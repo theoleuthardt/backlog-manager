@@ -89,7 +89,7 @@ jobs:
   deploy:
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: https://theocloud.dev/
     needs: build
     runs-on: ubuntu-latest
     name: Deploy
@@ -97,5 +97,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-      - name: Output page URL
-        run: echo "Page URL = ${{ steps.deployment.outputs.page_url }}"
