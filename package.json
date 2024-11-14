@@ -1,29 +1,44 @@
 {
-  "name": "backlogmanager",
-  "type": "module",
+  "name": "backlog-manager",
   "version": "0.0.1",
+  "private": true,
   "scripts": {
-    "dev": "astro dev",
-    "start": "astro dev",
-    "build": "astro check && astro build",
-    "preview": "astro preview",
-    "astro": "astro"
+    "dev": "node_modules/.bin/next dev --turbopack",
+    "build": "node_modules/.bin/next build",
+    "start": "node_modules/.bin/next start",
+    "lint": "node_modules/.bin/next lint"
   },
   "dependencies": {
-    "@astrojs/check": "^0.9.3",
-    "@astrojs/react": "^3.6.2",
-    "@astrojs/tailwind": "^5.1.0",
-    "@types/react": "^18.3.5",
-    "@types/react-dom": "^18.3.0",
-    "astro": "^4.15.4",
-    "class-variance-authority": "^0.7.0",
-    "clsx": "^2.1.1",
-    "lucide-react": "^0.439.0",
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "^2.46.1",
+    "dotenv": "^16.4.5",
+    "drizzle-orm": "^0.36.2",
+    "next": "15.0.3",
+    "postgres": "^3.4.5",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "tailwind-merge": "^2.5.2",
-    "tailwindcss": "^3.4.10",
-    "tailwindcss-animate": "^1.0.7",
-    "typescript": "^5.5.4"
-  }
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "drizzle-kit": "^0.28.1",
+    "eslint": "^8",
+    "eslint-config-next": "15.0.3",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  },
+  "description": "SaaS for managing your games backlog efficiently!",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/theoleuthardt/backlog-manager.git"
+  },
+  "author": "Theo Leuthardt",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/theoleuthardt/backlog-manager/issues"
+  },
+  "homepage": "https://github.com/theoleuthardt/backlog-manager#readme"
 }
