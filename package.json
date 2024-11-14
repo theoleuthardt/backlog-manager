@@ -9,12 +9,14 @@
     "lint": "node_modules/.bin/next lint"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "^2.46.1",
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.36.2",
     "next": "15.0.3",
     "postgres": "^3.4.5",
     "react": "^18.3.1",
-    "react-dom": "19.0.0-rc-66855b96-20241106"
+    "react-dom": "18.3.1"
   },
   "devDependencies": {
     "@types/node": "^20",
@@ -33,7 +35,7 @@
     "type": "git",
     "url": "git+https://github.com/theoleuthardt/backlog-manager.git"
   },
-  "author": "theo",
+  "author": "Theo Leuthardt",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/theoleuthardt/backlog-manager/issues"
