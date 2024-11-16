@@ -13,6 +13,12 @@ export default {
         foreground: "var(--foreground)",
       },
     },
+    fontFamily: {
+      "geist-sans": "var(--font-geist-sans)",
+      "geist-mono": "var(--font-geist-mono)",
+      spaceMono: ["'Space Mono'", "monospace"],
+      doto: ["'Doto'", "sans-serif"],
+    },
   },
   plugins: [],
 } satisfies Config;
