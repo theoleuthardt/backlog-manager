@@ -1,7 +1,10 @@
 import React from "react";
+import Image from "next/image";
+import { ImageType } from "@lib/types";  
 
 export interface ButtonProps {
-    text: string;
+    className?: string;
+    content: string | ImageType | undefined;
     link: string;
 }
 
@@ -9,12 +12,24 @@ export interface ButtonProps {
 export const Button = (props: ButtonProps) => {
     return (
         <div
-            className=" w-28 h-10 border-2 border-white rounded-full flex justify-center items-center
-            hover:underline hover:bg-white hover:text-black"
+            className={`${props.className} h-10 border-2 border-white rounded-full flex 
+            justify-center items-center hover:bg-white hover:text-black group transition duration-300`}
         >
-            <button>
-                <a href={`${props.link}`}>{props.text}</a>
-            </button>
+            {typeof props.content === "string" ? (
+                <a href={`${props.link}`}>
+                    {props.content}
+                </a>
+            ) : (
+                props.content &&
+                <a href={`${props.link}`}>
+                    <Image 
+                        className="filter invert group-hover:invert-0 transition duration-200"
+                        src={props.content?.src} 
+                        alt={props.content?.alt} 
+                        width={props.content?.width} 
+                        height={props.content?.height} />
+                </a>
+            )}
         </div>
     );
 };
