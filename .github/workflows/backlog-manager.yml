@@ -3,14 +3,14 @@ name: Deploy to Server
 on:
   workflow_dispatch:
     inputs:
-        question:
-          description: 'NEXT TO THE MOON?'
-          required: false
-          default: 'TURBO'
-          type: choice
-          options:
-            - 'TURBO'
-            - 'WAIT'
+      question:
+        description: "NEXT TO THE MOON?"
+        required: false
+        default: "TURBO"
+        type: choice
+        options:
+          - "TURBO"
+          - "WAIT"
 
 env:
   BUILD_PATH: "." # default value when not using subfolder

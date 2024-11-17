@@ -22,12 +22,15 @@
       "@/*": ["./src/*"],
       "@components/*": ["./src/app/components/*"],
       "@utils/*": ["./src/utils/*"],
-      "@lib/*": ["./src/lib/*"],
+      "@lib/*": ["./src/lib/*"]
     }
   },
   "include": [
-    "next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "additional.d.ts"],
-  "exclude": [
-    "backlog-manager/node_modules"
-  ]
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "additional.d.ts"
+  ],
+  "exclude": ["backlog-manager/node_modules"]
 }

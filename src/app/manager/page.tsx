@@ -1,10 +1,7 @@
 export default function Page() {
-    return (
-        <>
-            <div>
-                Manager
-            </div>
-        </>
-    );
-};
-
+  return (
+    <>
+      <div>Manager</div>
+    </>
+  );
+}
