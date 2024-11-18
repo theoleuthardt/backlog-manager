@@ -13,4 +13,11 @@ export const icons = [
     width: 37,
     height: 37,
   },
+  {
+    id: 3,
+    src: "https://img.icons8.com/material-outlined/48/github.png",
+    alt: "github",
+    width: 48,
+    height: 48,
+  },
 ];

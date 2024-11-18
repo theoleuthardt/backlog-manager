@@ -7,12 +7,12 @@ export const Navbar = () => {
     <div className="mt-1 flex flex-row items-center min-w-screen">
       <div className="flex justify-start flex-1 text-white text-2xl pl-5">
         <div className="filter invert pr-3 hover:animate-pulse">
-          {icons.at(1) ? (
+          {icons[1] ? (
             <Image
-              src={icons.at(1).src}
-              alt={icons.at(1).alt}
-              width={icons.at(1).width}
-              height={icons.at(1).height}
+              src={icons[1].src}
+              alt={icons[1].alt}
+              width={icons[1].width}
+              height={icons[1].height}
             />
           ) : null}
         </div>
