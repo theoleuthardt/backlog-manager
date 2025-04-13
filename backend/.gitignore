@@ -1,0 +1,5 @@
+# output directory
+/output
+
+# environment file
+.env
