@@ -1,6 +1,6 @@
 # Backlog Manager 🎮📒
 
-A web-based backlog manager with a NextJS frontend, Go backend with REST-API and authentication and PostgreSQL database, deployed via Docker.
+A web-based backlog manager as NextJS full stack app with authentication and PostgreSQL database, deployed via Docker.
 This is a private project of mine and still work in progress. 
 
 ## Overview 
