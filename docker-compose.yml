@@ -1,35 +1,26 @@
 services:
-  frontend:
+  backlog-manager:
+    env_file: .env
     build:
-      context: ./frontend
+      context: .
       dockerfile: Dockerfile
-    container_name: backlog-manager-frontend
-    restart: unless-stopped
-    ports:
-      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
-    depends_on:
-      - backend
-
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: backlog-manager-backend
-    restart: unless-stopped
+      args:
+        NODE_ENV: ${NODE_ENV}
     environment:
-      DATABASE_URL: ${DATABASE_URL}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      - POSTGRES_URL=${POSTGRES_URL}
+      - NODE_ENV=${NODE_ENV}
+      - HOSTNAME=${HOSTNAME}
+      - PORT=${NEXTJS_PORT}
     ports:
-      - "${BACKEND_PORT}:${BACKEND_PORT}"
+      - "${NEXTJS_PORT}:3000"
+    restart: unless-stopped
     depends_on:
       - db
 
   db:
     image: postgres:17-alpine
     container_name: postgres-db
-    restart: unless-stopped
+    env_file: .env
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -38,6 +29,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+    restart: unless-stopped
 
   db-monitoring:
     image: dpage/pgadmin4
