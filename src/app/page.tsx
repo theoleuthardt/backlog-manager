@@ -54,11 +54,11 @@ export default function Home() {
           <Navbar />
           <main className="drop-in flex flex-grow items-center justify-center px-4">
             <div className="max-w-xl rounded-lg p-6 text-center">
-              <h1 className="drop-in mb-4 mb-15 text-5xl font-extrabold text-indigo-500 shadow-indigo-500 text-shadow-md md:text-6xl lg:text-7xl">
+              <h1 className="drop-in mb-18 text-5xl font-extrabold text-indigo-500 shadow-indigo-500 text-shadow-md md:text-6xl lg:text-7xl">
                 Manage your gaming backlog!
               </h1>
               <a
-                href="login"
+                href="/login"
                 className="inline-block rounded-lg border bg-black px-6 py-2 text-indigo-600 transition-colors duration-300 hover:text-white hover:shadow-md hover:shadow-white"
               >
                 Get Started today!
