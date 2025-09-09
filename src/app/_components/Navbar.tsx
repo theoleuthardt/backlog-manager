@@ -15,7 +15,9 @@ export function Navbar() {
           />
         </Link>
         <Link href={"/"}>
-          <span className="text-xl font-bold">Backlog-Manager</span>
+          <span className="hidden text-xl font-bold sm:visible">
+            Backlog-Manager
+          </span>
         </Link>
       </div>
       <div className="flex flex-row space-x-8">

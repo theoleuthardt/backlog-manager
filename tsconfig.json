@@ -29,7 +29,8 @@
     "paths": {
       "~/*": ["./src/*"],
       "components": ["./src/app/_components/index.ts"],
-      "components/*": ["./src/app/_components/*"]
+      "components/*": ["./src/app/_components/*"],
+      "shadcn_components/*": ["./src/components/*"]
     }
   },
   "include": [
