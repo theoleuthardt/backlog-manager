@@ -59,7 +59,11 @@ export default function Home() {
             "linear-gradient(to bottom, black 60%, #1e3a8a 100%)",
         }}
       >
-        <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
+        <canvas
+          ref={canvasRef}
+          className="pointer-events-none absolute inset-0 h-full w-full"
+        />
+
         <div className="relative z-10 flex flex-col text-white">
           <div className="flex min-h-screen flex-col">
             <Navbar />
@@ -71,24 +75,25 @@ export default function Home() {
                 <p className="text- mb-8 text-lg text-gray-300">
                   Organize your games and track your progress with ease.
                 </p>
-                <div className="flex flex-col items-center justify-center gap-5 hover:cursor-pointer sm:flex-row">
-                  <Button
-                    variant="outline"
-                    className="border-black text-black transition-colors duration-300 hover:border-white hover:bg-transparent hover:text-white"
-                  >
-                    <Link href="/login">Get Started today!</Link>
-                  </Button>
+                <div className="flex flex-col items-center justify-center gap-5 sm:flex-row">
+                  {/* Korrigierte Button-Link-Struktur */}
+                  <Link href="/login">
+                    <Button
+                      variant="outline"
+                      className="border-black text-black transition-colors duration-300 hover:cursor-pointer hover:border-white hover:bg-transparent hover:text-white"
+                    >
+                      Get Started today!
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </main>
           </div>
-          <div id="features-section">
-            <canvas
-              ref={canvasRef}
-              className="absolute inset-0 h-full w-full"
-            />
+
+          <div id="features">
             <Features />
           </div>
+
           <Footer />
         </div>
       </div>

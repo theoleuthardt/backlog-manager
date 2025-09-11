@@ -22,7 +22,16 @@ export function Navbar() {
       </div>
       <div className="flex flex-row space-x-8">
         {navbarLinks.map((link) => (
-          <Link key={link.id} href={link.href} className="hover:underline">
+          <Link
+            key={link.id}
+            href={link.href}
+            onClick={() => {
+              if (link.onClick) {
+                link.onClick();
+              }
+            }}
+            className="hover:underline"
+          >
             {link.content}
           </Link>
         ))}
