@@ -27,7 +27,10 @@
     /* Path Aliases */
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"]
+      "~/*": ["./src/*"],
+      "components": ["./src/app/_components/index.ts"],
+      "components/*": ["./src/app/_components/*"],
+      "shadcn_components/*": ["./src/components/*"]
     }
   },
   "include": [
