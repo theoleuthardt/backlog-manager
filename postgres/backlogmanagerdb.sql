@@ -1,13 +1,9 @@
--- Korrigiertes PostgreSQL Schema für Backlog Manager
--- Falls eine vorherige Transaktion fehlgeschlagen ist, diese zuerst beenden:
 ROLLBACK;
 
 BEGIN;
 
--- Schema erstellen falls nicht vorhanden
 CREATE SCHEMA IF NOT EXISTS backlogmanagerdb;
 
--- Users Tabelle
 CREATE TABLE IF NOT EXISTS backlogmanagerdb."Users" (
     "UserID" BIGSERIAL PRIMARY KEY,
     "Username" VARCHAR(50) NOT NULL UNIQUE,
@@ -16,7 +12,6 @@ CREATE TABLE IF NOT EXISTS backlogmanagerdb."Users" (
     "CreatedAt" TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Games Tabelle
 CREATE TABLE IF NOT EXISTS backlogmanagerdb."Games" (
     "GameID" BIGSERIAL PRIMARY KEY,
     "Title" VARCHAR(255) NOT NULL,
@@ -27,19 +22,17 @@ CREATE TABLE IF NOT EXISTS backlogmanagerdb."Games" (
     "HowLongToBeat" INTEGER[] -- Array für verschiedene Spielzeiten (Main, Extras, Completionist)
 );
 
--- Categories Tabelle
 CREATE TABLE IF NOT EXISTS backlogmanagerdb."Categories" (
     "CategoryID" BIGSERIAL PRIMARY KEY,
     "UserID" BIGINT NOT NULL,
     "CategoryName" VARCHAR(100) NOT NULL,
-    "Color" VARCHAR(7) NOT NULL DEFAULT '#000000', -- Hex-Farben
+    "Color" VARCHAR(7) NOT NULL DEFAULT '#000000',
     "Description" TEXT DEFAULT 'No description',
     "CreatedAt" TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY ("UserID") REFERENCES backlogmanagerdb."Users"("UserID") 
         ON DELETE CASCADE ON UPDATE CASCADE
 );
 
--- Backlog Entries Tabelle
 CREATE TABLE IF NOT EXISTS backlogmanagerdb."BacklogEntries" (
     "BacklogEntryID" BIGSERIAL PRIMARY KEY,
     "UserID" BIGINT NOT NULL,
@@ -54,7 +47,7 @@ CREATE TABLE IF NOT EXISTS backlogmanagerdb."BacklogEntries" (
         ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY ("GameID") REFERENCES backlogmanagerdb."Games"("GameID") 
         ON DELETE CASCADE ON UPDATE CASCADE,
-    UNIQUE("UserID", "GameID") -- Ein User kann ein Spiel nur einmal im Backlog haben
+    UNIQUE("UserID", "GameID")
 );
 
 -- Junction Table für Many-to-Many Beziehung zwischen Categories und Backlog Entries
@@ -68,7 +61,6 @@ CREATE TABLE IF NOT EXISTS backlogmanagerdb."CategoryBacklogEntries" (
         ON DELETE CASCADE ON UPDATE CASCADE
 );
 
--- Indizes für bessere Performance
 CREATE INDEX IF NOT EXISTS idx_categories_userid ON backlogmanagerdb."Categories"("UserID");
 CREATE INDEX IF NOT EXISTS idx_backlogentries_userid ON backlogmanagerdb."BacklogEntries"("UserID");
 CREATE INDEX IF NOT EXISTS idx_backlogentries_gameid ON backlogmanagerdb."BacklogEntries"("GameID");
