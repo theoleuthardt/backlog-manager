@@ -64,6 +64,38 @@ export const getCategoryByID = async (categoryID: bigint) => {
   }
 };
 
+export const getCategoryIDsOfBacklogEntry = async (backlogEntryID: bigint) => {
+    const client = await pool.connect();
+    try {
+        const result = await client.query(
+            "SELECT * FROM CategoryBacklogEntries WHERE id = $1",
+            [backlogEntryID],
+        );
+        return result.rows as BacklogCategoryRow[];
+    } catch (error) {
+        console.error("Error fetching category IDs of BacklogEntry:", error);
+        throw error;
+    } finally {
+        client.release();
+    }
+};
+
+export const getCategoriesByUserID = async (userID: bigint) => {
+    const client = await pool.connect();
+    try {
+        const result = await client.query(
+            "SELECT * FROM Categories WHERE id = $1",
+            [userID],
+        );
+        return result.rows as CategoryRow[];
+    } catch (error) {
+        console.error("Error fetching categories by UserID:", error);
+        throw error;
+    } finally {
+        client.release();
+    }
+};
+
 
 export const getAllBacklogEntries = async () => {
   const client = await pool.connect();
@@ -92,6 +124,38 @@ export const getBacklogEntryByID = async (backlogEntryID: bigint) => {
   } finally {
     client.release();
   }
+};
+
+export const getBacklogEntriesByUserID = async (userID: bigint) => {
+    const client = await pool.connect();
+    try {
+        const result = await client.query(
+            "SELECT * FROM BacklogEntries WHERE id = $1",
+            [userID],
+        );
+        return result.rows as BacklogEntryRow[];
+    } catch (error) {
+        console.error("Error fetching backlog entries by UserID:", error);
+        throw error;
+    } finally {
+        client.release();
+    }
+};
+
+export const getBacklogEntryByGameID = async (gameID: bigint) => {
+    const client = await pool.connect();
+    try {
+        const result = await client.query(
+            "SELECT * FROM BacklogEntries WHERE id = $1",
+            [gameID],
+        );
+        return result.rows as BacklogEntryRow[];
+    } catch (error) {
+        console.error("Error fetching backlog entries by GameID:", error);
+        throw error;
+    } finally {
+        client.release();
+    }
 };
 
 
