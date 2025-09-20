@@ -15,7 +15,7 @@ export function Navbar() {
           />
         </Link>
         <Link href={"/"}>
-          <span className="hidden text-xl font-bold sm:visible">
+          <span className="text-xl font-bold hidden md:block">
             Backlog-Manager
           </span>
         </Link>
