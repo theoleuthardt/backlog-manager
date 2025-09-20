@@ -26,13 +26,14 @@ export const updateCategory = async (
   name: string,
   color: string,
   description: string,
-  createdAt: string
+  createdAt: string,
+  updatedAt: string
 ) => {
   const client = await pool.connect();
   try {
     const result = await client.query(
-      "UPDATE Categories SET name = $2, color = $3, description = $4, createdAt = $5 WHERE id = $1 RETURNING *",
-      [categoryID, name, color, description, createdAt],
+      "UPDATE Categories SET name = $2, color = $3, description = $4, createdAt = $5, updatedAt = $6 WHERE id = $1 RETURNING *",
+      [categoryID, name, color, description, createdAt, updatedAt],
     );
     return result.rows[0] as CategoryRow;
   } catch (error) {
@@ -48,17 +49,20 @@ export const updateBacklogEntry = async (
   status: string,
   owned: boolean,
   interest: bigint,
-  reviewNote: string,
+  reviewStars: bigint,
+  review: string,
+  note: string,
   addedAt: string,
-  completedAt: string
+  completedAt: string,
+  updatedAt: string
 ) => {
   const client = await pool.connect();
   try {
     const result = await client.query(
       `UPDATE BacklogEntries 
-       SET status = $2, owned = $3, interest = $4, reviewNote = $5, addedAt = $6, completedAt = $7 
+       SET status = $2, owned = $3, interest = $4, reviewStars = $5, review = $6, note = $7, addedAt = $8, completedAt = $9, updatedAt = $10 
        WHERE id = $1 RETURNING *`,
-      [backlogEntryID, status, owned, interest, reviewNote, addedAt, completedAt],
+      [backlogEntryID, status, owned, interest, reviewStars, review, note, addedAt, completedAt, updatedAt],
     );
     return result.rows[0] as BacklogEntryRow;
   } catch (error) {
@@ -76,15 +80,17 @@ export const updateGame = async (
   platform: string,
   releaseDate: string,
   imageLink: string,
-  howLongToBeat: string
+  howLongToBeat: string,
+  addedAt: string,
+  updatedAt: string
 ) => {
   const client = await pool.connect();
   try {
     const result = await client.query(
       `UPDATE Games 
-       SET title = $2, genre = $3, platform = $4, releaseDate = $5, imageLink = $6, howLongToBeat = $7 
+       SET title = $2, genre = $3, platform = $4, releaseDate = $5, imageLink = $6, howLongToBeat = $7, addedAt = $8, updatedAt = $9
        WHERE id = $1 RETURNING *`,
-      [gameID, title, genre, platform, releaseDate, imageLink, howLongToBeat],
+      [gameID, title, genre, platform, releaseDate, imageLink, howLongToBeat, addedAt, updatedAt],
     );
     return result.rows[0] as GameRow;
   } catch (error) {
@@ -99,16 +105,18 @@ export const updateCategoryBacklogEntry = async (
   categoryID: bigint,
   backlogEntryID: bigint,
   newCategoryID: bigint,
-  newBacklogEntryID: bigint
+  newBacklogEntryID: bigint,
+  addedAt: string,
+  updatedAt: string
 ) => {
   const client = await pool.connect();
   try {
     const result = await client.query(
       `UPDATE CategoryBacklogEntries 
-       SET categoryID = $3, backlogEntryID = $4
+       SET categoryID = $3, backlogEntryID = $4, addedAt = $5, updatedAt = $6
        WHERE categoryID = $1 AND backlogEntryID = $2
        RETURNING *`,
-      [categoryID, backlogEntryID, newCategoryID, newBacklogEntryID],
+      [categoryID, backlogEntryID, newCategoryID, newBacklogEntryID, addedAt, updatedAt],
     );
     return result.rows[0] as BacklogCategoryRow;
   } catch (error) {

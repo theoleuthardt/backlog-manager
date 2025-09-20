@@ -21,12 +21,12 @@ export const createUser = async (name: string, email: string) => {
   }
 };
 
-export const createCategory = async (userID: bigint, name: string, color: string, description: string, createdAt: string) => {
+export const createCategory = async (userID: bigint, name: string, color: string, description: string, createdAt: string, updatedAt: string) => {
     const client = await pool.connect();
     try {
         const result = await client.query(
-            "INSERT INTO Categories (userID, name, color, description, createdAt) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-            [userID, name, color, description, createdAt],
+            "INSERT INTO Categories (userID, name, color, description, createdAt, updatedAt) VALUES ($1, $2, $3, $4, $5, $6 RETURNING *",
+            [userID, name, color, description, createdAt, updatedAt],
         );
         return result.rows[0] as CategoryRow;
     } catch (error) {
@@ -37,12 +37,12 @@ export const createCategory = async (userID: bigint, name: string, color: string
     }
 };
 
-export const createBacklogEntry = async (userID: bigint, gameID: bigint, status: string, owned: boolean, interest: bigint, reviewNote: string, addedAt: string, completedAt: string) => {
+export const createBacklogEntry = async (userID: bigint, gameID: bigint, status: string, owned: boolean, interest: bigint, reviewStars: bigint, review: string, note: string, addedAt: string, completedAt: string, updatedAt: string) => {
     const client = await pool.connect();
     try {
         const result = await client.query(
-            "INSERT INTO BacklogEntries (userID, gameID, status, owned, interest, reviewNote, addedAt, completedAt) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
-            [userID, gameID, status, owned, interest, reviewNote, addedAt, completedAt],
+            "INSERT INTO BacklogEntries (userID, gameID, status, owned, interest, reviewStars, review, note, addedAt, completedAt, updatedAt) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *",
+            [userID, gameID, status, owned, interest, reviewStars, review, note, addedAt, completedAt, updatedAt],
         );
         return result.rows[0] as BacklogEntryRow;
     } catch (error) {
@@ -53,12 +53,12 @@ export const createBacklogEntry = async (userID: bigint, gameID: bigint, status:
     }
 };
 
-export const createGame = async (title: string, genre: string, platform: string, releaseDate: string, imageLink: string, howLongToBeat: string) => {
+export const createGame = async (title: string, genre: string, platform: string, releaseDate: string, imageLink: string, howLongToBeat: string, createdAt: string, updatedAt: string) => {
     const client = await pool.connect();
     try {
         const result = await client.query(
-            "INSERT INTO Games (title, genre, platform, releaseDate, imageLink, howLongToBeat) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-            [title, genre, platform, releaseDate, imageLink, howLongToBeat],
+            "INSERT INTO Games (title, genre, platform, releaseDate, imageLink, howLongToBeat, createdAt, updatedAt) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
+            [title, genre, platform, releaseDate, imageLink, howLongToBeat, createdAt, updatedAt],
         );
         return result.rows[0] as GameRow;
     } catch (error) {
@@ -69,12 +69,12 @@ export const createGame = async (title: string, genre: string, platform: string,
     }
 };
 
-export const addBacklogEntryToCategory = async (categoryID: bigint, backlogEntryID: bigint) => {
+export const addBacklogEntryToCategory = async (categoryID: bigint, backlogEntryID: bigint, createdAt: string, updatedAt: string) => {
     const client = await pool.connect();
     try {
         const result = await client.query(
-            "INSERT INTO CategoryBacklogEntries (categoryID, backlogEntryID) VALUES ($1, $2) RETURNING *",
-            [categoryID, backlogEntryID],
+            "INSERT INTO CategoryBacklogEntries (categoryID, backlogEntryID, createdAt, updatedAt) VALUES ($1, $2, $3, $4) RETURNING *",
+            [categoryID, backlogEntryID, createdAt, updatedAt],
         );
         return result.rows[0] as BacklogCategoryRow;
     } catch (error) {

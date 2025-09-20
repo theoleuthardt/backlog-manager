@@ -9,6 +9,7 @@ export interface CategoryRow {
   name: string;
   description?: string;
   createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface BacklogEntryRow {
@@ -17,9 +18,12 @@ export interface BacklogEntryRow {
   status: string;
   owned: boolean;
   interest: bigint;
-  reviewNote?: string;
+  reviewStars?: bigint;
+  review?: string;
+  note?: string;
   addedAt?: string;
   completedAt?: string;
+  updatedAt?: string;
 }
 
 export interface GameRow {
@@ -29,9 +33,13 @@ export interface GameRow {
   releaseDate?: string;
   imageLink?: string;
   howLongToBeat?: string;
+  completedAt?: string;
+  updatedAt?: string;
 }
 
 export interface BacklogCategoryRow {
   categoryID: bigint;
   backlogEntryID: bigint;
+  completedAt?: string;
+  updatedAt?: string;
 }

@@ -85,3 +85,19 @@ export const removeBacklogEntryFromCategory = async (categoryID: bigint, backlog
   }
 };
 
+export const deleteCategoryBacklogEntries  = async (categoryID: bigint) => {
+    const client = await pool.connect();
+    try {
+        const result = await client.query(
+            "DELETE FROM CategoryBacklogEntries WHERE categoryID = $1 RETURNING *",
+            [categoryID],
+        );
+        return result.rows[0] as BacklogCategoryRow;
+    } catch (error) {
+        console.error("Error removing backlog entry from category:", error);
+        throw error;
+    } finally {
+        client.release();
+    }
+};
+
