@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS "blm-system"."Games"(
     "Platform" VARCHAR(100) NOT NULL,
     "ReleaseDate" DATE,
     "ImageLink" TEXT,
-    "HowLongToBeat" INTEGER[], -- Array für verschiedene Spielzeiten (Main, Extras, Completionist)
+    "HowLongToBeat" INTEGER[],
     "CreatedAt" TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "UpdatedAt" TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -57,7 +57,6 @@ CREATE TABLE IF NOT EXISTS "blm-system"."BacklogEntries" (
     UNIQUE("UserID", "GameID")
 );
 
--- Junction Table für Many-to-Many Beziehung zwischen Categories und Backlog Entries
 CREATE TABLE IF NOT EXISTS "blm-system"."CategoryBacklogEntries" (
     "CategoryID" BIGINT     NOT NULL,
     "BacklogEntryID" BIGINT NOT NULL,
@@ -75,7 +74,7 @@ CREATE INDEX IF NOT EXISTS idx_backlogentries_userid ON "blm-system"."BacklogEnt
 CREATE INDEX IF NOT EXISTS idx_backlogentries_gameid ON "blm-system"."BacklogEntries"("GameID");
 CREATE INDEX IF NOT EXISTS idx_backlogentries_status ON "blm-system"."BacklogEntries"("Status");
 
--- Trigger um CompletedAt automatisch zu setzen wenn Status auf 'Completed' geändert wird
+-- set CompletedAt automatically if status is set to 'Completed'
 CREATE OR REPLACE FUNCTION "blm-system".update_completed_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -92,5 +91,8 @@ CREATE TRIGGER trigger_update_completed_at
     BEFORE UPDATE ON "blm-system"."BacklogEntries"
     FOR EACH ROW
     EXECUTE FUNCTION "blm-system".update_completed_at();
+
+-- set default schema
+ALTER DATABASE "backlog-manager-db" SET search_path = "blm-system", public;
 
 COMMIT;
