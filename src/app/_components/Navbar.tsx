@@ -1,8 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
-import { navbarLinks } from "~/constants";
+import { type NavbarLink } from "~/constants";
 
-export function Navbar() {
+interface NavbarProps {
+  navbarLinks: NavbarLink[]
+}
+
+export function Navbar(props: NavbarProps) {
   return (
     <nav className="mx-auto mb-8 flex w-full items-center justify-between rounded-4xl bg-transparent px-8 py-4 text-white">
       <div className="flex items-center space-x-2">
@@ -15,13 +19,13 @@ export function Navbar() {
           />
         </Link>
         <Link href={"/"}>
-          <span className="text-xl font-bold hidden md:block">
+          <span className="hidden text-xl font-bold md:block">
             Backlog-Manager
           </span>
         </Link>
       </div>
       <div className="flex flex-row space-x-8">
-        {navbarLinks.map((link) => (
+        {props.navbarLinks.map((link) => (
           <Link
             key={link.id}
             href={link.href}

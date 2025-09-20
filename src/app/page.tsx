@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { Navbar, Footer, Features } from "components";
 import { Button } from "shadcn_components/ui/button";
 import Link from "next/link";
+import { landingPageNavLinks } from "~/constants";
 
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -66,7 +67,7 @@ export default function Home() {
 
         <div className="relative z-10 flex flex-col text-white">
           <div className="flex min-h-screen flex-col">
-            <Navbar />
+            <Navbar navbarLinks={landingPageNavLinks} />
             <main className="drop-in flex flex-grow items-center justify-center px-4">
               <div className="max-w-xl rounded-lg p-6 text-center">
                 <h1 className="drop-in mb-8 text-5xl font-extrabold text-white shadow-white text-shadow-md md:text-6xl lg:text-7xl">
@@ -76,7 +77,6 @@ export default function Home() {
                   Organize your games and track your progress with ease.
                 </p>
                 <div className="flex flex-col items-center justify-center gap-5 sm:flex-row">
-                  {/* Korrigierte Button-Link-Struktur */}
                   <Link href="/login">
                     <Button
                       variant="outline"
