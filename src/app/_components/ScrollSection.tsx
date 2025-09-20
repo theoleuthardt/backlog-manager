@@ -13,7 +13,7 @@ export const ScrollSection = (Props: ScrollSectionProps) => {
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry && entry.isIntersecting) {
+        if (entry?.isIntersecting) {
           setTimeout(() => setIsVisible(true), Props.delay);
         }
       },
