@@ -12,6 +12,9 @@ const config = {
     "10.20.146.74",
     "10.20.*",
   ],
+  images: {
+    remotePatterns: [new URL("https://howlongtobeat.com/**")],
+  },
 };
 
 export default config;
