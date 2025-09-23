@@ -8,7 +8,7 @@ import { TRPCReactProvider } from "~/trpc/react";
 export const metadata: Metadata = {
   title: "Dashboard",
   description: "Your Backlog Manager Dashboard",
-  icons: [{ rel: "icon", url: "/favicon_mana.ico" }],
+  icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
 const geist = Geist({
