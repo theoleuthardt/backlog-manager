@@ -3,12 +3,12 @@ import Image from "next/image";
 import { type NavbarLink } from "~/constants";
 
 interface NavbarProps {
-  navbarLinks: NavbarLink[]
+  navbarLinks: NavbarLink[];
 }
 
 export function Navbar(props: NavbarProps) {
   return (
-    <nav className="mx-auto mb-8 flex w-full items-center justify-between rounded-4xl bg-transparent px-8 py-4 text-white">
+    <nav className="mx-auto flex w-full items-center justify-between rounded-4xl bg-transparent px-8 py-4 text-white">
       <div className="flex items-center space-x-2">
         <Link href={"/"}>
           <Image
