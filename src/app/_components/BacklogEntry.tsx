@@ -1,16 +1,14 @@
-"use client";
-import React, { useState, useEffect } from "react";
-import Image from "next/image";
 import {
   Dialog,
   DialogContent,
   DialogTrigger,
   DialogHeader,
-  DialogTitle,
   DialogDescription,
+  DialogTitle,
   DialogClose,
 } from "shadcn_components/ui/dialog";
 import { Button } from "shadcn_components/ui/button";
+import GameImage from "components/GameImage";
 
 interface BacklogEntryProps {
   title?: string;
@@ -28,44 +26,37 @@ interface BacklogEntryProps {
 }
 
 export const BacklogEntry = (props: BacklogEntryProps) => {
-  const [imgSrc, setImgSrc] = useState("/entryPlaceholder.png");
-
-  useEffect(() => {
-    const img = new window.Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => setImgSrc(props.imageLink ?? "/entryPlaceholder.png");
-    img.onerror = () => setImgSrc("/entryPlaceholder.png");
-    img.src = props.imageLink ?? "/entryPlaceholder.png";
-  }, [props.imageLink]);
-
   return (
-    <div className="h-[12.5rem] w-[9.375rem] cursor-pointer">
+    <div className="h-[14.0625rem] w-[9.375rem] cursor-pointer">
       <Dialog>
         <DialogTrigger asChild>
-          <Image
-            src={imgSrc}
-            alt={props.imageAlt ?? ""}
-            width={150}
-            height={200}
-          />
+          <div>
+            <GameImage
+              src={props.imageLink}
+              alt={props.imageAlt ?? ""}
+              width={150}
+              height={225}
+            />
+          </div>
         </DialogTrigger>
         <DialogContent
-          className="h-[40rem] w-[40rem] justify-center-safe border-2 border-white bg-black"
+          className="h-[40rem] w-[40rem] md:w-[50rem] lg:w-[70rem]
+          justify-center-safe border-2 border-white bg-black"
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <DialogClose asChild>
             <Button
-              variant="ghost"
-              size="sm"
-              className="absolute top-4 right-4 h-8 w-8 fill-white p-0 text-white"
+              variant="destructive"
+              size="icon"
+              className="absolute top-2 right-2 h-8 w-8 fill-white p-0 text-white [&:focus]:outline-none [&:focus]:ring-0 [&:focus-visible]:ring-0"
             ></Button>
           </DialogClose>
           <DialogHeader>
             <DialogTitle className="text-center text-3xl text-white">
               {props.title ?? "Game"}
             </DialogTitle>
-            <DialogDescription className="text-center text-white">
-              MOIN MEISTER WIE GEHTS SO, COOL DAS DU HIER RAUF GEKLICKT HAST!!!
+            <DialogDescription>
+              {props.note ?? "Lorem Ipsum and so on...."}
             </DialogDescription>
           </DialogHeader>
         </DialogContent>

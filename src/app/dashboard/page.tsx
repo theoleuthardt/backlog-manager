@@ -3,6 +3,7 @@ import { Navbar, Footer, BacklogEntry } from "components";
 import { BacklogEntryDummyData, dashboardNavLinks } from "~/constants";
 import Image from "next/image";
 import { Input } from "shadcn_components/ui/input";
+import { Button } from "shadcn_components/ui/button";
 
 export default function Dashboard() {
   return (
@@ -22,11 +23,18 @@ export default function Dashboard() {
                 <div id="upperSection" className="flex min-h-30 gap-12 p-8">
                   <div
                     id="leftBar"
-                    className="h-[20rem] w-48 flex-shrink-0 border-2 border-white p-4"
+                    className="h-[23rem] w-48 flex-shrink-0 border-2 border-white p-4"
                   >
+                    <Button
+                      id="addEntryButton"
+                      className="relative mb-4 h-[2rem] w-[10rem] rounded-3xl border-2 border-white bg-black p-4 font-bold text-white"
+                      variant="outline"
+                    >
+                      Add Entry
+                    </Button>
                     <div id="searchBar" className="relative mb-4 h-[2rem]">
                       <Input
-                        className="rounded-3xl"
+                        className="rounded-3xl text-center"
                         type="search"
                         placeholder="Backlog Entry"
                       />
@@ -55,11 +63,22 @@ export default function Dashboard() {
                     id="entryList"
                     className="h-[30rem] flex-1 overflow-hidden border-2 border-white p-4"
                   >
-                    <div className="grid h-full grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-2 overflow-y-auto">
+                    <div className="grid h-full grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3 overflow-y-auto">
                       {BacklogEntryDummyData.map((entry) => (
                         <BacklogEntry
                           key={entry.id}
+                          title={entry.title}
                           imageLink={entry.imageLink}
+                          imageAlt={entry.imageAlt}
+                          genre={entry.genre}
+                          platform={entry.platform}
+                          status={entry.status}
+                          owned={entry.owned}
+                          interest={entry.interest}
+                          review={entry.review}
+                          reviewStars={entry.reviewStars}
+                          note={entry.note}
+                          howLongToBeat={entry.howLongToBeat}
                         />
                       ))}
                     </div>
