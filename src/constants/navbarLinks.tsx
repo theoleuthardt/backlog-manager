@@ -39,19 +39,21 @@ export const landingPageNavLinks: NavbarLink[] = [
 export const dashboardNavLinks: NavbarLink[] = [
   {
     id: 1,
-    href: "#csv-import",
-    content: (
-      <Image src="/csv_import.png" alt="csv_import" width={32} height={32} />
-    ),
-    onClick: () => {
-      document.getElementById("csv-import")?.scrollIntoView({
-        behavior: "smooth",
-      });
-    },
+    href: "/account",
+    content: <Image src="/account.png" alt="account" width={32} height={32} />,
   },
   {
     id: 2,
-    href: "/login",
-    content: <Image src="/account.png" alt="account" width={32} height={32} />,
+    href: "/",
+    content: (
+      <Image
+        className="scale-125"
+        src="/logout.png"
+        alt="logout"
+        width={32}
+        height={32}
+      />
+    ),
+    onClick: () => {},
   },
 ];
