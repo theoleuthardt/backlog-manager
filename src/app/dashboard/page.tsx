@@ -2,8 +2,15 @@
 import { Navbar, Footer, BacklogEntry } from "components";
 import { BacklogEntryDummyData, dashboardNavLinks } from "~/constants";
 import Image from "next/image";
-import { Input } from "shadcn_components/ui/input";
 import { Button } from "shadcn_components/ui/button";
+import { Slider } from "shadcn_components/ui/slider";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "shadcn_components/ui/dropdown-menu";
+import { SearchBar } from "components/SearchBar";
 
 export default function Dashboard() {
   return (
@@ -12,7 +19,7 @@ export default function Dashboard() {
         className="relative min-h-screen overflow-hidden"
         style={{
           backgroundImage:
-            "linear-gradient(to bottom, black 60%, #1e3a8a 100%)",
+            "linear-gradient(to bottom, black 60%, #000000 100%)",
         }}
       >
         <div className="relative z-10 flex flex-col text-white">
@@ -20,50 +27,150 @@ export default function Dashboard() {
             <Navbar navbarLinks={dashboardNavLinks} />
             <main className="drop-in flex-grow px-4">
               <div className="mx-auto grid h-full max-w-[100rem] grid-rows-[1fr_auto] gap-6">
-                <div id="upperSection" className="flex min-h-30 gap-12 p-8">
+                <div id="upperSection" className="flex min-h-30 gap-8 p-4">
                   <div
                     id="leftBar"
-                    className="h-[23rem] w-48 flex-shrink-0 border-2 border-white p-4"
+                    className="h-[23rem] w-48 flex-shrink-0 p-4"
                   >
+                    <SearchBar />
                     <Button
                       id="addEntryButton"
-                      className="relative mb-4 h-[2rem] w-[10rem] rounded-3xl border-2 border-white bg-black p-4 font-bold text-white"
+                      className="relative mb-4 h-[2.5rem] w-[10rem] rounded-3xl border-0 bg-blue-700 p-4 font-bold text-white hover:bg-blue-800 hover:text-white"
                       variant="outline"
                     >
+                      <Image src="/add.png" alt="add" width={24} height={24} />
                       Add Entry
                     </Button>
-                    <div id="searchBar" className="relative mb-4 h-[2rem]">
-                      <Input
-                        className="rounded-3xl text-center"
-                        type="search"
-                        placeholder="Backlog Entry"
+                    <Button
+                      id="csvImportButton"
+                      className="relative mb-4 h-[2.5rem] w-[10rem] rounded-3xl border-0 bg-blue-700 p-4 font-bold text-white hover:bg-blue-800 hover:text-white"
+                      variant="outline"
+                    >
+                      <Image
+                        src="/csv_import.png"
+                        alt="csv_import"
+                        width={24}
+                        height={24}
                       />
-                    </div>
+                      Import Backlog
+                    </Button>
+                    <Button
+                      id="csvExportButton"
+                      className="relative mb-4 h-[2.5rem] w-[10rem] rounded-3xl border-0 bg-blue-700 p-4 font-bold text-white hover:bg-blue-800 hover:text-white"
+                      variant="outline"
+                    >
+                      <Image
+                        src="/csv_export.png"
+                        alt="csv_export"
+                        width={24}
+                        height={24}
+                      />
+                      Export Backlog
+                    </Button>
                     <div
                       id="filterOptions"
-                      className="mb-4 h-32 border-2 border-white p-4 text-center"
+                      className="mb-4 h-42 p-4 text-center"
                     >
-                      Dropdown Dropdown Dropdown
+                      <div className="mb-2 rounded-xl border-2 border-white hover:bg-white hover:text-black">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger>Dropdown 1</DropdownMenuTrigger>
+                          <DropdownMenuContent className="h-28 border-2 border-white bg-black">
+                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
+                              Option 1
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
+                              Option 2
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
+                              Option 3
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
+                              Option 4
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
+                              Option 5
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                      <div className="mb-2 rounded-xl border-2 border-white hover:bg-white hover:text-black">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger>Dropdown 2</DropdownMenuTrigger>
+                          <DropdownMenuContent className="h-28 border-2 border-white bg-black">
+                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
+                              Option 1
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
+                              Option 2
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
+                              Option 3
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
+                              Option 4
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                      <div className="mb-2 rounded-xl border-2 border-white hover:bg-white hover:text-black">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger>Dropdown 3</DropdownMenuTrigger>
+                          <DropdownMenuContent className="h-28 border-2 border-white bg-black">
+                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
+                              Option 1
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
+                              Option 2
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
+                              Option 3
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
+                              Option 4
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                      <div className="mb-10 rounded-xl border-2 border-white hover:bg-white hover:text-black">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger>Dropdown 4</DropdownMenuTrigger>
+                          <DropdownMenuContent className="h-28 border-2 border-white bg-black">
+                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
+                              Option 1
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
+                              Option 2
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
+                              Option 3
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
+                              Option 4
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
-                    <div
-                      id="slider"
-                      className="mb-4 h-[2rem] border-2 border-white text-center"
-                    >
-                      Slider
+                    <div id="slider" className="mb-4 h-[2rem] text-center">
+                      <Slider
+                        className="invert"
+                        defaultValue={[50]}
+                        max={100}
+                        step={1}
+                      />
                     </div>
-                    <div
-                      id="slider"
-                      className="mb-4 h-[2rem] border-2 border-white text-center"
-                    >
-                      Slider
+                    <div id="slider" className="mb-4 h-[2rem] text-center">
+                      <Slider
+                        className="invert"
+                        defaultValue={[50]}
+                        max={100}
+                        step={1}
+                      />
                     </div>
                   </div>
 
-                  <div
-                    id="entryList"
-                    className="h-[30rem] flex-1 overflow-hidden border-2 border-white p-4"
-                  >
-                    <div className="grid h-full grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3 overflow-y-auto">
+                  <div id="entryList" className="flex-1 overflow-hidden p-4">
+                    <div className="grid h-full grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-2 overflow-y-auto">
                       {BacklogEntryDummyData.map((entry) => (
                         <BacklogEntry
                           key={entry.id}
@@ -82,32 +189,6 @@ export default function Dashboard() {
                         />
                       ))}
                     </div>
-                  </div>
-                </div>
-
-                <div
-                  id="csv-import"
-                  className="pointer-events-auto flex h-24 cursor-pointer place-items-center-safe justify-center-safe border-2"
-                >
-                  <div className="flex flex-row">
-                    <Image
-                      src={"/csv_import.png"}
-                      alt={"csv_import"}
-                      width={50}
-                      height={50}
-                    />
-                    <div className="mx-4 flex place-items-center-safe justify-center-safe">
-                      <p className="text-center text-2xl font-bold text-white">
-                        Import your Backlog
-                      </p>
-                    </div>
-                    <Image
-                      className=""
-                      src={"/csv_import.png"}
-                      alt={"csv_import"}
-                      width={50}
-                      height={50}
-                    />
                   </div>
                 </div>
               </div>
