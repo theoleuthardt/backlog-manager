@@ -22,7 +22,7 @@ export default function GameImage(props: GameImageProps) {
       width={props.width}
       height={props.height}
       onError={handleError}
-      className="pointer-events-none"
+      className="pointer-events-none rounded-xl"
     />
   );
 }
