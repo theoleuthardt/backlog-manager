@@ -4,13 +4,9 @@ import { BacklogEntryDummyData, dashboardNavLinks } from "~/constants";
 import Image from "next/image";
 import { Button } from "shadcn_components/ui/button";
 import { Slider } from "shadcn_components/ui/slider";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "shadcn_components/ui/dropdown-menu";
 import { SearchBar } from "components/SearchBar";
+import { CustomDropdownMenu } from "components/CustomDropdownMenu";
+import { dropdownData } from "~/constants/dropdownData";
 
 export default function Dashboard() {
   return (
@@ -71,104 +67,37 @@ export default function Dashboard() {
                       id="filterOptions"
                       className="mb-4 h-42 p-4 text-center"
                     >
-                      <div className="mb-2 rounded-xl border-2 border-white hover:bg-white hover:text-black">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger>Dropdown 1</DropdownMenuTrigger>
-                          <DropdownMenuContent className="h-28 border-2 border-white bg-black">
-                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
-                              Option 1
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
-                              Option 2
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
-                              Option 3
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
-                              Option 4
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
-                              Option 5
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                      <div className="mb-2 rounded-xl border-2 border-white hover:bg-white hover:text-black">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger>Dropdown 2</DropdownMenuTrigger>
-                          <DropdownMenuContent className="h-28 border-2 border-white bg-black">
-                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
-                              Option 1
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
-                              Option 2
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
-                              Option 3
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
-                              Option 4
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                      <div className="mb-2 rounded-xl border-2 border-white hover:bg-white hover:text-black">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger>Dropdown 3</DropdownMenuTrigger>
-                          <DropdownMenuContent className="h-28 border-2 border-white bg-black">
-                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
-                              Option 1
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
-                              Option 2
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
-                              Option 3
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
-                              Option 4
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                      <div className="mb-10 rounded-xl border-2 border-white hover:bg-white hover:text-black">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger>Dropdown 4</DropdownMenuTrigger>
-                          <DropdownMenuContent className="h-28 border-2 border-white bg-black">
-                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
-                              Option 1
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
-                              Option 2
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
-                              Option 3
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="bg-black text-white hover:border-2 hover:border-white">
-                              Option 4
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-                    <div id="slider" className="mb-4 h-[2rem] text-center">
-                      <Slider
-                        className="invert"
-                        defaultValue={[50]}
-                        max={100}
-                        step={1}
+                      <CustomDropdownMenu
+                        items={dropdownData}
+                        triggerText={"Dropdown 1"}
                       />
-                    </div>
-                    <div id="slider" className="mb-4 h-[2rem] text-center">
-                      <Slider
-                        className="invert"
-                        defaultValue={[50]}
-                        max={100}
-                        step={1}
+                      <CustomDropdownMenu
+                        items={dropdownData}
+                        triggerText={"Dropdown 2"}
                       />
+                      <CustomDropdownMenu
+                        items={dropdownData}
+                        triggerText={"Dropdown 3"}
+                        className="mb-10"
+                      />
+                      <div id="slider" className="mb-4 h-[2rem] text-center">
+                        <Slider
+                          className="invert"
+                          defaultValue={[50]}
+                          max={100}
+                          step={1}
+                        />
+                      </div>
+                      <div id="slider" className="mb-4 h-[2rem] text-center">
+                        <Slider
+                          className="invert"
+                          defaultValue={[50]}
+                          max={100}
+                          step={1}
+                        />
+                      </div>
                     </div>
                   </div>
-
                   <div id="entryList" className="flex-1 overflow-hidden p-4">
                     <div className="grid h-full grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-2 overflow-y-auto">
                       {BacklogEntryDummyData.map((entry) => (
@@ -193,8 +122,8 @@ export default function Dashboard() {
                 </div>
               </div>
             </main>
+            <Footer />
           </div>
-          <Footer />
         </div>
       </div>
     </>
