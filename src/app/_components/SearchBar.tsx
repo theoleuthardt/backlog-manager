@@ -5,6 +5,8 @@ import Image from "next/image";
 export interface SearchBarProps {
   placeholder?: string;
   className?: string;
+  onInput?: Function;
+  ref?: React.RefObject<HTMLInputElement>;
 }
 
 export const SearchBar = (props: SearchBarProps) => {
@@ -14,9 +16,13 @@ export const SearchBar = (props: SearchBarProps) => {
         <Image src="/search.png" alt="Search" width={20} height={20} />
       </div>
       <Input
+        ref={props.ref}
         type="search"
         placeholder="Seach..."
         className="w-full border-2 pl-10"
+        onInput={() => {
+          if (props.onInput) props.onInput();
+        }}
       />
     </div>
   );
