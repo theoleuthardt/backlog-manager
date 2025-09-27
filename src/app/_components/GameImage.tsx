@@ -8,7 +8,7 @@ export interface GameImageProps {
   height: number;
 }
 
-export default function GameImage(props: GameImageProps) {
+export function GameImage(props: GameImageProps) {
   const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(props.src)}`;
   const handleError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     const target = e.target as HTMLImageElement;

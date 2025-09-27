@@ -8,7 +8,7 @@ import {
   DialogClose,
 } from "shadcn_components/ui/dialog";
 import { Button } from "shadcn_components/ui/button";
-import GameImage from "components/GameImage";
+import { GameImage } from "components/GameImage";
 
 interface BacklogEntryProps {
   title: string;
