@@ -25,9 +25,10 @@ export const CustomDropdownMenu = (props: DropdownMenuProps) => {
       <DropdownMenu>
         <DropdownMenuTrigger>{props.triggerText}</DropdownMenuTrigger>
         <DropdownMenuContent className="h-28 border-2 border-white bg-black">
-          {props.items.map((item) => {
+          {props.items.map((item, index) => {
             return (
               <DropdownMenuItem
+                key={index}
                 onClick={() => {
                   item.onClick();
                 }}
