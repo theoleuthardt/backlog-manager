@@ -1,12 +1,13 @@
 export interface UserRow {
   name: string;
-  email: number;
+  email: string;
   passwordHash?: string;
 }
 
 export interface CategoryRow {
   userID: bigint;
   name: string;
+  color: string;
   description?: string;
   createdAt?: string;
   updatedAt?: string;
