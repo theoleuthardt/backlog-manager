@@ -1,210 +1,118 @@
-import pool from "~/server/db";
+import type { Pool } from "pg";
 import type {UserRow} from "~/server/db/types";
 import type {CategoryRow} from "~/server/db/types";
 import type {BacklogEntryRow} from "~/server/db/types";
 import type {GameRow} from "~/server/db/types";
 import type {BacklogCategoryRow} from "~/server/db/types";
 
-export const getAllUsers = async () => {
-  const client = await pool.connect();
-  try {
-    const result = await client.query("SELECT * FROM Users");
-    return result.rows as UserRow[];
-  } catch (error) {
-    console.error("Error fetching users:", error);
-    throw error;
-  } finally {
-    client.release();
-  }
-};
-
-export const getUserByID = async (userID: bigint) => {
-  const client = await pool.connect();
-  try {
-    const result = await client.query(
-      "SELECT * FROM Users WHERE id = $1",
-      [userID],
-    );
-    return result.rows[0] as UserRow;
-  } catch (error) {
-    console.error("Error fetching user:", error);
-    throw error;
-  } finally {
-    client.release();
-  }
-};
-
-
-export const getAllCategories = async () => {
-  const client = await pool.connect();
-  try {
-    const result = await client.query("SELECT * FROM Categories");
-    return result.rows as CategoryRow[];
-  } catch (error) {
-    console.error("Error fetching categories:", error);
-    throw error;
-  } finally {
-    client.release();
-  }
-};
-
-export const getCategoryByID = async (categoryID: bigint) => {
-  const client = await pool.connect();
-  try {
-    const result = await client.query(
-      "SELECT * FROM Categories WHERE id = $1",
-      [categoryID],
-    );
-    return result.rows[0] as CategoryRow;
-  } catch (error) {
-    console.error("Error fetching category:", error);
-    throw error;
-  } finally {
-    client.release();
-  }
-};
-
-export const getCategoryIDsOfBacklogEntry = async (backlogEntryID: bigint) => {
-    const client = await pool.connect();
+export async function getAllUsers(pool: Pool) {
+    const query = 'SELECT * FROM "blm-system"."Users"'
     try {
-        const result = await client.query(
-            "SELECT * FROM CategoryBacklogEntries WHERE id = $1",
-            [backlogEntryID],
-        );
-        return result.rows as BacklogCategoryRow[];
+        const result = await pool.query(query)
+        return result.rows
     } catch (error) {
-        console.error("Error fetching category IDs of BacklogEntry:", error);
-        throw error;
-    } finally {
-        client.release();
+        console.error('Error getting all users:', error)
+        throw error
     }
-};
+}
 
-export const getCategoriesByUserID = async (userID: bigint) => {
-    const client = await pool.connect();
+export async function getUserById(pool: Pool, userId: number) {
+    const query = 'SELECT * FROM "blm-system"."Users" WHERE "UserID" = $1'
     try {
-        const result = await client.query(
-            "SELECT * FROM Categories WHERE id = $1",
-            [userID],
-        );
-        return result.rows as CategoryRow[];
+        const result = await pool.query(query, [userId])
+        return result.rows[0]
     } catch (error) {
-        console.error("Error fetching categories by UserID:", error);
-        throw error;
-    } finally {
-        client.release();
+        console.error('Error getting user by id:', error)
+        throw error
     }
-};
+}
 
-
-export const getAllBacklogEntries = async () => {
-  const client = await pool.connect();
-  try {
-    const result = await client.query("SELECT * FROM BacklogEntries");
-    return result.rows as BacklogEntryRow[];
-  } catch (error) {
-    console.error("Error fetching backlog entries:", error);
-    throw error;
-  } finally {
-    client.release();
-  }
-};
-
-export const getBacklogEntryByID = async (backlogEntryID: bigint) => {
-  const client = await pool.connect();
-  try {
-    const result = await client.query(
-      "SELECT * FROM BacklogEntries WHERE id = $1",
-      [backlogEntryID],
-    );
-    return result.rows[0] as BacklogEntryRow;
-  } catch (error) {
-    console.error("Error fetching backlog entry:", error);
-    throw error;
-  } finally {
-    client.release();
-  }
-};
-
-export const getBacklogEntriesByUserID = async (userID: bigint) => {
-    const client = await pool.connect();
+export async function getUserByUsername(pool: Pool, username: string) {
+    const query = 'SELECT * FROM "blm-system"."Users" WHERE "Username" = $1'
     try {
-        const result = await client.query(
-            "SELECT * FROM BacklogEntries WHERE id = $1",
-            [userID],
-        );
-        return result.rows as BacklogEntryRow[];
+        const result = await pool.query(query, [username])
+        return result.rows[0]
     } catch (error) {
-        console.error("Error fetching backlog entries by UserID:", error);
-        throw error;
-    } finally {
-        client.release();
+        console.error('Error getting user by username:', error)
+        throw error
     }
-};
+}
 
-export const getBacklogEntryByGameID = async (gameID: bigint) => {
-    const client = await pool.connect();
+export async function getGameById(pool: Pool, gameId: number) {
+    const query = 'SELECT * FROM "blm-system"."Games" WHERE "GameID" = $1'
     try {
-        const result = await client.query(
-            "SELECT * FROM BacklogEntries WHERE id = $1",
-            [gameID],
-        );
-        return result.rows as BacklogEntryRow[];
+        const result = await pool.query(query, [gameId])
+        return result.rows[0]
     } catch (error) {
-        console.error("Error fetching backlog entries by GameID:", error);
-        throw error;
-    } finally {
-        client.release();
+        console.error('Error getting game by id:', error)
+        throw error
     }
-};
+}
 
+export async function getAllGames(pool: Pool) {
+    const query = 'SELECT * FROM "blm-system"."Games"'
+    try {
+        const result = await pool.query(query)
+        return result.rows
+    } catch (error) {
+        console.error('Error getting all games:', error)
+        throw error
+    }
+}
 
-export const getAllGames = async () => {
-  const client = await pool.connect();
-  try {
-    const result = await client.query("SELECT * FROM Games");
-    return result.rows as GameRow[];
-  } catch (error) {
-    console.error("Error fetching games:", error);
-    throw error;
-  } finally {
-    client.release();
-  }
-};
+export async function getCategoriesByUser(pool: Pool, userId: number) {
+    const query = 'SELECT * FROM "blm-system"."Categories" WHERE "UserID" = $1'
+    try {
+        const result = await pool.query(query, [userId])
+        return result.rows
+    } catch (error) {
+        console.error('Error getting categories:', error)
+        throw error
+    }
+}
 
-export const getGameByID = async (gameID: bigint) => {
-  const client = await pool.connect();
-  try {
-    const result = await client.query(
-      "SELECT * FROM Games WHERE id = $1",
-      [gameID],
-    );
-    return result.rows[0] as GameRow;
-  } catch (error) {
-    console.error("Error fetching game:", error);
-    throw error;
-  } finally {
-    client.release();
-  }
-};
+export async function getBacklogEntriesByUser(pool: Pool, userId: number) {
+    const query = 'SELECT * FROM "blm-system"."BacklogEntries" WHERE "UserID" = $1'
+    try {
+        const result = await pool.query(query, [userId])
+        return result.rows
+    } catch (error) {
+        console.error('Error getting backlog entries:', error)
+        throw error
+    }
+}
 
+export async function getBacklogEntryById(pool: Pool, backlogEntryId: number) {
+    const query = 'SELECT * FROM "blm-system"."BacklogEntries" WHERE "BacklogEntryID" = $1'
+    try {
+        const result = await pool.query(query, [backlogEntryId])
+        return result.rows[0]
+    } catch (error) {
+        console.error('Error getting backlog entry:', error)
+        throw error
+    }
+}
 
-export const getBacklogEntriesForCategory = async (categoryID: bigint) => {
-  const client = await pool.connect();
-  try {
-    const result = await client.query(
-      `SELECT be.* 
-       FROM CategoryBacklogEntries cbe
-       JOIN BacklogEntries be ON cbe.backlogEntryID = be.id
-       WHERE cbe.categoryID = $1`,
-      [categoryID],
-    );
-    return result.rows as BacklogEntryRow[];
-  } catch (error) {
-    console.error("Error fetching backlog entries for category:", error);
-    throw error;
-  } finally {
-    client.release();
-  }
-};
+export async function getBacklogEntriesByStatus(pool: Pool, userId: number, status: string) {
+    const query = 'SELECT * FROM "blm-system"."BacklogEntries" WHERE "UserID" = $1 AND "Status" = $2'
+    try {
+        const result = await pool.query(query, [userId, status])
+        return result.rows
+    } catch (error) {
+        console.error('Error getting backlog entries by status:', error)
+        throw error
+    }
+}
 
+export async function getCategoriesForBacklogEntry(pool: Pool, backlogEntryId: number) {
+    const query = `SELECT c.* FROM "blm-system"."Categories" c
+                   JOIN "blm-system"."CategoryBacklogEntries" cbe ON c."CategoryID" = cbe."CategoryID"
+                   WHERE cbe."BacklogEntryID" = $1`
+    try {
+        const result = await pool.query(query, [backlogEntryId])
+        return result.rows
+    } catch (error) {
+        console.error('Error getting categories for backlog entry:', error)
+        throw error
+    }
+}
