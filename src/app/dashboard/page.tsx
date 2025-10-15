@@ -1,24 +1,21 @@
-"use client";
-import { Navbar, Footer, BacklogEntry } from "components";
-import { BacklogEntryDummyData, dashboardNavLinks } from "~/constants";
 import Image from "next/image";
+import {
+  Navbar,
+  Footer,
+  BacklogEntry,
+  CustomDropdownMenu,
+  UniSlider,
+  SearchBar,
+} from "components";
+import { BacklogEntryDummyData, dashboardNavLinks } from "~/constants";
 import { Button } from "shadcn_components/ui/button";
-import { Slider } from "shadcn_components/ui/slider";
-import { SearchBar } from "components/SearchBar";
-import { CustomDropdownMenu } from "components/CustomDropdownMenu";
 import { dropdownData } from "~/constants/dropdownData";
 
 export default function Dashboard() {
   return (
     <>
-      <div
-        className="relative min-h-screen overflow-hidden"
-        style={{
-          backgroundImage:
-            "linear-gradient(to bottom, black 60%, #000000 100%)",
-        }}
-      >
-        <div className="relative z-10 flex flex-col text-white">
+      <div className="relative min-h-screen overflow-hidden">
+        <div className={`relative z-10 flex flex-col bg-black text-white`}>
           <div className="flex min-h-screen flex-col">
             <Navbar navbarLinks={dashboardNavLinks} />
             <main className="drop-in flex-grow px-4">
@@ -80,22 +77,7 @@ export default function Dashboard() {
                         triggerText={"Dropdown 3"}
                         className="mb-10"
                       />
-                      <div id="slider" className="mb-4 h-[2rem] text-center">
-                        <Slider
-                          className="invert"
-                          defaultValue={[50]}
-                          max={100}
-                          step={1}
-                        />
-                      </div>
-                      <div id="slider" className="mb-4 h-[2rem] text-center">
-                        <Slider
-                          className="invert"
-                          defaultValue={[50]}
-                          max={100}
-                          step={1}
-                        />
-                      </div>
+                      <UniSlider defaultValue={50} step={1} maxvalue={100} />
                     </div>
                   </div>
                   <div id="entryList" className="flex-1 overflow-hidden p-4">

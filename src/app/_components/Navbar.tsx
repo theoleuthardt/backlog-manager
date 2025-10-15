@@ -1,5 +1,8 @@
+"use client";
+import React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { type NavbarLink } from "~/constants";
 
 interface NavbarProps {
@@ -7,6 +10,31 @@ interface NavbarProps {
 }
 
 export function Navbar(props: NavbarProps) {
+  const router = useRouter();
+
+  const handleClick = (e: React.MouseEvent, link: NavbarLink) => {
+    e.preventDefault();
+
+    switch (link.action) {
+      case "scroll":
+        if (link.target) {
+          document.getElementById(link.target)?.scrollIntoView({
+            behavior: "smooth",
+          });
+        }
+        break;
+
+      case "logout":
+        router.push("/logout");
+        break;
+
+      case "navigate":
+      default:
+        router.push(link.href);
+        break;
+    }
+  };
+
   return (
     <nav className="mx-auto flex w-full items-center justify-between rounded-4xl bg-transparent px-8 py-4 text-white">
       <div className="flex items-center space-x-2">
@@ -29,11 +57,7 @@ export function Navbar(props: NavbarProps) {
           <Link
             key={link.id}
             href={link.href}
-            onClick={() => {
-              if (link.onClick) {
-                link.onClick();
-              }
-            }}
+            onClick={(e) => handleClick(e, link)}
             className="hover:underline"
           >
             {link.content}

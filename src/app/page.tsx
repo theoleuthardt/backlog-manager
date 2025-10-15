@@ -1,70 +1,13 @@
-"use client";
-import { useEffect, useRef } from "react";
-import { Navbar, Footer, Features } from "components";
+import { Navbar, Footer, Features, UniverseBackground } from "components";
 import { Button } from "shadcn_components/ui/button";
 import Link from "next/link";
 import { landingPageNavLinks } from "~/constants";
 
 export default function Home() {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let w = (canvas.width = window.innerWidth);
-    let h = (canvas.height = window.innerHeight);
-
-    const stars = Array.from({ length: 200 }).map(() => ({
-      x: Math.random() * w,
-      y: Math.random() * h,
-      size: Math.random() * 1.5 + 0.5,
-      speed: Math.random() * 2 + 0.1,
-    }));
-
-    function animate() {
-      if (!ctx) return;
-      ctx.clearRect(0, 0, w, h);
-      ctx.fillStyle = "white";
-      stars.forEach((star) => {
-        star.y -= star.speed;
-        if (star.y < 0) star.y = h;
-        ctx.beginPath();
-        ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-        ctx.fill();
-      });
-
-      requestAnimationFrame(animate);
-    }
-
-    animate();
-
-    const handleResize = () => {
-      w = canvas.width = window.innerWidth;
-      h = canvas.height = window.innerHeight;
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
   return (
     <>
-      <div
-        className="relative min-h-screen overflow-hidden"
-        style={{
-          backgroundImage:
-            "linear-gradient(to bottom, black 60%, #1e3a8a 100%)",
-        }}
-      >
-        <canvas
-          ref={canvasRef}
-          className="pointer-events-none absolute inset-0 h-full w-full"
-        />
-
+      <div className="relative min-h-screen overflow-hidden">
+        <UniverseBackground />
         <div className="relative z-10 flex flex-col text-white">
           <div className="flex min-h-screen flex-col">
             <Navbar navbarLinks={landingPageNavLinks} />

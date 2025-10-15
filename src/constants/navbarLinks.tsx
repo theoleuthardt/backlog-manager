@@ -5,7 +5,8 @@ export interface NavbarLink {
   id: number;
   href: string;
   content: JSX.Element;
-  onClick?: () => void;
+  action?: string;
+  target?: string;
 }
 
 export const landingPageNavLinks: NavbarLink[] = [
@@ -13,26 +14,21 @@ export const landingPageNavLinks: NavbarLink[] = [
     id: 1,
     href: "#features",
     content: <Image src="/features.png" alt="account" width={32} height={32} />,
-    onClick: () => {
-      document.getElementById("features")?.scrollIntoView({
-        behavior: "smooth",
-      });
-    },
+    action: "scroll",
+    target: "features",
   },
   {
     id: 2,
     href: "#future-updates",
     content: <Image src="/updates.png" alt="account" width={32} height={32} />,
-    onClick: () => {
-      document.getElementById("future-updates")?.scrollIntoView({
-        behavior: "smooth",
-      });
-    },
+    action: "scroll",
+    target: "future-updates",
   },
   {
     id: 3,
     href: "/login",
     content: <Image src="/account.png" alt="account" width={32} height={32} />,
+    action: "navigate",
   },
 ];
 
@@ -41,6 +37,7 @@ export const dashboardNavLinks: NavbarLink[] = [
     id: 1,
     href: "/account",
     content: <Image src="/account.png" alt="account" width={32} height={32} />,
+    action: "navigate",
   },
   {
     id: 2,
@@ -54,6 +51,6 @@ export const dashboardNavLinks: NavbarLink[] = [
         height={32}
       />
     ),
-    onClick: () => {},
+    action: "logout",
   },
 ];

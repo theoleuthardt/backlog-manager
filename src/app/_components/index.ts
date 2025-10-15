@@ -7,6 +7,7 @@ import { CustomDropdownMenu } from "./CustomDropdownMenu";
 import { GameImage } from "./GameImage";
 import { SearchBar } from "./SearchBar";
 import { UniSlider } from "./UniSlider";
+import { UniverseBackground } from "./UniverseBackground";
 
 export {
   Navbar,
@@ -18,4 +19,5 @@ export {
   GameImage,
   SearchBar,
   UniSlider,
+  UniverseBackground,
 };

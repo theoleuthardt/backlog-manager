@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 import {
   DropdownMenu,
@@ -9,12 +10,12 @@ import {
 export interface DropdownMenuProps {
   className?: string;
   items: DropdownItem[];
-  triggerText: string;
+  triggerText?: string;
+  triggerIcon?: React.ReactNode;
 }
 
 export interface DropdownItem {
   text: string;
-  onClick: Function;
 }
 
 export const CustomDropdownMenu = (props: DropdownMenuProps) => {
@@ -23,15 +24,15 @@ export const CustomDropdownMenu = (props: DropdownMenuProps) => {
       className={`mb-2 rounded-xl border-2 border-white hover:bg-white hover:text-black ${props.className}`}
     >
       <DropdownMenu>
-        <DropdownMenuTrigger>{props.triggerText}</DropdownMenuTrigger>
+        <DropdownMenuTrigger>
+          {props.triggerIcon && props.triggerIcon}
+          {props.triggerText && props.triggerText}
+        </DropdownMenuTrigger>
         <DropdownMenuContent className="h-28 border-2 border-white bg-black">
           {props.items.map((item, index) => {
             return (
               <DropdownMenuItem
                 key={index}
-                onClick={() => {
-                  item.onClick();
-                }}
                 className="bg-black text-white hover:border-2 hover:border-white"
               >
                 {item.text}
