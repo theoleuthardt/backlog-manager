@@ -43,10 +43,8 @@ describe('Database Delete Operations', () => {
             database: 'backlog-manager-db'
         })
 
-        // SQL-Datei laden
         const sql = fs.readFileSync(path.resolve(__dirname, '../postgres/backlogmanagerdb-init.sql'), 'utf-8')
 
-        // SQL ausführen
         await postgresPool.query(sql)
     }, 60000)
 
@@ -85,19 +83,15 @@ describe('Database Delete Operations', () => {
         })
 
         it('should cascade delete related data when user is deleted', async () => {
-            // Create related data
             await createCategory(postgresPool, 1, "Action", "#FF0000")
             await createGame(postgresPool, "Test Game", "RPG", "PC", new Date())
             await createBacklogEntry(postgresPool, 1, 1, "Not Started", false, 3)
 
-            // Delete user
             await deleteUser(postgresPool, 1)
 
-            // Check that categories are deleted
             const categories = await getCategoriesByUser(postgresPool, 1)
             expect(categories).toHaveLength(0)
 
-            // Check that backlog entries are deleted
             const entries = await getBacklogEntriesByUser(postgresPool, 1)
             expect(entries).toHaveLength(0)
         })
@@ -139,14 +133,11 @@ describe('Database Delete Operations', () => {
             await createBacklogEntry(postgresPool, 1, 1, "Not Started", false, 3)
             await addCategoryToBacklogEntry(postgresPool, 1, 1)
 
-            // Verify relationship exists
             const categoriesBefore = await getCategoriesForBacklogEntry(postgresPool, 1)
             expect(categoriesBefore).toHaveLength(1)
 
-            // Delete category
             await deleteCategory(postgresPool, 1)
 
-            // Verify relationship is deleted
             const categoriesAfter = await getCategoriesForBacklogEntry(postgresPool, 1)
             expect(categoriesAfter).toHaveLength(0)
         })
@@ -187,14 +178,11 @@ describe('Database Delete Operations', () => {
             await createBacklogEntry(postgresPool, 1, 1, "Not Started", false, 3)
             await createBacklogEntry(postgresPool, 1, 2, "In Progress", true, 4)
 
-            // Verify entries exist
             const entriesBefore = await getBacklogEntriesByUser(postgresPool, 1)
             expect(entriesBefore).toHaveLength(2)
 
-            // Delete game
             await deleteGame(postgresPool, 1)
 
-            // Verify entry for game 1 is deleted, but entry for game 2 remains
             const entriesAfter = await getBacklogEntriesByUser(postgresPool, 1)
             expect(entriesAfter).toHaveLength(1)
             expect(entriesAfter[0].GameID).toBe('2')
@@ -243,14 +231,11 @@ describe('Database Delete Operations', () => {
             await createCategory(postgresPool, 1, "Action", "#FF0000")
             await addCategoryToBacklogEntry(postgresPool, 1, 1)
 
-            // Verify relationship exists
             const categoriesBefore = await getCategoriesForBacklogEntry(postgresPool, 1)
             expect(categoriesBefore).toHaveLength(1)
 
-            // Delete backlog entry
             await deleteBacklogEntry(postgresPool, 1)
 
-            // Verify relationship is deleted
             const categoriesAfter = await getCategoriesForBacklogEntry(postgresPool, 1)
             expect(categoriesAfter).toHaveLength(0)
         })
@@ -280,7 +265,6 @@ describe('Database Delete Operations', () => {
             await createBacklogEntry(postgresPool, 1, 1, "Not Started", false, 3)
             await createBacklogEntry(postgresPool, 1, 2, "In Progress", true, 4)
 
-            // Add relationships
             await addCategoryToBacklogEntry(postgresPool, 1, 1)
             await addCategoryToBacklogEntry(postgresPool, 2, 1)
             await addCategoryToBacklogEntry(postgresPool, 1, 2)
@@ -292,7 +276,6 @@ describe('Database Delete Operations', () => {
             expect(removed.CategoryID).toBe('1')
             expect(removed.BacklogEntryID).toBe('1')
 
-            // Verify relationship is removed
             const categories = await getCategoriesForBacklogEntry(postgresPool, 1)
             expect(categories).toHaveLength(1)
             expect(categories[0].CategoryID).toBe('2')
@@ -301,12 +284,10 @@ describe('Database Delete Operations', () => {
         it('should not affect other relationships when removing one', async () => {
             await removeBacklogEntryFromCategory(postgresPool, 1, 1)
 
-            // Entry 2 should still have category 1
             const categoriesForEntry2 = await getCategoriesForBacklogEntry(postgresPool, 2)
             expect(categoriesForEntry2).toHaveLength(1)
             expect(categoriesForEntry2[0].CategoryID).toBe('1')
 
-            // Category 2 should still be linked to entry 1
             const entriesForCategory2 = await getBacklogEntriesForCategory(postgresPool, 2)
             expect(entriesForCategory2).toHaveLength(1)
         })
@@ -319,14 +300,11 @@ describe('Database Delete Operations', () => {
         it('should delete all backlog entries from a category', async () => {
             const deleted = await deleteCategoryBacklogEntries(postgresPool, 1)
 
-            // Should return first deleted row
             expect(deleted.CategoryID).toBe('1')
 
-            // Verify all relationships for category 1 are deleted
             const entriesForCategory1 = await getBacklogEntriesForCategory(postgresPool, 1)
             expect(entriesForCategory1).toHaveLength(0)
 
-            // Verify other category relationships are not affected
             const entriesForCategory2 = await getBacklogEntriesForCategory(postgresPool, 2)
             expect(entriesForCategory2).toHaveLength(1)
         })
@@ -339,7 +317,6 @@ describe('Database Delete Operations', () => {
         })
 
         it('should handle removing last relationship from backlog entry', async () => {
-            // Entry 2 has only one category (1)
             await removeBacklogEntryFromCategory(postgresPool, 1, 2)
 
             const categories = await getCategoriesForBacklogEntry(postgresPool, 2)
@@ -347,7 +324,6 @@ describe('Database Delete Operations', () => {
         })
 
         it('should handle deleting all entries when category has multiple entries', async () => {
-            // Category 1 has 2 entries (1 and 2)
             const deleted = await deleteCategoryBacklogEntries(postgresPool, 1)
 
             expect(deleted).toBeDefined()

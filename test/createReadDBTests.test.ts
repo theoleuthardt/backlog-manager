@@ -36,13 +36,10 @@ describe('Database Read Operations', () => {
             database: 'backlog-manager-db'
         })
 
-        // SQL-Datei laden
         const sql = fs.readFileSync(path.resolve(__dirname, '../postgres/backlogmanagerdb-init.sql'), 'utf-8')
 
-        // SQL ausführen
         await postgresPool.query(sql)
 
-        // Test-Daten erstellen
         await createUser(postgresPool, "John Doe", "john@doe", "1234567890")
         await createUser(postgresPool, "Jane Doe", "jane@doe", "1234567890")
 
@@ -186,7 +183,6 @@ describe('Database Read Operations', () => {
 
             expect(backlogEntries).toHaveLength(1)
 
-            // BacklogEntry 1 - alle Felder prüfen
             expect(backlogEntries[0].BacklogEntryID).toBe('1')
             expect(backlogEntries[0].UserID).toBe('1')
             expect(backlogEntries[0].GameID).toBe('1')

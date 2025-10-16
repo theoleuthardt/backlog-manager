@@ -26,10 +26,8 @@ describe('Database Update Operations', () => {
             database: 'backlog-manager-db'
         })
 
-        // SQL-Datei laden
         const sql = fs.readFileSync(path.resolve(__dirname, '../postgres/backlogmanagerdb-init.sql'), 'utf-8')
 
-        // SQL ausführen
         await postgresPool.query(sql)
     }, 60000)
 
@@ -80,7 +78,6 @@ describe('Database Update Operations', () => {
         it('should update UpdatedAt timestamp', async () => {
             const originalUser = await getUserById(postgresPool, userId)
 
-            // Kurz warten um sicherzustellen, dass Zeitstempel unterschiedlich sind
             await new Promise(resolve => setTimeout(resolve, 1000))
 
             const updatedUser = await updateUser(
@@ -344,7 +341,6 @@ describe('Database Update Operations', () => {
         })
 
         it('should clear optional fields', async () => {
-            // Erst Entry mit Review erstellen
             await updateBacklogEntry(
                 postgresPool,
                 backlogEntryId,
@@ -356,7 +352,6 @@ describe('Database Update Operations', () => {
                 "Some notes"
             )
 
-            // Dann Review entfernen
             const updatedEntry = await updateBacklogEntry(
                 postgresPool,
                 backlogEntryId,
