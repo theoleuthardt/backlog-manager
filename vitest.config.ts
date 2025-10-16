@@ -10,7 +10,7 @@ export default defineConfig({
                 singleThread: true
             }
         },
-        include: ['src/**/*.test.ts'],
+        include: ['test/*.test.ts'],
     },
     resolve: {
         alias: {

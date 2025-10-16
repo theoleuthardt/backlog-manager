@@ -116,3 +116,16 @@ export async function getCategoriesForBacklogEntry(pool: Pool, backlogEntryId: n
         throw error
     }
 }
+
+export async function getBacklogEntriesForCategory(pool: Pool, categoryId: number) {
+    const query = `SELECT c.* FROM "blm-system"."BacklogEntries" c
+                   JOIN "blm-system"."CategoryBacklogEntries" cbe ON c."BacklogEntryID" = cbe."BacklogEntryID"
+                   WHERE cbe."CategoryID" = $1`
+    try {
+        const result = await pool.query(query, [categoryId])
+        return result.rows
+    } catch (error) {
+        console.error('Error getting categories for backlog entry:', error)
+        throw error
+    }
+}

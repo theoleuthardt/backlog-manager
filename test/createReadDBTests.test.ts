@@ -3,7 +3,7 @@ import { Pool } from 'pg'
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql'
 import fs from 'fs'
 import path from 'path'
-import { createUser, createGame, createCategory, createBacklogEntry, addCategoryToBacklogEntry } from '../server/db/CRUD/create'
+import { createUser, createGame, createCategory, createBacklogEntry, addCategoryToBacklogEntry } from '~/server/db/CRUD/create'
 import {
     getAllUsers,
     getUserById,
@@ -14,7 +14,7 @@ import {
     getBacklogEntriesByUser,
     getBacklogEntryById,
     getBacklogEntriesByStatus,
-    getCategoriesForBacklogEntry
+    getCategoriesForBacklogEntry, getBacklogEntriesForCategory
 } from "~/server/db/CRUD/read"
 
 describe('Database Read Operations', () => {
@@ -37,7 +37,7 @@ describe('Database Read Operations', () => {
         })
 
         // SQL-Datei laden
-        const sql = fs.readFileSync(path.resolve(__dirname, '../../postgres/backlogmanagerdb-init.sql'), 'utf-8')
+        const sql = fs.readFileSync(path.resolve(__dirname, '../postgres/backlogmanagerdb-init.sql'), 'utf-8')
 
         // SQL ausführen
         await postgresPool.query(sql)
@@ -49,11 +49,11 @@ describe('Database Read Operations', () => {
         await createGame(postgresPool, "Elden Ring", "RPG", "PC", new Date(), "Pictures/EldenRing.jpg", [1, 2, 3])
         await createGame(postgresPool, "Hollow Knight", "Metroidvania", "PC", new Date())
 
-        await createCategory(postgresPool, 1, "Action", "#FF0000")
+        await createCategory(postgresPool, 1, "Action", "#FF0000", "A game with action and adventure")
         await createCategory(postgresPool, 1, "Adventure", "#00FF00")
         await createCategory(postgresPool, 2, "Indie", "#0000FF")
 
-        await createBacklogEntry(postgresPool, 1, 1, "Not Started", true, 2)
+        await createBacklogEntry(postgresPool, 1, 1, "Not Started", true, 2, 4, "This is a review", "This is a note")
         await createBacklogEntry(postgresPool, 1, 2, "In Progress", false, 3)
         await createBacklogEntry(postgresPool, 2, 1, "Completed", true, 7)
 
@@ -101,9 +101,13 @@ describe('Database Read Operations', () => {
 
         it('should get game by id', async () => {
             const game = await getGameById(postgresPool, 1)
+            expect(game.GameID).toBe('1')
             expect(game.Title).toBe('Elden Ring')
             expect(game.Genre).toBe('RPG')
             expect(game.Platform).toBe('PC')
+            expect(game.ReleaseDate).toBeInstanceOf(Date)
+            expect(game.ImageLink).toBe('Pictures/EldenRing.jpg')
+            expect(game.HowLongToBeat).toEqual([1, 2, 3])
         })
     })
 
@@ -111,8 +115,11 @@ describe('Database Read Operations', () => {
         it('should get categories by user', async () => {
             const categories = await getCategoriesByUser(postgresPool, 1)
             expect(categories).toHaveLength(2)
+            expect(categories[0].CategoryID).toBe('1')
+            expect(categories[0].UserID).toBe('1')
             expect(categories[0].CategoryName).toBe('Action')
-            expect(categories[1].CategoryName).toBe('Adventure')
+            expect(categories[0].Color).toBe('#FF0000')
+            expect(categories[0].Description).toBe('A game with action and adventure')
         })
 
         it('should get categories for different user', async () => {
@@ -123,11 +130,25 @@ describe('Database Read Operations', () => {
     })
 
     describe('Backlog Entry Read Operations', () => {
+
+        const now = new Date();
+        now.setHours(now.getHours() - 2);
+        now.setSeconds(0, 0)
+
         it('should get backlog entries by user', async () => {
             const entries = await getBacklogEntriesByUser(postgresPool, 1)
             expect(entries).toHaveLength(2)
+            expect(entries[0].BacklogEntryID).toBe('1')
+            expect(entries[0].UserID).toBe('1')
+            expect(entries[0].GameID).toBe('1')
             expect(entries[0].Status).toBe('Not Started')
-            expect(entries[1].Status).toBe('In Progress')
+            expect(entries[0].Owned).toBe(true)
+            expect(entries[0].Interest).toBe(2)
+            expect(entries[0].ReviewStars).toBe(4)
+            expect(entries[0].Review).toBe('This is a review')
+            expect(entries[0].Note).toBe('This is a note')
+            expect(entries[0].CreatedAt).toStrictEqual(now)
+            expect(entries[0].UpdatedAt).toStrictEqual(now)
         })
 
         it('should get backlog entry by id', async () => {
@@ -158,6 +179,31 @@ describe('Database Read Operations', () => {
         it('should return empty array for backlog entry without categories', async () => {
             const categories = await getCategoriesForBacklogEntry(postgresPool, 3)
             expect(categories).toHaveLength(0)
+        })
+
+        it('should get backlog entries for category with all fields', async () => {
+            const backlogEntries = await getBacklogEntriesForCategory(postgresPool, 1)
+
+            expect(backlogEntries).toHaveLength(1)
+
+            // BacklogEntry 1 - alle Felder prüfen
+            expect(backlogEntries[0].BacklogEntryID).toBe('1')
+            expect(backlogEntries[0].UserID).toBe('1')
+            expect(backlogEntries[0].GameID).toBe('1')
+            expect(backlogEntries[0].Status).toBe('Not Started')
+        })
+
+        it('should get multiple backlog entries for category', async () => {
+            const backlogEntries = await getBacklogEntriesForCategory(postgresPool, 2)
+
+            expect(backlogEntries).toHaveLength(1)
+            expect(backlogEntries[0].BacklogEntryID).toBe('1')
+            expect(backlogEntries[0].GameID).toBe('1')
+        })
+
+        it('should return empty array for category without backlog entries', async () => {
+            const backlogEntries = await getBacklogEntriesForCategory(postgresPool, 3)
+            expect(backlogEntries).toHaveLength(0)
         })
     })
 })

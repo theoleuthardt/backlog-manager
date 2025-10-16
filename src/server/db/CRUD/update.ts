@@ -114,38 +114,3 @@ export const updateGame = async (
         client.release()
     }
 }
-
-// Update CategoryBacklogEntry - This table doesn't have IDs, it's a junction table with composite key
-// You typically don't update the relationship itself, but delete and recreate it
-// If you must update it, here's how:
-export const updateCategoryBacklogEntry = async (
-    pool: Pool,
-    oldCategoryID: number,
-    oldBacklogEntryID: number,
-    newCategoryID: number,
-    newBacklogEntryID: number
-) => {
-    const client = await pool.connect()
-    try {
-        // First delete the old relationship
-        await client.query(
-            `DELETE FROM "blm-system"."CategoryBacklogEntries" 
-       WHERE "CategoryID" = $1 AND "BacklogEntryID" = $2`,
-            [oldCategoryID, oldBacklogEntryID]
-        )
-
-        // Then insert the new relationship
-        const result = await client.query(
-            `INSERT INTO "blm-system"."CategoryBacklogEntries" ("CategoryID", "BacklogEntryID") 
-       VALUES ($1, $2) 
-       RETURNING *`,
-            [newCategoryID, newBacklogEntryID]
-        )
-        return result.rows[0] as BacklogCategoryRow
-    } catch (error) {
-        console.error('Error updating category-backlog entry relation:', error)
-        throw error
-    } finally {
-        client.release()
-    }
-}
