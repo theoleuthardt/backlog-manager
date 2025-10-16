@@ -17,7 +17,7 @@ export const updateUser = async (
     try {
         const result = await client.query(
             `UPDATE "blm-system"."Users"
-             SET "Username" = $2, "Email" = $3, "PasswordHash" = $4, "UpdatedAt" = CURRENT_TIMESTAMP
+             SET "Username" = $2, "Email" = $3, "PasswordHash" = $4, "UpdatedAt" = DATE_TRUNC('minute', CURRENT_TIMESTAMP)
              WHERE "UserID" = $1
              RETURNING *`,
             [userID, username, email, passwordHash]
@@ -43,7 +43,7 @@ export const updateCategory = async (
     try {
         const result = await client.query(
             `UPDATE "blm-system"."Categories"
-             SET "CategoryName" = $2, "Color" = $3, "Description" = $4, "UpdatedAt" = CURRENT_TIMESTAMP
+             SET "CategoryName" = $2, "Color" = $3, "Description" = $4, "UpdatedAt" = DATE_TRUNC('minute', CURRENT_TIMESTAMP)
              WHERE "CategoryID" = $1
              RETURNING *`,
             [categoryID, categoryName, color, description]
@@ -72,7 +72,7 @@ export const updateBacklogEntry = async (
     try {
         const result = await client.query(
             `UPDATE "blm-system"."BacklogEntries" 
-       SET "Status" = $2, "Owned" = $3, "Interest" = $4, "ReviewStars" = $5, "Review" = $6, "Note" = $7, "UpdatedAt" = CURRENT_TIMESTAMP 
+       SET "Status" = $2, "Owned" = $3, "Interest" = $4, "ReviewStars" = $5, "Review" = $6, "Note" = $7, "UpdatedAt" = DATE_TRUNC('minute', CURRENT_TIMESTAMP) 
        WHERE "BacklogEntryID" = $1 
        RETURNING *`,
             [backlogEntryID, status, owned, interest, reviewStars || null, review || null, note || null]
@@ -101,7 +101,7 @@ export const updateGame = async (
     try {
         const result = await client.query(
             `UPDATE "blm-system"."Games" 
-       SET "Title" = $2, "Genre" = $3, "Platform" = $4, "ReleaseDate" = $5, "ImageLink" = $6, "HowLongToBeat" = $7, "UpdatedAt" = CURRENT_TIMESTAMP 
+       SET "Title" = $2, "Genre" = $3, "Platform" = $4, "ReleaseDate" = $5, "ImageLink" = $6, "HowLongToBeat" = $7, "UpdatedAt" = DATE_TRUNC('minute', CURRENT_TIMESTAMP) 
        WHERE "GameID" = $1 
        RETURNING *`,
             [gameID, title, genre, platform, releaseDate || null, imageLink || null, howLongToBeat || null]
