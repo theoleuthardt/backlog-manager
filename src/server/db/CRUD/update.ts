@@ -5,7 +5,6 @@ import type {BacklogEntryRow} from "~/server/db/types";
 import type {GameRow} from "~/server/db/types";
 import type {BacklogCategoryRow} from "~/server/db/types";
 
-// Update User - Only update username, email, and password
 export const updateUser = async (
     pool: Pool,
     userID: number,
@@ -31,7 +30,6 @@ export const updateUser = async (
     }
 }
 
-// Update Category - Don't pass CreatedAt, let DB handle UpdatedAt
 export const updateCategory = async (
     pool: Pool,
     categoryID: number,
@@ -57,7 +55,6 @@ export const updateCategory = async (
     }
 }
 
-// Update Backlog Entry - Don't update CreatedAt, let DB handle CompletedAt and UpdatedAt
 export const updateBacklogEntry = async (
     pool: Pool,
     backlogEntryID: number,
@@ -86,7 +83,6 @@ export const updateBacklogEntry = async (
     }
 }
 
-// Update Game - Don't update CreatedAt, let DB handle UpdatedAt
 export const updateGame = async (
     pool: Pool,
     gameID: number,

@@ -5,7 +5,6 @@ import type {BacklogEntryRow} from "~/server/db/types";
 import type {GameRow} from "~/server/db/types";
 import type {BacklogCategoryRow} from "~/server/db/types";
 
-// Delete User
 export const deleteUser = async (pool: Pool, userID: number) => {
     const client = await pool.connect()
     try {
@@ -24,7 +23,6 @@ export const deleteUser = async (pool: Pool, userID: number) => {
     }
 }
 
-// Delete Category
 export const deleteCategory = async (pool: Pool, categoryID: number) => {
     const client = await pool.connect()
     try {
@@ -43,7 +41,6 @@ export const deleteCategory = async (pool: Pool, categoryID: number) => {
     }
 }
 
-// Delete Backlog Entry
 export const deleteBacklogEntry = async (pool: Pool, backlogEntryID: number) => {
     const client = await pool.connect()
     try {
@@ -62,7 +59,6 @@ export const deleteBacklogEntry = async (pool: Pool, backlogEntryID: number) => 
     }
 }
 
-// Delete Game
 export const deleteGame = async (pool: Pool, gameID: number) => {
     const client = await pool.connect()
     try {
@@ -81,7 +77,6 @@ export const deleteGame = async (pool: Pool, gameID: number) => {
     }
 }
 
-// Remove a BacklogEntry from a Category
 export const removeBacklogEntryFromCategory = async (
     pool: Pool,
     categoryID: number,
@@ -104,7 +99,6 @@ export const removeBacklogEntryFromCategory = async (
     }
 }
 
-// Delete all BacklogEntries from a Category
 export const deleteCategoryBacklogEntries = async (pool: Pool, categoryID: number) => {
     const client = await pool.connect()
     try {
