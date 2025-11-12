@@ -1,86 +1,61 @@
-import pool from "~/server/db";
+import type { Pool } from "pg";
 import type {UserRow} from "~/server/db/types";
 import type {CategoryRow} from "~/server/db/types";
 import type {BacklogEntryRow} from "~/server/db/types";
 import type {GameRow} from "~/server/db/types";
 import type {BacklogCategoryRow} from "~/server/db/types";
 
-export const createUser = async (name: string, email: string) => {
-  const client = await pool.connect();
-  try {
-    const result = await client.query(
-      "INSERT INTO Users (name, email) VALUES ($1, $2) RETURNING *",
-      [name, email],
-    );
-    return result.rows[0] as UserRow;
-  } catch (error) {
-    console.error("Error creating user:", error);
-    throw error;
-  } finally {
-    client.release();
-  }
-};
-
-export const createCategory = async (userID: bigint, name: string, color: string, description: string, createdAt: string, updatedAt: string) => {
-    const client = await pool.connect();
+export async function createUser(pool: Pool, username: string, email: string, passwordHash: string) {
+    const query = 'INSERT INTO "blm-system"."Users" ("Username", "Email", "PasswordHash") VALUES ($1, $2, $3) RETURNING *'
     try {
-        const result = await client.query(
-            "INSERT INTO Categories (userID, name, color, description, createdAt, updatedAt) VALUES ($1, $2, $3, $4, $5, $6 RETURNING *",
-            [userID, name, color, description, createdAt, updatedAt],
-        );
-        return result.rows[0] as CategoryRow;
+        const result = await pool.query(query, [username, email, passwordHash])
+        return result.rows[0]
     } catch (error) {
-        console.error("Error creating user:", error);
-        throw error;
-    } finally {
-        client.release();
+        console.error('Error creating user:', error)
+        throw error
     }
-};
+}
 
-export const createBacklogEntry = async (userID: bigint, gameID: bigint, status: string, owned: boolean, interest: bigint, reviewStars: bigint, review: string, note: string, addedAt: string, completedAt: string, updatedAt: string) => {
-    const client = await pool.connect();
+export async function createGame(pool: Pool, title: string, genre: string, platform: string, releaseDate?: Date, imageLink?: string, howLongToBeat?: number[]) {
+    const query = 'INSERT INTO "blm-system"."Games" ("Title", "Genre", "Platform", "ReleaseDate", "ImageLink", "HowLongToBeat") VALUES ($1, $2, $3, $4, $5, $6) RETURNING *'
     try {
-        const result = await client.query(
-            "INSERT INTO BacklogEntries (userID, gameID, status, owned, interest, reviewStars, review, note, addedAt, completedAt, updatedAt) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *",
-            [userID, gameID, status, owned, interest, reviewStars, review, note, addedAt, completedAt, updatedAt],
-        );
-        return result.rows[0] as BacklogEntryRow;
+        const result = await pool.query(query, [title, genre, platform, releaseDate || null, imageLink || null, howLongToBeat || null])
+        return result.rows[0]
     } catch (error) {
-        console.error("Error creating user:", error);
-        throw error;
-    } finally {
-        client.release();
+        console.error('Error creating game:', error)
+        throw error
     }
-};
+}
 
-export const createGame = async (title: string, genre: string, platform: string, releaseDate: string, imageLink: string, howLongToBeat: string, createdAt: string, updatedAt: string) => {
-    const client = await pool.connect();
+export async function createCategory(pool: Pool, userId: number, categoryName: string, color: string = '#000000', description: string = 'No description') {
+    const query = 'INSERT INTO "blm-system"."Categories" ("UserID", "CategoryName", "Color", "Description") VALUES ($1, $2, $3, $4) RETURNING *'
     try {
-        const result = await client.query(
-            "INSERT INTO Games (title, genre, platform, releaseDate, imageLink, howLongToBeat, createdAt, updatedAt) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
-            [title, genre, platform, releaseDate, imageLink, howLongToBeat, createdAt, updatedAt],
-        );
-        return result.rows[0] as GameRow;
+        const result = await pool.query(query, [userId, categoryName, color, description])
+        return result.rows[0]
     } catch (error) {
-        console.error("Error creating user:", error);
-        throw error;
-    } finally {
-        client.release();
+        console.error('Error creating category:', error)
+        throw error
     }
-};
+}
 
-export const addBacklogEntryToCategory = async (categoryID: bigint, backlogEntryID: bigint, createdAt: string, updatedAt: string) => {
-    const client = await pool.connect();
+export async function createBacklogEntry(pool: Pool, userId: number, gameId: number, status: string, owned: boolean, interest: number, reviewStars?: number, review?: string, note?: string) {
+    const query = 'INSERT INTO "blm-system"."BacklogEntries" ("UserID", "GameID", "Status", "Owned", "Interest", "ReviewStars", "Review", "Note") VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *'
     try {
-        const result = await client.query(
-            "INSERT INTO CategoryBacklogEntries (categoryID, backlogEntryID, createdAt, updatedAt) VALUES ($1, $2, $3, $4) RETURNING *",
-            [categoryID, backlogEntryID, createdAt, updatedAt],
-        );
-        return result.rows[0] as BacklogCategoryRow;
+        const result = await pool.query(query, [userId, gameId, status, owned, interest, reviewStars || null, review || null, note || null])
+        return result.rows[0]
     } catch (error) {
-        console.error("Error creating user:", error);
-        throw error;
-    } finally {
-        client.release();
+        console.error('Error creating backlog entry:', error)
+        throw error
     }
-};
+}
+
+export async function addCategoryToBacklogEntry(pool: Pool, categoryId: number, backlogEntryId: number) {
+    const query = 'INSERT INTO "blm-system"."CategoryBacklogEntries" ("CategoryID", "BacklogEntryID") VALUES ($1, $2) RETURNING *'
+    try {
+        const result = await pool.query(query, [categoryId, backlogEntryId])
+        return result.rows[0]
+    } catch (error) {
+        console.error('Error adding category to backlog entry:', error)
+        throw error
+    }
+}

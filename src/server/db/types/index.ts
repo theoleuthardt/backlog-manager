@@ -1,18 +1,22 @@
 export interface UserRow {
+    id: bigint;
   name: string;
-  email: number;
+  email: string;
   passwordHash?: string;
 }
 
 export interface CategoryRow {
   userID: bigint;
+  categoryID: bigint;
   name: string;
+  color: string;
   description?: string;
   createdAt?: string;
   updatedAt?: string;
 }
 
 export interface BacklogEntryRow {
+  backlogEntryID: bigint;
   userID: bigint;
   gameID: bigint;
   status: string;
@@ -27,6 +31,7 @@ export interface BacklogEntryRow {
 }
 
 export interface GameRow {
+  gameID: bigint;
   title: string;
   genre: string;
   platform: string;
