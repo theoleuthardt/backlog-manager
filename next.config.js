@@ -11,7 +11,11 @@ const config = {
     "*.local-origin.dev",
     "10.20.146.74",
     "10.20.*",
+
   ],
+  images: {
+    domains: ["avatars.githubusercontent.com", "cdn.discordapp.com"],
+  }
 };
 
 export default config;
