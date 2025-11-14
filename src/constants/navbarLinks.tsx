@@ -41,7 +41,7 @@ export const dashboardNavLinks: NavbarLink[] = [
   },
   {
     id: 2,
-    href: "/",
+    href: "/logout",
     content: (
       <Image
         className="scale-125"
