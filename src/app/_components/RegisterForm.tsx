@@ -112,6 +112,15 @@ export default function RegisterForm() {
           Log in
         </a>
       </p>
+      <p className="text-center text-gray-400">
+        Register with another provider?{" "}
+        <a
+          href="/api/auth/signin?callbackUrl=/dashboard"
+          className="text-blue-400 underline hover:text-blue-300"
+        >
+          Register here
+        </a>
+      </p>
     </form>
   );
 }
