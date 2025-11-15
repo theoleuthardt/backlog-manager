@@ -1,0 +1,15 @@
+{
+    "sqltools.connections": [
+        {
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "Backlog Manager",
+            "database": "backlog-manager-db",
+            "username": "postgres",
+            "password": "1234"
+        }
+    ]
+}

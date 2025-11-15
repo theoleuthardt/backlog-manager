@@ -6,30 +6,34 @@ import type {GameRow} from "~/server/db/types";
 import type {BacklogCategoryRow} from "~/server/db/types";
 
 // Update User - Only update username, email, and password
-export const updateUser = async (
+export const updateUserByEmail = async (
     pool: Pool,
-    userID: number,
-    username: string,
     email: string,
-    passwordHash: string
-) => {
-    const client = await pool.connect()
+    username: string,
+    passwordHash: string,
+    steamId: string | null
+  ) => {
+    const client = await pool.connect();
     try {
-        const result = await client.query(
-            `UPDATE "blm-system"."Users"
-             SET "Username" = $2, "Email" = $3, "PasswordHash" = $4, "UpdatedAt" = DATE_TRUNC('minute', CURRENT_TIMESTAMP)
-             WHERE "UserID" = $1
-             RETURNING *`,
-            [userID, username, email, passwordHash]
-        )
-        return result.rows[0] as UserRow
+      const result = await client.query(
+        `UPDATE "blm-system"."Users"
+         SET "Username" = $2,
+             "PasswordHash" = $3,
+             "SteamId" = $4,
+             "UpdatedAt" = DATE_TRUNC('minute', CURRENT_TIMESTAMP)
+         WHERE "Email" = $1
+         RETURNING *`,
+        [email, username, passwordHash, steamId]
+      );
+      return result.rows[0] as UserRow;
     } catch (error) {
-        console.error('Error updating user:', error)
-        throw error
+      console.error('Error updating user:', error);
+      throw error;
     } finally {
-        client.release()
+      client.release();
     }
-}
+  };
+  
 
 // Update Category - Don't pass CreatedAt, let DB handle UpdatedAt
 export const updateCategory = async (
