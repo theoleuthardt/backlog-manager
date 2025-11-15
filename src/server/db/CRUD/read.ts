@@ -38,6 +38,17 @@ export async function getUserByUsername(pool: Pool, username: string) {
     }
 }
 
+export async function getUserByEmail(pool: Pool, email: string) {
+    const query = 'SELECT * FROM "blm-system"."Users" WHERE "Email" = $1'
+    try {
+        const result = await pool.query(query, [email])
+        return result.rows[0]
+    } catch (error) {
+        console.error('Error getting user by email:', error)
+        throw error
+    }
+}
+
 export async function getGameById(pool: Pool, gameId: number) {
     const query = 'SELECT * FROM "blm-system"."Games" WHERE "GameID" = $1'
     try {

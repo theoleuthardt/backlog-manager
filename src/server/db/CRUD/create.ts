@@ -5,10 +5,10 @@ import type {BacklogEntryRow} from "~/server/db/types";
 import type {GameRow} from "~/server/db/types";
 import type {BacklogCategoryRow} from "~/server/db/types";
 
-export async function createUser(pool: Pool, username: string, email: string, passwordHash: string) {
-    const query = 'INSERT INTO "blm-system"."Users" ("Username", "Email", "PasswordHash") VALUES ($1, $2, $3) RETURNING *'
+export async function createUser(pool: Pool, username: string, email: string, passwordHash: string, steamId: string) {
+    const query = 'INSERT INTO "blm-system"."Users" ("Username", "Email", "PasswordHash", "SteamId") VALUES ($1, $2, $3, $4) RETURNING *'
     try {
-        const result = await pool.query(query, [username, email, passwordHash])
+        const result = await pool.query(query, [username, email, passwordHash, steamId])
         return result.rows[0]
     } catch (error) {
         console.error('Error creating user:', error)

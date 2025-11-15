@@ -1,8 +1,9 @@
 export interface UserRow {
-    id: bigint;
+  id: bigint;
   name: string;
   email: string;
   passwordHash?: string;
+  steamId: string;
 }
 
 export interface CategoryRow {
