@@ -20,7 +20,6 @@ export const updateUserByEmail = async (
          SET "Username" = $2,
              "PasswordHash" = $3,
              "SteamId" = $4,
-             "UpdatedAt" = DATE_TRUNC('minute', CURRENT_TIMESTAMP)
          WHERE "Email" = $1
          RETURNING *`,
         [email, username, passwordHash, steamId]
