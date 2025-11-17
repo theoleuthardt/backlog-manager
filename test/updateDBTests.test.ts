@@ -4,8 +4,8 @@ import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testconta
 import fs from 'fs'
 import path from 'path'
 import { createUser, createGame, createCategory, createBacklogEntry } from '~/server/db/CRUD/create'
-import { getUserById, getGameById, getCategoriesByUser, getBacklogEntryById } from "~/server/db/CRUD/read"
-import { updateUser, updateCategory, updateBacklogEntry, updateGame } from "~/server/db/CRUD/update"
+import { getUserById, getGameById, getCategoriesByUser, getBacklogEntryById, getUserByEmail } from "~/server/db/CRUD/read"
+import { updateUserByEmail, updateCategory, updateBacklogEntry, updateGame } from "~/server/db/CRUD/update"
 
 describe('Database Update Operations', () => {
     let postgresContainer: StartedPostgreSqlContainer
@@ -37,55 +37,59 @@ describe('Database Update Operations', () => {
     })
 
     describe('User Update Operations', () => {
-        let userId: number
+        let email: string
 
         beforeEach(async () => {
+            email = "john@doe.com"
             await postgresPool.query('TRUNCATE TABLE "blm-system"."Users" RESTART IDENTITY CASCADE')
-            await createUser(postgresPool, "John Doe", "john@doe.com", "oldpassword123")
-            userId = 1
+            await createUser(postgresPool, "John Doe", email, "oldpassword123", "12345")
+
         })
 
+
         it('should update user with all fields', async () => {
-            const updatedUser = await updateUser(
+            const updatedUser = await updateUserByEmail(
                 postgresPool,
-                userId,
-                "John Smith",
-                "john@smith.com",
-                "newpassword456"
+                email,
+                "john_smith",
+                "newpassword456",
+                "123456"
             )
 
-            expect(updatedUser.UserID).toBe('1')
-            expect(updatedUser.Username).toBe('John Smith')
-            expect(updatedUser.Email).toBe('john@smith.com')
+            expect(updatedUser.Username).toBe('john_smith')
+            expect(updatedUser.Email).toBe(email)
             expect(updatedUser.PasswordHash).toBe('newpassword456')
             expect(updatedUser.UpdatedAt).toBeInstanceOf(Date)
+            expect(updatedUser.SteamId).toBe('123456')
         })
 
         it('should update only username', async () => {
-            const updatedUser = await updateUser(
+            const updatedUser = await updateUserByEmail(
                 postgresPool,
-                userId,
-                "Jane Doe",
-                "john@doe.com",
-                "oldpassword123"
+                email,
+                "new_username",
+                "oldpassword123",
+                "12345"	
             )
 
-            expect(updatedUser.Username).toBe('Jane Doe')
-            expect(updatedUser.Email).toBe('john@doe.com')
+            expect(updatedUser.Username).toBe('new_username')
+            expect(updatedUser.Email).toBe(email)
             expect(updatedUser.PasswordHash).toBe('oldpassword123')
+            expect(updatedUser.UpdatedAt).toBeInstanceOf(Date)
+            expect(updatedUser.SteamId).toBe('12345')
         })
 
         it('should update UpdatedAt timestamp', async () => {
-            const originalUser = await getUserById(postgresPool, userId)
+            const originalUser = await getUserByEmail(postgresPool, email)
 
             await new Promise(resolve => setTimeout(resolve, 1000))
 
-            const updatedUser = await updateUser(
+            const updatedUser = await updateUserByEmail(
                 postgresPool,
-                userId,
+                email,
                 "Updated Name",
-                "john@doe.com",
-                "oldpassword123"
+                "oldpassword123", 
+                "12345"
             )
 
             expect(new Date(updatedUser.UpdatedAt).getTime())
@@ -99,7 +103,7 @@ describe('Database Update Operations', () => {
         beforeEach(async () => {
             await postgresPool.query('TRUNCATE TABLE "blm-system"."Users" RESTART IDENTITY CASCADE')
             await postgresPool.query('TRUNCATE TABLE "blm-system"."Categories" RESTART IDENTITY CASCADE')
-            await createUser(postgresPool, "John Doe", "john@doe.com", "password123")
+            await createUser(postgresPool, "John Doe", "john@doe.com", "password123", "12345")
             await createCategory(postgresPool, 1, "Action", "#FF0000", "Action games")
             categoryId = 1
         })
@@ -246,7 +250,7 @@ describe('Database Update Operations', () => {
             await postgresPool.query('TRUNCATE TABLE "blm-system"."Games" RESTART IDENTITY CASCADE')
             await postgresPool.query('TRUNCATE TABLE "blm-system"."BacklogEntries" RESTART IDENTITY CASCADE')
 
-            await createUser(postgresPool, "John Doe", "john@doe.com", "password123")
+            await createUser(postgresPool, "John Doe", "john@doe.com", "password123", "12345")
             await createGame(postgresPool, "Elden Ring", "RPG", "PC", new Date())
             await createBacklogEntry(
                 postgresPool,

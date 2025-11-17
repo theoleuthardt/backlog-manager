@@ -56,8 +56,8 @@ describe('Database Delete Operations', () => {
     describe('User Delete Operations', () => {
         beforeEach(async () => {
             await postgresPool.query('TRUNCATE TABLE "blm-system"."Users" RESTART IDENTITY CASCADE')
-            await createUser(postgresPool, "John Doe", "john@doe.com", "password123")
-            await createUser(postgresPool, "Jane Doe", "jane@doe.com", "password456")
+            await createUser(postgresPool, "John Doe", "john@doe.com", "password123", "12345")
+            await createUser(postgresPool, "Jane Doe", "jane@doe.com", "password456", "12345")
         })
 
         it('should delete user and return deleted user data', async () => {
@@ -101,7 +101,7 @@ describe('Database Delete Operations', () => {
         beforeEach(async () => {
             await postgresPool.query('TRUNCATE TABLE "blm-system"."Users" RESTART IDENTITY CASCADE')
             await postgresPool.query('TRUNCATE TABLE "blm-system"."Categories" RESTART IDENTITY CASCADE')
-            await createUser(postgresPool, "John Doe", "john@doe.com", "password123")
+            await createUser(postgresPool, "John Doe", "john@doe.com", "password123", "12345")
             await createCategory(postgresPool, 1, "Action", "#FF0000", "Action games")
             await createCategory(postgresPool, 1, "Adventure", "#00FF00")
         })
@@ -195,7 +195,7 @@ describe('Database Delete Operations', () => {
             await postgresPool.query('TRUNCATE TABLE "blm-system"."Games" RESTART IDENTITY CASCADE')
             await postgresPool.query('TRUNCATE TABLE "blm-system"."BacklogEntries" RESTART IDENTITY CASCADE')
 
-            await createUser(postgresPool, "John Doe", "john@doe.com", "password123")
+            await createUser(postgresPool, "John Doe", "john@doe.com", "password123", "12345")
             await createGame(postgresPool, "Elden Ring", "RPG", "PC", new Date())
             await createGame(postgresPool, "Hollow Knight", "Metroidvania", "PC", new Date())
             await createBacklogEntry(postgresPool, 1, 1, "Not Started", false, 3, null, null, "Note 1")
@@ -257,7 +257,7 @@ describe('Database Delete Operations', () => {
             await postgresPool.query('TRUNCATE TABLE "blm-system"."Categories" RESTART IDENTITY CASCADE')
             await postgresPool.query('TRUNCATE TABLE "blm-system"."BacklogEntries" RESTART IDENTITY CASCADE')
 
-            await createUser(postgresPool, "John Doe", "john@doe.com", "password123")
+            await createUser(postgresPool, "John Doe", "john@doe.com", "password123", "12345")
             await createGame(postgresPool, "Elden Ring", "RPG", "PC", new Date())
             await createGame(postgresPool, "Hollow Knight", "Metroidvania", "PC", new Date())
             await createCategory(postgresPool, 1, "Action", "#FF0000")

@@ -14,7 +14,8 @@ import {
     getBacklogEntriesByUser,
     getBacklogEntryById,
     getBacklogEntriesByStatus,
-    getCategoriesForBacklogEntry, getBacklogEntriesForCategory
+    getCategoriesForBacklogEntry, getBacklogEntriesForCategory,
+    getUserByEmail
 } from "~/server/db/CRUD/read"
 
 describe('Database Read Operations', () => {
@@ -40,8 +41,8 @@ describe('Database Read Operations', () => {
 
         await postgresPool.query(sql)
 
-        await createUser(postgresPool, "John Doe", "john@doe", "1234567890")
-        await createUser(postgresPool, "Jane Doe", "jane@doe", "1234567890")
+        await createUser(postgresPool, "John Doe", "john@doe", "1234567890", "0987654321")
+        await createUser(postgresPool, "Jane Doe", "jane@doe", "1234567890", "0987654321")
 
         await createGame(postgresPool, "Elden Ring", "RPG", "PC", new Date(), "Pictures/EldenRing.jpg", [1, 2, 3])
         await createGame(postgresPool, "Hollow Knight", "Metroidvania", "PC", new Date())
@@ -76,9 +77,10 @@ describe('Database Read Operations', () => {
             expect(users[1].Username).toBe('Jane Doe')
         })
 
-        it('should get user by id', async () => {
-            const user = await getUserById(postgresPool, 1)
-            expect(user).toEqual({ UserID: '1', Username: 'John Doe', Email: 'john@doe', PasswordHash: '1234567890', CreatedAt: now, UpdatedAt: now})
+        it('should get user by email', async () => {
+            const user = await getUserByEmail(postgresPool, 'john@doe')
+            expect(user).toEqual({ UserID: '1', Username: 'John Doe', Email: 'john@doe', PasswordHash: '1234567890', SteamId: '0987654321', CreatedAt: now, UpdatedAt: now})
+            
         })
 
         it('should get user by username', async () => {

@@ -19,7 +19,7 @@ export const updateUserByEmail = async (
         `UPDATE "blm-system"."Users"
          SET "Username" = $2,
              "PasswordHash" = $3,
-             "SteamId" = $4,
+             "SteamId" = $4
          WHERE "Email" = $1
          RETURNING *`,
         [email, username, passwordHash, steamId]
