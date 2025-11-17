@@ -10,6 +10,7 @@ import {
 } from "shadcn_components/ui/dialog";
 import { Button } from "shadcn_components/ui/button";
 import { GameImage } from "components/GameImage";
+import { XIcon } from "lucide-react";
 
 interface BacklogEntryProps {
   title: string;
@@ -46,13 +47,16 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
         <DialogContent
           className="h-[40rem] w-[40rem] justify-center-safe border-2 border-white bg-black md:w-[50rem] lg:w-[70rem]"
           onOpenAutoFocus={(e) => e.preventDefault()}
+          showCloseButton={false}
         >
           <DialogClose asChild>
             <Button
               variant="destructive"
               size="icon"
-              className="absolute top-2 right-2 h-8 w-8 fill-white p-0 text-white [&:focus]:ring-0 [&:focus]:outline-none [&:focus-visible]:ring-0"
-            ></Button>
+              className="absolute top-2 right-2 h-8 w-8 focus:ring-0 focus:ring-offset-0 focus:outline-none focus-visible:ring-0"
+            >
+              <XIcon className="h-4 w-4 text-black" />
+            </Button>
           </DialogClose>
           <DialogHeader>
             <DialogTitle className="text-center text-3xl text-white">
