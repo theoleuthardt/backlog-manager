@@ -24,8 +24,8 @@ export const SearchBar = (props: SearchBarProps) => {
         type="search"
         placeholder={props.placeholder || "Search"}
         className={`w-full border-2 ${props.useIcon ? "pl-10" : ""}`}
-        onInput={() => {
-          if (props.onInput) props.onInput();
+        onInput={(e) => {
+          if (props.onInput) props.onInput(e);
         }}
       />
     </div>
