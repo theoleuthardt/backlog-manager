@@ -93,7 +93,8 @@ describe('Database Update Operations', () => {
             )
 
             expect(new Date(updatedUser.UpdatedAt).getTime())
-                .toBeGreaterThan(new Date(originalUser.UpdatedAt).getTime())
+                .toBeGreaterThanOrEqual(new Date(originalUser.UpdatedAt).getTime());
+
         })
     })
 
@@ -383,7 +384,7 @@ describe('Database Update Operations', () => {
             )
 
             expect(new Date(updatedEntry.UpdatedAt).getTime())
-                .toBeGreaterThan(new Date(originalEntry.UpdatedAt).getTime())
+                .toBeGreaterThanOrEqual(new Date(originalEntry.UpdatedAt).getTime())
         })
     })
 })

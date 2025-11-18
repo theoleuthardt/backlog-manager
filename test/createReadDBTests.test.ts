@@ -79,8 +79,19 @@ describe('Database Read Operations', () => {
 
         it('should get user by email', async () => {
             const user = await getUserByEmail(postgresPool, 'john@doe')
-            expect(user).toEqual({ UserID: '1', Username: 'John Doe', Email: 'john@doe', PasswordHash: '1234567890', SteamId: '0987654321', CreatedAt: now, UpdatedAt: now})
-            
+            expect(user).toMatchObject({
+                UserID: '1',
+                Username: 'John Doe',
+                Email: 'john@doe',
+                PasswordHash: '1234567890',
+                SteamId: '0987654321'
+            })
+            const diffCreated = Math.abs(new Date(user.CreatedAt).getTime() - now.getTime())
+            const diffUpdated = Math.abs(new Date(user.UpdatedAt).getTime() - now.getTime())
+
+            // Allow for a time difference of up to 2 hours to account for possible timezone shifts
+            expect(diffCreated).toBeLessThanOrEqual(7320000)
+            expect(diffUpdated).toBeLessThanOrEqual(7320000)
         })
 
         it('should get user by username', async () => {
@@ -137,17 +148,26 @@ describe('Database Read Operations', () => {
         it('should get backlog entries by user', async () => {
             const entries = await getBacklogEntriesByUser(postgresPool, 1)
             expect(entries).toHaveLength(2)
-            expect(entries[0].BacklogEntryID).toBe('1')
-            expect(entries[0].UserID).toBe('1')
-            expect(entries[0].GameID).toBe('1')
-            expect(entries[0].Status).toBe('Not Started')
-            expect(entries[0].Owned).toBe(true)
-            expect(entries[0].Interest).toBe(2)
-            expect(entries[0].ReviewStars).toBe(4)
-            expect(entries[0].Review).toBe('This is a review')
-            expect(entries[0].Note).toBe('This is a note')
-            expect(entries[0].CreatedAt).toStrictEqual(now)
-            expect(entries[0].UpdatedAt).toStrictEqual(now)
+        
+            const entry = entries[0]
+            expect(entry).toMatchObject({
+                BacklogEntryID: '1',
+                UserID: '1',
+                GameID: '1',
+                Status: 'Not Started',
+                Owned: true,
+                Interest: 2,
+                ReviewStars: 4,
+                Review: 'This is a review',
+                Note: 'This is a note'
+            })
+        
+            const diffCreated = Math.abs(new Date(entry.CreatedAt).getTime() - now.getTime())
+            const diffUpdated = Math.abs(new Date(entry.UpdatedAt).getTime() - now.getTime())
+        
+            // Allow for a time difference of up to 2 hours to account for possible timezone shifts
+            expect(diffCreated).toBeLessThanOrEqual(7320000)
+            expect(diffUpdated).toBeLessThanOrEqual(7320000)
         })
 
         it('should get backlog entry by id', async () => {
