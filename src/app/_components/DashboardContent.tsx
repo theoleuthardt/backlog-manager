@@ -14,6 +14,7 @@ import {
 import { Checkbox } from "shadcn_components/ui/checkbox";
 import { Slider } from "shadcn_components/ui/slider";
 import { Label } from "shadcn_components/ui/label";
+import Image from "next/image";
 
 interface BacklogEntryData {
   id: number;
@@ -54,6 +55,7 @@ export const DashboardContent = ({ initialData }: DashboardContentProps) => {
   const [completionistTimeRange, setCompletionistTimeRange] = useState<
     [number, number]
   >([0, 500]);
+  const [isLeftBarOpen, setIsLeftBarOpen] = useState(true);
 
   const allPlatforms = useMemo(() => {
     const platforms = new Set<string>();
@@ -173,193 +175,216 @@ export const DashboardContent = ({ initialData }: DashboardContentProps) => {
 
   return (
     <div id="upperSection" className="flex min-h-30 gap-8 p-4">
-      <div id="leftBar" className="h-[40rem] w-60 flex-shrink-0 p-4">
-        <div
-          id="filterOptions"
-          className="mb-4 h-full space-y-4 overflow-y-auto p-4"
+      <div className="ml-4 flex flex-col">
+        <button
+          onClick={() => setIsLeftBarOpen(!isLeftBarOpen)}
+          className={`group flex h-10 items-center justify-center self-center rounded-md border-2 border-white bg-black text-2xl font-bold text-white transition-all duration-300 ease-in-out hover:bg-white ${
+            isLeftBarOpen ? "w-44" : "w-10"
+          }`}
+          aria-label={isLeftBarOpen ? "Close sidebar" : "Open sidebar"}
         >
-          <div className="space-y-2">
-            <SearchBar
-              useIcon={true}
-              onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
-                setSearchQuery(e.target.value);
-              }}
-            />
-            <Label className="text-sm font-medium text-white">Platform</Label>
-            <ToggleGroup
-              type="multiple"
-              value={selectedPlatforms}
-              onValueChange={setSelectedPlatforms}
-              className="flex flex-wrap justify-start gap-1"
-            >
-              {allPlatforms.map((platform) => (
-                <ToggleGroupItem
-                  key={platform}
-                  value={platform}
-                  className="h-8 px-2 text-xs data-[state=on]:bg-blue-700 data-[state=on]:text-white"
-                >
-                  {platform}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-white">Genre</Label>
-            <DropdownMenu>
-              <DropdownMenuTrigger className="w-full rounded-md border border-white bg-black px-3 py-2 text-sm text-white hover:bg-white hover:text-black">
-                {selectedGenres.length > 0
-                  ? `${selectedGenres.length} selected`
-                  : "Select genres"}
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="max-h-60 w-56 overflow-y-auto border-white bg-black">
-                {allGenres.map((genre) => (
-                  <DropdownMenuCheckboxItem
-                    key={genre}
-                    checked={selectedGenres.includes(genre)}
-                    onCheckedChange={(checked) => {
-                      setSelectedGenres(
-                        checked
-                          ? [...selectedGenres, genre]
-                          : selectedGenres.filter((g) => g !== genre),
-                      );
-                    }}
-                    className="text-white hover:bg-white hover:text-black"
+          <Image
+            src={isLeftBarOpen ? "/chevron-left.png" : "/chevron-right.png"}
+            alt={isLeftBarOpen ? "Collapse" : "Expand"}
+            className="h-6 w-6 transition-all duration-300 group-hover:invert"
+            width={60}
+            height={60}
+          />
+        </button>
+        <div
+          id="leftBar"
+          className={`h-[40rem] flex-shrink-0 overflow-hidden p-4 transition-all duration-300 ease-in-out ${
+            isLeftBarOpen ? "w-60 opacity-100" : "w-0 p-0 opacity-0"
+          }`}
+        >
+          <div
+            id="filterOptions"
+            className="mb-4 h-full space-y-4 overflow-y-auto p-4"
+          >
+            <div className="space-y-2">
+              <SearchBar
+                useIcon={true}
+                onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  setSearchQuery(e.target.value);
+                }}
+              />
+              <Label className="text-sm font-medium text-white">Platform</Label>
+              <ToggleGroup
+                type="multiple"
+                value={selectedPlatforms}
+                onValueChange={setSelectedPlatforms}
+                className="flex flex-wrap justify-start gap-1"
+              >
+                {allPlatforms.map((platform) => (
+                  <ToggleGroupItem
+                    key={platform}
+                    value={platform}
+                    className="h-8 px-2 text-xs data-[state=on]:bg-blue-700 data-[state=on]:text-white"
                   >
-                    {genre}
-                  </DropdownMenuCheckboxItem>
+                    {platform}
+                  </ToggleGroupItem>
                 ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+              </ToggleGroup>
+            </div>
 
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-white">Status</Label>
-            <DropdownMenu>
-              <DropdownMenuTrigger className="w-full rounded-md border border-white bg-black px-3 py-2 text-sm text-white hover:bg-white hover:text-black">
-                {selectedStatuses.length > 0
-                  ? `${selectedStatuses.length} selected`
-                  : "Select status"}
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56 border-white bg-black">
-                {statusOptions.map((status) => (
-                  <DropdownMenuCheckboxItem
-                    key={status}
-                    checked={selectedStatuses.includes(status)}
-                    onCheckedChange={(checked) => {
-                      setSelectedStatuses(
-                        checked
-                          ? [...selectedStatuses, status]
-                          : selectedStatuses.filter((s) => s !== status),
-                      );
-                    }}
-                    className="text-white hover:bg-white hover:text-black"
-                  >
-                    {status}
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-white">Genre</Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger className="w-full rounded-md border border-white bg-black px-3 py-2 text-sm text-white hover:bg-white hover:text-black">
+                  {selectedGenres.length > 0
+                    ? `${selectedGenres.length} selected`
+                    : "Select genres"}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="max-h-60 w-56 overflow-y-auto border-white bg-black">
+                  {allGenres.map((genre) => (
+                    <DropdownMenuCheckboxItem
+                      key={genre}
+                      checked={selectedGenres.includes(genre)}
+                      onCheckedChange={(checked) => {
+                        setSelectedGenres(
+                          checked
+                            ? [...selectedGenres, genre]
+                            : selectedGenres.filter((g) => g !== genre),
+                        );
+                      }}
+                      className="text-white hover:bg-white hover:text-black"
+                    >
+                      {genre}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
 
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="owned"
-              checked={ownedOnly}
-              onCheckedChange={(checked) => setOwnedOnly(checked as boolean)}
-              className="border-white data-[state=checked]:bg-blue-700"
-            />
-            <Label
-              htmlFor="owned"
-              className="cursor-pointer text-sm font-medium text-white"
-            >
-              Owned only
-            </Label>
-          </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-white">Status</Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger className="w-full rounded-md border border-white bg-black px-3 py-2 text-sm text-white hover:bg-white hover:text-black">
+                  {selectedStatuses.length > 0
+                    ? `${selectedStatuses.length} selected`
+                    : "Select status"}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56 border-white bg-black">
+                  {statusOptions.map((status) => (
+                    <DropdownMenuCheckboxItem
+                      key={status}
+                      checked={selectedStatuses.includes(status)}
+                      onCheckedChange={(checked) => {
+                        setSelectedStatuses(
+                          checked
+                            ? [...selectedStatuses, status]
+                            : selectedStatuses.filter((s) => s !== status),
+                        );
+                      }}
+                      className="text-white hover:bg-white hover:text-black"
+                    >
+                      {status}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
 
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-white">
-              Interest: {interestRange[0]} - {interestRange[1]}
-            </Label>
-            <Slider
-              min={1}
-              max={10}
-              step={1}
-              value={interestRange}
-              onValueChange={(value) =>
-                setInterestRange(value as [number, number])
-              }
-              className="invert"
-            />
-          </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="owned"
+                checked={ownedOnly}
+                onCheckedChange={(checked) => setOwnedOnly(checked as boolean)}
+                className="border-white data-[state=checked]:bg-blue-700"
+              />
+              <Label
+                htmlFor="owned"
+                className="cursor-pointer text-sm font-medium text-white"
+              >
+                Owned only
+              </Label>
+            </div>
 
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-white">
-              Review Stars: {reviewStarsRange[0]} - {reviewStarsRange[1]}
-            </Label>
-            <Slider
-              min={1}
-              max={5}
-              step={1}
-              value={reviewStarsRange}
-              onValueChange={(value) =>
-                setReviewStarsRange(value as [number, number])
-              }
-              className="invert"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-white">
+                Interest: {interestRange[0]} - {interestRange[1]}
+              </Label>
+              <Slider
+                min={1}
+                max={10}
+                step={1}
+                value={interestRange}
+                onValueChange={(value) =>
+                  setInterestRange(value as [number, number])
+                }
+                className="invert"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-white">
-              Main Story: {mainTimeRange[0]}h - {mainTimeRange[1]}h
-            </Label>
-            <Slider
-              min={0}
-              max={500}
-              step={1}
-              value={mainTimeRange}
-              onValueChange={(value) =>
-                setMainTimeRange(value as [number, number])
-              }
-              className="invert"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-white">
+                Review Stars: {reviewStarsRange[0]} - {reviewStarsRange[1]}
+              </Label>
+              <Slider
+                min={1}
+                max={5}
+                step={1}
+                value={reviewStarsRange}
+                onValueChange={(value) =>
+                  setReviewStarsRange(value as [number, number])
+                }
+                className="invert"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-white">
-              Main + Extra: {mainExtraTimeRange[0]}h - {mainExtraTimeRange[1]}h
-            </Label>
-            <Slider
-              min={0}
-              max={500}
-              step={1}
-              value={mainExtraTimeRange}
-              onValueChange={(value) =>
-                setMainExtraTimeRange(value as [number, number])
-              }
-              className="invert"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-white">
+                Main Story: {mainTimeRange[0]}h - {mainTimeRange[1]}h
+              </Label>
+              <Slider
+                min={0}
+                max={500}
+                step={1}
+                value={mainTimeRange}
+                onValueChange={(value) =>
+                  setMainTimeRange(value as [number, number])
+                }
+                className="invert"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-white">
-              Completionist: {completionistTimeRange[0]}h -{" "}
-              {completionistTimeRange[1]}h
-            </Label>
-            <Slider
-              min={0}
-              max={500}
-              step={1}
-              value={completionistTimeRange}
-              onValueChange={(value) =>
-                setCompletionistTimeRange(value as [number, number])
-              }
-              className="invert"
-            />
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-white">
+                Main + Extra: {mainExtraTimeRange[0]}h - {mainExtraTimeRange[1]}
+                h
+              </Label>
+              <Slider
+                min={0}
+                max={500}
+                step={1}
+                value={mainExtraTimeRange}
+                onValueChange={(value) =>
+                  setMainExtraTimeRange(value as [number, number])
+                }
+                className="invert"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-white">
+                Completionist: {completionistTimeRange[0]}h -{" "}
+                {completionistTimeRange[1]}h
+              </Label>
+              <Slider
+                min={0}
+                max={500}
+                step={1}
+                value={completionistTimeRange}
+                onValueChange={(value) =>
+                  setCompletionistTimeRange(value as [number, number])
+                }
+                className="invert"
+              />
+            </div>
           </div>
         </div>
       </div>
-      <div id="entryList" className="flex-1 overflow-hidden p-4">
+      <div id="entryList" className="mr-4 flex-1 overflow-hidden p-4">
         <div className="grid h-full grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-2 overflow-y-auto">
           {filteredData.map((entry) => (
             <BacklogEntry
