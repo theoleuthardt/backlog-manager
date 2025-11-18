@@ -2,15 +2,23 @@
 import React, { type ReactNode } from "react";
 import { useRef } from "react";
 import { Button } from "shadcn_components/ui/button";
+import Image from "next/image";
 
 interface ImportCSVButtonProps {
-  id: string;
-  disabled: boolean;
+  id?: string;
+  disabled?: boolean;
   className?: string;
-  children: ReactNode;
+  children?: ReactNode;
+  iconOnly?: boolean;
 }
 
-export const ImportCSVButton = (props: ImportCSVButtonProps) => {
+export const ImportCSVButton = ({
+  id = "import-csv-button",
+  disabled = false,
+  className = "",
+  children,
+  iconOnly = false,
+}: ImportCSVButtonProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleButtonClick = () => {
@@ -27,13 +35,22 @@ export const ImportCSVButton = (props: ImportCSVButtonProps) => {
   return (
     <>
       <Button
-        id={props.id}
-        className={`relative mb-4 h-[2.5rem] w-[10rem] rounded-3xl border-0 bg-blue-700 p-4 font-bold text-white hover:bg-blue-800 hover:text-white ${props.className}`}
+        id={id}
+        className={`border-0 font-bold text-white ${className}`}
         variant="outline"
-        disabled={props.disabled}
+        disabled={disabled}
         onClick={handleButtonClick}
       >
-        {props.children}
+        {iconOnly ? (
+          <Image
+            src="/csv_import.png"
+            alt="import CSV"
+            width={32}
+            height={32}
+          />
+        ) : (
+          children
+        )}
       </Button>
       <input
         ref={fileInputRef}

@@ -30,7 +30,9 @@ export function Navbar(props: NavbarProps) {
 
       case "navigate":
       default:
-        router.push(link.href);
+        if (link.href != null) {
+          router.push(link.href);
+        }
         break;
     }
   };
@@ -52,17 +54,26 @@ export function Navbar(props: NavbarProps) {
           </span>
         </Link>
       </div>
-      <div className="flex flex-row space-x-8">
-        {props.navbarLinks.map((link) => (
-          <Link
-            key={link.id}
-            href={link.href}
-            onClick={(e) => handleClick(e, link)}
-            className="hover:underline"
-          >
-            {link.content}
-          </Link>
-        ))}
+      <div className="flex flex-row items-center space-x-8">
+        {props.navbarLinks.map((link) => {
+          if (link.type === "component") {
+            return (
+              <div className="!h-8 !w-8 !border-0 !p-0" key={link.id}>
+                {link.component}
+              </div>
+            );
+          }
+          return (
+            <Link
+              key={link.id}
+              href={link.href || "#"}
+              onClick={(e) => handleClick(e, link)}
+              className="bg-transparent hover:underline"
+            >
+              {link.content}
+            </Link>
+          );
+        })}
       </div>
     </nav>
   );

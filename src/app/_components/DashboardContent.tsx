@@ -1,16 +1,19 @@
 "use client";
 import React, { useState, useMemo } from "react";
-import Image from "next/image";
+import { BacklogEntry, SearchBar } from "components";
 import {
-  BacklogEntry,
-  CustomDropdownMenu,
-  UniSlider,
-  SearchBar,
-  ImportCSVButton,
-  ExportCSVButton,
-  EntryCreationDialog,
-} from "components";
-import { dropdownData } from "~/constants/dropdownData";
+  ToggleGroup,
+  ToggleGroupItem,
+} from "shadcn_components/ui/toggle-group";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "shadcn_components/ui/dropdown-menu";
+import { Checkbox } from "shadcn_components/ui/checkbox";
+import { Slider } from "shadcn_components/ui/slider";
+import { Label } from "shadcn_components/ui/label";
 
 interface BacklogEntryData {
   id: number;
@@ -34,61 +37,326 @@ interface DashboardContentProps {
 
 export const DashboardContent = ({ initialData }: DashboardContentProps) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [ownedOnly, setOwnedOnly] = useState(false);
+  const [interestRange, setInterestRange] = useState<[number, number]>([1, 10]);
+  const [reviewStarsRange, setReviewStarsRange] = useState<[number, number]>([
+    1, 5,
+  ]);
+  const [mainTimeRange, setMainTimeRange] = useState<[number, number]>([
+    0, 500,
+  ]);
+  const [mainExtraTimeRange, setMainExtraTimeRange] = useState<
+    [number, number]
+  >([0, 500]);
+  const [completionistTimeRange, setCompletionistTimeRange] = useState<
+    [number, number]
+  >([0, 500]);
+
+  const allPlatforms = useMemo(() => {
+    const platforms = new Set<string>();
+    initialData.forEach((entry) => {
+      entry.platform?.forEach((p) => platforms.add(p));
+    });
+    return Array.from(platforms).sort();
+  }, [initialData]);
+
+  const allGenres = useMemo(() => {
+    const genres = new Set<string>();
+    initialData.forEach((entry) => {
+      entry.genre?.forEach((g) => genres.add(g));
+    });
+    return Array.from(genres).sort();
+  }, [initialData]);
+
+  const statusOptions = [
+    "Not Started",
+    "In Progress",
+    "Completed",
+    "On Hold",
+    "Dropped",
+  ];
 
   const filteredData = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return initialData;
-    }
-    return initialData.filter((entry) =>
-      entry.title.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
-  }, [initialData, searchQuery]);
+    return initialData.filter((entry) => {
+      if (
+        searchQuery.trim() &&
+        !entry.title.toLowerCase().includes(searchQuery.toLowerCase())
+      ) {
+        return false;
+      }
+
+      if (selectedPlatforms.length > 0) {
+        const hasMatchingPlatform = entry.platform?.some((p) =>
+          selectedPlatforms.includes(p),
+        );
+        if (!hasMatchingPlatform) return false;
+      }
+
+      if (selectedGenres.length > 0) {
+        const hasMatchingGenre = entry.genre?.some((g) =>
+          selectedGenres.includes(g),
+        );
+        if (!hasMatchingGenre) return false;
+      }
+
+      if (selectedStatuses.length > 0 && entry.status) {
+        if (!selectedStatuses.includes(entry.status)) return false;
+      }
+
+      if (ownedOnly && !entry.owned) {
+        return false;
+      }
+
+      if (entry.interest !== undefined) {
+        if (
+          entry.interest < interestRange[0] ||
+          entry.interest > interestRange[1]
+        ) {
+          return false;
+        }
+      }
+
+      if (entry.reviewStars !== undefined) {
+        if (
+          entry.reviewStars < reviewStarsRange[0] ||
+          entry.reviewStars > reviewStarsRange[1]
+        ) {
+          return false;
+        }
+      }
+
+      if (entry.howLongToBeat) {
+        const [main, mainExtra, completionist] = entry.howLongToBeat;
+
+        if (
+          main !== undefined &&
+          (main < mainTimeRange[0] || main > mainTimeRange[1])
+        ) {
+          return false;
+        }
+
+        if (
+          mainExtra !== undefined &&
+          (mainExtra < mainExtraTimeRange[0] ||
+            mainExtra > mainExtraTimeRange[1])
+        ) {
+          return false;
+        }
+
+        if (
+          completionist !== undefined &&
+          (completionist < completionistTimeRange[0] ||
+            completionist > completionistTimeRange[1])
+        ) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [
+    initialData,
+    searchQuery,
+    selectedPlatforms,
+    selectedGenres,
+    selectedStatuses,
+    ownedOnly,
+    interestRange,
+    reviewStarsRange,
+    mainTimeRange,
+    mainExtraTimeRange,
+    completionistTimeRange,
+  ]);
 
   return (
     <div id="upperSection" className="flex min-h-30 gap-8 p-4">
-      <div id="leftBar" className="h-[23rem] w-48 flex-shrink-0 p-4">
-        <SearchBar
-          useIcon={true}
-          onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
-            setSearchQuery(e.target.value);
-          }}
-        />
-        <EntryCreationDialog />
-        <ImportCSVButton
-          id="csvImportButton"
-          className="relative mb-4 h-[2.5rem] w-[10rem] rounded-3xl border-0 bg-blue-700 p-4 font-bold text-white hover:bg-blue-800 hover:text-white"
-          disabled={false}
+      <div id="leftBar" className="h-[40rem] w-60 flex-shrink-0 p-4">
+        <div
+          id="filterOptions"
+          className="mb-4 h-full space-y-4 overflow-y-auto p-4"
         >
-          <Image
-            src="/csv_import.png"
-            alt="csv_import"
-            width={24}
-            height={24}
-          />
-          Import Backlog
-        </ImportCSVButton>
-        <ExportCSVButton
-          id="csvExportButton"
-          className="relative mb-4 h-[2.5rem] w-[10rem] rounded-3xl border-0 bg-blue-700 p-4 font-bold text-white hover:bg-blue-800 hover:text-white"
-          disabled={false}
-        >
-          <Image
-            src="/csv_export.png"
-            alt="csv_export"
-            width={24}
-            height={24}
-          />
-          Export Backlog
-        </ExportCSVButton>
-        <div id="filterOptions" className="mb-4 h-42 p-4 text-center">
-          <CustomDropdownMenu items={dropdownData} triggerText={"Dropdown 1"} />
-          <CustomDropdownMenu items={dropdownData} triggerText={"Dropdown 2"} />
-          <CustomDropdownMenu
-            items={dropdownData}
-            triggerText={"Dropdown 3"}
-            className="mb-10"
-          />
-          <UniSlider defaultValue={50} step={1} maxvalue={100} />
+          <div className="space-y-2">
+            <SearchBar
+              useIcon={true}
+              onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setSearchQuery(e.target.value);
+              }}
+            />
+            <Label className="text-sm font-medium text-white">Platform</Label>
+            <ToggleGroup
+              type="multiple"
+              value={selectedPlatforms}
+              onValueChange={setSelectedPlatforms}
+              className="flex flex-wrap justify-start gap-1"
+            >
+              {allPlatforms.map((platform) => (
+                <ToggleGroupItem
+                  key={platform}
+                  value={platform}
+                  className="h-8 px-2 text-xs data-[state=on]:bg-blue-700 data-[state=on]:text-white"
+                >
+                  {platform}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-white">Genre</Label>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="w-full rounded-md border border-white bg-black px-3 py-2 text-sm text-white hover:bg-white hover:text-black">
+                {selectedGenres.length > 0
+                  ? `${selectedGenres.length} selected`
+                  : "Select genres"}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="max-h-60 w-56 overflow-y-auto border-white bg-black">
+                {allGenres.map((genre) => (
+                  <DropdownMenuCheckboxItem
+                    key={genre}
+                    checked={selectedGenres.includes(genre)}
+                    onCheckedChange={(checked) => {
+                      setSelectedGenres(
+                        checked
+                          ? [...selectedGenres, genre]
+                          : selectedGenres.filter((g) => g !== genre),
+                      );
+                    }}
+                    className="text-white hover:bg-white hover:text-black"
+                  >
+                    {genre}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-white">Status</Label>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="w-full rounded-md border border-white bg-black px-3 py-2 text-sm text-white hover:bg-white hover:text-black">
+                {selectedStatuses.length > 0
+                  ? `${selectedStatuses.length} selected`
+                  : "Select status"}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56 border-white bg-black">
+                {statusOptions.map((status) => (
+                  <DropdownMenuCheckboxItem
+                    key={status}
+                    checked={selectedStatuses.includes(status)}
+                    onCheckedChange={(checked) => {
+                      setSelectedStatuses(
+                        checked
+                          ? [...selectedStatuses, status]
+                          : selectedStatuses.filter((s) => s !== status),
+                      );
+                    }}
+                    className="text-white hover:bg-white hover:text-black"
+                  >
+                    {status}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="owned"
+              checked={ownedOnly}
+              onCheckedChange={(checked) => setOwnedOnly(checked as boolean)}
+              className="border-white data-[state=checked]:bg-blue-700"
+            />
+            <Label
+              htmlFor="owned"
+              className="cursor-pointer text-sm font-medium text-white"
+            >
+              Owned only
+            </Label>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-white">
+              Interest: {interestRange[0]} - {interestRange[1]}
+            </Label>
+            <Slider
+              min={1}
+              max={10}
+              step={1}
+              value={interestRange}
+              onValueChange={(value) =>
+                setInterestRange(value as [number, number])
+              }
+              className="invert"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-white">
+              Review Stars: {reviewStarsRange[0]} - {reviewStarsRange[1]}
+            </Label>
+            <Slider
+              min={1}
+              max={5}
+              step={1}
+              value={reviewStarsRange}
+              onValueChange={(value) =>
+                setReviewStarsRange(value as [number, number])
+              }
+              className="invert"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-white">
+              Main Story: {mainTimeRange[0]}h - {mainTimeRange[1]}h
+            </Label>
+            <Slider
+              min={0}
+              max={500}
+              step={1}
+              value={mainTimeRange}
+              onValueChange={(value) =>
+                setMainTimeRange(value as [number, number])
+              }
+              className="invert"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-white">
+              Main + Extra: {mainExtraTimeRange[0]}h - {mainExtraTimeRange[1]}h
+            </Label>
+            <Slider
+              min={0}
+              max={500}
+              step={1}
+              value={mainExtraTimeRange}
+              onValueChange={(value) =>
+                setMainExtraTimeRange(value as [number, number])
+              }
+              className="invert"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-white">
+              Completionist: {completionistTimeRange[0]}h -{" "}
+              {completionistTimeRange[1]}h
+            </Label>
+            <Slider
+              min={0}
+              max={500}
+              step={1}
+              value={completionistTimeRange}
+              onValueChange={(value) =>
+                setCompletionistTimeRange(value as [number, number])
+              }
+              className="invert"
+            />
+          </div>
         </div>
       </div>
       <div id="entryList" className="flex-1 overflow-hidden p-4">

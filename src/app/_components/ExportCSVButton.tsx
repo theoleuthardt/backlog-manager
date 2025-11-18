@@ -1,26 +1,38 @@
 "use client";
 import type { ReactNode } from "react";
 import { Button } from "shadcn_components/ui/button";
+import Image from "next/image";
 
 interface ExportCSVButtonProps {
-  id: string;
-  disabled: boolean;
+  id?: string;
+  disabled?: boolean;
   className?: string;
-  children: ReactNode;
+  children?: ReactNode;
+  iconOnly?: boolean;
 }
 
-export const ExportCSVButton = (props: ExportCSVButtonProps) => {
+export const ExportCSVButton = ({
+  id = "export-csv-button",
+  disabled = false,
+  className = "",
+  children,
+  iconOnly = false,
+}: ExportCSVButtonProps) => {
   return (
     <Button
-      id={props.id}
-      className={`relative mb-4 h-[2.5rem] w-[10rem] rounded-3xl border-0 bg-blue-700 p-4 font-bold text-white hover:bg-blue-800 hover:text-white ${props.className}`}
+      id={id}
+      className={`border-0 bg-blue-700 font-bold text-white hover:bg-blue-800 hover:text-white ${className}`}
       variant="outline"
-      disabled={props.disabled}
+      disabled={disabled}
       onClick={() => {
         console.log("Export clicked!");
       }}
     >
-      {props.children}
+      {iconOnly ? (
+        <Image src="/csv_export.png" alt="export CSV" width={32} height={32} />
+      ) : (
+        children
+      )}
     </Button>
   );
 };
