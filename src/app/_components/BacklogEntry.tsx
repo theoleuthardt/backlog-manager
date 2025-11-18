@@ -31,11 +31,11 @@ interface BacklogEntryProps {
 export const BacklogEntry = (props: BacklogEntryProps) => {
   return (
     <div
-      className={`h-[14.0625rem] w-[9.375rem] cursor-pointer rounded-xl ${props.className}`}
+      className={`w-[9.375rem] cursor-pointer rounded-xl ${props.className}`}
     >
       <Dialog>
         <DialogTrigger asChild>
-          <div>
+          <div className="leading-[0]">
             <GameImage
               src={props.imageLink ?? ""}
               alt={props.imageAlt ?? ""}

@@ -385,7 +385,7 @@ export const DashboardContent = ({ initialData }: DashboardContentProps) => {
         </div>
       </div>
       <div id="entryList" className="mr-4 flex-1 overflow-hidden p-4">
-        <div className="grid h-full grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-2 overflow-y-auto">
+        <div className="grid h-full grid-cols-[repeat(auto-fill,minmax(150px,max-content))] content-start gap-x-2 gap-y-2 overflow-y-auto">
           {filteredData.map((entry) => (
             <BacklogEntry
               key={entry.id}
