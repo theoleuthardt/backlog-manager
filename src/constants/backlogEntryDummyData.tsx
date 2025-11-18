@@ -130,4 +130,17 @@ export const BacklogEntryDummyData = [
     note: "Das Spiel ist sehr schwer, aber ich habe es schon mal gespielt!",
     howLongToBeat: [9, 10, 17],
   },
+  {
+    id: 9,
+    title: "Donkey Kong Country Mania",
+    imageLink:
+      "https://howlongtobeat.com/games/162338_Donkey_Kong_Country_Mania.jpg",
+    imageAlt: "How to Beat Donkey Kong Country Mania",
+    genre: ["Scrolling", "Platform"],
+    platform: ["Super Nintendo"],
+    status: "Not Played",
+    owned: false,
+    interest: 3,
+    howLongToBeat: [3.5],
+  },
 ];
