@@ -7,6 +7,7 @@ export interface GameImageProps {
   alt: string;
   width: number;
   height: number;
+  className?: string;
 }
 
 export function GameImage(props: GameImageProps) {
@@ -23,7 +24,7 @@ export function GameImage(props: GameImageProps) {
       width={props.width}
       height={props.height}
       onError={handleError}
-      className="pointer-events-none rounded-xl"
+      className={`pointer-events-none rounded-xl ${props.className}`}
     />
   );
 }
