@@ -7,10 +7,6 @@ import pool from "../db";
 import argon2 from "argon2";
 import { createUser } from "../db/CRUD/create";
 
-/**
- * Module augmentation for `next-auth` types.
- * Erweitert Session und User um steamId.
- */
 declare module "next-auth" {
   interface Session extends DefaultSession {
     user: {
@@ -24,9 +20,6 @@ declare module "next-auth" {
   }
 }
 
-/**
- * NextAuth Konfiguration
- */
 export const authConfig: NextAuthConfig = {
   session: {
     strategy: "jwt",
