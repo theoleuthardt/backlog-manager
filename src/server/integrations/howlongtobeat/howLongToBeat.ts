@@ -1,5 +1,4 @@
-import {stringify} from "node:querystring";
-import type {HltbGame, HltbSearchResult, HltbSearchResultItem} from "~/server/integrations/types";
+import type {HltbGame, HltbSearchResult} from "~/server/integrations/types";
 
 export async function SearchGame(input: string) {
     const response = await fetch('https://hltbapi1.azurewebsites.net/hltb/search', {
