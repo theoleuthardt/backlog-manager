@@ -2,11 +2,14 @@
 import React from "react";
 import { Input } from "~/components/ui/input";
 import Image from "next/image";
+import { X } from "lucide-react";
 
 export interface SearchBarProps {
   placeholder?: string;
   className?: string;
   onInput?: Function;
+  onClear?: () => void;
+  value?: string;
   ref?: React.RefObject<HTMLInputElement>;
   useIcon: boolean;
 }
@@ -23,11 +26,21 @@ export const SearchBar = (props: SearchBarProps) => {
         ref={props.ref}
         type="search"
         placeholder={props.placeholder || "Search"}
-        className={`w-full border-2 ${props.useIcon ? "pl-10" : ""}`}
+        value={props.value}
+        className={`w-full border-2 ${props.useIcon ? "pl-10" : ""} ${props.value && props.onClear ? "pr-10" : ""}`}
         onInput={(e) => {
           if (props.onInput) props.onInput(e);
         }}
       />
+      {props.value && props.onClear && (
+        <button
+          onClick={props.onClear}
+          className="absolute inset-y-0 right-0 flex items-center pr-3 text-red-500 transition-colors hover:text-red-700"
+          type="button"
+        >
+          <X size={20} />
+        </button>
+      )}
     </div>
   );
 };
