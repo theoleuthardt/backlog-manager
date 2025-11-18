@@ -1,10 +1,6 @@
 name: CI Tests
 
 on:
-  push:
-    branches:
-      - main
-      - 27-testing-workflow-for-pull-requests
   pull_request:
     branches:
       - main
