@@ -18,13 +18,17 @@ export function GameImage(props: GameImageProps) {
   };
 
   return (
-    <Image
-      src={proxyUrl}
-      alt={props.alt}
-      width={props.width}
-      height={props.height}
-      onError={handleError}
-      className={`pointer-events-none rounded-xl ${props.className}`}
-    />
+    <div
+      className="relative overflow-hidden rounded-xl"
+      style={{ width: `${props.width}px`, height: `${props.height}px` }}
+    >
+      <Image
+        src={proxyUrl}
+        alt={props.alt}
+        fill
+        onError={handleError}
+        className={`pointer-events-none object-cover ${props.className}`}
+      />
+    </div>
   );
 }
