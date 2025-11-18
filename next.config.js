@@ -13,6 +13,13 @@ const config = {
     "10.20.*",
   ],
   images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "howlongtobeat.com",
+        pathname: "/**",
+      },
+    ],
     domains: [],
     unoptimized: false,
     localPatterns: [
