@@ -45,7 +45,7 @@ describe('Database Read Operations', () => {
         await createCategory(postgresPool, 1, "Adventure", "#00FF00")
         await createCategory(postgresPool, 2, "Indie", "#0000FF")
 
-        await createBacklogEntry(postgresPool, 1, "Elden Ring", "RPG", "PC", "Not Started", true, 2, new Date(), "Pictures/EldenRing.jpg", "", 4, "This is a review", "This is a note")
+        await createBacklogEntry(postgresPool, 1, "Elden Ring", "RPG", "PC", "Not Started", true, 2, new Date(), "Pictures/EldenRing.jpg", 50, 100, 150, 4, "This is a review", "This is a note")
         await createBacklogEntry(postgresPool, 1, "Hollow Knight", "Metroidvania", "PC", "In Progress", false, 3)
         await createBacklogEntry(postgresPool, 2, "Elden Ring", "RPG", "PC", "Completed", true, 7)
 

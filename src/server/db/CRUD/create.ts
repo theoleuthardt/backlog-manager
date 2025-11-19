@@ -23,10 +23,10 @@ export async function createCategory(pool: Pool, userId: number, categoryName: s
     }
 }
 
-export async function createBacklogEntry(pool: Pool, userId: number, title: string, genre: string, platform: string, status: string, owned: boolean, interest: number, releaseDate?: Date, imageLink?: string, howLongToBeat?: string, reviewStars?: number, review?: string, note?: string) {
-    const query = 'INSERT INTO "blm-system"."BacklogEntries" ("UserID", "Title", "Genre", "Platform", "Status", "Owned", "Interest", "ReleaseDate", "ImageLink", "HowLongToBeat", "ReviewStars", "Review", "Note") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *'
+export async function createBacklogEntry(pool: Pool, userId: number, title: string, genre: string, platform: string, status: string, owned: boolean, interest: number, releaseDate?: Date, imageLink?: string, mainTime?: number, mainPlusExtraTime?: number, completionTime?: number, reviewStars?: number, review?: string, note?: string) {
+    const query = 'INSERT INTO "blm-system"."BacklogEntries" ("UserID", "Title", "Genre", "Platform", "Status", "Owned", "Interest", "ReleaseDate", "ImageLink", "MainTime", "MainPlusExtraTime", "CompletionTime", "ReviewStars", "Review", "Note") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *'
     try {
-        const result = await pool.query(query, [userId, title, genre, platform, status, owned, interest, releaseDate || null, imageLink || null, howLongToBeat || null, reviewStars || null, review || null, note || null])
+        const result = await pool.query(query, [userId, title, genre, platform, status, owned, interest, releaseDate || null, imageLink || null, mainTime || null, mainPlusExtraTime || null, completionTime || null, reviewStars || null, review || null, note || null])
         return result.rows[0]
     } catch (error) {
         console.error('Error creating backlog entry:', error)

@@ -142,8 +142,8 @@ describe('Database Delete Operations', () => {
             await postgresPool.query('TRUNCATE TABLE "blm-system"."BacklogEntries" RESTART IDENTITY CASCADE')
 
             await createUser(postgresPool, "John Doe", "john@doe.com", "password123")
-            await createBacklogEntry(postgresPool, 1, "Elden Ring", "RPG", "PC", "Not Started", false, 3, null, null, null, null, null, "Note 1")
-            await createBacklogEntry(postgresPool, 1, "Hollow Knight", "Metroidvania", "PC", "In Progress", true, 4, new Date(), "Great game.jpg", "50-100", 5, "Great game", "Note 2")
+            await createBacklogEntry(postgresPool, 1, "Elden Ring", "RPG", "PC", "Not Started", false, 3, null, null, null, null, null, null, null,  "Note 1")
+            await createBacklogEntry(postgresPool, 1, "Hollow Knight", "Metroidvania", "PC", "In Progress", true, 4, new Date(), "Great game.jpg", 50, 100, 150, 5, "Great game", "Note 2")
         })
 
         it('should delete backlog entry and return deleted entry data', async () => {

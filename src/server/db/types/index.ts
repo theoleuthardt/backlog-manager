@@ -23,7 +23,9 @@ export interface BacklogEntryRow {
   platform: string;
   releaseDate?: string;
   imageLink?: string;
-  howLongToBeat?: string;
+  mainTime?: number;
+  mainPlusExtraTime?: number;
+  completionTime?: number;
   status: string;
   owned: boolean;
   interest: bigint;

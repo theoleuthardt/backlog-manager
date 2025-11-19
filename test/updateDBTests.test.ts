@@ -170,6 +170,7 @@ describe('Database Update Operations', () => {
                 null,
                 null,
                 null,
+                null,
                 "Initial note"
             )
             backlogEntryId = 1
@@ -187,7 +188,9 @@ describe('Database Update Operations', () => {
                 5,
                 new Date('2024-01-15'),
                 "image.jpg",
-                "50-100",
+                50,
+                100,
+                150,
                 5,
                 "Amazing game!",
                 "Finished after 100 hours"
@@ -266,6 +269,8 @@ describe('Database Update Operations', () => {
                 null,
                 null,
                 null,
+                null,
+                null,
                 4,
                 "Good game but has some flaws",
                 "Completed main story"
@@ -287,6 +292,8 @@ describe('Database Update Operations', () => {
                 "Completed",
                 true,
                 5,
+                null,
+                null,
                 null,
                 null,
                 null,

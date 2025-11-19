@@ -64,7 +64,9 @@ export const updateBacklogEntry = async (
     interest: number,
     releaseDate?: Date,
     imageLink?: string,
-    howLongToBeat?: string,
+    mainTime?: number,
+    mainPlusExtraTime?: number,
+    completionTime?: number,
     reviewStars?: number,
     review?: string,
     note?: string
@@ -73,10 +75,10 @@ export const updateBacklogEntry = async (
     try {
         const result = await client.query(
             `UPDATE "blm-system"."BacklogEntries" 
-       SET "Title" = $2, "Genre" = $3, "Platform" = $4, "Status" = $5, "Owned" = $6, "Interest" = $7, "ReleaseDate" = $8, "ImageLink" = $9, "HowLongToBeat" = $10, "ReviewStars" = $11, "Review" = $12, "Note" = $13, "UpdatedAt" = DATE_TRUNC('minute', CURRENT_TIMESTAMP) 
+       SET "Title" = $2, "Genre" = $3, "Platform" = $4, "Status" = $5, "Owned" = $6, "Interest" = $7, "ReleaseDate" = $8, "ImageLink" = $9, "MainTime" = $10, "MainPlusExtraTime" = $11, "CompletionTime" = $12, "ReviewStars" = $13, "Review" = $14, "Note" = $15, "UpdatedAt" = DATE_TRUNC('minute', CURRENT_TIMESTAMP) 
        WHERE "BacklogEntryID" = $1 
        RETURNING *`,
-            [backlogEntryID, title, genre, platform, status, owned, interest, releaseDate || null, imageLink || null, howLongToBeat || null, reviewStars || null, review || null, note || null]
+            [backlogEntryID, title, genre, platform, status, owned, interest, releaseDate || null, imageLink || null, mainTime || null, mainPlusExtraTime || null, completionTime || null, reviewStars || null, review || null, note || null]
         )
         return result.rows[0] as BacklogEntryRow
     } catch (error) {
