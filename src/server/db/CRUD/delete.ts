@@ -2,7 +2,6 @@ import { Pool } from 'pg'
 import type {UserRow} from "~/server/db/types";
 import type {CategoryRow} from "~/server/db/types";
 import type {BacklogEntryRow} from "~/server/db/types";
-import type {GameRow} from "~/server/db/types";
 import type {BacklogCategoryRow} from "~/server/db/types";
 
 export const deleteUser = async (pool: Pool, userID: number) => {
@@ -59,23 +58,6 @@ export const deleteBacklogEntry = async (pool: Pool, backlogEntryID: number) => 
     }
 }
 
-export const deleteGame = async (pool: Pool, gameID: number) => {
-    const client = await pool.connect()
-    try {
-        const result = await client.query(
-            `DELETE FROM "blm-system"."Games"
-             WHERE "GameID" = $1
-             RETURNING *`,
-            [gameID]
-        )
-        return result.rows[0] as GameRow
-    } catch (error) {
-        console.error('Error deleting game:', error)
-        throw error
-    } finally {
-        client.release()
-    }
-}
 
 export const removeBacklogEntryFromCategory = async (
     pool: Pool,

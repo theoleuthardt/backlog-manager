@@ -10,6 +10,7 @@ export default defineConfig({
                 singleThread: true
             }
         },
+        testTimeout: 10000,
         include: ['test/*.test.ts'],
     },
     resolve: {

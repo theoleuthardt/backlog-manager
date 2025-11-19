@@ -2,8 +2,6 @@ import { Pool } from 'pg'
 import type {UserRow} from "~/server/db/types";
 import type {CategoryRow} from "~/server/db/types";
 import type {BacklogEntryRow} from "~/server/db/types";
-import type {GameRow} from "~/server/db/types";
-import type {BacklogCategoryRow} from "~/server/db/types";
 
 export const updateUser = async (
     pool: Pool,
@@ -58,9 +56,17 @@ export const updateCategory = async (
 export const updateBacklogEntry = async (
     pool: Pool,
     backlogEntryID: number,
+    title: string,
+    genre: string,
+    platform: string,
     status: string,
     owned: boolean,
     interest: number,
+    releaseDate?: Date,
+    imageLink?: string,
+    mainTime?: number,
+    mainPlusExtraTime?: number,
+    completionTime?: number,
     reviewStars?: number,
     review?: string,
     note?: string
@@ -69,10 +75,10 @@ export const updateBacklogEntry = async (
     try {
         const result = await client.query(
             `UPDATE "blm-system"."BacklogEntries" 
-       SET "Status" = $2, "Owned" = $3, "Interest" = $4, "ReviewStars" = $5, "Review" = $6, "Note" = $7, "UpdatedAt" = DATE_TRUNC('minute', CURRENT_TIMESTAMP) 
+       SET "Title" = $2, "Genre" = $3, "Platform" = $4, "Status" = $5, "Owned" = $6, "Interest" = $7, "ReleaseDate" = $8, "ImageLink" = $9, "MainTime" = $10, "MainPlusExtraTime" = $11, "CompletionTime" = $12, "ReviewStars" = $13, "Review" = $14, "Note" = $15, "UpdatedAt" = DATE_TRUNC('minute', CURRENT_TIMESTAMP) 
        WHERE "BacklogEntryID" = $1 
        RETURNING *`,
-            [backlogEntryID, status, owned, interest, reviewStars || null, review || null, note || null]
+            [backlogEntryID, title, genre, platform, status, owned, interest, releaseDate || null, imageLink || null, mainTime || null, mainPlusExtraTime || null, completionTime || null, reviewStars || null, review || null, note || null]
         )
         return result.rows[0] as BacklogEntryRow
     } catch (error) {
@@ -83,30 +89,3 @@ export const updateBacklogEntry = async (
     }
 }
 
-export const updateGame = async (
-    pool: Pool,
-    gameID: number,
-    title: string,
-    genre: string,
-    platform: string,
-    releaseDate?: Date,
-    imageLink?: string,
-    howLongToBeat?: number[]
-) => {
-    const client = await pool.connect()
-    try {
-        const result = await client.query(
-            `UPDATE "blm-system"."Games" 
-       SET "Title" = $2, "Genre" = $3, "Platform" = $4, "ReleaseDate" = $5, "ImageLink" = $6, "HowLongToBeat" = $7, "UpdatedAt" = DATE_TRUNC('minute', CURRENT_TIMESTAMP) 
-       WHERE "GameID" = $1 
-       RETURNING *`,
-            [gameID, title, genre, platform, releaseDate || null, imageLink || null, howLongToBeat || null]
-        )
-        return result.rows[0] as GameRow
-    } catch (error) {
-        console.error('Error updating game:', error)
-        throw error
-    } finally {
-        client.release()
-    }
-}
