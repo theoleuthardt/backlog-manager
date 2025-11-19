@@ -14,17 +14,6 @@ CREATE TABLE IF NOT EXISTS "blm-system"."Users"(
     "UpdatedAt" TIMESTAMP NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP)
 );
 
-CREATE TABLE IF NOT EXISTS "blm-system"."Games"(
-    "GameID" BIGSERIAL PRIMARY KEY,
-    "Title" VARCHAR(255) NOT NULL,
-    "Genre" VARCHAR(100) NOT NULL,
-    "Platform" VARCHAR(100) NOT NULL,
-    "ReleaseDate" DATE,
-    "ImageLink" TEXT,
-    "HowLongToBeat" INTEGER[],
-    "CreatedAt" TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP),
-    "UpdatedAt" TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP)
-);
 
 CREATE TABLE IF NOT EXISTS "blm-system"."Categories" (
     "CategoryID"   BIGSERIAL PRIMARY KEY,
@@ -41,7 +30,14 @@ CREATE TABLE IF NOT EXISTS "blm-system"."Categories" (
 CREATE TABLE IF NOT EXISTS "blm-system"."BacklogEntries" (
     "BacklogEntryID" BIGSERIAL PRIMARY KEY,
     "UserID"         BIGINT NOT NULL,
-    "GameID"         BIGINT NOT NULL,
+    "Title"          VARCHAR(255) NOT NULL,
+    "Genre"          VARCHAR(100) NOT NULL,
+    "Platform"       VARCHAR(100) NOT NULL,
+    "ReleaseDate"    DATE,
+    "ImageLink"      TEXT,
+    "MainTime"       INTEGER,
+    "MainPlusExtraTime" INTEGER,
+    "CompletionTime" INTEGER,
     "Status"         VARCHAR(20) NOT NULL CHECK ("Status" IN ('Not Started', 'In Progress', 'Completed', 'On Hold', 'Dropped')),
     "Owned"          BOOLEAN NOT NULL            DEFAULT FALSE,
     "Interest"       INTEGER NOT NULL CHECK ("Interest" >= 1 AND "Interest" <= 10),
@@ -49,13 +45,10 @@ CREATE TABLE IF NOT EXISTS "blm-system"."BacklogEntries" (
     "Review"         TEXT,
     "Note"           TEXT,
     "CompletedAt"    TIMESTAMP WITHOUT TIME ZONE,
-    "CreatedAt" TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP),
-    "UpdatedAt" TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP),
+    "CreatedAt"      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP),
+    "UpdatedAt"      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP),
     FOREIGN KEY ("UserID") REFERENCES "blm-system"."Users"("UserID")
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY ("GameID") REFERENCES "blm-system"."Games"("GameID")
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    UNIQUE("UserID", "GameID")
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS "blm-system"."CategoryBacklogEntries" (
@@ -72,7 +65,6 @@ CREATE TABLE IF NOT EXISTS "blm-system"."CategoryBacklogEntries" (
 
 CREATE INDEX IF NOT EXISTS idx_categories_userid ON "blm-system"."Categories"("UserID");
 CREATE INDEX IF NOT EXISTS idx_backlogentries_userid ON "blm-system"."BacklogEntries"("UserID");
-CREATE INDEX IF NOT EXISTS idx_backlogentries_gameid ON "blm-system"."BacklogEntries"("GameID");
 CREATE INDEX IF NOT EXISTS idx_backlogentries_status ON "blm-system"."BacklogEntries"("Status");
 
 -- set CompletedAt automatically if status is set to 'Completed'
