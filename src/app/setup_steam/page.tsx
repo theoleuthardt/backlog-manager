@@ -42,7 +42,7 @@ export default function SteamIdSetupPage() {
   }, [success, router]);
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-black to-blue-900 px-4 text-white">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-black px-4 text-white">
       <div className="container max-w-md">
         <h1 className="mb-6 text-4xl font-extrabold text-white">
           Steam ID Required
