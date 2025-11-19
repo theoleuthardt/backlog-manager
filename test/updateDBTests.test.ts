@@ -162,7 +162,6 @@ describe('Database Update Operations', () => {
             await postgresPool.query('TRUNCATE TABLE "blm-system"."BacklogEntries" RESTART IDENTITY CASCADE')
 
             await createUser(postgresPool, "John Doe", "john@doe.com", "password123", "12345")
-            await createUser(postgresPool, "John Doe", "john@doe.com", "password123")
 
             await createBacklogEntry(
                 postgresPool,
