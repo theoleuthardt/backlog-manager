@@ -14,6 +14,7 @@ import { XIcon } from "lucide-react";
 
 interface BacklogEntryProps {
   title: string;
+  playtime?: number;
   imageLink: string;
   imageAlt?: string;
   genre?: string[];

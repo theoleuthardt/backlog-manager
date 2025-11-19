@@ -2,6 +2,7 @@ export const BacklogEntryDummyData = [
   {
     id: 1,
     title: "The First Berserker Khazan",
+    playtime: 66,
     imageLink:
       "https://howlongtobeat.com/games/141849_The_First_Berserker_Khazan.jpg",
     imageAlt: "How to Beat Berserker Khazan",
@@ -18,6 +19,7 @@ export const BacklogEntryDummyData = [
   {
     id: 2,
     title: "Batman: Arkham Knight",
+    playtime: 40,
     imageLink:
       "https://howlongtobeat.com/games/Batman_Arkham_Knight_Cover_Art.jpg",
     imageAlt: "How to Beat Batman",
@@ -42,6 +44,7 @@ export const BacklogEntryDummyData = [
   {
     id: 3,
     title: "SnowRunner",
+    playtime: 79,
     imageLink: "https://howlongtobeat.com/games/77675_SnowRunner.jpg",
     imageAlt: "How to Beat SnowRunner",
     genre: ["Racing/Driving", "Simulation"],
@@ -57,6 +60,7 @@ export const BacklogEntryDummyData = [
   {
     id: 4,
     title: "Super Mario Galaxy 2",
+    playtime: 2,
     imageLink:
       "https://howlongtobeat.com/games/Super_Mario_Galaxy_2_Box_Art.jpg",
     imageAlt: "How to Beat Super Mario Galaxy",
@@ -73,6 +77,7 @@ export const BacklogEntryDummyData = [
   {
     id: 5,
     title: "Marvel's Spider-Man 2",
+    playtime: 33,
     imageLink: "https://howlongtobeat.com/games/79769_Marvels_Spider-Man_2.png",
     imageAlt: "How to Beat Marvel's Spider-Man 2",
     genre: ["Action", "Adventure", "Superhero"],
@@ -88,6 +93,7 @@ export const BacklogEntryDummyData = [
   {
     id: 6,
     title: "Borderlands 4",
+    playtime: 55,
     imageLink: "https://howlongtobeat.com/games/91605_Borderlands_4.jpg",
     imageAlt: "How to Beat Borderlands 4",
     genre: ["First-Person", "Shooter"],
@@ -103,6 +109,7 @@ export const BacklogEntryDummyData = [
   {
     id: 7,
     title: "Sea of Thieves",
+    playtime: 30,
     imageLink: "https://howlongtobeat.com/games/38053_Sea_of_Thieves.jpg",
     imageAlt: "How to Beat Sea of Thieves",
     genre: ["Action", "Adventure", "Open World"],
@@ -118,6 +125,7 @@ export const BacklogEntryDummyData = [
   {
     id: 8,
     title: "Dispatch",
+    playtime: 0,
     imageLink: "https://howlongtobeat.com/games/160618_Dispatch.jpg",
     imageAlt: "How to Beat Dispatch",
     genre: ["Action", "Adventure", "Management"],
@@ -133,6 +141,7 @@ export const BacklogEntryDummyData = [
   {
     id: 9,
     title: "Donkey Kong Country Mania",
+    playtime: 0,
     imageLink:
       "https://howlongtobeat.com/games/162338_Donkey_Kong_Country_Mania.jpg",
     imageAlt: "How to Beat Donkey Kong Country Mania",

@@ -19,6 +19,7 @@ import Image from "next/image";
 interface BacklogEntryData {
   id: number;
   title: string;
+  playtime?: number;
   imageLink: string;
   imageAlt?: string;
   genre?: string[];
@@ -56,6 +57,20 @@ export const DashboardContent = ({ initialData }: DashboardContentProps) => {
     [number, number]
   >([0, 500]);
   const [isLeftBarOpen, setIsLeftBarOpen] = useState(true);
+
+  const maxPlaytime = useMemo(() => {
+    const max = Math.max(
+      ...initialData.map((entry) => entry.playtime ?? 0),
+      0,
+    );
+    // Round to even number
+    return max % 2 === 0 ? max : max + 1;
+  }, [initialData]);
+
+  const [playtimeRange, setPlaytimeRange] = useState<[number, number]>([
+    0,
+    maxPlaytime,
+  ]);
 
   const allPlatforms = useMemo(() => {
     const platforms = new Set<string>();
@@ -130,6 +145,15 @@ export const DashboardContent = ({ initialData }: DashboardContentProps) => {
         }
       }
 
+      if (entry.playtime !== undefined) {
+        if (
+          entry.playtime < playtimeRange[0] ||
+          entry.playtime > playtimeRange[1]
+        ) {
+          return false;
+        }
+      }
+
       if (entry.howLongToBeat) {
         const [main, mainExtra, completionist] = entry.howLongToBeat;
 
@@ -168,6 +192,7 @@ export const DashboardContent = ({ initialData }: DashboardContentProps) => {
     ownedOnly,
     interestRange,
     reviewStarsRange,
+    playtimeRange,
     mainTimeRange,
     mainExtraTimeRange,
     completionistTimeRange,
@@ -334,6 +359,22 @@ export const DashboardContent = ({ initialData }: DashboardContentProps) => {
 
             <div className="space-y-2">
               <Label className="text-sm font-medium text-white">
+                Playtime: {playtimeRange[0]}h - {playtimeRange[1]}h
+              </Label>
+              <Slider
+                min={0}
+                max={maxPlaytime}
+                step={1}
+                value={playtimeRange}
+                onValueChange={(value) =>
+                  setPlaytimeRange(value as [number, number])
+                }
+                className="invert"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-white">
                 Main Story: {mainTimeRange[0]}h - {mainTimeRange[1]}h
               </Label>
               <Slider
@@ -390,6 +431,7 @@ export const DashboardContent = ({ initialData }: DashboardContentProps) => {
             <BacklogEntry
               key={entry.id}
               title={entry.title}
+              playtime={entry.playtime}
               imageLink={entry.imageLink}
               imageAlt={entry.imageAlt}
               genre={entry.genre}
