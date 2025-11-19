@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   try {
     const { username, email, password, steamId } = await req.json();
 
-    if (!username || !email || !password || !steamId) {
+    if (!username || !email || !password) {
       return NextResponse.json({ message: "Missing fields" }, { status: 400 });
     }
 
