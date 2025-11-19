@@ -19,14 +19,6 @@ export default async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (isProtectedPath && session?.user) {
-    const steamId = session.user.steamId ?? null;
-
-    if (!steamId || steamId.trim() === "") {
-      const steamSetupUrl = new URL("/setup_steam", request.url);
-      return NextResponse.redirect(steamSetupUrl);
-    }
-  }
 
   return NextResponse.next();
 }
