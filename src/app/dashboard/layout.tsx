@@ -1,4 +1,4 @@
-import "../styles/globals.css";
+import "../../styles/globals.css";
 
 import { type Metadata } from "next";
 import { Geist } from "next/font/google";
@@ -6,8 +6,8 @@ import { Geist } from "next/font/google";
 import { TRPCReactProvider } from "~/trpc/react";
 
 export const metadata: Metadata = {
-  title: "Backlog-Manager",
-  description: "A manager for your gaming backlog",
+  title: "Dashboard",
+  description: "Your Backlog Manager Dashboard",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 

@@ -12,6 +12,22 @@ const config = {
     "10.20.146.74",
     "10.20.*",
   ],
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "howlongtobeat.com",
+        pathname: "/**",
+      },
+    ],
+    domains: [],
+    unoptimized: false,
+    localPatterns: [
+      {
+        pathname: "/**",
+      },
+    ],
+  },
 };
 
 export default config;
