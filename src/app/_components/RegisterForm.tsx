@@ -89,10 +89,9 @@ export default function RegisterForm() {
       <input
         type="text"
         name="steamId"
-        placeholder="Steam ID"
+        placeholder="Steam ID (optional)"
         value={form.steamId}
         onChange={handleChange}
-        required
         className="w-full rounded-lg border border-gray-600 bg-black/20 px-4 py-3 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
       />
 
