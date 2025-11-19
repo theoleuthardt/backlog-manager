@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { api } from "~/trpc/react";
 
 export default function RegisterForm() {
   const [form, setForm] = useState({
@@ -10,42 +11,28 @@ export default function RegisterForm() {
     password: "",
     steamId: "",
   });
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const register = api.user.register.useMutation();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const handleChange = (e: any) =>
+    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setError("");
-
     try {
-      const res = await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+      await register.mutateAsync({
+        username: form.username,
+        email: form.email,
+        password: form.password,
+        steamId: form.steamId || undefined,
       });
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || "Registration failed");
-      }
-
-      setSuccess(true);
+      router.push("/api/auth/signin?callbackUrl=/dashboard");
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || "Failed to register user");
     }
   };
-
-  useEffect(() => {
-    if (success) {
-      router.push("/api/auth/signin?callbackUrl=/dashboard");
-    }
-  }, [success, router]);
-
   return (
     <form
       onSubmit={handleSubmit}

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { api } from "~/trpc/react";
 
 export default function SteamIdSetupPage() {
   const [steamId, setSteamId] = useState("");
@@ -9,29 +10,21 @@ export default function SteamIdSetupPage() {
   const [success, setSuccess] = useState(false);
   const router = useRouter();
 
+  const updateSteamId = api.user.updateSteamId.useMutation();
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSteamId(e.target.value);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setError("");
 
     try {
-      const res = await fetch("/api/user/update-steamid", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ steamId }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || "Updating Steam ID failed");
-      }
-
+      await updateSteamId.mutateAsync({ steamId });
       setSuccess(true);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || "Failed to update Steam ID");
     }
   };
 
