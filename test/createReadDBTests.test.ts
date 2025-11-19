@@ -86,6 +86,7 @@ describe('Database Read Operations', () => {
                 PasswordHash: '1234567890',
                 SteamId: '0987654321'
             })
+
             const diffCreated = Math.abs(new Date(user.CreatedAt).getTime() - now.getTime())
             const diffUpdated = Math.abs(new Date(user.UpdatedAt).getTime() - now.getTime())
 
@@ -148,7 +149,6 @@ describe('Database Read Operations', () => {
         it('should get backlog entries by user', async () => {
             const entries = await getBacklogEntriesByUser(postgresPool, 1)
             expect(entries).toHaveLength(2)
-        
             const entry = entries[0]
             expect(entry).toMatchObject({
                 BacklogEntryID: '1',
@@ -161,10 +161,10 @@ describe('Database Read Operations', () => {
                 Review: 'This is a review',
                 Note: 'This is a note'
             })
-        
+
+
             const diffCreated = Math.abs(new Date(entry.CreatedAt).getTime() - now.getTime())
             const diffUpdated = Math.abs(new Date(entry.UpdatedAt).getTime() - now.getTime())
-        
             // Allow for a time difference of up to 2 hours to account for possible timezone shifts
             expect(diffCreated).toBeLessThanOrEqual(7320000)
             expect(diffUpdated).toBeLessThanOrEqual(7320000)
