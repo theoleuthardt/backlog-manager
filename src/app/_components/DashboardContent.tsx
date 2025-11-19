@@ -56,13 +56,10 @@ export const DashboardContent = ({ initialData }: DashboardContentProps) => {
   const [completionistTimeRange, setCompletionistTimeRange] = useState<
     [number, number]
   >([0, 500]);
-  const [isLeftBarOpen, setIsLeftBarOpen] = useState(true);
+  const [isLeftBarOpen, setIsLeftBarOpen] = useState(false);
 
   const maxPlaytime = useMemo(() => {
-    const max = Math.max(
-      ...initialData.map((entry) => entry.playtime ?? 0),
-      0,
-    );
+    const max = Math.max(...initialData.map((entry) => entry.playtime ?? 0), 0);
     // Round to even number
     return max % 2 === 0 ? max : max + 1;
   }, [initialData]);
