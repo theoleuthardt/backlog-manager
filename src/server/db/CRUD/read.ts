@@ -1,9 +1,4 @@
 import type { Pool } from "pg";
-import type {UserRow} from "~/server/db/types";
-import type {CategoryRow} from "~/server/db/types";
-import type {BacklogEntryRow} from "~/server/db/types";
-import type {GameRow} from "~/server/db/types";
-import type {BacklogCategoryRow} from "~/server/db/types";
 
 export async function getAllUsers(pool: Pool) {
     const query = 'SELECT * FROM "blm-system"."Users"'
@@ -49,27 +44,6 @@ export async function getUserByEmail(pool: Pool, email: string) {
     }
 }
 
-export async function getGameById(pool: Pool, gameId: number) {
-    const query = 'SELECT * FROM "blm-system"."Games" WHERE "GameID" = $1'
-    try {
-        const result = await pool.query(query, [gameId])
-        return result.rows[0]
-    } catch (error) {
-        console.error('Error getting game by id:', error)
-        throw error
-    }
-}
-
-export async function getAllGames(pool: Pool) {
-    const query = 'SELECT * FROM "blm-system"."Games"'
-    try {
-        const result = await pool.query(query)
-        return result.rows
-    } catch (error) {
-        console.error('Error getting all games:', error)
-        throw error
-    }
-}
 
 export async function getCategoriesByUser(pool: Pool, userId: number) {
     const query = 'SELECT * FROM "blm-system"."Categories" WHERE "UserID" = $1'

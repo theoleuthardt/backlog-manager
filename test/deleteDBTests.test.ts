@@ -3,15 +3,11 @@ import { Pool } from 'pg'
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql'
 import fs from 'fs'
 import path from 'path'
-import { createUser, createGame, createCategory, createBacklogEntry, addCategoryToBacklogEntry } from '~/server/db/CRUD/create'
+import { createUser, createCategory, createBacklogEntry, addCategoryToBacklogEntry } from '~/server/db/CRUD/create'
 import {
     getAllUsers,
-    getUserById,
-    getAllGames,
-    getGameById,
     getCategoriesByUser,
     getBacklogEntriesByUser,
-    getBacklogEntryById,
     getCategoriesForBacklogEntry,
     getBacklogEntriesForCategory
 } from "~/server/db/CRUD/read"
@@ -19,7 +15,6 @@ import {
     deleteUser,
     deleteCategory,
     deleteBacklogEntry,
-    deleteGame,
     removeBacklogEntryFromCategory,
     deleteCategoryBacklogEntries
 } from "~/server/db/CRUD/delete"
@@ -84,8 +79,7 @@ describe('Database Delete Operations', () => {
 
         it('should cascade delete related data when user is deleted', async () => {
             await createCategory(postgresPool, 1, "Action", "#FF0000")
-            await createGame(postgresPool, "Test Game", "RPG", "PC", new Date())
-            await createBacklogEntry(postgresPool, 1, 1, "Not Started", false, 3)
+            await createBacklogEntry(postgresPool, 1, "Test Game", "RPG", "PC", "Not Started", false, 3)
 
             await deleteUser(postgresPool, 1)
 
@@ -129,8 +123,7 @@ describe('Database Delete Operations', () => {
         })
 
         it('should cascade delete CategoryBacklogEntries relationships', async () => {
-            await createGame(postgresPool, "Test Game", "RPG", "PC", new Date())
-            await createBacklogEntry(postgresPool, 1, 1, "Not Started", false, 3)
+            await createBacklogEntry(postgresPool, 1, "Test Game", "RPG", "PC", "Not Started", false, 3)
             await addCategoryToBacklogEntry(postgresPool, 1, 1)
 
             const categoriesBefore = await getCategoriesForBacklogEntry(postgresPool, 1)
@@ -143,63 +136,15 @@ describe('Database Delete Operations', () => {
         })
     })
 
-    describe('Game Delete Operations', () => {
-        beforeEach(async () => {
-            await postgresPool.query('TRUNCATE TABLE "blm-system"."Games" RESTART IDENTITY CASCADE')
-            await createGame(postgresPool, "Elden Ring", "RPG", "PC", new Date(), "image.jpg", [50, 100])
-            await createGame(postgresPool, "Hollow Knight", "Metroidvania", "PC", new Date())
-        })
-
-        it('should delete game and return deleted game data', async () => {
-            const deletedGame = await deleteGame(postgresPool, 1)
-
-            expect(deletedGame.GameID).toBe('1')
-            expect(deletedGame.Title).toBe('Elden Ring')
-            expect(deletedGame.Genre).toBe('RPG')
-            expect(deletedGame.Platform).toBe('PC')
-            expect(deletedGame.ImageLink).toBe('image.jpg')
-            expect(deletedGame.HowLongToBeat).toEqual([50, 100])
-        })
-
-        it('should remove game from database', async () => {
-            await deleteGame(postgresPool, 1)
-
-            const games = await getAllGames(postgresPool)
-            expect(games).toHaveLength(1)
-            expect(games[0].Title).toBe('Hollow Knight')
-        })
-
-        it('should return undefined when deleting non-existent game', async () => {
-            const deletedGame = await deleteGame(postgresPool, 999)
-            expect(deletedGame).toBeUndefined()
-        })
-
-        it('should cascade delete related backlog entries', async () => {
-            await createBacklogEntry(postgresPool, 1, 1, "Not Started", false, 3)
-            await createBacklogEntry(postgresPool, 1, 2, "In Progress", true, 4)
-
-            const entriesBefore = await getBacklogEntriesByUser(postgresPool, 1)
-            expect(entriesBefore).toHaveLength(2)
-
-            await deleteGame(postgresPool, 1)
-
-            const entriesAfter = await getBacklogEntriesByUser(postgresPool, 1)
-            expect(entriesAfter).toHaveLength(1)
-            expect(entriesAfter[0].GameID).toBe('2')
-        })
-    })
-
     describe('Backlog Entry Delete Operations', () => {
         beforeEach(async () => {
             await postgresPool.query('TRUNCATE TABLE "blm-system"."Users" RESTART IDENTITY CASCADE')
-            await postgresPool.query('TRUNCATE TABLE "blm-system"."Games" RESTART IDENTITY CASCADE')
             await postgresPool.query('TRUNCATE TABLE "blm-system"."BacklogEntries" RESTART IDENTITY CASCADE')
 
+
             await createUser(postgresPool, "John Doe", "john@doe.com", "password123", "12345")
-            await createGame(postgresPool, "Elden Ring", "RPG", "PC", new Date())
-            await createGame(postgresPool, "Hollow Knight", "Metroidvania", "PC", new Date())
-            await createBacklogEntry(postgresPool, 1, 1, "Not Started", false, 3, null, null, "Note 1")
-            await createBacklogEntry(postgresPool, 1, 2, "In Progress", true, 4, 5, "Great game", "Note 2")
+            await createBacklogEntry(postgresPool, 1, "Elden Ring", "RPG", "PC", "Not Started", false, 3, null, null, null, null, null, null, null,  "Note 1")
+            await createBacklogEntry(postgresPool, 1, "Hollow Knight", "Metroidvania", "PC", "In Progress", true, 4, new Date(), "Great game.jpg", 50, 100, 150, 5, "Great game", "Note 2")
         })
 
         it('should delete backlog entry and return deleted entry data', async () => {
@@ -207,19 +152,21 @@ describe('Database Delete Operations', () => {
 
             expect(deletedEntry.BacklogEntryID).toBe('1')
             expect(deletedEntry.UserID).toBe('1')
-            expect(deletedEntry.GameID).toBe('1')
+            expect(deletedEntry.Title).toBe('Elden Ring')
+            expect(deletedEntry.Genre).toBe('RPG')
+            expect(deletedEntry.Platform).toBe('PC')
             expect(deletedEntry.Status).toBe('Not Started')
             expect(deletedEntry.Owned).toBe(false)
             expect(deletedEntry.Interest).toBe(3)
             expect(deletedEntry.Note).toBe('Note 1')
         })
 
-        it('should remove backlog entry from database', async () => {
+        it('should remove entry with GameID references', async () => {
             await deleteBacklogEntry(postgresPool, 1)
 
             const entries = await getBacklogEntriesByUser(postgresPool, 1)
             expect(entries).toHaveLength(1)
-            expect(entries[0].GameID).toBe('2')
+            expect(entries[0].Title).toBe('Hollow Knight')
         })
 
         it('should return undefined when deleting non-existent entry', async () => {
@@ -253,17 +200,16 @@ describe('Database Delete Operations', () => {
     describe('CategoryBacklogEntry Delete Operations', () => {
         beforeEach(async () => {
             await postgresPool.query('TRUNCATE TABLE "blm-system"."Users" RESTART IDENTITY CASCADE')
-            await postgresPool.query('TRUNCATE TABLE "blm-system"."Games" RESTART IDENTITY CASCADE')
             await postgresPool.query('TRUNCATE TABLE "blm-system"."Categories" RESTART IDENTITY CASCADE')
             await postgresPool.query('TRUNCATE TABLE "blm-system"."BacklogEntries" RESTART IDENTITY CASCADE')
 
+
             await createUser(postgresPool, "John Doe", "john@doe.com", "password123", "12345")
-            await createGame(postgresPool, "Elden Ring", "RPG", "PC", new Date())
-            await createGame(postgresPool, "Hollow Knight", "Metroidvania", "PC", new Date())
+            await createBacklogEntry(postgresPool, 1, "Elden Ring", "RPG", "PC", "Not Started", false, 3)
+            await createBacklogEntry(postgresPool, 1, "Hollow Knight", "Metroidvania", "PC", "In Progress", true, 4)
+
             await createCategory(postgresPool, 1, "Action", "#FF0000")
             await createCategory(postgresPool, 1, "Adventure", "#00FF00")
-            await createBacklogEntry(postgresPool, 1, 1, "Not Started", false, 3)
-            await createBacklogEntry(postgresPool, 1, 2, "In Progress", true, 4)
 
             await addCategoryToBacklogEntry(postgresPool, 1, 1)
             await addCategoryToBacklogEntry(postgresPool, 2, 1)

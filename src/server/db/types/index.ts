@@ -19,7 +19,14 @@ export interface CategoryRow {
 export interface BacklogEntryRow {
   backlogEntryID: bigint;
   userID: bigint;
-  gameID: bigint;
+  title: string;
+  genre: string;
+  platform: string;
+  releaseDate?: string;
+  imageLink?: string;
+  mainTime?: number;
+  mainPlusExtraTime?: number;
+  completionTime?: number;
   status: string;
   owned: boolean;
   interest: bigint;
@@ -27,18 +34,6 @@ export interface BacklogEntryRow {
   review?: string;
   note?: string;
   addedAt?: string;
-  completedAt?: string;
-  updatedAt?: string;
-}
-
-export interface GameRow {
-  gameID: bigint;
-  title: string;
-  genre: string;
-  platform: string;
-  releaseDate?: string;
-  imageLink?: string;
-  howLongToBeat?: string;
   completedAt?: string;
   updatedAt?: string;
 }
