@@ -122,7 +122,9 @@ describe('Database Read Operations', () => {
             expect(entry).toMatchObject({
                 BacklogEntryID: '1',
                 UserID: '1',
-                GameID: '1',
+                Title: 'Elden Ring',
+                Genre: 'RPG',
+                Platform: 'PC',
                 Status: 'Not Started',
                 Owned: true,
                 Interest: 2,

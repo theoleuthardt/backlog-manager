@@ -3,9 +3,9 @@ import { Pool } from 'pg'
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql'
 import fs from 'fs'
 import path from 'path'
-import { createUser, createGame, createCategory, createBacklogEntry } from '~/server/db/CRUD/create'
-import { getUserById, getGameById, getCategoriesByUser, getBacklogEntryById } from "~/server/db/CRUD/read"
-import { updateUser, updateCategory, updateBacklogEntry, updateGame } from "~/server/db/CRUD/update"
+import { createUser, createCategory, createBacklogEntry } from '~/server/db/CRUD/create'
+import { getUserById, getBacklogEntryById } from "~/server/db/CRUD/read"
+import { updateUser, updateCategory, updateBacklogEntry } from "~/server/db/CRUD/update"
 
 describe('Database Update Operations', () => {
     let postgresContainer: StartedPostgreSqlContainer
@@ -147,114 +147,27 @@ describe('Database Update Operations', () => {
         })
     })
 
-    describe('Game Update Operations', () => {
-        let gameId: number
-
-        beforeEach(async () => {
-            await postgresPool.query('TRUNCATE TABLE "blm-system"."Games" RESTART IDENTITY CASCADE')
-            await createGame(
-                postgresPool,
-                "Elden Ring",
-                "RPG",
-                "PC",
-                new Date('2022-02-25'),
-                "old-image.jpg",
-                [50, 100, 150]
-            )
-            gameId = 1
-        })
-
-        it('should update game with all fields', async () => {
-            const newDate = new Date('2023-01-01')
-            const updatedGame = await updateGame(
-                postgresPool,
-                gameId,
-                "Elden Ring: Shadow of the Erdtree",
-                "Action RPG",
-                "Multi-platform",
-                newDate,
-                "new-image.jpg",
-                [60, 120, 180]
-            )
-
-            expect(updatedGame.GameID).toBe('1')
-            expect(updatedGame.Title).toBe('Elden Ring: Shadow of the Erdtree')
-            expect(updatedGame.Genre).toBe('Action RPG')
-            expect(updatedGame.Platform).toBe('Multi-platform')
-            expect(updatedGame.ReleaseDate).toBeInstanceOf(Date)
-            expect(updatedGame.ImageLink).toBe('new-image.jpg')
-            expect(updatedGame.HowLongToBeat).toEqual([60, 120, 180])
-            expect(updatedGame.UpdatedAt).toBeInstanceOf(Date)
-        })
-
-        it('should update only title and genre', async () => {
-            const updatedGame = await updateGame(
-                postgresPool,
-                gameId,
-                "Dark Souls 4",
-                "Souls-like",
-                "PC",
-                new Date('2022-02-25'),
-                "old-image.jpg",
-                [50, 100, 150]
-            )
-
-            expect(updatedGame.Title).toBe('Dark Souls 4')
-            expect(updatedGame.Genre).toBe('Souls-like')
-            expect(updatedGame.Platform).toBe('PC')
-        })
-
-        it('should update with null optional fields', async () => {
-            const updatedGame = await updateGame(
-                postgresPool,
-                gameId,
-                "Minimal Game",
-                "Indie",
-                "PC"
-            )
-
-            expect(updatedGame.Title).toBe('Minimal Game')
-            expect(updatedGame.Genre).toBe('Indie')
-            expect(updatedGame.ReleaseDate).toBeNull()
-            expect(updatedGame.ImageLink).toBeNull()
-            expect(updatedGame.HowLongToBeat).toBeNull()
-        })
-
-        it('should clear optional fields by passing undefined', async () => {
-            const updatedGame = await updateGame(
-                postgresPool,
-                gameId,
-                "Elden Ring",
-                "RPG",
-                "PC",
-                undefined,
-                undefined,
-                undefined
-            )
-
-            expect(updatedGame.ReleaseDate).toBeNull()
-            expect(updatedGame.ImageLink).toBeNull()
-            expect(updatedGame.HowLongToBeat).toBeNull()
-        })
-    })
 
     describe('Backlog Entry Update Operations', () => {
         let backlogEntryId: number
 
         beforeEach(async () => {
             await postgresPool.query('TRUNCATE TABLE "blm-system"."Users" RESTART IDENTITY CASCADE')
-            await postgresPool.query('TRUNCATE TABLE "blm-system"."Games" RESTART IDENTITY CASCADE')
             await postgresPool.query('TRUNCATE TABLE "blm-system"."BacklogEntries" RESTART IDENTITY CASCADE')
 
             await createUser(postgresPool, "John Doe", "john@doe.com", "password123")
-            await createGame(postgresPool, "Elden Ring", "RPG", "PC", new Date())
             await createBacklogEntry(
                 postgresPool,
                 1,
-                1,
+                "Elden Ring",
+                "RPG",
+                "PC",
                 "Not Started",
                 false,
                 3,
+                null,
+                null,
+                null,
                 null,
                 null,
                 "Initial note"
@@ -266,15 +179,24 @@ describe('Database Update Operations', () => {
             const updatedEntry = await updateBacklogEntry(
                 postgresPool,
                 backlogEntryId,
+                "Elden Ring",
+                "RPG",
+                "PC",
                 "Completed",
                 true,
                 5,
+                new Date('2024-01-15'),
+                "image.jpg",
+                "50-100",
                 5,
                 "Amazing game!",
                 "Finished after 100 hours"
             )
 
             expect(updatedEntry.BacklogEntryID).toBe('1')
+            expect(updatedEntry.Title).toBe('Elden Ring')
+            expect(updatedEntry.Genre).toBe('RPG')
+            expect(updatedEntry.Platform).toBe('PC')
             expect(updatedEntry.Status).toBe('Completed')
             expect(updatedEntry.Owned).toBe(true)
             expect(updatedEntry.Interest).toBe(5)
@@ -288,6 +210,9 @@ describe('Database Update Operations', () => {
             const updatedEntry = await updateBacklogEntry(
                 postgresPool,
                 backlogEntryId,
+                "Elden Ring",
+                "RPG",
+                "PC",
                 "In Progress",
                 false,
                 3
@@ -302,6 +227,9 @@ describe('Database Update Operations', () => {
             const updatedEntry = await updateBacklogEntry(
                 postgresPool,
                 backlogEntryId,
+                "Elden Ring",
+                "RPG",
+                "PC",
                 "Not Started",
                 true,
                 3
@@ -314,6 +242,9 @@ describe('Database Update Operations', () => {
             const updatedEntry = await updateBacklogEntry(
                 postgresPool,
                 backlogEntryId,
+                "Elden Ring",
+                "RPG",
+                "PC",
                 "Not Started",
                 false,
                 5
@@ -326,9 +257,15 @@ describe('Database Update Operations', () => {
             const updatedEntry = await updateBacklogEntry(
                 postgresPool,
                 backlogEntryId,
+                "Elden Ring",
+                "RPG",
+                "PC",
                 "Completed",
                 true,
                 5,
+                null,
+                null,
+                null,
                 4,
                 "Good game but has some flaws",
                 "Completed main story"
@@ -344,9 +281,15 @@ describe('Database Update Operations', () => {
             await updateBacklogEntry(
                 postgresPool,
                 backlogEntryId,
+                "Elden Ring",
+                "RPG",
+                "PC",
                 "Completed",
                 true,
                 5,
+                null,
+                null,
+                null,
                 5,
                 "Great game",
                 "Some notes"
@@ -355,6 +298,9 @@ describe('Database Update Operations', () => {
             const updatedEntry = await updateBacklogEntry(
                 postgresPool,
                 backlogEntryId,
+                "Elden Ring",
+                "RPG",
+                "PC",
                 "Completed",
                 true,
                 5
@@ -373,6 +319,9 @@ describe('Database Update Operations', () => {
             const updatedEntry = await updateBacklogEntry(
                 postgresPool,
                 backlogEntryId,
+                "Elden Ring",
+                "RPG",
+                "PC",
                 "In Progress",
                 false,
                 4
