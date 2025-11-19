@@ -3,7 +3,7 @@ export interface UserRow {
   name: string;
   email: string;
   passwordHash?: string;
-  steamId: string;
+  steamId?: string;
 }
 
 export interface CategoryRow {
