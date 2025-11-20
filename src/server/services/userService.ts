@@ -1,59 +1,67 @@
 import type { Pool } from "pg";
+import type {
+  CreateUserParams,
+  UpdateUserParams,
+} from "~/server/db/types/params";
 import * as createCRUD from "~/server/db/CRUD/create";
 import * as readCRUD from "~/server/db/CRUD/read";
 import * as updateCRUD from "~/server/db/CRUD/update";
 import * as deleteCRUD from "~/server/db/CRUD/delete";
+import type { User } from "~/server/db/utils/mapper";
 
 /**
  * USER SERVICE FUNCTIONS
  *
- * Handles all user-related database operations
+ * Handles all user-related business logic
  */
 
 /**
- * CREATE OPERATIONS
+ * Create a new user
  */
 export async function createUser(
   pool: Pool,
-  username: string,
-  email: string,
-  passwordHash: string
-) {
-  return await createCRUD.createUser(pool, username, email, passwordHash);
+  params: CreateUserParams
+): Promise<User> {
+  return await createCRUD.createUser(pool, params);
 }
 
 /**
- * READ OPERATIONS
+ * Get all users
  */
-export async function getAllUsers(pool: Pool) {
+export async function getAllUsers(pool: Pool): Promise<User[]> {
   return await readCRUD.getAllUsers(pool);
 }
 
-export async function getUserById(pool: Pool, userId: number) {
+/**
+ * Get a user by ID
+ */
+export async function getUserById(pool: Pool, userId: number): Promise<User> {
   return await readCRUD.getUserById(pool, userId);
 }
 
-export async function getUserByUsername(pool: Pool, username: string) {
+/**
+ * Get a user by username
+ */
+export async function getUserByUsername(
+  pool: Pool,
+  username: string
+): Promise<User | null> {
   return await readCRUD.getUserByUsername(pool, username);
 }
 
 /**
- * UPDATE OPERATIONS
+ * Update a user
  */
 export async function updateUser(
   pool: Pool,
-  userId: number,
-  username: string,
-  email: string,
-  passwordHash: string
-) {
-  return await updateCRUD.updateUser(pool, userId, username, email, passwordHash);
+  params: UpdateUserParams
+): Promise<User> {
+  return await updateCRUD.updateUser(pool, params);
 }
 
 /**
- * DELETE OPERATIONS
+ * Delete a user (with cascading deletes in transaction)
  */
-export async function deleteUser(pool: Pool, userId: number) {
+export async function deleteUser(pool: Pool, userId: number): Promise<User> {
   return await deleteCRUD.deleteUser(pool, userId);
 }
-
