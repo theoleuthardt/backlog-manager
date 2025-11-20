@@ -1,341 +1,352 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
-import { Pool } from 'pg'
-import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql'
-import fs from 'fs'
-import path from 'path'
-import { createUser, createCategory, createBacklogEntry } from '~/server/db/CRUD/create'
-import { getUserById, getBacklogEntryById } from "~/server/db/CRUD/read"
-import { updateUser, updateCategory, updateBacklogEntry } from "~/server/db/CRUD/update"
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
+import { Pool } from "pg";
+import {
+  PostgreSqlContainer,
+  type StartedPostgreSqlContainer,
+} from "@testcontainers/postgresql";
+import fs from "fs";
+import path from "path";
+import {
+  createUser,
+  createCategory,
+  createBacklogEntry,
+} from "~/server/db/CRUD/create";
+import { getUserById, getBacklogEntryById } from "~/server/db/CRUD/read";
+import {
+  updateUser,
+  updateCategory,
+  updateBacklogEntry,
+} from "~/server/db/CRUD/update";
 
-describe('Database Update Operations', () => {
-    let postgresContainer: StartedPostgreSqlContainer
-    let postgresPool: Pool
+describe("Database Update Operations", () => {
+  let postgresContainer: StartedPostgreSqlContainer;
+  let postgresPool: Pool;
 
-    beforeAll(async () => {
-        postgresContainer = await new PostgreSqlContainer('postgres:16')
-            .withDatabase('backlog-manager-db')
-            .withUsername('testuser')
-            .withPassword('testpass')
-            .start()
+  beforeAll(async () => {
+    postgresContainer = await new PostgreSqlContainer("postgres:16")
+      .withDatabase("backlog-manager-db")
+      .withUsername("testuser")
+      .withPassword("testpass")
+      .start();
 
-        postgresPool = new Pool({
-            user: 'testuser',
-            password: 'testpass',
-            host: postgresContainer.getHost(),
-            port: postgresContainer.getPort(),
-            database: 'backlog-manager-db'
-        })
+    postgresPool = new Pool({
+      user: "testuser",
+      password: "testpass",
+      host: postgresContainer.getHost(),
+      port: postgresContainer.getPort(),
+      database: "backlog-manager-db",
+    });
 
-        const sql = fs.readFileSync(path.resolve(__dirname, '../postgres/backlogmanagerdb-init.sql'), 'utf-8')
+    const sql = fs.readFileSync(
+      path.resolve(__dirname, "../postgres/backlogmanagerdb-init.sql"),
+      "utf-8",
+    );
 
-        await postgresPool.query(sql)
-    }, 60000)
+    await postgresPool.query(sql);
+  }, 60000);
 
-    afterAll(async () => {
-        await postgresPool.end()
-        await postgresContainer.stop()
-    })
+  afterAll(async () => {
+    await postgresPool.end();
+    await postgresContainer.stop();
+  });
 
-    describe('User Update Operations', () => {
-        let userId: number
+  describe("User Update Operations", () => {
+    let userId: number;
 
-        beforeEach(async () => {
-            await postgresPool.query('TRUNCATE TABLE "blm-system"."Users" RESTART IDENTITY CASCADE')
-            await createUser(postgresPool, "John Doe", "john@doe.com", "oldpassword123")
-            userId = 1
-        })
+    beforeEach(async () => {
+      await postgresPool.query(
+        'TRUNCATE TABLE "blm-system"."Users" RESTART IDENTITY CASCADE',
+      );
+      await createUser(postgresPool, {
+        username: "John Doe",
+        email: "john@doe.com",
+        passwordHash: "oldpassword123",
+      });
+      userId = 1;
+    });
 
-        it('should update user with all fields', async () => {
-            const updatedUser = await updateUser(
-                postgresPool,
-                userId,
-                "John Smith",
-                "john@smith.com",
-                "newpassword456"
-            )
+    it("should update user with all fields", async () => {
+      const updatedUser = await updateUser(postgresPool, {
+        userId,
+        username: "John Smith",
+        email: "john@smith.com",
+        passwordHash: "newpassword456",
+      });
 
-            expect(updatedUser.UserID).toBe('1')
-            expect(updatedUser.Username).toBe('John Smith')
-            expect(updatedUser.Email).toBe('john@smith.com')
-            expect(updatedUser.PasswordHash).toBe('newpassword456')
-            expect(updatedUser.UpdatedAt).toBeInstanceOf(Date)
-        })
+      expect(updatedUser.id).toBe(1);
+      expect(updatedUser.name).toBe("John Smith");
+      expect(updatedUser.email).toBe("john@smith.com");
+      expect(updatedUser.passwordHash).toBe("newpassword456");
+    });
 
-        it('should update only username', async () => {
-            const updatedUser = await updateUser(
-                postgresPool,
-                userId,
-                "Jane Doe",
-                "john@doe.com",
-                "oldpassword123"
-            )
+    it("should update only username", async () => {
+      const updatedUser = await updateUser(postgresPool, {
+        userId,
+        username: "Jane Doe",
+        email: "john@doe.com",
+        passwordHash: "oldpassword123",
+      });
 
-            expect(updatedUser.Username).toBe('Jane Doe')
-            expect(updatedUser.Email).toBe('john@doe.com')
-            expect(updatedUser.PasswordHash).toBe('oldpassword123')
-        })
+      expect(updatedUser.name).toBe("Jane Doe");
+      expect(updatedUser.email).toBe("john@doe.com");
+      expect(updatedUser.passwordHash).toBe("oldpassword123");
+    });
 
-        it('should update UpdatedAt timestamp', async () => {
-            const originalUser = await getUserById(postgresPool, userId)
+    it("should update UpdatedAt timestamp", async () => {
+      const originalUser = await getUserById(postgresPool, userId);
 
-            await new Promise(resolve => setTimeout(resolve, 1000))
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-            const updatedUser = await updateUser(
-                postgresPool,
-                userId,
-                "Updated Name",
-                "john@doe.com",
-                "oldpassword123"
-            )
+      const updatedUser = await updateUser(postgresPool, {
+        userId,
+        username: "Updated Name",
+        email: "john@doe.com",
+        passwordHash: "oldpassword123",
+      });
 
-            expect(new Date(updatedUser.UpdatedAt).getTime())
-                .toBeGreaterThanOrEqual(new Date(originalUser.UpdatedAt).getTime())
-        })
-    })
+      expect(new Date(updatedUser.UpdatedAt).getTime()).toBeGreaterThanOrEqual(
+        new Date(originalUser.UpdatedAt).getTime(),
+      );
+    });
+  });
 
-    describe('Category Update Operations', () => {
-        let categoryId: number
+  describe("Category Update Operations", () => {
+    let categoryId: number;
 
-        beforeEach(async () => {
-            await postgresPool.query('TRUNCATE TABLE "blm-system"."Users" RESTART IDENTITY CASCADE')
-            await postgresPool.query('TRUNCATE TABLE "blm-system"."Categories" RESTART IDENTITY CASCADE')
-            await createUser(postgresPool, "John Doe", "john@doe.com", "password123")
-            await createCategory(postgresPool, 1, "Action", "#FF0000", "Action games")
-            categoryId = 1
-        })
+    beforeEach(async () => {
+      await postgresPool.query(
+        'TRUNCATE TABLE "blm-system"."Users" RESTART IDENTITY CASCADE',
+      );
+      await postgresPool.query(
+        'TRUNCATE TABLE "blm-system"."Categories" RESTART IDENTITY CASCADE',
+      );
+      await createUser(postgresPool, {
+        username: "John Doe",
+        email: "john@doe.com",
+        passwordHash: "password123",
+      });
+      await createCategory(postgresPool, {
+        userId: 1,
+        categoryName: "Action",
+        color: "#FF0000",
+        description: "Action games",
+      });
+      categoryId = 1;
+    });
 
-        it('should update category with all fields', async () => {
-            const updatedCategory = await updateCategory(
-                postgresPool,
-                categoryId,
-                "Adventure",
-                "#00FF00",
-                "Adventure games description"
-            )
+    it("should update category with all fields", async () => {
+      const updatedCategory = await updateCategory(postgresPool, {
+        categoryId,
+        categoryName: "Adventure",
+        color: "#00FF00",
+        description: "Adventure games description",
+      });
 
-            expect(updatedCategory.CategoryID).toBe('1')
-            expect(updatedCategory.CategoryName).toBe('Adventure')
-            expect(updatedCategory.Color).toBe('#00FF00')
-            expect(updatedCategory.Description).toBe('Adventure games description')
-            expect(updatedCategory.UpdatedAt).toBeInstanceOf(Date)
-        })
+      expect(updatedCategory.categoryID).toBe(1);
+      expect(updatedCategory.name).toBe("Adventure");
+      expect(updatedCategory.color).toBe("#00FF00");
+      expect(updatedCategory.description).toBe("Adventure games description");
+    });
 
-        it('should update only category name', async () => {
-            const updatedCategory = await updateCategory(
-                postgresPool,
-                categoryId,
-                "RPG",
-                "#FF0000",
-                "Action games"
-            )
+    it("should update only category name", async () => {
+      const updatedCategory = await updateCategory(postgresPool, {
+        categoryId,
+        categoryName: "RPG",
+        color: "#FF0000",
+        description: "Action games",
+      });
 
-            expect(updatedCategory.CategoryName).toBe('RPG')
-            expect(updatedCategory.Color).toBe('#FF0000')
-            expect(updatedCategory.Description).toBe('Action games')
-        })
+      expect(updatedCategory.name).toBe("RPG");
+      expect(updatedCategory.color).toBe("#FF0000");
+      expect(updatedCategory.description).toBe("Action games");
+    });
 
-        it('should update description to empty string', async () => {
-            const updatedCategory = await updateCategory(
-                postgresPool,
-                categoryId,
-                "Action",
-                "#FF0000",
-                ""
-            )
+    it("should update description to empty string", async () => {
+      const updatedCategory = await updateCategory(postgresPool, {
+        categoryId,
+        categoryName: "Action",
+        color: "#FF0000",
+        description: "",
+      });
 
-            expect(updatedCategory.Description).toBe('')
-        })
-    })
+      expect(updatedCategory.description).toBe("");
+    });
+  });
 
+  describe("Backlog Entry Update Operations", () => {
+    let backlogEntryId: number;
 
-    describe('Backlog Entry Update Operations', () => {
-        let backlogEntryId: number
+    beforeEach(async () => {
+      await postgresPool.query(
+        'TRUNCATE TABLE "blm-system"."Users" RESTART IDENTITY CASCADE',
+      );
+      await postgresPool.query(
+        'TRUNCATE TABLE "blm-system"."BacklogEntries" RESTART IDENTITY CASCADE',
+      );
 
-        beforeEach(async () => {
-            await postgresPool.query('TRUNCATE TABLE "blm-system"."Users" RESTART IDENTITY CASCADE')
-            await postgresPool.query('TRUNCATE TABLE "blm-system"."BacklogEntries" RESTART IDENTITY CASCADE')
+      await createUser(postgresPool, {
+        username: "John Doe",
+        email: "john@doe.com",
+        passwordHash: "password123",
+      });
+      await createBacklogEntry(postgresPool, {
+        userId: 1,
+        title: "Elden Ring",
+        genre: "RPG",
+        platform: "PC",
+        status: "Not Started",
+        owned: false,
+        interest: 3,
+        note: "Initial note",
+      });
+      backlogEntryId = 1;
+    });
 
-            await createUser(postgresPool, "John Doe", "john@doe.com", "password123")
-            await createBacklogEntry(
-                postgresPool,
-                1,
-                "Elden Ring",
-                "RPG",
-                "PC",
-                "Not Started",
-                false,
-                3,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                "Initial note"
-            )
-            backlogEntryId = 1
-        })
+    it("should update backlog entry with all fields", async () => {
+      const updatedEntry = await updateBacklogEntry(postgresPool, {
+        backlogEntryId,
+        title: "Elden Ring",
+        genre: "RPG",
+        platform: "PC",
+        status: "Completed",
+        owned: true,
+        interest: 5,
+        releaseDate: new Date("2024-01-15"),
+        imageLink: "image.jpg",
+        mainTime: 50,
+        mainPlusExtraTime: 100,
+        completionTime: 150,
+        reviewStars: 5,
+        review: "Amazing game!",
+        note: "Finished after 100 hours",
+      });
 
-        it('should update backlog entry with all fields', async () => {
-            const updatedEntry = await updateBacklogEntry(
-                postgresPool,
-                backlogEntryId,
-                "Elden Ring",
-                "RPG",
-                "PC",
-                "Completed",
-                true,
-                5,
-                new Date('2024-01-15'),
-                "image.jpg",
-                50,
-                100,
-                150,
-                5,
-                "Amazing game!",
-                "Finished after 100 hours"
-            )
+      expect(updatedEntry.backlogEntryID).toBe(1);
+      expect(updatedEntry.title).toBe("Elden Ring");
+      expect(updatedEntry.genre).toBe("RPG");
+      expect(updatedEntry.platform).toBe("PC");
+      expect(updatedEntry.status).toBe("Completed");
+      expect(updatedEntry.owned).toBe(true);
+      expect(updatedEntry.interest).toBe(5);
+      expect(updatedEntry.reviewStars).toBe(5);
+      expect(updatedEntry.review).toBe("Amazing game!");
+      expect(updatedEntry.note).toBe("Finished after 100 hours");
+    });
 
-            expect(updatedEntry.BacklogEntryID).toBe('1')
-            expect(updatedEntry.Title).toBe('Elden Ring')
-            expect(updatedEntry.Genre).toBe('RPG')
-            expect(updatedEntry.Platform).toBe('PC')
-            expect(updatedEntry.Status).toBe('Completed')
-            expect(updatedEntry.Owned).toBe(true)
-            expect(updatedEntry.Interest).toBe(5)
-            expect(updatedEntry.ReviewStars).toBe(5)
-            expect(updatedEntry.Review).toBe('Amazing game!')
-            expect(updatedEntry.Note).toBe('Finished after 100 hours')
-            expect(updatedEntry.UpdatedAt).toBeInstanceOf(Date)
-        })
+    it("should update status from Not Started to In Progress", async () => {
+      const updatedEntry = await updateBacklogEntry(postgresPool, {
+        backlogEntryId,
+        title: "Elden Ring",
+        genre: "RPG",
+        platform: "PC",
+        status: "In Progress",
+        owned: false,
+        interest: 3,
+      });
 
-        it('should update status from Not Started to In Progress', async () => {
-            const updatedEntry = await updateBacklogEntry(
-                postgresPool,
-                backlogEntryId,
-                "Elden Ring",
-                "RPG",
-                "PC",
-                "In Progress",
-                false,
-                3
-            )
+      expect(updatedEntry.status).toBe("In Progress");
+      expect(updatedEntry.reviewStars).toBeUndefined();
+      expect(updatedEntry.review).toBeUndefined();
+    });
 
-            expect(updatedEntry.Status).toBe('In Progress')
-            expect(updatedEntry.ReviewStars).toBeNull()
-            expect(updatedEntry.Review).toBeNull()
-        })
+    it("should update owned status", async () => {
+      const updatedEntry = await updateBacklogEntry(postgresPool, {
+        backlogEntryId,
+        title: "Elden Ring",
+        genre: "RPG",
+        platform: "PC",
+        status: "Not Started",
+        owned: true,
+        interest: 3,
+      });
 
-        it('should update owned status', async () => {
-            const updatedEntry = await updateBacklogEntry(
-                postgresPool,
-                backlogEntryId,
-                "Elden Ring",
-                "RPG",
-                "PC",
-                "Not Started",
-                true,
-                3
-            )
+      expect(updatedEntry.owned).toBe(true);
+    });
 
-            expect(updatedEntry.Owned).toBe(true)
-        })
+    it("should update interest level", async () => {
+      const updatedEntry = await updateBacklogEntry(postgresPool, {
+        backlogEntryId,
+        title: "Elden Ring",
+        genre: "RPG",
+        platform: "PC",
+        status: "Not Started",
+        owned: false,
+        interest: 5,
+      });
 
-        it('should update interest level', async () => {
-            const updatedEntry = await updateBacklogEntry(
-                postgresPool,
-                backlogEntryId,
-                "Elden Ring",
-                "RPG",
-                "PC",
-                "Not Started",
-                false,
-                5
-            )
+      expect(updatedEntry.interest).toBe(5);
+    });
 
-            expect(updatedEntry.Interest).toBe(5)
-        })
+    it("should add review and rating to entry without them", async () => {
+      const updatedEntry = await updateBacklogEntry(postgresPool, {
+        backlogEntryId,
+        title: "Elden Ring",
+        genre: "RPG",
+        platform: "PC",
+        status: "Completed",
+        owned: true,
+        interest: 5,
+        reviewStars: 4,
+        review: "Good game but has some flaws",
+        note: "Completed main story",
+      });
 
-        it('should add review and rating to entry without them', async () => {
-            const updatedEntry = await updateBacklogEntry(
-                postgresPool,
-                backlogEntryId,
-                "Elden Ring",
-                "RPG",
-                "PC",
-                "Completed",
-                true,
-                5,
-                null,
-                null,
-                null,
-                null,
-                null,
-                4,
-                "Good game but has some flaws",
-                "Completed main story"
-            )
+      expect(updatedEntry.status).toBe("Completed");
+      expect(updatedEntry.reviewStars).toBe(4);
+      expect(updatedEntry.review).toBe("Good game but has some flaws");
+      expect(updatedEntry.note).toBe("Completed main story");
+    });
 
-            expect(updatedEntry.Status).toBe('Completed')
-            expect(updatedEntry.ReviewStars).toBe(4)
-            expect(updatedEntry.Review).toBe('Good game but has some flaws')
-            expect(updatedEntry.Note).toBe('Completed main story')
-        })
+    it("should clear optional fields", async () => {
+      await updateBacklogEntry(postgresPool, {
+        backlogEntryId,
+        title: "Elden Ring",
+        genre: "RPG",
+        platform: "PC",
+        status: "Completed",
+        owned: true,
+        interest: 5,
+        reviewStars: 5,
+        review: "Great game",
+        note: "Some notes",
+      });
 
-        it('should clear optional fields', async () => {
-            await updateBacklogEntry(
-                postgresPool,
-                backlogEntryId,
-                "Elden Ring",
-                "RPG",
-                "PC",
-                "Completed",
-                true,
-                5,
-                null,
-                null,
-                null,
-                null,
-                null,
-                5,
-                "Great game",
-                "Some notes"
-            )
+      const updatedEntry = await updateBacklogEntry(postgresPool, {
+        backlogEntryId,
+        title: "Elden Ring",
+        genre: "RPG",
+        platform: "PC",
+        status: "Completed",
+        owned: true,
+        interest: 5,
+      });
 
-            const updatedEntry = await updateBacklogEntry(
-                postgresPool,
-                backlogEntryId,
-                "Elden Ring",
-                "RPG",
-                "PC",
-                "Completed",
-                true,
-                5
-            )
+      expect(updatedEntry.reviewStars).toBeUndefined();
+      expect(updatedEntry.review).toBeUndefined();
+      expect(updatedEntry.note).toBeUndefined();
+    });
 
-            expect(updatedEntry.ReviewStars).toBeNull()
-            expect(updatedEntry.Review).toBeNull()
-            expect(updatedEntry.Note).toBeNull()
-        })
+    it("should update UpdatedAt timestamp", async () => {
+      const originalEntry = await getBacklogEntryById(
+        postgresPool,
+        backlogEntryId,
+      );
 
-        it('should update UpdatedAt timestamp', async () => {
-            const originalEntry = await getBacklogEntryById(postgresPool, backlogEntryId)
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-            await new Promise(resolve => setTimeout(resolve, 1000))
+      const updatedEntry = await updateBacklogEntry(postgresPool, {
+        backlogEntryId,
+        title: "Elden Ring",
+        genre: "RPG",
+        platform: "PC",
+        status: "In Progress",
+        owned: false,
+        interest: 4,
+      });
 
-            const updatedEntry = await updateBacklogEntry(
-                postgresPool,
-                backlogEntryId,
-                "Elden Ring",
-                "RPG",
-                "PC",
-                "In Progress",
-                false,
-                4
-            )
-
-            expect(new Date(updatedEntry.UpdatedAt).getTime())
-                .toBeGreaterThanOrEqual(new Date(originalEntry.UpdatedAt).getTime())
-        })
-    })
-})
+      expect(new Date(updatedEntry.UpdatedAt).getTime()).toBeGreaterThanOrEqual(
+        new Date(originalEntry.UpdatedAt).getTime(),
+      );
+    });
+  });
+});
