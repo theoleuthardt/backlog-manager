@@ -1,6 +1,3 @@
-/**
- * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation.
- */
 import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
@@ -13,9 +10,17 @@ const config = {
   ],
 
   images: {
-    domains: ["avatars.githubusercontent.com", "cdn.discordapp.com"],
-
     remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "avatars.githubusercontent.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn.discordapp.com",
+        pathname: "/**",
+      },
       {
         protocol: "https",
         hostname: "howlongtobeat.com",
