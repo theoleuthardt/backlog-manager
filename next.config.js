@@ -1,6 +1,5 @@
 /**
- * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially useful
- * for Docker builds.
+ * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation.
  */
 import "./src/env.js";
 
@@ -11,11 +10,10 @@ const config = {
     "*.local-origin.dev",
     "10.20.146.74",
     "10.20.*",
-
   ],
+
   images: {
     domains: ["avatars.githubusercontent.com", "cdn.discordapp.com"],
-  }
 
     remotePatterns: [
       {
@@ -24,8 +22,9 @@ const config = {
         pathname: "/**",
       },
     ],
-    domains: [],
+
     unoptimized: false,
+
     localPatterns: [
       {
         pathname: "/**",
