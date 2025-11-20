@@ -1,91 +1,229 @@
-import { Pool } from 'pg'
-import type {UserRow} from "~/server/db/types";
-import type {CategoryRow} from "~/server/db/types";
-import type {BacklogEntryRow} from "~/server/db/types";
+import type { Pool } from "pg";
+import type {
+  UpdateUserParams,
+  UpdateCategoryParams,
+  UpdateBacklogEntryParams,
+} from "../types/params";
+import { handleDatabaseError, NotFoundError } from "../types/errors";
+import {
+  mapUser,
+  mapCategory,
+  mapBacklogEntry,
+  type User,
+  type Category,
+  type BacklogEntry,
+} from "../utils/mapper";
 
-export const updateUser = async (
-    pool: Pool,
-    userID: number,
-    username: string,
-    email: string,
-    passwordHash: string
-) => {
-    const client = await pool.connect()
-    try {
-        const result = await client.query(
-            `UPDATE "blm-system"."Users"
-             SET "Username" = $2, "Email" = $3, "PasswordHash" = $4, "UpdatedAt" = DATE_TRUNC('minute', CURRENT_TIMESTAMP)
-             WHERE "UserID" = $1
-             RETURNING *`,
-            [userID, username, email, passwordHash]
-        )
-        return result.rows[0] as UserRow
-    } catch (error) {
-        console.error('Error updating user:', error)
-        throw error
-    } finally {
-        client.release()
+/**
+ * Update a user
+ */
+export async function updateUser(
+  pool: Pool,
+  params: UpdateUserParams,
+): Promise<User> {
+  const client = await pool.connect();
+  try {
+    const updates: string[] = [];
+    const values: any[] = [params.userId];
+    let paramCount = 2;
+
+    if (params.username !== undefined) {
+      updates.push(`"Username" = $${paramCount++}`);
+      values.push(params.username);
     }
+    if (params.email !== undefined) {
+      updates.push(`"Email" = $${paramCount++}`);
+      values.push(params.email);
+    }
+    if (params.passwordHash !== undefined) {
+      updates.push(`"PasswordHash" = $${paramCount++}`);
+      values.push(params.passwordHash);
+    }
+
+    updates.push(`"UpdatedAt" = DATE_TRUNC('minute', CURRENT_TIMESTAMP)`);
+
+    if (updates.length === 0) {
+      const result = await client.query(
+        'SELECT * FROM "blm-system"."Users" WHERE "UserID" = $1',
+        [params.userId],
+      );
+      if (!result.rows[0]) {
+        throw new NotFoundError("User", params.userId);
+      }
+      return mapUser(result.rows[0]);
+    }
+
+    const query = `
+      UPDATE "blm-system"."Users"
+      SET ${updates.join(", ")}
+      WHERE "UserID" = $1
+      RETURNING *
+    `;
+
+    const result = await client.query(query, values);
+    if (!result.rows[0]) {
+      throw new NotFoundError("User", params.userId);
+    }
+    return mapUser(result.rows[0]);
+  } catch (error) {
+    if (error instanceof NotFoundError) throw error;
+    handleDatabaseError(error, "updateUser");
+  } finally {
+    client.release();
+  }
 }
 
-export const updateCategory = async (
-    pool: Pool,
-    categoryID: number,
-    categoryName: string,
-    color: string,
-    description: string
-) => {
-    const client = await pool.connect()
-    try {
-        const result = await client.query(
-            `UPDATE "blm-system"."Categories"
-             SET "CategoryName" = $2, "Color" = $3, "Description" = $4, "UpdatedAt" = DATE_TRUNC('minute', CURRENT_TIMESTAMP)
-             WHERE "CategoryID" = $1
-             RETURNING *`,
-            [categoryID, categoryName, color, description]
-        )
-        return result.rows[0] as CategoryRow
-    } catch (error) {
-        console.error('Error updating category:', error)
-        throw error
-    } finally {
-        client.release()
+/**
+ * Update a category
+ */
+export async function updateCategory(
+  pool: Pool,
+  params: UpdateCategoryParams,
+): Promise<Category> {
+  const client = await pool.connect();
+  try {
+    const updates: string[] = [];
+    const values: any[] = [params.categoryId];
+    let paramCount = 2;
+
+    if (params.categoryName !== undefined) {
+      updates.push(`"CategoryName" = $${paramCount++}`);
+      values.push(params.categoryName);
     }
+    if (params.color !== undefined) {
+      updates.push(`"Color" = $${paramCount++}`);
+      values.push(params.color);
+    }
+    if (params.description !== undefined) {
+      updates.push(`"Description" = $${paramCount++}`);
+      values.push(params.description);
+    }
+
+    updates.push(`"UpdatedAt" = DATE_TRUNC('minute', CURRENT_TIMESTAMP)`);
+
+    if (updates.length === 0) {
+      const result = await client.query(
+        'SELECT * FROM "blm-system"."Categories" WHERE "CategoryID" = $1',
+        [params.categoryId],
+      );
+      if (!result.rows[0]) {
+        throw new NotFoundError("Category", params.categoryId);
+      }
+      return mapCategory(result.rows[0]);
+    }
+
+    const query = `
+      UPDATE "blm-system"."Categories"
+      SET ${updates.join(", ")}
+      WHERE "CategoryID" = $1
+      RETURNING *
+    `;
+
+    const result = await client.query(query, values);
+    if (!result.rows[0]) {
+      throw new NotFoundError("Category", params.categoryId);
+    }
+    return mapCategory(result.rows[0]);
+  } catch (error) {
+    if (error instanceof NotFoundError) throw error;
+    handleDatabaseError(error, "updateCategory");
+  } finally {
+    client.release();
+  }
 }
 
-export const updateBacklogEntry = async (
-    pool: Pool,
-    backlogEntryID: number,
-    title: string,
-    genre: string,
-    platform: string,
-    status: string,
-    owned: boolean,
-    interest: number,
-    releaseDate?: Date,
-    imageLink?: string,
-    mainTime?: number,
-    mainPlusExtraTime?: number,
-    completionTime?: number,
-    reviewStars?: number,
-    review?: string,
-    note?: string
-) => {
-    const client = await pool.connect()
-    try {
-        const result = await client.query(
-            `UPDATE "blm-system"."BacklogEntries" 
-       SET "Title" = $2, "Genre" = $3, "Platform" = $4, "Status" = $5, "Owned" = $6, "Interest" = $7, "ReleaseDate" = $8, "ImageLink" = $9, "MainTime" = $10, "MainPlusExtraTime" = $11, "CompletionTime" = $12, "ReviewStars" = $13, "Review" = $14, "Note" = $15, "UpdatedAt" = DATE_TRUNC('minute', CURRENT_TIMESTAMP) 
-       WHERE "BacklogEntryID" = $1 
-       RETURNING *`,
-            [backlogEntryID, title, genre, platform, status, owned, interest, releaseDate || null, imageLink || null, mainTime || null, mainPlusExtraTime || null, completionTime || null, reviewStars || null, review || null, note || null]
-        )
-        return result.rows[0] as BacklogEntryRow
-    } catch (error) {
-        console.error('Error updating backlog entry:', error)
-        throw error
-    } finally {
-        client.release()
-    }
-}
+/**
+ * Update a backlog entry
+ */
+export async function updateBacklogEntry(
+  pool: Pool,
+  params: UpdateBacklogEntryParams,
+): Promise<BacklogEntry> {
+  const client = await pool.connect();
+  try {
+    const updates: string[] = [];
+    const values: any[] = [params.backlogEntryId];
+    let paramCount = 2;
 
+    if (params.title !== undefined) {
+      updates.push(`"Title" = $${paramCount++}`);
+      values.push(params.title);
+    }
+    if (params.genre !== undefined) {
+      updates.push(`"Genre" = $${paramCount++}`);
+      values.push(params.genre);
+    }
+    if (params.platform !== undefined) {
+      updates.push(`"Platform" = $${paramCount++}`);
+      values.push(params.platform);
+    }
+    if (params.status !== undefined) {
+      updates.push(`"Status" = $${paramCount++}`);
+      values.push(params.status);
+    }
+    if (params.owned !== undefined) {
+      updates.push(`"Owned" = $${paramCount++}`);
+      values.push(params.owned);
+    }
+    if (params.interest !== undefined) {
+      updates.push(`"Interest" = $${paramCount++}`);
+      values.push(params.interest);
+    }
+    // Always update optional fields, setting to NULL if not provided
+    updates.push(`"ReleaseDate" = $${paramCount++}`);
+    values.push(params.releaseDate || null);
+
+    updates.push(`"ImageLink" = $${paramCount++}`);
+    values.push(params.imageLink || null);
+
+    updates.push(`"MainTime" = $${paramCount++}`);
+    values.push(params.mainTime ?? null);
+
+    updates.push(`"MainPlusExtraTime" = $${paramCount++}`);
+    values.push(params.mainPlusExtraTime ?? null);
+
+    updates.push(`"CompletionTime" = $${paramCount++}`);
+    values.push(params.completionTime ?? null);
+
+    updates.push(`"ReviewStars" = $${paramCount++}`);
+    values.push(params.reviewStars ?? null);
+
+    updates.push(`"Review" = $${paramCount++}`);
+    values.push(params.review || null);
+
+    updates.push(`"Note" = $${paramCount++}`);
+    values.push(params.note || null);
+
+    updates.push(`"UpdatedAt" = DATE_TRUNC('minute', CURRENT_TIMESTAMP)`);
+
+    if (updates.length === 0) {
+      // No fields to update, just return current entry
+      const result = await client.query(
+        'SELECT * FROM "blm-system"."BacklogEntries" WHERE "BacklogEntryID" = $1',
+        [params.backlogEntryId],
+      );
+      if (!result.rows[0]) {
+        throw new NotFoundError("BacklogEntry", params.backlogEntryId);
+      }
+      return mapBacklogEntry(result.rows[0]);
+    }
+
+    const query = `
+      UPDATE "blm-system"."BacklogEntries"
+      SET ${updates.join(", ")}
+      WHERE "BacklogEntryID" = $1
+      RETURNING *
+    `;
+
+    const result = await client.query(query, values);
+    if (!result.rows[0]) {
+      throw new NotFoundError("BacklogEntry", params.backlogEntryId);
+    }
+    return mapBacklogEntry(result.rows[0]);
+  } catch (error) {
+    if (error instanceof NotFoundError) throw error;
+    handleDatabaseError(error, "updateBacklogEntry");
+  } finally {
+    client.release();
+  }
+}
