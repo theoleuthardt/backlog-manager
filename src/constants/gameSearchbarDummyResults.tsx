@@ -1,13 +1,6 @@
-interface SearchResult {
-  title: string;
-  imageUrl: string;
-  steamAppId: number;
-  mainStory: number;
-  mainStoryWithExtras: number;
-  completionist: number;
-}
+import type { GameSearchResult } from "~/types";
 
-export const gameSearchbarDummyResults: SearchResult[] = [
+export const gameSearchbarDummyResults: GameSearchResult[] = [
   {
     title: "SnowRunner",
     imageUrl: "https://howlongtobeat.com/games/77675_SnowRunner.jpg",

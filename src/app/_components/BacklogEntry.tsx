@@ -26,23 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "shadcn_components/ui/select";
-
-interface BacklogEntryProps {
-  title: string;
-  playtime?: number;
-  imageLink: string;
-  imageAlt?: string;
-  genre?: string[];
-  platform?: string[];
-  status?: string;
-  owned?: boolean;
-  interest?: number;
-  reviewStars?: number;
-  review?: string;
-  note?: string;
-  howLongToBeat?: number[];
-  className?: string;
-}
+import type { BacklogEntryProps } from "~/types";
 
 export const BacklogEntry = (props: BacklogEntryProps) => {
   const [imageLink, setImageLink] = useState(props.imageLink);
@@ -56,10 +40,10 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
   const [reviewStars, setReviewStars] = useState(props.reviewStars ?? 0);
   const [review, setReview] = useState(props.review ?? "");
   const [note, setNote] = useState(props.note ?? "");
-  const [hltbMain, setHltbMain] = useState(props.howLongToBeat?.[0] ?? 0);
-  const [hltbExtra, setHltbExtra] = useState(props.howLongToBeat?.[1] ?? 0);
+  const [hltbMain, setHltbMain] = useState(props.mainTime ?? 0);
+  const [hltbExtra, setHltbExtra] = useState(props.mainPlusExtraTime ?? 0);
   const [hltbCompletionist, setHltbCompletionist] = useState(
-    props.howLongToBeat?.[2] ?? 0,
+    props.completionTime ?? 0,
   );
   const [isLoading, setIsLoading] = useState(false);
   const [imagePopoverOpen, setImagePopoverOpen] = useState(false);
@@ -96,11 +80,14 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
         changes.reviewStars = reviewStars;
       if (review !== (props.review ?? "")) changes.review = review;
       if (note !== (props.note ?? "")) changes.note = note;
-
-      const newHltb = [hltbMain, hltbExtra, hltbCompletionist];
-      const oldHltb = props.howLongToBeat ?? [0, 0, 0];
-      if (JSON.stringify(newHltb) !== JSON.stringify(oldHltb)) {
-        changes.howLongToBeat = newHltb;
+      if (hltbMain !== (props.mainTime ?? 0)) {
+        changes.mainTime = hltbMain;
+      }
+      if (hltbExtra !== (props.mainPlusExtraTime ?? 0)) {
+        changes.mainPlusExtraTime = hltbExtra;
+      }
+      if (hltbCompletionist !== (props.completionTime ?? 0)) {
+        changes.completionTime = hltbCompletionist;
       }
 
       if (Object.keys(changes).length > 0) {

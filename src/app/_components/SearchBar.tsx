@@ -3,16 +3,7 @@ import React from "react";
 import { Input } from "~/components/ui/input";
 import Image from "next/image";
 import { X } from "lucide-react";
-
-export interface SearchBarProps {
-  placeholder?: string;
-  className?: string;
-  onInput?: Function;
-  onClear?: () => void;
-  value?: string;
-  ref?: React.RefObject<HTMLInputElement>;
-  useIcon: boolean;
-}
+import type { SearchBarProps } from "~/types";
 
 export const SearchBar = (props: SearchBarProps) => {
   return (

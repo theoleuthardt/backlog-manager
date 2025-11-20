@@ -15,27 +15,7 @@ import { Checkbox } from "shadcn_components/ui/checkbox";
 import { Slider } from "shadcn_components/ui/slider";
 import { Label } from "shadcn_components/ui/label";
 import Image from "next/image";
-
-interface BacklogEntryData {
-  id: number;
-  title: string;
-  playtime?: number;
-  imageLink: string;
-  imageAlt?: string;
-  genre?: string[];
-  platform?: string[];
-  status?: string;
-  owned?: boolean;
-  interest?: number;
-  reviewStars?: number;
-  review?: string;
-  note?: string;
-  howLongToBeat?: number[];
-}
-
-interface DashboardContentProps {
-  initialData: BacklogEntryData[];
-}
+import type { DashboardContentProps } from "~/types";
 
 export const DashboardContent = ({ initialData }: DashboardContentProps) => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -151,31 +131,27 @@ export const DashboardContent = ({ initialData }: DashboardContentProps) => {
         }
       }
 
-      if (entry.howLongToBeat) {
-        const [main, mainExtra, completionist] = entry.howLongToBeat;
+      if (
+        entry.mainTime !== undefined &&
+        (entry.mainTime < mainTimeRange[0] || entry.mainTime > mainTimeRange[1])
+      ) {
+        return false;
+      }
 
-        if (
-          main !== undefined &&
-          (main < mainTimeRange[0] || main > mainTimeRange[1])
-        ) {
-          return false;
-        }
+      if (
+        entry.mainPlusExtraTime !== undefined &&
+        (entry.mainPlusExtraTime < mainExtraTimeRange[0] ||
+          entry.mainPlusExtraTime > mainExtraTimeRange[1])
+      ) {
+        return false;
+      }
 
-        if (
-          mainExtra !== undefined &&
-          (mainExtra < mainExtraTimeRange[0] ||
-            mainExtra > mainExtraTimeRange[1])
-        ) {
-          return false;
-        }
-
-        if (
-          completionist !== undefined &&
-          (completionist < completionistTimeRange[0] ||
-            completionist > completionistTimeRange[1])
-        ) {
-          return false;
-        }
+      if (
+        entry.completionTime !== undefined &&
+        (entry.completionTime < completionistTimeRange[0] ||
+          entry.completionTime > completionistTimeRange[1])
+      ) {
+        return false;
       }
 
       return true;
@@ -439,7 +415,9 @@ export const DashboardContent = ({ initialData }: DashboardContentProps) => {
               review={entry.review}
               reviewStars={entry.reviewStars}
               note={entry.note}
-              howLongToBeat={entry.howLongToBeat}
+              mainTime={entry.mainTime}
+              mainPlusExtraTime={entry.mainPlusExtraTime}
+              completionTime={entry.completionTime}
             />
           ))}
         </div>

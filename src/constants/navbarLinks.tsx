@@ -1,6 +1,5 @@
 "use client";
 import Image from "next/image";
-import { type JSX, type ReactNode } from "react";
 import { EntryCreationDialog } from "~/app/_components/EntryCreationDialog";
 import { ImportCSVButton } from "~/app/_components/ImportCSVButton";
 import { ExportCSVButton } from "~/app/_components/ExportCSVButton";
@@ -9,16 +8,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
-
-export interface NavbarLink {
-  id: number;
-  href?: string;
-  content?: JSX.Element;
-  component?: ReactNode;
-  action?: string;
-  target?: string;
-  type: "link" | "component";
-}
+import type { NavbarLink } from "~/types";
 
 export const landingPageNavLinks: NavbarLink[] = [
   {

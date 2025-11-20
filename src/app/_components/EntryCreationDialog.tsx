@@ -14,22 +14,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { gameSearchbarDummyResults } from "~/constants";
-
-interface SearchResult {
-  title: string;
-  imageUrl: string;
-  steamAppId: number;
-  mainStory: number;
-  mainStoryWithExtras: number;
-  completionist: number;
-}
-
-interface EntryCreationDialogProps {
-  triggerIcon?: string;
-  triggerAlt?: string;
-  triggerClassName?: string;
-  showText?: boolean;
-}
+import type { GameSearchResult, EntryCreationDialogProps } from "~/types";
 
 export const EntryCreationDialog = ({
   triggerIcon = "/search.png",
@@ -39,7 +24,7 @@ export const EntryCreationDialog = ({
 }: EntryCreationDialogProps = {}) => {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [resultsVisible, setResultsVisible] = React.useState(false);
-  const [searchResults, setSearchResults] = React.useState<SearchResult[]>([]);
+  const [searchResults, setSearchResults] = React.useState<GameSearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = React.useState<number | null>(null);
 
   return (
