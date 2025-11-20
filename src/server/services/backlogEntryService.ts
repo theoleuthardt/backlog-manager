@@ -103,7 +103,6 @@ export async function updateBacklogEntry(
 }
 
 export async function deleteBacklogEntry(pool: Pool, backlogEntryId: number) {
-  // First remove all category associations
   const client = await pool.connect();
   try {
     await client.query(
@@ -114,13 +113,12 @@ export async function deleteBacklogEntry(pool: Pool, backlogEntryId: number) {
   } finally {
     client.release();
   }
-  // Then delete the backlog entry
   return await deleteCRUD.deleteBacklogEntry(pool, backlogEntryId);
 }
 
 /**
  * CATEGORY-BACKLOG ENTRY ASSOCIATION FUNCTIONS
- * 
+ *
  * Handles the relationship between categories and backlog entries
  */
 

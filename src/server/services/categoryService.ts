@@ -35,9 +35,7 @@ export async function updateCategory(
 }
 
 export async function deleteCategory(pool: Pool, categoryId: number) {
-  // First delete all category-backlog entry associations
   await deleteCRUD.deleteCategoryBacklogEntries(pool, categoryId);
-  // Then delete the category
   return await deleteCRUD.deleteCategory(pool, categoryId);
 }
 
