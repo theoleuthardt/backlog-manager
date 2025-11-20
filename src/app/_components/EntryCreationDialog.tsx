@@ -118,8 +118,22 @@ export const EntryCreationDialog = ({
                   </li>
                 ))}
               </ul>
-              {selectedIndex !== null && (
-                <Link href="/creation-tool" className="flex justify-center">
+              {selectedIndex !== null && searchResults[selectedIndex] && (
+                <Link
+                  href={{
+                    pathname: "/creation-tool",
+                    query: {
+                      title: searchResults[selectedIndex].title,
+                      imageUrl: searchResults[selectedIndex].imageUrl,
+                      steamAppId: searchResults[selectedIndex].steamAppId,
+                      mainStory: searchResults[selectedIndex].mainStory,
+                      mainStoryWithExtras:
+                        searchResults[selectedIndex].mainStoryWithExtras,
+                      completionist: searchResults[selectedIndex].completionist,
+                    },
+                  }}
+                  className="flex justify-center"
+                >
                   <Button className="h-[3rem] max-w-md min-w-[13rem] bg-blue-700 px-6 font-bold text-white hover:bg-blue-800">
                     <span className="truncate">Continue in Creation Tool</span>
                   </Button>
