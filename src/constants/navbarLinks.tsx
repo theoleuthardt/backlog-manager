@@ -8,7 +8,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
-import type { NavbarLink } from "~/types";
+import type { NavbarLink } from "~/app/types";
 
 export const landingPageNavLinks: NavbarLink[] = [
   {
@@ -63,7 +63,7 @@ export const dashboardNavLinks: NavbarLink[] = [
         <TooltipTrigger asChild>
           <ImportCSVButton
             iconOnly
-            className="!h-8 !w-8 !p-0 !border-0 !bg-transparent hover:!bg-transparent cursor-pointer"
+            className="!h-8 !w-8 cursor-pointer !border-0 !bg-transparent !p-0 hover:!bg-transparent"
           />
         </TooltipTrigger>
         <TooltipContent>
@@ -80,7 +80,7 @@ export const dashboardNavLinks: NavbarLink[] = [
         <TooltipTrigger asChild>
           <ExportCSVButton
             iconOnly
-            className="!h-8 !w-8 !p-0 !border-0 !bg-transparent hover:!bg-transparent cursor-pointer"
+            className="!h-8 !w-8 cursor-pointer !border-0 !bg-transparent !p-0 hover:!bg-transparent"
           />
         </TooltipTrigger>
         <TooltipContent>

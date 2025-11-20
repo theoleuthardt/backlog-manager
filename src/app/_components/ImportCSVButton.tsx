@@ -3,7 +3,7 @@ import React from "react";
 import { useRef } from "react";
 import { Button } from "shadcn_components/ui/button";
 import Image from "next/image";
-import type { ImportCSVButtonProps } from "~/types";
+import type { ImportCSVButtonProps } from "~/app/types";
 
 export const ImportCSVButton = ({
   id = "import-csv-button",

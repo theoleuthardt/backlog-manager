@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { Slider } from "~/components/ui/slider";
-import type { UniSliderProps } from "~/types";
+import type { UniSliderProps } from "~/app/types";
 
 export const UniSlider = (props: UniSliderProps) => {
   return (

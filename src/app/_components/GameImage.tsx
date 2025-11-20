@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import React from "react";
-import type { GameImageProps } from "~/types";
+import type { GameImageProps } from "~/app/types";
 
 export function GameImage(props: GameImageProps) {
   const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(props.src)}`;

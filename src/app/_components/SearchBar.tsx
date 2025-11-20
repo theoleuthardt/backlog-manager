@@ -3,7 +3,7 @@ import React from "react";
 import { Input } from "~/components/ui/input";
 import Image from "next/image";
 import { X } from "lucide-react";
-import type { SearchBarProps } from "~/types";
+import type { SearchBarProps } from "~/app/types";
 
 export const SearchBar = (props: SearchBarProps) => {
   return (

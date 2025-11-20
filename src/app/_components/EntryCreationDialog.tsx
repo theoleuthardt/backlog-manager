@@ -14,7 +14,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { gameSearchbarDummyResults } from "~/constants";
-import type { GameSearchResult, EntryCreationDialogProps } from "~/types";
+import type { GameSearchResult, EntryCreationDialogProps } from "~/app/types";
 
 export const EntryCreationDialog = ({
   triggerIcon = "/search.png",
@@ -24,7 +24,9 @@ export const EntryCreationDialog = ({
 }: EntryCreationDialogProps = {}) => {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [resultsVisible, setResultsVisible] = React.useState(false);
-  const [searchResults, setSearchResults] = React.useState<GameSearchResult[]>([]);
+  const [searchResults, setSearchResults] = React.useState<GameSearchResult[]>(
+    [],
+  );
   const [selectedIndex, setSelectedIndex] = React.useState<number | null>(null);
 
   return (

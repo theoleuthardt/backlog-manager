@@ -1,7 +1,7 @@
 "use client";
 import { Button } from "shadcn_components/ui/button";
 import Image from "next/image";
-import type { ExportCSVButtonProps } from "~/types";
+import type { ExportCSVButtonProps } from "~/app/types";
 
 export const ExportCSVButton = ({
   id = "export-csv-button",

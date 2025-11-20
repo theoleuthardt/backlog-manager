@@ -44,7 +44,7 @@ export function GetBacklogEntriesExample() {
   return (
     <ul>
       {entries?.map((entry) => (
-        <li key={entry.id}>{entry.title}</li>
+        <li key={entry.backlogEntryID}>{entry.title}</li>
       ))}
     </ul>
   );
@@ -87,7 +87,7 @@ export function GetCategoriesExample() {
   return (
     <ul>
       {categories?.map((cat) => (
-        <li key={cat.id}>{cat.name}</li>
+        <li key={cat.categoryID}>{cat.name}</li>
       ))}
     </ul>
   );
@@ -189,7 +189,7 @@ export function CompleteBacklogComponent() {
 
       <div>
         {entries?.map((entry) => (
-          <div key={entry.id}>
+          <div key={entry.backlogEntryID}>
             <h3>{entry.title}</h3>
             <p>Genre: {entry.genre}</p>
             <p>Platform: {entry.platform}</p>
@@ -198,7 +198,7 @@ export function CompleteBacklogComponent() {
             <button
               onClick={async () => {
                 await updateEntry.mutateAsync({
-                  backlogEntryId: entry.id,
+                  backlogEntryId: entry.backlogEntryID,
                   title: entry.title,
                   genre: entry.genre,
                   platform: entry.platform,
@@ -214,7 +214,7 @@ export function CompleteBacklogComponent() {
             <button
               onClick={async () => {
                 await deleteEntry.mutateAsync({
-                  backlogEntryId: entry.id,
+                  backlogEntryId: entry.backlogEntryID,
                 });
               }}
             >
@@ -227,7 +227,7 @@ export function CompleteBacklogComponent() {
       <div>
         <h2>Categories</h2>
         {categories?.map((cat) => (
-          <div key={cat.id}>{cat.name}</div>
+          <div key={cat.categoryID}>{cat.name}</div>
         ))}
       </div>
     </div>

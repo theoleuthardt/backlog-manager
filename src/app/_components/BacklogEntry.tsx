@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "shadcn_components/ui/select";
-import type { BacklogEntryProps } from "~/types";
+import type { BacklogEntryProps } from "~/app/types";
 
 export const BacklogEntry = (props: BacklogEntryProps) => {
   const [imageLink, setImageLink] = useState(props.imageLink);
