@@ -13,6 +13,10 @@ export async function SearchGame(input: string) {
         })
     })
     const data = await response.json();
+    
+    if (!Array.isArray(data)) {
+        return [];
+    }
 
     const result: HltbSearchResult = data.map((item: any) => ({
         id: item.id,
