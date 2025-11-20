@@ -16,6 +16,22 @@ const config = {
   images: {
     domains: ["avatars.githubusercontent.com", "cdn.discordapp.com"],
   }
+
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "howlongtobeat.com",
+        pathname: "/**",
+      },
+    ],
+    domains: [],
+    unoptimized: false,
+    localPatterns: [
+      {
+        pathname: "/**",
+      },
+    ],
+  },
 };
 
 export default config;

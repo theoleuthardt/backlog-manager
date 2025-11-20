@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 import { ScrollSection } from "components/ScrollSection";
 import Image from "next/image";

@@ -1,29 +1,13 @@
-import Image from "next/image";
+import { type NavbarLink } from "./navbarLinks";
+import { landingPageNavLinks } from "./navbarLinks";
+import { dashboardNavLinks } from "./navbarLinks";
+import { BacklogEntryDummyData } from "./backlogEntryDummyData";
+import { gameSearchbarDummyResults } from "~/constants/gameSearchbarDummyResults";
 
-export const navbarLinks = [
-  {
-    id: 1,
-    href: "#features",
-    content: <Image src="/features.png" alt="account" width={32} height={32} />,
-    onClick: () => {
-      document.getElementById("features")?.scrollIntoView({
-        behavior: "smooth",
-      });
-    },
-  },
-  {
-    id: 2,
-    href: "#future-updates",
-    content: <Image src="/updates.png" alt="account" width={32} height={32} />,
-    onClick: () => {
-      document.getElementById("features")?.scrollIntoView({
-        behavior: "smooth",
-      });
-    },
-  },
-  {
-    id: 3,
-    href: "/login",
-    content: <Image src="/account.png" alt="account" width={32} height={32} />,
-  },
-];
+export {
+  type NavbarLink,
+  landingPageNavLinks,
+  dashboardNavLinks,
+  BacklogEntryDummyData,
+  gameSearchbarDummyResults,
+};
