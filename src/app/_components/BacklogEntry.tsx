@@ -26,23 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "shadcn_components/ui/select";
-
-interface BacklogEntryProps {
-  title: string;
-  playtime?: number;
-  imageLink: string;
-  imageAlt?: string;
-  genre?: string[];
-  platform?: string[];
-  status?: string;
-  owned?: boolean;
-  interest?: number;
-  reviewStars?: number;
-  review?: string;
-  note?: string;
-  howLongToBeat?: number[];
-  className?: string;
-}
+import type { BacklogEntryProps } from "~/types";
 
 export const BacklogEntry = (props: BacklogEntryProps) => {
   const [imageLink, setImageLink] = useState(props.imageLink);
@@ -56,11 +40,6 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
   const [reviewStars, setReviewStars] = useState(props.reviewStars ?? 0);
   const [review, setReview] = useState(props.review ?? "");
   const [note, setNote] = useState(props.note ?? "");
-  const [hltbMain, setHltbMain] = useState(props.howLongToBeat?.[0] ?? 0);
-  const [hltbExtra, setHltbExtra] = useState(props.howLongToBeat?.[1] ?? 0);
-  const [hltbCompletionist, setHltbCompletionist] = useState(
-    props.howLongToBeat?.[2] ?? 0,
-  );
   const [isLoading, setIsLoading] = useState(false);
   const [imagePopoverOpen, setImagePopoverOpen] = useState(false);
 
@@ -96,12 +75,6 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
         changes.reviewStars = reviewStars;
       if (review !== (props.review ?? "")) changes.review = review;
       if (note !== (props.note ?? "")) changes.note = note;
-
-      const newHltb = [hltbMain, hltbExtra, hltbCompletionist];
-      const oldHltb = props.howLongToBeat ?? [0, 0, 0];
-      if (JSON.stringify(newHltb) !== JSON.stringify(oldHltb)) {
-        changes.howLongToBeat = newHltb;
-      }
 
       if (Object.keys(changes).length > 0) {
         const response = await fetch("/api/backlog/update", {
@@ -319,51 +292,28 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                   </Label>
                   <div className="grid grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <Label
-                        htmlFor="hltb-main"
-                        className="text-sm text-gray-400"
-                      >
+                      <Label className="text-sm text-gray-400">
                         Main Story
                       </Label>
-                      <Input
-                        id="hltb-main"
-                        type="number"
-                        value={hltbMain}
-                        onChange={(e) => setHltbMain(Number(e.target.value))}
-                        className="bg-black text-white"
-                      />
+                      <div className="flex h-10 items-center rounded-md border border-white/20 bg-black px-3 py-2 text-white">
+                        {props.mainTime ?? "--"}
+                      </div>
                     </div>
                     <div className="space-y-2">
-                      <Label
-                        htmlFor="hltb-extra"
-                        className="text-sm text-gray-400"
-                      >
+                      <Label className="text-sm text-gray-400">
                         Main + Extra
                       </Label>
-                      <Input
-                        id="hltb-extra"
-                        type="number"
-                        value={hltbExtra}
-                        onChange={(e) => setHltbExtra(Number(e.target.value))}
-                        className="bg-black text-white"
-                      />
+                      <div className="flex h-10 items-center rounded-md border border-white/20 bg-black px-3 py-2 text-white">
+                        {props.mainPlusExtraTime ?? "--"}
+                      </div>
                     </div>
                     <div className="space-y-2">
-                      <Label
-                        htmlFor="hltb-completionist"
-                        className="text-sm text-gray-400"
-                      >
+                      <Label className="text-sm text-gray-400">
                         Completionist
                       </Label>
-                      <Input
-                        id="hltb-completionist"
-                        type="number"
-                        value={hltbCompletionist}
-                        onChange={(e) =>
-                          setHltbCompletionist(Number(e.target.value))
-                        }
-                        className="bg-black text-white"
-                      />
+                      <div className="flex h-10 items-center rounded-md border border-white/20 bg-black px-3 py-2 text-white">
+                        {props.completionTime ?? "--"}
+                      </div>
                     </div>
                   </div>
                 </div>

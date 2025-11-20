@@ -6,17 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-
-export interface DropdownMenuProps {
-  className?: string;
-  items: DropdownItem[];
-  triggerText?: string;
-  triggerIcon?: React.ReactNode;
-}
-
-export interface DropdownItem {
-  text: string;
-}
+import type { DropdownMenuProps } from "~/types";
 
 export const CustomDropdownMenu = (props: DropdownMenuProps) => {
   return (

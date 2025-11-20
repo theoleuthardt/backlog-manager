@@ -1,14 +1,7 @@
 "use client";
 import React from "react";
 import { Slider } from "~/components/ui/slider";
-
-export interface UniSliderProps {
-  className?: string;
-  defaultValue: number;
-  maxvalue: number;
-  step: number;
-  ref?: React.RefObject<HTMLInputElement>;
-}
+import type { UniSliderProps } from "~/types";
 
 export const UniSlider = (props: UniSliderProps) => {
   return (

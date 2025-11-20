@@ -1,15 +1,7 @@
 "use client";
-import type { ReactNode } from "react";
 import { Button } from "shadcn_components/ui/button";
 import Image from "next/image";
-
-interface ExportCSVButtonProps {
-  id?: string;
-  disabled?: boolean;
-  className?: string;
-  children?: ReactNode;
-  iconOnly?: boolean;
-}
+import type { ExportCSVButtonProps } from "~/types";
 
 export const ExportCSVButton = ({
   id = "export-csv-button",

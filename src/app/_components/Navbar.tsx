@@ -3,11 +3,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { type NavbarLink } from "~/constants";
-
-interface NavbarProps {
-  navbarLinks: NavbarLink[];
-}
+import type { NavbarLink, NavbarProps } from "~/types";
 
 export function Navbar(props: NavbarProps) {
   const router = useRouter();

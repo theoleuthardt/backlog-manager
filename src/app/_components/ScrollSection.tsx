@@ -1,11 +1,6 @@
 "use client";
 import React, { useRef, useState, useEffect } from "react";
-
-interface ScrollSectionProps {
-  children: React.ReactNode;
-  className?: string;
-  delay?: number;
-}
+import type { ScrollSectionProps } from "~/types";
 
 export const ScrollSection = (Props: ScrollSectionProps) => {
   const [isVisible, setIsVisible] = useState(false);
