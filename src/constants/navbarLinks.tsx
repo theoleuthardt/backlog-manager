@@ -63,7 +63,7 @@ export const dashboardNavLinks: NavbarLink[] = [
         <TooltipTrigger asChild>
           <ImportCSVButton
             iconOnly
-            className="!h-8 !w-8 !p-0 !border-0 !bg-transparent hover:!bg-transparent cursor-pointer"
+            className="!h-8 !w-8 cursor-pointer !border-0 !bg-transparent !p-0 hover:!bg-transparent"
           />
         </TooltipTrigger>
         <TooltipContent>
@@ -80,7 +80,7 @@ export const dashboardNavLinks: NavbarLink[] = [
         <TooltipTrigger asChild>
           <ExportCSVButton
             iconOnly
-            className="!h-8 !w-8 !p-0 !border-0 !bg-transparent hover:!bg-transparent cursor-pointer"
+            className="!h-8 !w-8 cursor-pointer !border-0 !bg-transparent !p-0 hover:!bg-transparent"
           />
         </TooltipTrigger>
         <TooltipContent>
@@ -99,6 +99,38 @@ export const dashboardNavLinks: NavbarLink[] = [
   },
   {
     id: 5,
+    href: "/logout",
+    content: (
+      <Image
+        className="scale-125"
+        src="/logout.png"
+        alt="logout"
+        width={32}
+        height={32}
+      />
+    ),
+    action: "logout",
+    type: "link",
+  },
+];
+
+export const creationToolNavLinks: NavbarLink[] = [
+  {
+    id: 1,
+    href: "/dashboard",
+    content: <Image src="/go-back.png" alt="go-back" width={32} height={32} />,
+    action: "navigate",
+    type: "link",
+  },
+  {
+    id: 2,
+    href: "/account",
+    content: <Image src="/account.png" alt="account" width={32} height={32} />,
+    action: "navigate",
+    type: "link",
+  },
+  {
+    id: 3,
     href: "/logout",
     content: (
       <Image

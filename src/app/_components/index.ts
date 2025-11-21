@@ -12,6 +12,7 @@ import { ImportCSVButton } from "./ImportCSVButton";
 import { ExportCSVButton } from "./ExportCSVButton";
 import { EntryCreationDialog } from "components/EntryCreationDialog";
 import { DashboardContent } from "./DashboardContent";
+import { CreationToolForm } from "./CreationToolForm";
 
 export {
   Navbar,
@@ -28,4 +29,5 @@ export {
   ExportCSVButton,
   EntryCreationDialog,
   DashboardContent,
+  CreationToolForm,
 };
