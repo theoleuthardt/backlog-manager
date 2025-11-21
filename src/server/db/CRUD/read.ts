@@ -1,6 +1,11 @@
 import type { Pool } from "pg";
 import type { GetEntriesByStatusParams } from "../types/params";
 import { handleDatabaseError, NotFoundError } from "../types/errors";
+import type {
+  UserRow,
+  CategoryRow,
+  BacklogEntryRow,
+} from "../types";
 import {
   mapUser,
   mapUsers,
@@ -20,7 +25,7 @@ export async function getAllUsers(pool: Pool): Promise<User[]> {
 
   try {
     const result = await pool.query(query);
-    return mapUsers(result.rows);
+    return mapUsers(result.rows as UserRow[]);
   } catch (error) {
     handleDatabaseError(error, "getAllUsers");
   }
@@ -37,7 +42,7 @@ export async function getUserById(pool: Pool, userId: number): Promise<User> {
     if (!result.rows[0]) {
       throw new NotFoundError("User", userId);
     }
-    return mapUser(result.rows[0]);
+    return mapUser(result.rows[0] as UserRow);
   } catch (error) {
     if (error instanceof NotFoundError) throw error;
     handleDatabaseError(error, "getUserById");
@@ -55,7 +60,7 @@ export async function getUserByUsername(
 
   try {
     const result = await pool.query(query, [username]);
-    return result.rows[0] ? mapUser(result.rows[0]) : null;
+    return result.rows[0] ? mapUser(result.rows[0] as UserRow) : null;
   } catch (error) {
     handleDatabaseError(error, "getUserByUsername");
   }
@@ -72,7 +77,7 @@ export async function getCategoriesByUser(
 
   try {
     const result = await pool.query(query, [userId]);
-    return mapCategories(result.rows);
+    return mapCategories(result.rows as CategoryRow[]);
   } catch (error) {
     handleDatabaseError(error, "getCategoriesByUser");
   }
@@ -90,7 +95,7 @@ export async function getBacklogEntriesByUser(
 
   try {
     const result = await pool.query(query, [userId]);
-    return mapBacklogEntries(result.rows);
+    return mapBacklogEntries(result.rows as BacklogEntryRow[]);
   } catch (error) {
     handleDatabaseError(error, "getBacklogEntriesByUser");
   }
@@ -111,7 +116,7 @@ export async function getBacklogEntryById(
     if (!result.rows[0]) {
       throw new NotFoundError("BacklogEntry", backlogEntryId);
     }
-    return mapBacklogEntry(result.rows[0]);
+    return mapBacklogEntry(result.rows[0] as BacklogEntryRow);
   } catch (error) {
     if (error instanceof NotFoundError) throw error;
     handleDatabaseError(error, "getBacklogEntryById");
@@ -130,7 +135,7 @@ export async function getBacklogEntriesByStatus(
 
   try {
     const result = await pool.query(query, [params.userId, params.status]);
-    return mapBacklogEntries(result.rows);
+    return mapBacklogEntries(result.rows as BacklogEntryRow[]);
   } catch (error) {
     handleDatabaseError(error, "getBacklogEntriesByStatus");
   }
@@ -152,7 +157,7 @@ export async function getCategoriesForBacklogEntry(
 
   try {
     const result = await pool.query(query, [backlogEntryId]);
-    return mapCategories(result.rows);
+    return mapCategories(result.rows as CategoryRow[]);
   } catch (error) {
     handleDatabaseError(error, "getCategoriesForBacklogEntry");
   }
@@ -174,7 +179,7 @@ export async function getBacklogEntriesForCategory(
 
   try {
     const result = await pool.query(query, [categoryId]);
-    return mapBacklogEntries(result.rows);
+    return mapBacklogEntries(result.rows as BacklogEntryRow[]);
   } catch (error) {
     handleDatabaseError(error, "getBacklogEntriesForCategory");
   }

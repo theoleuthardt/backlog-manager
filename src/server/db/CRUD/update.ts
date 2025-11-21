@@ -5,6 +5,11 @@ import type {
   UpdateBacklogEntryParams,
 } from "../types/params";
 import { handleDatabaseError, NotFoundError } from "../types/errors";
+import type {
+  UserRow,
+  CategoryRow,
+  BacklogEntryRow,
+} from "../types";
 import {
   mapUser,
   mapCategory,
@@ -24,7 +29,7 @@ export async function updateUser(
   const client = await pool.connect();
   try {
     const updates: string[] = [];
-    const values: any[] = [params.userId];
+    const values: (string | number)[] = [params.userId];
     let paramCount = 2;
 
     if (params.username !== undefined) {
@@ -50,7 +55,7 @@ export async function updateUser(
       if (!result.rows[0]) {
         throw new NotFoundError("User", params.userId);
       }
-      return mapUser(result.rows[0]);
+      return mapUser(result.rows[0] as UserRow);
     }
 
     const query = `
@@ -64,7 +69,7 @@ export async function updateUser(
     if (!result.rows[0]) {
       throw new NotFoundError("User", params.userId);
     }
-    return mapUser(result.rows[0]);
+    return mapUser(result.rows[0] as UserRow);
   } catch (error) {
     if (error instanceof NotFoundError) throw error;
     handleDatabaseError(error, "updateUser");
@@ -83,7 +88,7 @@ export async function updateCategory(
   const client = await pool.connect();
   try {
     const updates: string[] = [];
-    const values: any[] = [params.categoryId];
+    const values: (string | number)[] = [params.categoryId];
     let paramCount = 2;
 
     if (params.categoryName !== undefined) {
@@ -109,7 +114,7 @@ export async function updateCategory(
       if (!result.rows[0]) {
         throw new NotFoundError("Category", params.categoryId);
       }
-      return mapCategory(result.rows[0]);
+      return mapCategory(result.rows[0] as CategoryRow);
     }
 
     const query = `
@@ -123,7 +128,7 @@ export async function updateCategory(
     if (!result.rows[0]) {
       throw new NotFoundError("Category", params.categoryId);
     }
-    return mapCategory(result.rows[0]);
+    return mapCategory(result.rows[0] as CategoryRow);
   } catch (error) {
     if (error instanceof NotFoundError) throw error;
     handleDatabaseError(error, "updateCategory");
@@ -142,7 +147,7 @@ export async function updateBacklogEntry(
   const client = await pool.connect();
   try {
     const updates: string[] = [];
-    const values: any[] = [params.backlogEntryId];
+    const values: (string | number | boolean | string[] | Date | null)[] = [params.backlogEntryId];
     let paramCount = 2;
 
     if (params.title !== undefined) {
@@ -171,10 +176,10 @@ export async function updateBacklogEntry(
     }
     // Always update optional fields, setting to NULL if not provided
     updates.push(`"ReleaseDate" = $${paramCount++}`);
-    values.push(params.releaseDate || null);
+    values.push(params.releaseDate ?? null);
 
     updates.push(`"ImageLink" = $${paramCount++}`);
-    values.push(params.imageLink || null);
+    values.push(params.imageLink ?? null);
 
     updates.push(`"MainTime" = $${paramCount++}`);
     values.push(params.mainTime ?? null);
@@ -189,10 +194,10 @@ export async function updateBacklogEntry(
     values.push(params.reviewStars ?? null);
 
     updates.push(`"Review" = $${paramCount++}`);
-    values.push(params.review || null);
+    values.push(params.review ?? null);
 
     updates.push(`"Note" = $${paramCount++}`);
-    values.push(params.note || null);
+    values.push(params.note ?? null);
 
     updates.push(`"UpdatedAt" = DATE_TRUNC('minute', CURRENT_TIMESTAMP)`);
 
@@ -205,7 +210,7 @@ export async function updateBacklogEntry(
       if (!result.rows[0]) {
         throw new NotFoundError("BacklogEntry", params.backlogEntryId);
       }
-      return mapBacklogEntry(result.rows[0]);
+      return mapBacklogEntry(result.rows[0] as BacklogEntryRow);
     }
 
     const query = `
@@ -219,7 +224,7 @@ export async function updateBacklogEntry(
     if (!result.rows[0]) {
       throw new NotFoundError("BacklogEntry", params.backlogEntryId);
     }
-    return mapBacklogEntry(result.rows[0]);
+    return mapBacklogEntry(result.rows[0] as BacklogEntryRow);
   } catch (error) {
     if (error instanceof NotFoundError) throw error;
     handleDatabaseError(error, "updateBacklogEntry");

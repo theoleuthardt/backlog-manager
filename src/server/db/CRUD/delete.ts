@@ -2,6 +2,12 @@ import type { Pool } from "pg";
 import type { CategoryBacklogAssociationParams } from "../types/params";
 import { handleDatabaseError, NotFoundError } from "../types/errors";
 import { withTransaction } from "../utils/transaction";
+import type {
+  UserRow,
+  CategoryRow,
+  BacklogEntryRow,
+  BacklogCategoryRow,
+} from "../types";
 import {
   mapUser,
   mapCategory,
@@ -51,7 +57,7 @@ export async function deleteUser(pool: Pool, userId: number): Promise<User> {
         [userId],
       );
 
-      return mapUser(userResult.rows[0]);
+      return mapUser(userResult.rows[0] as UserRow);
     });
   } catch (error) {
     if (error instanceof NotFoundError) throw error;
@@ -87,7 +93,7 @@ export async function deleteCategory(
         [categoryId],
       );
 
-      return mapCategory(categoryResult.rows[0]);
+      return mapCategory(categoryResult.rows[0] as CategoryRow);
     });
   } catch (error) {
     if (error instanceof NotFoundError) throw error;
@@ -123,7 +129,7 @@ export async function deleteBacklogEntry(
         [backlogEntryId],
       );
 
-      return mapBacklogEntry(entryResult.rows[0]);
+      return mapBacklogEntry(entryResult.rows[0] as BacklogEntryRow);
     });
   } catch (error) {
     if (error instanceof NotFoundError) throw error;
@@ -152,7 +158,7 @@ export async function removeBacklogEntryFromCategory(
       );
     }
 
-    return mapBacklogCategoryAssociation(result.rows[0]);
+    return mapBacklogCategoryAssociation(result.rows[0] as BacklogCategoryRow);
   } catch (error) {
     if (error instanceof NotFoundError) throw error;
     handleDatabaseError(error, "removeBacklogEntryFromCategory");

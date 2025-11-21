@@ -1,5 +1,18 @@
 import type { HltbGame, HltbSearchResult } from "~/server/integrations/types";
 
+interface HltbApiGame {
+  id: number;
+  hltbId: number;
+  title: string;
+  imageUrl: string;
+  steamAppId: number | null;
+  gogAppId: number | null;
+  mainStory: number;
+  mainStoryWithExtras: number;
+  completionist: number;
+  lastUpdatedAt: string;
+}
+
 export async function SearchGame(input: string) {
   try {
     const controller = new AbortController();
@@ -28,13 +41,13 @@ export async function SearchGame(input: string) {
       return [];
     }
 
-    const data = await response.json();
+    const data: unknown = await response.json();
 
     if (!Array.isArray(data)) {
       return [];
     }
 
-    const result: HltbSearchResult = data.map((item: any) => ({
+    const result: HltbSearchResult = (data as HltbApiGame[]).map((item) => ({
       id: item.id,
       hltbId: item.hltbId,
       title: item.title,
@@ -69,19 +82,20 @@ export async function GetGameByID(id: number) {
       throw new Error(`HowLongToBeat API error: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data: unknown = await response.json();
+    const apiData = data as HltbApiGame;
 
     const result: HltbGame = {
-      id: data.id,
-      hltbId: data.hltbId,
-      title: data.title,
-      imageUrl: data.imageUrl,
-      steamAppId: data.steamAppId,
-      gogAppId: data.gogAppId,
-      mainStory: data.mainStory,
-      mainStoryWithExtras: data.mainStoryWithExtras,
-      completionist: data.completionist,
-      lastUpdatedAt: data.lastUpdatedAt,
+      id: apiData.id,
+      hltbId: apiData.hltbId,
+      title: apiData.title,
+      imageUrl: apiData.imageUrl,
+      steamAppId: apiData.steamAppId,
+      gogAppId: apiData.gogAppId,
+      mainStory: apiData.mainStory,
+      mainStoryWithExtras: apiData.mainStoryWithExtras,
+      completionist: apiData.completionist,
+      lastUpdatedAt: apiData.lastUpdatedAt,
     };
     return result;
   } catch (error) {

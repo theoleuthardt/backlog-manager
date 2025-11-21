@@ -44,7 +44,7 @@ export async function withTransaction<T>(
 export async function executeInTransaction(
   pool: Pool,
   operation: string,
-  queries: Array<{ query: string; params?: any[] }>
+  queries: Array<{ query: string; params?: unknown[] }>
 ): Promise<void> {
   try {
     await withTransaction(pool, async (client) => {

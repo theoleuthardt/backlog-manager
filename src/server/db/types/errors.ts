@@ -53,8 +53,8 @@ export class ValidationError extends TRPCError {
 /**
  * Map PostgreSQL error codes to appropriate tRPC errors
  */
-export function handleDatabaseError(error: any, operation: string): never {
-  if (error.code) {
+export function handleDatabaseError(error: unknown, operation: string): never {
+  if (error && typeof error === 'object' && 'code' in error) {
     switch (error.code) {
       case "23505": // Unique violation
         throw new ConflictError(

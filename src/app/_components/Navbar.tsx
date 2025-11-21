@@ -62,7 +62,7 @@ export function Navbar(props: NavbarProps) {
           return (
             <Link
               key={link.id}
-              href={link.href || "#"}
+              href={link.href ?? "#"}
               onClick={(e) => handleClick(e, link)}
               className="bg-transparent hover:underline"
             >

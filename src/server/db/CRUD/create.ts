@@ -6,6 +6,12 @@ import type {
   CategoryBacklogAssociationParams,
 } from "../types/params";
 import { handleDatabaseError } from "../types/errors";
+import type {
+  UserRow,
+  CategoryRow,
+  BacklogEntryRow,
+  BacklogCategoryRow,
+} from "../types";
 import {
   mapUser,
   mapCategory,
@@ -33,7 +39,7 @@ export async function createUser(
       params.email,
       params.passwordHash,
     ]);
-    return mapUser(result.rows[0]!);
+    return mapUser(result.rows[0] as UserRow);
   } catch (error) {
     handleDatabaseError(error, "createUser");
   }
@@ -53,10 +59,10 @@ export async function createCategory(
     const result = await pool.query(query, [
       params.userId,
       params.categoryName,
-      params.color || "#000000",
-      params.description || "No description",
+      params.color ?? "#000000",
+      params.description ?? "No description",
     ]);
-    return mapCategory(result.rows[0]!);
+    return mapCategory(result.rows[0] as CategoryRow);
   } catch (error) {
     handleDatabaseError(error, "createCategory");
   }
@@ -81,16 +87,16 @@ export async function createBacklogEntry(
       params.status,
       params.owned,
       params.interest,
-      params.releaseDate || null,
-      params.imageLink || null,
-      params.mainTime || null,
-      params.mainPlusExtraTime || null,
-      params.completionTime || null,
-      params.reviewStars || null,
-      params.review || null,
-      params.note || null,
+      params.releaseDate ?? null,
+      params.imageLink ?? null,
+      params.mainTime ?? null,
+      params.mainPlusExtraTime ?? null,
+      params.completionTime ?? null,
+      params.reviewStars ?? null,
+      params.review ?? null,
+      params.note ?? null,
     ]);
-    return mapBacklogEntry(result.rows[0]!);
+    return mapBacklogEntry(result.rows[0] as BacklogEntryRow);
   } catch (error) {
     handleDatabaseError(error, "createBacklogEntry");
   }
@@ -111,7 +117,7 @@ export async function addCategoryToBacklogEntry(
       params.categoryId,
       params.backlogEntryId,
     ]);
-    return mapBacklogCategoryAssociation(result.rows[0]!);
+    return mapBacklogCategoryAssociation(result.rows[0] as BacklogCategoryRow);
   } catch (error) {
     handleDatabaseError(error, "addCategoryToBacklogEntry");
   }
