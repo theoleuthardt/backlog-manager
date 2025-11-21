@@ -4,7 +4,7 @@ import { BacklogEntryDummyData } from "./backlogEntryDummyData";
 import { gameSearchbarDummyResults } from "./gameSearchbarDummyResults";
 import { creationToolNavLinks } from "./navbarLinks";
 
-export { type NavbarLink } from "~/types";
+export { type NavbarLink } from "~/app/types";
 export {
   landingPageNavLinks,
   dashboardNavLinks,

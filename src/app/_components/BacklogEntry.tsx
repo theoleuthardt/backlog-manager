@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "shadcn_components/ui/select";
-import type { BacklogEntryProps } from "~/types";
+import type { BacklogEntryProps } from "~/app/types";
 
 export const BacklogEntry = (props: BacklogEntryProps) => {
   const [imageLink, setImageLink] = useState(props.imageLink);
@@ -54,7 +54,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
   const handleUpdate = async () => {
     setIsLoading(true);
     try {
-      const changes: Record<string, any> = {};
+      const changes: Record<string, string | number | boolean | string[]> = {};
 
       if (imageLink !== props.imageLink) changes.imageLink = imageLink;
       if (playtime !== (props.playtime ?? 0)) changes.playtime = playtime;
@@ -116,9 +116,9 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
         </DialogTrigger>
         <DialogContent
           className="h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] !max-w-none border-2 border-white bg-black p-0"
-          onOpenAutoFocus={(e: { preventDefault: () => any }) =>
-            e.preventDefault()
-          }
+          onOpenAutoFocus={(e: { preventDefault: () => void }) => {
+            e.preventDefault();
+          }}
           showCloseButton={false}
         >
           <DialogClose asChild>

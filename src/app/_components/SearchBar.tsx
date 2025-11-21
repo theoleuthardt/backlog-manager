@@ -3,7 +3,7 @@ import React from "react";
 import { Input } from "~/components/ui/input";
 import Image from "next/image";
 import { X } from "lucide-react";
-import type { SearchBarProps } from "~/types";
+import type { SearchBarProps } from "~/app/types";
 
 export const SearchBar = (props: SearchBarProps) => {
   return (
@@ -16,11 +16,11 @@ export const SearchBar = (props: SearchBarProps) => {
       <Input
         ref={props.ref}
         type="search"
-        placeholder={props.placeholder || "Search"}
+        placeholder={props.placeholder ?? "Search"}
         value={props.value}
         className={`w-full border-2 ${props.useIcon ? "pl-10" : ""} ${props.value && props.onClear ? "pr-10" : ""}`}
         onInput={(e) => {
-          if (props.onInput) props.onInput(e);
+          if (props.onInput) props.onInput(e as React.ChangeEvent<HTMLInputElement>);
         }}
       />
       {props.value && props.onClear && (

@@ -15,7 +15,7 @@ import { Checkbox } from "shadcn_components/ui/checkbox";
 import { Slider } from "shadcn_components/ui/slider";
 import { Label } from "shadcn_components/ui/label";
 import Image from "next/image";
-import type { DashboardContentProps } from "~/types";
+import type { DashboardContentProps } from "~/app/types";
 
 export const DashboardContent = ({ initialData }: DashboardContentProps) => {
   const [searchQuery, setSearchQuery] = useState("");

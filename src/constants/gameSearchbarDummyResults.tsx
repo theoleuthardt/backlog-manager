@@ -1,4 +1,4 @@
-import type { GameSearchResult } from "~/types";
+import type { GameSearchResult } from "~/app/types";
 
 export const gameSearchbarDummyResults: GameSearchResult[] = [
   {

@@ -1,5 +1,5 @@
 /**
- * @param {{ url: string | URL; }} request
+ * @param {Request} request
  */
 export async function GET(request) {
   const { searchParams } = new URL(request.url)

@@ -1,45 +1,47 @@
 export interface UserRow {
-    id: bigint;
-  name: string;
-  email: string;
-  passwordHash?: string;
+  UserID: bigint;
+  Username: string;
+  Email: string;
+  PasswordHash: string;
+  CreatedAt: string;
+  UpdatedAt: string;
 }
 
 export interface CategoryRow {
-  userID: bigint;
-  categoryID: bigint;
-  name: string;
-  color: string;
-  description?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  CategoryID: bigint;
+  UserID: bigint;
+  CategoryName: string;
+  Color: string;
+  Description: string;
+  CreatedAt: string;
+  UpdatedAt: string;
 }
 
 export interface BacklogEntryRow {
-  backlogEntryID: bigint;
-  userID: bigint;
-  title: string;
-  genre: string;
-  platform: string;
-  releaseDate?: string;
-  imageLink?: string;
-  mainTime?: number;
-  mainPlusExtraTime?: number;
-  completionTime?: number;
-  status: string;
-  owned: boolean;
-  interest: bigint;
-  reviewStars?: bigint;
-  review?: string;
-  note?: string;
-  addedAt?: string;
-  completedAt?: string;
-  updatedAt?: string;
+  BacklogEntryID: bigint;
+  UserID: bigint;
+  Title: string;
+  Genre: string;
+  Platform: string;
+  ReleaseDate?: string;
+  ImageLink?: string;
+  MainTime?: number;
+  MainPlusExtraTime?: number;
+  CompletionTime?: number;
+  Status: string;
+  Owned: boolean;
+  Interest: bigint;
+  ReviewStars?: bigint;
+  Review?: string;
+  Note?: string;
+  CompletedAt?: string;
+  CreatedAt: string;
+  UpdatedAt: string;
 }
 
 export interface BacklogCategoryRow {
-  categoryID: bigint;
-  backlogEntryID: bigint;
-  completedAt?: string;
-  updatedAt?: string;
+  CategoryID: bigint;
+  BacklogEntryID: bigint;
+  CreatedAt: string;
+  UpdatedAt: string;
 }

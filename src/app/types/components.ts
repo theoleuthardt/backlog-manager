@@ -47,7 +47,7 @@ export interface GameImageProps {
 export interface SearchBarProps {
   placeholder?: string;
   className?: string;
-  onInput?: Function;
+  onInput?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onClear?: () => void;
   value?: string;
   ref?: React.RefObject<HTMLInputElement>;

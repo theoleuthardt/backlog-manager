@@ -3,7 +3,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import type { NavbarLink, NavbarProps } from "~/types";
+import type { NavbarLink, NavbarProps } from "~/app/types";
 
 export function Navbar(props: NavbarProps) {
   const router = useRouter();
@@ -62,7 +62,7 @@ export function Navbar(props: NavbarProps) {
           return (
             <Link
               key={link.id}
-              href={link.href || "#"}
+              href={link.href ?? "#"}
               onClick={(e) => handleClick(e, link)}
               className="bg-transparent hover:underline"
             >

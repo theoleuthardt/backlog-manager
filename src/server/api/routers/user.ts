@@ -32,12 +32,11 @@ export const userRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input }) => {
-      return await userService.createUser(
-        pool,
-        input.username,
-        input.email,
-        input.passwordHash
-      );
+      return await userService.createUser(pool, {
+        username: input.username,
+        email: input.email,
+        passwordHash: input.passwordHash,
+      });
     }),
 
   /**
@@ -114,13 +113,12 @@ export const userRouter = createTRPCRouter({
         throw new Error("User ID not found in session");
       }
       const userId = parseInt(ctx.session.user.id);
-      return await userService.updateUser(
-        pool,
+      return await userService.updateUser(pool, {
         userId,
-        input.username,
-        input.email,
-        input.passwordHash
-      );
+        username: input.username,
+        email: input.email,
+        passwordHash: input.passwordHash,
+      });
     }),
 
   /**
@@ -143,13 +141,12 @@ export const userRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input }) => {
-      return await userService.updateUser(
-        pool,
-        input.userId,
-        input.username,
-        input.email,
-        input.passwordHash
-      );
+      return await userService.updateUser(pool, {
+        userId: input.userId,
+        username: input.username,
+        email: input.email,
+        passwordHash: input.passwordHash,
+      });
     }),
 
   /**

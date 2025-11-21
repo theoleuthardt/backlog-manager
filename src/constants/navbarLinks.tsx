@@ -8,7 +8,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
-import type { NavbarLink } from "~/types";
+import type { NavbarLink } from "~/app/types";
 
 export const landingPageNavLinks: NavbarLink[] = [
   {

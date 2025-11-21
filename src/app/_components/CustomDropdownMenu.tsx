@@ -6,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import type { DropdownMenuProps } from "~/types";
+import type { DropdownMenuProps } from "~/app/types";
 
 export const CustomDropdownMenu = (props: DropdownMenuProps) => {
   return (
