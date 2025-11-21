@@ -54,12 +54,11 @@ export class ValidationError extends TRPCError {
  * Map PostgreSQL error codes to appropriate tRPC errors
  */
 export function handleDatabaseError(error: any, operation: string): never {
-  // PostgreSQL error codes
   if (error.code) {
     switch (error.code) {
       case "23505": // Unique violation
         throw new ConflictError(
-          "A resource with this identifier already exists"
+          "A resource with this identifier already exists",
         );
       case "23503": // Foreign key violation
         throw new ValidationError("Referenced resource does not exist");
