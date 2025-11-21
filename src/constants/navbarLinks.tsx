@@ -145,3 +145,36 @@ export const creationToolNavLinks: NavbarLink[] = [
     type: "link",
   },
 ];
+
+export const importCSVNavLinks: NavbarLink[] = [
+  {
+    id: 1,
+    href: "/dashboard",
+    content: <Image src="/go-back.png" alt="go-back" width={32} height={32} />,
+    action: "navigate",
+    type: "link",
+  },
+  {
+    id: 2,
+    href: "/account",
+    content: <Image src="/account.png" alt="account" width={32} height={32} />,
+    action: "navigate",
+    type: "link",
+  },
+  {
+    id: 3,
+    href: "/logout",
+    content: (
+      <Image
+        className="scale-125"
+        src="/logout.png"
+        alt="logout"
+        width={32}
+        height={32}
+      />
+    ),
+    action: "logout",
+    type: "link",
+  },
+];
+
