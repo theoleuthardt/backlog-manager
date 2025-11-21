@@ -6,6 +6,7 @@ import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
 const config = {
+  output: "standalone",
   allowedDevOrigins: [
     "local-origin.dev",
     "*.local-origin.dev",
