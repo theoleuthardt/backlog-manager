@@ -43,7 +43,9 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
   const [review, setReview] = useState(props.review ?? "");
   const [note, setNote] = useState(props.note ?? "");
   const [isLoading, setIsLoading] = useState(false);
-  const [updateStatus, setUpdateStatus] = useState<"idle" | "success" | "error">("idle");
+  const [updateStatus, setUpdateStatus] = useState<
+    "idle" | "success" | "error"
+  >("idle");
   const [imagePopoverOpen, setImagePopoverOpen] = useState(false);
 
   const handleUpdateImage = () => {
@@ -99,7 +101,6 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
         setUpdateStatus("success");
         toast.success("Entry updated successfully!");
 
-        // Reset status after 2 seconds
         setTimeout(() => setUpdateStatus("idle"), 2000);
       } else {
         toast.info("No changes to update");
@@ -111,10 +112,9 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
       toast.error(
         error instanceof Error
           ? `Failed to update: ${error.message}`
-          : "Failed to update entry. Please try again."
+          : "Failed to update entry. Please try again.",
       );
 
-      // Reset status after 3 seconds
       setTimeout(() => setUpdateStatus("idle"), 3000);
     } finally {
       setIsLoading(false);
