@@ -119,8 +119,8 @@ export function UpdateBacklogEntryExample() {
     await updateEntry.mutateAsync({
       backlogEntryId: 1,
       title: "Updated Title",
-      genre: "Action-Adventure",
-      platform: "Nintendo Switch",
+      genre: ["Action-Adventure"],
+      platform: ["Nintendo Switch"],
       status: "Completed",
       owned: true,
       interest: 8,
@@ -200,8 +200,8 @@ export function CompleteBacklogComponent() {
                 await updateEntry.mutateAsync({
                   backlogEntryId: entry.backlogEntryID,
                   title: entry.title,
-                  genre: entry.genre,
-                  platform: entry.platform,
+                  genre: entry.genre.split(", "),
+                  platform: entry.platform.split(", "),
                   status: "Playing",
                   owned: entry.owned,
                   interest: entry.interest,
