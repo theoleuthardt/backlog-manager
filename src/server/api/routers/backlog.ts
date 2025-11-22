@@ -206,13 +206,13 @@ export const backlogRouter = createTRPCRouter({
       z.object({
         backlogEntryId: z.number().positive(),
         title: z.string().min(1).optional(),
-        genre: z.string().min(1).optional(),
-        platform: z.string().min(1).optional(),
-        status: z.enum(["Backlog", "Playing", "Completed"]).optional(),
+        genre: z.array(z.string()).optional(),
+        platform: z.array(z.string()).optional(),
+        status: z.string().optional(),
         owned: z.boolean().optional(),
         interest: z.number().min(0).max(10).optional(),
         releaseDate: z.date().optional(),
-        imageLink: z.string().url().optional(),
+        imageLink: z.string().optional(),
         mainTime: z.number().positive().optional(),
         mainPlusExtraTime: z.number().positive().optional(),
         completionTime: z.number().positive().optional(),
@@ -222,7 +222,12 @@ export const backlogRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input }) => {
-      return await backlogEntryService.updateBacklogEntry(pool, input);
+      const dbInput = {
+        ...input,
+        genre: input.genre ? input.genre.join(", ") : undefined,
+        platform: input.platform ? input.platform.join(", ") : undefined,
+      };
+      return await backlogEntryService.updateBacklogEntry(pool, dbInput);
     }),
 
   /**

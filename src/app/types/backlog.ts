@@ -2,6 +2,7 @@
  * Backlog entry properties for display and form
  */
 export interface BacklogEntryProps {
+  id: number;
   title: string;
   playtime?: number;
   imageLink: string;

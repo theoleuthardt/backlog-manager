@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "shadcn_components/ui/select";
 import type { BacklogEntryProps } from "~/app/types";
+import { api } from "~/trpc/react";
 
 export const BacklogEntry = (props: BacklogEntryProps) => {
   const [imageLink, setImageLink] = useState(props.imageLink);
@@ -51,13 +52,24 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
     }
   };
 
+  const updateEntryMutation = api.backlog.updateEntry.useMutation();
+
   const handleUpdate = async () => {
     setIsLoading(true);
     try {
-      const changes: Record<string, string | number | boolean | string[]> = {};
+      const changes: {
+        imageLink?: string;
+        genre?: string[];
+        platform?: string[];
+        status?: string;
+        owned?: boolean;
+        interest?: number;
+        reviewStars?: number;
+        review?: string;
+        note?: string;
+      } = {};
 
       if (imageLink !== props.imageLink) changes.imageLink = imageLink;
-      if (playtime !== (props.playtime ?? 0)) changes.playtime = playtime;
       if (genre !== (props.genre?.join(", ") ?? ""))
         changes.genre = genre
           .split(",")
@@ -77,20 +89,10 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
       if (note !== (props.note ?? "")) changes.note = note;
 
       if (Object.keys(changes).length > 0) {
-        const response = await fetch("/api/backlog/update", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            title: props.title,
-            ...changes,
-          }),
+        await updateEntryMutation.mutateAsync({
+          backlogEntryId: props.id,
+          ...changes,
         });
-
-        if (!response.ok) {
-          throw new Error("Failed to update");
-        }
       }
     } catch (error) {
       console.error("Error updating backlog entry:", error);
