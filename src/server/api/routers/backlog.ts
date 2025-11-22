@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import pool from "~/server/db/index";
 import * as backlogEntryService from "~/server/services/backlogEntryService";
 import * as categoryService from "~/server/services/categoryService";
@@ -64,7 +64,7 @@ export const backlogRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       // TODO: Remove fallback after auth merge
-      const userId = parseInt(ctx.session?.user?.id || String(TEST_USER_ID));
+      const userId = parseInt(ctx.session?.user?.id ?? String(TEST_USER_ID));
 
       // Map frontend status values to database values
       const statusMap: Record<string, string> = {
@@ -74,7 +74,7 @@ export const backlogRouter = createTRPCRouter({
         "Dropped": "Dropped",
       };
 
-      const mappedStatus = statusMap[input.status] || "Not Started";
+      const mappedStatus = statusMap[input.status] ?? "Not Started";
 
       return await backlogEntryService.createBacklogEntry(pool, {
         userId,
@@ -106,7 +106,7 @@ export const backlogRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const userId = parseInt(ctx.session?.user?.id || String(TEST_USER_ID));
+      const userId = parseInt(ctx.session?.user?.id ?? String(TEST_USER_ID));
       return await categoryService.createCategory(pool, {
         userId,
         ...input,
@@ -143,7 +143,7 @@ export const backlogRouter = createTRPCRouter({
    */
   getEntries: publicProcedure // TODO: Change back to protectedProcedure after auth merge
     .query(async ({ ctx }) => {
-      const userId = parseInt(ctx.session?.user?.id || String(TEST_USER_ID));
+      const userId = parseInt(ctx.session?.user?.id ?? String(TEST_USER_ID));
       return await backlogEntryService.getBacklogEntriesByUser(pool, userId);
     }),
 
@@ -173,7 +173,7 @@ export const backlogRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const userId = parseInt(ctx.session?.user?.id || String(TEST_USER_ID));
+      const userId = parseInt(ctx.session?.user?.id ?? String(TEST_USER_ID));
       return await backlogEntryService.getBacklogEntriesByStatus(pool, {
         userId,
         status: input.status,
@@ -187,7 +187,7 @@ export const backlogRouter = createTRPCRouter({
    */
   getCategories: publicProcedure // TODO: Change back to protectedProcedure after auth merge
     .query(async ({ ctx }) => {
-    const userId = parseInt(ctx.session?.user?.id || String(TEST_USER_ID));
+    const userId = parseInt(ctx.session?.user?.id ?? String(TEST_USER_ID));
     return await categoryService.getCategoriesByUser(pool, userId);
   }),
 
