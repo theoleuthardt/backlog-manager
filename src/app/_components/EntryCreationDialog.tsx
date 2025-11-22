@@ -13,6 +13,7 @@ import { GameImage, SearchBar } from "components";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
+import { Spinner } from "~/components/ui/spinner";
 import type { EntryCreationDialogProps } from "~/app/types";
 import { api } from "~/trpc/react";
 import { useDebounce } from "~/hooks/useDebounce";
@@ -94,7 +95,10 @@ export const EntryCreationDialog = ({
           {resultsVisible && (
             <div className="flex flex-col items-center gap-6">
               {isLoading ? (
-                <div className="text-white">Searching...</div>
+                <div className="flex items-center gap-3 text-white">
+                  <Spinner className="h-6 w-6" />
+                  <span className="text-lg">Searching for game...</span>
+                </div>
               ) : searchResults.length > 0 ? (
                 <>
                   <ul className="flex max-h-96 w-full max-w-2xl flex-col gap-2 overflow-y-auto bg-transparent">
