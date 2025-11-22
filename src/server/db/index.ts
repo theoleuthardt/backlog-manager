@@ -1,7 +1,5 @@
 import { Pool } from "pg";
 
-console.log("🔌 POSTGRES_URL:", process.env.POSTGRES_URL);
-
 const pool = new Pool({
   connectionString: process.env.POSTGRES_URL,
   max: 20, // Maximum number of clients in the pool
