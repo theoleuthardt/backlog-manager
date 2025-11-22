@@ -302,7 +302,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                         <SelectItem value="backlog">Backlog</SelectItem>
                         <SelectItem value="playing">Playing</SelectItem>
                         <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="abandoned">Abandoned</SelectItem>
+                        <SelectItem value="dropped">Dropped</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
