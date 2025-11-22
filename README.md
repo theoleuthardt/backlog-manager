@@ -15,13 +15,14 @@ games according to categories such as "Games I still want to play", "Games I'm c
 - Connect all your game accounts (Only Steam for now)
 - Import your games from Steam
 - Import your existing backlog from a CSV file
+- Export your backlog as a CSV file (simple download)
+- Sort & Filter options to organize your backlog+
 - User authentication
-- Categorization of games via self made groups
-- Access your backlog from anywhere (cross platform native apps coming soon)
+- Access your backlog from anywhere (browser or native app)
 
 ## Architecture
 
 - **Frontend:** NextJS (T3 Stack)
 - **Backend:** Typescript
 - **Database:** PostgreSQL (pg-package)
-- **Deployment:** Docker
+- **Deployment:** Docker/Multi Platform Apps with Tauri
