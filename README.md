@@ -12,16 +12,21 @@ games according to categories such as "Games I still want to play", "Games I'm c
 "Games I've already played through". This is made possible by simple drag &amp; drop.
 
 ## Features
-- Connect all your game accounts (Only Steam for now)
-- Import your games from Steam
+- Create backlog entries with howlongtobeat times
+- Automatic image scraping from howlongtobeat.com
+- Note your own thoughts about games
+- Make reviews for your completed games (optional)
+- Update your backlog entries as often as you want
+- Connect your Steam account for current playtimes (automatic sync)
+- Sort & Filter options to organize your backlog
 - Import your existing backlog from a CSV file
+- Export your backlog as a CSV file (simple download)
 - User authentication
-- Categorization of games via self made groups
-- Access your backlog from anywhere (cross platform native apps coming soon)
+- Access your backlog from anywhere (browser or native app)
 
 ## Architecture
 
 - **Frontend:** NextJS (T3 Stack)
 - **Backend:** Typescript
 - **Database:** PostgreSQL (pg-package)
-- **Deployment:** Docker
+- **Deployment:** Docker/Multi Platform Apps with Tauri
