@@ -1,5 +1,5 @@
 import { Navbar, Footer, DashboardContent } from "components";
-import { BacklogEntryDummyData, dashboardNavLinks } from "~/constants";
+import { dashboardNavLinks } from "~/constants";
 
 export default function Dashboard() {
   return (
@@ -10,7 +10,7 @@ export default function Dashboard() {
             <Navbar navbarLinks={dashboardNavLinks} />
             <main className="drop-in flex-grow px-4">
               <div className="mx-auto grid h-full max-w-[100rem] grid-rows-[1fr_auto] gap-6">
-                <DashboardContent initialData={BacklogEntryDummyData} />
+                <DashboardContent />
               </div>
             </main>
             <Footer />

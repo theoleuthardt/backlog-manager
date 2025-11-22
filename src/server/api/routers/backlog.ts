@@ -3,6 +3,31 @@ import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import pool from "~/server/db/index";
 import * as backlogEntryService from "~/server/services/backlogEntryService";
 import * as categoryService from "~/server/services/categoryService";
+import type { BacklogEntry } from "~/server/db/utils/mapper";
+
+/**
+ * Transform database BacklogEntry to frontend format
+ */
+function transformBacklogEntry(entry: BacklogEntry) {
+  return {
+    id: entry.backlogEntryID,
+    title: entry.title,
+    imageLink: entry.imageLink ?? "",
+    imageAlt: entry.title,
+    genre: entry.genre ? entry.genre.split(", ").filter(Boolean) : [],
+    platform: entry.platform ? entry.platform.split(", ").filter(Boolean) : [],
+    status: entry.status,
+    owned: entry.owned,
+    interest: entry.interest,
+    reviewStars: entry.reviewStars,
+    review: entry.review,
+    note: entry.note,
+    mainTime: entry.mainTime,
+    mainPlusExtraTime: entry.mainPlusExtraTime,
+    completionTime: entry.completionTime,
+    playtime: 0, // TODO: Add playtime field to database
+  };
+}
 
 // ============================================================================
 // TODO: TEMPORARY FOR TESTING - Remove when merging auth branch
@@ -144,7 +169,11 @@ export const backlogRouter = createTRPCRouter({
   getEntries: publicProcedure // TODO: Change back to protectedProcedure after auth merge
     .query(async ({ ctx }) => {
       const userId = parseInt(ctx.session?.user?.id ?? String(TEST_USER_ID));
-      return await backlogEntryService.getBacklogEntriesByUser(pool, userId);
+      const entries = await backlogEntryService.getBacklogEntriesByUser(
+        pool,
+        userId,
+      );
+      return entries.map(transformBacklogEntry);
     }),
 
   /**
