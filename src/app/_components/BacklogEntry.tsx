@@ -8,12 +8,13 @@ import {
 } from "shadcn_components/ui/dialog";
 import { Button } from "shadcn_components/ui/button";
 import { GameImage } from "components/GameImage";
-import { XIcon, Loader2, Edit2 } from "lucide-react";
+import { XIcon, Loader2, Edit2, Check, X } from "lucide-react";
 import { useState } from "react";
 import { Input } from "shadcn_components/ui/input";
 import { Label } from "shadcn_components/ui/label";
 import { Textarea } from "shadcn_components/ui/textarea";
 import { Checkbox } from "shadcn_components/ui/checkbox";
+import { toast } from "sonner";
 import {
   Popover,
   PopoverContent,
@@ -42,6 +43,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
   const [review, setReview] = useState(props.review ?? "");
   const [note, setNote] = useState(props.note ?? "");
   const [isLoading, setIsLoading] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState<"idle" | "success" | "error">("idle");
   const [imagePopoverOpen, setImagePopoverOpen] = useState(false);
 
   const handleUpdateImage = () => {
@@ -56,6 +58,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
 
   const handleUpdate = async () => {
     setIsLoading(true);
+    setUpdateStatus("idle");
     try {
       const changes: {
         imageLink?: string;
@@ -93,9 +96,26 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
           backlogEntryId: props.id,
           ...changes,
         });
+        setUpdateStatus("success");
+        toast.success("Entry updated successfully!");
+
+        // Reset status after 2 seconds
+        setTimeout(() => setUpdateStatus("idle"), 2000);
+      } else {
+        toast.info("No changes to update");
+        setIsLoading(false);
       }
     } catch (error) {
       console.error("Error updating backlog entry:", error);
+      setUpdateStatus("error");
+      toast.error(
+        error instanceof Error
+          ? `Failed to update: ${error.message}`
+          : "Failed to update entry. Please try again."
+      );
+
+      // Reset status after 3 seconds
+      setTimeout(() => setUpdateStatus("idle"), 3000);
     } finally {
       setIsLoading(false);
     }
@@ -383,13 +403,29 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                     variant="outline"
                     size="sm"
                     onClick={handleUpdate}
-                    disabled={isLoading}
-                    className="min-w-[200px] gap-2 bg-black text-white hover:bg-white hover:text-black"
+                    disabled={isLoading || updateStatus === "success"}
+                    className={`min-w-[200px] gap-2 transition-colors duration-300 ${
+                      updateStatus === "success"
+                        ? "bg-green-600 text-white hover:bg-green-600"
+                        : updateStatus === "error"
+                          ? "bg-red-600 text-white hover:bg-red-600"
+                          : "bg-black text-white hover:bg-white hover:text-black"
+                    }`}
                   >
                     {isLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Updating...
+                      </>
+                    ) : updateStatus === "success" ? (
+                      <>
+                        <Check className="mr-2 h-4 w-4" />
+                        Updated!
+                      </>
+                    ) : updateStatus === "error" ? (
+                      <>
+                        <X className="mr-2 h-4 w-4" />
+                        Failed
                       </>
                     ) : (
                       "Update Entry"
