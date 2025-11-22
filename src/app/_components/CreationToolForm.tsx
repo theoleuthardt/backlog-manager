@@ -22,7 +22,6 @@ export function CreationToolForm() {
   const searchParams = useSearchParams();
   const title = searchParams.get("title") ?? "";
   const imageUrl = searchParams.get("imageUrl") ?? "";
-  const steamAppId = searchParams.get("steamAppId") ?? "";
   const mainStory = parseFloat(searchParams.get("mainStory") ?? "0");
   const mainStoryWithExtras = parseFloat(
     searchParams.get("mainStoryWithExtras") ?? "0",
@@ -77,7 +76,7 @@ export function CreationToolForm() {
         Dropped: "Dropped",
       };
 
-      const mappedStatus = statusMap[status] || "Backlog";
+      const mappedStatus = statusMap[status] ?? "Backlog";
 
       await createEntryMutation.mutateAsync({
         title,
