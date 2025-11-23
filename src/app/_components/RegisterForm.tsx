@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
+import { TRPCClientError } from "@trpc/client";
 
 export default function RegisterForm() {
   const [form, setForm] = useState({
@@ -11,15 +12,17 @@ export default function RegisterForm() {
     password: "",
     steamId: "",
   });
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const router = useRouter();
   const createUser = api.user.createUser.useMutation();
 
-  const handleChange = (e: any) =>
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setErrors({});
+
     try {
       await createUser.mutateAsync({
         username: form.username,
@@ -30,9 +33,24 @@ export default function RegisterForm() {
 
       router.push("/api/auth/signin?callbackUrl=/dashboard");
     } catch (err: any) {
-      setError(err.message || "Failed to register user");
+      if (err.data?.zodError?.fieldErrors) {
+        // Mappe Zod-Fehler in ein einfaches Objekt
+        const fieldErrors: Record<string, string> = {};
+        for (const key in err.data.zodError.fieldErrors) {
+          const messages = err.data.zodError.fieldErrors[key];
+          if (messages && messages.length > 0) {
+            fieldErrors[key] = messages[0]; // nur erste Fehlermeldung pro Feld
+          }
+        }
+        setErrors(fieldErrors);
+      } else if (err.message) {
+        setErrors({ form: err.message });
+      } else {
+        setErrors({ form: "Unknown error occurred" });
+      }
     }
   };
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -41,46 +59,85 @@ export default function RegisterForm() {
       <p className="mb-8 text-center text-lg text-gray-300">
         Fill in your details to create a new account.
       </p>
-      {error && <p className="text-red-400">{error}</p>}
 
-      <input
-        type="text"
-        name="username"
-        placeholder="Username"
-        value={form.username}
-        onChange={handleChange}
-        required
-        className="w-full rounded-lg border border-gray-600 bg-black/20 px-4 py-3 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
-      />
+      {/* Allgemeine Fehler */}
+      {errors.form && (
+        <div className="rounded bg-red-900/50 p-4 text-red-400">
+          {errors.form}
+        </div>
+      )}
 
-      <input
-        type="email"
-        name="email"
-        placeholder="Email"
-        value={form.email}
-        onChange={handleChange}
-        required
-        className="w-full rounded-lg border border-gray-600 bg-black/20 px-4 py-3 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
-      />
+      {/* Username */}
+      <div>
+        <input
+          type="text"
+          name="username"
+          placeholder="Username"
+          value={form.username}
+          onChange={handleChange}
+          required
+          className={`w-full rounded-lg border px-4 py-3 placeholder-gray-400 focus:outline-none ${
+            errors.username
+              ? "border-red-400 bg-red-900/20 text-red-200"
+              : "border-gray-600 bg-black/20 text-white"
+          }`}
+        />
+        {errors.username && (
+          <p className="mt-1 text-sm text-red-400">{errors.username}</p>
+        )}
+      </div>
 
-      <input
-        type="password"
-        name="password"
-        placeholder="Password"
-        value={form.password}
-        onChange={handleChange}
-        required
-        className="w-full rounded-lg border border-gray-600 bg-black/20 px-4 py-3 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
-      />
+      {/* Email */}
+      <div>
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          value={form.email}
+          onChange={handleChange}
+          required
+          className={`w-full rounded-lg border px-4 py-3 placeholder-gray-400 focus:outline-none ${
+            errors.email
+              ? "border-red-400 bg-red-900/20 text-red-200"
+              : "border-gray-600 bg-black/20 text-white"
+          }`}
+        />
+        {errors.email && (
+          <p className="mt-1 text-sm text-red-400">{errors.email}</p>
+        )}
+      </div>
 
-      <input
-        type="text"
-        name="steamId"
-        placeholder="Steam ID (optional)"
-        value={form.steamId}
-        onChange={handleChange}
-        className="w-full rounded-lg border border-gray-600 bg-black/20 px-4 py-3 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
-      />
+      {/* Password */}
+      <div>
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          value={form.password}
+          onChange={handleChange}
+          required
+          className={`w-full rounded-lg border px-4 py-3 placeholder-gray-400 focus:outline-none ${
+            errors.password
+              ? "border-red-400 bg-red-900/20 text-red-200"
+              : "border-gray-600 bg-black/20 text-white"
+          }`}
+        />
+        {errors.password && (
+          <p className="mt-1 text-sm text-red-400">{errors.password}</p>
+        )}
+      </div>
+
+      {/* Steam ID */}
+      <div>
+        <input
+          type="text"
+          name="steamId"
+          placeholder="Steam ID (optional)"
+          value={form.steamId}
+          onChange={handleChange}
+          className="w-full rounded-lg border border-gray-600 bg-black/20 px-4 py-3 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
+        />
+      </div>
 
       <button
         type="submit"
@@ -98,6 +155,7 @@ export default function RegisterForm() {
           Log in
         </a>
       </p>
+
       <p className="text-center text-gray-400">
         Register with another provider?{" "}
         <a
