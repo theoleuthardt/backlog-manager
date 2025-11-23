@@ -1,5 +1,5 @@
 import { parse } from "csv-parse";
-import { SearchGame } from "../howlongtobeat/howLongToBeat";
+import { SearchGame } from "../integrations/howlongtobeat/howLongToBeat";
 import type { Pool } from "pg";
 import * as backlogEntryService from "~/server/services/backlogEntryService";
 
@@ -141,38 +141,22 @@ export async function importBacklogEntriesFromCSV(
         console.warn(`Could not find game "${title}" in howLongToBeat:`, searchError);
       }
 
-      // TODO status cannot be imported for now, because waiting on new changes on main
-      const entryData: BacklogEntryInput = {
+      //TODO Status is currently buggy because for now there are only enum states. Will be fixed in https://github.com/theoleuthardt/backlog-manager/issues/64#issue-3648683095
+      const entryParams = {
+        userId,
         title,
         genre: String(record[config.genreColumn] || "Unknown"),
         platform: String(record[config.platformColumn] || "Unknown"),
-        status: 'Not Started',
+        status: String(record[config.statusColumn] || "Not Started"),
         owned: true,
         interest: 5,
-        imageLink: gameData?.imageUrl || undefined,
-        mainTime: gameData?.mainStory || undefined,
-        mainPlusExtraTime: gameData?.mainStoryWithExtras || undefined,
-        completionTime: gameData?.completionist || undefined,
+        imageLink: gameData?.imageUrl,
+        mainTime: gameData?.mainStory,
+        mainPlusExtraTime: gameData?.mainStoryWithExtras,
+        completionTime: gameData?.completionist,
       };
 
-      await backlogEntryService.createBacklogEntry(
-        pool,
-        userId,
-        entryData.title,
-        entryData.genre,
-        entryData.platform,
-        entryData.status,
-        entryData.owned,
-        entryData.interest,
-        entryData.releaseDate,
-        entryData.imageLink,
-        entryData.mainTime,
-        entryData.mainPlusExtraTime,
-        entryData.completionTime,
-        entryData.reviewStars,
-        entryData.review,
-        entryData.note
-      );
+      await backlogEntryService.createBacklogEntry(pool, entryParams);
 
       results.success++;
     } catch (error) {

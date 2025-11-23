@@ -4,7 +4,7 @@ import {
   createTRPCRouter,
   protectedProcedure,
 } from "~/server/api/trpc";
-import { parseCSVContent, importBacklogEntriesFromCSV, type ColumnConfig } from "~/server/integrations/csv/parseCSV";
+import { parseCSVContent, importBacklogEntriesFromCSV, type ColumnConfig } from "~/server/csv/parseCSV";
 import pool from "~/server/db/index";
 
 export const csvRouter = createTRPCRouter({
