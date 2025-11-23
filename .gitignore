@@ -47,3 +47,4 @@ yarn-error.log*
 
 # local docker files
 /docker
+.vscode/settings.json

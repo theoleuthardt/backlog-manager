@@ -17,6 +17,16 @@ const config = {
     remotePatterns: [
       {
         protocol: "https",
+        hostname: "avatars.githubusercontent.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn.discordapp.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
         hostname: "howlongtobeat.com",
         pathname: "/**",
       },

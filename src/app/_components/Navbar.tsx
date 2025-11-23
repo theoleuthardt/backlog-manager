@@ -21,7 +21,7 @@ export function Navbar(props: NavbarProps) {
         break;
 
       case "logout":
-        router.push("/logout");
+        router.push("/api/auth/signout");
         break;
 
       case "navigate":

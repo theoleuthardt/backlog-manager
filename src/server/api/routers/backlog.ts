@@ -48,7 +48,7 @@ export const backlogRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const userId = parseInt(ctx.session.user.id || "0");
+      const userId = parseInt(ctx.session.user.id ?? "0");
       return await backlogEntryService.createBacklogEntry(pool, {
         userId,
         ...input,
@@ -76,7 +76,7 @@ export const backlogRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const userId = parseInt(ctx.session.user.id || "0");
+      const userId = parseInt(ctx.session.user.id ?? "0");
       return await categoryService.createCategory(pool, {
         userId,
         ...input,
@@ -112,7 +112,7 @@ export const backlogRouter = createTRPCRouter({
    * const entries = await trpc.backlog.getEntries.query()
    */
   getEntries: protectedProcedure.query(async ({ ctx }) => {
-    const userId = parseInt(ctx.session.user.id || "0");
+    const userId = parseInt(ctx.session.user.id ?? "0");
     return await backlogEntryService.getBacklogEntriesByUser(pool, userId);
   }),
 
@@ -142,7 +142,7 @@ export const backlogRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const userId = parseInt(ctx.session.user.id || "0");
+      const userId = parseInt(ctx.session.user.id ?? "0");
       return await backlogEntryService.getBacklogEntriesByStatus(pool, {
         userId,
         status: input.status,
@@ -155,7 +155,7 @@ export const backlogRouter = createTRPCRouter({
    * const categories = await trpc.backlog.getCategories.query()
    */
   getCategories: protectedProcedure.query(async ({ ctx }) => {
-    const userId = parseInt(ctx.session.user.id || "0");
+    const userId = parseInt(ctx.session.user.id ?? "0");
     return await categoryService.getCategoriesByUser(pool, userId);
   }),
 
