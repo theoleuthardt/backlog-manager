@@ -15,18 +15,26 @@ export const ImportCSVContent = () => {
   const [platformColumn, setPlatformColumn] = useState("C");
   const [statusColumn, setStatusColumn] = useState("D");
 
-  const parseCSV = api.csv.parse.useMutation({
+  const importCSV = api.csv.importEntries.useMutation({
     onSuccess: (result) => {
-      if (result.success) {
-        console.log("CSV parsed successfully!");
-        console.log("Imported data:", result.data);
+      if (result.success && result.data) {
+        const { success, failed, errors } = result.data;
+        console.log(`CSV import completed: ${success} successful, ${failed} failed`);
+        if (errors.length > 0) {
+          console.error("Import errors:", errors);
+        }
+        setError(
+          failed > 0
+            ? `Import completed with errors: ${success} created, ${failed} failed`
+            : `Successfully imported ${success} backlog entries!`
+        );
       } else {
         setError(result.error);
       }
       setIsLoading(false);
     },
     onError: (err) => {
-      setError(err.message || "Failed to parse CSV");
+      setError(err.message || "Failed to import CSV");
       setIsLoading(false);
     },
   });
@@ -47,7 +55,13 @@ export const ImportCSVContent = () => {
       setIsLoading(true);
       setError(null);
       const fileContent = await file.text();
-      await parseCSV.mutateAsync({ content: fileContent });
+      await importCSV.mutateAsync({
+        content: fileContent,
+        titleColumn,
+        genreColumn,
+        platformColumn,
+        statusColumn,
+      });
     } catch (error) {
       setError(error instanceof Error ? error.message : "Error processing CSV file");
       setIsLoading(false);
