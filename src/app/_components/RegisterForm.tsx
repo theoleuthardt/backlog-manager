@@ -40,11 +40,9 @@ export default function RegisterForm() {
 
       await signIn(undefined, { callbackUrl: "/dashboard" });
     } catch (err: unknown) {
-      // Sicherer Umgang mit TRPCClientError und Zod-Fehlern
       if (err instanceof TRPCClientError) {
         const fieldErrors: Record<string, string> = {};
 
-        // Typ-Guard für err.data
         const data = err.data as
           | { zodError?: { fieldErrors?: Record<string, string[]> } }
           | undefined;
@@ -82,7 +80,6 @@ export default function RegisterForm() {
         </div>
       )}
 
-      {/* Username */}
       <div>
         <input
           type="text"
@@ -102,7 +99,6 @@ export default function RegisterForm() {
         )}
       </div>
 
-      {/* Email */}
       <div>
         <input
           type="email"
@@ -122,7 +118,6 @@ export default function RegisterForm() {
         )}
       </div>
 
-      {/* Password */}
       <div>
         <input
           type="password"
@@ -142,7 +137,6 @@ export default function RegisterForm() {
         )}
       </div>
 
-      {/* Steam ID */}
       <div>
         <input
           type="text"
