@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import type { BacklogEntryData } from "./backlog";
 import type { NavbarLink } from "./navigation";
 
 /**
@@ -93,13 +92,6 @@ export interface ImportCSVButtonProps {
   className?: string;
   children?: ReactNode;
   iconOnly?: boolean;
-}
-
-/**
- * Dashboard content component props
- */
-export interface DashboardContentProps {
-  initialData: BacklogEntryData[];
 }
 
 /**

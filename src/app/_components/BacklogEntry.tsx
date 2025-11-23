@@ -56,6 +56,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
     }
   };
 
+  const utils = api.useUtils();
   const updateEntryMutation = api.backlog.updateEntry.useMutation();
 
   const handleUpdate = async () => {
@@ -98,6 +99,11 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
           backlogEntryId: props.id,
           ...changes,
         });
+        setUpdateStatus("success");
+        toast.success("Entry updated successfully!");
+
+        await utils.backlog.getEntries.invalidate();
+
         setUpdateStatus("success");
         toast.success("Entry updated successfully!");
 
@@ -299,10 +305,11 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="backlog">Backlog</SelectItem>
-                        <SelectItem value="playing">Playing</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="dropped">Dropped</SelectItem>
+                        <SelectItem value="Not Started">Not Started</SelectItem>
+                        <SelectItem value="In Progress">In Progress</SelectItem>
+                        <SelectItem value="Completed">Completed</SelectItem>
+                        <SelectItem value="On Hold">On Hold</SelectItem>
+                        <SelectItem value="Dropped">Dropped</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -373,7 +380,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                         step="0.5"
                         value={reviewStars}
                         onChange={(e) => setReviewStars(Number(e.target.value))}
-                        disabled={status !== "completed"}
+                        disabled={status !== "Completed"}
                         className="bg-black text-white disabled:opacity-50"
                       />
                     </div>
@@ -386,7 +393,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                         id="review"
                         value={review}
                         onChange={(e) => setReview(e.target.value)}
-                        disabled={status !== "completed"}
+                        disabled={status !== "Completed"}
                         placeholder="Write your review here..."
                         className="min-h-[100px] bg-black text-white disabled:opacity-50"
                       />

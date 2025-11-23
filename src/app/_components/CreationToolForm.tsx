@@ -28,6 +28,9 @@ export function CreationToolForm() {
   );
   const completionist = parseFloat(searchParams.get("completionist") ?? "0");
 
+  const hasHltbData = mainStory > 0 || mainStoryWithExtras > 0 || completionist > 0;
+  const hasMissingData = !imageUrl || !hasHltbData;
+
   const [genre, setGenre] = useState("");
   const [platform, setPlatform] = useState("");
   const [status, setStatus] = useState("");
@@ -118,6 +121,17 @@ export function CreationToolForm() {
       <h1 className="mb-4 text-center text-2xl font-bold lg:mb-6 lg:text-3xl">
         Creation Tool for <span className="text-blue-500">{title}</span>
       </h1>
+
+      {hasMissingData && (
+        <div className="mb-4 rounded-lg border-2 border-yellow-600 bg-yellow-900/20 p-4 text-center text-yellow-200">
+          <p className="font-semibold">⚠️ Warning: Missing game data</p>
+          <p className="text-sm">
+            {!imageUrl && "No image found. "}
+            {!hasHltbData && "No HowLongToBeat times found. "}
+            Consider searching for the game in the Add Entry dialog to get complete data.
+          </p>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
         <div className="flex flex-col gap-4 lg:flex-row lg:gap-8">

@@ -6,7 +6,11 @@ import { Spinner } from "~/components/ui/spinner";
 
 export function GameImage(props: GameImageProps) {
   const [isLoading, setIsLoading] = useState(true);
-  const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(props.src)}`;
+
+  const hasValidSrc = props.src && props.src.trim().length > 0;
+  const proxyUrl = hasValidSrc
+    ? `/api/image-proxy?url=${encodeURIComponent(props.src)}`
+    : "/entryPlaceholder.png";
 
   const handleError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     const target = e.target as HTMLImageElement;
@@ -23,7 +27,7 @@ export function GameImage(props: GameImageProps) {
       className="relative overflow-hidden rounded-xl"
       style={{ width: `${props.width}px`, height: `${props.height}px` }}
     >
-      {isLoading && (
+      {isLoading && hasValidSrc && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-800/50 backdrop-blur-sm">
           <Spinner className="h-8 w-8 text-white" />
         </div>
