@@ -5,11 +5,7 @@ import type {
   UpdateBacklogEntryParams,
 } from "../types/params";
 import { handleDatabaseError, NotFoundError } from "../types/errors";
-import type {
-  UserRow,
-  CategoryRow,
-  BacklogEntryRow,
-} from "../types";
+import type { UserRow, CategoryRow, BacklogEntryRow } from "../types";
 import {
   mapUser,
   mapCategory,
@@ -152,7 +148,9 @@ export async function updateBacklogEntry(
   const client = await pool.connect();
   try {
     const updates: string[] = [];
-    const values: (string | number | boolean | string[] | Date | null)[] = [params.backlogEntryId];
+    const values: (string | number | boolean | string[] | Date | null)[] = [
+      params.backlogEntryId,
+    ];
     let paramCount = 2;
 
     if (params.title !== undefined) {
@@ -179,35 +177,42 @@ export async function updateBacklogEntry(
       updates.push(`"Interest" = $${paramCount++}`);
       values.push(params.interest);
     }
-    // Always update optional fields, setting to NULL if not provided
-    updates.push(`"ReleaseDate" = $${paramCount++}`);
-    values.push(params.releaseDate ?? null);
-
-    updates.push(`"ImageLink" = $${paramCount++}`);
-    values.push(params.imageLink ?? null);
-
-    updates.push(`"MainTime" = $${paramCount++}`);
-    values.push(params.mainTime ?? null);
-
-    updates.push(`"MainPlusExtraTime" = $${paramCount++}`);
-    values.push(params.mainPlusExtraTime ?? null);
-
-    updates.push(`"CompletionTime" = $${paramCount++}`);
-    values.push(params.completionTime ?? null);
-
-    updates.push(`"ReviewStars" = $${paramCount++}`);
-    values.push(params.reviewStars ?? null);
-
-    updates.push(`"Review" = $${paramCount++}`);
-    values.push(params.review ?? null);
-
-    updates.push(`"Note" = $${paramCount++}`);
-    values.push(params.note ?? null);
+    if (params.releaseDate !== undefined) {
+      updates.push(`"ReleaseDate" = $${paramCount++}`);
+      values.push(params.releaseDate);
+    }
+    if (params.imageLink !== undefined) {
+      updates.push(`"ImageLink" = $${paramCount++}`);
+      values.push(params.imageLink);
+    }
+    if (params.mainTime !== undefined) {
+      updates.push(`"MainTime" = $${paramCount++}`);
+      values.push(params.mainTime);
+    }
+    if (params.mainPlusExtraTime !== undefined) {
+      updates.push(`"MainPlusExtraTime" = $${paramCount++}`);
+      values.push(params.mainPlusExtraTime);
+    }
+    if (params.completionTime !== undefined) {
+      updates.push(`"CompletionTime" = $${paramCount++}`);
+      values.push(params.completionTime);
+    }
+    if (params.reviewStars !== undefined) {
+      updates.push(`"ReviewStars" = $${paramCount++}`);
+      values.push(params.reviewStars);
+    }
+    if (params.review !== undefined) {
+      updates.push(`"Review" = $${paramCount++}`);
+      values.push(params.review);
+    }
+    if (params.note !== undefined) {
+      updates.push(`"Note" = $${paramCount++}`);
+      values.push(params.note);
+    }
 
     updates.push(`"UpdatedAt" = DATE_TRUNC('minute', CURRENT_TIMESTAMP)`);
 
     if (updates.length === 0) {
-      // No fields to update, just return current entry
       const result = await client.query(
         'SELECT * FROM "blm-system"."BacklogEntries" WHERE "BacklogEntryID" = $1',
         [params.backlogEntryId],

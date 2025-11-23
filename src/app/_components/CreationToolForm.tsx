@@ -69,23 +69,11 @@ export function CreationToolForm() {
         return;
       }
 
-      const statusMap: Record<
-        string,
-        "Backlog" | "Playing" | "Completed" | "Dropped"
-      > = {
-        "Not Started": "Backlog",
-        "In Progress": "Playing",
-        Completed: "Completed",
-        Dropped: "Dropped",
-      };
-
-      const mappedStatus = statusMap[status] ?? "Backlog";
-
       await createEntryMutation.mutateAsync({
         title,
         genre,
         platform,
-        status: mappedStatus,
+        status: status as "Not Started" | "In Progress" | "Completed" | "On Hold" | "Dropped",
         owned,
         interest,
         imageLink: imageUrl,
@@ -229,8 +217,9 @@ export function CreationToolForm() {
                   <SelectContent>
                     <SelectItem value="Not Started">Not Started</SelectItem>
                     <SelectItem value="In Progress">In Progress</SelectItem>
-                    <SelectItem value="Dropped">Dropped</SelectItem>
+                    <SelectItem value="On Hold">On Hold</SelectItem>
                     <SelectItem value="Completed">Completed</SelectItem>
+                    <SelectItem value="Dropped">Dropped</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

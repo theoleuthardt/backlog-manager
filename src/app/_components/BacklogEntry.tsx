@@ -8,7 +8,7 @@ import {
 } from "shadcn_components/ui/dialog";
 import { Button } from "shadcn_components/ui/button";
 import { GameImage } from "components/GameImage";
-import { XIcon, Loader2, Edit2, Check, X } from "lucide-react";
+import { XIcon, Loader2, Edit2, Check, X, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Input } from "shadcn_components/ui/input";
 import { Label } from "shadcn_components/ui/label";
@@ -27,6 +27,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "shadcn_components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "shadcn_components/ui/alert-dialog";
 import type { BacklogEntryProps } from "~/app/types";
 import { api } from "~/trpc/react";
 
@@ -47,6 +58,8 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
     "idle" | "success" | "error"
   >("idle");
   const [imagePopoverOpen, setImagePopoverOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleUpdateImage = () => {
     if (newImageUrl.trim()) {
@@ -58,6 +71,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
 
   const utils = api.useUtils();
   const updateEntryMutation = api.backlog.updateEntry.useMutation();
+  const deleteEntryMutation = api.backlog.deleteEntry.useMutation();
 
   const handleUpdate = async () => {
     setIsLoading(true);
@@ -104,6 +118,8 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
 
         await utils.backlog.getEntries.invalidate();
 
+        await utils.backlog.getEntries.invalidate();
+
         setUpdateStatus("success");
         toast.success("Entry updated successfully!");
 
@@ -124,6 +140,29 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
       setTimeout(() => setUpdateStatus("idle"), 3000);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteEntryMutation.mutateAsync({
+        backlogEntryId: props.id,
+      });
+
+      await utils.backlog.getEntries.invalidate();
+
+      toast.success(`"${props.title}" deleted successfully!`);
+      setDeleteDialogOpen(false);
+    } catch (error) {
+      console.error("Error deleting backlog entry:", error);
+      toast.error(
+        error instanceof Error
+          ? `Failed to delete: ${error.message}`
+          : "Failed to delete entry. Please try again.",
+      );
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -403,8 +442,57 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
 
                 <div
                   id="update-button-section"
-                  className="flex justify-end pt-4 pb-4"
+                  className="flex justify-between pt-4 pb-4"
                 >
+                  <AlertDialog
+                    open={deleteDialogOpen}
+                    onOpenChange={setDeleteDialogOpen}
+                  >
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="min-w-[150px] gap-2 bg-red-600 text-white hover:bg-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete Entry
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="border-2 border-red-600 bg-black">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="text-xl text-white">
+                          Delete &quot;{props.title}&quot;?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-gray-300">
+                          This action cannot be undone. This will permanently
+                          delete this backlog entry from your collection.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel className="bg-black text-white hover:bg-gray-800">
+                          Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleDelete}
+                          disabled={isDeleting}
+                          className="bg-red-600 text-white hover:bg-red-700"
+                        >
+                          {isDeleting ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Deleting...
+                            </>
+                          ) : (
+                            <>
+                              <Trash2 className="h-4 w-4" />
+                              Delete
+                            </>
+                          )}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+
                   <Button
                     id="update-entry-button"
                     variant="outline"

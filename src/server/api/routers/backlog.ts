@@ -59,7 +59,7 @@ export const backlogRouter = createTRPCRouter({
         title: z.string().min(1, "Title is required"),
         genre: z.string().min(1, "Genre is required"),
         platform: z.string().min(1, "Platform is required"),
-        status: z.enum(["Backlog", "Playing", "Completed", "Dropped"]),
+        status: z.enum(["Not Started", "In Progress", "Completed", "On Hold", "Dropped"]),
         owned: z.boolean(),
         interest: z.number().min(0).max(10),
         releaseDate: z.date().optional(),
@@ -77,6 +77,9 @@ export const backlogRouter = createTRPCRouter({
       return await backlogEntryService.createBacklogEntry(pool, {
         userId,
         ...input,
+        reviewStars: input.reviewStars
+          ? Math.round(input.reviewStars)
+          : undefined,
       });
     }),
 
@@ -138,7 +141,10 @@ export const backlogRouter = createTRPCRouter({
    */
   getEntries: protectedProcedure.query(async ({ ctx }) => {
     const userId = parseInt(ctx.session.user.id ?? "0");
-    const entries = await backlogEntryService.getBacklogEntriesByUser(pool, userId);
+    const entries = await backlogEntryService.getBacklogEntriesByUser(
+      pool,
+      userId,
+    );
     return entries.map(transformBacklogEntry);
   }),
 
@@ -164,7 +170,7 @@ export const backlogRouter = createTRPCRouter({
   getEntriesByStatus: protectedProcedure
     .input(
       z.object({
-        status: z.enum(["Backlog", "Playing", "Completed", "Dropped"]),
+        status: z.enum(["Not Started", "In Progress", "Completed", "On Hold", "Dropped"]),
       }),
     )
     .query(async ({ ctx, input }) => {
