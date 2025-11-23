@@ -67,17 +67,20 @@ export async function getUserByUsername(
 }
 
 /**
- * 
  * Get user by email
  */
-export async function getUserByEmail(pool: Pool, email: string) {
-  const query = 'SELECT * FROM "blm-system"."Users" WHERE "Email" = $1'
+export async function getUserByEmail(
+  pool: Pool,
+  email: string,
+): Promise<User | null> {
+  const query = 'SELECT * FROM "blm-system"."Users" WHERE "Email" = $1';
+  
   try {
-      const result = await pool.query(query, [email])
-      return result.rows[0]
+    const result = await pool.query(query, [email]);
+    if (!result.rows[0]) return null;
+    return mapUser(result.rows[0] as UserRow);
   } catch (error) {
-      console.error('Error getting user by email:', error)
-      throw error
+    handleDatabaseError(error, "getUserByEmail");
   }
 }
 

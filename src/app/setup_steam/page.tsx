@@ -33,8 +33,12 @@ export default function SteamIdSetupPage() {
       });
       console.log("Updating SteamID to:", steamId);
       setSuccess(true);
-    } catch (err: any) {
-      setError(err.message || "Failed to update Steam ID");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message ?? "Failed to update Steam ID");
+      } else {
+        setError("Failed to update Steam ID");
+      }
     }
   };
 

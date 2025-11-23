@@ -1,6 +1,8 @@
 import Image from "next/image";
 import { auth } from "~/server/auth";
 import { HydrateClient } from "~/trpc/server";
+import { signIn, signOut } from "next-auth/react";
+import Link from "next/link";
 
 export default async function LoginPage() {
   const session = await auth();
@@ -18,18 +20,20 @@ export default async function LoginPage() {
                 Log in to access your dashboard and manage your content.
               </p>
               <div className="flex flex-col items-center gap-4">
-                <a
-                  href="/api/auth/signin?callbackUrl=/dashboard"
+                <button
+                  onClick={() =>
+                    signIn(undefined, { callbackUrl: "/dashboard" })
+                  }
                   className="rounded-full bg-blue-600 px-10 py-3 font-semibold text-white transition hover:bg-blue-700"
                 >
                   Login
-                </a>
-                <a
+                </button>
+                <Link
                   href="/register"
                   className="rounded-full bg-green-600 px-10 py-3 font-semibold text-white transition hover:bg-green-700"
                 >
                   Register
-                </a>
+                </Link>
               </div>
             </>
           ) : (
@@ -49,12 +53,12 @@ export default async function LoginPage() {
               <p className="mb-4 text-center text-lg text-gray-300">
                 If you want to logout, click the button below.
               </p>
-              <a
-                href="/api/auth/signout"
+              <button
+                onClick={() => signOut()}
                 className="rounded-full bg-white/10 px-10 py-3 font-semibold text-white transition hover:bg-white/20"
               >
                 Sign out
-              </a>
+              </button>
             </div>
           )}
         </div>

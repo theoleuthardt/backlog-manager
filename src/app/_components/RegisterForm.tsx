@@ -1,19 +1,26 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import { TRPCClientError } from "@trpc/client";
+import { signIn } from "next-auth/react";
+import Link from "next/link";
+
+interface FormState {
+  username: string;
+  email: string;
+  password: string;
+  steamId: string;
+}
 
 export default function RegisterForm() {
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<FormState>({
     username: "",
     email: "",
     password: "",
     steamId: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const router = useRouter();
   const createUser = api.user.createUser.useMutation();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -31,19 +38,28 @@ export default function RegisterForm() {
         steamId: form.steamId || undefined,
       });
 
-      router.push("/api/auth/signin?callbackUrl=/dashboard");
-    } catch (err: any) {
-      if (err.data?.zodError?.fieldErrors) {
-        // Mappe Zod-Fehler in ein einfaches Objekt
+      await signIn(undefined, { callbackUrl: "/dashboard" });
+    } catch (err: unknown) {
+      // Sicherer Umgang mit TRPCClientError und Zod-Fehlern
+      if (err instanceof TRPCClientError) {
         const fieldErrors: Record<string, string> = {};
-        for (const key in err.data.zodError.fieldErrors) {
-          const messages = err.data.zodError.fieldErrors[key];
-          if (messages && messages.length > 0) {
-            fieldErrors[key] = messages[0]; // nur erste Fehlermeldung pro Feld
+
+        // Typ-Guard für err.data
+        const data = err.data as
+          | { zodError?: { fieldErrors?: Record<string, string[]> } }
+          | undefined;
+
+        const zodErrors = data?.zodError?.fieldErrors ?? {};
+
+        for (const key in zodErrors) {
+          const messages = zodErrors[key];
+          if (messages?.length) {
+            fieldErrors[key] = messages[0] ?? "Unknown error";
           }
         }
+
         setErrors(fieldErrors);
-      } else if (err.message) {
+      } else if (err instanceof Error) {
         setErrors({ form: err.message });
       } else {
         setErrors({ form: "Unknown error occurred" });
@@ -60,7 +76,6 @@ export default function RegisterForm() {
         Fill in your details to create a new account.
       </p>
 
-      {/* Allgemeine Fehler */}
       {errors.form && (
         <div className="rounded bg-red-900/50 p-4 text-red-400">
           {errors.form}
@@ -148,22 +163,23 @@ export default function RegisterForm() {
 
       <p className="text-center text-gray-400">
         Already have an account?{" "}
-        <a
+        <Link
           href="/login"
           className="text-blue-400 underline hover:text-blue-300"
         >
           Log in
-        </a>
+        </Link>
       </p>
 
       <p className="text-center text-gray-400">
         Register with another provider?{" "}
-        <a
-          href="/api/auth/signin?callbackUrl=/dashboard"
+        <button
+          type="button"
+          onClick={() => signIn(undefined, { callbackUrl: "/dashboard" })}
           className="text-blue-400 underline hover:text-blue-300"
         >
           Register here
-        </a>
+        </button>
       </p>
     </form>
   );

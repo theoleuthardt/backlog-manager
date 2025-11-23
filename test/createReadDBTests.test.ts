@@ -161,13 +161,13 @@ describe("Database Read Operations", () => {
     it("should get user by email", async () => {
       const userJohn = await getUserByEmail(postgresPool, "john@doe");
       expect(userJohn).not.toBeNull();
-      expect(userJohn?.Username).toBe("John Doe");
-      expect(userJohn?.Email).toBe("john@doe");
-  
+      expect(userJohn?.name).toBe("John Doe");
+      expect(userJohn?.email).toBe("john@doe");
+
       const userJane = await getUserByEmail(postgresPool, "jane@doe");
       expect(userJane).not.toBeNull();
-      expect(userJane?.Username).toBe("Jane Doe");
-      expect(userJane?.Email).toBe("jane@doe");
+      expect(userJane?.name).toBe("Jane Doe");
+      expect(userJane?.email).toBe("jane@doe");
     });
 
     it("should return undefined for non-existent email", async () => {
