@@ -39,14 +39,14 @@ export const authConfig: NextAuthConfig = {
           const dbUser = await userService.getUserByEmail(pool, credentials.email as string);
           if (!dbUser) return null;
 
-          const isValid = await argon2.verify(dbUser.PasswordHash, credentials.password as string);
+          const isValid = await argon2.verify((dbUser as any).PasswordHash, credentials.password as string);
           if (!isValid) return null;
 
           const user = {
-            id: dbUser.UserID.toString(),
-            username: dbUser.Username ?? null,
-            email: dbUser.Email ?? null,
-            steamId: dbUser.SteamId ?? null,
+            id: (dbUser as any).UserID.toString(),
+            username: (dbUser as any).Username ?? null,
+            email: (dbUser as any).Email ?? null,
+            steamId: (dbUser as any).SteamId ?? null,
           };
 
           console.log("Authorize User:", user);
@@ -91,8 +91,8 @@ export const authConfig: NextAuthConfig = {
         ...session,
         user: {
           ...session.user,
-          id: dbUser?.UserID.toString() ?? null,
-          steamId: dbUser?.SteamId ?? null,
+          id: (dbUser as any)?.UserID.toString() ?? null,
+          steamId: (dbUser as any)?.SteamId ?? null,
         },
       };
 
