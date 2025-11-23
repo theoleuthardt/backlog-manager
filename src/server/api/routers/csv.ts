@@ -5,6 +5,7 @@ import {
   protectedProcedure,
 } from "~/server/api/trpc";
 import { parseCSVContent, importBacklogEntriesFromCSV, type ColumnConfig } from "~/server/csv/parseCSV";
+import * as backlogEntryService from "~/server/services/backlogEntryService";
 import pool from "~/server/db/index";
 
 export const csvRouter = createTRPCRouter({
@@ -57,6 +58,55 @@ export const csvRouter = createTRPCRouter({
         return {
           success: false,
           data: null,
+          error: error instanceof Error ? error.message : "Unknown error occurred",
+        };
+      }
+    }),
+
+  createMissingGameEntry: protectedProcedure
+    .input(z.object({
+      missingGame: z.object({
+        title: z.string(),
+        genre: z.string(),
+        platform: z.string(),
+        status: z.string(),
+      }),
+      gameData: z.object({
+        hltbId: z.number(),
+        title: z.string(),
+        imageUrl: z.string(),
+        mainStory: z.number(),
+        mainStoryWithExtras: z.number(),
+        completionist: z.number(),
+      }),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const userId = parseInt(ctx.session.user.id || "0");
+
+        const entryParams = {
+          userId,
+          title: input.missingGame.title,
+          genre: input.missingGame.genre,
+          platform: input.missingGame.platform,
+          status: input.missingGame.status,
+          owned: true,
+          interest: 5,
+          imageLink: input.gameData.imageUrl,
+          mainTime: input.gameData.mainStory,
+          mainPlusExtraTime: input.gameData.mainStoryWithExtras,
+          completionTime: input.gameData.completionist,
+        };
+
+        await backlogEntryService.createBacklogEntry(pool, entryParams);
+
+        return {
+          success: true,
+          error: null,
+        };
+      } catch (error) {
+        return {
+          success: false,
           error: error instanceof Error ? error.message : "Unknown error occurred",
         };
       }

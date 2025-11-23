@@ -3,6 +3,8 @@ import React, { useRef, useState } from "react";
 import { Button } from "shadcn_components/ui/button";
 import Image from "next/image";
 import { api } from "~/trpc/react";
+import { MissingGamesModal } from "./MissingGamesModal";
+import type { MissingGame } from "~/server/csv/parseCSV";
 
 const COLUMN_OPTIONS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
 
@@ -14,20 +16,31 @@ export const ImportCSVContent = () => {
   const [genreColumn, setGenreColumn] = useState("B");
   const [platformColumn, setPlatformColumn] = useState("C");
   const [statusColumn, setStatusColumn] = useState("D");
+  const [missingGames, setMissingGames] = useState<MissingGame[]>([]);
+  const [showMissingGamesModal, setShowMissingGamesModal] = useState(false);
 
   const importCSV = api.csv.importEntries.useMutation({
     onSuccess: (result) => {
       if (result.success && result.data) {
-        const { success, failed, errors } = result.data;
-        console.log(`CSV import completed: ${success} successful, ${failed} failed`);
-        if (errors.length > 0) {
+        const { success, failed, errors, missingGames: missing } = result.data;
+        console.log(`CSV import completed: ${success} successful, ${failed} failed, ${missing.length} missing`);
+
+        if (missing && missing.length > 0) {
+          setMissingGames(missing);
+          setShowMissingGamesModal(true);
+          setError(
+            `Import completed: ${success} created. ${missing.length} games were not found in howLongToBeat and need manual lookup.`
+          );
+        } else if (errors.length > 0) {
           console.error("Import errors:", errors);
+          setError(
+            failed > 0
+              ? `Import completed with errors: ${success} created, ${failed} failed`
+              : `Successfully imported ${success} backlog entries!`
+          );
+        } else {
+          setError(`Successfully imported ${success} backlog entries!`);
         }
-        setError(
-          failed > 0
-            ? `Import completed with errors: ${success} created, ${failed} failed`
-            : `Successfully imported ${success} backlog entries!`
-        );
       } else {
         setError(result.error);
       }
@@ -167,6 +180,15 @@ export const ImportCSVContent = () => {
           {error}
         </div>
       )}
+
+      <MissingGamesModal
+        missingGames={missingGames}
+        isOpen={showMissingGamesModal}
+        onClose={() => setShowMissingGamesModal(false)}
+        onGameSelected={(gameTitle, gameData) => {
+          console.log(`Selected game for "${gameTitle}":`, gameData);
+        }}
+      />
     </div>
   );
 };

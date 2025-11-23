@@ -31,6 +31,13 @@ export interface BacklogEntryInput {
   note?: string;
 }
 
+export interface MissingGame {
+  title: string;
+  genre: string;
+  platform: string;
+  status: string;
+}
+
 export async function parseCSVContent(fileContent: string): Promise<CSVRecord[]> {
   return new Promise((resolve, reject) => {
     const records: CSVRecord[] = [];
@@ -110,11 +117,13 @@ export async function importBacklogEntriesFromCSV(
   success: number;
   failed: number;
   errors: Array<{ title: string; error: string }>;
+  missingGames: MissingGame[];
 }> {
   const results = {
     success: 0,
     failed: 0,
     errors: [] as Array<{ title: string; error: string }>,
+    missingGames: [] as MissingGame[],
   };
 
   for (const record of records) {
@@ -132,13 +141,26 @@ export async function importBacklogEntriesFromCSV(
 
       // Search for the game in howLongToBeat to get additional data
       let gameData = null;
+      let foundInHLTB = false;
       try {
         const searchResults = await SearchGame(title);
         if (searchResults && searchResults.length > 0) {
           gameData = searchResults[0];
+          foundInHLTB = true;
         }
       } catch (searchError) {
         console.warn(`Could not find game "${title}" in howLongToBeat:`, searchError);
+      }
+
+      // If not found in HLTB, add to missing games list
+      if (!foundInHLTB) {
+        results.missingGames.push({
+          title,
+          genre: String(record[config.genreColumn] || "Unknown"),
+          platform: String(record[config.platformColumn] || "Unknown"),
+          status: String(record[config.statusColumn] || "Not Started"),
+        });
+        continue;
       }
 
       //TODO Status is currently buggy because for now there are only enum states. Will be fixed in https://github.com/theoleuthardt/backlog-manager/issues/64#issue-3648683095
