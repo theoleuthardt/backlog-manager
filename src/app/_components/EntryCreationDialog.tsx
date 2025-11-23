@@ -13,8 +13,10 @@ import { GameImage, SearchBar } from "components";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
-import { gameSearchbarDummyResults } from "~/constants";
-import type { GameSearchResult, EntryCreationDialogProps } from "~/app/types";
+import { Spinner } from "~/components/ui/spinner";
+import type { EntryCreationDialogProps } from "~/app/types";
+import { api } from "~/trpc/react";
+import { useDebounce } from "~/hooks/useDebounce";
 
 export const EntryCreationDialog = ({
   triggerIcon = "/search.png",
@@ -23,11 +25,19 @@ export const EntryCreationDialog = ({
   showText = true,
 }: EntryCreationDialogProps = {}) => {
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [resultsVisible, setResultsVisible] = React.useState(false);
-  const [searchResults, setSearchResults] = React.useState<GameSearchResult[]>(
-    [],
-  );
   const [selectedIndex, setSelectedIndex] = React.useState<number | null>(null);
+
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  const { data: searchResults = [], isLoading } =
+    api.gameSearch.search.useQuery(
+      { searchTerm: debouncedSearchQuery },
+      {
+        enabled: debouncedSearchQuery.length > 0,
+        refetchOnWindowFocus: false,
+      },
+    );
+
+  const resultsVisible = searchQuery.length > 0;
 
   return (
     <Dialog>
@@ -72,75 +82,80 @@ export const EntryCreationDialog = ({
                 onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
                   const query = e.target.value;
                   setSearchQuery(query);
-                  if (query.length > 0) {
-                    setResultsVisible(true);
-                    setSearchResults(gameSearchbarDummyResults);
-                  } else {
-                    setResultsVisible(false);
-                    setSearchResults([]);
-                    setSelectedIndex(null);
-                  }
+                  setSelectedIndex(null);
                 }}
                 onClear={() => {
                   setSearchQuery("");
-                  setResultsVisible(false);
-                  setSearchResults([]);
                   setSelectedIndex(null);
                 }}
                 className="mx-auto text-white"
               />
             </div>
           </div>
-          {resultsVisible && searchResults.length > 0 && (
+          {resultsVisible && (
             <div className="flex flex-col items-center gap-6">
-              <ul className="flex max-h-96 w-full max-w-2xl flex-col gap-2 overflow-y-auto bg-transparent">
-                {searchResults.map((result, index) => (
-                  <li
-                    key={index}
-                    onClick={() => setSelectedIndex(index)}
-                    className={cn(
-                      "group flex cursor-pointer items-center gap-2 rounded-xl p-2 transition-all duration-300 ease-in-out",
-                      selectedIndex === index
-                        ? "border-2 border-blue-600"
-                        : "border-2 border-transparent",
-                    )}
-                  >
-                    <div className="flex flex-row items-center gap-2">
-                      <GameImage
-                        src={result.imageUrl}
-                        alt={result.title}
-                        width={60}
-                        height={90}
-                        className="rounded-lg"
-                      />
-                      <div className="ml-5 flex items-center justify-center text-lg font-semibold text-white transition-colors duration-300 group-hover:text-blue-600">
-                        {result.title}
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-              {selectedIndex !== null && searchResults[selectedIndex] && (
-                <Link
-                  href={{
-                    pathname: "/creation-tool",
-                    query: {
-                      title: searchResults[selectedIndex].title,
-                      imageUrl: searchResults[selectedIndex].imageUrl,
-                      steamAppId: searchResults[selectedIndex].steamAppId,
-                      mainStory: searchResults[selectedIndex].mainStory,
-                      mainStoryWithExtras:
-                        searchResults[selectedIndex].mainStoryWithExtras,
-                      completionist: searchResults[selectedIndex].completionist,
-                    },
-                  }}
-                  className="flex justify-center"
-                >
-                  <Button className="h-[3rem] max-w-md min-w-[13rem] bg-blue-700 px-6 font-bold text-white hover:bg-blue-800">
-                    <span className="truncate">Continue in Creation Tool</span>
-                  </Button>
-                </Link>
-              )}
+              {isLoading ? (
+                <div className="flex items-center gap-3 text-white">
+                  <Spinner className="h-6 w-6" />
+                  <span className="text-lg">Searching for game...</span>
+                </div>
+              ) : searchResults.length > 0 ? (
+                <>
+                  <ul className="flex max-h-96 w-full max-w-2xl flex-col gap-2 overflow-y-auto bg-transparent">
+                    {searchResults.map((result, index) => (
+                      <li
+                        key={result.id}
+                        onClick={() => setSelectedIndex(index)}
+                        className={cn(
+                          "group flex cursor-pointer items-center gap-2 rounded-xl p-2 transition-all duration-300 ease-in-out",
+                          selectedIndex === index
+                            ? "border-2 border-blue-600"
+                            : "border-2 border-transparent",
+                        )}
+                      >
+                        <div className="flex flex-row items-center gap-2">
+                          <GameImage
+                            src={result.imageUrl}
+                            alt={result.title}
+                            width={60}
+                            height={90}
+                            className="rounded-lg"
+                          />
+                          <div className="ml-5 flex items-center justify-center text-lg font-semibold text-white transition-colors duration-300 group-hover:text-blue-600">
+                            {result.title}
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  {selectedIndex !== null && searchResults[selectedIndex] && (
+                    <Link
+                      href={{
+                        pathname: "/creation-tool",
+                        query: {
+                          title: searchResults[selectedIndex].title,
+                          imageUrl: searchResults[selectedIndex].imageUrl,
+                          steamAppId: searchResults[selectedIndex].steamAppId,
+                          mainStory: searchResults[selectedIndex].mainStory,
+                          mainStoryWithExtras:
+                            searchResults[selectedIndex].mainStoryWithExtras,
+                          completionist:
+                            searchResults[selectedIndex].completionist,
+                        },
+                      }}
+                      className="flex justify-center"
+                    >
+                      <Button className="h-[3rem] max-w-md min-w-[13rem] bg-blue-700 px-6 font-bold text-white hover:bg-blue-800">
+                        <span className="truncate">
+                          Continue in Creation Tool
+                        </span>
+                      </Button>
+                    </Link>
+                  )}
+                </>
+              ) : debouncedSearchQuery.length > 0 ? (
+                <div className="text-white">No results found</div>
+              ) : null}
             </div>
           )}
         </DialogPrimitive.Content>

@@ -403,6 +403,7 @@ export const DashboardContent = ({ initialData }: DashboardContentProps) => {
           {filteredData.map((entry) => (
             <BacklogEntry
               key={entry.id}
+              id={entry.id}
               title={entry.title}
               playtime={entry.playtime}
               imageLink={entry.imageLink}

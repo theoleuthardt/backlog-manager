@@ -7,7 +7,7 @@ import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
-import { Loader2 } from "lucide-react";
+import { Loader2, Check, X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -15,12 +15,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { api } from "~/trpc/react";
+import { toast } from "sonner";
 
 export function CreationToolForm() {
   const searchParams = useSearchParams();
   const title = searchParams.get("title") ?? "";
   const imageUrl = searchParams.get("imageUrl") ?? "";
-  const steamAppId = searchParams.get("steamAppId") ?? "";
   const mainStory = parseFloat(searchParams.get("mainStory") ?? "0");
   const mainStoryWithExtras = parseFloat(
     searchParams.get("mainStoryWithExtras") ?? "0",
@@ -36,42 +37,80 @@ export function CreationToolForm() {
   const [review, setReview] = useState("");
   const [note, setNote] = useState("");
   const [playtime, setPlaytime] = useState(0);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [createStatus, setCreateStatus] = useState<
+    "idle" | "success" | "error"
+  >("idle");
+
+  const createEntryMutation = api.backlog.createEntry.useMutation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    setIsLoading(true);
+    setCreateStatus("idle");
 
-    const entryData = {
-      title,
-      imageLink: imageUrl,
-      steamAppId: parseInt(steamAppId),
-      genre: genre
-        .split(",")
-        .map((g) => g.trim())
-        .filter(Boolean),
-      platform: platform
-        .split(",")
-        .map((p) => p.trim())
-        .filter(Boolean),
-      status,
-      owned,
-      interest,
-      reviewStars,
-      review,
-      note,
-      playtime,
-      mainTime: mainStory,
-      mainPlusExtraTime: mainStoryWithExtras,
-      completionTime: completionist,
-    };
+    try {
+      if (!genre.trim()) {
+        toast.error("Please enter at least one genre");
+        setIsLoading(false);
+        return;
+      }
+      if (!platform.trim()) {
+        toast.error("Please enter at least one platform");
+        setIsLoading(false);
+        return;
+      }
+      if (!status) {
+        toast.error("Please select a status");
+        setIsLoading(false);
+        return;
+      }
 
-    console.log("Submitting entry:", entryData);
+      const statusMap: Record<
+        string,
+        "Backlog" | "Playing" | "Completed" | "Dropped"
+      > = {
+        "Not Started": "Backlog",
+        "In Progress": "Playing",
+        Completed: "Completed",
+        Dropped: "Dropped",
+      };
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+      const mappedStatus = statusMap[status] ?? "Backlog";
 
-    setIsSubmitting(false);
+      await createEntryMutation.mutateAsync({
+        title,
+        genre,
+        platform,
+        status: mappedStatus,
+        owned,
+        interest,
+        imageLink: imageUrl,
+        mainTime: mainStory || undefined,
+        mainPlusExtraTime: mainStoryWithExtras || undefined,
+        completionTime: completionist || undefined,
+        reviewStars: reviewStars || undefined,
+        review: review || undefined,
+        note: note || undefined,
+      });
+
+      setCreateStatus("success");
+      toast.success("Entry created successfully!");
+
+      setTimeout(() => setCreateStatus("idle"), 2000);
+    } catch (error) {
+      console.error("❌ Error creating backlog entry:", error);
+      setCreateStatus("error");
+      toast.error(
+        error instanceof Error
+          ? `Failed to create: ${error.message}`
+          : "Failed to create entry. Please try again.",
+      );
+
+      setTimeout(() => setCreateStatus("idle"), 3000);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -273,13 +312,29 @@ export function CreationToolForm() {
             <div className="mt-4 flex justify-center lg:justify-end">
               <Button
                 type="submit"
-                disabled={isSubmitting}
-                className="w-full border-2 border-white bg-black px-8 py-5 text-base font-bold text-white hover:bg-white hover:text-black disabled:opacity-50 lg:w-auto lg:min-w-[200px]"
+                disabled={isLoading || createStatus === "success"}
+                className={`w-full border-2 px-8 py-5 text-base font-bold transition-colors duration-300 lg:w-auto lg:min-w-[200px] ${
+                  createStatus === "success"
+                    ? "border-green-600 bg-green-600 text-white hover:bg-green-600"
+                    : createStatus === "error"
+                      ? "border-red-600 bg-red-600 text-white hover:bg-red-600"
+                      : "border-white bg-black text-white hover:bg-white hover:text-black"
+                }`}
               >
-                {isSubmitting ? (
+                {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Creating Entry...
+                  </>
+                ) : createStatus === "success" ? (
+                  <>
+                    <Check className="mr-2 h-4 w-4" />
+                    Created!
+                  </>
+                ) : createStatus === "error" ? (
+                  <>
+                    <X className="mr-2 h-4 w-4" />
+                    Failed
                   </>
                 ) : (
                   "Create Entry"

@@ -34,18 +34,18 @@ export const backlogRouter = createTRPCRouter({
         title: z.string().min(1, "Title is required"),
         genre: z.string().min(1, "Genre is required"),
         platform: z.string().min(1, "Platform is required"),
-        status: z.enum(["Backlog", "Playing", "Completed"]),
+        status: z.enum(["Backlog", "Playing", "Completed", "Dropped"]),
         owned: z.boolean(),
         interest: z.number().min(0).max(10),
         releaseDate: z.date().optional(),
-        imageLink: z.string().url().optional(),
+        imageLink: z.string().optional(),
         mainTime: z.number().positive().optional(),
         mainPlusExtraTime: z.number().positive().optional(),
         completionTime: z.number().positive().optional(),
         reviewStars: z.number().min(0).max(5).optional(),
         review: z.string().optional(),
         note: z.string().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const userId = parseInt(ctx.session.user.id ?? "0");
@@ -73,7 +73,7 @@ export const backlogRouter = createTRPCRouter({
           .regex(/^#[0-9A-F]{6}$/i, "Invalid color format")
           .optional(),
         description: z.string().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const userId = parseInt(ctx.session.user.id ?? "0");
@@ -96,7 +96,7 @@ export const backlogRouter = createTRPCRouter({
       z.object({
         categoryId: z.number().positive(),
         backlogEntryId: z.number().positive(),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       return await backlogEntryService.addCategoryToBacklogEntry(pool, input);
@@ -126,7 +126,7 @@ export const backlogRouter = createTRPCRouter({
     .query(async ({ input }) => {
       return await backlogEntryService.getBacklogEntryById(
         pool,
-        input.backlogEntryId
+        input.backlogEntryId,
       );
     }),
 
@@ -138,8 +138,8 @@ export const backlogRouter = createTRPCRouter({
   getEntriesByStatus: protectedProcedure
     .input(
       z.object({
-        status: z.enum(["Backlog", "Playing", "Completed"]),
-      })
+        status: z.enum(["Backlog", "Playing", "Completed", "Dropped"]),
+      }),
     )
     .query(async ({ ctx, input }) => {
       const userId = parseInt(ctx.session.user.id ?? "0");
@@ -169,7 +169,7 @@ export const backlogRouter = createTRPCRouter({
     .query(async ({ input }) => {
       return await backlogEntryService.getCategoriesForBacklogEntry(
         pool,
-        input.backlogEntryId
+        input.backlogEntryId,
       );
     }),
 
@@ -183,7 +183,7 @@ export const backlogRouter = createTRPCRouter({
     .query(async ({ input }) => {
       return await backlogEntryService.getBacklogEntriesForCategory(
         pool,
-        input.categoryId
+        input.categoryId,
       );
     }),
 
@@ -206,23 +206,31 @@ export const backlogRouter = createTRPCRouter({
       z.object({
         backlogEntryId: z.number().positive(),
         title: z.string().min(1).optional(),
-        genre: z.string().min(1).optional(),
-        platform: z.string().min(1).optional(),
-        status: z.enum(["Backlog", "Playing", "Completed"]).optional(),
+        genre: z.array(z.string()).optional(),
+        platform: z.array(z.string()).optional(),
+        status: z.string().optional(),
         owned: z.boolean().optional(),
         interest: z.number().min(0).max(10).optional(),
         releaseDate: z.date().optional(),
-        imageLink: z.string().url().optional(),
+        imageLink: z.string().optional(),
         mainTime: z.number().positive().optional(),
         mainPlusExtraTime: z.number().positive().optional(),
         completionTime: z.number().positive().optional(),
         reviewStars: z.number().min(0).max(5).optional(),
         review: z.string().optional(),
         note: z.string().optional(),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
-      return await backlogEntryService.updateBacklogEntry(pool, input);
+      const dbInput = {
+        ...input,
+        genre: input.genre ? input.genre.join(", ") : undefined,
+        platform: input.platform ? input.platform.join(", ") : undefined,
+        reviewStars: input.reviewStars
+          ? Math.round(input.reviewStars)
+          : undefined,
+      };
+      return await backlogEntryService.updateBacklogEntry(pool, dbInput);
     }),
 
   /**
@@ -240,9 +248,12 @@ export const backlogRouter = createTRPCRouter({
       z.object({
         categoryId: z.number().positive(),
         categoryName: z.string().min(1).optional(),
-        color: z.string().regex(/^#[0-9A-F]{6}$/i).optional(),
+        color: z
+          .string()
+          .regex(/^#[0-9A-F]{6}$/i)
+          .optional(),
         description: z.string().optional(),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       return await categoryService.updateCategory(pool, input);
@@ -262,7 +273,7 @@ export const backlogRouter = createTRPCRouter({
     .mutation(async ({ input }) => {
       return await backlogEntryService.deleteBacklogEntry(
         pool,
-        input.backlogEntryId
+        input.backlogEntryId,
       );
     }),
 
@@ -290,12 +301,12 @@ export const backlogRouter = createTRPCRouter({
       z.object({
         categoryId: z.number().positive(),
         backlogEntryId: z.number().positive(),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       return await backlogEntryService.removeBacklogEntryFromCategory(
         pool,
-        input
+        input,
       );
     }),
 });
