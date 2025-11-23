@@ -1,11 +1,29 @@
 "use client";
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { Button } from "shadcn_components/ui/button";
 import Image from "next/image";
-import { parse } from "csv-parse";
+import { api } from "~/trpc/react";
 
 export const ImportCSVContent = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const parseCSV = api.csv.parse.useMutation({
+    onSuccess: (result) => {
+      if (result.success) {
+        console.log("CSV parsed successfully!");
+        console.log("Imported data:", result.data);
+      } else {
+        setError(result.error);
+      }
+      setIsLoading(false);
+    },
+    onError: (err) => {
+      setError(err.message || "Failed to parse CSV");
+      setIsLoading(false);
+    },
+  });
 
   const handleButtonClick = () => {
     fileInputRef.current?.click();
@@ -20,73 +38,13 @@ export const ImportCSVContent = () => {
 
   const processCSVFile = async (file: File) => {
     try {
+      setIsLoading(true);
+      setError(null);
       const fileContent = await file.text();
-      const records: Record<string, unknown>[] = [];
-
-      const parser = parse(fileContent, {
-        columns: false,
-        skip_empty_lines: true,
-      });
-
-      parser.on("readable", function () {
-        let record;
-        while ((record = parser.read()) !== null) {
-          records.push(record);
-        }
-      });
-
-      parser.on("error", function (err) {
-        console.error("CSV parsing error:", err);
-      });
-
-      parser.on("end", function () {
-        // Transform records to fixed structure [A, B, C, ...]
-        const transformedData = records.map((row: any) => {
-          const keys = [
-            "A",
-            "B",
-            "C",
-            "D",
-            "E",
-            "F",
-            "G",
-            "H",
-            "I",
-            "J",
-            "K",
-            "L",
-            "M",
-            "N",
-            "O",
-            "P",
-            "Q",
-            "R",
-            "S",
-            "T",
-            "U",
-            "V",
-            "W",
-            "X",
-            "Y",
-            "Z",
-          ];
-          const transformedRow: Record<string, unknown> = {};
-
-          row.forEach((value: unknown, index: number) => {
-              const key = keys[index];
-              if (key !== undefined) {
-                  transformedRow[key] = value;
-              }
-          });
-
-          return transformedRow;
-        });
-
-        console.log("CSV parsed successfully!");
-        console.log("Imported data:", transformedData);
-      });
+      await parseCSV.mutateAsync({ content: fileContent });
     } catch (error) {
-      console.error("Error processing CSV file:", error);
+      setError(error instanceof Error ? error.message : "Error processing CSV file");
+      setIsLoading(false);
     }
   };
 
