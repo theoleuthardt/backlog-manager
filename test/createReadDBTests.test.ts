@@ -16,6 +16,7 @@ import {
   getAllUsers,
   getUserById,
   getUserByUsername,
+  getUserByEmail,
   getCategoriesByUser,
   getBacklogEntriesByUser,
   getBacklogEntryById,
@@ -155,6 +156,23 @@ describe("Database Read Operations", () => {
       const user = await getUserByUsername(postgresPool, "Jane Doe");
       expect(user?.name).toBe("Jane Doe");
       expect(user?.email).toBe("jane@doe");
+    });
+
+    it("should get user by email", async () => {
+      const userJohn = await getUserByEmail(postgresPool, "john@doe");
+      expect(userJohn).not.toBeNull();
+      expect(userJohn?.name).toBe("John Doe");
+      expect(userJohn?.email).toBe("john@doe");
+
+      const userJane = await getUserByEmail(postgresPool, "jane@doe");
+      expect(userJane).not.toBeNull();
+      expect(userJane?.name).toBe("Jane Doe");
+      expect(userJane?.email).toBe("jane@doe");
+    });
+
+    it("should return undefined for non-existent email", async () => {
+      const user = await getUserByEmail(postgresPool, "nonexistent@example.com");
+      expect(user).toBeNull();
     });
   });
 
