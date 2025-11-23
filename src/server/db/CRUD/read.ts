@@ -67,6 +67,21 @@ export async function getUserByUsername(
 }
 
 /**
+ * 
+ * Get user by email
+ */
+export async function getUserByEmail(pool: Pool, email: string) {
+  const query = 'SELECT * FROM "blm-system"."Users" WHERE "Email" = $1'
+  try {
+      const result = await pool.query(query, [email])
+      return result.rows[0]
+  } catch (error) {
+      console.error('Error getting user by email:', error)
+      throw error
+  }
+}
+
+/**
  * Get all categories for a user
  */
 export async function getCategoriesByUser(
