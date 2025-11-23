@@ -1,54 +1,14 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import pool from "~/server/db/index";
 import * as backlogEntryService from "~/server/services/backlogEntryService";
 import * as categoryService from "~/server/services/categoryService";
-import type { BacklogEntry } from "~/server/db/utils/mapper";
-
-/**
- * Transform database BacklogEntry to frontend format
- */
-function transformBacklogEntry(entry: BacklogEntry) {
-  return {
-    id: entry.backlogEntryID,
-    title: entry.title,
-    imageLink: entry.imageLink ?? "",
-    imageAlt: entry.title,
-    genre: entry.genre ? entry.genre.split(", ").filter(Boolean) : [],
-    platform: entry.platform ? entry.platform.split(", ").filter(Boolean) : [],
-    status: entry.status,
-    owned: entry.owned,
-    interest: entry.interest,
-    reviewStars: entry.reviewStars,
-    review: entry.review,
-    note: entry.note,
-    mainTime: entry.mainTime,
-    mainPlusExtraTime: entry.mainPlusExtraTime,
-    completionTime: entry.completionTime,
-    playtime: 0, // TODO: Add playtime field to database
-  };
-}
-
-// ============================================================================
-// TODO: TEMPORARY FOR TESTING - Remove when merging auth branch
-//
-// INSTRUCTIONS FOR REVERTING WHEN MERGING AUTH:
-// 1. Change all 'publicProcedure' back to 'protectedProcedure'
-// 2. Remove ' || String(TEST_USER_ID)' from all userId lines
-// 3. Remove this TEST_USER_ID constant
-// 4. Remove all "TODO: Change back to protectedProcedure after auth merge" comments
-//
-// PREREQUISITES FOR TESTING:
-// - Ensure a user with ID=1 exists in your database
-// - If not, run: INSERT INTO "Users" (username, email) VALUES ('test', 'test@test.com');
-// ============================================================================
-const TEST_USER_ID = 1;
 
 /**
  * Backlog Entry Router
  *
- * TEMP: Using publicProcedure for testing. Will use protectedProcedure after auth merge.
- * The userId is obtained from the authenticated session (or TEST_USER_ID for now).
+ * All procedures require authentication (protectedProcedure).
+ * The userId is obtained from the authenticated session.
  */
 export const backlogRouter = createTRPCRouter({
   /**
@@ -68,7 +28,7 @@ export const backlogRouter = createTRPCRouter({
    *   imageLink: "https://..."
    * })
    */
-  createEntry: publicProcedure // TODO: Change back to protectedProcedure after auth merge
+  createEntry: protectedProcedure
     .input(
       z.object({
         title: z.string().min(1, "Title is required"),
@@ -92,10 +52,6 @@ export const backlogRouter = createTRPCRouter({
       return await backlogEntryService.createBacklogEntry(pool, {
         userId,
         ...input,
-        status: mappedStatus,
-        reviewStars: input.reviewStars
-          ? Math.round(input.reviewStars)
-          : undefined,
       });
     }),
 
@@ -108,7 +64,7 @@ export const backlogRouter = createTRPCRouter({
    *   description: "Platformer games"
    * })
    */
-  createCategory: publicProcedure // TODO: Change back to protectedProcedure after auth merge
+  createCategory: protectedProcedure
     .input(
       z.object({
         categoryName: z.string().min(1, "Category name is required"),
@@ -135,7 +91,7 @@ export const backlogRouter = createTRPCRouter({
    *   backlogEntryId: 5
    * })
    */
-  addCategoryToEntry: publicProcedure // TODO: Change back to protectedProcedure after auth merge
+  addCategoryToEntry: protectedProcedure
     .input(
       z.object({
         categoryId: z.number().positive(),
@@ -165,7 +121,7 @@ export const backlogRouter = createTRPCRouter({
    * @example
    * const entry = await trpc.backlog.getEntryById.query({ backlogEntryId: 1 })
    */
-  getEntryById: publicProcedure // TODO: Change back to protectedProcedure after auth merge
+  getEntryById: protectedProcedure
     .input(z.object({ backlogEntryId: z.number().positive() }))
     .query(async ({ input }) => {
       return await backlogEntryService.getBacklogEntryById(
@@ -179,7 +135,7 @@ export const backlogRouter = createTRPCRouter({
    * @example
    * const completedEntries = await trpc.backlog.getEntriesByStatus.query({ status: "Completed" })
    */
-  getEntriesByStatus: publicProcedure // TODO: Change back to protectedProcedure after auth merge
+  getEntriesByStatus: protectedProcedure
     .input(
       z.object({
         status: z.enum(["Backlog", "Playing", "Completed", "Dropped"]),
@@ -208,7 +164,7 @@ export const backlogRouter = createTRPCRouter({
    * @example
    * const categories = await trpc.backlog.getCategoriesForEntry.query({ backlogEntryId: 1 })
    */
-  getCategoriesForEntry: publicProcedure // TODO: Change back to protectedProcedure after auth merge
+  getCategoriesForEntry: protectedProcedure
     .input(z.object({ backlogEntryId: z.number().positive() }))
     .query(async ({ input }) => {
       return await backlogEntryService.getCategoriesForBacklogEntry(
@@ -222,7 +178,7 @@ export const backlogRouter = createTRPCRouter({
    * @example
    * const entries = await trpc.backlog.getEntriesForCategory.query({ categoryId: 1 })
    */
-  getEntriesForCategory: publicProcedure // TODO: Change back to protectedProcedure after auth merge
+  getEntriesForCategory: protectedProcedure
     .input(z.object({ categoryId: z.number().positive() }))
     .query(async ({ input }) => {
       return await backlogEntryService.getBacklogEntriesForCategory(
@@ -245,7 +201,7 @@ export const backlogRouter = createTRPCRouter({
    *   ...otherFields
    * })
    */
-  updateEntry: publicProcedure // TODO: Change back to protectedProcedure after auth merge
+  updateEntry: protectedProcedure
     .input(
       z.object({
         backlogEntryId: z.number().positive(),
@@ -287,7 +243,7 @@ export const backlogRouter = createTRPCRouter({
    *   description: "Updated description"
    * })
    */
-  updateCategory: publicProcedure // TODO: Change back to protectedProcedure after auth merge
+  updateCategory: protectedProcedure
     .input(
       z.object({
         categoryId: z.number().positive(),
@@ -312,7 +268,7 @@ export const backlogRouter = createTRPCRouter({
    * @example
    * await trpc.backlog.deleteEntry.mutate({ backlogEntryId: 1 })
    */
-  deleteEntry: publicProcedure // TODO: Change back to protectedProcedure after auth merge
+  deleteEntry: protectedProcedure
     .input(z.object({ backlogEntryId: z.number().positive() }))
     .mutation(async ({ input }) => {
       return await backlogEntryService.deleteBacklogEntry(
@@ -326,7 +282,7 @@ export const backlogRouter = createTRPCRouter({
    * @example
    * await trpc.backlog.deleteCategory.mutate({ categoryId: 1 })
    */
-  deleteCategory: publicProcedure // TODO: Change back to protectedProcedure after auth merge
+  deleteCategory: protectedProcedure
     .input(z.object({ categoryId: z.number().positive() }))
     .mutation(async ({ input }) => {
       return await categoryService.deleteCategory(pool, input.categoryId);
@@ -340,7 +296,7 @@ export const backlogRouter = createTRPCRouter({
    *   backlogEntryId: 5
    * })
    */
-  removeCategoryFromEntry: publicProcedure // TODO: Change back to protectedProcedure after auth merge
+  removeCategoryFromEntry: protectedProcedure
     .input(
       z.object({
         categoryId: z.number().positive(),
