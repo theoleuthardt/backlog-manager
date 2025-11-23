@@ -6,6 +6,14 @@ import pool from "../db";
 import argon2 from "argon2";
 import * as userService from "~/server/services/userService"; 
 
+interface DbUser {
+  UserID: number;
+  Username: string | null;
+  Email: string | null;
+  SteamId: string | null;
+  PasswordHash: string;
+}
+
 declare module "next-auth" {
   interface Session extends DefaultSession {
     user: {
@@ -36,17 +44,17 @@ export const authConfig: NextAuthConfig = {
         if (!credentials?.email || !credentials?.password) return null;
 
         try {
-          const dbUser = await userService.getUserByEmail(pool, credentials.email as string);
+          const dbUser = await userService.getUserByEmail(pool, credentials.email as string) as DbUser | null;
           if (!dbUser) return null;
 
-          const isValid = await argon2.verify((dbUser as any).PasswordHash, credentials.password as string);
+          const isValid = await argon2.verify(dbUser.PasswordHash, credentials.password as string);
           if (!isValid) return null;
 
           const user = {
-            id: (dbUser as any).UserID.toString(),
-            username: (dbUser as any).Username ?? null,
-            email: (dbUser as any).Email ?? null,
-            steamId: (dbUser as any).SteamId ?? null,
+            id: dbUser.UserID.toString(),
+            username: dbUser.Username ?? null,
+            email: dbUser.Email ?? null,
+            steamId: dbUser.SteamId ?? null,
           };
 
           console.log("Authorize User:", user);
@@ -63,7 +71,7 @@ export const authConfig: NextAuthConfig = {
       const email = user.email;
       if (!email) return false;
 
-      const dbUser = await userService.getUserByEmail(pool, email);
+      const dbUser = await userService.getUserByEmail(pool, email) as DbUser | null;
 
       if (!dbUser) {
         await userService.createUser(pool, {
@@ -84,15 +92,15 @@ export const authConfig: NextAuthConfig = {
       return token;
     },
 
-    async session({ session, token }) {
-      const dbUser = await userService.getUserByEmail(pool, session.user.email);
+    async session({ session }) {
+      const dbUser = await userService.getUserByEmail(pool, session.user.email) as DbUser | null;
 
       const enrichedSession = {
         ...session,
         user: {
           ...session.user,
-          id: (dbUser as any)?.UserID.toString() ?? null,
-          steamId: (dbUser as any)?.SteamId ?? null,
+          id: dbUser?.UserID.toString() ?? undefined,
+          steamId: dbUser?.SteamId ?? null,
         },
       };
 
