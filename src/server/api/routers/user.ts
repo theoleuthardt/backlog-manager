@@ -2,6 +2,8 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import pool from "~/server/db/index";
 import * as userService from "~/server/services/userService";
+import argon2 from "argon2";
+
 
 /**
  * User Router
@@ -24,20 +26,24 @@ export const userRouter = createTRPCRouter({
    * })
    */
   createUser: publicProcedure
-    .input(
-      z.object({
-        username: z.string().min(3, "Username must be at least 3 characters"),
-        email: z.string().email("Invalid email address"),
-        passwordHash: z.string().min(1, "Password hash is required"),
-      })
-    )
-    .mutation(async ({ input }) => {
-      return await userService.createUser(pool, {
-        username: input.username,
-        email: input.email,
-        passwordHash: input.passwordHash,
-      });
-    }),
+  .input(
+    z.object({
+      username: z.string().min(3, "Username must be at least 3 characters"),
+      email: z.string().email("Invalid email address"),
+      passwordHash: z.string().min(1, "Password is required"),
+      steamId: z.string().optional(),
+    })
+  )
+  .mutation(async ({ input }) => {
+    const hashedPassword = await argon2.hash(input.passwordHash);
+
+    return await userService.createUser(pool, {
+      username: input.username,
+      email: input.email,
+      passwordHash: hashedPassword,
+      steamId: input.steamId,
+    });
+  }),
 
   /**
    * READ PROCEDURES
@@ -101,25 +107,32 @@ export const userRouter = createTRPCRouter({
    * })
    */
   updateCurrentUser: protectedProcedure
-    .input(
-      z.object({
-        username: z.string().min(3, "Username must be at least 3 characters"),
-        email: z.string().email("Invalid email address"),
-        passwordHash: z.string().min(1, "Password hash is required"),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      if (!ctx.session?.user?.id) {
-        throw new Error("User ID not found in session");
-      }
-      const userId = parseInt(ctx.session.user.id);
-      return await userService.updateUser(pool, {
-        userId,
-        username: input.username,
-        email: input.email,
-        passwordHash: input.passwordHash,
-      });
-    }),
+  .input(
+    z.object({
+      username: z.string().min(1).optional(),
+      email: z.string().email().optional(),
+      passwordHash: z.string().min(1).optional(),
+      steamId: z.string().optional(),
+    })
+  )
+  .mutation(async ({ ctx, input }) => {
+    if (!ctx.session?.user?.id) {
+      throw new Error("User ID not found in session");
+    }
+
+    const userId = parseInt(ctx.session.user.id);
+    console.log("Updating userId:", userId, "with SteamID:", input.steamId);
+
+
+    return await userService.updateUser(pool, {
+      userId,
+      username: input.username,
+      email: input.email,
+      passwordHash: input.passwordHash,
+      steamId: input.steamId,
+    });
+  }),
+
 
   /**
    * Update a specific user (Admin only - in production, add permission check)
@@ -138,6 +151,7 @@ export const userRouter = createTRPCRouter({
         username: z.string().min(3, "Username must be at least 3 characters"),
         email: z.string().email("Invalid email address"),
         passwordHash: z.string().min(1, "Password hash is required"),
+        steamId: z.string().optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -146,6 +160,7 @@ export const userRouter = createTRPCRouter({
         username: input.username,
         email: input.email,
         passwordHash: input.passwordHash,
+        steamId: input.steamId,
       });
     }),
 

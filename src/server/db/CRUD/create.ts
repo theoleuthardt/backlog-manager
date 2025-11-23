@@ -31,13 +31,14 @@ export async function createUser(
   params: CreateUserParams
 ): Promise<User> {
   const query =
-    'INSERT INTO "blm-system"."Users" ("Username", "Email", "PasswordHash") VALUES ($1, $2, $3) RETURNING *';
+    'INSERT INTO "blm-system"."Users" ("Username", "Email", "PasswordHash", "SteamId") VALUES ($1, $2, $3, $4) RETURNING *';
 
   try {
     const result = await pool.query(query, [
       params.username,
       params.email,
       params.passwordHash,
+      params.steamId,
     ]);
     return mapUser(result.rows[0] as UserRow);
   } catch (error) {
