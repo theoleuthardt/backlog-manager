@@ -7,11 +7,11 @@ import argon2 from "argon2";
 import * as userService from "~/server/services/userService"; 
 
 interface DbUser {
-  UserID: number;
-  Username: string | null;
-  Email: string | null;
+  id: number;
+  name: string | null;
+  email: string | null;
   SteamId: string | null;
-  PasswordHash: string;
+  passwordHash: string;
 }
 
 declare module "next-auth" {
@@ -45,15 +45,17 @@ export const authConfig: NextAuthConfig = {
 
         try {
           const dbUser = await userService.getUserByEmail(pool, credentials.email as string) as DbUser | null;
-          if (!dbUser) return null;
-
-          const isValid = await argon2.verify(dbUser.PasswordHash, credentials.password as string);
+          if (!dbUser) {
+            console.log("No user found with email:", credentials.email);
+            return null;
+          }
+          const isValid = await argon2.verify(dbUser.passwordHash, credentials.password as string);
           if (!isValid) return null;
 
           const user = {
-            id: dbUser.UserID.toString(),
-            username: dbUser.Username ?? null,
-            email: dbUser.Email ?? null,
+            id: dbUser.id.toString(),
+            username: dbUser.name ?? null, 
+            email: dbUser.email ?? null,      
             steamId: dbUser.SteamId ?? null,
           };
 
@@ -99,7 +101,7 @@ export const authConfig: NextAuthConfig = {
         ...session,
         user: {
           ...session.user,
-          id: dbUser?.UserID.toString() ?? undefined,
+          id: dbUser?.id.toString() ?? undefined,
           steamId: dbUser?.SteamId ?? null,
         },
       };
