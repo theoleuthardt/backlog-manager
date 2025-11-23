@@ -19,7 +19,11 @@ import { api } from "~/trpc/react";
 import { Loader2 } from "lucide-react";
 
 export const DashboardContent = () => {
-  const { data: backlogData, isLoading, error } = api.backlog.getEntries.useQuery(undefined, {
+  const {
+    data: backlogData,
+    isLoading,
+    error,
+  } = api.backlog.getEntries.useQuery(undefined, {
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   });
@@ -45,8 +49,10 @@ export const DashboardContent = () => {
 
   const maxPlaytime = useMemo(() => {
     if (!backlogData) return 100;
-    const max = Math.max(...backlogData.map((entry) => entry.playtime ?? 0), 0);
-    // Round to even number
+    const max = Math.max(
+      ...backlogData.map((entry) => entry.playtime ?? 0),
+      0,
+    );
     return max % 2 === 0 ? max : max + 1;
   }, [backlogData]);
 
@@ -92,14 +98,14 @@ export const DashboardContent = () => {
       }
 
       if (selectedPlatforms.length > 0) {
-        const hasMatchingPlatform = entry.platform?.some((p) =>
+        const hasMatchingPlatform = entry.platform?.some((p: string) =>
           selectedPlatforms.includes(p),
         );
         if (!hasMatchingPlatform) return false;
       }
 
       if (selectedGenres.length > 0) {
-        const hasMatchingGenre = entry.genre?.some((g) =>
+        const hasMatchingGenre = entry.genre?.some((g: string) =>
           selectedGenres.includes(g),
         );
         if (!hasMatchingGenre) return false;

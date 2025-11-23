@@ -29,21 +29,6 @@ function transformBacklogEntry(entry: BacklogEntry) {
   };
 }
 
-// ============================================================================
-// TODO: TEMPORARY FOR TESTING - Remove when merging auth branch
-//
-// INSTRUCTIONS FOR REVERTING WHEN MERGING AUTH:
-// 1. Change all 'publicProcedure' back to 'protectedProcedure'
-// 2. Remove ' || String(TEST_USER_ID)' from all userId lines
-// 3. Remove this TEST_USER_ID constant
-// 4. Remove all "TODO: Change back to protectedProcedure after auth merge" comments
-//
-// PREREQUISITES FOR TESTING:
-// - Ensure a user with ID=1 exists in your database
-// - If not, run: INSERT INTO "Users" (username, email) VALUES ('test', 'test@test.com');
-// ============================================================================
-const TEST_USER_ID = 1;
-
 /**
  * Backlog Entry Router
  *
@@ -78,7 +63,7 @@ export const backlogRouter = createTRPCRouter({
         owned: z.boolean(),
         interest: z.number().min(0).max(10),
         releaseDate: z.date().optional(),
-        imageLink: z.string().optional(), // Allow any string, not just URLs
+        imageLink: z.string().optional(),
         mainTime: z.number().positive().optional(),
         mainPlusExtraTime: z.number().positive().optional(),
         completionTime: z.number().positive().optional(),
@@ -157,7 +142,8 @@ export const backlogRouter = createTRPCRouter({
    */
   getEntries: protectedProcedure.query(async ({ ctx }) => {
     const userId = parseInt(ctx.session.user.id ?? "0");
-    return await backlogEntryService.getBacklogEntriesByUser(pool, userId);
+    const entries = await backlogEntryService.getBacklogEntriesByUser(pool, userId);
+    return entries.map(transformBacklogEntry);
   }),
 
   /**
