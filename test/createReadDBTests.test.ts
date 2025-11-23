@@ -172,7 +172,7 @@ describe("Database Read Operations", () => {
 
     it("should return undefined for non-existent email", async () => {
       const user = await getUserByEmail(postgresPool, "nonexistent@example.com");
-      expect(user).toBeUndefined();
+      expect(user).toBeNull();
     });
   });
 
