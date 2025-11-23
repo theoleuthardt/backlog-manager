@@ -25,7 +25,7 @@ export async function updateUser(
   const client = await pool.connect();
   try {
     const updates: string[] = [];
-    const values: (string | number)[] = [params.userId];
+    const values: (string | number | null)[] = [params.userId];
     let paramCount = 2;
 
     if (params.username !== undefined) {
@@ -39,6 +39,10 @@ export async function updateUser(
     if (params.passwordHash !== undefined) {
       updates.push(`"PasswordHash" = $${paramCount++}`);
       values.push(params.passwordHash);
+    }
+    if (params.steamId !== undefined) {
+      updates.push(`"SteamId" = $${paramCount++}`);
+      values.push(params.steamId);
     }
 
     updates.push(`"UpdatedAt" = DATE_TRUNC('minute', CURRENT_TIMESTAMP)`);
@@ -73,6 +77,7 @@ export async function updateUser(
     client.release();
   }
 }
+
 
 /**
  * Update a category
