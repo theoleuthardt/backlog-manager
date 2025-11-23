@@ -2,10 +2,9 @@ import { type DefaultSession, type NextAuthConfig } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
 import GitHubProvider from "next-auth/providers/github";
 import CredentialProvider from "next-auth/providers/credentials";
-import { getUserByEmail } from "../db/CRUD/read";
 import pool from "../db";
 import argon2 from "argon2";
-import { createUser } from "../db/CRUD/create";
+import * as userService from "~/server/services/userService"; 
 
 declare module "next-auth" {
   interface Session extends DefaultSession {
@@ -35,21 +34,21 @@ export const authConfig: NextAuthConfig = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
-      
+
         try {
-          const dbUser = await getUserByEmail(pool, credentials.email as string);
+          const dbUser = await userService.getUserByEmail(pool, credentials.email as string);
           if (!dbUser) return null;
-      
+
           const isValid = await argon2.verify(dbUser.PasswordHash, credentials.password as string);
           if (!isValid) return null;
-      
+
           const user = {
-            id: dbUser.id,
+            id: dbUser.UserID.toString(),
             username: dbUser.Username ?? null,
             email: dbUser.Email ?? null,
-            steamId: dbUser.SteamId ?? null
+            steamId: dbUser.SteamId ?? null,
           };
-      
+
           console.log("Authorize User:", user);
           return user;
         } catch (error) {
@@ -63,20 +62,20 @@ export const authConfig: NextAuthConfig = {
     async signIn({ user }) {
       const email = user.email;
       if (!email) return false;
-    
-      const dbUser = await getUserByEmail(pool, email);
-    
+
+      const dbUser = await userService.getUserByEmail(pool, email);
+
       if (!dbUser) {
-        
-    
-        await createUser(pool, {
+        await userService.createUser(pool, {
           username: user.name ?? email,
           email: email,
-          passwordHash: "",}); // Empty password hash for OAuth users
+          passwordHash: "", // Empty password hash for OAuth users
+        });
       }
-    
+
       return true;
     },
+
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
@@ -84,21 +83,20 @@ export const authConfig: NextAuthConfig = {
       }
       return token;
     },
-    
+
     async session({ session, token }) {
-      const dbUser = await getUserByEmail(pool, session.user.email);
-    
+      const dbUser = await userService.getUserByEmail(pool, session.user.email);
+
       const enrichedSession = {
         ...session,
         user: {
           ...session.user,
-          id: dbUser?.UserID ?? null,
+          id: dbUser?.UserID.toString() ?? null,
           steamId: dbUser?.SteamId ?? null,
         },
       };
-        
+
       return enrichedSession;
-    }
-    
+    },
   },
 };

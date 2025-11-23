@@ -50,6 +50,15 @@ export async function getUserByUsername(
 }
 
 /**
+ * Get a user by email
+ */
+export async function getUserByEmail(
+  pool: Pool,
+  email: string 
+): Promise<User | null> { 
+  return await readCRUD.getUserByEmail(pool, email);
+}
+/**
  * Update a user
  */
 export async function updateUser(
