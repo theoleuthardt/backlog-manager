@@ -111,9 +111,11 @@ export function mapBacklogEntry(row: BacklogEntryRow): BacklogEntry {
     platform: row.Platform,
     releaseDate: row.ReleaseDate ?? undefined,
     imageLink: row.ImageLink ?? undefined,
-    mainTime: row.MainTime ?? undefined,
-    mainPlusExtraTime: row.MainPlusExtraTime ?? undefined,
-    completionTime: row.CompletionTime ?? undefined,
+    mainTime: row.MainTime ? Number(row.MainTime) : undefined,
+    mainPlusExtraTime: row.MainPlusExtraTime
+      ? Number(row.MainPlusExtraTime)
+      : undefined,
+    completionTime: row.CompletionTime ? Number(row.CompletionTime) : undefined,
     status: row.Status,
     owned: row.Owned,
     interest: Number(row.Interest),
