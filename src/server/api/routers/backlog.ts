@@ -78,7 +78,7 @@ export const backlogRouter = createTRPCRouter({
         owned: z.boolean(),
         interest: z.number().min(0).max(10),
         releaseDate: z.date().optional(),
-        imageLink: z.string().optional(), // Allow any string, not just URLs
+        imageLink: z.string().optional(),
         mainTime: z.number().positive().optional(),
         mainPlusExtraTime: z.number().positive().optional(),
         completionTime: z.number().positive().optional(),

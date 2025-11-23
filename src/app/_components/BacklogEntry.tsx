@@ -99,6 +99,8 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
           backlogEntryId: props.id,
           ...changes,
         });
+        setUpdateStatus("success");
+        toast.success("Entry updated successfully!");
 
         await utils.backlog.getEntries.invalidate();
 
