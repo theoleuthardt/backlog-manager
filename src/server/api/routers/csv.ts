@@ -38,7 +38,7 @@ export const csvRouter = createTRPCRouter({
     }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const userId = parseInt(ctx.session.user.id || "0");
+        const userId = parseInt(ctx.session?.user?.id ?? "0");
         const records = await parseCSVContent(input.content);
 
         const config: ColumnConfig = {
@@ -82,7 +82,7 @@ export const csvRouter = createTRPCRouter({
     }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const userId = parseInt(ctx.session.user.id || "0");
+        const userId = parseInt(ctx.session?.user?.id ?? "0");
 
         const entryParams = {
           userId,
