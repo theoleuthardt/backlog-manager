@@ -18,7 +18,7 @@ export const SearchBar = (props: SearchBarProps) => {
         type="search"
         placeholder={props.placeholder ?? "Search"}
         value={props.value}
-        className={`w-full border-2 ${props.useIcon ? "pl-10" : ""} ${props.value && props.onClear ? "pr-10" : ""}`}
+        className={`w-full border-2 ${props.useIcon ? "pl-10" : ""} ${props.value && props.onClear ? "pr-10" : ""} [&::-webkit-search-cancel-button]:hidden`}
         onInput={(e) => {
           if (props.onInput) props.onInput(e as React.ChangeEvent<HTMLInputElement>);
         }}
