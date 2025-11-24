@@ -1,0 +1,83 @@
+name: Deploy Werkzeugkiste!
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [ main ]
+
+  workflow_dispatch:
+    inputs:
+      question:
+        description: 'Deploy on dev server?'
+        required: false
+        default: 'yes'
+        type: choice
+        options:
+          - 'yes'
+          - 'no'
+
+jobs:
+  docker-build-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/backlog-manager:latest
+          build-args: |
+            NODE_ENV=development
+            AUTH_SECRET=${{ secrets.AUTH_SECRET }}
+            AUTH_DISCORD_ID=${{ secrets.AUTH_DISCORD_ID }}
+            AUTH_DISCORD_SECRET=${{ secrets.AUTH_DISCORD_SECRET }}
+            AUTH_GITHUB_ID=${{ secrets.AUTH_GITHUB_ID }}
+            AUTH_GITHUB_SECRET=${{ secrets.AUTH_GITHUB_SECRET }}
+            POSTGRES_URL=${{ secrets.POSTGRES_URL }}
+
+  deploy-on-server:
+    needs: docker-build-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install Wireguard
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wireguard-tools
+
+      - name: Setup Wireguard Configuration
+        run: |
+          sudo mkdir -p /etc/wireguard
+          echo "${{ secrets.VPN_CONFIG }}" | sudo tee /etc/wireguard/wg0.conf > /dev/null
+          sudo chmod 600 /etc/wireguard/wg0.conf
+
+      - name: Connect to Wireguard
+        run: |
+          sudo wg-quick up wg0
+          sleep 10
+          sudo wg show
+
+
+      - name: Deploy on Server
+        uses: appleboy/ssh-action@v1.2.1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.PORT }}
+          script: |
+            cd "${{ secrets.HOMELAB_PATH }}"
+            docker compose up -d --pull always
