@@ -2,8 +2,11 @@ name: Deploy Werkzeugkiste!
 
 on:
   pull_request:
-    types: [closed]
-    branches: [ dev ]
+    branches:
+      - dev
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
 
   workflow_dispatch:
     inputs:
