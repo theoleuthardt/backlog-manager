@@ -86,10 +86,10 @@ export const csvRouter = createTRPCRouter({
 
         const entryParams = {
           userId,
-          title: input.missingGame.title,
+          title: input.gameData.title,
           genre: input.missingGame.genre,
           platform: input.missingGame.platform,
-          status: input.missingGame.status,
+          status: "Not Started",  //TODO update when status is no enum anymore :)
           owned: true,
           interest: 5,
           imageLink: input.gameData.imageUrl,
@@ -98,15 +98,17 @@ export const csvRouter = createTRPCRouter({
           completionTime: input.gameData.completionist,
         };
 
-        await backlogEntryService.createBacklogEntry(pool, entryParams);
+        const createdEntry = await backlogEntryService.createBacklogEntry(pool, entryParams);
 
         return {
           success: true,
+          data: createdEntry,
           error: null,
         };
       } catch (error) {
         return {
           success: false,
+          data: null,
           error: error instanceof Error ? error.message : "Unknown error occurred",
         };
       }
