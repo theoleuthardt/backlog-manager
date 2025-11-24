@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Button } from "shadcn_components/ui/button";
 import { X } from "lucide-react";
 import { Spinner } from "~/components/ui/spinner";
+import { SearchBar } from "./SearchBar";
 import { api } from "~/trpc/react";
 import type { MissingGame } from "~/server/csv/parseCSV";
 
@@ -32,8 +33,8 @@ export const MissingGamesModal = ({
 }: MissingGamesModalProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<GameSearchResult[]>([]);
   const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<GameSearchResult[]>([]);
 
   const gameSearchQuery = api.gameSearch.search.useQuery(
     { searchTerm: debouncedQuery },
@@ -46,7 +47,6 @@ export const MissingGamesModal = ({
     onSuccess: () => {
       setSearchQuery("");
       setSearchResults([]);
-      setDebouncedQuery("");
 
       // Move to next missing game
       if (currentIndex < missingGames.length - 1) {
@@ -87,7 +87,6 @@ export const MissingGamesModal = ({
   const handleSkip = () => {
     setSearchQuery("");
     setSearchResults([]);
-    setDebouncedQuery("");
 
     if (currentIndex < missingGames.length - 1) {
       setCurrentIndex(currentIndex + 1);
@@ -124,17 +123,16 @@ export const MissingGamesModal = ({
         <div className="mb-6">
           <p className="text-sm text-gray-400 mb-2">Search for the game in howLongToBeat:</p>
           <div className="flex gap-2 items-center">
-            <input
-              type="text"
-              placeholder="Search game..."
+            <SearchBar
               value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                if (e.target.value.trim()) {
-                  setDebouncedQuery(e.target.value);
-                }
+              placeholder="Search game..."
+              onInput={(e) => setSearchQuery(e.currentTarget.value)}
+              onDebouncedChange={setDebouncedQuery}
+              onClear={() => {
+                setSearchQuery("");
+                setSearchResults([]);
               }}
-              className="flex-1 px-3 py-2 bg-black border-2 border-white text-white rounded disabled:opacity-50"
+              className="!mb-0 flex-1"
             />
             {gameSearchQuery.isPending && (
               <Spinner className="size-6 text-white" />
