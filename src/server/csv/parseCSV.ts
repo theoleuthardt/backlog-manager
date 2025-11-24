@@ -110,6 +110,7 @@ function transformRecords(records: CSVRecord[]): CSVRecord[] {
 
 // Global progress tracking for CSV imports
 const importProgressMap = new Map<string, number>();
+const importCancelFlagsMap = new Map<string, boolean>();
 
 export function getImportProgress(sessionId: string): number {
   return importProgressMap.get(sessionId) ?? 0;
@@ -121,6 +122,23 @@ export function setImportProgress(sessionId: string, processed: number) {
 
 export function clearImportProgress(sessionId: string) {
   importProgressMap.delete(sessionId);
+  importCancelFlagsMap.delete(sessionId);
+}
+
+export function setCancelFlag(sessionId: string, cancelled: boolean) {
+  if (cancelled) {
+    importCancelFlagsMap.set(sessionId, true);
+  } else {
+    importCancelFlagsMap.delete(sessionId);
+  }
+}
+
+export function getCancelFlag(sessionId: string): boolean {
+  return importCancelFlagsMap.get(sessionId) ?? false;
+}
+
+export function isCancelled(sessionId: string): boolean {
+  return getCancelFlag(sessionId);
 }
 
 function emitProgress(sessionId: string, processed: number) {
@@ -151,6 +169,12 @@ export async function importBacklogEntriesFromCSV(
   let processedCount = 0;
 
   for (const record of records) {
+    // Check if import was cancelled
+    if (sessionId && isCancelled(sessionId)) {
+      console.log(`Import cancelled at record ${processedCount + 1}/${records.length}`);
+      break;
+    }
+
     try {
       const title = String(record[config.titleColumn] || "").trim();
 

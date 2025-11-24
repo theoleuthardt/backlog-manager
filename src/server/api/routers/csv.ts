@@ -4,7 +4,7 @@ import {
   createTRPCRouter,
   protectedProcedure,
 } from "~/server/api/trpc";
-import { parseCSVContent, importBacklogEntriesFromCSV, getImportProgress, clearImportProgress, type ColumnConfig } from "~/server/csv/parseCSV";
+import { parseCSVContent, importBacklogEntriesFromCSV, getImportProgress, setCancelFlag, type ColumnConfig } from "~/server/csv/parseCSV";
 import * as backlogEntryService from "~/server/services/backlogEntryService";
 import pool from "~/server/db/index";
 
@@ -73,6 +73,25 @@ export const csvRouter = createTRPCRouter({
       return {
         processed,
       };
+    }),
+
+  cancelImport: protectedProcedure
+    .input(z.object({
+      sessionId: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        setCancelFlag(input.sessionId, true);
+        return {
+          success: true,
+          message: "Import cancelled",
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : "Failed to cancel import",
+        };
+      }
     }),
 
   createMissingGameEntry: protectedProcedure

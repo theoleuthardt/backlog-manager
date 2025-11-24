@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useCallback } from "react";
 import { Button } from "shadcn_components/ui/button";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -13,14 +13,13 @@ const COLUMN_OPTIONS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "
 export const ImportCSVContent = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const csvImport = useCSVImport();
-  const { state, startImport, updateProgress, completeImport, setColumnConfig, setMissingGamesModal } = csvImport;
-  const { isLoading, totalRecords, createdRecords, completionMessage, missingGames, showMissingGamesModal, titleColumn, genreColumn, platformColumn, statusColumn, sessionId } = state;
+  const { state, startImport, updateProgress, completeImport, setColumnConfig, setMissingGamesModal, showCancelConfirmation, cancelImport } = csvImport;
+  const { isLoading, totalRecords, createdRecords, completionMessage, missingGames, showMissingGamesModal, showCancelConfirmation: showConfirm, titleColumn, genreColumn, platformColumn, statusColumn, sessionId } = state;
 
   const importCSV = api.csv.importEntries.useMutation({
     onSuccess: (result) => {
       if (result.success && result.data) {
         const { success, failed, errors, missingGames: missing } = result.data;
-        const total = success + failed + missing.length;
         console.log(`CSV import completed: ${success} successful, ${failed} failed, ${missing.length} missing`);
 
         if (missing && missing.length > 0) {
@@ -76,6 +75,23 @@ export const ImportCSVContent = () => {
       updateProgress(getProgress.data.processed);
     }
   }, [getProgress.data, updateProgress]);
+
+  const cancelCSVMutation = api.csv.cancelImport.useMutation({
+    onSuccess: () => {
+      toast.info("Import cancelled");
+      completeImport("Import was cancelled by the user");
+    },
+    onError: (err) => {
+      toast.error(err.message || "Failed to cancel import");
+    },
+  });
+
+  const handleCancelImport = useCallback(async () => {
+    if (sessionId) {
+      await cancelCSVMutation.mutateAsync({ sessionId });
+      cancelImport();
+    }
+  }, [sessionId, cancelCSVMutation, cancelImport]);
 
   const processCSVFile = async (file: File) => {
     try {
@@ -201,6 +217,41 @@ export const ImportCSVContent = () => {
           <p className="text-center text-gray-400 text-sm">
             Creating entries: {createdRecords} / {totalRecords}
           </p>
+          <Button
+            className="w-full border-2 border-red-500 font-bold text-red-500 bg-black hover:bg-red-500 hover:text-black"
+            variant="outline"
+            onClick={() => showCancelConfirmation(true)}
+            size="sm"
+          >
+            Cancel Import
+          </Button>
+        </div>
+      )}
+
+      {showConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-black border-2 border-white rounded-lg p-6 max-w-sm w-full mx-4 space-y-4">
+            <h2 className="text-xl font-bold text-white">Cancel Import?</h2>
+            <p className="text-gray-400">
+              Are you sure you want to cancel the import? The process will stop and no further entries will be created.
+            </p>
+            <div className="flex gap-4 justify-end">
+              <Button
+                className="border-2 border-white font-bold text-white bg-black hover:bg-white hover:text-black"
+                variant="outline"
+                onClick={() => showCancelConfirmation(false)}
+              >
+                Keep Importing
+              </Button>
+              <Button
+                className="border-2 border-red-500 font-bold text-red-500 bg-black hover:bg-red-500 hover:text-black"
+                variant="outline"
+                onClick={handleCancelImport}
+              >
+                Yes, Cancel
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 

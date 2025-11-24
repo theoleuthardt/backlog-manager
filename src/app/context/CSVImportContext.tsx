@@ -5,12 +5,14 @@ import type { MissingGame } from "~/server/csv/parseCSV";
 
 export interface ImportState {
   isLoading: boolean;
+  isCancelling: boolean;
   sessionId: string | null;
   totalRecords: number;
   createdRecords: number;
   completionMessage: string | null;
   missingGames: MissingGame[];
   showMissingGamesModal: boolean;
+  showCancelConfirmation: boolean;
   titleColumn: string;
   genreColumn: string;
   platformColumn: string;
@@ -33,6 +35,8 @@ interface CSVImportContextType {
     platformColumn: string,
     statusColumn: string
   ) => void;
+  showCancelConfirmation: (show: boolean) => void;
+  cancelImport: () => void;
 }
 
 const CSVImportContext = createContext<CSVImportContextType | undefined>(
@@ -41,12 +45,14 @@ const CSVImportContext = createContext<CSVImportContextType | undefined>(
 
 const DEFAULT_STATE: ImportState = {
   isLoading: false,
+  isCancelling: false,
   sessionId: null,
   totalRecords: 0,
   createdRecords: 0,
   completionMessage: null,
   missingGames: [],
   showMissingGamesModal: false,
+  showCancelConfirmation: false,
   titleColumn: "A",
   genreColumn: "B",
   platformColumn: "C",
@@ -122,6 +128,21 @@ export const CSVImportProvider: React.FC<{ children: React.ReactNode }> = ({
     []
   );
 
+  const showCancelConfirmation = useCallback((show: boolean) => {
+    setState((prev) => ({
+      ...prev,
+      showCancelConfirmation: show,
+    }));
+  }, []);
+
+  const cancelImport = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      isCancelling: true,
+      showCancelConfirmation: false,
+    }));
+  }, []);
+
   return (
     <CSVImportContext.Provider
       value={{
@@ -132,6 +153,8 @@ export const CSVImportProvider: React.FC<{ children: React.ReactNode }> = ({
         resetImport,
         setMissingGamesModal,
         setColumnConfig,
+        showCancelConfirmation,
+        cancelImport,
       }}
     >
       {children}
