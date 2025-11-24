@@ -2,6 +2,7 @@
 import React, { useRef, useState } from "react";
 import { Button } from "shadcn_components/ui/button";
 import Image from "next/image";
+import { toast } from "sonner";
 import { api } from "~/trpc/react";
 import { MissingGamesModal } from "./MissingGamesModal";
 import type { MissingGame } from "~/server/csv/parseCSV";
@@ -11,7 +12,7 @@ const COLUMN_OPTIONS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "
 export const ImportCSVContent = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [completionMessage, setCompletionMessage] = useState<string | null>(null);
   const [titleColumn, setTitleColumn] = useState("A");
   const [genreColumn, setGenreColumn] = useState("B");
   const [platformColumn, setPlatformColumn] = useState("C");
@@ -28,26 +29,31 @@ export const ImportCSVContent = () => {
         if (missing && missing.length > 0) {
           setMissingGames(missing);
           setShowMissingGamesModal(true);
-          setError(
-            `Import completed: ${success} created. ${missing.length} games were not found in howLongToBeat and need manual lookup.`
+          toast.info(
+            `${success} entries imported. ${missing.length} games need manual lookup.`
+          );
+          setCompletionMessage(
+            `✓ ${success + missing.length} entries created successfully. ${missing.length} needed manual lookup.`
           );
         } else if (errors.length > 0) {
           console.error("Import errors:", errors);
-          setError(
-            failed > 0
-              ? `Import completed with errors: ${success} created, ${failed} failed`
-              : `Successfully imported ${success} backlog entries!`
-          );
+          const message = failed > 0
+            ? `Import completed: ${success} created, ${failed} failed`
+            : `Successfully imported ${success} backlog entries!`;
+          toast.warning(message);
+          setCompletionMessage(`✓ ${message}`);
         } else {
-          setError(`Successfully imported ${success} backlog entries!`);
+          const message = `Successfully imported ${success} backlog entries!`;
+          toast.success(message);
+          setCompletionMessage(`✓ ${message}`);
         }
       } else {
-        setError(result.error);
+        toast.error(result.error || "Import failed");
       }
       setIsLoading(false);
     },
     onError: (err) => {
-      setError(err.message || "Failed to import CSV");
+      toast.error(err.message || "Failed to import CSV");
       setIsLoading(false);
     },
   });
@@ -66,7 +72,6 @@ export const ImportCSVContent = () => {
   const processCSVFile = async (file: File) => {
     try {
       setIsLoading(true);
-      setError(null);
       const fileContent = await file.text();
       await importCSV.mutateAsync({
         content: fileContent,
@@ -76,7 +81,7 @@ export const ImportCSVContent = () => {
         statusColumn,
       });
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Error processing CSV file");
+      toast.error(error instanceof Error ? error.message : "Error processing CSV file");
       setIsLoading(false);
     }
   };
@@ -175,9 +180,9 @@ export const ImportCSVContent = () => {
         onChange={handleFileChange}
       />
 
-      {error && (
-        <div className="w-full max-w-md p-4 bg-red-900 border-2 border-red-500 text-white rounded text-center">
-          {error}
+      {completionMessage && (
+        <div className="w-full max-w-md text-center text-white">
+          {completionMessage}
         </div>
       )}
 
