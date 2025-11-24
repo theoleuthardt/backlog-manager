@@ -8,12 +8,13 @@ import {
 } from "shadcn_components/ui/dialog";
 import { Button } from "shadcn_components/ui/button";
 import { GameImage } from "components/GameImage";
-import { XIcon, Loader2, Edit2 } from "lucide-react";
+import { XIcon, Loader2, Edit2, Check, X, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Input } from "shadcn_components/ui/input";
 import { Label } from "shadcn_components/ui/label";
 import { Textarea } from "shadcn_components/ui/textarea";
 import { Checkbox } from "shadcn_components/ui/checkbox";
+import { toast } from "sonner";
 import {
   Popover,
   PopoverContent,
@@ -26,7 +27,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "shadcn_components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "shadcn_components/ui/alert-dialog";
 import type { BacklogEntryProps } from "~/app/types";
+import { api } from "~/trpc/react";
 
 export const BacklogEntry = (props: BacklogEntryProps) => {
   const [imageLink, setImageLink] = useState(props.imageLink);
@@ -41,7 +54,12 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
   const [review, setReview] = useState(props.review ?? "");
   const [note, setNote] = useState(props.note ?? "");
   const [isLoading, setIsLoading] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState<
+    "idle" | "success" | "error"
+  >("idle");
   const [imagePopoverOpen, setImagePopoverOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleUpdateImage = () => {
     if (newImageUrl.trim()) {
@@ -51,13 +69,27 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
     }
   };
 
+  const utils = api.useUtils();
+  const updateEntryMutation = api.backlog.updateEntry.useMutation();
+  const deleteEntryMutation = api.backlog.deleteEntry.useMutation();
+
   const handleUpdate = async () => {
     setIsLoading(true);
+    setUpdateStatus("idle");
     try {
-      const changes: Record<string, string | number | boolean | string[]> = {};
+      const changes: {
+        imageLink?: string;
+        genre?: string[];
+        platform?: string[];
+        status?: string;
+        owned?: boolean;
+        interest?: number;
+        reviewStars?: number;
+        review?: string;
+        note?: string;
+      } = {};
 
       if (imageLink !== props.imageLink) changes.imageLink = imageLink;
-      if (playtime !== (props.playtime ?? 0)) changes.playtime = playtime;
       if (genre !== (props.genre?.join(", ") ?? ""))
         changes.genre = genre
           .split(",")
@@ -77,25 +109,60 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
       if (note !== (props.note ?? "")) changes.note = note;
 
       if (Object.keys(changes).length > 0) {
-        const response = await fetch("/api/backlog/update", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            title: props.title,
-            ...changes,
-          }),
+        await updateEntryMutation.mutateAsync({
+          backlogEntryId: props.id,
+          ...changes,
         });
+        setUpdateStatus("success");
+        toast.success("Entry updated successfully!");
 
-        if (!response.ok) {
-          throw new Error("Failed to update");
-        }
+        await utils.backlog.getEntries.invalidate();
+
+        await utils.backlog.getEntries.invalidate();
+
+        setUpdateStatus("success");
+        toast.success("Entry updated successfully!");
+
+        setTimeout(() => setUpdateStatus("idle"), 2000);
+      } else {
+        toast.info("No changes to update");
+        setIsLoading(false);
       }
     } catch (error) {
       console.error("Error updating backlog entry:", error);
+      setUpdateStatus("error");
+      toast.error(
+        error instanceof Error
+          ? `Failed to update: ${error.message}`
+          : "Failed to update entry. Please try again.",
+      );
+
+      setTimeout(() => setUpdateStatus("idle"), 3000);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteEntryMutation.mutateAsync({
+        backlogEntryId: props.id,
+      });
+
+      await utils.backlog.getEntries.invalidate();
+
+      toast.success(`"${props.title}" deleted successfully!`);
+      setDeleteDialogOpen(false);
+    } catch (error) {
+      console.error("Error deleting backlog entry:", error);
+      toast.error(
+        error instanceof Error
+          ? `Failed to delete: ${error.message}`
+          : "Failed to delete entry. Please try again.",
+      );
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -277,10 +344,11 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="backlog">Backlog</SelectItem>
-                        <SelectItem value="playing">Playing</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="abandoned">Abandoned</SelectItem>
+                        <SelectItem value="Not Started">Not Started</SelectItem>
+                        <SelectItem value="In Progress">In Progress</SelectItem>
+                        <SelectItem value="Completed">Completed</SelectItem>
+                        <SelectItem value="On Hold">On Hold</SelectItem>
+                        <SelectItem value="Dropped">Dropped</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -351,7 +419,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                         step="0.5"
                         value={reviewStars}
                         onChange={(e) => setReviewStars(Number(e.target.value))}
-                        disabled={status !== "completed"}
+                        disabled={status !== "Completed"}
                         className="bg-black text-white disabled:opacity-50"
                       />
                     </div>
@@ -364,7 +432,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                         id="review"
                         value={review}
                         onChange={(e) => setReview(e.target.value)}
-                        disabled={status !== "completed"}
+                        disabled={status !== "Completed"}
                         placeholder="Write your review here..."
                         className="min-h-[100px] bg-black text-white disabled:opacity-50"
                       />
@@ -374,20 +442,85 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
 
                 <div
                   id="update-button-section"
-                  className="flex justify-end pt-4 pb-4"
+                  className="flex justify-between pt-4 pb-4"
                 >
+                  <AlertDialog
+                    open={deleteDialogOpen}
+                    onOpenChange={setDeleteDialogOpen}
+                  >
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="min-w-[150px] gap-2 bg-red-600 text-white hover:bg-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete Entry
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="border-2 border-red-600 bg-black">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="text-xl text-white">
+                          Delete &quot;{props.title}&quot;?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-gray-300">
+                          This action cannot be undone. This will permanently
+                          delete this backlog entry from your collection.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel className="bg-black text-white hover:bg-gray-800">
+                          Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleDelete}
+                          disabled={isDeleting}
+                          className="bg-red-600 text-white hover:bg-red-700"
+                        >
+                          {isDeleting ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Deleting...
+                            </>
+                          ) : (
+                            <>
+                              <Trash2 className="h-4 w-4" />
+                              Delete
+                            </>
+                          )}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+
                   <Button
                     id="update-entry-button"
                     variant="outline"
                     size="sm"
                     onClick={handleUpdate}
-                    disabled={isLoading}
-                    className="min-w-[200px] gap-2 bg-black text-white hover:bg-white hover:text-black"
+                    disabled={isLoading || updateStatus === "success"}
+                    className={`min-w-[200px] gap-2 transition-colors duration-300 ${
+                      updateStatus === "success"
+                        ? "bg-green-600 text-white hover:bg-green-600"
+                        : updateStatus === "error"
+                          ? "bg-red-600 text-white hover:bg-red-600"
+                          : "bg-black text-white hover:bg-white hover:text-black"
+                    }`}
                   >
                     {isLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Updating...
+                      </>
+                    ) : updateStatus === "success" ? (
+                      <>
+                        <Check className="mr-2 h-4 w-4" />
+                        Updated!
+                      </>
+                    ) : updateStatus === "error" ? (
+                      <>
+                        <X className="mr-2 h-4 w-4" />
+                        Failed
                       </>
                     ) : (
                       "Update Entry"

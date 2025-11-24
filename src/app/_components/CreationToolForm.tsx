@@ -7,7 +7,7 @@ import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
-import { Loader2 } from "lucide-react";
+import { Loader2, Check, X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -15,17 +15,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { api } from "~/trpc/react";
+import { toast } from "sonner";
 
 export function CreationToolForm() {
   const searchParams = useSearchParams();
   const title = searchParams.get("title") ?? "";
   const imageUrl = searchParams.get("imageUrl") ?? "";
-  const steamAppId = searchParams.get("steamAppId") ?? "";
   const mainStory = parseFloat(searchParams.get("mainStory") ?? "0");
   const mainStoryWithExtras = parseFloat(
     searchParams.get("mainStoryWithExtras") ?? "0",
   );
   const completionist = parseFloat(searchParams.get("completionist") ?? "0");
+
+  const hasHltbData = mainStory > 0 || mainStoryWithExtras > 0 || completionist > 0;
+  const hasMissingData = !imageUrl || !hasHltbData;
 
   const [genre, setGenre] = useState("");
   const [platform, setPlatform] = useState("");
@@ -36,42 +40,68 @@ export function CreationToolForm() {
   const [review, setReview] = useState("");
   const [note, setNote] = useState("");
   const [playtime, setPlaytime] = useState(0);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [createStatus, setCreateStatus] = useState<
+    "idle" | "success" | "error"
+  >("idle");
+
+  const createEntryMutation = api.backlog.createEntry.useMutation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    setIsLoading(true);
+    setCreateStatus("idle");
 
-    const entryData = {
-      title,
-      imageLink: imageUrl,
-      steamAppId: parseInt(steamAppId),
-      genre: genre
-        .split(",")
-        .map((g) => g.trim())
-        .filter(Boolean),
-      platform: platform
-        .split(",")
-        .map((p) => p.trim())
-        .filter(Boolean),
-      status,
-      owned,
-      interest,
-      reviewStars,
-      review,
-      note,
-      playtime,
-      mainTime: mainStory,
-      mainPlusExtraTime: mainStoryWithExtras,
-      completionTime: completionist,
-    };
+    try {
+      if (!genre.trim()) {
+        toast.error("Please enter at least one genre");
+        setIsLoading(false);
+        return;
+      }
+      if (!platform.trim()) {
+        toast.error("Please enter at least one platform");
+        setIsLoading(false);
+        return;
+      }
+      if (!status) {
+        toast.error("Please select a status");
+        setIsLoading(false);
+        return;
+      }
 
-    console.log("Submitting entry:", entryData);
+      await createEntryMutation.mutateAsync({
+        title,
+        genre,
+        platform,
+        status: status as "Not Started" | "In Progress" | "Completed" | "On Hold" | "Dropped",
+        owned,
+        interest,
+        imageLink: imageUrl,
+        mainTime: mainStory || undefined,
+        mainPlusExtraTime: mainStoryWithExtras || undefined,
+        completionTime: completionist || undefined,
+        reviewStars: reviewStars || undefined,
+        review: review || undefined,
+        note: note || undefined,
+      });
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+      setCreateStatus("success");
+      toast.success("Entry created successfully!");
 
-    setIsSubmitting(false);
+      setTimeout(() => setCreateStatus("idle"), 2000);
+    } catch (error) {
+      console.error("❌ Error creating backlog entry:", error);
+      setCreateStatus("error");
+      toast.error(
+        error instanceof Error
+          ? `Failed to create: ${error.message}`
+          : "Failed to create entry. Please try again.",
+      );
+
+      setTimeout(() => setCreateStatus("idle"), 3000);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -79,6 +109,17 @@ export function CreationToolForm() {
       <h1 className="mb-4 text-center text-2xl font-bold lg:mb-6 lg:text-3xl">
         Creation Tool for <span className="text-blue-500">{title}</span>
       </h1>
+
+      {hasMissingData && (
+        <div className="mb-4 rounded-lg border-2 border-yellow-600 bg-yellow-900/20 p-4 text-center text-yellow-200">
+          <p className="font-semibold">⚠️ Warning: Missing game data</p>
+          <p className="text-sm">
+            {!imageUrl && "No image found. "}
+            {!hasHltbData && "No HowLongToBeat times found. "}
+            Consider searching for the game in the Add Entry dialog to get complete data.
+          </p>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
         <div className="flex flex-col gap-4 lg:flex-row lg:gap-8">
@@ -176,8 +217,9 @@ export function CreationToolForm() {
                   <SelectContent>
                     <SelectItem value="Not Started">Not Started</SelectItem>
                     <SelectItem value="In Progress">In Progress</SelectItem>
-                    <SelectItem value="Dropped">Dropped</SelectItem>
+                    <SelectItem value="On Hold">On Hold</SelectItem>
                     <SelectItem value="Completed">Completed</SelectItem>
+                    <SelectItem value="Dropped">Dropped</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -273,13 +315,29 @@ export function CreationToolForm() {
             <div className="mt-4 flex justify-center lg:justify-end">
               <Button
                 type="submit"
-                disabled={isSubmitting}
-                className="w-full border-2 border-white bg-black px-8 py-5 text-base font-bold text-white hover:bg-white hover:text-black disabled:opacity-50 lg:w-auto lg:min-w-[200px]"
+                disabled={isLoading || createStatus === "success"}
+                className={`w-full border-2 px-8 py-5 text-base font-bold transition-colors duration-300 lg:w-auto lg:min-w-[200px] ${
+                  createStatus === "success"
+                    ? "border-green-600 bg-green-600 text-white hover:bg-green-600"
+                    : createStatus === "error"
+                      ? "border-red-600 bg-red-600 text-white hover:bg-red-600"
+                      : "border-white bg-black text-white hover:bg-white hover:text-black"
+                }`}
               >
-                {isSubmitting ? (
+                {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Creating Entry...
+                  </>
+                ) : createStatus === "success" ? (
+                  <>
+                    <Check className="mr-2 h-4 w-4" />
+                    Created!
+                  </>
+                ) : createStatus === "error" ? (
+                  <>
+                    <X className="mr-2 h-4 w-4" />
+                    Failed
                   </>
                 ) : (
                   "Create Entry"

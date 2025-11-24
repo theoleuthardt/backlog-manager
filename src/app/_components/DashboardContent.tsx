@@ -15,9 +15,18 @@ import { Checkbox } from "shadcn_components/ui/checkbox";
 import { Slider } from "shadcn_components/ui/slider";
 import { Label } from "shadcn_components/ui/label";
 import Image from "next/image";
-import type { DashboardContentProps } from "~/app/types";
+import { api } from "~/trpc/react";
+import { Loader2 } from "lucide-react";
 
-export const DashboardContent = ({ initialData }: DashboardContentProps) => {
+export const DashboardContent = () => {
+  const {
+    data: backlogData,
+    isLoading,
+    error,
+  } = api.backlog.getEntries.useQuery(undefined, {
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
@@ -39,10 +48,13 @@ export const DashboardContent = ({ initialData }: DashboardContentProps) => {
   const [isLeftBarOpen, setIsLeftBarOpen] = useState(false);
 
   const maxPlaytime = useMemo(() => {
-    const max = Math.max(...initialData.map((entry) => entry.playtime ?? 0), 0);
-    // Round to even number
+    if (!backlogData) return 100;
+    const max = Math.max(
+      ...backlogData.map((entry) => entry.playtime ?? 0),
+      0,
+    );
     return max % 2 === 0 ? max : max + 1;
-  }, [initialData]);
+  }, [backlogData]);
 
   const [playtimeRange, setPlaytimeRange] = useState<[number, number]>([
     0,
@@ -50,20 +62,22 @@ export const DashboardContent = ({ initialData }: DashboardContentProps) => {
   ]);
 
   const allPlatforms = useMemo(() => {
+    if (!backlogData) return [];
     const platforms = new Set<string>();
-    initialData.forEach((entry) => {
+    backlogData.forEach((entry) => {
       entry.platform?.forEach((p) => platforms.add(p));
     });
     return Array.from(platforms).sort();
-  }, [initialData]);
+  }, [backlogData]);
 
   const allGenres = useMemo(() => {
+    if (!backlogData) return [];
     const genres = new Set<string>();
-    initialData.forEach((entry) => {
+    backlogData.forEach((entry) => {
       entry.genre?.forEach((g) => genres.add(g));
     });
     return Array.from(genres).sort();
-  }, [initialData]);
+  }, [backlogData]);
 
   const statusOptions = [
     "Not Started",
@@ -74,7 +88,8 @@ export const DashboardContent = ({ initialData }: DashboardContentProps) => {
   ];
 
   const filteredData = useMemo(() => {
-    return initialData.filter((entry) => {
+    if (!backlogData) return [];
+    return backlogData.filter((entry) => {
       if (
         searchQuery.trim() &&
         !entry.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -83,14 +98,14 @@ export const DashboardContent = ({ initialData }: DashboardContentProps) => {
       }
 
       if (selectedPlatforms.length > 0) {
-        const hasMatchingPlatform = entry.platform?.some((p) =>
+        const hasMatchingPlatform = entry.platform?.some((p: string) =>
           selectedPlatforms.includes(p),
         );
         if (!hasMatchingPlatform) return false;
       }
 
       if (selectedGenres.length > 0) {
-        const hasMatchingGenre = entry.genre?.some((g) =>
+        const hasMatchingGenre = entry.genre?.some((g: string) =>
           selectedGenres.includes(g),
         );
         if (!hasMatchingGenre) return false;
@@ -157,7 +172,7 @@ export const DashboardContent = ({ initialData }: DashboardContentProps) => {
       return true;
     });
   }, [
-    initialData,
+    backlogData,
     searchQuery,
     selectedPlatforms,
     selectedGenres,
@@ -170,6 +185,28 @@ export const DashboardContent = ({ initialData }: DashboardContentProps) => {
     mainExtraTimeRange,
     completionistTimeRange,
   ]);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-12 w-12 animate-spin text-white" />
+          <p className="text-lg text-white">Loading your backlog...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <p className="text-lg text-red-500">Error loading backlog entries</p>
+          <p className="text-sm text-white">{error.message}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div id="upperSection" className="flex min-h-30 gap-8 p-4">
@@ -399,28 +436,46 @@ export const DashboardContent = ({ initialData }: DashboardContentProps) => {
         </div>
       </div>
       <div id="entryList" className="mr-4 flex-1 overflow-hidden p-4">
-        <div className="grid h-full grid-cols-[repeat(auto-fill,minmax(150px,max-content))] content-start gap-x-2 gap-y-2 overflow-y-auto">
-          {filteredData.map((entry) => (
-            <BacklogEntry
-              key={entry.id}
-              title={entry.title}
-              playtime={entry.playtime}
-              imageLink={entry.imageLink}
-              imageAlt={entry.imageAlt}
-              genre={entry.genre}
-              platform={entry.platform}
-              status={entry.status}
-              owned={entry.owned}
-              interest={entry.interest}
-              review={entry.review}
-              reviewStars={entry.reviewStars}
-              note={entry.note}
-              mainTime={entry.mainTime}
-              mainPlusExtraTime={entry.mainPlusExtraTime}
-              completionTime={entry.completionTime}
-            />
-          ))}
-        </div>
+        {filteredData.length === 0 ? (
+          <div className="flex h-full items-center justify-center">
+            <div className="text-center">
+              <h2 className="mb-2 text-2xl font-bold text-white">
+                {backlogData && backlogData.length > 0
+                  ? "No entries match your filters"
+                  : "Your backlog is empty"}
+              </h2>
+              <p className="text-gray-400">
+                {backlogData && backlogData.length > 0
+                  ? "Try adjusting your filter settings"
+                  : "Start by adding your first game!"}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid h-full grid-cols-[repeat(auto-fill,minmax(150px,max-content))] content-start gap-x-2 gap-y-2 overflow-y-auto">
+            {filteredData.map((entry) => (
+              <BacklogEntry
+                key={entry.id}
+                id={entry.id}
+                title={entry.title}
+                playtime={entry.playtime}
+                imageLink={entry.imageLink}
+                imageAlt={entry.imageAlt}
+                genre={entry.genre}
+                platform={entry.platform}
+                status={entry.status}
+                owned={entry.owned}
+                interest={entry.interest}
+                review={entry.review}
+                reviewStars={entry.reviewStars}
+                note={entry.note}
+                mainTime={entry.mainTime}
+                mainPlusExtraTime={entry.mainPlusExtraTime}
+                completionTime={entry.completionTime}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

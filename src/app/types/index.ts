@@ -16,7 +16,6 @@ export type {
   EntryCreationDialogProps,
   ExportCSVButtonProps,
   ImportCSVButtonProps,
-  DashboardContentProps,
   NavbarProps,
 } from "./components";
 

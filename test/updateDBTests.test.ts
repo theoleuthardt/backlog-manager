@@ -236,45 +236,45 @@ describe("Database Update Operations", () => {
     it("should update status from Not Started to In Progress", async () => {
       const updatedEntry = await updateBacklogEntry(postgresPool, {
         backlogEntryId,
-        title: "Elden Ring",
-        genre: "RPG",
-        platform: "PC",
         status: "In Progress",
-        owned: false,
-        interest: 3,
       });
 
       expect(updatedEntry.status).toBe("In Progress");
       expect(updatedEntry.reviewStars).toBeUndefined();
       expect(updatedEntry.review).toBeUndefined();
+      expect(updatedEntry.title).toBe("Elden Ring");
+      expect(updatedEntry.genre).toBe("RPG");
+      expect(updatedEntry.platform).toBe("PC");
+      expect(updatedEntry.owned).toBe(false);
+      expect(updatedEntry.interest).toBe(3);
     });
 
     it("should update owned status", async () => {
       const updatedEntry = await updateBacklogEntry(postgresPool, {
         backlogEntryId,
-        title: "Elden Ring",
-        genre: "RPG",
-        platform: "PC",
-        status: "Not Started",
         owned: true,
-        interest: 3,
       });
 
       expect(updatedEntry.owned).toBe(true);
+      expect(updatedEntry.title).toBe("Elden Ring");
+      expect(updatedEntry.genre).toBe("RPG");
+      expect(updatedEntry.platform).toBe("PC");
+      expect(updatedEntry.status).toBe("Not Started");
+      expect(updatedEntry.interest).toBe(3);
     });
 
     it("should update interest level", async () => {
       const updatedEntry = await updateBacklogEntry(postgresPool, {
         backlogEntryId,
-        title: "Elden Ring",
-        genre: "RPG",
-        platform: "PC",
-        status: "Not Started",
-        owned: false,
         interest: 5,
       });
 
       expect(updatedEntry.interest).toBe(5);
+      expect(updatedEntry.title).toBe("Elden Ring");
+      expect(updatedEntry.genre).toBe("RPG");
+      expect(updatedEntry.platform).toBe("PC");
+      expect(updatedEntry.status).toBe("Not Started");
+      expect(updatedEntry.owned).toBe(false);
     });
 
     it("should add review and rating to entry without them", async () => {
@@ -297,33 +297,35 @@ describe("Database Update Operations", () => {
       expect(updatedEntry.note).toBe("Completed main story");
     });
 
-    it("should clear optional fields", async () => {
+    it("should preserve existing fields when updating only some fields", async () => {
       await updateBacklogEntry(postgresPool, {
         backlogEntryId,
-        title: "Elden Ring",
-        genre: "RPG",
-        platform: "PC",
         status: "Completed",
-        owned: true,
-        interest: 5,
         reviewStars: 5,
         review: "Great game",
         note: "Some notes",
+        imageLink: "test-image.jpg",
+        mainTime: 50,
+        mainPlusExtraTime: 100,
+        completionTime: 150,
       });
 
       const updatedEntry = await updateBacklogEntry(postgresPool, {
         backlogEntryId,
-        title: "Elden Ring",
-        genre: "RPG",
-        platform: "PC",
-        status: "Completed",
         owned: true,
-        interest: 5,
+        interest: 10,
       });
 
-      expect(updatedEntry.reviewStars).toBeUndefined();
-      expect(updatedEntry.review).toBeUndefined();
-      expect(updatedEntry.note).toBeUndefined();
+      expect(updatedEntry.owned).toBe(true);
+      expect(updatedEntry.interest).toBe(10);
+      expect(updatedEntry.status).toBe("Completed");
+      expect(updatedEntry.reviewStars).toBe(5);
+      expect(updatedEntry.review).toBe("Great game");
+      expect(updatedEntry.note).toBe("Some notes");
+      expect(updatedEntry.imageLink).toBe("test-image.jpg");
+      expect(updatedEntry.mainTime).toBe(50);
+      expect(updatedEntry.mainPlusExtraTime).toBe(100);
+      expect(updatedEntry.completionTime).toBe(150);
     });
 
     it("should update UpdatedAt timestamp", async () => {
@@ -336,11 +338,7 @@ describe("Database Update Operations", () => {
 
       const updatedEntry = await updateBacklogEntry(postgresPool, {
         backlogEntryId,
-        title: "Elden Ring",
-        genre: "RPG",
-        platform: "PC",
         status: "In Progress",
-        owned: false,
         interest: 4,
       });
 

@@ -5,10 +5,22 @@ import { TRPCError } from "@trpc/server";
  */
 export class DatabaseError extends TRPCError {
   constructor(operation: string, cause: unknown) {
-    const message = `Database operation failed: ${operation}`;
+    let detailedMessage = `Database operation failed: ${operation}`;
+    if (cause && typeof cause === 'object') {
+      const pgError = cause as { message?: string; code?: string; detail?: string };
+      if (pgError.message) {
+        detailedMessage += ` - ${pgError.message}`;
+      }
+      if (pgError.code) {
+        detailedMessage += ` (PG Error Code: ${pgError.code})`;
+      }
+      if (pgError.detail) {
+        detailedMessage += ` - Detail: ${pgError.detail}`;
+      }
+    }
     super({
       code: "INTERNAL_SERVER_ERROR",
-      message,
+      message: detailedMessage,
       cause,
     });
   }
