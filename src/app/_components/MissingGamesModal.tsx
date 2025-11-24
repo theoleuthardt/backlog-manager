@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import { Button } from "shadcn_components/ui/button";
 import { X } from "lucide-react";
 import { Spinner } from "~/components/ui/spinner";
@@ -22,14 +23,13 @@ interface MissingGamesModalProps {
   missingGames: MissingGame[];
   isOpen: boolean;
   onClose: () => void;
-  onGameSelected: (gameTitle: string, gameData: GameSearchResult) => void;
+  onGameSelected?: (gameTitle: string, gameData: GameSearchResult) => void;
 }
 
 export const MissingGamesModal = ({
   missingGames,
   isOpen,
   onClose,
-  onGameSelected,
 }: MissingGamesModalProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
@@ -152,10 +152,12 @@ export const MissingGamesModal = ({
                 >
                   <div className="flex items-start gap-3">
                     {game.imageUrl && (
-                      <img
+                      <Image
                         src={game.imageUrl}
                         alt={game.title}
-                        className="w-12 h-12 object-cover rounded"
+                        width={48}
+                        height={48}
+                        className="object-cover rounded"
                       />
                     )}
                     <div className="flex-1">

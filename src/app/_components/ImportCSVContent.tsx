@@ -43,7 +43,7 @@ export const ImportCSVContent = () => {
           completeImport(`✓ ${message}`);
         }
       } else {
-        toast.error(result.error || "Import failed");
+        toast.error(result.error ?? "Import failed");
         completeImport("");
       }
     },
@@ -60,7 +60,7 @@ export const ImportCSVContent = () => {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      processCSVFile(file);
+      void processCSVFile(file);
     }
   };
 
@@ -88,8 +88,12 @@ export const ImportCSVContent = () => {
 
   const handleCancelImport = useCallback(async () => {
     if (sessionId) {
-      await cancelCSVMutation.mutateAsync({ sessionId });
-      cancelImport();
+      try {
+        await cancelCSVMutation.mutateAsync({ sessionId });
+        cancelImport();
+      } catch (error) {
+        console.error("Failed to cancel import:", error);
+      }
     }
   }, [sessionId, cancelCSVMutation, cancelImport]);
 
@@ -220,7 +224,7 @@ export const ImportCSVContent = () => {
           <Button
             className="w-full border-2 border-red-500 font-bold text-red-500 bg-black hover:bg-red-500 hover:text-black"
             variant="outline"
-            onClick={() => showCancelConfirmation(true)}
+            onClick={() => void showCancelConfirmation(true)}
             size="sm"
           >
             Cancel Import

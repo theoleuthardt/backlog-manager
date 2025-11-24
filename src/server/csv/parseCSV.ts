@@ -3,9 +3,7 @@ import { SearchGame } from "../integrations/howlongtobeat/howLongToBeat";
 import type { Pool } from "pg";
 import * as backlogEntryService from "~/server/services/backlogEntryService";
 
-export interface CSVRecord {
-  [key: string]: unknown;
-}
+export type CSVRecord = Record<string, unknown>;
 
 export interface ColumnConfig {
   titleColumn: string;
@@ -40,7 +38,7 @@ export interface MissingGame {
 
 export async function parseCSVContent(fileContent: string): Promise<CSVRecord[]> {
   return new Promise((resolve, reject) => {
-    const records: CSVRecord[] = [];
+    const records: unknown[] = [];
 
     const parser = parse(fileContent, {
       columns: false,
@@ -48,7 +46,7 @@ export async function parseCSVContent(fileContent: string): Promise<CSVRecord[]>
     });
 
     parser.on("readable", function () {
-      let record;
+      let record: unknown;
       while ((record = parser.read()) !== null) {
         records.push(record);
       }
@@ -64,7 +62,14 @@ export async function parseCSVContent(fileContent: string): Promise<CSVRecord[]>
   });
 }
 
-function transformRecords(records: CSVRecord[]): CSVRecord[] {
+function safeString(value: unknown, defaultValue = ""): string {
+  if (typeof value === "string") return value;
+  if (value === undefined || value === null) return defaultValue;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  return defaultValue;
+}
+
+function transformRecords(records: unknown[]): CSVRecord[] {
   const keys = [
     "A",
     "B",
@@ -94,15 +99,17 @@ function transformRecords(records: CSVRecord[]): CSVRecord[] {
     "Z",
   ];
 
-  return records.map((row: any) => {
+  return records.map((row) => {
     const transformedRow: CSVRecord = {};
 
-    row.forEach((value: unknown, index: number) => {
-      const key = keys[index];
-      if (key !== undefined) {
-        transformedRow[key] = value;
-      }
-    });
+    if (Array.isArray(row)) {
+      row.forEach((value: unknown, index: number) => {
+        const key = keys[index];
+        if (key !== undefined) {
+          transformedRow[key] = value;
+        }
+      });
+    }
 
     return transformedRow;
   });
@@ -176,7 +183,7 @@ export async function importBacklogEntriesFromCSV(
     }
 
     try {
-      const title = String(record[config.titleColumn] || "").trim();
+      const title = safeString(record[config.titleColumn], "").trim();
 
       if (!title) {
         results.failed++;
@@ -206,9 +213,9 @@ export async function importBacklogEntriesFromCSV(
       if (!foundInHLTB) {
         results.missingGames.push({
           title,
-          genre: String(record[config.genreColumn] || "Unknown"),
-          platform: String(record[config.platformColumn] || "Unknown"),
-          status: String(record[config.statusColumn] || "Not Started"),
+          genre: safeString(record[config.genreColumn], "Unknown"),
+          platform: safeString(record[config.platformColumn], "Unknown"),
+          status: safeString(record[config.statusColumn], "Not Started"),
         });
         processedCount++;
         if (sessionId) emitProgress(sessionId, processedCount);
@@ -219,8 +226,8 @@ export async function importBacklogEntriesFromCSV(
       const entryParams = {
         userId,
         title,
-        genre: String(record[config.genreColumn] || "Unknown"),
-        platform: String(record[config.platformColumn] || "Unknown"),
+        genre: safeString(record[config.genreColumn], "Unknown"),
+        platform: safeString(record[config.platformColumn], "Unknown"),
         status: "Not Started",
         owned: true,
         interest: 5,
@@ -248,9 +255,8 @@ export async function importBacklogEntriesFromCSV(
       }
     } catch (error) {
       results.failed++;
-      const title = String(record[config.titleColumn] || "Unknown");
       results.errors.push({
-        title,
+        title: safeString(record[config.titleColumn], "Unknown"),
         error: error instanceof Error ? error.message : "Unknown error",
       });
       processedCount++;

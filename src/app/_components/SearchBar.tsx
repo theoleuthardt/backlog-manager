@@ -14,12 +14,13 @@ interface SearchBarWithDebounceProps extends SearchBarProps {
 export const SearchBar = (props: SearchBarWithDebounceProps) => {
   const [localValue, setLocalValue] = useState(props.value ?? "");
   const debouncedValue = useDebounce(localValue, props.debounceDelay ?? 300);
+  const { onDebouncedChange } = props;
 
   React.useEffect(() => {
-    if (props.onDebouncedChange) {
-      props.onDebouncedChange(debouncedValue);
+    if (onDebouncedChange) {
+      onDebouncedChange(debouncedValue);
     }
-  }, [debouncedValue, props.onDebouncedChange]);
+  }, [debouncedValue, onDebouncedChange]);
 
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     setLocalValue(e.currentTarget.value);

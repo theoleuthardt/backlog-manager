@@ -92,7 +92,7 @@ export const CSVImportProvider: React.FC<{ children: React.ReactNode }> = ({
         ...prev,
         isLoading: false,
         completionMessage,
-        missingGames: missingGames || [],
+        missingGames: missingGames ?? [],
         showMissingGamesModal: (missingGames?.length ?? 0) > 0,
       }));
     },
