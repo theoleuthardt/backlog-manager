@@ -3,7 +3,7 @@ name: Deploy Werkzeugkiste!
 on:
   pull_request:
     types: [closed]
-    branches: [ main ]
+    branches: [ dev ]
 
   workflow_dispatch:
     inputs:
