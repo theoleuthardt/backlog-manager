@@ -1,8 +1,9 @@
 "use client";
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Button } from "shadcn_components/ui/button";
 import Image from "next/image";
 import { toast } from "sonner";
+import { v4 as uuidv4 } from "uuid";
 import { api } from "~/trpc/react";
 import { MissingGamesModal } from "./MissingGamesModal";
 import type { MissingGame } from "~/server/csv/parseCSV";
@@ -19,12 +20,19 @@ export const ImportCSVContent = () => {
   const [statusColumn, setStatusColumn] = useState("D");
   const [missingGames, setMissingGames] = useState<MissingGame[]>([]);
   const [showMissingGamesModal, setShowMissingGamesModal] = useState(false);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [createdRecords, setCreatedRecords] = useState(0);
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   const importCSV = api.csv.importEntries.useMutation({
     onSuccess: (result) => {
       if (result.success && result.data) {
         const { success, failed, errors, missingGames: missing } = result.data;
+        const total = success + failed + missing.length;
         console.log(`CSV import completed: ${success} successful, ${failed} failed, ${missing.length} missing`);
+
+        // Update progress bar to show final state
+        setCreatedRecords(total);
 
         if (missing && missing.length > 0) {
           setMissingGames(missing);
@@ -33,7 +41,7 @@ export const ImportCSVContent = () => {
             `${success} entries imported. ${missing.length} games need manual lookup.`
           );
           setCompletionMessage(
-            `✓ ${success + missing.length} entries created successfully. ${missing.length} needed manual lookup.`
+            `✓ ${success} entries created successfully. ${missing.length} needed manual lookup.`
           );
         } else if (errors.length > 0) {
           console.error("Import errors:", errors);
@@ -69,16 +77,38 @@ export const ImportCSVContent = () => {
     }
   };
 
+  const getProgress = api.csv.getProgress.useQuery(
+    { sessionId: sessionId ?? "" },
+    { enabled: sessionId !== null && isLoading, refetchInterval: 200 }
+  );
+
+  // Update createdRecords when progress changes
+  useEffect(() => {
+    if (getProgress.data) {
+      setCreatedRecords(getProgress.data.processed);
+    }
+  }, [getProgress.data]);
+
   const processCSVFile = async (file: File) => {
     try {
       setIsLoading(true);
+      setCreatedRecords(0);
       const fileContent = await file.text();
+      const lines = fileContent.trim().split('\n');
+      const recordCount = Math.max(0, lines.length - 1);
+      setTotalRecords(recordCount);
+
+      // Generate session ID for progress tracking
+      const newSessionId = uuidv4();
+      setSessionId(newSessionId);
+
       await importCSV.mutateAsync({
         content: fileContent,
         titleColumn,
         genreColumn,
         platformColumn,
         statusColumn,
+        sessionId: newSessionId,
       });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Error processing CSV file");
@@ -167,10 +197,27 @@ export const ImportCSVContent = () => {
         className="border-2 border-white font-bold text-white bg-black hover:bg-white hover:text-black"
         variant="outline"
         onClick={handleButtonClick}
+        disabled={isLoading}
         size="lg"
       >
         Select CSV File
       </Button>
+
+      {isLoading && totalRecords > 0 && (
+        <div className="w-full max-w-md space-y-2">
+          <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-white transition-all duration-300"
+              style={{
+                width: `${(createdRecords / totalRecords) * 100}%`
+              }}
+            />
+          </div>
+          <p className="text-center text-gray-400 text-sm">
+            Creating entries: {createdRecords} / {totalRecords}
+          </p>
+        </div>
+      )}
 
       <input
         ref={fileInputRef}
@@ -181,7 +228,7 @@ export const ImportCSVContent = () => {
       />
 
       {completionMessage && (
-        <div className="w-full max-w-md text-center text-white">
+          <div className="w-full max-w-md text-center text-white">
           {completionMessage}
         </div>
       )}

@@ -4,7 +4,7 @@ import {
   createTRPCRouter,
   protectedProcedure,
 } from "~/server/api/trpc";
-import { parseCSVContent, importBacklogEntriesFromCSV, type ColumnConfig } from "~/server/csv/parseCSV";
+import { parseCSVContent, importBacklogEntriesFromCSV, getImportProgress, clearImportProgress, type ColumnConfig } from "~/server/csv/parseCSV";
 import * as backlogEntryService from "~/server/services/backlogEntryService";
 import pool from "~/server/db/index";
 
@@ -35,6 +35,7 @@ export const csvRouter = createTRPCRouter({
       genreColumn: z.string(),
       platformColumn: z.string(),
       statusColumn: z.string(),
+      sessionId: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -48,7 +49,7 @@ export const csvRouter = createTRPCRouter({
           statusColumn: input.statusColumn,
         };
 
-        const results = await importBacklogEntriesFromCSV(pool, userId, records, config);
+        const results = await importBacklogEntriesFromCSV(pool, userId, records, config, input.sessionId);
         return {
           success: true,
           data: results,
@@ -61,6 +62,17 @@ export const csvRouter = createTRPCRouter({
           error: error instanceof Error ? error.message : "Unknown error occurred",
         };
       }
+    }),
+
+  getProgress: protectedProcedure
+    .input(z.object({
+      sessionId: z.string(),
+    }))
+    .query(async ({ input }) => {
+      const processed = getImportProgress(input.sessionId);
+      return {
+        processed,
+      };
     }),
 
   createMissingGameEntry: protectedProcedure

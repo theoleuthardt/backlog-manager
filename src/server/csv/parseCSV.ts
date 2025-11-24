@@ -108,11 +108,33 @@ function transformRecords(records: CSVRecord[]): CSVRecord[] {
   });
 }
 
+// Global progress tracking for CSV imports
+const importProgressMap = new Map<string, number>();
+
+export function getImportProgress(sessionId: string): number {
+  return importProgressMap.get(sessionId) ?? 0;
+}
+
+export function setImportProgress(sessionId: string, processed: number) {
+  importProgressMap.set(sessionId, processed);
+}
+
+export function clearImportProgress(sessionId: string) {
+  importProgressMap.delete(sessionId);
+}
+
+function emitProgress(sessionId: string, processed: number) {
+  if (sessionId) {
+    setImportProgress(sessionId, processed);
+  }
+}
+
 export async function importBacklogEntriesFromCSV(
   pool: Pool,
   userId: number,
   records: CSVRecord[],
-  config: ColumnConfig
+  config: ColumnConfig,
+  sessionId?: string
 ): Promise<{
   success: number;
   failed: number;
@@ -126,6 +148,8 @@ export async function importBacklogEntriesFromCSV(
     missingGames: [] as MissingGame[],
   };
 
+  let processedCount = 0;
+
   for (const record of records) {
     try {
       const title = String(record[config.titleColumn] || "").trim();
@@ -136,6 +160,8 @@ export async function importBacklogEntriesFromCSV(
           title: "Unknown",
           error: `Title (column ${config.titleColumn}) is required`,
         });
+        processedCount++;
+        if (sessionId) emitProgress(sessionId, processedCount);
         continue;
       }
 
@@ -160,6 +186,8 @@ export async function importBacklogEntriesFromCSV(
           platform: String(record[config.platformColumn] || "Unknown"),
           status: String(record[config.statusColumn] || "Not Started"),
         });
+        processedCount++;
+        if (sessionId) emitProgress(sessionId, processedCount);
         continue;
       }
 
@@ -169,7 +197,7 @@ export async function importBacklogEntriesFromCSV(
         title,
         genre: String(record[config.genreColumn] || "Unknown"),
         platform: String(record[config.platformColumn] || "Unknown"),
-        status: String(record[config.statusColumn] || "Not Started"),
+        status: "Not Started",
         owned: true,
         interest: 5,
         imageLink: gameData?.imageUrl,
@@ -178,9 +206,22 @@ export async function importBacklogEntriesFromCSV(
         completionTime: gameData?.completionist,
       };
 
-      await backlogEntryService.createBacklogEntry(pool, entryParams);
-
-      results.success++;
+      try {
+        console.log(`📝 Creating backlog entry:`, {
+          title,
+          genre: entryParams.genre,
+          platform: entryParams.platform,
+          status: entryParams.status,
+        });
+        await backlogEntryService.createBacklogEntry(pool, entryParams);
+        results.success++;
+        processedCount++;
+        if (sessionId) emitProgress(sessionId, processedCount);
+        console.log(`✓ Created backlog entry: ${title}`);
+      } catch (createError) {
+        console.error(`✗ Failed to create backlog entry for "${title}":`, createError);
+        throw createError;
+      }
     } catch (error) {
       results.failed++;
       const title = String(record[config.titleColumn] || "Unknown");
@@ -188,6 +229,8 @@ export async function importBacklogEntriesFromCSV(
         title,
         error: error instanceof Error ? error.message : "Unknown error",
       });
+      processedCount++;
+      if (sessionId) emitProgress(sessionId, processedCount);
     }
   }
 
