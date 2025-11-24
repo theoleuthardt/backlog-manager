@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backlog Manager - Loading</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: white;
+        }
+
+        .container {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        p {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            will-change: transform;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .logs {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            height: 300px;
+            min-height: 300px;
+            max-height: 300px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            text-align: left;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+        }
+
+        .log-entry {
+            margin: 0.25rem 0;
+            opacity: 0.9;
+        }
+
+        .log-error {
+            color: #ff6b6b;
+        }
+
+        .log-info {
+            color: #4ecdc4;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .status {
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🎮</div>
+        <h1>Backlog Manager</h1>
+        <p>Starting server...</p>
+        <div class="spinner"></div>
+        <div class="status" id="status">Initializing</div>
+        <div class="logs" id="logs"></div>
+    </div>
+
+    <script>
+        const statusEl = document.getElementById('status');
+        const logsEl = document.getElementById('logs');
+        const logs = [];
+
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            logs.push({ time: timestamp, message, type });
+
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logsEl.appendChild(logEntry);
+            logsEl.scrollTop = logsEl.scrollHeight;
+        }
+        
+        addLog('Initializing Backlog Manager...', 'info');
+        addLog('Starting embedded server...', 'info');
+        
+        window.updateStatus = function(message, isError) {
+            addLog(message, isError ? 'error' : 'info');
+            statusEl.textContent = message;
+            if (isError) {
+                statusEl.style.color = 'red';
+                document.querySelector('.spinner').style.display = 'none';
+            }
+        };
+        
+        setTimeout(() => {
+            addLog('Checking if server is ready...', 'info');
+            let checkCount = 0;
+            const maxChecks = 120; // 60 seconds
+
+            function checkServer() {
+                fetch('http://localhost:3000')
+                    .then(response => {
+                        addLog('Server is ready! Loading app...', 'info');
+                        statusEl.textContent = 'Server ready! Loading...';
+                        window.location.href = 'http://localhost:3000';
+                    })
+                    .catch(() => {
+                        checkCount++;
+                        if (checkCount < maxChecks) {
+                            if (checkCount % 10 === 0) {
+                                addLog(`Waiting for server... (${Math.floor(checkCount / 2)}s)`, 'info');
+                            }
+                            setTimeout(checkServer, 500);
+                        } else {
+                            addLog('Server did not start within timeout', 'error');
+                            statusEl.textContent = 'Server startup timeout';
+                            statusEl.style.color = 'red';
+                            document.querySelector('.spinner').style.display = 'none';
+                        }
+                    });
+            }
+
+            checkServer();
+        }, 3000);
+    </script>
+</body>
+</html>
