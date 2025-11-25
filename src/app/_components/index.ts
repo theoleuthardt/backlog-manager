@@ -11,6 +11,7 @@ import { UniverseBackground } from "./UniverseBackground";
 import { ImportCSVButton } from "./ImportCSVButton";
 import { ImportCSVContent } from "./ImportCSVContent";
 import { ExportCSVButton } from "./ExportCSVButton";
+import { ExportCSVContent } from "./ExportCSVContent";
 import { EntryCreationDialog } from "components/EntryCreationDialog";
 import { DashboardContent } from "./DashboardContent";
 import { CreationToolForm } from "./CreationToolForm";
@@ -29,6 +30,7 @@ export {
   ImportCSVButton,
   ImportCSVContent,
   ExportCSVButton,
+  ExportCSVContent,
   EntryCreationDialog,
   DashboardContent,
   CreationToolForm,
