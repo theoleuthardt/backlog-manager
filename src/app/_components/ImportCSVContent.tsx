@@ -69,7 +69,6 @@ export const ImportCSVContent = () => {
     { enabled: sessionId !== null && isLoading, refetchInterval: 200 }
   );
 
-  // Update createdRecords when progress changes
   useEffect(() => {
     if (getProgress.data) {
       updateProgress(getProgress.data.processed);
@@ -103,7 +102,6 @@ export const ImportCSVContent = () => {
       const lines = fileContent.trim().split('\n');
       const recordCount = Math.max(0, lines.length - 1);
 
-      // Generate session ID for progress tracking
       const newSessionId = uuidv4();
       startImport(newSessionId, recordCount);
 

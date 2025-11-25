@@ -115,7 +115,6 @@ function transformRecords(records: unknown[]): CSVRecord[] {
   });
 }
 
-// Global progress tracking for CSV imports
 const importProgressMap = new Map<string, number>();
 const importCancelFlagsMap = new Map<string, boolean>();
 
@@ -176,7 +175,6 @@ export async function importBacklogEntriesFromCSV(
   let processedCount = 0;
 
   for (const record of records) {
-    // Check if import was cancelled
     if (sessionId && isCancelled(sessionId)) {
       console.log(`Import cancelled at record ${processedCount + 1}/${records.length}`);
       break;
@@ -196,7 +194,6 @@ export async function importBacklogEntriesFromCSV(
         continue;
       }
 
-      // Search for the game in howLongToBeat to get additional data
       let gameData = null;
       let foundInHLTB = false;
       try {
@@ -209,7 +206,6 @@ export async function importBacklogEntriesFromCSV(
         console.warn(`Could not find game "${title}" in howLongToBeat:`, searchError);
       }
 
-      // If not found in HLTB, add to missing games list
       if (!foundInHLTB) {
         results.missingGames.push({
           title,
