@@ -48,7 +48,6 @@ export const MissingGamesModal = ({
       setSearchQuery("");
       setSearchResults([]);
 
-      // Move to next missing game
       if (currentIndex < missingGames.length - 1) {
         setCurrentIndex(currentIndex + 1);
       } else {
@@ -60,7 +59,6 @@ export const MissingGamesModal = ({
     },
   });
 
-  // Update searchResults when gameSearchQuery data changes
   React.useEffect(() => {
     if (gameSearchQuery.data) {
       setSearchResults(gameSearchQuery.data);
