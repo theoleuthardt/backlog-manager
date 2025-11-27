@@ -1,19 +1,10 @@
-import type { HltbGame, HltbSearchResult } from "~/server/integrations/types";
+import type {
+  HltbGame,
+  HltbSearchResult,
+  HltbSearchResultItem,
+} from "~/server/integrations/types";
 
-interface HltbApiGame {
-  id: number;
-  hltbId: number;
-  title: string;
-  imageUrl: string;
-  steamAppId: number | null;
-  gogAppId: number | null;
-  mainStory: number;
-  mainStoryWithExtras: number;
-  completionist: number;
-  lastUpdatedAt: string;
-}
-
-export async function SearchGame(input: string) {
+export async function SearchGameOnHLTB(input: string) {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000);
@@ -47,18 +38,20 @@ export async function SearchGame(input: string) {
       return [];
     }
 
-    const result: HltbSearchResult = (data as HltbApiGame[]).map((item) => ({
-      id: item.id,
-      hltbId: item.hltbId,
-      title: item.title,
-      imageUrl: item.imageUrl,
-      steamAppId: item.steamAppId,
-      gogAppId: item.gogAppId,
-      mainStory: item.mainStory,
-      mainStoryWithExtras: item.mainStoryWithExtras,
-      completionist: item.completionist,
-      lastUpdatedAt: item.lastUpdatedAt,
-    }));
+    const result: HltbSearchResult = (data as HltbSearchResultItem[]).map(
+      (item) => ({
+        id: item.id,
+        hltbId: item.hltbId,
+        title: item.title,
+        imageUrl: item.imageUrl,
+        steamAppId: item.steamAppId,
+        gogAppId: item.gogAppId,
+        mainStory: item.mainStory,
+        mainStoryWithExtras: item.mainStoryWithExtras,
+        completionist: item.completionist,
+        lastUpdatedAt: item.lastUpdatedAt,
+      }),
+    );
     return result;
   } catch (error) {
     console.error("SearchGame error:", error);

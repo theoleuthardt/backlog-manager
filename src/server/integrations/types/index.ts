@@ -1,3 +1,4 @@
+// HowLongToBeat API
 export interface HltbSearchResultItem {
   id: number;
   hltbId: number;
@@ -10,7 +11,7 @@ export interface HltbSearchResultItem {
   completionist: number;
   lastUpdatedAt: string;
 }
-
 export type HltbSearchResult = HltbSearchResultItem[];
-
 export type HltbGame = HltbSearchResultItem;
+
+// IGDB API
