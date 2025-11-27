@@ -1,8 +1,4 @@
-import type {
-  HltbGame,
-  HltbSearchResult,
-  HltbSearchResultItem,
-} from "~/server/integrations/types";
+import type { HltbResultData } from "~/server/integrations/types";
 
 export async function SearchGameOnHLTB(input: string) {
   try {
@@ -38,20 +34,18 @@ export async function SearchGameOnHLTB(input: string) {
       return [];
     }
 
-    const result: HltbSearchResult = (data as HltbSearchResultItem[]).map(
-      (item) => ({
-        id: item.id,
-        hltbId: item.hltbId,
-        title: item.title,
-        imageUrl: item.imageUrl,
-        steamAppId: item.steamAppId,
-        gogAppId: item.gogAppId,
-        mainStory: item.mainStory,
-        mainStoryWithExtras: item.mainStoryWithExtras,
-        completionist: item.completionist,
-        lastUpdatedAt: item.lastUpdatedAt,
-      }),
-    );
+    const result = (data as HltbResultData[]).map((item: HltbResultData) => ({
+      id: item.id,
+      hltbId: item.hltbId,
+      title: item.title,
+      imageUrl: item.imageUrl,
+      steamAppId: item.steamAppId,
+      gogAppId: item.gogAppId,
+      mainStory: item.mainStory,
+      mainStoryWithExtras: item.mainStoryWithExtras,
+      completionist: item.completionist,
+      lastUpdatedAt: item.lastUpdatedAt,
+    }));
     return result;
   } catch (error) {
     console.error("SearchGame error:", error);
@@ -59,7 +53,7 @@ export async function SearchGameOnHLTB(input: string) {
   }
 }
 
-export async function GetGameByID(id: number) {
+export async function GetGameByIDOnHLTB(id: number) {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000);
@@ -76,9 +70,9 @@ export async function GetGameByID(id: number) {
     }
 
     const data: unknown = await response.json();
-    const apiData = data as HltbApiGame;
+    const apiData = data as HltbResultData;
 
-    const result: HltbGame = {
+    const result: HltbResultData = {
       id: apiData.id,
       hltbId: apiData.hltbId,
       title: apiData.title,

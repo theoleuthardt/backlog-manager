@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  GetGameByID,
+  GetGameByIDOnHLTB,
   SearchGameOnHLTB,
 } from "~/server/integrations/howlongtobeat/howLongToBeat";
 
@@ -42,14 +42,14 @@ describe("HowLongToBeat Integration", () => {
 
   describe("GetGameByID", () => {
     it("should retrieve game by ID", async () => {
-      const result = await GetGameByID(2224);
+      const result = await GetGameByIDOnHLTB(2224);
       expect(result).toBeDefined();
       expect(result.hltbId).toBe(2224);
       expect(result.title).toBeDefined();
     });
 
     it("should return game with time data structure", async () => {
-      const result = await GetGameByID(2224);
+      const result = await GetGameByIDOnHLTB(2224);
 
       // Verify the three separate time fields exist in the response (API field names)
       expect(result).toHaveProperty("mainStory");
@@ -73,7 +73,7 @@ describe("HowLongToBeat Integration", () => {
 
     it("should retrieve different game successfully", async () => {
       // Testing with a well-known game ID
-      const result = await GetGameByID(10270); // The Witcher 3
+      const result = await GetGameByIDOnHLTB(10270); // The Witcher 3
       expect(result).toBeDefined();
       expect(result.hltbId).toBe(10270);
     });
