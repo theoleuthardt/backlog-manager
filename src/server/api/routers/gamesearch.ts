@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { SearchGame } from "~/server/integrations/howlongtobeat/howLongToBeat";
+import { SearchGameOnHLTB } from "~/server/integrations/howlongtobeat/howLongToBeat";
 
 /**
  * Game Search Router
@@ -17,9 +17,9 @@ export const gameSearchRouter = createTRPCRouter({
     .input(
       z.object({
         searchTerm: z.string().min(1, "Search term is required"),
-      })
+      }),
     )
     .query(async ({ input }) => {
-      return await SearchGame(input.searchTerm);
+      return await SearchGameOnHLTB(input.searchTerm);
     }),
 });

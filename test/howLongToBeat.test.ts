@@ -1,20 +1,20 @@
 import { describe, it, expect } from "vitest";
 import {
   GetGameByID,
-  SearchGame,
+  SearchGameOnHLTB,
 } from "~/server/integrations/howlongtobeat/howLongToBeat";
 
 describe("HowLongToBeat Integration", () => {
   describe("SearchGame", () => {
     it("should find game by title", async () => {
-      const result = await SearchGame("Fortnite");
+      const result = await SearchGameOnHLTB("Fortnite");
       expect(result).toBeDefined();
       expect(result.length).toBeGreaterThan(0);
       expect(result[0]?.title).toBe("Fortnite");
     });
 
     it("should return game with time fields", async () => {
-      const result = await SearchGame("Elden Ring");
+      const result = await SearchGameOnHLTB("Elden Ring");
       expect(result).toBeDefined();
       expect(result.length).toBeGreaterThan(0);
 
@@ -29,12 +29,12 @@ describe("HowLongToBeat Integration", () => {
     });
 
     it("should return empty array for non-existent game", async () => {
-      const result = await SearchGame("NonExistentGame123XYZ456789");
+      const result = await SearchGameOnHLTB("NonExistentGame123XYZ456789");
       expect(result).toEqual([]);
     });
 
     it("should handle search with special characters", async () => {
-      const result = await SearchGame("The Legend of Zelda");
+      const result = await SearchGameOnHLTB("The Legend of Zelda");
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
     });
@@ -60,7 +60,10 @@ describe("HowLongToBeat Integration", () => {
       if (result.mainStory !== null && result.mainStory !== undefined) {
         expect(typeof result.mainStory).toBe("number");
       }
-      if (result.mainStoryWithExtras !== null && result.mainStoryWithExtras !== undefined) {
+      if (
+        result.mainStoryWithExtras !== null &&
+        result.mainStoryWithExtras !== undefined
+      ) {
         expect(typeof result.mainStoryWithExtras).toBe("number");
       }
       if (result.completionist !== null && result.completionist !== undefined) {
