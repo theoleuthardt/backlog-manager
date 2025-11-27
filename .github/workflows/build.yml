@@ -48,12 +48,6 @@ jobs:
           push: ${{ github.event_name == 'workflow_dispatch' && inputs.push_to_dockerhub }}
           build-args: |
             NODE_ENV=production
-            AUTH_SECRET=${{ secrets.AUTH_SECRET }}
-            AUTH_DISCORD_ID=${{ secrets.AUTH_DISCORD_ID }}
-            AUTH_DISCORD_SECRET=${{ secrets.AUTH_DISCORD_SECRET }}
-            AUTH_GITHUB_ID=${{ secrets.AUTH_GITHUB_ID }}
-            AUTH_GITHUB_SECRET=${{ secrets.AUTH_GITHUB_SECRET }}
-            POSTGRES_URL=${{ secrets.POSTGRES_URL }}
           tags: |
             ${{ github.event_name == 'workflow_dispatch' && inputs.push_to_dockerhub && format('{0}/{1}:{2}', secrets.DOCKERHUB_USERNAME, 'backlog-manager', inputs.image_tag) || format('backlog-manager:{0}', github.event_name == 'workflow_dispatch' && inputs.image_tag || github.sha) }}
           cache-from: type=gha

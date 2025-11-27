@@ -27,23 +27,12 @@ COPY . .
 ARG NODE_ENV
 ENV NODE_ENV=$NODE_ENV
 
-# Authentication and database secrets
-ARG AUTH_SECRET
-ARG AUTH_DISCORD_ID
-ARG AUTH_DISCORD_SECRET
-ARG AUTH_GITHUB_ID
-ARG AUTH_GITHUB_SECRET
-ARG POSTGRES_URL
-
-ENV AUTH_SECRET=$AUTH_SECRET
-ENV AUTH_DISCORD_ID=$AUTH_DISCORD_ID
-ENV AUTH_DISCORD_SECRET=$AUTH_DISCORD_SECRET
-ENV AUTH_GITHUB_ID=$AUTH_GITHUB_ID
-ENV AUTH_GITHUB_SECRET=$AUTH_GITHUB_SECRET
-ENV POSTGRES_URL=$POSTGRES_URL
-
 # Skip environment validation during Docker build
+# Auth and database secrets are provided at runtime, not build time
 ENV SKIP_ENV_VALIDATION=1
+
+# Increase Node.js memory limit for the build process
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry
