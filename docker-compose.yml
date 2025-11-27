@@ -7,10 +7,16 @@ services:
       args:
         NODE_ENV: ${NODE_ENV}
     environment:
-      - POSTGRES_URL=${POSTGRES_URL}
+      # Runtime environment variables (not build-time)
       - NODE_ENV=${NODE_ENV}
       - HOSTNAME=${HOSTNAME}
       - PORT=${NEXTJS_PORT}
+      - AUTH_SECRET=${AUTH_SECRET}
+      - AUTH_DISCORD_ID=${AUTH_DISCORD_ID}
+      - AUTH_DISCORD_SECRET=${AUTH_DISCORD_SECRET}
+      - AUTH_GITHUB_ID=${AUTH_GITHUB_ID}
+      - AUTH_GITHUB_SECRET=${AUTH_GITHUB_SECRET}
+      - POSTGRES_URL=${POSTGRES_URL}
     ports:
       - "${NEXTJS_PORT}:3000"
     restart: unless-stopped

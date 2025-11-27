@@ -28,7 +28,11 @@ ARG NODE_ENV
 ENV NODE_ENV=$NODE_ENV
 
 # Skip environment validation during Docker build
+# Auth and database secrets are provided at runtime, not build time
 ENV SKIP_ENV_VALIDATION=1
+
+# Increase Node.js memory limit for the build process
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry

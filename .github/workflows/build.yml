@@ -1,9 +1,10 @@
-name: Build Docker Image
+name: Docker Build & Push
 
 on:
   pull_request:
     branches:
       - main
+      - dev
     paths-ignore:
       - '**.md'
       - 'docs/**'
@@ -23,7 +24,7 @@ on:
 
 jobs:
   build:
-    name: Build and Test Docker Image
+    name: Build NextJS Docker Image
     runs-on: ubuntu-latest
 
     steps:
@@ -40,7 +41,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build Docker image
+      - name: Build Docker image and Push to DockerHub if requested
         uses: docker/build-push-action@v5
         with:
           context: .

@@ -77,12 +77,12 @@ export function CreationToolForm() {
         owned,
         interest,
         imageLink: imageUrl,
-        mainTime: mainStory || undefined,
-        mainPlusExtraTime: mainStoryWithExtras || undefined,
-        completionTime: completionist || undefined,
-        reviewStars: reviewStars || undefined,
-        review: review || undefined,
-        note: note || undefined,
+        mainTime: mainStory ?? undefined,
+        mainPlusExtraTime: mainStoryWithExtras ?? undefined,
+        completionTime: completionist ?? undefined,
+        reviewStars: reviewStars ?? undefined,
+        review: review ?? undefined,
+        note: note ?? undefined,
       });
 
       setCreateStatus("success");
