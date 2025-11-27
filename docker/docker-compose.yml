@@ -1,0 +1,28 @@
+# LOCAL DOCKER COMPOSE FILE FOR POSTGRESQL DB
+# Note: The postgres image requires individual env vars (POSTGRES_USER, etc.)
+# Your app uses POSTGRES_URL to connect, which should match these values
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: postgres-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT}:5432"
+
+  db-monitoring:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "${PGADMIN_PORT}:80"
+
+volumes:
+  postgres_data:

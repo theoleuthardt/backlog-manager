@@ -144,4 +144,24 @@ export const csvRouter = createTRPCRouter({
         };
       }
     }),
+
+  exportEntries: protectedProcedure
+    .query(async ({ ctx }) => {
+      try {
+        const userId = parseInt(ctx.session?.user?.id ?? "0");
+        const entries = await backlogEntryService.getBacklogEntriesByUser(pool, userId);
+
+        return {
+          success: true,
+          data: entries,
+          error: null,
+        };
+      } catch (error) {
+        return {
+          success: false,
+          data: null,
+          error: error instanceof Error ? error.message : "Failed to fetch backlog entries",
+        };
+      }
+    }),
 });

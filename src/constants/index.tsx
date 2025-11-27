@@ -4,6 +4,7 @@ import { BacklogEntryDummyData } from "./backlogEntryDummyData";
 import { gameSearchbarDummyResults } from "./gameSearchbarDummyResults";
 import { creationToolNavLinks } from "./navbarLinks";
 import { importCSVNavLinks } from "./navbarLinks";
+import { exportCSVNavLinks } from "./navbarLinks";
 
 export { type NavbarLink } from "~/app/types";
 export {
@@ -13,4 +14,5 @@ export {
   gameSearchbarDummyResults,
   creationToolNavLinks,
   importCSVNavLinks,
+  exportCSVNavLinks,
 };
