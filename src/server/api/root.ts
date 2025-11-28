@@ -1,7 +1,7 @@
 import { postRouter } from "./routers/post";
 import { backlogRouter } from "./routers/backlog";
 import { userRouter } from "./routers/user";
-import { gameSearchRouter } from "./routers/gamesearch";
+import { HLTBSearchRouter } from "./routers/hltb";
 import { csvRouter } from "./routers/csv";
 import { createCallerFactory, createTRPCRouter } from "./trpc";
 
@@ -15,7 +15,7 @@ export const appRouter = createTRPCRouter({
   backlog: backlogRouter,
   user: userRouter,
   csv: csvRouter,
-  gameSearch: gameSearchRouter,
+  gameSearch: HLTBSearchRouter,
 });
 
 // export type definition of API
