@@ -1,4 +1,9 @@
 import type {
+  IGDBCover,
+  IGDBGameData,
+  IGDBGameTimeToBeat,
+  IGDBGenre,
+  IGDBPlatform,
   IGDBSearchResult,
   IGDBTokenResponse,
 } from "~/server/integrations/types";
@@ -77,7 +82,7 @@ export async function getGameOnIGDB(
   gameId: string,
   clientId: string,
   accessToken: string,
-): Promise<[]> {
+): Promise<IGDBGameData[]> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 60000);
   const options: RequestInit = {
@@ -104,7 +109,7 @@ export async function getGameOnIGDB(
       "https://api.igdb.com/v4/games",
       options,
     );
-    const data: [] = await response.json();
+    const data: IGDBGameData[] = await response.json();
     clearTimeout(timeoutId);
 
     if (!response.ok) {
@@ -115,6 +120,166 @@ export async function getGameOnIGDB(
     return data;
   } catch (err) {
     console.error("Error getting IGDB game:", err);
+    throw err;
+  }
+}
+
+export async function getPlatformOnIGDB(
+  platformId: number,
+  clientId: string,
+  accessToken: string,
+): Promise<IGDBPlatform[]> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000);
+  const options: RequestInit = {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${accessToken}`,
+      "Client-ID": clientId,
+    },
+    body:
+      "fields abbreviation,alternative_name,category,checksum,created_at,generation,name,platform_family,platform_logo,platform_type,slug,summary,updated_at,url,versions,websites; " +
+      `where id = ${platformId};`,
+    signal: controller.signal,
+  };
+
+  try {
+    const response: Response = await fetch(
+      "https://api.igdb.com/v4/platforms",
+      options,
+    );
+    const data: IGDBPlatform[] = await response.json();
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      console.error(`IGDB API error: ${response.status}`);
+      return [];
+    }
+
+    return data;
+  } catch (err) {
+    console.error("Error getting IGDB platform:", err);
+    throw err;
+  }
+}
+
+export async function getGameTimeToBeatOnIGDB(
+  gameId: number,
+  clientId: string,
+  accessToken: string,
+): Promise<IGDBGameTimeToBeat[]> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000);
+  const options: RequestInit = {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${accessToken}`,
+      "Client-ID": clientId,
+    },
+    body:
+      "fields checksum,completely,count,created_at,game_id,hastily,normally,updated_at; " +
+      `where game_id = ${gameId};`,
+    signal: controller.signal,
+  };
+
+  try {
+    const response: Response = await fetch(
+      "https://api.igdb.com/v4/game_time_to_beats",
+      options,
+    );
+    const data: IGDBGameTimeToBeat[] = await response.json();
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      console.error(`IGDB API error: ${response.status}`);
+      return [];
+    }
+
+    return data;
+  } catch (err) {
+    console.error("Error getting IGDB game time to beat:", err);
+    throw err;
+  }
+}
+
+export async function getCoverOnIGDB(
+  coverId: number,
+  clientId: string,
+  accessToken: string,
+): Promise<IGDBCover[]> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000);
+  const options: RequestInit = {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${accessToken}`,
+      "Client-ID": clientId,
+    },
+    body:
+      "fields alpha_channel,animated,checksum,game,game_localization,height,image_id,url,width; " +
+      `where id = ${coverId};`,
+    signal: controller.signal,
+  };
+
+  try {
+    const response: Response = await fetch(
+      "https://api.igdb.com/v4/covers",
+      options,
+    );
+    const data: IGDBCover[] = await response.json();
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      console.error(`IGDB API error: ${response.status}`);
+      return [];
+    }
+
+    return data;
+  } catch (err) {
+    console.error("Error getting IGDB cover:", err);
+    throw err;
+  }
+}
+
+export async function getGenreOnIGDB(
+  genreId: number,
+  clientId: string,
+  accessToken: string,
+): Promise<IGDBGenre[]> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000);
+  const options: RequestInit = {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${accessToken}`,
+      "Client-ID": clientId,
+    },
+    body:
+      "fields checksum,created_at,name,slug,updated_at,url; " +
+      `where id = ${genreId};`,
+    signal: controller.signal,
+  };
+
+  try {
+    const response: Response = await fetch(
+      "https://api.igdb.com/v4/genres",
+      options,
+    );
+    const data: IGDBGenre[] = await response.json();
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      console.error(`IGDB API error: ${response.status}`);
+      return [];
+    }
+
+    return data;
+  } catch (err) {
+    console.error("Error getting IGDB genre:", err);
     throw err;
   }
 }
