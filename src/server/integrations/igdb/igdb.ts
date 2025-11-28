@@ -14,7 +14,7 @@ export async function generateIGDBToken(
 ): Promise<IGDBTokenResponse> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 60000);
-  const url: string = `https://id.twitch.tv/oauth2/token?client_id=${clientId}&client_secret=${clientSecret}&grant_type=client_credentials`;
+  const url = `https://id.twitch.tv/oauth2/token?client_id=${clientId}&client_secret=${clientSecret}&grant_type=client_credentials`;
   const options: RequestInit = {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -23,7 +23,7 @@ export async function generateIGDBToken(
 
   try {
     const response: Response = await fetch(url, options);
-    const data: IGDBTokenResponse = await response.json();
+    const data = (await response.json()) as IGDBTokenResponse;
     clearTimeout(timeoutId);
 
     if (!response.ok) {
@@ -54,7 +54,7 @@ export async function searchGameOnIGDB(
     },
     body:
       "fields alternative_name,character,checksum,collection,company,description,game,name,platform,published_at,test_dummy,theme; " +
-      `where name = ${searchTerm};`,
+      `where name ~* *"${searchTerm}"*;`,
     signal: controller.signal,
   };
 
@@ -63,7 +63,7 @@ export async function searchGameOnIGDB(
       "https://api.igdb.com/v4/search",
       options,
     );
-    const data: IGDBSearchResult[] = await response.json();
+    const data = (await response.json()) as IGDBSearchResult[];
     clearTimeout(timeoutId);
 
     if (!response.ok) {
@@ -109,7 +109,7 @@ export async function getGameOnIGDB(
       "https://api.igdb.com/v4/games",
       options,
     );
-    const data: IGDBGameData[] = await response.json();
+    const data = (await response.json()) as IGDBGameData[];
     clearTimeout(timeoutId);
 
     if (!response.ok) {
@@ -149,7 +149,7 @@ export async function getPlatformOnIGDB(
       "https://api.igdb.com/v4/platforms",
       options,
     );
-    const data: IGDBPlatform[] = await response.json();
+    const data = (await response.json()) as IGDBPlatform[];
     clearTimeout(timeoutId);
 
     if (!response.ok) {
@@ -189,7 +189,7 @@ export async function getGameTimeToBeatOnIGDB(
       "https://api.igdb.com/v4/game_time_to_beats",
       options,
     );
-    const data: IGDBGameTimeToBeat[] = await response.json();
+    const data = (await response.json()) as IGDBGameTimeToBeat[];
     clearTimeout(timeoutId);
 
     if (!response.ok) {
@@ -229,7 +229,7 @@ export async function getCoverOnIGDB(
       "https://api.igdb.com/v4/covers",
       options,
     );
-    const data: IGDBCover[] = await response.json();
+    const data = (await response.json()) as IGDBCover[];
     clearTimeout(timeoutId);
 
     if (!response.ok) {
@@ -269,7 +269,7 @@ export async function getGenreOnIGDB(
       "https://api.igdb.com/v4/genres",
       options,
     );
-    const data: IGDBGenre[] = await response.json();
+    const data = (await response.json()) as IGDBGenre[];
     clearTimeout(timeoutId);
 
     if (!response.ok) {
