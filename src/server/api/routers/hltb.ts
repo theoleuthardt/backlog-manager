@@ -7,7 +7,7 @@ import { SearchGameOnHLTB } from "~/server/integrations/howlongtobeat/howLongToB
  *
  * Handles game search functionality using HowLongToBeat API
  */
-export const gameSearchRouter = createTRPCRouter({
+export const HLTBSearchRouter = createTRPCRouter({
   /**
    * Search for games using HowLongToBeat API
    * @example
