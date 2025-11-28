@@ -176,4 +176,101 @@ export const IGDBRouter = createTRPCRouter({
       const accessToken = await getValidToken();
       return await getGameTimeToBeatOnIGDB(input.gameId, clientId, accessToken);
     }),
+
+  /**
+   * Enriched search endpoint that returns data compatible with frontend expectations
+   * Searches IGDB and enriches results with cover images and time-to-beat data
+   * @example
+   * const results = await trpc.igdb.search.query({ searchTerm: "Zelda" })
+   */
+  search: publicProcedure
+    .input(
+      z.object({
+        searchTerm: z.string().min(1, "Search term is required"),
+      }),
+    )
+    .query(async ({ input }) => {
+      const clientId = process.env.IGDB_CLIENT_ID;
+      if (!clientId) {
+        throw new Error("IGDB_CLIENT_ID not configured");
+      }
+
+      const accessToken = await getValidToken();
+
+      const searchResults = await searchGameOnIGDB(
+        input.searchTerm,
+        clientId,
+        accessToken,
+      );
+
+      const enrichedResults = await Promise.all(
+        searchResults.slice(0, 10).map(async (searchResult) => {
+          try {
+            const gameId =
+              searchResult.game?.toString() ?? searchResult.id.toString();
+            const gameData = await getGameOnIGDB(gameId, clientId, accessToken);
+            const game = gameData[0];
+
+            if (!game) {
+              return null;
+            }
+
+            let imageUrl = "";
+            if (game.cover) {
+              const coverData = await getCoverOnIGDB(
+                game.cover,
+                clientId,
+                accessToken,
+              );
+              const cover = coverData[0];
+              if (cover?.image_id) {
+                imageUrl = `https://images.igdb.com/igdb/image/upload/t_cover_big/${cover.image_id}.jpg`;
+              }
+            }
+
+            let mainStory = 0;
+            let mainStoryWithExtras = 0;
+            let completionist = 0;
+
+            try {
+              const timeToBeatData = await getGameTimeToBeatOnIGDB(
+                game.id,
+                clientId,
+                accessToken,
+              );
+              const timeToBeat = timeToBeatData[0];
+              if (timeToBeat) {
+                mainStory = timeToBeat.hastily
+                  ? Math.round((timeToBeat.hastily / 3600) * 10) / 10
+                  : 0;
+                mainStoryWithExtras = timeToBeat.normally
+                  ? Math.round((timeToBeat.normally / 3600) * 10) / 10
+                  : 0;
+                completionist = timeToBeat.completely
+                  ? Math.round((timeToBeat.completely / 3600) * 10) / 10
+                  : 0;
+              }
+            } catch {
+              console.log(`No time to beat data for game ${game.id}`);
+            }
+
+            return {
+              id: game.id,
+              hltbId: game.id,
+              title: game.name ?? "Unknown Game",
+              imageUrl,
+              steamAppId: null,
+              mainStory,
+              mainStoryWithExtras,
+              completionist,
+            };
+          } catch (error) {
+            console.error("Error enriching game data:", error);
+            return null;
+          }
+        }),
+      );
+
+      return enrichedResults.filter((result) => result !== null);
+    }),
 });

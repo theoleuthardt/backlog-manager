@@ -36,7 +36,7 @@ export const MissingGamesModal = ({
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [searchResults, setSearchResults] = useState<GameSearchResult[]>([]);
 
-  const gameSearchQuery = api.gameSearch.search.useQuery(
+  const gameSearchQuery = api.igdb.search.useQuery(
     { searchTerm: debouncedQuery },
     {
       enabled: debouncedQuery.length > 0,

@@ -29,7 +29,7 @@ export const EntryCreationDialog = ({
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const { data: searchResults = [], isLoading } =
-    api.gameSearch.search.useQuery(
+    api.igdb.search.useQuery(
       { searchTerm: debouncedSearchQuery },
       {
         enabled: debouncedSearchQuery.length > 0,
