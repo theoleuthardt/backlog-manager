@@ -13,3 +13,16 @@ export interface HltbResultData {
 }
 
 // IGDB API
+export interface IGDBTokenResponse {
+  access_token: string;
+  expires_in: number;
+  token_type: string;
+}
+
+export interface IGDBSearchResult {
+  id: number;
+  alternative_name: string;
+  game: number;
+  name: string;
+  publishedAt: number;
+}
