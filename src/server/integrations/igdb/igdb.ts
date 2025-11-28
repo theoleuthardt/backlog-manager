@@ -54,7 +54,7 @@ export async function searchGameOnIGDB(
     },
     body:
       "fields alternative_name,character,checksum,collection,company,description,game,name,platform,published_at,test_dummy,theme; " +
-      `where name ~* *"${searchTerm}"*;`,
+      `where name ~ *"${searchTerm}"*;`,
     signal: controller.signal,
   };
 
