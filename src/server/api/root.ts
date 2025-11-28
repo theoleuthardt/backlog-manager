@@ -3,6 +3,7 @@ import { backlogRouter } from "./routers/backlog";
 import { userRouter } from "./routers/user";
 import { HLTBSearchRouter } from "./routers/hltb";
 import { csvRouter } from "./routers/csv";
+import { IGDBRouter } from "./routers/igdb";
 import { createCallerFactory, createTRPCRouter } from "./trpc";
 
 /**
@@ -16,6 +17,7 @@ export const appRouter = createTRPCRouter({
   user: userRouter,
   csv: csvRouter,
   gameSearch: HLTBSearchRouter,
+  igdb: IGDBRouter,
 });
 
 // export type definition of API
