@@ -22,6 +22,8 @@ export function CreationToolForm() {
   const searchParams = useSearchParams();
   const title = searchParams.get("title") ?? "";
   const imageUrl = searchParams.get("imageUrl") ?? "";
+  const genresFromUrl = searchParams.get("genres") ?? "";
+  const platformsFromUrl = searchParams.get("platforms") ?? "";
   const mainStory = parseFloat(searchParams.get("mainStory") ?? "0");
   const mainStoryWithExtras = parseFloat(
     searchParams.get("mainStoryWithExtras") ?? "0",
@@ -31,8 +33,8 @@ export function CreationToolForm() {
   const hasHltbData = mainStory > 0 || mainStoryWithExtras > 0 || completionist > 0;
   const hasMissingData = !imageUrl || !hasHltbData;
 
-  const [genre, setGenre] = useState("");
-  const [platform, setPlatform] = useState("");
+  const [genre, setGenre] = useState(genresFromUrl);
+  const [platform, setPlatform] = useState(platformsFromUrl);
   const [status, setStatus] = useState("");
   const [owned, setOwned] = useState(false);
   const [interest, setInterest] = useState(5);

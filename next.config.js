@@ -30,6 +30,11 @@ const config = {
         hostname: "howlongtobeat.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "images.igdb.com",
+        pathname: "/**",
+      },
     ],
     domains: [],
     unoptimized: false,

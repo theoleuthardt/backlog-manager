@@ -27,15 +27,17 @@ export const EntryCreationDialog = ({
   const [searchQuery, setSearchQuery] = React.useState("");
   const [selectedIndex, setSelectedIndex] = React.useState<number | null>(null);
 
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
-  const { data: searchResults = [], isLoading } =
-    api.igdb.search.useQuery(
-      { searchTerm: debouncedSearchQuery },
-      {
-        enabled: debouncedSearchQuery.length > 0,
-        refetchOnWindowFocus: false,
-      },
-    );
+  const debouncedSearchQuery = useDebounce(searchQuery, 800);
+  const { data: searchResults = [], isLoading } = api.igdb.search.useQuery(
+    { searchTerm: debouncedSearchQuery },
+    {
+      enabled: debouncedSearchQuery.length > 0,
+      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 5,
+      gcTime: 1000 * 60 * 10,
+      retry: 3,
+    },
+  );
 
   const resultsVisible = searchQuery.length > 0;
 
@@ -115,7 +117,7 @@ export const EntryCreationDialog = ({
                       >
                         <div className="flex flex-row items-center gap-2">
                           <GameImage
-                            src={result.imageUrl}
+                            src={result.imageUrl ?? ""}
                             alt={result.title}
                             width={60}
                             height={90}
@@ -134,8 +136,16 @@ export const EntryCreationDialog = ({
                         pathname: "/creation-tool",
                         query: {
                           title: searchResults[selectedIndex].title,
-                          imageUrl: searchResults[selectedIndex].imageUrl,
-                          steamAppId: searchResults[selectedIndex].steamAppId,
+                          imageUrl: searchResults[selectedIndex].imageUrl ?? "",
+                          steamAppId:
+                            searchResults[selectedIndex].steamAppId ?? "",
+                          genres:
+                            searchResults[selectedIndex].genres?.join(", ") ??
+                            "",
+                          platforms:
+                            searchResults[selectedIndex].platforms?.join(
+                              ", ",
+                            ) ?? "",
                           mainStory: searchResults[selectedIndex].mainStory,
                           mainStoryWithExtras:
                             searchResults[selectedIndex].mainStoryWithExtras,

@@ -23,15 +23,14 @@ export async function generateIGDBToken(
 
   try {
     const response: Response = await fetch(url, options);
-    const data = (await response.json()) as IGDBTokenResponse;
     clearTimeout(timeoutId);
 
     if (!response.ok) {
       console.error(`IGDB API error: ${response.status}`);
-      return {};
+      throw new Error(`Failed to generate IGDB token: ${response.status}`);
     }
 
-    return data;
+    return (await response.json()) as IGDBTokenResponse;
   } catch (err) {
     console.error("Error generating IGDB token:", err);
     throw err;
