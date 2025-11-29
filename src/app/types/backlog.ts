@@ -47,9 +47,13 @@ export interface BacklogEntryData {
  * Game search result from game database
  */
 export interface GameSearchResult {
+  id: number;
+  hltbId: number;
   title: string;
-  imageUrl: string;
-  steamAppId: number;
+  imageUrl: string | null;
+  steamAppId: number | null;
+  genres?: string[];
+  platforms?: string[];
   mainStory: number;
   mainStoryWithExtras: number;
   completionist: number;

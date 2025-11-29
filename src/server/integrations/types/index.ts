@@ -128,3 +128,16 @@ export interface IGDBGenre {
   updated_at?: number;
   url?: string;
 }
+
+export type EnrichedResult = {
+  id: number;
+  hltbId: number;
+  title: string;
+  imageUrl: string | null;
+  steamAppId: null;
+  genres: string[];
+  platforms: string[];
+  mainStory: number;
+  mainStoryWithExtras: number;
+  completionist: number;
+} | null;

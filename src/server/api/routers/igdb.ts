@@ -9,8 +9,11 @@ import {
   getGenreOnIGDB,
   getGameTimeToBeatOnIGDB,
 } from "~/server/integrations/igdb/igdb";
+import type { EnrichedResult } from "~/server/integrations/types";
 
 let cachedToken: { accessToken: string; expiresAt: number } | null = null;
+const genreCache = new Map<number, string>();
+const platformCache = new Map<number, string>();
 
 /**
  * Gets a valid IGDB access token, using cached token if available
@@ -43,6 +46,77 @@ async function getValidToken(): Promise<string> {
   };
 
   return tokenResponse.access_token;
+}
+
+/**
+ * Fetch genre with caching
+ */
+async function getCachedGenre(
+  genreId: number,
+  clientId: string,
+  accessToken: string,
+): Promise<string | null> {
+  if (genreCache.has(genreId)) {
+    return genreCache.get(genreId)!;
+  }
+
+  try {
+    const genreData = await getGenreOnIGDB(genreId, clientId, accessToken);
+    const name = genreData[0]?.name;
+    if (name) {
+      genreCache.set(genreId, name);
+      return name;
+    }
+  } catch (error) {
+    console.error(`Failed to fetch genre ${genreId}:`, error);
+  }
+  return null;
+}
+
+/**
+ * Fetch platform with caching
+ */
+async function getCachedPlatform(
+  platformId: number,
+  clientId: string,
+  accessToken: string,
+): Promise<string | null> {
+  if (platformCache.has(platformId)) {
+    return platformCache.get(platformId)!;
+  }
+
+  try {
+    const platformData = await getPlatformOnIGDB(
+      platformId,
+      clientId,
+      accessToken,
+    );
+    const name = platformData[0]?.name;
+    if (name) {
+      platformCache.set(platformId, name);
+      return name;
+    }
+  } catch (error) {
+    console.error(`Failed to fetch platform ${platformId}:`, error);
+  }
+  return null;
+}
+
+/**
+ * Process games with controlled concurrency to avoid rate limiting
+ */
+async function processInBatches<T, R>(
+  items: T[],
+  batchSize: number,
+  processor: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = [];
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    const batchResults = await Promise.all(batch.map(processor));
+    results.push(...batchResults);
+  }
+  return results;
 }
 
 /**
@@ -203,8 +277,11 @@ export const IGDBRouter = createTRPCRouter({
         accessToken,
       );
 
-      const enrichedResults = await Promise.all(
-        searchResults.slice(0, 10).map(async (searchResult) => {
+      const gamesToProcess = searchResults.slice(0, 10);
+      const enrichedResults = await processInBatches(
+        gamesToProcess,
+        3,
+        async (searchResult) => {
           try {
             const gameId =
               searchResult.game?.toString() ?? searchResult.id.toString();
@@ -215,16 +292,61 @@ export const IGDBRouter = createTRPCRouter({
               return null;
             }
 
-            let imageUrl = "";
+            let imageUrl: string | null = null;
             if (game.cover) {
-              const coverData = await getCoverOnIGDB(
-                game.cover,
-                clientId,
-                accessToken,
-              );
-              const cover = coverData[0];
-              if (cover?.image_id) {
-                imageUrl = `https://images.igdb.com/igdb/image/upload/t_cover_big/${cover.image_id}.jpg`;
+              try {
+                const coverData = await getCoverOnIGDB(
+                  game.cover,
+                  clientId,
+                  accessToken,
+                );
+                const cover = coverData[0];
+                if (cover?.image_id) {
+                  imageUrl = `https://images.igdb.com/igdb/image/upload/t_cover_big/${cover.image_id}.jpg`;
+                }
+              } catch (error) {
+                console.error(
+                  `Failed to fetch cover for game ${game.id}:`,
+                  error,
+                );
+              }
+            }
+
+            let genres: string[] = [];
+            if (game.genres && Array.isArray(game.genres)) {
+              try {
+                const genreNames = await Promise.all(
+                  game.genres.map((genreId: number) =>
+                    getCachedGenre(genreId, clientId, accessToken),
+                  ),
+                );
+                genres = genreNames.filter(
+                  (name): name is string => name !== null,
+                );
+              } catch (error) {
+                console.error(
+                  `Failed to fetch genres for game ${game.id}:`,
+                  error,
+                );
+              }
+            }
+
+            let platforms: string[] = [];
+            if (game.platforms && Array.isArray(game.platforms)) {
+              try {
+                const platformNames = await Promise.all(
+                  game.platforms.map((platformId: number) =>
+                    getCachedPlatform(platformId, clientId, accessToken),
+                  ),
+                );
+                platforms = platformNames.filter(
+                  (name): name is string => name !== null,
+                );
+              } catch (error) {
+                console.error(
+                  `Failed to fetch platforms for game ${game.id}:`,
+                  error,
+                );
               }
             }
 
@@ -260,17 +382,21 @@ export const IGDBRouter = createTRPCRouter({
               title: game.name ?? "Unknown Game",
               imageUrl,
               steamAppId: null,
+              genres,
+              platforms,
               mainStory,
               mainStoryWithExtras,
               completionist,
-            };
+            } as EnrichedResult;
           } catch (error) {
             console.error("Error enriching game data:", error);
             return null;
           }
-        }),
+        },
       );
 
-      return enrichedResults.filter((result) => result !== null);
+      return enrichedResults.filter(
+        (result): result is NonNullable<EnrichedResult> => result !== null,
+      );
     }),
 });
