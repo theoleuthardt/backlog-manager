@@ -30,7 +30,8 @@ export function CreationToolForm() {
   );
   const completionist = parseFloat(searchParams.get("completionist") ?? "0");
 
-  const hasHltbData = mainStory > 0 || mainStoryWithExtras > 0 || completionist > 0;
+  const hasHltbData =
+    mainStory > 0 || mainStoryWithExtras > 0 || completionist > 0;
   const hasMissingData = !imageUrl || !hasHltbData;
 
   const [genre, setGenre] = useState(genresFromUrl);
@@ -75,7 +76,12 @@ export function CreationToolForm() {
         title,
         genre,
         platform,
-        status: status as "Not Started" | "In Progress" | "Completed" | "On Hold" | "Dropped",
+        status: status as
+          | "Not Started"
+          | "In Progress"
+          | "Completed"
+          | "On Hold"
+          | "Dropped",
         owned,
         interest,
         imageLink: imageUrl,
@@ -117,8 +123,9 @@ export function CreationToolForm() {
           <p className="font-semibold">⚠️ Warning: Missing game data</p>
           <p className="text-sm">
             {!imageUrl && "No image found. "}
-            {!hasHltbData && "No HowLongToBeat times found. "}
-            Consider searching for the game in the Add Entry dialog to get complete data.
+            {!hasHltbData && "No game beat times found. "}
+            Consider searching for the game again in the searchbar to get
+            complete data.
           </p>
         </div>
       )}
