@@ -6,7 +6,8 @@
   "scripts": {
     "build": "next build",
     "check": "next lint && tsc --noEmit",
-    "dev": "next dev --turbo",
+    "dev": "NODE_OPTIONS='--max-old-space-size=4096' next dev --turbo",
+    "dev:webpack": "NODE_OPTIONS='--max-old-space-size=4096' next dev --webpack",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "lint": "next lint",
