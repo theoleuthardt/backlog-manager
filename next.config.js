@@ -13,6 +13,13 @@ const config = {
     "10.20.146.74",
     "10.20.*",
   ],
+
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+    
+  turbopack: {},
+
   images: {
     remotePatterns: [
       {
