@@ -105,7 +105,7 @@ export const csvRouter = createTRPCRouter({
       gameData: z.object({
         hltbId: z.number(),
         title: z.string(),
-        imageUrl: z.string(),
+        imageUrl: z.string().nullable(),
         mainStory: z.number(),
         mainStoryWithExtras: z.number(),
         completionist: z.number(),
@@ -123,7 +123,7 @@ export const csvRouter = createTRPCRouter({
           status: "Not Started",  //TODO update when status is no enum anymore :)
           owned: true,
           interest: 5,
-          imageLink: input.gameData.imageUrl,
+          imageLink: input.gameData.imageUrl ?? undefined,
           mainTime: input.gameData.mainStory,
           mainPlusExtraTime: input.gameData.mainStoryWithExtras,
           completionTime: input.gameData.completionist,
