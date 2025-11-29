@@ -13,7 +13,10 @@ interface GameSearchResult {
   id: number;
   hltbId: number;
   title: string;
-  imageUrl: string;
+  imageUrl: string | null;
+  steamAppId: number | null;
+  genres?: string[];
+  platforms?: string[];
   mainStory: number;
   mainStoryWithExtras: number;
   completionist: number;

@@ -2,6 +2,8 @@ import type { GameSearchResult } from "~/app/types";
 
 export const gameSearchbarDummyResults: GameSearchResult[] = [
   {
+    id: 1,
+    hltbId: 77675,
     title: "SnowRunner",
     imageUrl: "https://howlongtobeat.com/games/77675_SnowRunner.jpg",
     steamAppId: 1465360,
@@ -10,6 +12,8 @@ export const gameSearchbarDummyResults: GameSearchResult[] = [
     completionist: 236.38,
   },
   {
+    id: 2,
+    hltbId: 0,
     title: "Batman: Arkham Asylum GOTY",
     imageUrl: "https://howlongtobeat.com/games/Batman_Arkham_Asylum_GOTY.jpg",
     steamAppId: 35140,
@@ -18,6 +22,8 @@ export const gameSearchbarDummyResults: GameSearchResult[] = [
     completionist: 25.3,
   },
   {
+    id: 3,
+    hltbId: 127735,
     title: "Might & Magic: Clash of Heroes - Definitive Edition",
     imageUrl:
       "https://howlongtobeat.com/games/127735_Might_&_Magic_Clash_of_Heroes_-_Definitive_Edition.jpg",
@@ -27,6 +33,8 @@ export const gameSearchbarDummyResults: GameSearchResult[] = [
     completionist: 31.91,
   },
   {
+    id: 4,
+    hltbId: 37863,
     title: "Kingdom Hearts HD 2.8 Final Chapter Prologue",
     imageUrl:
       "https://howlongtobeat.com/games/37863_Kingdom_Hearts_HD_2.8_Final_Chapter_Prologue.jpg",
@@ -36,6 +44,8 @@ export const gameSearchbarDummyResults: GameSearchResult[] = [
     completionist: 66.82,
   },
   {
+    id: 5,
+    hltbId: 34139,
     title: "Naruto Shippuden: Ultimate Ninja Storm 4",
     imageUrl:
       "https://howlongtobeat.com/games/34139_Naruto_Shippuden_Ultimate_Ninja_Storm_4.jpg",
