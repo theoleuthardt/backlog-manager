@@ -104,17 +104,25 @@ async function getCachedPlatform(
 
 /**
  * Process games with controlled concurrency to avoid rate limiting
+ * Adds a delay between batches to respect API rate limits
  */
 async function processInBatches<T, R>(
   items: T[],
   batchSize: number,
   processor: (item: T) => Promise<R>,
+  delayBetweenBatchesMs = 1000,
 ): Promise<R[]> {
   const results: R[] = [];
   for (let i = 0; i < items.length; i += batchSize) {
     const batch = items.slice(i, i + batchSize);
     const batchResults = await Promise.all(batch.map(processor));
     results.push(...batchResults);
+
+    if (i + batchSize < items.length) {
+      await new Promise((resolve) =>
+        setTimeout(resolve, delayBetweenBatchesMs),
+      );
+    }
   }
   return results;
 }
@@ -277,10 +285,10 @@ export const IGDBRouter = createTRPCRouter({
         accessToken,
       );
 
-      const gamesToProcess = searchResults.slice(0, 10);
+      const gamesToProcess = searchResults.slice(0, 8);
       const enrichedResults = await processInBatches(
         gamesToProcess,
-        3,
+        1,
         async (searchResult) => {
           try {
             const gameId =
