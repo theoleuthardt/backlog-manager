@@ -2,6 +2,7 @@ import { postRouter } from "./routers/post";
 import { backlogRouter } from "./routers/backlog";
 import { userRouter } from "./routers/user";
 import { gameSearchRouter } from "./routers/gamesearch";
+import { csvRouter } from "./routers/csv";
 import { createCallerFactory, createTRPCRouter } from "./trpc";
 
 /**
@@ -13,6 +14,7 @@ export const appRouter = createTRPCRouter({
   post: postRouter,
   backlog: backlogRouter,
   user: userRouter,
+  csv: csvRouter,
   gameSearch: gameSearchRouter,
 });
 

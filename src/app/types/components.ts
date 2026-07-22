@@ -50,7 +50,7 @@ export interface SearchBarProps {
   onClear?: () => void;
   value?: string;
   ref?: React.RefObject<HTMLInputElement>;
-  useIcon: boolean;
+  useIcon?: boolean;
 }
 
 /**

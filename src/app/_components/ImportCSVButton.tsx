@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "shadcn_components/ui/button";
 import Image from "next/image";
 import type { ImportCSVButtonProps } from "~/app/types";
@@ -12,46 +12,30 @@ export const ImportCSVButton = ({
   children,
   iconOnly = false,
 }: ImportCSVButtonProps) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   const handleButtonClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      console.log("Selected file:", file);
-    }
+    router.push("/import-csv");
   };
 
   return (
-    <>
-      <Button
-        id={id}
-        className={`border-0 font-bold text-white ${className}`}
-        variant="outline"
-        disabled={disabled}
-        onClick={handleButtonClick}
-      >
-        {iconOnly ? (
-          <Image
-            src="/csv_import.png"
-            alt="import CSV"
-            width={32}
-            height={32}
-          />
-        ) : (
-          children
-        )}
-      </Button>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".csv"
-        className="hidden"
-        onChange={handleFileChange}
-      />
-    </>
+    <Button
+      id={id}
+      className={`border-0 font-bold text-white ${className}`}
+      variant="outline"
+      disabled={disabled}
+      onClick={handleButtonClick}
+    >
+      {iconOnly ? (
+        <Image
+          src="/csv_import.png"
+          alt="import CSV"
+          width={32}
+          height={32}
+        />
+      ) : (
+        children
+      )}
+    </Button>
   );
 };

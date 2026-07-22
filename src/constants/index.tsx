@@ -3,6 +3,8 @@ import { dashboardNavLinks } from "./navbarLinks";
 import { BacklogEntryDummyData } from "./backlogEntryDummyData";
 import { gameSearchbarDummyResults } from "./gameSearchbarDummyResults";
 import { creationToolNavLinks } from "./navbarLinks";
+import { importCSVNavLinks } from "./navbarLinks";
+import { exportCSVNavLinks } from "./navbarLinks";
 
 export { type NavbarLink } from "~/app/types";
 export {
@@ -11,4 +13,6 @@ export {
   BacklogEntryDummyData,
   gameSearchbarDummyResults,
   creationToolNavLinks,
+  importCSVNavLinks,
+  exportCSVNavLinks,
 };

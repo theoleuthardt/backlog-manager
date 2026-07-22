@@ -5,6 +5,7 @@ import { Geist } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import { Toaster } from "~/components/ui/sonner";
+import { CSVImportProvider } from "~/app/context/CSVImportContext";
 
 export const metadata: Metadata = {
   title: "Backlog-Manager",
@@ -23,7 +24,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geist.variable}`}>
       <body>
-        <TRPCReactProvider>{children}</TRPCReactProvider>
+        <TRPCReactProvider>
+          <CSVImportProvider>{children}</CSVImportProvider>
+        </TRPCReactProvider>
         <Toaster />
       </body>
     </html>
