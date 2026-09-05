@@ -4,9 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Backlog Manager is a NextJS full-stack app (T3 Stack) for managing video game backlogs. Users can track games with metadata from HowLongToBeat and IGDB, organize games into categories via drag & drop, connect Steam accounts for playtime sync, and import/export CSV files.
+Backlog Manager is a video game backlog manager. It's mid-migration (see issue #103/#104): the frontend is a Next.js app (T3 Stack) living in `frontend/`, and the backend is being rewritten from Next.js/tRPC into a standalone Python/Litestar service living in `backend/`. The Litestar backend currently only has a `/health` check — all real business logic (backlog CRUD, auth, CSV import/export, IGDB/HowLongToBeat integration) still lives in `frontend/src/server/` and is served via tRPC, unchanged, until the migration's later steps land.
+
+Users can track games with metadata from HowLongToBeat and IGDB, organize games into categories via drag & drop, connect Steam accounts for playtime sync, and import/export CSV files.
 
 ## Commands
+
+Root `package.json` only has convenience scripts delegating to `frontend/` (`--prefix frontend`) - run `npm install --prefix frontend` once first, or `cd frontend` and use these directly:
 
 ```bash
 # Development
@@ -28,23 +32,36 @@ npm run typecheck    # TypeScript check
 npm run format:check # Check Prettier formatting
 npm run format:write # Apply Prettier formatting
 
-# Testing
+# Testing (run from frontend/, not delegated from root)
 npx vitest run       # Run all tests once
 npx vitest           # Run tests in watch mode
 npx vitest run test/createReadDBTests.test.ts  # Run single test file
 ```
 
+Backend (`backend/`, uv-managed):
+```bash
+cd backend
+uv sync              # Install dependencies
+uv run uvicorn backlog_manager_backend.app:app --reload --port 8000
+uv run pytest        # Run tests (spins up a real Postgres via testcontainers)
+uv run ruff check .  # Lint
+```
+
+`.env`/`.env.example`/`.env.prod` stay at the repo root (not inside `frontend/`) since `compose.yml` needs them there for its own variable substitution; `frontend/next.config.js` loads the root `.env` explicitly via `dotenv` for local dev.
+
 ## Architecture
 
-**Stack:** Next.js 15+ with App Router, tRPC for type-safe API, PostgreSQL via pg package, NextAuth v5 for authentication, Tailwind CSS + shadcn/ui components.
+**Frontend stack:** Next.js 15+ with App Router, tRPC for type-safe API, PostgreSQL via pg package, NextAuth v5 for authentication, Tailwind CSS + shadcn/ui components. Lives entirely in `frontend/`.
 
-**Path Aliases:**
+**Backend stack:** Python/Litestar, uv-managed, SQLAlchemy 2.0 async + asyncpg (planned; not yet in use). Lives entirely in `backend/`. See issue #104 for the full migration plan and rationale.
+
+**Path Aliases** (relative to `frontend/`):
 - `~/` → `./src/*`
 - `components` / `components/*` → `./src/app/_components/*`
 - `shadcn_components/*` → `./src/components/*` (shadcn/ui components)
 
-**Key Directories:**
-- `src/server/api/routers/` - tRPC routers (backlog, user, hltb, igdb, csv)
+**Key Directories** (all under `frontend/`):
+- `src/server/api/routers/` - tRPC routers (backlog, user, igdb, csv)
 - `src/server/services/` - Business logic services
 - `src/server/db/CRUD/` - Database operations (create, read, update, delete)
 - `src/server/integrations/` - External APIs (HowLongToBeat, IGDB)
@@ -55,9 +72,9 @@ npx vitest run test/createReadDBTests.test.ts  # Run single test file
 **tRPC Setup:**
 - `publicProcedure` - Unauthenticated endpoints
 - `protectedProcedure` - Requires auth session
-- Routers defined in `src/server/api/root.ts`
+- Routers defined in `frontend/src/server/api/root.ts`
 
-**Database:** Direct PostgreSQL via connection pool (`src/server/db/index.ts`), no ORM.
+**Database:** Direct PostgreSQL via connection pool (`frontend/src/server/db/index.ts`), no ORM — the frontend's own DB access. The `backend/` Litestar app will get its own SQLAlchemy-based access layer once sub-issue #110 lands.
 
 ## ESLint Rules
 
@@ -139,12 +156,4 @@ git push -u origin 42-feature-description
 gh pr create --title "feat: implement feature" --body "Closes #42"
 ```
 
-<!-- BEGIN:nextjs-agent-rules -->
-
-# This is NOT the Next.js you know
-
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
-
-This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
-
-<!-- END:nextjs-agent-rules -->
+Next.js's own agent-rules notice now lives in `frontend/AGENTS.md` (with `frontend/CLAUDE.md` pointing to it) since that's where `next dev` resolves it from after the move to `frontend/`.

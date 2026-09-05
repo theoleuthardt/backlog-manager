@@ -42,7 +42,8 @@ jobs:
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ./frontend
+          file: ./frontend/Containerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/backlog-manager:latest
           build-args: |

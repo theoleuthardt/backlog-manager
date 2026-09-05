@@ -45,7 +45,7 @@ describe("Database Read Operations", () => {
     });
 
     const sql = fs.readFileSync(
-      path.resolve(__dirname, "../postgres/backlogmanagerdb-init.sql"),
+      path.resolve(__dirname, "../../postgres/backlogmanagerdb-init.sql"),
       "utf-8",
     );
 
