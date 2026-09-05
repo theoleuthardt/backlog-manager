@@ -1,0 +1,13 @@
+# virtual environment
+.venv/
+
+# python bytecode
+__pycache__/
+*.pyc
+
+# tool caches
+.pytest_cache/
+.ruff_cache/
+
+# local env files
+.env
