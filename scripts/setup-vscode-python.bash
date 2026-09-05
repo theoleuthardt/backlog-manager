@@ -21,7 +21,7 @@ fi
 mkdir -p "$SETTINGS_DIR"
 [ -f "$SETTINGS_FILE" ] || echo '{}' >"$SETTINGS_FILE"
 
-python3 - "$SETTINGS_FILE" "$VENV_PYTHON" "$BACKEND_SRC" <<'PYEOF'
+STALE_INTERPRETER="$(python3 - "$SETTINGS_FILE" "$VENV_PYTHON" "$BACKEND_SRC" <<'PYEOF'
 import json
 import sys
 
@@ -29,8 +29,8 @@ settings_file, venv_python, backend_src = sys.argv[1:4]
 
 
 def strip_jsonc(text):
-    """Strip // and /* */ comments (outside string literals) so VS Code's
-    settings.json - which allows comments and trailing commas - can be
+    """Strip // and /* */ comments (outside string literals) so VS Code
+    settings.json, which allows comments and trailing commas, can be
     parsed with the standard json module."""
     out = []
     in_string = in_line_comment = in_block_comment = False
@@ -121,6 +121,7 @@ with open(settings_file) as f:
 settings = json.loads(strip_trailing_commas(strip_jsonc(raw)))
 
 # Only these two keys are touched - everything else in the file is left as-is.
+previous_interpreter = settings.get("python.defaultInterpreterPath")
 settings["python.defaultInterpreterPath"] = venv_python
 
 extra_paths = settings.get("python.analysis.extraPaths", [])
@@ -131,13 +132,29 @@ settings["python.analysis.extraPaths"] = extra_paths
 with open(settings_file, "w") as f:
     json.dump(settings, f, indent=4)
     f.write("\n")
+
+# The VS Code / VSCodium Python extension only reads python.defaultInterpreterPath
+# the first time it loads a workspace; once it has picked an interpreter for
+# this workspace it ignores further changes to the setting. A settings.json
+# that already pointed somewhere else means that has likely already happened,
+# so tell the caller to warn the user instead of claiming the reload will work.
+if previous_interpreter is not None and previous_interpreter != venv_python:
+    print("stale")
 PYEOF
+)"
 
 echo "Updated $SETTINGS_FILE:"
 echo "  python.defaultInterpreterPath = $VENV_PYTHON"
 echo "  python.analysis.extraPaths    includes \"$BACKEND_SRC\""
-echo "Reload the VS Code/VSCodium window for it to take effect."
-echo "If the interpreter shown in the status bar doesn't switch after reload,"
-echo "it was already pinned for this workspace - run 'Python: Select Interpreter'"
-echo "(or 'Python: Clear Workspace Interpreter Setting') from the command palette"
-echo "and pick $VENV_PYTHON."
+
+if [ "$STALE_INTERPRETER" = "stale" ]; then
+    echo
+    echo "warning: $SETTINGS_FILE already pointed at a different interpreter." >&2
+    echo "VS Code/VSCodium's Python extension only reads python.defaultInterpreterPath" >&2
+    echo "the first time it loads a workspace, so it may have already pinned the old" >&2
+    echo "one and reloading won't switch it. Run 'Python: Select Interpreter' (or" >&2
+    echo "'Python: Clear Workspace Interpreter Setting') from the command palette and" >&2
+    echo "pick $VENV_PYTHON." >&2
+else
+    echo "Reload the VS Code/VSCodium window for it to take effect."
+fi
