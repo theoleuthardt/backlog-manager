@@ -23,7 +23,6 @@ mkdir -p "$SETTINGS_DIR"
 
 python3 - "$SETTINGS_FILE" "$VENV_PYTHON" "$BACKEND_SRC" <<'PYEOF'
 import json
-import re
 import sys
 
 settings_file, venv_python, backend_src = sys.argv[1:4]
@@ -77,14 +76,49 @@ def strip_jsonc(text):
             continue
         out.append(c)
         i += 1
-    # Trailing commas before a closing bracket/brace are also legal JSONC.
-    return re.sub(r",(\s*[}\]])", r"\1", "".join(out))
+    return "".join(out)
+
+
+def strip_trailing_commas(text):
+    """Drop a "," that is immediately followed (ignoring whitespace) by a
+    closing "}" or "]" - legal in JSONC, rejected by json.loads. Comma
+    characters inside string values are left untouched."""
+    out = []
+    in_string = False
+    i, n = 0, len(text)
+    while i < n:
+        c = text[i]
+        if in_string:
+            out.append(c)
+            if c == "\\" and i + 1 < n:
+                out.append(text[i + 1])
+                i += 2
+                continue
+            if c == '"':
+                in_string = False
+            i += 1
+            continue
+        if c == '"':
+            in_string = True
+            out.append(c)
+            i += 1
+            continue
+        if c == ",":
+            j = i + 1
+            while j < n and text[j] in " \t\r\n":
+                j += 1
+            if j < n and text[j] in "}]":
+                i += 1
+                continue
+        out.append(c)
+        i += 1
+    return "".join(out)
 
 
 with open(settings_file) as f:
     raw = f.read()
 
-settings = json.loads(strip_jsonc(raw))
+settings = json.loads(strip_trailing_commas(strip_jsonc(raw)))
 
 # Only these two keys are touched - everything else in the file is left as-is.
 settings["python.defaultInterpreterPath"] = venv_python
