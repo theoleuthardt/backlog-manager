@@ -178,6 +178,33 @@ async def test_import_does_not_create_entry_if_cancelled_during_hltb_lookup(
     assert entries == []
 
 
+async def test_import_does_not_track_missing_game_if_cancelled_during_empty_hltb_lookup(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    session_id = "cancel-empty-lookup-test"
+
+    async def fake_search(title: str) -> list[HltbResultData]:
+        parse_csv.set_cancel_flag(session_id, True)
+        return []
+
+    monkeypatch.setattr(parse_csv, "search_game_on_hltb", fake_search)
+
+    try:
+        result = await parse_csv.import_backlog_entries_from_csv(
+            session,
+            user.id,
+            [{"A": "Unknown Game", "B": "RPG", "C": "PC", "D": "Not Started"}],
+            _COLUMN_CONFIG,
+            session_id=session_id,
+        )
+    finally:
+        parse_csv.clear_import_progress(session_id)
+
+    assert result.success == 0
+    assert result.missing_games == []
+
+
 def test_import_progress_tracking() -> None:
     session_id = "progress-test"
     assert parse_csv.get_import_progress(session_id) == 0

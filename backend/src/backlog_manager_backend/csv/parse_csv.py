@@ -141,6 +141,15 @@ async def import_backlog_entries_from_csv(
             continue
 
         search_results = await search_game_on_hltb(title)
+
+        if session_id and is_cancelled(session_id):
+            logger.info(
+                "Import cancelled",
+                processed=processed_count + 1,
+                total=len(records),
+            )
+            break
+
         game_data = search_results[0] if search_results else None
 
         if game_data is None:
@@ -156,14 +165,6 @@ async def import_backlog_entries_from_csv(
             if session_id:
                 set_import_progress(session_id, processed_count)
             continue
-
-        if session_id and is_cancelled(session_id):
-            logger.info(
-                "Import cancelled",
-                processed=processed_count + 1,
-                total=len(records),
-            )
-            break
 
         try:
             # TODO: status is hardcoded because Status is currently a fixed
