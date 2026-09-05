@@ -1,6 +1,4 @@
 import { type DefaultSession, type NextAuthConfig } from "next-auth";
-import DiscordProvider from "next-auth/providers/discord";
-import GitHubProvider from "next-auth/providers/github";
 import CredentialProvider from "next-auth/providers/credentials";
 import pool from "../db";
 import argon2 from "argon2";
@@ -32,8 +30,6 @@ export const authConfig: NextAuthConfig = {
     strategy: "jwt",
   },
   providers: [
-    DiscordProvider,
-    GitHubProvider,
     CredentialProvider({
       name: "Credentials",
       credentials: {
@@ -69,23 +65,6 @@ export const authConfig: NextAuthConfig = {
     }),
   ],
   callbacks: {
-    async signIn({ user }) {
-      const email = user.email;
-      if (!email) return false;
-
-      const dbUser = await userService.getUserByEmail(pool, email) as DbUser | null;
-
-      if (!dbUser) {
-        await userService.createUser(pool, {
-          username: user.name ?? email,
-          email: email,
-          passwordHash: "", // Empty password hash for OAuth users
-        });
-      }
-
-      return true;
-    },
-
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;

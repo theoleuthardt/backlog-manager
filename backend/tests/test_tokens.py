@@ -1,0 +1,60 @@
+import time
+from types import ModuleType
+
+import pytest
+
+
+@pytest.fixture
+def tokens() -> ModuleType:
+    """Imported lazily since backlog_manager_backend.auth.tokens imports
+    config at module scope, and config eagerly builds Settings() on
+    import - see the game_service fixture in test_game_service.py for
+    the same pattern."""
+    from backlog_manager_backend.auth import tokens as module
+
+    return module
+
+
+def test_create_and_decode_access_token_round_trips(tokens: ModuleType) -> None:
+    token = tokens.create_access_token(42)
+
+    assert tokens.decode_access_token(token) == 42
+
+
+def test_decode_access_token_rejects_garbage(tokens: ModuleType) -> None:
+    with pytest.raises(tokens.TokenError):
+        tokens.decode_access_token("not-a-jwt")
+
+
+def test_decode_access_token_rejects_expired_token(
+    tokens: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(tokens, "_ACCESS_TOKEN_LIFETIME_SECONDS", -1)
+    expired_token = tokens.create_access_token(42)
+
+    with pytest.raises(tokens.TokenError):
+        tokens.decode_access_token(expired_token)
+
+
+def test_decode_access_token_rejects_wrong_signature(
+    tokens: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    token = tokens.create_access_token(42)
+
+    monkeypatch.setattr(tokens.settings, "auth_secret", "a-completely-different-secret")
+
+    with pytest.raises(tokens.TokenError):
+        tokens.decode_access_token(token)
+
+
+def test_decode_access_token_rejects_non_integer_subject(tokens: ModuleType) -> None:
+    from jose import jwt
+
+    bad_token = jwt.encode(
+        {"sub": "not-an-id", "exp": int(time.time()) + 60},
+        tokens.settings.auth_secret,
+        algorithm="HS256",
+    )
+
+    with pytest.raises(tokens.TokenError):
+        tokens.decode_access_token(bad_token)

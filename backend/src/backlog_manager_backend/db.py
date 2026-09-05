@@ -1,5 +1,12 @@
+from collections.abc import AsyncGenerator
+
 from sqlalchemy import NullPool
-from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 from backlog_manager_backend.config import settings
 
@@ -11,3 +18,10 @@ from backlog_manager_backend.config import settings
 # sustained request load, not before.
 engine: AsyncEngine = create_async_engine(settings.postgres_url, poolclass=NullPool)
 async_session = async_sessionmaker(engine, expire_on_commit=False)
+
+
+async def provide_db_session() -> AsyncGenerator[AsyncSession, None]:
+    """Litestar dependency: one session per request, committed implicitly
+    by each repository call and closed once the request finishes."""
+    async with async_session() as session:
+        yield session

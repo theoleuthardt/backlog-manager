@@ -21,6 +21,7 @@ def postgres_url() -> Generator[str, None, None]:
         os.environ["POSTGRES_URL"] = pg.get_connection_url().replace(
             "postgresql+psycopg2", "postgresql+asyncpg"
         )
+        os.environ.setdefault("AUTH_SECRET", "test-only-secret-not-for-production")
         yield os.environ["POSTGRES_URL"]
 
 
