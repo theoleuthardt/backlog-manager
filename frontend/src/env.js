@@ -11,8 +11,6 @@ export const env = createEnv({
       process.env.NODE_ENV === "production"
         ? z.string()
         : z.string().optional(),
-    AUTH_DISCORD_ID: z.string(),
-    AUTH_DISCORD_SECRET: z.string(),
     IGDB_CLIENT_ID: z.string(),
     IGDB_CLIENT_SECRET: z.string(),
     POSTGRES_URL: z.string().url(),
@@ -36,8 +34,6 @@ export const env = createEnv({
    */
   runtimeEnv: {
     AUTH_SECRET: process.env.AUTH_SECRET,
-    AUTH_DISCORD_ID: process.env.AUTH_DISCORD_ID,
-    AUTH_DISCORD_SECRET: process.env.AUTH_DISCORD_SECRET,
     IGDB_CLIENT_ID: process.env.IGDB_CLIENT_ID,
     IGDB_CLIENT_SECRET: process.env.IGDB_CLIENT_SECRET,
     POSTGRES_URL: process.env.POSTGRES_URL,

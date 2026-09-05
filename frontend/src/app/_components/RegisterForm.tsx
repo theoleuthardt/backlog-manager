@@ -164,17 +164,6 @@ export default function RegisterForm() {
           Log in
         </Link>
       </p>
-
-      <p className="text-center text-gray-400">
-        Register with another provider?{" "}
-        <button
-          type="button"
-          onClick={() => signIn(undefined, { callbackUrl: "/dashboard" })}
-          className="text-blue-400 underline hover:text-blue-300"
-        >
-          Register here
-        </button>
-      </p>
     </form>
   );
 }
