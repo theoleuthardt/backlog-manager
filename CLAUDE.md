@@ -53,7 +53,7 @@ uv run ruff check .  # Lint
 
 **Frontend stack:** Next.js 15+ with App Router, tRPC for type-safe API, PostgreSQL via pg package, NextAuth v5 for authentication, Tailwind CSS + shadcn/ui components. Lives entirely in `frontend/`.
 
-**Backend stack:** Python/Litestar, uv-managed, SQLAlchemy 2.0 async + asyncpg (planned; not yet in use). Lives entirely in `backend/`. See issue #104 for the full migration plan and rationale.
+**Backend stack:** Python/Litestar, uv-managed, SQLAlchemy 2.0 async + asyncpg. Lives entirely in `backend/`. Has a full DB access layer now (`models/`, `repositories/`, `schemas/`, Alembic baselined onto the existing schema — issue #110) plus a `/health` check, but no real HTTP routes/auth yet; the frontend still talks to its own tRPC backend until that lands. See issue #104 for the full migration plan and rationale.
 
 **Path Aliases** (relative to `frontend/`):
 - `~/` → `./src/*`
@@ -74,7 +74,9 @@ uv run ruff check .  # Lint
 - `protectedProcedure` - Requires auth session
 - Routers defined in `frontend/src/server/api/root.ts`
 
-**Database:** Direct PostgreSQL via connection pool (`frontend/src/server/db/index.ts`), no ORM — the frontend's own DB access. The `backend/` Litestar app will get its own SQLAlchemy-based access layer once sub-issue #110 lands.
+**Database:** Two parallel access layers exist during the migration, both against the same schema (`postgres/backlogmanagerdb-init.sql`, unchanged by either):
+- Frontend: direct PostgreSQL via connection pool (`frontend/src/server/db/index.ts`), no ORM — still what actually serves the app today.
+- Backend: SQLAlchemy 2.0 async models/repositories (`backend/src/backlog_manager_backend/{models,repositories,schemas}/`), Alembic baselined onto the existing schema (`backend/alembic/`, stamped rather than migrated from scratch) — built, tested, not yet wired to any route.
 
 ## ESLint Rules
 
