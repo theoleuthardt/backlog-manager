@@ -17,7 +17,9 @@ const config = {
   typescript: {
     ignoreBuildErrors: false,
   },
-    
+
+  serverExternalPackages: ["pg"],
+
   turbopack: {},
 
   images: {

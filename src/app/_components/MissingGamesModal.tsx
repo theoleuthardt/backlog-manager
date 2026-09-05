@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { Button } from "shadcn_components/ui/button";
 import { X } from "lucide-react";
@@ -37,7 +37,6 @@ export const MissingGamesModal = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<GameSearchResult[]>([]);
 
   const gameSearchQuery = api.igdb.search.useQuery(
     { searchTerm: debouncedQuery },
@@ -46,10 +45,11 @@ export const MissingGamesModal = ({
     }
   );
 
+  const searchResults = searchQuery.length > 0 ? (gameSearchQuery.data ?? []) : [];
+
   const createMissingGameMutation = api.csv.createMissingGameEntry.useMutation({
     onSuccess: () => {
       setSearchQuery("");
-      setSearchResults([]);
 
       if (currentIndex < missingGames.length - 1) {
         setCurrentIndex(currentIndex + 1);
@@ -61,12 +61,6 @@ export const MissingGamesModal = ({
       console.error("Failed to create missing game entry:", error);
     },
   });
-
-  React.useEffect(() => {
-    if (gameSearchQuery.data) {
-      setSearchResults(gameSearchQuery.data);
-    }
-  }, [gameSearchQuery.data]);
 
   if (!isOpen || missingGames.length === 0) {
     return null;
@@ -87,7 +81,6 @@ export const MissingGamesModal = ({
 
   const handleSkip = () => {
     setSearchQuery("");
-    setSearchResults([]);
 
     if (currentIndex < missingGames.length - 1) {
       setCurrentIndex(currentIndex + 1);
@@ -129,10 +122,7 @@ export const MissingGamesModal = ({
               placeholder="Search game..."
               onInput={(e) => setSearchQuery(e.currentTarget.value)}
               onDebouncedChange={setDebouncedQuery}
-              onClear={() => {
-                setSearchQuery("");
-                setSearchResults([]);
-              }}
+              onClear={() => setSearchQuery("")}
               className="!mb-0 flex-1"
             />
             {gameSearchQuery.isPending && (

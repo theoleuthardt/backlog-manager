@@ -11,7 +11,7 @@ interface SearchBarWithDebounceProps extends SearchBarProps {
   debounceDelay?: number;
 }
 
-export const SearchBar = (props: SearchBarWithDebounceProps) => {
+export const SearchBar = ({ ref, ...props }: SearchBarWithDebounceProps) => {
   const [localValue, setLocalValue] = useState(props.value ?? "");
   const debouncedValue = useDebounce(localValue, props.debounceDelay ?? 300);
   const { onDebouncedChange } = props;
@@ -42,7 +42,7 @@ export const SearchBar = (props: SearchBarWithDebounceProps) => {
         </div>
       )}
       <Input
-        ref={props.ref}
+        ref={ref}
         type="search"
         placeholder={props.placeholder ?? "Search"}
         value={displayValue}
