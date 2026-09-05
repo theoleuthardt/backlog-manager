@@ -51,9 +51,9 @@ tasks:
       - docker compose up -d db db-monitoring
 
   db:down:
-    desc: Stop the local compose stack
+    desc: Stop the local Postgres + pgAdmin (only those two services)
     cmds:
-      - docker compose down
+      - docker compose stop db db-monitoring
 
   frontend:install:
     desc: Install frontend dependencies
