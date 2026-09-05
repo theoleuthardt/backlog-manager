@@ -89,22 +89,20 @@ def set_import_progress(session_id: str, processed: int) -> None:
     _import_progress[session_id] = processed
 
 
-def _clear_transient_import_state(session_id: str) -> None:
+def clear_import_progress(session_id: str) -> None:
     _import_progress.pop(session_id, None)
     _import_cancel_flags.pop(session_id, None)
-
-
-def clear_import_progress(session_id: str) -> None:
-    _clear_transient_import_state(session_id)
     _import_session_owners.pop(session_id, None)
 
 
 def set_import_session_owner(session_id: str, user_id: int) -> None:
-    """Once a session_id is claimed, it stays claimed for that user
-    forever (never cleared automatically, see the finally block below) -
-    a different user_id reusing it is rejected outright rather than
-    silently taking over ownership, which would let them hijack an
-    in-progress import's progress/cancel endpoints."""
+    """Guards against two concurrent requests racing on the same
+    session_id: while an import is running, a different user_id
+    reusing it is rejected outright rather than silently taking over
+    ownership, which would let them hijack that import's progress/cancel
+    endpoints. Once the import finishes, clear_import_progress() (see
+    the finally block below) frees the session_id again - by then there
+    is nothing left for a later reuse to expose."""
     existing_owner = _import_session_owners.get(session_id)
     if existing_owner is not None and existing_owner != user_id:
         raise ConflictError(_SESSION_ID_IN_USE)
@@ -230,13 +228,12 @@ async def import_backlog_entries_from_csv(
 
         return result
     finally:
-        # Ownership (_import_session_owners) deliberately survives this -
-        # it's what set_import_session_owner() checks to reject a session_id
-        # being reused by a different user, even long after this import
-        # finished. Only the transient per-run progress/cancel state is
-        # cleared here, on every exit path (success, exception, or this
-        # coroutine being cancelled), so a later import reusing the same
-        # session_id doesn't inherit stale progress or an already-set
-        # cancel flag from this run.
+        # Runs on every exit path (success, exception, or this coroutine
+        # being cancelled) so a session_id is always freed once this
+        # import is done, rather than leaking progress/cancel/ownership
+        # state for a session_id nobody will ever import with again.
+        # set_import_session_owner() above still protects a *concurrent*
+        # request racing on the same session_id while this import is
+        # still running - the collision case it guards against.
         if session_id:
-            _clear_transient_import_state(session_id)
+            clear_import_progress(session_id)

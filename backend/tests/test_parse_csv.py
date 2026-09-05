@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -244,9 +246,16 @@ def test_set_import_session_owner_allows_same_owner_to_reuse_session_id() -> Non
         parse_csv.clear_import_progress(session_id)
 
 
-async def test_import_rejects_session_id_already_owned_by_another_user(
-    session: AsyncSession,
+async def test_import_rejects_session_id_owned_by_another_user_while_in_progress(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """The real-world race this guards against is two concurrent HTTP
+    requests reusing the same session_id while the first import is
+    still running - session state is freed once an import finishes (see
+    the finally block in import_backlog_entries_from_csv), so the
+    collision only exists during that window. Simulated here with
+    asyncio directly, since two sequential calls can no longer exercise
+    it now that completed imports free their session_id."""
     owner = await _make_user(session)
     intruder = await user_repo.create_user(
         session,
@@ -254,16 +263,34 @@ async def test_import_rejects_session_id_already_owned_by_another_user(
             username="csvintruder", email="csvintruder@example.com", password_hash="h"
         ),
     )
-    session_id = "owner-collision-import-test"
+    session_id = "owner-collision-inflight-test"
+    owner_is_processing = asyncio.Event()
+    release_owner = asyncio.Event()
 
-    try:
-        await parse_csv.import_backlog_entries_from_csv(
-            session, owner.id, [], _COLUMN_CONFIG, session_id=session_id
+    async def blocking_search(title: str) -> list[HltbResultData]:
+        owner_is_processing.set()
+        await release_owner.wait()
+        return [_hltb_result(title)]
+
+    monkeypatch.setattr(parse_csv, "search_game_on_hltb", blocking_search)
+
+    owner_task = asyncio.create_task(
+        parse_csv.import_backlog_entries_from_csv(
+            session,
+            owner.id,
+            [{"A": "Celeste", "B": "Platformer", "C": "PC", "D": "Not Started"}],
+            _COLUMN_CONFIG,
+            session_id=session_id,
         )
+    )
+    try:
+        await owner_is_processing.wait()
 
         with pytest.raises(ConflictError):
             await parse_csv.import_backlog_entries_from_csv(
                 session, intruder.id, [], _COLUMN_CONFIG, session_id=session_id
             )
     finally:
+        release_owner.set()
+        await owner_task
         parse_csv.clear_import_progress(session_id)
