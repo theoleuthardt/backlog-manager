@@ -1,5 +1,5 @@
 import msgspec
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,14 +12,22 @@ _LAST_ADMIN_ERROR = "Cannot remove the last remaining admin"
 
 
 async def _is_last_admin(session: AsyncSession, model: UserModel) -> bool:
+    """Row-locks every admin (FOR UPDATE) for the rest of this
+    transaction, not just counts them - otherwise two concurrent
+    requests each demoting/deleting a *different* admin (with exactly
+    two left) could each see "one other admin" and both proceed,
+    leaving zero. The lock serializes them: the second transaction
+    blocks here until the first commits or rolls back, then sees the
+    up-to-date count. FOR UPDATE can't be combined with an aggregate in
+    one query, hence counting the locked rows in Python instead."""
     if not model.is_admin:
         return False
-    other_admins = await session.scalar(
-        select(func.count())
-        .select_from(UserModel)
-        .where(UserModel.is_admin.is_(True), UserModel.id != model.id)
-    )
-    return not other_admins
+    admin_ids = (
+        await session.scalars(
+            select(UserModel.id).where(UserModel.is_admin.is_(True)).with_for_update()
+        )
+    ).all()
+    return list(admin_ids) == [model.id]
 
 
 def _to_schema(model: UserModel) -> User:

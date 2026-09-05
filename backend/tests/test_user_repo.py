@@ -193,3 +193,50 @@ async def test_update_user_allows_promoting_a_user_to_admin(session: AsyncSessio
     updated = await user_repo.update_user(session, UpdateUserParams(user_id=user.id, is_admin=True))
 
     assert updated.is_admin is True
+
+
+async def test_last_admin_check_locks_admin_rows_for_the_transaction(postgres_url: str) -> None:
+    """Regression test for a TOCTOU race CodeRabbit flagged: without a
+    lock, two concurrent requests each demoting/deleting a *different*
+    admin (with exactly two left) could each see "one other admin" and
+    both proceed, leaving zero. _is_last_admin locks every admin row
+    (FOR UPDATE) for the rest of the transaction to close that gap -
+    verified here directly: a second session's attempt to read the
+    same admin row FOR UPDATE must block until the first transaction
+    that locked it ends, not run concurrently alongside it."""
+    import asyncio
+
+    from backlog_manager_backend.db import async_session
+    from backlog_manager_backend.models.user import User as UserModel
+
+    async with async_session() as setup_session:
+        admin = await user_repo.create_user(
+            setup_session,
+            CreateUserParams(
+                username="lockedadmin",
+                email="lockedadmin@example.com",
+                password_hash="h",
+                is_admin=True,
+            ),
+        )
+
+    second_query_completed = asyncio.Event()
+
+    async def hold_the_lock() -> None:
+        async with async_session() as locking_session, locking_session.begin():
+            await locking_session.get(UserModel, admin.id, with_for_update=True)
+            # Hold the lock long enough for the second query to prove
+            # it's actually blocked, not just incidentally slower.
+            await asyncio.sleep(0.3)
+            assert not second_query_completed.is_set()
+
+    async def try_to_lock_the_same_row() -> None:
+        # Give hold_the_lock a head start so it acquires the lock first.
+        await asyncio.sleep(0.05)
+        async with async_session() as contending_session, contending_session.begin():
+            await contending_session.get(UserModel, admin.id, with_for_update=True)
+        second_query_completed.set()
+
+    await asyncio.gather(hold_the_lock(), try_to_lock_the_same_row())
+
+    assert second_query_completed.is_set()
