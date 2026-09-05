@@ -76,6 +76,7 @@ def _safe_string(value: object, default: str = "") -> str:
 
 _import_progress: dict[str, int] = {}
 _import_cancel_flags: dict[str, bool] = {}
+_import_session_owners: dict[str, int] = {}
 
 
 def get_import_progress(session_id: str) -> int:
@@ -89,6 +90,19 @@ def set_import_progress(session_id: str, processed: int) -> None:
 def clear_import_progress(session_id: str) -> None:
     _import_progress.pop(session_id, None)
     _import_cancel_flags.pop(session_id, None)
+    _import_session_owners.pop(session_id, None)
+
+
+def set_import_session_owner(session_id: str, user_id: int) -> None:
+    _import_session_owners[session_id] = user_id
+
+
+def get_import_session_owner(session_id: str) -> int | None:
+    """None for a session_id that was never registered (unknown to the
+    server, e.g. a typo) - distinct from a real owner mismatch, which
+    callers should treat as "not found" rather than leaking that the
+    session belongs to someone else."""
+    return _import_session_owners.get(session_id)
 
 
 def set_cancel_flag(session_id: str, cancelled: bool) -> None:
@@ -115,6 +129,9 @@ async def import_backlog_entries_from_csv(
 ) -> ImportResult:
     result = ImportResult(errors=[], missing_games=[])
     processed_count = 0
+
+    if session_id:
+        set_import_session_owner(session_id, user_id)
 
     for record in records:
         if session_id and is_cancelled(session_id):

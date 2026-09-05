@@ -89,3 +89,47 @@ async def test_get_and_cancel_import_progress(postgres_url: str, create_and_logi
     assert initial.status_code == 200
     assert initial.json() == {"processed": 0}
     assert cancel_response.status_code == 204
+
+
+async def test_import_session_progress_and_cancel_are_bound_to_their_owner(
+    postgres_url: str, create_and_login
+) -> None:
+    """Regression test for an IDOR: the progress/cancel endpoints used
+    to trust the client-supplied session_id alone, so any authenticated
+    user could poll or cancel *another* user's in-progress CSV import
+    just by guessing/knowing their session_id."""
+    from backlog_manager_backend.app import create_app
+
+    session_id = "owned-session-xyz"
+
+    with TestClient(app=create_app()) as client:
+        owner_headers = await create_and_login(client, "csvidorowner@example.com")
+        intruder_headers = await create_and_login(client, "csvidorintruder@example.com")
+
+        # Registers `session_id` as owned by the owner user (even a trivial,
+        # zero-record import goes through import_backlog_entries_from_csv,
+        # which is what records ownership).
+        client.post(
+            "/api/csv/import",
+            headers=owner_headers,
+            json={
+                "content": "",
+                "title_column": "A",
+                "genre_column": "B",
+                "platform_column": "C",
+                "status_column": "D",
+                "session_id": session_id,
+            },
+        )
+
+        intruder_progress = client.get(
+            f"/api/csv/import/{session_id}/progress", headers=intruder_headers
+        )
+        intruder_cancel = client.post(
+            f"/api/csv/import/{session_id}/cancel", headers=intruder_headers
+        )
+        owner_progress = client.get(f"/api/csv/import/{session_id}/progress", headers=owner_headers)
+
+    assert intruder_progress.status_code == 404
+    assert intruder_cancel.status_code == 404
+    assert owner_progress.status_code == 200
