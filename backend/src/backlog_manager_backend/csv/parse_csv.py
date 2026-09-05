@@ -76,6 +76,9 @@ def _safe_string(value: object, default: str = "") -> str:
 
 _import_progress: dict[str, int] = {}
 _import_cancel_flags: dict[str, bool] = {}
+_import_session_owners: dict[str, int] = {}
+
+_SESSION_ID_IN_USE = "Import session ID is already in use by another import"
 
 
 def get_import_progress(session_id: str) -> int:
@@ -89,6 +92,29 @@ def set_import_progress(session_id: str, processed: int) -> None:
 def clear_import_progress(session_id: str) -> None:
     _import_progress.pop(session_id, None)
     _import_cancel_flags.pop(session_id, None)
+    _import_session_owners.pop(session_id, None)
+
+
+def set_import_session_owner(session_id: str, user_id: int) -> None:
+    """Guards against two concurrent requests racing on the same
+    session_id: while an import is running, a different user_id
+    reusing it is rejected outright rather than silently taking over
+    ownership, which would let them hijack that import's progress/cancel
+    endpoints. Once the import finishes, clear_import_progress() (see
+    the finally block below) frees the session_id again - by then there
+    is nothing left for a later reuse to expose."""
+    existing_owner = _import_session_owners.get(session_id)
+    if existing_owner is not None and existing_owner != user_id:
+        raise ConflictError(_SESSION_ID_IN_USE)
+    _import_session_owners[session_id] = user_id
+
+
+def get_import_session_owner(session_id: str) -> int | None:
+    """None for a session_id that was never registered (unknown to the
+    server, e.g. a typo) - distinct from a real owner mismatch, which
+    callers should treat as "not found" rather than leaking that the
+    session belongs to someone else."""
+    return _import_session_owners.get(session_id)
 
 
 def set_cancel_flag(session_id: str, cancelled: bool) -> None:
@@ -116,84 +142,98 @@ async def import_backlog_entries_from_csv(
     result = ImportResult(errors=[], missing_games=[])
     processed_count = 0
 
-    for record in records:
-        if session_id and is_cancelled(session_id):
-            logger.info(
-                "Import cancelled",
-                processed=processed_count + 1,
-                total=len(records),
-            )
-            break
+    if session_id:
+        set_import_session_owner(session_id, user_id)
 
-        title = _safe_string(record.get(config.title_column), "").strip()
-
-        if not title:
-            result.failed += 1
-            result.errors.append(
-                RecordError(
-                    title="Unknown",
-                    error=f"Title (column {config.title_column}) is required",
+    try:
+        for record in records:
+            if session_id and is_cancelled(session_id):
+                logger.info(
+                    "Import cancelled",
+                    processed=processed_count + 1,
+                    total=len(records),
                 )
-            )
-            processed_count += 1
-            if session_id:
-                set_import_progress(session_id, processed_count)
-            continue
+                break
 
-        search_results = await search_game_on_hltb(title)
+            title = _safe_string(record.get(config.title_column), "").strip()
 
-        if session_id and is_cancelled(session_id):
-            logger.info(
-                "Import cancelled",
-                processed=processed_count + 1,
-                total=len(records),
-            )
-            break
-
-        game_data = search_results[0] if search_results else None
-
-        if game_data is None:
-            result.missing_games.append(
-                MissingGame(
-                    title=title,
-                    genre=_safe_string(record.get(config.genre_column), "Unknown"),
-                    platform=_safe_string(record.get(config.platform_column), "Unknown"),
-                    status=_safe_string(record.get(config.status_column), "Not Started"),
+            if not title:
+                result.failed += 1
+                result.errors.append(
+                    RecordError(
+                        title="Unknown",
+                        error=f"Title (column {config.title_column}) is required",
+                    )
                 )
-            )
-            processed_count += 1
-            if session_id:
-                set_import_progress(session_id, processed_count)
-            continue
+                processed_count += 1
+                if session_id:
+                    set_import_progress(session_id, processed_count)
+                continue
 
-        try:
-            # TODO: status is hardcoded because Status is currently a fixed
-            # enum on the DB side, so an arbitrary CSV value can't be
-            # persisted as-is yet. See
-            # https://github.com/theoleuthardt/backlog-manager/issues/64
-            await create_backlog_entry(
-                session,
-                CreateBacklogEntryParams(
-                    user_id=user_id,
-                    title=title,
-                    genre=_safe_string(record.get(config.genre_column), "Unknown"),
-                    platform=_safe_string(record.get(config.platform_column), "Unknown"),
-                    status=_safe_string(record.get(config.status_column), "Not Started"),
-                    owned=True,
-                    interest=5,
-                    image_link=game_data.image_url,
-                    main_time=Decimal(str(game_data.main_story)),
-                    main_plus_extra_time=Decimal(str(game_data.main_story_with_extras)),
-                    completion_time=Decimal(str(game_data.completionist)),
-                ),
-            )
-            result.success += 1
-        except (NotFoundError, ConflictError, ValidationError, DatabaseError) as error:
-            result.failed += 1
-            result.errors.append(RecordError(title=title, error=str(error)))
-        finally:
-            processed_count += 1
-            if session_id:
-                set_import_progress(session_id, processed_count)
+            search_results = await search_game_on_hltb(title)
 
-    return result
+            if session_id and is_cancelled(session_id):
+                logger.info(
+                    "Import cancelled",
+                    processed=processed_count + 1,
+                    total=len(records),
+                )
+                break
+
+            game_data = search_results[0] if search_results else None
+
+            if game_data is None:
+                result.missing_games.append(
+                    MissingGame(
+                        title=title,
+                        genre=_safe_string(record.get(config.genre_column), "Unknown"),
+                        platform=_safe_string(record.get(config.platform_column), "Unknown"),
+                        status=_safe_string(record.get(config.status_column), "Not Started"),
+                    )
+                )
+                processed_count += 1
+                if session_id:
+                    set_import_progress(session_id, processed_count)
+                continue
+
+            try:
+                # TODO: status is hardcoded because Status is currently a fixed
+                # enum on the DB side, so an arbitrary CSV value can't be
+                # persisted as-is yet. See
+                # https://github.com/theoleuthardt/backlog-manager/issues/64
+                await create_backlog_entry(
+                    session,
+                    CreateBacklogEntryParams(
+                        user_id=user_id,
+                        title=title,
+                        genre=_safe_string(record.get(config.genre_column), "Unknown"),
+                        platform=_safe_string(record.get(config.platform_column), "Unknown"),
+                        status=_safe_string(record.get(config.status_column), "Not Started"),
+                        owned=True,
+                        interest=5,
+                        image_link=game_data.image_url,
+                        main_time=Decimal(str(game_data.main_story)),
+                        main_plus_extra_time=Decimal(str(game_data.main_story_with_extras)),
+                        completion_time=Decimal(str(game_data.completionist)),
+                    ),
+                )
+                result.success += 1
+            except (NotFoundError, ConflictError, ValidationError, DatabaseError) as error:
+                result.failed += 1
+                result.errors.append(RecordError(title=title, error=str(error)))
+            finally:
+                processed_count += 1
+                if session_id:
+                    set_import_progress(session_id, processed_count)
+
+        return result
+    finally:
+        # Runs on every exit path (success, exception, or this coroutine
+        # being cancelled) so a session_id is always freed once this
+        # import is done, rather than leaking progress/cancel/ownership
+        # state for a session_id nobody will ever import with again.
+        # set_import_session_owner() above still protects a *concurrent*
+        # request racing on the same session_id while this import is
+        # still running - the collision case it guards against.
+        if session_id:
+            clear_import_progress(session_id)

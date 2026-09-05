@@ -1,7 +1,10 @@
+import asyncio
+
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.csv import parse_csv
+from backlog_manager_backend.errors import ConflictError
 from backlog_manager_backend.integrations.types import HltbResultData
 from backlog_manager_backend.repositories import backlog_entry_repo, user_repo
 from backlog_manager_backend.schemas.user import CreateUserParams
@@ -215,3 +218,79 @@ def test_import_progress_tracking() -> None:
     parse_csv.clear_import_progress(session_id)
     assert parse_csv.get_import_progress(session_id) == 0
     assert parse_csv.get_cancel_flag(session_id) is False
+
+
+def test_set_import_session_owner_rejects_reassignment_to_different_user() -> None:
+    """Regression test for an IDOR: reusing another user's still-active
+    session_id used to silently transfer ownership to the new caller,
+    letting them read/cancel that user's import via the progress/cancel
+    endpoints."""
+    session_id = "owner-collision-test"
+    parse_csv.set_import_session_owner(session_id, user_id=1)
+
+    try:
+        with pytest.raises(ConflictError):
+            parse_csv.set_import_session_owner(session_id, user_id=2)
+        assert parse_csv.get_import_session_owner(session_id) == 1
+    finally:
+        parse_csv.clear_import_progress(session_id)
+
+
+def test_set_import_session_owner_allows_same_owner_to_reuse_session_id() -> None:
+    session_id = "owner-reuse-test"
+    parse_csv.set_import_session_owner(session_id, user_id=1)
+
+    try:
+        parse_csv.set_import_session_owner(session_id, user_id=1)
+    finally:
+        parse_csv.clear_import_progress(session_id)
+
+
+async def test_import_rejects_session_id_owned_by_another_user_while_in_progress(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The real-world race this guards against is two concurrent HTTP
+    requests reusing the same session_id while the first import is
+    still running - session state is freed once an import finishes (see
+    the finally block in import_backlog_entries_from_csv), so the
+    collision only exists during that window. Simulated here with
+    asyncio directly, since two sequential calls can no longer exercise
+    it now that completed imports free their session_id."""
+    owner = await _make_user(session)
+    intruder = await user_repo.create_user(
+        session,
+        CreateUserParams(
+            username="csvintruder", email="csvintruder@example.com", password_hash="h"
+        ),
+    )
+    session_id = "owner-collision-inflight-test"
+    owner_is_processing = asyncio.Event()
+    release_owner = asyncio.Event()
+
+    async def blocking_search(title: str) -> list[HltbResultData]:
+        owner_is_processing.set()
+        await release_owner.wait()
+        return [_hltb_result(title)]
+
+    monkeypatch.setattr(parse_csv, "search_game_on_hltb", blocking_search)
+
+    owner_task = asyncio.create_task(
+        parse_csv.import_backlog_entries_from_csv(
+            session,
+            owner.id,
+            [{"A": "Celeste", "B": "Platformer", "C": "PC", "D": "Not Started"}],
+            _COLUMN_CONFIG,
+            session_id=session_id,
+        )
+    )
+    try:
+        await owner_is_processing.wait()
+
+        with pytest.raises(ConflictError):
+            await parse_csv.import_backlog_entries_from_csv(
+                session, intruder.id, [], _COLUMN_CONFIG, session_id=session_id
+            )
+    finally:
+        release_owner.set()
+        await owner_task
+        parse_csv.clear_import_progress(session_id)

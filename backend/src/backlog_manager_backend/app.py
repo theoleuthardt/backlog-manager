@@ -9,6 +9,7 @@ from backlog_manager_backend.config import settings
 from backlog_manager_backend.db import engine, provide_db_session
 from backlog_manager_backend.routes.auth import login
 from backlog_manager_backend.routes.backlog import backlog_router
+from backlog_manager_backend.routes.csv import csv_router
 from backlog_manager_backend.routes.games import (
     enriched_search,
     get_cover,
@@ -37,6 +38,7 @@ def create_app() -> Litestar:
             backlog_router,
             user_router,
             admin_user_router,
+            csv_router,
             search_game,
             enriched_search,
             get_game,
