@@ -81,7 +81,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_update_completed_at
+CREATE OR REPLACE TRIGGER trigger_update_completed_at
     BEFORE UPDATE ON "blm-system"."BacklogEntries"
     FOR EACH ROW
     EXECUTE FUNCTION "blm-system".update_completed_at();

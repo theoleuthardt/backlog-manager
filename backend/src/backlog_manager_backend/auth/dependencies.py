@@ -10,6 +10,13 @@ from backlog_manager_backend.schemas.user import User
 
 _BEARER_PREFIX = "Bearer "
 
+# Router-level `security=` value for every router gated by get_current_user
+# or require_admin - references the "BearerAuth" scheme defined once in
+# app.py's OpenAPIConfig(components=...), so the generated OpenAPI spec (and
+# therefore the frontend's generated client) correctly reflects which
+# operations need an Authorization header.
+BEARER_SECURITY_REQUIREMENT = [{"BearerAuth": []}]
+
 
 async def get_current_user(request: Request, db_session: NamedDependency[AsyncSession]) -> User:
     auth_header = request.headers.get("Authorization")

@@ -1,11 +1,24 @@
 from litestar import Litestar
+from litestar.config.cors import CORSConfig
 from litestar.di import Provide
+from litestar.openapi import OpenAPIConfig
+from litestar.openapi.spec import Components, SecurityScheme
 
 from backlog_manager_backend.bootstrap import bootstrap_initial_admin
+from backlog_manager_backend.config import settings
 from backlog_manager_backend.db import engine, provide_db_session
 from backlog_manager_backend.routes.auth import login
 from backlog_manager_backend.routes.backlog import backlog_router
 from backlog_manager_backend.routes.csv import csv_router
+from backlog_manager_backend.routes.games import (
+    enriched_search,
+    get_cover,
+    get_game,
+    get_game_time_to_beat,
+    get_genre,
+    get_platform,
+    search_game,
+)
 from backlog_manager_backend.routes.health import health
 from backlog_manager_backend.routes.user import admin_user_router, user_router
 
@@ -26,10 +39,36 @@ def create_app() -> Litestar:
             user_router,
             admin_user_router,
             csv_router,
+            search_game,
+            enriched_search,
+            get_game,
+            get_game_time_to_beat,
+            get_platform,
+            get_cover,
+            get_genre,
         ],
         dependencies={"db_session": Provide(provide_db_session)},
         on_startup=[bootstrap_initial_admin],
         on_shutdown=[close_db_connection],
+        # The frontend calls this API directly, cross-origin - no Next.js
+        # proxy in front. allow_credentials stays False (the default):
+        # auth is a Bearer token in the Authorization header, not a
+        # cookie, so the browser never needs to send credentials on a
+        # cross-origin request here.
+        cors_config=CORSConfig(
+            allow_origins=settings.cors_allowed_origins_list,
+            allow_methods=["GET", "POST", "PUT", "DELETE"],
+            allow_headers=["Content-Type", "Authorization"],
+        ),
+        openapi_config=OpenAPIConfig(
+            title="Backlog Manager API",
+            version="1.0.0",
+            components=Components(
+                security_schemes={
+                    "BearerAuth": SecurityScheme(type="http", scheme="bearer", bearer_format="JWT")
+                }
+            ),
+        ),
     )
 
 
