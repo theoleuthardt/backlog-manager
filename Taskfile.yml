@@ -48,12 +48,12 @@ tasks:
   db:up:
     desc: Start local Postgres + pgAdmin via compose.yml
     cmds:
-      - docker compose up -d db db-monitoring
+      - podman compose up -d db db-monitoring
 
   db:down:
     desc: Stop the local Postgres + pgAdmin (only those two services)
     cmds:
-      - docker compose stop db db-monitoring
+      - podman compose stop db db-monitoring
 
   frontend:install:
     desc: Install frontend dependencies

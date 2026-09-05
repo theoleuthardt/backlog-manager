@@ -1,6 +1,6 @@
 # Backlog Manager 🎮📒
 
-A web-based backlog manager as NextJS full stack app with authentication and PostgreSQL database, deployed via Docker.
+A web-based backlog manager as NextJS full stack app with authentication and PostgreSQL database, deployed via Podman.
 This is a private project of mine and still work in progress. 
 
 ## Overview 
@@ -29,4 +29,4 @@ games according to categories such as "Games I still want to play", "Games I'm c
 - **Frontend:** NextJS (T3 Stack), in `frontend/`
 - **Backend:** migrating from TypeScript/tRPC to Python/Litestar (`backend/`) — see issue #104. Business logic currently still lives in `frontend/src/server/` until the migration's later steps land.
 - **Database:** PostgreSQL (pg-package on the frontend today; SQLAlchemy planned for the backend)
-- **Deployment:** Docker/Multi Platform Apps with Tauri
+- **Deployment:** Podman/Multi Platform Apps with Tauri

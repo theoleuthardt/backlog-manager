@@ -27,7 +27,7 @@ COPY . .
 ARG NODE_ENV
 ENV NODE_ENV=$NODE_ENV
 
-# Skip environment validation during Docker build
+# Skip environment validation during the container build
 # Auth and database secrets are provided at runtime, not build time
 ENV SKIP_ENV_VALIDATION=1
 

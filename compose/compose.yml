@@ -1,4 +1,4 @@
-# LOCAL DOCKER COMPOSE FILE FOR POSTGRESQL DB
+# LOCAL PODMAN COMPOSE FILE FOR POSTGRESQL DB
 # Note: The postgres image requires individual env vars (POSTGRES_USER, etc.)
 # Your app uses POSTGRES_URL to connect, which should match these values
 
