@@ -77,9 +77,16 @@ export function CreationToolForm() {
         owned,
         interest,
         imageLink: imageUrl,
-        mainTime: mainStory ?? undefined,
-        mainPlusExtraTime: mainStoryWithExtras ?? undefined,
-        completionTime: completionist ?? undefined,
+        mainTime:
+          Number.isFinite(mainStory) && mainStory > 0 ? mainStory : undefined,
+        mainPlusExtraTime:
+          Number.isFinite(mainStoryWithExtras) && mainStoryWithExtras > 0
+            ? mainStoryWithExtras
+            : undefined,
+        completionTime:
+          Number.isFinite(completionist) && completionist > 0
+            ? completionist
+            : undefined,
         reviewStars: reviewStars ?? undefined,
         review: review ?? undefined,
         note: note ?? undefined,
