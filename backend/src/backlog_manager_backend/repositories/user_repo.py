@@ -1,3 +1,4 @@
+import msgspec
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -65,13 +66,13 @@ async def update_user(session: AsyncSession, params: UpdateUserParams) -> User:
     if model is None:
         raise NotFoundError("User", params.user_id)
 
-    if params.username is not None:
+    if params.username is not msgspec.UNSET:
         model.username = params.username
-    if params.email is not None:
+    if params.email is not msgspec.UNSET:
         model.email = params.email
-    if params.password_hash is not None:
+    if params.password_hash is not msgspec.UNSET:
         model.password_hash = params.password_hash
-    if params.steam_id is not None:
+    if params.steam_id is not msgspec.UNSET:
         model.steam_id = params.steam_id
     model.updated_at = now_truncated_to_minute()
 

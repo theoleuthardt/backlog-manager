@@ -91,21 +91,77 @@ async def test_update_backlog_entry_to_completed_sets_completed_at(
     assert updated.completed_at is not None
 
 
+async def test_update_backlog_entry_can_clear_nullable_field_with_explicit_none(
+    session: AsyncSession,
+) -> None:
+    user = await _make_user(session)
+    entry = await backlog_entry_repo.create_backlog_entry(
+        session,
+        CreateBacklogEntryParams(
+            user_id=user.id,
+            title="Elden Ring",
+            genre="RPG",
+            platform="PC",
+            status="Completed",
+            owned=True,
+            interest=8,
+            review_stars=5,
+            note="loved it",
+        ),
+    )
+    assert entry.review_stars == 5
+    assert entry.note == "loved it"
+
+    cleared = await backlog_entry_repo.update_backlog_entry(
+        session,
+        UpdateBacklogEntryParams(
+            backlog_entry_id=entry.backlog_entry_id, review_stars=None, note=None
+        ),
+    )
+
+    assert cleared.review_stars is None
+    assert cleared.note is None
+    # fields not mentioned in the update (left at UNSET) stay untouched
+    assert cleared.title == "Elden Ring"
+
+
+async def test_update_backlog_entry_omitted_fields_stay_unchanged(
+    session: AsyncSession,
+) -> None:
+    """The bug this guards against: using a plain None default for every
+    optional field made "not provided" and "explicitly cleared"
+    indistinguishable, so a partial update calling anything other than
+    the literal-provided fields would touch every column."""
+    user = await _make_user(session)
+    entry = await _make_entry(session, user.id, title="Original Title")
+
+    updated = await backlog_entry_repo.update_backlog_entry(
+        session, UpdateBacklogEntryParams(backlog_entry_id=entry.backlog_entry_id)
+    )
+
+    assert updated.title == "Original Title"
+    assert updated.genre == entry.genre
+    assert updated.status == entry.status
+
+
 async def test_update_backlog_entry_away_from_completed_clears_completed_at(
     session: AsyncSession,
 ) -> None:
     user = await _make_user(session)
-    entry = await _make_entry(session, user.id, status="Completed")
-    assert (await backlog_entry_repo.get_backlog_entry_by_id(
-        session, entry.backlog_entry_id
-    )).completed_at is None  # never was "In Progress" first, trigger only fires on UPDATE
+    entry = await _make_entry(session, user.id, status="In Progress")
 
     completed = await backlog_entry_repo.update_backlog_entry(
+        session,
+        UpdateBacklogEntryParams(backlog_entry_id=entry.backlog_entry_id, status="Completed"),
+    )
+    assert completed.completed_at is not None
+
+    dropped = await backlog_entry_repo.update_backlog_entry(
         session, UpdateBacklogEntryParams(backlog_entry_id=entry.backlog_entry_id, status="Dropped")
     )
 
-    assert completed.status == "Dropped"
-    assert completed.completed_at is None
+    assert dropped.status == "Dropped"
+    assert dropped.completed_at is None
 
 
 async def test_update_backlog_entry_not_found(session: AsyncSession) -> None:

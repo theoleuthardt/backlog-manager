@@ -20,8 +20,12 @@ class CreateUserParams(msgspec.Struct):
 
 
 class UpdateUserParams(msgspec.Struct):
+    """UNSET (default) means "field omitted, leave unchanged"; an
+    explicit None (only possible for nullable columns, i.e. steam_id)
+    means "clear this field" - the two aren't interchangeable."""
+
     user_id: int
-    username: str | None = None
-    email: str | None = None
-    password_hash: str | None = None
-    steam_id: str | None = None
+    username: str | msgspec.UnsetType = msgspec.UNSET
+    email: str | msgspec.UnsetType = msgspec.UNSET
+    password_hash: str | msgspec.UnsetType = msgspec.UNSET
+    steam_id: str | None | msgspec.UnsetType = msgspec.UNSET

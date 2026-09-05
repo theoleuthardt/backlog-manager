@@ -1,3 +1,4 @@
+import msgspec
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -119,33 +120,33 @@ async def update_backlog_entry(
     if model is None:
         raise NotFoundError("BacklogEntry", params.backlog_entry_id)
 
-    if params.title is not None:
+    if params.title is not msgspec.UNSET:
         model.title = params.title
-    if params.genre is not None:
+    if params.genre is not msgspec.UNSET:
         model.genre = params.genre
-    if params.platform is not None:
+    if params.platform is not msgspec.UNSET:
         model.platform = params.platform
-    if params.status is not None:
+    if params.status is not msgspec.UNSET:
         model.status = params.status
-    if params.owned is not None:
+    if params.owned is not msgspec.UNSET:
         model.owned = params.owned
-    if params.interest is not None:
+    if params.interest is not msgspec.UNSET:
         model.interest = params.interest
-    if params.release_date is not None:
+    if params.release_date is not msgspec.UNSET:
         model.release_date = params.release_date
-    if params.image_link is not None:
+    if params.image_link is not msgspec.UNSET:
         model.image_link = params.image_link
-    if params.main_time is not None:
+    if params.main_time is not msgspec.UNSET:
         model.main_time = params.main_time
-    if params.main_plus_extra_time is not None:
+    if params.main_plus_extra_time is not msgspec.UNSET:
         model.main_plus_extra_time = params.main_plus_extra_time
-    if params.completion_time is not None:
+    if params.completion_time is not msgspec.UNSET:
         model.completion_time = params.completion_time
-    if params.review_stars is not None:
+    if params.review_stars is not msgspec.UNSET:
         model.review_stars = params.review_stars
-    if params.review is not None:
+    if params.review is not msgspec.UNSET:
         model.review = params.review
-    if params.note is not None:
+    if params.note is not msgspec.UNSET:
         model.note = params.note
     model.updated_at = now_truncated_to_minute()
 

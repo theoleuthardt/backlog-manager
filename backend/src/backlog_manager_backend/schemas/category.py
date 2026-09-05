@@ -21,7 +21,11 @@ class CreateCategoryParams(msgspec.Struct):
 
 
 class UpdateCategoryParams(msgspec.Struct):
+    """UNSET (default) means "field omitted, leave unchanged"; an
+    explicit None (only possible for description, the one nullable
+    column here) means "clear this field"."""
+
     category_id: int
-    category_name: str | None = None
-    color: str | None = None
-    description: str | None = None
+    category_name: str | msgspec.UnsetType = msgspec.UNSET
+    color: str | msgspec.UnsetType = msgspec.UNSET
+    description: str | None | msgspec.UnsetType = msgspec.UNSET

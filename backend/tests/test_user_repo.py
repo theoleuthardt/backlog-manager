@@ -2,6 +2,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.errors import ConflictError, NotFoundError
+from backlog_manager_backend.models.user import User as UserModel
 from backlog_manager_backend.repositories import user_repo
 from backlog_manager_backend.schemas.user import CreateUserParams, UpdateUserParams
 
@@ -90,6 +91,23 @@ async def test_update_user_partial(session: AsyncSession) -> None:
 
     assert updated.name == "renamed"
     assert updated.email == "original@example.com"  # unchanged fields stay untouched
+
+
+async def test_update_user_can_clear_steam_id_with_explicit_none(
+    session: AsyncSession,
+) -> None:
+    # steam_id isn't exposed on the User response schema (matching the
+    # original TS mapUser(), which never included it either), so verify
+    # against the underlying model directly instead.
+    created = await _make_user(session, steam_id="steam123")
+    assert (await session.get(UserModel, created.id)).steam_id == "steam123"
+
+    updated = await user_repo.update_user(
+        session, UpdateUserParams(user_id=created.id, steam_id=None)
+    )
+
+    assert (await session.get(UserModel, created.id)).steam_id is None
+    assert updated.name == created.name  # omitted field stays untouched
 
 
 async def test_update_user_not_found(session: AsyncSession) -> None:

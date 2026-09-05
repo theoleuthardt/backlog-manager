@@ -1,3 +1,4 @@
+import msgspec
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -68,11 +69,11 @@ async def update_category(session: AsyncSession, params: UpdateCategoryParams) -
     if model is None:
         raise NotFoundError("Category", params.category_id)
 
-    if params.category_name is not None:
+    if params.category_name is not msgspec.UNSET:
         model.name = params.category_name
-    if params.color is not None:
+    if params.color is not msgspec.UNSET:
         model.color = params.color
-    if params.description is not None:
+    if params.description is not msgspec.UNSET:
         model.description = params.description
     model.updated_at = now_truncated_to_minute()
 

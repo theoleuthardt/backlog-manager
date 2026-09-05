@@ -45,21 +45,27 @@ class CreateBacklogEntryParams(msgspec.Struct):
 
 
 class UpdateBacklogEntryParams(msgspec.Struct):
+    """Every optional field defaults to UNSET (field omitted from the
+    update - leave unchanged), distinct from an explicit None (field
+    provided as null - clear it). Using a plain None default for both
+    would make it impossible to ever clear a nullable column such as
+    review_stars or note."""
+
     backlog_entry_id: int
-    title: str | None = None
-    genre: str | None = None
-    platform: str | None = None
-    status: str | None = None
-    owned: bool | None = None
-    interest: int | None = None
-    release_date: date | None = None
-    image_link: str | None = None
-    main_time: Decimal | None = None
-    main_plus_extra_time: Decimal | None = None
-    completion_time: Decimal | None = None
-    review_stars: int | None = None
-    review: str | None = None
-    note: str | None = None
+    title: str | msgspec.UnsetType = msgspec.UNSET
+    genre: str | msgspec.UnsetType = msgspec.UNSET
+    platform: str | msgspec.UnsetType = msgspec.UNSET
+    status: str | msgspec.UnsetType = msgspec.UNSET
+    owned: bool | msgspec.UnsetType = msgspec.UNSET
+    interest: int | msgspec.UnsetType = msgspec.UNSET
+    release_date: date | None | msgspec.UnsetType = msgspec.UNSET
+    image_link: str | None | msgspec.UnsetType = msgspec.UNSET
+    main_time: Decimal | None | msgspec.UnsetType = msgspec.UNSET
+    main_plus_extra_time: Decimal | None | msgspec.UnsetType = msgspec.UNSET
+    completion_time: Decimal | None | msgspec.UnsetType = msgspec.UNSET
+    review_stars: int | None | msgspec.UnsetType = msgspec.UNSET
+    review: str | None | msgspec.UnsetType = msgspec.UNSET
+    note: str | None | msgspec.UnsetType = msgspec.UNSET
 
 
 class GetEntriesByStatusParams(msgspec.Struct):

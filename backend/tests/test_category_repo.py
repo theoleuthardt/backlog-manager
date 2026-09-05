@@ -71,6 +71,25 @@ async def test_update_category_partial(session: AsyncSession) -> None:
     assert updated.name == "Original"
 
 
+async def test_update_category_can_clear_description_with_explicit_none(
+    session: AsyncSession,
+) -> None:
+    user = await _make_user(session)
+    category = await category_repo.create_category(
+        session,
+        CreateCategoryParams(
+            user_id=user.id, category_name="Games", description="Has a description"
+        ),
+    )
+
+    updated = await category_repo.update_category(
+        session, UpdateCategoryParams(category_id=category.category_id, description=None)
+    )
+
+    assert updated.description is None
+    assert updated.name == "Games"  # omitted field stays untouched
+
+
 async def test_update_category_not_found(session: AsyncSession) -> None:
     with pytest.raises(NotFoundError):
         await category_repo.update_category(
