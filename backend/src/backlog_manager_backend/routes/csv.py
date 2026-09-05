@@ -1,8 +1,8 @@
 from litestar import Router, get, post
 from litestar.di import NamedDependency, Provide
-from litestar.exceptions import NotFoundException
+from litestar.exceptions import ClientException, NotFoundException
 from litestar.params import FromPath
-from litestar.status_codes import HTTP_200_OK, HTTP_204_NO_CONTENT
+from litestar.status_codes import HTTP_200_OK, HTTP_204_NO_CONTENT, HTTP_409_CONFLICT
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.auth.dependencies import get_current_user
@@ -16,6 +16,7 @@ from backlog_manager_backend.csv.parse_csv import (
     parse_csv_content,
     set_cancel_flag,
 )
+from backlog_manager_backend.errors import ConflictError
 from backlog_manager_backend.schemas.csv import (
     ImportCsvRequest,
     ImportProgressResponse,
@@ -55,9 +56,12 @@ async def import_csv(
         platform_column=data.platform_column,
         status_column=data.status_column,
     )
-    return await import_backlog_entries_from_csv(
-        db_session, current_user.id, records, config, data.session_id
-    )
+    try:
+        return await import_backlog_entries_from_csv(
+            db_session, current_user.id, records, config, data.session_id
+        )
+    except ConflictError as error:
+        raise ClientException(str(error), status_code=HTTP_409_CONFLICT) from error
 
 
 @get("/api/csv/import/{session_id:str}/progress")

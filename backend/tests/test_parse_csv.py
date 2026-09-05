@@ -2,6 +2,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.csv import parse_csv
+from backlog_manager_backend.errors import ConflictError
 from backlog_manager_backend.integrations.types import HltbResultData
 from backlog_manager_backend.repositories import backlog_entry_repo, user_repo
 from backlog_manager_backend.schemas.user import CreateUserParams
@@ -215,3 +216,54 @@ def test_import_progress_tracking() -> None:
     parse_csv.clear_import_progress(session_id)
     assert parse_csv.get_import_progress(session_id) == 0
     assert parse_csv.get_cancel_flag(session_id) is False
+
+
+def test_set_import_session_owner_rejects_reassignment_to_different_user() -> None:
+    """Regression test for an IDOR: reusing another user's still-active
+    session_id used to silently transfer ownership to the new caller,
+    letting them read/cancel that user's import via the progress/cancel
+    endpoints."""
+    session_id = "owner-collision-test"
+    parse_csv.set_import_session_owner(session_id, user_id=1)
+
+    try:
+        with pytest.raises(ConflictError):
+            parse_csv.set_import_session_owner(session_id, user_id=2)
+        assert parse_csv.get_import_session_owner(session_id) == 1
+    finally:
+        parse_csv.clear_import_progress(session_id)
+
+
+def test_set_import_session_owner_allows_same_owner_to_reuse_session_id() -> None:
+    session_id = "owner-reuse-test"
+    parse_csv.set_import_session_owner(session_id, user_id=1)
+
+    try:
+        parse_csv.set_import_session_owner(session_id, user_id=1)
+    finally:
+        parse_csv.clear_import_progress(session_id)
+
+
+async def test_import_rejects_session_id_already_owned_by_another_user(
+    session: AsyncSession,
+) -> None:
+    owner = await _make_user(session)
+    intruder = await user_repo.create_user(
+        session,
+        CreateUserParams(
+            username="csvintruder", email="csvintruder@example.com", password_hash="h"
+        ),
+    )
+    session_id = "owner-collision-import-test"
+
+    try:
+        await parse_csv.import_backlog_entries_from_csv(
+            session, owner.id, [], _COLUMN_CONFIG, session_id=session_id
+        )
+
+        with pytest.raises(ConflictError):
+            await parse_csv.import_backlog_entries_from_csv(
+                session, intruder.id, [], _COLUMN_CONFIG, session_id=session_id
+            )
+    finally:
+        parse_csv.clear_import_progress(session_id)
