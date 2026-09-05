@@ -195,3 +195,65 @@ async def test_enriched_search_returns_503_when_igdb_not_configured(postgres_url
         response = client.get("/api/games/enriched-search", params={"search_term": "Celeste"})
 
     assert response.status_code == 503
+
+
+async def test_search_game_returns_503_on_transport_failure(
+    configured_igdb: ModuleType, monkeypatch: pytest.MonkeyPatch, postgres_url: str
+) -> None:
+    """Regression test: a connection failure during the actual IGDB data
+    query (after a token was already obtained) used to propagate
+    uncaught as httpx.RequestError, becoming a generic 500 instead of
+    503."""
+    from backlog_manager_backend.app import create_app
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "id.twitch.tv":
+            return httpx.Response(
+                200, json={"access_token": "tok", "expires_in": 3600, "token_type": "bearer"}
+            )
+        raise httpx.ConnectError("connection refused", request=request)
+
+    _mock_igdb(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get("/api/games/search", params={"search_term": "Zelda"})
+
+    assert response.status_code == 503
+
+
+async def test_search_game_returns_503_when_token_request_fails(
+    configured_igdb: ModuleType, monkeypatch: pytest.MonkeyPatch, postgres_url: str
+) -> None:
+    """Same failure class, one step earlier: a transport failure while
+    acquiring the IGDB access token itself."""
+    from backlog_manager_backend.app import create_app
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("connection refused", request=request)
+
+    _mock_igdb(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get("/api/games/search", params={"search_term": "Zelda"})
+
+    assert response.status_code == 503
+
+
+async def test_enriched_search_returns_503_on_transport_failure(
+    configured_igdb: ModuleType, monkeypatch: pytest.MonkeyPatch, postgres_url: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "id.twitch.tv":
+            return httpx.Response(
+                200, json={"access_token": "tok", "expires_in": 3600, "token_type": "bearer"}
+            )
+        raise httpx.ConnectError("connection refused", request=request)
+
+    _mock_igdb(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get("/api/games/enriched-search", params={"search_term": "Celeste"})
+
+    assert response.status_code == 503
