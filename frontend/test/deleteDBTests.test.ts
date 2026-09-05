@@ -38,7 +38,7 @@ describe('Database Delete Operations', () => {
             database: 'backlog-manager-db'
         })
 
-        const sql = fs.readFileSync(path.resolve(__dirname, '../postgres/backlogmanagerdb-init.sql'), 'utf-8')
+        const sql = fs.readFileSync(path.resolve(__dirname, '../../postgres/backlogmanagerdb-init.sql'), 'utf-8')
 
         await postgresPool.query(sql)
     }, 60000)

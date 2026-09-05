@@ -26,7 +26,7 @@ games according to categories such as "Games I still want to play", "Games I'm c
 
 ## Architecture
 
-- **Frontend:** NextJS (T3 Stack)
-- **Backend:** Typescript
-- **Database:** PostgreSQL (pg-package)
+- **Frontend:** NextJS (T3 Stack), in `frontend/`
+- **Backend:** migrating from TypeScript/tRPC to Python/Litestar (`backend/`) — see issue #104. Business logic currently still lives in `frontend/src/server/` until the migration's later steps land.
+- **Database:** PostgreSQL (pg-package on the frontend today; SQLAlchemy planned for the backend)
 - **Deployment:** Docker/Multi Platform Apps with Tauri

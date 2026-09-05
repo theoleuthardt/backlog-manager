@@ -43,8 +43,8 @@ jobs:
       - name: Build Docker image and Push to DockerHub if requested
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: ./Dockerfile
+          context: ./frontend
+          file: ./frontend/Containerfile
           push: ${{ github.event_name == 'workflow_dispatch' && inputs.push_to_dockerhub }}
           build-args: |
             NODE_ENV=production
