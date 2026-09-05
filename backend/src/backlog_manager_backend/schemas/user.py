@@ -56,6 +56,20 @@ class PublicUser(msgspec.Struct):
         )
 
 
+class PublicUsername(msgspec.Struct):
+    """The only fields safe to return from an unauthenticated username
+    lookup - no email, is_admin, or timestamps. PublicUser is for
+    authenticated self/admin views only; it must never back a public
+    endpoint."""
+
+    id: int
+    name: str
+
+    @classmethod
+    def from_user(cls, user: User) -> "PublicUsername":
+        return cls(id=user.id, name=user.name)
+
+
 class UpdateOwnUserRequest(msgspec.Struct):
     """Same UNSET-vs-None semantics as UpdateUserParams. `password` is
     the plaintext new password (hashed server-side before it ever

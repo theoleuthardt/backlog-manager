@@ -59,4 +59,5 @@ def test_login_is_rate_limited(postgres_url: str) -> None:
             for _ in range(11)
         ]
 
+    assert [response.status_code for response in responses[:10]] == [401] * 10
     assert responses[-1].status_code == 429

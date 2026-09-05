@@ -63,9 +63,7 @@ async def test_update_own_user_hashes_new_password(postgres_url: str, create_and
     assert new_login.status_code == 200
 
 
-async def test_update_own_user_rejects_short_password(
-    postgres_url: str, create_and_login
-) -> None:
+async def test_update_own_user_rejects_short_password(postgres_url: str, create_and_login) -> None:
     from backlog_manager_backend.app import create_app
 
     app = create_app()
@@ -110,7 +108,13 @@ async def test_delete_own_user_removes_account(postgres_url: str, create_and_log
     assert login_after_delete.status_code == 401
 
 
-async def test_get_user_by_username_is_public(postgres_url: str, create_and_login) -> None:
+async def test_get_user_by_username_is_public_but_excludes_sensitive_fields(
+    postgres_url: str, create_and_login
+) -> None:
+    """Regression test: this endpoint requires no authentication (it
+    doesn't declare current_user, so the router's auth dependency never
+    runs), so it must never return email, is_admin, or timestamps -
+    only enough to confirm the username exists."""
     from backlog_manager_backend.app import create_app
 
     app = create_app()
@@ -120,7 +124,23 @@ async def test_get_user_by_username_is_public(postgres_url: str, create_and_logi
         response = client.get("/api/user/by-username/publiclookup")
 
     assert response.status_code == 200
-    assert response.json()["email"] == "publiclookup@example.com"
+    body = response.json()
+    assert body["name"] == "publiclookup"
+    assert "email" not in body
+    assert "is_admin" not in body
+    assert "created_at" not in body
+
+
+async def test_user_responses_are_not_cached(postgres_url: str, create_and_login) -> None:
+    from backlog_manager_backend.app import create_app
+
+    app = create_app()
+
+    with TestClient(app=app) as client:
+        headers = await create_and_login(client, "nocache@example.com")
+        response = client.get("/api/user/me", headers=headers)
+
+    assert response.headers["cache-control"] == "no-store"
 
 
 async def test_get_user_by_username_returns_404_for_unknown_username(postgres_url: str) -> None:
@@ -191,9 +211,7 @@ async def test_admin_can_create_list_update_and_delete_users(
         delete_response = client.delete(
             f"/api/admin/users/{created_user_id}", headers=admin_headers
         )
-        get_after_delete = client.get(
-            f"/api/admin/users/{created_user_id}", headers=admin_headers
-        )
+        get_after_delete = client.get(f"/api/admin/users/{created_user_id}", headers=admin_headers)
 
     assert {user["email"] for user in list_response.json()} >= {
         "theadmin@example.com",

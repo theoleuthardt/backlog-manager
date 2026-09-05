@@ -1,7 +1,8 @@
 import pytest
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backlog_manager_backend.errors import ConflictError, NotFoundError
+from backlog_manager_backend.errors import ConflictError, NotFoundError, ValidationError
 from backlog_manager_backend.models.user import User as UserModel
 from backlog_manager_backend.repositories import user_repo
 from backlog_manager_backend.schemas.user import CreateUserParams, UpdateUserParams
@@ -13,8 +14,18 @@ async def _make_user(session: AsyncSession, **overrides: object) -> object:
         email=overrides.get("email", "testuser@example.com"),
         password_hash=overrides.get("password_hash", "hashed-password"),
         steam_id=overrides.get("steam_id"),
+        is_admin=overrides.get("is_admin", False),
     )
     return await user_repo.create_user(session, params)
+
+
+async def _clear_all_admins(session: AsyncSession) -> None:
+    """The isolated `session` fixture still sees every other test's
+    real, permanently-committed rows (they share one Postgres
+    container for the whole run) - this DELETE only affects this
+    test's own rolled-back transaction, giving a deterministic "no
+    admins yet" starting point without touching any other test's data."""
+    await session.execute(delete(UserModel).where(UserModel.is_admin.is_(True)))
 
 
 async def test_create_user(session: AsyncSession) -> None:
@@ -130,3 +141,55 @@ async def test_delete_user(session: AsyncSession) -> None:
 async def test_delete_user_not_found(session: AsyncSession) -> None:
     with pytest.raises(NotFoundError):
         await user_repo.delete_user(session, 999_999_999)
+
+
+async def test_delete_user_rejects_deleting_the_last_admin(session: AsyncSession) -> None:
+    await _clear_all_admins(session)
+    admin = await _make_user(session, email="onlyadmin@example.com", is_admin=True)
+
+    with pytest.raises(ValidationError):
+        await user_repo.delete_user(session, admin.id)
+
+
+async def test_delete_user_allows_deleting_an_admin_when_another_remains(
+    session: AsyncSession,
+) -> None:
+    await _clear_all_admins(session)
+    await _make_user(session, username="admin1", email="admin1@example.com", is_admin=True)
+    admin2 = await _make_user(session, username="admin2", email="admin2@example.com", is_admin=True)
+
+    deleted = await user_repo.delete_user(session, admin2.id)
+
+    assert deleted.id == admin2.id
+
+
+async def test_update_user_rejects_demoting_the_last_admin(session: AsyncSession) -> None:
+    await _clear_all_admins(session)
+    admin = await _make_user(session, email="lastadmin@example.com", is_admin=True)
+
+    with pytest.raises(ValidationError):
+        await user_repo.update_user(session, UpdateUserParams(user_id=admin.id, is_admin=False))
+
+
+async def test_update_user_allows_demoting_an_admin_when_another_remains(
+    session: AsyncSession,
+) -> None:
+    await _clear_all_admins(session)
+    await _make_user(session, username="admin1b", email="admin1b@example.com", is_admin=True)
+    admin2 = await _make_user(
+        session, username="admin2b", email="admin2b@example.com", is_admin=True
+    )
+
+    updated = await user_repo.update_user(
+        session, UpdateUserParams(user_id=admin2.id, is_admin=False)
+    )
+
+    assert updated.is_admin is False
+
+
+async def test_update_user_allows_promoting_a_user_to_admin(session: AsyncSession) -> None:
+    user = await _make_user(session, email="promoteme@example.com", is_admin=False)
+
+    updated = await user_repo.update_user(session, UpdateUserParams(user_id=user.id, is_admin=True))
+
+    assert updated.is_admin is True

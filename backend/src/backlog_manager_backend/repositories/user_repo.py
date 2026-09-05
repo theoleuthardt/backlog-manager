@@ -1,12 +1,25 @@
 import msgspec
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backlog_manager_backend.errors import NotFoundError, handle_database_error
+from backlog_manager_backend.errors import NotFoundError, ValidationError, handle_database_error
 from backlog_manager_backend.models.user import User as UserModel
 from backlog_manager_backend.schemas.user import CreateUserParams, UpdateUserParams, User
 from backlog_manager_backend.utils import now_truncated_to_minute
+
+_LAST_ADMIN_ERROR = "Cannot remove the last remaining admin"
+
+
+async def _is_last_admin(session: AsyncSession, model: UserModel) -> bool:
+    if not model.is_admin:
+        return False
+    other_admins = await session.scalar(
+        select(func.count())
+        .select_from(UserModel)
+        .where(UserModel.is_admin.is_(True), UserModel.id != model.id)
+    )
+    return not other_admins
 
 
 def _to_schema(model: UserModel) -> User:
@@ -68,6 +81,9 @@ async def update_user(session: AsyncSession, params: UpdateUserParams) -> User:
     if model is None:
         raise NotFoundError("User", params.user_id)
 
+    if params.is_admin is False and await _is_last_admin(session, model):
+        raise ValidationError(_LAST_ADMIN_ERROR)
+
     if params.username is not msgspec.UNSET:
         model.username = params.username
     if params.email is not msgspec.UNSET:
@@ -93,6 +109,9 @@ async def delete_user(session: AsyncSession, user_id: int) -> User:
     model = await session.get(UserModel, user_id)
     if model is None:
         raise NotFoundError("User", user_id)
+
+    if await _is_last_admin(session, model):
+        raise ValidationError(_LAST_ADMIN_ERROR)
 
     schema = _to_schema(model)
     await session.delete(model)

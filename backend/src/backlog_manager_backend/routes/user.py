@@ -1,4 +1,5 @@
 from litestar import Router, delete, get, post, put
+from litestar.datastructures import CacheControlHeader
 from litestar.di import NamedDependency, Provide
 from litestar.exceptions import ClientException, NotFoundException
 from litestar.params import FromPath
@@ -12,12 +13,18 @@ from backlog_manager_backend.repositories import user_repo
 from backlog_manager_backend.schemas.user import (
     CreateUserRequest,
     PublicUser,
+    PublicUsername,
     UpdateOwnUserRequest,
     UpdateUserAdminRequest,
     UpdateUserParams,
     User,
 )
 from backlog_manager_backend.services.auth_service import create_user, validate_password_strength
+
+# Every response below includes email and/or is_admin - a private cache
+# (browser) must not reuse one of these for a different user after e.g. an
+# account switch on a shared machine.
+_NO_STORE = CacheControlHeader(no_store=True)
 
 _USER_NOT_FOUND = "User not found"
 
@@ -70,18 +77,21 @@ async def delete_own_user(
     db_session: NamedDependency[AsyncSession],
     current_user: NamedDependency[User],
 ) -> None:
-    await user_repo.delete_user(db_session, current_user.id)
+    try:
+        await user_repo.delete_user(db_session, current_user.id)
+    except ValidationError as error:
+        raise ClientException(str(error)) from error
 
 
 @get("/api/user/by-username/{username:str}")
 async def get_user_by_username(
     username: FromPath[str],
     db_session: NamedDependency[AsyncSession],
-) -> PublicUser:
+) -> PublicUsername:
     user = await user_repo.get_user_by_username(db_session, username)
     if user is None:
         raise NotFoundException(_USER_NOT_FOUND)
-    return PublicUser.from_user(user)
+    return PublicUsername.from_user(user)
 
 
 @post("/api/admin/users", status_code=HTTP_201_CREATED)
@@ -161,12 +171,15 @@ async def delete_user_admin(
         await user_repo.delete_user(db_session, user_id)
     except NotFoundError as error:
         raise NotFoundException(_USER_NOT_FOUND) from error
+    except ValidationError as error:
+        raise ClientException(str(error)) from error
 
 
 user_router = Router(
     path="",
     route_handlers=[get_own_user, update_own_user, delete_own_user, get_user_by_username],
     dependencies={"current_user": Provide(get_current_user)},
+    cache_control=_NO_STORE,
 )
 
 admin_user_router = Router(
@@ -182,4 +195,5 @@ admin_user_router = Router(
         "authenticated_user": Provide(get_current_user),
         "current_user": Provide(require_admin),
     },
+    cache_control=_NO_STORE,
 )
