@@ -29,4 +29,19 @@ games according to categories such as "Games I still want to play", "Games I'm c
 - **Frontend:** NextJS (T3 Stack), in `frontend/`
 - **Backend:** migrating from TypeScript/tRPC to Python/Litestar (`backend/`) — see issue #104. Business logic currently still lives in `frontend/src/server/` until the migration's later steps land.
 - **Database:** PostgreSQL (pg-package on the frontend today; SQLAlchemy planned for the backend)
-- **Deployment:** Podman/Multi Platform Apps with Tauri
+- **Deployment:** Podman/Multi-Platform Apps with Tauri
+
+## Local Development
+
+Requires [go-task](https://taskfile.dev) and [Podman](https://podman.io/) with a
+Compose provider installed (`podman-compose`, e.g. `brew install podman-compose`
+on macOS) — `podman compose` delegates to whichever provider is on your `PATH`.
+
+```bash
+task install   # npm install (frontend) + uv sync (backend)
+task db:up     # start local Postgres + pgAdmin
+task dev       # Next.js dev server
+```
+
+See `Taskfile.yml` (`task --list`) for the full command surface, and
+`CLAUDE.md` for more detail on the project's structure and workflows.
