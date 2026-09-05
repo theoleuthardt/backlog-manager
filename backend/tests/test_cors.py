@@ -10,11 +10,15 @@ def test_allows_configured_origin(postgres_url: str) -> None:
             headers={
                 "Origin": "http://localhost:3000",
                 "Access-Control-Request-Method": "GET",
+                "Access-Control-Request-Headers": "Authorization, Content-Type",
             },
         )
 
     assert response.status_code == 204
     assert response.headers["access-control-allow-origin"] == "http://localhost:3000"
+    allowed_headers = response.headers["access-control-allow-headers"].lower()
+    assert "authorization" in allowed_headers
+    assert "content-type" in allowed_headers
 
 
 def test_rejects_unconfigured_origin(postgres_url: str) -> None:

@@ -174,7 +174,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       },
       "post": {
         "summary": "CreateEntry",
@@ -240,7 +245,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/api/backlog/entries/{entry_id}": {
@@ -309,7 +319,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       },
       "put": {
         "summary": "UpdateEntry",
@@ -386,7 +401,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       },
       "delete": {
         "summary": "DeleteEntry",
@@ -446,7 +466,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/api/backlog/entries/{entry_id}/categories": {
@@ -518,7 +543,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/api/backlog/entries/{entry_id}/categories/{category_id}": {
@@ -589,7 +619,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       },
       "delete": {
         "summary": "RemoveCategoryFromEntry",
@@ -658,7 +693,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/api/backlog/categories": {
@@ -681,7 +721,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       },
       "post": {
         "summary": "CreateCategory",
@@ -747,7 +792,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/api/backlog/categories/{category_id}": {
@@ -826,7 +876,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       },
       "delete": {
         "summary": "DeleteCategory",
@@ -886,7 +941,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/api/backlog/categories/{category_id}/entries": {
@@ -958,7 +1018,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/api/user/me": {
@@ -986,7 +1051,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       },
       "put": {
         "summary": "UpdateOwnUser",
@@ -1060,7 +1130,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       },
       "delete": {
         "summary": "DeleteOwnUser",
@@ -1079,7 +1154,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/api/user/by-username/{username}": {
@@ -1187,7 +1267,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       },
       "post": {
         "summary": "CreateUserAdmin",
@@ -1261,7 +1346,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/api/admin/users/{user_id}": {
@@ -1338,7 +1428,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       },
       "put": {
         "summary": "UpdateUserAdmin",
@@ -1423,7 +1518,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       },
       "delete": {
         "summary": "DeleteUserAdmin",
@@ -1491,7 +1591,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     }
   },
@@ -2197,6 +2302,13 @@
         "type": "object",
         "required": [],
         "title": "UpdateUserAdminRequest"
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
       }
     }
   }

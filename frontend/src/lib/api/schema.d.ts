@@ -293,9 +293,9 @@ export interface components {
         CreateCategoryRequest: {
             category_name: string;
             /** @default #000000 */
-            color: string;
+            color?: string;
             /** @default No description */
-            description: string;
+            description?: string;
         };
         /** CreateUserRequest */
         CreateUserRequest: {
@@ -304,7 +304,7 @@ export interface components {
             password: string;
             steam_id?: string | null;
             /** @default false */
-            is_admin: boolean;
+            is_admin?: boolean;
         };
         /** LoginParams */
         LoginParams: {
@@ -331,7 +331,7 @@ export interface components {
         TokenResponse: {
             access_token: string;
             /** @default bearer */
-            token_type: string;
+            token_type?: string;
         };
         /** UpdateBacklogEntryRequest */
         UpdateBacklogEntryRequest: {

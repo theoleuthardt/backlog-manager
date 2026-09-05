@@ -2,6 +2,7 @@ from litestar import Litestar
 from litestar.config.cors import CORSConfig
 from litestar.di import Provide
 from litestar.openapi import OpenAPIConfig
+from litestar.openapi.spec import Components, SecurityScheme
 
 from backlog_manager_backend.bootstrap import bootstrap_initial_admin
 from backlog_manager_backend.config import settings
@@ -41,7 +42,15 @@ def create_app() -> Litestar:
             allow_methods=["GET", "POST", "PUT", "DELETE"],
             allow_headers=["Content-Type", "Authorization"],
         ),
-        openapi_config=OpenAPIConfig(title="Backlog Manager API", version="1.0.0"),
+        openapi_config=OpenAPIConfig(
+            title="Backlog Manager API",
+            version="1.0.0",
+            components=Components(
+                security_schemes={
+                    "BearerAuth": SecurityScheme(type="http", scheme="bearer", bearer_format="JWT")
+                }
+            ),
+        ),
     )
 
 

@@ -28,7 +28,10 @@ export const env = createEnv({
     // Baked in at build time - points the openapi-fetch client (see
     // src/lib/api/client.ts) at the Litestar backend. Not consumed by
     // anything yet; the tRPC -> REST migration is a separate, later step.
-    NEXT_PUBLIC_API_URL: z.string().url().default("http://localhost:8000"),
+    NEXT_PUBLIC_API_URL:
+      process.env.NODE_ENV === "production"
+        ? z.string().url()
+        : z.string().url().default("http://localhost:8000"),
   },
 
   /**

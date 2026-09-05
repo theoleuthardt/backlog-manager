@@ -10,7 +10,7 @@
     "dev:webpack": "NODE_OPTIONS='--max-old-space-size=4096' next dev --webpack",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
-    "generate-api-types": "openapi-typescript ../backend/openapi.json -o ./src/lib/api/schema.d.ts",
+    "generate-api-types": "openapi-typescript ../backend/openapi.json -o ./src/lib/api/schema.d.ts --default-non-nullable=false",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "preview": "NODE_OPTIONS='--max-old-space-size=4096' next build --webpack && next start",

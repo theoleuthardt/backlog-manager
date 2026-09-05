@@ -10,7 +10,7 @@ Users can track games with metadata from HowLongToBeat and IGDB, organize games 
 
 ## Commands
 
-**Preferred: `task <name>`** (see `Taskfile.yml`, requires [go-task](https://taskfile.dev)) — wraps both the frontend (npm) and backend (uv) toolchains plus the local Postgres compose stack under one command surface. `task` (no args) lists everything available; the most common ones:
+**Always use `task <name>` (see `Taskfile.yml`, requires [go-task](https://taskfile.dev)) when running commands in this repo, instead of calling `npm run ...` / `uv run ...` / `docker compose ...` directly.** It wraps both the frontend (npm) and backend (uv) toolchains plus the local Postgres compose stack under one unified command surface, so any command run from Claude Code should go through it if a matching task exists. `task` (no args) lists everything available; the most common ones:
 
 ```bash
 task install       # npm install (frontend) + uv sync (backend)
