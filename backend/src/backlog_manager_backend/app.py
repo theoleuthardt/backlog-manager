@@ -5,6 +5,15 @@ from backlog_manager_backend.bootstrap import bootstrap_initial_admin
 from backlog_manager_backend.db import engine, provide_db_session
 from backlog_manager_backend.routes.auth import login
 from backlog_manager_backend.routes.backlog import backlog_router
+from backlog_manager_backend.routes.games import (
+    enriched_search,
+    get_cover,
+    get_game,
+    get_game_time_to_beat,
+    get_genre,
+    get_platform,
+    search_game,
+)
 from backlog_manager_backend.routes.health import health
 from backlog_manager_backend.routes.user import admin_user_router, user_router
 
@@ -24,6 +33,13 @@ def create_app() -> Litestar:
             backlog_router,
             user_router,
             admin_user_router,
+            search_game,
+            enriched_search,
+            get_game,
+            get_game_time_to_beat,
+            get_platform,
+            get_cover,
+            get_genre,
         ],
         dependencies={"db_session": Provide(provide_db_session)},
         on_startup=[bootstrap_initial_admin],
