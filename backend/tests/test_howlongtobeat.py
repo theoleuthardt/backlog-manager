@@ -50,6 +50,17 @@ async def test_search_game_on_hltb_returns_parsed_results(monkeypatch: pytest.Mo
     assert results[0].steam_app_id == 504230
 
 
+async def test_search_game_on_hltb_returns_empty_list_on_malformed_json(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"not json")
+
+    _mock_client(handler, monkeypatch)
+
+    assert await search_game_on_hltb("Celeste") == []
+
+
 async def test_search_game_on_hltb_returns_empty_list_on_error(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

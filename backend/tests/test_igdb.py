@@ -95,6 +95,17 @@ async def test_search_game_on_igdb_returns_empty_list_on_error(
     assert await search_game_on_igdb("Zelda", "cid", "tok") == []
 
 
+async def test_search_game_on_igdb_returns_empty_list_on_malformed_json(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"not json")
+
+    _mock_client(handler, monkeypatch)
+
+    assert await search_game_on_igdb("Zelda", "cid", "tok") == []
+
+
 async def test_get_genre_on_igdb_returns_parsed_genre(monkeypatch: pytest.MonkeyPatch) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         assert request.url.path == "/v4/genres"

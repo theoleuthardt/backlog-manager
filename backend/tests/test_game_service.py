@@ -136,8 +136,8 @@ async def test_search_falls_back_to_hltb_when_igdb_has_no_beat_time(
     async def fake_search_game_on_hltb(search_term: str) -> list[HltbResultData]:
         return [
             HltbResultData(
-                id=1,
-                hltb_id=1,
+                id=999,
+                hltb_id=999,
                 title="Celeste",
                 image_url="https://example.com/celeste.jpg",
                 main_story=8.5,
@@ -166,7 +166,7 @@ async def test_search_falls_back_to_hltb_when_igdb_has_no_beat_time(
     assert results == [
         EnrichedResult(
             id=1,
-            hltb_id=1,
+            hltb_id=999,
             title="Celeste",
             image_url="https://images.igdb.com/igdb/image/upload/t_cover_big/abc123.jpg",
             genres=["Platformer"],

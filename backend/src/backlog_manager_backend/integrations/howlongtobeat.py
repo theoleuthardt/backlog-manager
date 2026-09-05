@@ -29,7 +29,7 @@ async def search_game_on_hltb(search_term: str) -> list[HltbResultData]:
 
     try:
         return msgspec.json.decode(response.content, type=list[HltbResultData])
-    except msgspec.ValidationError:
+    except msgspec.DecodeError:
         return []
 
 

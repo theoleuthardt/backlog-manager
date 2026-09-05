@@ -157,7 +157,19 @@ async def import_backlog_entries_from_csv(
                 set_import_progress(session_id, processed_count)
             continue
 
+        if session_id and is_cancelled(session_id):
+            logger.info(
+                "Import cancelled",
+                processed=processed_count + 1,
+                total=len(records),
+            )
+            break
+
         try:
+            # TODO: status is hardcoded because Status is currently a fixed
+            # enum on the DB side, so an arbitrary CSV value can't be
+            # persisted as-is yet. See
+            # https://github.com/theoleuthardt/backlog-manager/issues/64
             await create_backlog_entry(
                 session,
                 CreateBacklogEntryParams(

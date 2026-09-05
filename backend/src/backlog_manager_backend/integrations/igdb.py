@@ -73,7 +73,15 @@ async def _query_igdb[T](
             response=response,
         )
 
-    return msgspec.json.decode(response.content, type=result_type)
+    try:
+        return msgspec.json.decode(response.content, type=result_type)
+    except msgspec.DecodeError as error:
+        logger.error(f"Malformed IGDB {endpoint} response", error=str(error))
+        raise httpx.HTTPStatusError(
+            f"Malformed IGDB {endpoint} response: {error}",
+            request=response.request,
+            response=response,
+        ) from error
 
 
 async def search_game_on_igdb(

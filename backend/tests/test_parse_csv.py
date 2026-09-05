@@ -148,6 +148,36 @@ async def test_import_respects_cancel_flag(
     assert result.failed == 0
 
 
+async def test_import_does_not_create_entry_if_cancelled_during_hltb_lookup(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    session_id = "cancel-mid-lookup-test"
+
+    async def fake_search(title: str) -> list[HltbResultData]:
+        # Simulates cancellation arriving while the HLTB request is in flight,
+        # i.e. after this record's lookup has already started.
+        parse_csv.set_cancel_flag(session_id, True)
+        return [_hltb_result(title)]
+
+    monkeypatch.setattr(parse_csv, "search_game_on_hltb", fake_search)
+
+    try:
+        result = await parse_csv.import_backlog_entries_from_csv(
+            session,
+            user.id,
+            [{"A": "Celeste", "B": "Platformer", "C": "PC", "D": "Not Started"}],
+            _COLUMN_CONFIG,
+            session_id=session_id,
+        )
+    finally:
+        parse_csv.clear_import_progress(session_id)
+
+    assert result.success == 0
+    entries = await backlog_entry_repo.get_backlog_entries_by_user(session, user.id)
+    assert entries == []
+
+
 def test_import_progress_tracking() -> None:
     session_id = "progress-test"
     assert parse_csv.get_import_progress(session_id) == 0

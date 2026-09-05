@@ -3,7 +3,6 @@ import time
 from collections.abc import Awaitable, Callable
 
 import httpx
-import msgspec
 import structlog
 
 from backlog_manager_backend.config import settings
@@ -68,7 +67,7 @@ async def get_cached_genre(genre_id: int, client_id: str, access_token: str) -> 
         if name:
             _genre_cache[genre_id] = name
             return name
-    except (httpx.HTTPError, msgspec.ValidationError):
+    except httpx.HTTPError:
         logger.error("Failed to fetch genre", genre_id=genre_id)
     return None
 
@@ -83,7 +82,7 @@ async def get_cached_platform(platform_id: int, client_id: str, access_token: st
         if name:
             _platform_cache[platform_id] = name
             return name
-    except (httpx.HTTPError, msgspec.ValidationError):
+    except httpx.HTTPError:
         logger.error("Failed to fetch platform", platform_id=platform_id)
     return None
 
@@ -129,7 +128,7 @@ async def _enrich_search_result(
                         "https://images.igdb.com/igdb/image/upload/"
                         f"t_cover_big/{cover.image_id}.jpg"
                     )
-            except (httpx.HTTPError, msgspec.ValidationError):
+            except httpx.HTTPError:
                 logger.error("Failed to fetch cover for game", game_id=game.id)
 
         genres: list[str] = []
@@ -142,7 +141,7 @@ async def _enrich_search_result(
                     )
                 )
                 genres = [name for name in genre_names if name is not None]
-            except (httpx.HTTPError, msgspec.ValidationError):
+            except httpx.HTTPError:
                 logger.error("Failed to fetch genres for game", game_id=game.id)
 
         platforms: list[str] = []
@@ -155,7 +154,7 @@ async def _enrich_search_result(
                     )
                 )
                 platforms = [name for name in platform_names if name is not None]
-            except (httpx.HTTPError, msgspec.ValidationError):
+            except httpx.HTTPError:
                 logger.error("Failed to fetch platforms for game", game_id=game.id)
 
         main_story = 0.0
@@ -170,23 +169,25 @@ async def _enrich_search_result(
                 main_story = _seconds_to_hours(time_to_beat.hastily)
                 main_story_with_extras = _seconds_to_hours(time_to_beat.normally)
                 completionist = _seconds_to_hours(time_to_beat.completely)
-        except (httpx.HTTPError, msgspec.ValidationError):
+        except httpx.HTTPError:
             logger.error("Failed to fetch time to beat for game", game_id=game.id)
 
+        hltb_id = game.id
         if main_story == 0 and main_story_with_extras == 0 and completionist == 0 and game.name:
             try:
                 hltb_results = await search_game_on_hltb(game.name)
                 hltb_match = hltb_results[0] if hltb_results else None
                 if hltb_match:
+                    hltb_id = hltb_match.hltb_id
                     main_story = hltb_match.main_story
                     main_story_with_extras = hltb_match.main_story_with_extras
                     completionist = hltb_match.completionist
-            except (httpx.HTTPError, msgspec.ValidationError):
+            except httpx.HTTPError:
                 logger.error("HLTB fallback failed for game", game_name=game.name)
 
         return EnrichedResult(
             id=game.id,
-            hltb_id=game.id,
+            hltb_id=hltb_id,
             title=game.name or "Unknown Game",
             image_url=image_url,
             genres=genres,
@@ -195,7 +196,7 @@ async def _enrich_search_result(
             main_story_with_extras=main_story_with_extras,
             completionist=completionist,
         )
-    except (httpx.HTTPError, msgspec.ValidationError):
+    except httpx.HTTPError:
         logger.error("Error enriching game data")
         return None
 
