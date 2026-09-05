@@ -1,6 +1,6 @@
 from litestar import Router, delete, get, post, put
 from litestar.di import NamedDependency, Provide
-from litestar.exceptions import NotFoundException
+from litestar.exceptions import NotFoundException, ValidationException
 from litestar.params import FromPath, FromQuery
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -55,6 +55,17 @@ async def _get_owned_category(session: AsyncSession, category_id: int, user: Use
     return category
 
 
+def _join_tags(field_name: str, values: list[str]) -> str:
+    """The DB stores genre/platform as one ", "-joined column (unchanged
+    from the original schema), so a value containing that delimiter
+    would silently split back into multiple values on the next read -
+    rejected here rather than persisted lossily."""
+    for value in values:
+        if "," in value:
+            raise ValidationException(f"{field_name} entries must not contain a comma: {value!r}")
+    return ", ".join(values)
+
+
 @post("/api/backlog/entries", status_code=201)
 async def create_entry(
     data: CreateBacklogEntryRequest,
@@ -66,8 +77,8 @@ async def create_entry(
         CreateBacklogEntryParams(
             user_id=current_user.id,
             title=data.title,
-            genre=", ".join(data.genre),
-            platform=", ".join(data.platform),
+            genre=_join_tags("genre", data.genre),
+            platform=_join_tags("platform", data.platform),
             status=data.status,
             owned=data.owned,
             interest=data.interest,
@@ -127,9 +138,11 @@ async def update_entry(
         UpdateBacklogEntryParams(
             backlog_entry_id=entry_id,
             title=data.title,
-            genre=", ".join(data.genre) if isinstance(data.genre, list) else data.genre,
+            genre=_join_tags("genre", data.genre) if isinstance(data.genre, list) else data.genre,
             platform=(
-                ", ".join(data.platform) if isinstance(data.platform, list) else data.platform
+                _join_tags("platform", data.platform)
+                if isinstance(data.platform, list)
+                else data.platform
             ),
             status=data.status,
             owned=data.owned,

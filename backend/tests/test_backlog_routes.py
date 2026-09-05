@@ -352,3 +352,57 @@ def test_entry_routes_require_authentication(postgres_url: str) -> None:
         response = client.get("/api/backlog/entries")
 
     assert response.status_code == 401
+
+
+def test_create_entry_rejects_genre_containing_a_comma(postgres_url: str) -> None:
+    """Regression test: genre/platform are stored as one ", "-joined DB
+    column, so a value containing that delimiter would silently split
+    back into multiple values on the next read - must be rejected
+    instead of persisted lossily."""
+    from backlog_manager_backend.app import app
+
+    with TestClient(app=app) as client:
+        headers = _register_and_login(client, "commaguard@example.com")
+
+        response = client.post(
+            "/api/backlog/entries",
+            headers=headers,
+            json={
+                "title": "Celeste",
+                "genre": ["Action, Adventure"],
+                "platform": ["PC"],
+                "status": "Not Started",
+                "owned": True,
+                "interest": 5,
+            },
+        )
+
+    assert response.status_code == 400
+
+
+def test_update_entry_rejects_platform_containing_a_comma(postgres_url: str) -> None:
+    from backlog_manager_backend.app import app
+
+    with TestClient(app=app) as client:
+        headers = _register_and_login(client, "commaguardupdate@example.com")
+
+        entry_id = client.post(
+            "/api/backlog/entries",
+            headers=headers,
+            json={
+                "title": "Celeste",
+                "genre": ["Platformer"],
+                "platform": ["PC"],
+                "status": "Not Started",
+                "owned": True,
+                "interest": 5,
+            },
+        ).json()["id"]
+
+        response = client.put(
+            f"/api/backlog/entries/{entry_id}",
+            headers=headers,
+            json={"platform": ["PC, Steam Deck"]},
+        )
+
+    assert response.status_code == 400
