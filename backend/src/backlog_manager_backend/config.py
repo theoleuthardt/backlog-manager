@@ -13,6 +13,14 @@ class Settings(BaseSettings):
     # read again after that first run.
     initial_admin_email: str | None = None
     initial_admin_password: str | None = None
+    # Comma-separated list of origins the browser is allowed to call this
+    # API from (see cors_allowed_origins_list) - the frontend talks to this
+    # backend directly, cross-origin, rather than through a Next.js proxy.
+    cors_allowed_origins: str = "http://localhost:3000"
+
+    @property
+    def cors_allowed_origins_list(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_allowed_origins.split(",") if origin.strip()]
 
 
 settings = Settings()

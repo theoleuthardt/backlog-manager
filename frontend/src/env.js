@@ -25,7 +25,10 @@ export const env = createEnv({
    * `NEXT_PUBLIC_`.
    */
   client: {
-    // NEXT_PUBLIC_CLIENTVAR: z.string(),
+    // Baked in at build time - points the openapi-fetch client (see
+    // src/lib/api/client.ts) at the Litestar backend. Not consumed by
+    // anything yet; the tRPC -> REST migration is a separate, later step.
+    NEXT_PUBLIC_API_URL: z.string().url().default("http://localhost:8000"),
   },
 
   /**
@@ -38,7 +41,7 @@ export const env = createEnv({
     IGDB_CLIENT_SECRET: process.env.IGDB_CLIENT_SECRET,
     POSTGRES_URL: process.env.POSTGRES_URL,
     NODE_ENV: process.env.NODE_ENV,
-    // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

@@ -126,3 +126,15 @@ tasks:
     dir: "{{.BACKEND_DIR}}"
     cmds:
       - uv run alembic revision --autogenerate -m "{{.CLI_ARGS}}"
+
+  backend:openapi:
+    desc: Regenerate backend/openapi.json from the current route handlers
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - uv run python scripts/dump_openapi_schema.py
+
+  frontend:generate-api-types:
+    desc: Regenerate the type-safe API client types from backend/openapi.json
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run generate-api-types
