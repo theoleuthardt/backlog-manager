@@ -1,0 +1,21 @@
+meta {
+  name: Get Game Time To Beat
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/api/trpc/igdb.getGameTimeToBeat?input={"json":{"gameId":141503}}
+  body: none
+  auth: none
+}
+
+params:query {
+  input: {"json":{"gameId":141503}}
+}
+
+docs {
+  IGDB's own beat-time data (hastily/normally/completely, in seconds) by
+  game id. If IGDB has no entry for a game, "Search Games (Enriched)"
+  falls back to HowLongToBeat instead.
+}

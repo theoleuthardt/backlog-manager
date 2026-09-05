@@ -1,0 +1,24 @@
+meta {
+  name: Proxy IGDB Image
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/image-proxy?url=https%3A%2F%2Fimages.igdb.com%2Figdb%2Fimage%2Fupload%2Ft_cover_big%2Fco3ofx.jpg
+  body: none
+  auth: none
+}
+
+params:query {
+  url: https%3A%2F%2Fimages.igdb.com%2Figdb%2Fimage%2Fupload%2Ft_cover_big%2Fco3ofx.jpg
+}
+
+docs {
+  Proxies an IGDB (or HowLongToBeat) cover image server-side, since both
+  origins block direct hotlinking in some contexts. Only images.igdb.com
+  and howlongtobeat.com URLs are allowed; anything else returns 400.
+
+  Response is cached for 24h (Cache-Control: public, max-age=86400,
+  immutable).
+}

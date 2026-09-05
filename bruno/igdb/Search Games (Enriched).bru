@@ -1,0 +1,24 @@
+meta {
+  name: Search Games (Enriched)
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/trpc/igdb.search?input={"json":{"searchTerm":"Zelda"}}
+  body: none
+  auth: none
+}
+
+params:query {
+  input: {"json":{"searchTerm":"Zelda"}}
+}
+
+docs {
+  Frontend-facing search used by SearchBar/MissingGamesModal.
+
+  Searches IGDB, then enriches the top 8 matches with cover image, genres,
+  platforms, and beat times (IGDB game_time_to_beats, falling back to
+  HowLongToBeat when IGDB has no data for that game). This is the slowest
+  endpoint since it makes several sequential IGDB requests per game.
+}

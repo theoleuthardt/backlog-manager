@@ -123,7 +123,7 @@ export const MissingGamesModal = ({
               onInput={(e) => setSearchQuery(e.currentTarget.value)}
               onDebouncedChange={setDebouncedQuery}
               onClear={() => setSearchQuery("")}
-              className="!mb-0 flex-1"
+              className="mb-0! flex-1"
             />
             {gameSearchQuery.isPending && (
               <Spinner className="size-6 text-white" />

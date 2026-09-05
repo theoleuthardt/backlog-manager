@@ -1,0 +1,20 @@
+meta {
+  name: Search Game (Raw)
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/trpc/igdb.searchGame?input={"json":{"searchTerm":"Zelda"}}
+  body: none
+  auth: none
+}
+
+params:query {
+  input: {"json":{"searchTerm":"Zelda"}}
+}
+
+docs {
+  Raw IGDB /search results, unenriched. Returns id/name/game (the linked
+  game id used by "Get Game") for each match.
+}

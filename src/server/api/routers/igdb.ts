@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { env } from "~/env";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import {
   generateIGDBToken,
@@ -9,6 +10,7 @@ import {
   getGenreOnIGDB,
   getGameTimeToBeatOnIGDB,
 } from "~/server/integrations/igdb/igdb";
+import { SearchGameOnHLTB } from "~/server/integrations/howlongtobeat/howLongToBeat";
 import type { EnrichedResult } from "~/server/integrations/types";
 
 let cachedToken: { accessToken: string; expiresAt: number } | null = null;
@@ -19,8 +21,8 @@ const platformCache = new Map<number, string>();
  * Gets a valid IGDB access token, using cached token if available
  */
 async function getValidToken(): Promise<string> {
-  const clientId = process.env.IGDB_CLIENT_ID;
-  const clientSecret = process.env.IGDB_CLIENT_SECRET;
+  const clientId = env.IGDB_CLIENT_ID;
+  const clientSecret = env.IGDB_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
     throw new Error(
@@ -145,7 +147,7 @@ export const IGDBRouter = createTRPCRouter({
       }),
     )
     .query(async ({ input }) => {
-      const clientId = process.env.IGDB_CLIENT_ID;
+      const clientId = env.IGDB_CLIENT_ID;
       if (!clientId) {
         throw new Error("IGDB_CLIENT_ID not configured");
       }
@@ -166,7 +168,7 @@ export const IGDBRouter = createTRPCRouter({
       }),
     )
     .query(async ({ input }) => {
-      const clientId = process.env.IGDB_CLIENT_ID;
+      const clientId = env.IGDB_CLIENT_ID;
       if (!clientId) {
         throw new Error("IGDB_CLIENT_ID not configured");
       }
@@ -187,7 +189,7 @@ export const IGDBRouter = createTRPCRouter({
       }),
     )
     .query(async ({ input }) => {
-      const clientId = process.env.IGDB_CLIENT_ID;
+      const clientId = env.IGDB_CLIENT_ID;
       if (!clientId) {
         throw new Error("IGDB_CLIENT_ID not configured");
       }
@@ -208,7 +210,7 @@ export const IGDBRouter = createTRPCRouter({
       }),
     )
     .query(async ({ input }) => {
-      const clientId = process.env.IGDB_CLIENT_ID;
+      const clientId = env.IGDB_CLIENT_ID;
       if (!clientId) {
         throw new Error("IGDB_CLIENT_ID not configured");
       }
@@ -229,7 +231,7 @@ export const IGDBRouter = createTRPCRouter({
       }),
     )
     .query(async ({ input }) => {
-      const clientId = process.env.IGDB_CLIENT_ID;
+      const clientId = env.IGDB_CLIENT_ID;
       if (!clientId) {
         throw new Error("IGDB_CLIENT_ID not configured");
       }
@@ -250,7 +252,7 @@ export const IGDBRouter = createTRPCRouter({
       }),
     )
     .query(async ({ input }) => {
-      const clientId = process.env.IGDB_CLIENT_ID;
+      const clientId = env.IGDB_CLIENT_ID;
       if (!clientId) {
         throw new Error("IGDB_CLIENT_ID not configured");
       }
@@ -272,7 +274,7 @@ export const IGDBRouter = createTRPCRouter({
       }),
     )
     .query(async ({ input }) => {
-      const clientId = process.env.IGDB_CLIENT_ID;
+      const clientId = env.IGDB_CLIENT_ID;
       if (!clientId) {
         throw new Error("IGDB_CLIENT_ID not configured");
       }
@@ -381,7 +383,29 @@ export const IGDBRouter = createTRPCRouter({
                   : 0;
               }
             } catch {
-              console.log(`No time to beat data for game ${game.id}`);
+              console.error(`Failed to fetch time to beat for game ${game.id}`);
+            }
+
+            // Fall back to HowLongToBeat when IGDB has no beat-time data
+            if (
+              mainStory === 0 &&
+              mainStoryWithExtras === 0 &&
+              completionist === 0 &&
+              game.name
+            ) {
+              try {
+                const hltbResults = await SearchGameOnHLTB(game.name);
+                const hltbMatch = hltbResults[0];
+                if (hltbMatch) {
+                  mainStory = hltbMatch.mainStory;
+                  mainStoryWithExtras = hltbMatch.mainStoryWithExtras;
+                  completionist = hltbMatch.completionist;
+                }
+              } catch {
+                console.error(
+                  `HLTB fallback failed for game ${game.name}`,
+                );
+              }
             }
 
             return {
