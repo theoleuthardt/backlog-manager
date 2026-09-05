@@ -4,51 +4,18 @@ import pool from "~/server/db/index";
 import * as userService from "~/server/services/userService";
 import argon2 from "argon2";
 
-
 /**
  * User Router
  *
- * Handles user-related operations like authentication, profile management, etc.
- * Most procedures require authentication (protectedProcedure).
+ * Handles user-related operations for the currently authenticated user.
+ * There is no public self-registration or unrestricted admin-by-id
+ * access here - both were removed since the Python/Litestar backend
+ * (backend/) is taking over user management with a real admin role
+ * and an actual permission check (see backend/routes/user.py). This
+ * tRPC router is being phased out along with the rest of the Next.js
+ * backend, not extended further.
  */
 export const userRouter = createTRPCRouter({
-  /**
-   * CREATE PROCEDURES
-   */
-
-  /**
-   * Create a new user (Registration)
-   * @example
-   * await trpc.user.createUser.mutate({
-   *   username: "john_doe",
-   *   email: "john@example.com",
-   *   passwordHash: "hashed_password"
-   * })
-   */
-  createUser: publicProcedure
-  .input(
-    z.object({
-      username: z.string().min(3, "Username must be at least 3 characters"),
-      email: z.string().email("Invalid email address"),
-      passwordHash: z.string().min(1, "Password is required"),
-      steamId: z.string().optional(),
-    })
-  )
-  .mutation(async ({ input }) => {
-    const hashedPassword = await argon2.hash(input.passwordHash);
-
-    return await userService.createUser(pool, {
-      username: input.username,
-      email: input.email,
-      passwordHash: hashedPassword,
-      steamId: input.steamId,
-    });
-  }),
-
-  /**
-   * READ PROCEDURES
-   */
-
   /**
    * Get the current authenticated user
    * @example
@@ -63,17 +30,6 @@ export const userRouter = createTRPCRouter({
   }),
 
   /**
-   * Get a user by ID (Admin only - in production, add permission check)
-   * @example
-   * const user = await trpc.user.getUserById.query({ userId: 1 })
-   */
-  getUserById: protectedProcedure
-    .input(z.object({ userId: z.number().positive() }))
-    .query(async ({ input }) => {
-      return await userService.getUserById(pool, input.userId);
-    }),
-
-  /**
    * Get a user by username
    * @example
    * const user = await trpc.user.getUserByUsername.query({ username: "john_doe" })
@@ -85,88 +41,40 @@ export const userRouter = createTRPCRouter({
     }),
 
   /**
-   * Get all users (Admin only - in production, add permission check)
-   * @example
-   * const allUsers = await trpc.user.getAllUsers.query()
-   */
-  getAllUsers: protectedProcedure.query(async () => {
-    return await userService.getAllUsers(pool);
-  }),
-
-  /**
-   * UPDATE PROCEDURES
-   */
-
-  /**
    * Update the current user's profile
    * @example
    * await trpc.user.updateCurrentUser.mutate({
    *   username: "new_username",
    *   email: "newemail@example.com",
-   *   passwordHash: "new_hashed_password"
+   *   passwordHash: "new_plaintext_password"
    * })
    */
   updateCurrentUser: protectedProcedure
-  .input(
-    z.object({
-      username: z.string().min(1).optional(),
-      email: z.string().email().optional(),
-      passwordHash: z.string().min(1).optional(),
-      steamId: z.string().optional(),
-    })
-  )
-  .mutation(async ({ ctx, input }) => {
-    if (!ctx.session?.user?.id) {
-      throw new Error("User ID not found in session");
-    }
-
-    const userId = parseInt(ctx.session.user.id);
-    console.log("Updating userId:", userId, "with SteamID:", input.steamId);
-
-
-    return await userService.updateUser(pool, {
-      userId,
-      username: input.username,
-      email: input.email,
-      passwordHash: input.passwordHash,
-      steamId: input.steamId,
-    });
-  }),
-
-
-  /**
-   * Update a specific user (Admin only - in production, add permission check)
-   * @example
-   * await trpc.user.updateUser.mutate({
-   *   userId: 1,
-   *   username: "updated_username",
-   *   email: "updated@example.com",
-   *   passwordHash: "new_hashed_password"
-   * })
-   */
-  updateUser: protectedProcedure
     .input(
       z.object({
-        userId: z.number().positive(),
-        username: z.string().min(3, "Username must be at least 3 characters"),
-        email: z.string().email("Invalid email address"),
-        passwordHash: z.string().min(1, "Password hash is required"),
+        username: z.string().min(1).optional(),
+        email: z.string().email().optional(),
+        passwordHash: z.string().min(1).optional(),
         steamId: z.string().optional(),
-      })
+      }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.session?.user?.id) {
+        throw new Error("User ID not found in session");
+      }
+
+      const userId = parseInt(ctx.session.user.id);
+
       return await userService.updateUser(pool, {
-        userId: input.userId,
+        userId,
         username: input.username,
         email: input.email,
-        passwordHash: input.passwordHash,
+        passwordHash: input.passwordHash
+          ? await argon2.hash(input.passwordHash)
+          : undefined,
         steamId: input.steamId,
       });
     }),
-
-  /**
-   * DELETE PROCEDURES
-   */
 
   /**
    * Delete the current user
@@ -180,16 +88,5 @@ export const userRouter = createTRPCRouter({
     const userId = parseInt(ctx.session.user.id);
     return await userService.deleteUser(pool, userId);
   }),
-
-  /**
-   * Delete a specific user (Admin only - in production, add permission check)
-   * @example
-   * await trpc.user.deleteUser.mutate({ userId: 1 })
-   */
-  deleteUser: protectedProcedure
-    .input(z.object({ userId: z.number().positive() }))
-    .mutation(async ({ input }) => {
-      return await userService.deleteUser(pool, input.userId);
-    }),
 });
 
