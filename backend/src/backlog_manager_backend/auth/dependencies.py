@@ -1,6 +1,6 @@
 from litestar import Request
 from litestar.di import NamedDependency
-from litestar.exceptions import NotAuthorizedException
+from litestar.exceptions import NotAuthorizedException, PermissionDeniedException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.auth.tokens import TokenError, decode_access_token
@@ -26,3 +26,15 @@ async def get_current_user(request: Request, db_session: NamedDependency[AsyncSe
         return await get_user_by_id(db_session, user_id)
     except NotFoundError as error:
         raise NotAuthorizedException("User not found") from error
+
+
+async def require_admin(authenticated_user: NamedDependency[User]) -> User:
+    """Registered to provide "current_user" (see admin_user_router),
+    same as get_current_user, but must take a differently-named
+    parameter - naming it "current_user" too would make the dependency
+    depend on itself and blow the recursion limit at app startup. There
+    is no way to grant is_admin through the API; it's set directly in
+    the database by whoever operates the deployment."""
+    if not authenticated_user.is_admin:
+        raise PermissionDeniedException("Admin privileges required")
+    return authenticated_user

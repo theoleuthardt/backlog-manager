@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import ClassVar
 
-from sqlalchemy import BigInteger
+from sqlalchemy import BigInteger, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backlog_manager_backend.models import TIMESTAMP_DEFAULT, Base
@@ -16,6 +16,7 @@ class User(Base):
     email: Mapped[str] = mapped_column("Email", unique=True)
     password_hash: Mapped[str] = mapped_column("PasswordHash")
     steam_id: Mapped[str | None] = mapped_column("SteamId")
+    is_admin: Mapped[bool] = mapped_column("IsAdmin", server_default=text("false"))
     created_at: Mapped[datetime] = mapped_column(
         "CreatedAt", server_default=TIMESTAMP_DEFAULT
     )

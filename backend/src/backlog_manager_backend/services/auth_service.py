@@ -4,8 +4,8 @@ from backlog_manager_backend.auth.passwords import hash_password, verify_passwor
 from backlog_manager_backend.auth.tokens import create_access_token
 from backlog_manager_backend.errors import ValidationError
 from backlog_manager_backend.repositories import user_repo
-from backlog_manager_backend.schemas.auth import LoginParams, RegisterParams
-from backlog_manager_backend.schemas.user import CreateUserParams, User
+from backlog_manager_backend.schemas.auth import LoginParams
+from backlog_manager_backend.schemas.user import CreateUserParams, CreateUserRequest, User
 
 # Verified against whenever there's no real password hash to check (unknown
 # email, or an OAuth-only account), so that path still pays the same Argon2
@@ -14,8 +14,21 @@ from backlog_manager_backend.schemas.user import CreateUserParams, User
 # response timing to enumerate which emails are registered.
 _DUMMY_PASSWORD_HASH = hash_password("not-a-real-password-used-only-for-timing")
 
+MIN_PASSWORD_LENGTH = 8
 
-async def register(session: AsyncSession, params: RegisterParams) -> User:
+
+def validate_password_strength(password: str) -> None:
+    if len(password) < MIN_PASSWORD_LENGTH:
+        raise ValidationError(f"Password must be at least {MIN_PASSWORD_LENGTH} characters long")
+
+
+async def create_user(session: AsyncSession, params: CreateUserRequest) -> User:
+    """There is no public self-registration endpoint - every account is
+    created by an admin (or, for the very first account, the startup
+    bootstrap in bootstrap.py), so this is only ever reached with an
+    already-authorized caller."""
+    validate_password_strength(params.password)
+
     return await user_repo.create_user(
         session,
         CreateUserParams(
@@ -23,6 +36,7 @@ async def register(session: AsyncSession, params: RegisterParams) -> User:
             email=params.email,
             password_hash=hash_password(params.password),
             steam_id=params.steam_id,
+            is_admin=params.is_admin,
         ),
     )
 

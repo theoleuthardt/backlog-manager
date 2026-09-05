@@ -15,6 +15,7 @@ def _to_schema(model: UserModel) -> User:
         name=model.username,
         email=model.email,
         password_hash=model.password_hash,
+        is_admin=model.is_admin,
         created_at=model.created_at,
         updated_at=model.updated_at,
     )
@@ -26,6 +27,7 @@ async def create_user(session: AsyncSession, params: CreateUserParams) -> User:
         email=params.email,
         password_hash=params.password_hash,
         steam_id=params.steam_id,
+        is_admin=params.is_admin,
     )
     session.add(model)
     try:
@@ -74,6 +76,8 @@ async def update_user(session: AsyncSession, params: UpdateUserParams) -> User:
         model.password_hash = params.password_hash
     if params.steam_id is not msgspec.UNSET:
         model.steam_id = params.steam_id
+    if params.is_admin is not msgspec.UNSET:
+        model.is_admin = params.is_admin
     model.updated_at = now_truncated_to_minute()
 
     try:

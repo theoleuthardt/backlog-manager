@@ -1,18 +1,34 @@
 from litestar import Litestar
 from litestar.di import Provide
 
+from backlog_manager_backend.bootstrap import bootstrap_initial_admin
 from backlog_manager_backend.db import engine, provide_db_session
-from backlog_manager_backend.routes.auth import login, register
+from backlog_manager_backend.routes.auth import login
 from backlog_manager_backend.routes.backlog import backlog_router
 from backlog_manager_backend.routes.health import health
+from backlog_manager_backend.routes.user import admin_user_router, user_router
 
 
 async def close_db_connection() -> None:
     await engine.dispose()
 
 
-app = Litestar(
-    route_handlers=[health, register, login, backlog_router],
-    dependencies={"db_session": Provide(provide_db_session)},
-    on_shutdown=[close_db_connection],
-)
+def create_app() -> Litestar:
+    """A factory (rather than a bare module-level instance) so tests can
+    get a fresh app - and, critically, a fresh rate-limit store - per
+    test instead of sharing one across the whole test session."""
+    return Litestar(
+        route_handlers=[
+            health,
+            login,
+            backlog_router,
+            user_router,
+            admin_user_router,
+        ],
+        dependencies={"db_session": Provide(provide_db_session)},
+        on_startup=[bootstrap_initial_admin],
+        on_shutdown=[close_db_connection],
+    )
+
+
+app = create_app()

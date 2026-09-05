@@ -1,7 +1,7 @@
 from types import ModuleType
 
 import pytest
-from litestar.exceptions import NotAuthorizedException
+from litestar.exceptions import NotAuthorizedException, PermissionDeniedException
 from litestar.testing import RequestFactory
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,10 +19,15 @@ def dependencies() -> ModuleType:
     return module
 
 
-async def _make_user(session: AsyncSession) -> object:
+async def _make_user(session: AsyncSession, is_admin: bool = False) -> object:
     return await user_repo.create_user(
         session,
-        CreateUserParams(username="depsuser", email="depsuser@example.com", password_hash="h"),
+        CreateUserParams(
+            username="depsuser",
+            email="depsuser@example.com",
+            password_hash="h",
+            is_admin=is_admin,
+        ),
     )
 
 
@@ -79,3 +84,22 @@ async def test_get_current_user_rejects_token_for_deleted_user(
 
     with pytest.raises(NotAuthorizedException):
         await dependencies.get_current_user(request, session)
+
+
+async def test_require_admin_returns_the_user_when_they_are_an_admin(
+    dependencies: ModuleType, session: AsyncSession
+) -> None:
+    admin = await _make_user(session, is_admin=True)
+
+    result = await dependencies.require_admin(admin)
+
+    assert result.id == admin.id
+
+
+async def test_require_admin_rejects_a_non_admin_user(
+    dependencies: ModuleType, session: AsyncSession
+) -> None:
+    non_admin = await _make_user(session, is_admin=False)
+
+    with pytest.raises(PermissionDeniedException):
+        await dependencies.require_admin(non_admin)

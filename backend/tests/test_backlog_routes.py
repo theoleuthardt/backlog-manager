@@ -1,21 +1,13 @@
 from litestar.testing import TestClient
 
 
-def _register_and_login(client: TestClient, email: str) -> dict[str, str]:
-    client.post(
-        "/api/auth/register",
-        json={"username": email.split("@")[0], "email": email, "password": "hunter2"},
-    )
-    login_response = client.post("/api/auth/login", json={"email": email, "password": "hunter2"})
-    token = login_response.json()["access_token"]
-    return {"Authorization": f"Bearer {token}"}
+async def test_create_and_get_entry_round_trips(postgres_url: str, create_and_login) -> None:
+    from backlog_manager_backend.app import create_app
 
-
-def test_create_and_get_entry_round_trips(postgres_url: str) -> None:
-    from backlog_manager_backend.app import app
+    app = create_app()
 
     with TestClient(app=app) as client:
-        headers = _register_and_login(client, "entryowner@example.com")
+        headers = await create_and_login(client, "entryowner@example.com")
 
         create_response = client.post(
             "/api/backlog/entries",
@@ -41,12 +33,14 @@ def test_create_and_get_entry_round_trips(postgres_url: str) -> None:
     assert get_response.json() == created
 
 
-def test_list_entries_only_returns_own_entries(postgres_url: str) -> None:
-    from backlog_manager_backend.app import app
+async def test_list_entries_only_returns_own_entries(postgres_url: str, create_and_login) -> None:
+    from backlog_manager_backend.app import create_app
+
+    app = create_app()
 
     with TestClient(app=app) as client:
-        headers_a = _register_and_login(client, "usera@example.com")
-        headers_b = _register_and_login(client, "userb@example.com")
+        headers_a = await create_and_login(client, "usera@example.com")
+        headers_b = await create_and_login(client, "userb@example.com")
 
         client.post(
             "/api/backlog/entries",
@@ -67,12 +61,16 @@ def test_list_entries_only_returns_own_entries(postgres_url: str) -> None:
     assert list_response.json() == []
 
 
-def test_get_entry_by_id_rejects_other_users_entry(postgres_url: str) -> None:
-    from backlog_manager_backend.app import app
+async def test_get_entry_by_id_rejects_other_users_entry(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    app = create_app()
 
     with TestClient(app=app) as client:
-        headers_a = _register_and_login(client, "ownera@example.com")
-        headers_b = _register_and_login(client, "ownerb@example.com")
+        headers_a = await create_and_login(client, "ownera@example.com")
+        headers_b = await create_and_login(client, "ownerb@example.com")
 
         create_response = client.post(
             "/api/backlog/entries",
@@ -93,12 +91,14 @@ def test_get_entry_by_id_rejects_other_users_entry(postgres_url: str) -> None:
     assert response.status_code == 404
 
 
-def test_update_entry_rejects_other_users_entry(postgres_url: str) -> None:
-    from backlog_manager_backend.app import app
+async def test_update_entry_rejects_other_users_entry(postgres_url: str, create_and_login) -> None:
+    from backlog_manager_backend.app import create_app
+
+    app = create_app()
 
     with TestClient(app=app) as client:
-        headers_a = _register_and_login(client, "updatera@example.com")
-        headers_b = _register_and_login(client, "updaterb@example.com")
+        headers_a = await create_and_login(client, "updatera@example.com")
+        headers_b = await create_and_login(client, "updaterb@example.com")
 
         create_response = client.post(
             "/api/backlog/entries",
@@ -123,12 +123,14 @@ def test_update_entry_rejects_other_users_entry(postgres_url: str) -> None:
     assert response.status_code == 404
 
 
-def test_delete_entry_rejects_other_users_entry(postgres_url: str) -> None:
-    from backlog_manager_backend.app import app
+async def test_delete_entry_rejects_other_users_entry(postgres_url: str, create_and_login) -> None:
+    from backlog_manager_backend.app import create_app
+
+    app = create_app()
 
     with TestClient(app=app) as client:
-        headers_a = _register_and_login(client, "deletera@example.com")
-        headers_b = _register_and_login(client, "deleterb@example.com")
+        headers_a = await create_and_login(client, "deletera@example.com")
+        headers_b = await create_and_login(client, "deleterb@example.com")
 
         create_response = client.post(
             "/api/backlog/entries",
@@ -151,11 +153,15 @@ def test_delete_entry_rejects_other_users_entry(postgres_url: str) -> None:
     assert still_there.status_code == 200
 
 
-def test_update_entry_partial_update_leaves_other_fields_unchanged(postgres_url: str) -> None:
-    from backlog_manager_backend.app import app
+async def test_update_entry_partial_update_leaves_other_fields_unchanged(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    app = create_app()
 
     with TestClient(app=app) as client:
-        headers = _register_and_login(client, "partialupdate@example.com")
+        headers = await create_and_login(client, "partialupdate@example.com")
 
         create_response = client.post(
             "/api/backlog/entries",
@@ -185,11 +191,13 @@ def test_update_entry_partial_update_leaves_other_fields_unchanged(postgres_url:
     assert updated["note"] == "great game"
 
 
-def test_get_entries_by_status_filters(postgres_url: str) -> None:
-    from backlog_manager_backend.app import app
+async def test_get_entries_by_status_filters(postgres_url: str, create_and_login) -> None:
+    from backlog_manager_backend.app import create_app
+
+    app = create_app()
 
     with TestClient(app=app) as client:
-        headers = _register_and_login(client, "statusfilter@example.com")
+        headers = await create_and_login(client, "statusfilter@example.com")
 
         client.post(
             "/api/backlog/entries",
@@ -225,12 +233,14 @@ def test_get_entries_by_status_filters(postgres_url: str) -> None:
     assert titles == ["Completed game"]
 
 
-def test_category_crud_and_ownership(postgres_url: str) -> None:
-    from backlog_manager_backend.app import app
+async def test_category_crud_and_ownership(postgres_url: str, create_and_login) -> None:
+    from backlog_manager_backend.app import create_app
+
+    app = create_app()
 
     with TestClient(app=app) as client:
-        headers_a = _register_and_login(client, "categoryowner@example.com")
-        headers_b = _register_and_login(client, "categoryintruder@example.com")
+        headers_a = await create_and_login(client, "categoryowner@example.com")
+        headers_b = await create_and_login(client, "categoryintruder@example.com")
 
         create_response = client.post(
             "/api/backlog/categories",
@@ -263,11 +273,13 @@ def test_category_crud_and_ownership(postgres_url: str) -> None:
     assert len(list_response.json()) == 1
 
 
-def test_add_and_remove_category_from_entry(postgres_url: str) -> None:
-    from backlog_manager_backend.app import app
+async def test_add_and_remove_category_from_entry(postgres_url: str, create_and_login) -> None:
+    from backlog_manager_backend.app import create_app
+
+    app = create_app()
 
     with TestClient(app=app) as client:
-        headers = _register_and_login(client, "associationowner@example.com")
+        headers = await create_and_login(client, "associationowner@example.com")
 
         entry_id = client.post(
             "/api/backlog/entries",
@@ -313,12 +325,16 @@ def test_add_and_remove_category_from_entry(postgres_url: str) -> None:
     assert categories_for_entry_after_removal.json() == []
 
 
-def test_add_category_to_entry_rejects_other_users_category(postgres_url: str) -> None:
-    from backlog_manager_backend.app import app
+async def test_add_category_to_entry_rejects_other_users_category(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    app = create_app()
 
     with TestClient(app=app) as client:
-        headers_a = _register_and_login(client, "entryowner2@example.com")
-        headers_b = _register_and_login(client, "categoryowner2@example.com")
+        headers_a = await create_and_login(client, "entryowner2@example.com")
+        headers_b = await create_and_login(client, "categoryowner2@example.com")
 
         entry_id = client.post(
             "/api/backlog/entries",
@@ -346,7 +362,9 @@ def test_add_category_to_entry_rejects_other_users_category(postgres_url: str) -
 
 
 def test_entry_routes_require_authentication(postgres_url: str) -> None:
-    from backlog_manager_backend.app import app
+    from backlog_manager_backend.app import create_app
+
+    app = create_app()
 
     with TestClient(app=app) as client:
         response = client.get("/api/backlog/entries")
@@ -354,15 +372,19 @@ def test_entry_routes_require_authentication(postgres_url: str) -> None:
     assert response.status_code == 401
 
 
-def test_create_entry_rejects_genre_containing_a_comma(postgres_url: str) -> None:
+async def test_create_entry_rejects_genre_containing_a_comma(
+    postgres_url: str, create_and_login
+) -> None:
     """Regression test: genre/platform are stored as one ", "-joined DB
     column, so a value containing that delimiter would silently split
     back into multiple values on the next read - must be rejected
     instead of persisted lossily."""
-    from backlog_manager_backend.app import app
+    from backlog_manager_backend.app import create_app
+
+    app = create_app()
 
     with TestClient(app=app) as client:
-        headers = _register_and_login(client, "commaguard@example.com")
+        headers = await create_and_login(client, "commaguard@example.com")
 
         response = client.post(
             "/api/backlog/entries",
@@ -380,11 +402,15 @@ def test_create_entry_rejects_genre_containing_a_comma(postgres_url: str) -> Non
     assert response.status_code == 400
 
 
-def test_update_entry_rejects_platform_containing_a_comma(postgres_url: str) -> None:
-    from backlog_manager_backend.app import app
+async def test_update_entry_rejects_platform_containing_a_comma(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    app = create_app()
 
     with TestClient(app=app) as client:
-        headers = _register_and_login(client, "commaguardupdate@example.com")
+        headers = await create_and_login(client, "commaguardupdate@example.com")
 
         entry_id = client.post(
             "/api/backlog/entries",
