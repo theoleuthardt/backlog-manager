@@ -20,6 +20,15 @@ next-env.d.ts
 
 # production
 build
+dist
+
+# tool caches (Node/JS side - node_modules, .next, and the Python side
+# below already cover most of the rest; these are the ones tools write
+# outside those directories)
+.cache/
+.eslintcache
+.stylelintcache
+.turbo/
 
 # misc
 .DS_Store
