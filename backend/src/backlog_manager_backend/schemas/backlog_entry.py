@@ -83,3 +83,91 @@ class CategoryBacklogEntry(msgspec.Struct):
 class CategoryBacklogAssociationParams(msgspec.Struct):
     category_id: int
     backlog_entry_id: int
+
+
+class BacklogEntryResponse(msgspec.Struct):
+    """Normalized shape returned by every backlog-entry endpoint - genre
+    and platform are always lists (the DB stores them as a single
+    comma-separated column), unlike the tRPC prototype this replaces,
+    where only one endpoint (getEntries) bothered to transform them and
+    the rest returned the raw comma-separated string."""
+
+    id: int
+    title: str
+    genre: list[str]
+    platform: list[str]
+    status: str
+    owned: bool
+    interest: int
+    created_at: datetime
+    updated_at: datetime
+    release_date: date | None = None
+    image_link: str | None = None
+    main_time: Decimal | None = None
+    main_plus_extra_time: Decimal | None = None
+    completion_time: Decimal | None = None
+    review_stars: int | None = None
+    review: str | None = None
+    note: str | None = None
+    completed_at: datetime | None = None
+
+    @classmethod
+    def from_entry(cls, entry: BacklogEntry) -> "BacklogEntryResponse":
+        return cls(
+            id=entry.backlog_entry_id,
+            title=entry.title,
+            genre=[g for g in entry.genre.split(", ") if g],
+            platform=[p for p in entry.platform.split(", ") if p],
+            status=entry.status,
+            owned=entry.owned,
+            interest=entry.interest,
+            created_at=entry.created_at,
+            updated_at=entry.updated_at,
+            release_date=entry.release_date,
+            image_link=entry.image_link,
+            main_time=entry.main_time,
+            main_plus_extra_time=entry.main_plus_extra_time,
+            completion_time=entry.completion_time,
+            review_stars=entry.review_stars,
+            review=entry.review,
+            note=entry.note,
+            completed_at=entry.completed_at,
+        )
+
+
+class CreateBacklogEntryRequest(msgspec.Struct):
+    title: str
+    genre: list[str]
+    platform: list[str]
+    status: str
+    owned: bool
+    interest: int
+    release_date: date | None = None
+    image_link: str | None = None
+    main_time: Decimal | None = None
+    main_plus_extra_time: Decimal | None = None
+    completion_time: Decimal | None = None
+    review_stars: float | None = None
+    review: str | None = None
+    note: str | None = None
+
+
+class UpdateBacklogEntryRequest(msgspec.Struct):
+    """Same UNSET-vs-None distinction as UpdateBacklogEntryParams: an
+    omitted field is left unchanged, an explicit null clears a nullable
+    field."""
+
+    title: str | msgspec.UnsetType = msgspec.UNSET
+    genre: list[str] | msgspec.UnsetType = msgspec.UNSET
+    platform: list[str] | msgspec.UnsetType = msgspec.UNSET
+    status: str | msgspec.UnsetType = msgspec.UNSET
+    owned: bool | msgspec.UnsetType = msgspec.UNSET
+    interest: int | msgspec.UnsetType = msgspec.UNSET
+    release_date: date | None | msgspec.UnsetType = msgspec.UNSET
+    image_link: str | None | msgspec.UnsetType = msgspec.UNSET
+    main_time: Decimal | None | msgspec.UnsetType = msgspec.UNSET
+    main_plus_extra_time: Decimal | None | msgspec.UnsetType = msgspec.UNSET
+    completion_time: Decimal | None | msgspec.UnsetType = msgspec.UNSET
+    review_stars: float | None | msgspec.UnsetType = msgspec.UNSET
+    review: str | None | msgspec.UnsetType = msgspec.UNSET
+    note: str | None | msgspec.UnsetType = msgspec.UNSET
