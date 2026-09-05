@@ -10,7 +10,7 @@ Users can track games with metadata from HowLongToBeat and IGDB, organize games 
 
 ## Commands
 
-**Preferred: `task <name>`** (see `Taskfile.yml`, requires [go-task](https://taskfile.dev)) — wraps both the frontend (npm) and backend (uv) toolchains plus the local Postgres compose stack under one command surface. `task` (no args) lists everything available; the most common ones:
+**Always use `task <name>` (see `Taskfile.yml`, requires [go-task](https://taskfile.dev)) when running commands in this repo, instead of calling `npm run ...` / `uv run ...` / `docker compose ...` directly.** It wraps both the frontend (npm) and backend (uv) toolchains plus the local Postgres compose stack under one unified command surface, so any command run from Claude Code should go through it if a matching task exists. `task` (no args) lists everything available; the most common ones:
 
 ```bash
 task install       # npm install (frontend) + uv sync (backend)
@@ -97,6 +97,12 @@ The project enforces strict ESLint rules:
 - Use `??` instead of `||` for nullish values
 - Remove unused variables
 - Don't annotate types that can be inferred
+
+## Testing Philosophy
+
+Always work test-driven: write the test that expresses the desired behavior before (or alongside) the implementation, then make the implementation satisfy it.
+
+Once a test correctly expresses the desired behavior, treat it as fixed — do not edit or weaken that test to make a failure go away. If a test fails, the default assumption is that the code is wrong, not the test. Only change a test when the desired behavior itself has genuinely changed (and say so explicitly), never as a shortcut to get a suite green.
 
 ## Issue Management Workflow
 

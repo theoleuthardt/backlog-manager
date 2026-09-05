@@ -6,7 +6,11 @@ from litestar.params import FromPath
 from litestar.status_codes import HTTP_201_CREATED, HTTP_204_NO_CONTENT, HTTP_409_CONFLICT
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backlog_manager_backend.auth.dependencies import get_current_user, require_admin
+from backlog_manager_backend.auth.dependencies import (
+    BEARER_SECURITY_REQUIREMENT,
+    get_current_user,
+    require_admin,
+)
 from backlog_manager_backend.auth.passwords import hash_password
 from backlog_manager_backend.errors import ConflictError, NotFoundError, ValidationError
 from backlog_manager_backend.repositories import user_repo
@@ -40,12 +44,12 @@ def _hash_if_present(password: str | object) -> str | object:
     return hash_password(password) if isinstance(password, str) else password
 
 
-@get("/api/user/me")
+@get("/api/user/me", security=BEARER_SECURITY_REQUIREMENT)
 async def get_own_user(current_user: NamedDependency[User]) -> PublicUser:
     return PublicUser.from_user(current_user)
 
 
-@put("/api/user/me")
+@put("/api/user/me", security=BEARER_SECURITY_REQUIREMENT)
 async def update_own_user(
     data: UpdateOwnUserRequest,
     db_session: NamedDependency[AsyncSession],
@@ -72,7 +76,7 @@ async def update_own_user(
     return PublicUser.from_user(updated)
 
 
-@delete("/api/user/me", status_code=HTTP_204_NO_CONTENT)
+@delete("/api/user/me", status_code=HTTP_204_NO_CONTENT, security=BEARER_SECURITY_REQUIREMENT)
 async def delete_own_user(
     db_session: NamedDependency[AsyncSession],
     current_user: NamedDependency[User],
@@ -196,4 +200,5 @@ admin_user_router = Router(
         "current_user": Provide(require_admin),
     },
     cache_control=_NO_STORE,
+    security=BEARER_SECURITY_REQUIREMENT,
 )

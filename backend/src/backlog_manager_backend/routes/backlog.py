@@ -4,7 +4,7 @@ from litestar.exceptions import NotFoundException, ValidationException
 from litestar.params import FromPath, FromQuery
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backlog_manager_backend.auth.dependencies import get_current_user
+from backlog_manager_backend.auth.dependencies import BEARER_SECURITY_REQUIREMENT, get_current_user
 from backlog_manager_backend.errors import NotFoundError
 from backlog_manager_backend.repositories import (
     backlog_entry_repo,
@@ -297,4 +297,5 @@ backlog_router = Router(
         get_entries_for_category,
     ],
     dependencies={"current_user": Provide(get_current_user)},
+    security=BEARER_SECURITY_REQUIREMENT,
 )
