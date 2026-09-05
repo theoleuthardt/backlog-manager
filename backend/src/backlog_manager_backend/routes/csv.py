@@ -1,0 +1,64 @@
+from litestar import Router, get, post
+from litestar.di import NamedDependency, Provide
+from litestar.params import FromPath
+from litestar.status_codes import HTTP_200_OK, HTTP_204_NO_CONTENT
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from backlog_manager_backend.auth.dependencies import get_current_user
+from backlog_manager_backend.csv.parse_csv import (
+    ColumnConfig,
+    CSVRecord,
+    ImportResult,
+    get_import_progress,
+    import_backlog_entries_from_csv,
+    parse_csv_content,
+    set_cancel_flag,
+)
+from backlog_manager_backend.schemas.csv import (
+    ImportCsvRequest,
+    ImportProgressResponse,
+    ParseCsvRequest,
+)
+from backlog_manager_backend.schemas.user import User
+
+
+@post("/api/csv/parse", status_code=HTTP_200_OK)
+async def parse_csv(data: ParseCsvRequest, current_user: NamedDependency[User]) -> list[CSVRecord]:
+    return parse_csv_content(data.content)
+
+
+@post("/api/csv/import", status_code=HTTP_200_OK)
+async def import_csv(
+    data: ImportCsvRequest,
+    db_session: NamedDependency[AsyncSession],
+    current_user: NamedDependency[User],
+) -> ImportResult:
+    records = parse_csv_content(data.content)
+    config = ColumnConfig(
+        title_column=data.title_column,
+        genre_column=data.genre_column,
+        platform_column=data.platform_column,
+        status_column=data.status_column,
+    )
+    return await import_backlog_entries_from_csv(
+        db_session, current_user.id, records, config, data.session_id
+    )
+
+
+@get("/api/csv/import/{session_id:str}/progress")
+async def get_csv_import_progress(
+    session_id: FromPath[str], current_user: NamedDependency[User]
+) -> ImportProgressResponse:
+    return ImportProgressResponse(processed=get_import_progress(session_id))
+
+
+@post("/api/csv/import/{session_id:str}/cancel", status_code=HTTP_204_NO_CONTENT)
+async def cancel_csv_import(session_id: FromPath[str], current_user: NamedDependency[User]) -> None:
+    set_cancel_flag(session_id, True)
+
+
+csv_router = Router(
+    path="",
+    route_handlers=[parse_csv, import_csv, get_csv_import_progress, cancel_csv_import],
+    dependencies={"current_user": Provide(get_current_user)},
+)
