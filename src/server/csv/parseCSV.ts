@@ -1,5 +1,5 @@
 import { parse } from "csv-parse";
-import { SearchGame } from "../integrations/howlongtobeat/howLongToBeat";
+import { SearchGameOnHLTB } from "../integrations/howlongtobeat/howLongToBeat";
 import type { Pool } from "pg";
 import * as backlogEntryService from "~/server/services/backlogEntryService";
 
@@ -36,7 +36,9 @@ export interface MissingGame {
   status: string;
 }
 
-export async function parseCSVContent(fileContent: string): Promise<CSVRecord[]> {
+export async function parseCSVContent(
+  fileContent: string,
+): Promise<CSVRecord[]> {
   return new Promise((resolve, reject) => {
     const records: unknown[] = [];
 
@@ -65,7 +67,8 @@ export async function parseCSVContent(fileContent: string): Promise<CSVRecord[]>
 function safeString(value: unknown, defaultValue = ""): string {
   if (typeof value === "string") return value;
   if (value === undefined || value === null) return defaultValue;
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (typeof value === "number" || typeof value === "boolean")
+    return String(value);
   return defaultValue;
 }
 
@@ -158,7 +161,7 @@ export async function importBacklogEntriesFromCSV(
   userId: number,
   records: CSVRecord[],
   config: ColumnConfig,
-  sessionId?: string
+  sessionId?: string,
 ): Promise<{
   success: number;
   failed: number;
@@ -176,7 +179,9 @@ export async function importBacklogEntriesFromCSV(
 
   for (const record of records) {
     if (sessionId && isCancelled(sessionId)) {
-      console.log(`Import cancelled at record ${processedCount + 1}/${records.length}`);
+      console.log(
+        `Import cancelled at record ${processedCount + 1}/${records.length}`,
+      );
       break;
     }
 
@@ -197,13 +202,16 @@ export async function importBacklogEntriesFromCSV(
       let gameData = null;
       let foundInHLTB = false;
       try {
-        const searchResults = await SearchGame(title);
+        const searchResults = await SearchGameOnHLTB(title);
         if (searchResults && searchResults.length > 0) {
           gameData = searchResults[0];
           foundInHLTB = true;
         }
       } catch (searchError) {
-        console.warn(`Could not find game "${title}" in howLongToBeat:`, searchError);
+        console.warn(
+          `Could not find game "${title}" in howLongToBeat:`,
+          searchError,
+        );
       }
 
       if (!foundInHLTB) {
@@ -246,7 +254,10 @@ export async function importBacklogEntriesFromCSV(
         if (sessionId) emitProgress(sessionId, processedCount);
         console.log(`✓ Created backlog entry: ${title}`);
       } catch (createError) {
-        console.error(`✗ Failed to create backlog entry for "${title}":`, createError);
+        console.error(
+          `✗ Failed to create backlog entry for "${title}":`,
+          createError,
+        );
         throw createError;
       }
     } catch (error) {

@@ -35,9 +35,7 @@ yarn-error.log*
 # do not commit any .env files to git, except for the .env.example file. https://create.t3.gg/en/usage/env-variables#using-environment-variables
 .env
 .env*.local
-
-# vercel
-.vercel
+.env.prod
 
 # typescript
 *.tsbuildinfo
@@ -48,3 +46,9 @@ yarn-error.log*
 # local docker files
 /docker
 .vscode/settings.json
+
+# tauri (desktop app) build artifacts, tracked in the source folder itself
+# but not fully covered by src-tauri/.gitignore on branches that predate it
+/src-tauri/target/
+/src-tauri/gen/schemas
+/src-tauri/resources/

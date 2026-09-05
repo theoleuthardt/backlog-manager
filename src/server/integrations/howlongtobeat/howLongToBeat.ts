@@ -1,19 +1,6 @@
-import type { HltbGame, HltbSearchResult } from "~/server/integrations/types";
+import type { HltbResultData } from "~/server/integrations/types";
 
-interface HltbApiGame {
-  id: number;
-  hltbId: number;
-  title: string;
-  imageUrl: string;
-  steamAppId: number | null;
-  gogAppId: number | null;
-  mainStory: number;
-  mainStoryWithExtras: number;
-  completionist: number;
-  lastUpdatedAt: string;
-}
-
-export async function SearchGame(input: string) {
+export async function SearchGameOnHLTB(input: string) {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000);
@@ -47,7 +34,7 @@ export async function SearchGame(input: string) {
       return [];
     }
 
-    const result: HltbSearchResult = (data as HltbApiGame[]).map((item) => ({
+    const result = (data as HltbResultData[]).map((item: HltbResultData) => ({
       id: item.id,
       hltbId: item.hltbId,
       title: item.title,
@@ -66,7 +53,7 @@ export async function SearchGame(input: string) {
   }
 }
 
-export async function GetGameByID(id: number) {
+export async function GetGameByIDOnHLTB(id: number) {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000);
@@ -83,9 +70,9 @@ export async function GetGameByID(id: number) {
     }
 
     const data: unknown = await response.json();
-    const apiData = data as HltbApiGame;
+    const apiData = data as HltbResultData;
 
-    const result: HltbGame = {
+    const result: HltbResultData = {
       id: apiData.id,
       hltbId: apiData.hltbId,
       title: apiData.title,

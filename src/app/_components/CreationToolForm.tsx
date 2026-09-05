@@ -22,17 +22,22 @@ export function CreationToolForm() {
   const searchParams = useSearchParams();
   const title = searchParams.get("title") ?? "";
   const imageUrl = searchParams.get("imageUrl") ?? "";
-  const mainStory = parseFloat(searchParams.get("mainStory") ?? "0");
-  const mainStoryWithExtras = parseFloat(
+  const genresFromUrl = searchParams.get("genres") ?? "";
+  const platformsFromUrl = searchParams.get("platforms") ?? "";
+  const mainStory = Number.parseFloat(searchParams.get("mainStory") ?? "0");
+  const mainStoryWithExtras = Number.parseFloat(
     searchParams.get("mainStoryWithExtras") ?? "0",
   );
-  const completionist = parseFloat(searchParams.get("completionist") ?? "0");
+  const completionist = Number.parseFloat(
+    searchParams.get("completionist") ?? "0",
+  );
 
-  const hasHltbData = mainStory > 0 || mainStoryWithExtras > 0 || completionist > 0;
+  const hasHltbData =
+    mainStory > 0 || mainStoryWithExtras > 0 || completionist > 0;
   const hasMissingData = !imageUrl || !hasHltbData;
 
-  const [genre, setGenre] = useState("");
-  const [platform, setPlatform] = useState("");
+  const [genre, setGenre] = useState(genresFromUrl);
+  const [platform, setPlatform] = useState(platformsFromUrl);
   const [status, setStatus] = useState("");
   const [owned, setOwned] = useState(false);
   const [interest, setInterest] = useState(5);
@@ -73,7 +78,12 @@ export function CreationToolForm() {
         title,
         genre,
         platform,
-        status: status as "Not Started" | "In Progress" | "Completed" | "On Hold" | "Dropped",
+        status: status as
+          | "Not Started"
+          | "In Progress"
+          | "Completed"
+          | "On Hold"
+          | "Dropped",
         owned,
         interest,
         imageLink: imageUrl,
@@ -111,6 +121,40 @@ export function CreationToolForm() {
     }
   };
 
+  let submitButtonColorClasses =
+    "border-white bg-black text-white hover:bg-white hover:text-black";
+  if (createStatus === "success") {
+    submitButtonColorClasses =
+      "border-green-600 bg-green-600 text-white hover:bg-green-600";
+  } else if (createStatus === "error") {
+    submitButtonColorClasses =
+      "border-red-600 bg-red-600 text-white hover:bg-red-600";
+  }
+
+  let submitButtonContent: React.ReactNode = "Create Entry";
+  if (isLoading) {
+    submitButtonContent = (
+      <>
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        Creating Entry...
+      </>
+    );
+  } else if (createStatus === "success") {
+    submitButtonContent = (
+      <>
+        <Check className="mr-2 h-4 w-4" />
+        Created!
+      </>
+    );
+  } else if (createStatus === "error") {
+    submitButtonContent = (
+      <>
+        <X className="mr-2 h-4 w-4" />
+        Failed
+      </>
+    );
+  }
+
   return (
     <div className="mx-auto w-full max-w-[1600px]">
       <h1 className="mb-4 text-center text-2xl font-bold lg:mb-6 lg:text-3xl">
@@ -122,15 +166,16 @@ export function CreationToolForm() {
           <p className="font-semibold">⚠️ Warning: Missing game data</p>
           <p className="text-sm">
             {!imageUrl && "No image found. "}
-            {!hasHltbData && "No HowLongToBeat times found. "}
-            Consider searching for the game in the Add Entry dialog to get complete data.
+            {!hasHltbData && "No game beat times found. "}
+            Consider searching for the game again in the searchbar to get
+            complete data.
           </p>
         </div>
       )}
 
       <form onSubmit={handleSubmit}>
         <div className="flex flex-col gap-4 lg:flex-row lg:gap-8">
-          <div className="flex justify-center lg:w-64 lg:flex-shrink-0">
+          <div className="flex justify-center lg:w-64 lg:shrink-0">
             <GameImage
               src={imageUrl}
               alt={title}
@@ -241,7 +286,9 @@ export function CreationToolForm() {
                   min="0"
                   step="0.1"
                   value={playtime}
-                  onChange={(e) => setPlaytime(parseFloat(e.target.value) || 0)}
+                  onChange={(e) =>
+                    setPlaytime(Number.parseFloat(e.target.value) || 0)
+                  }
                   className="bg-black text-white"
                 />
               </div>
@@ -256,7 +303,9 @@ export function CreationToolForm() {
                   min="1"
                   max="10"
                   value={interest}
-                  onChange={(e) => setInterest(parseInt(e.target.value) || 1)}
+                  onChange={(e) =>
+                    setInterest(Number.parseInt(e.target.value) || 1)
+                  }
                   className="bg-black text-white"
                 />
               </div>
@@ -273,7 +322,7 @@ export function CreationToolForm() {
                   step="0.5"
                   value={reviewStars}
                   onChange={(e) =>
-                    setReviewStars(parseFloat(e.target.value) || 0)
+                    setReviewStars(Number.parseFloat(e.target.value) || 0)
                   }
                   disabled={status !== "Completed"}
                   className="bg-black text-white disabled:opacity-50"
@@ -300,7 +349,7 @@ export function CreationToolForm() {
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   placeholder="Add any notes about this game..."
-                  className="min-h-[80px] resize-none bg-black text-white"
+                  className="min-h-20 resize-none bg-black text-white"
                 />
               </div>
 
@@ -314,7 +363,7 @@ export function CreationToolForm() {
                   onChange={(e) => setReview(e.target.value)}
                   placeholder="Write your review here..."
                   disabled={status !== "Completed"}
-                  className="min-h-[80px] resize-none bg-black text-white disabled:opacity-50"
+                  className="min-h-20 resize-none bg-black text-white disabled:opacity-50"
                 />
               </div>
             </div>
@@ -323,32 +372,9 @@ export function CreationToolForm() {
               <Button
                 type="submit"
                 disabled={isLoading || createStatus === "success"}
-                className={`w-full border-2 px-8 py-5 text-base font-bold transition-colors duration-300 lg:w-auto lg:min-w-[200px] ${
-                  createStatus === "success"
-                    ? "border-green-600 bg-green-600 text-white hover:bg-green-600"
-                    : createStatus === "error"
-                      ? "border-red-600 bg-red-600 text-white hover:bg-red-600"
-                      : "border-white bg-black text-white hover:bg-white hover:text-black"
-                }`}
+                className={`w-full border-2 px-8 py-5 text-base font-bold transition-colors duration-300 lg:w-auto lg:min-w-[200px] ${submitButtonColorClasses}`}
               >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating Entry...
-                  </>
-                ) : createStatus === "success" ? (
-                  <>
-                    <Check className="mr-2 h-4 w-4" />
-                    Created!
-                  </>
-                ) : createStatus === "error" ? (
-                  <>
-                    <X className="mr-2 h-4 w-4" />
-                    Failed
-                  </>
-                ) : (
-                  "Create Entry"
-                )}
+                {submitButtonContent}
               </Button>
             </div>
           </div>

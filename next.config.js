@@ -13,6 +13,15 @@ const config = {
     "10.20.146.74",
     "10.20.*",
   ],
+
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+
+  serverExternalPackages: ["pg"],
+
+  turbopack: {},
+
   images: {
     remotePatterns: [
       {
@@ -28,6 +37,11 @@ const config = {
       {
         protocol: "https",
         hostname: "howlongtobeat.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "images.igdb.com",
         pathname: "/**",
       },
     ],
