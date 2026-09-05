@@ -23,6 +23,7 @@ build
 
 # misc
 .DS_Store
+Thumbs.db
 *.pem
 
 # debug
@@ -57,6 +58,14 @@ yarn-error.log*
 # claude
 .claude
 
-# python backend
-backend/.pytest_cache/
-backend/.ruff_cache/
+# python (backend/ has its own .gitignore too; these are unanchored so they
+# also catch stray venvs/caches anywhere else in the repo)
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.egg-info/
