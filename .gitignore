@@ -46,3 +46,9 @@ yarn-error.log*
 # local docker files
 /docker
 .vscode/settings.json
+
+# tauri (desktop app) build artifacts, tracked in the source folder itself
+# but not fully covered by src-tauri/.gitignore on branches that predate it
+/src-tauri/target/
+/src-tauri/gen/schemas
+/src-tauri/resources/
