@@ -18,33 +18,63 @@ def auth_service() -> ModuleType:
     return module
 
 
-async def test_register_creates_user_with_hashed_password(
+async def test_create_user_creates_user_with_hashed_password(
     auth_service: ModuleType, session: AsyncSession
 ) -> None:
-    from backlog_manager_backend.schemas.auth import RegisterParams
+    from backlog_manager_backend.schemas.user import CreateUserRequest
 
-    user = await auth_service.register(
+    user = await auth_service.create_user(
         session,
-        RegisterParams(username="newuser", email="newuser@example.com", password="hunter2"),
+        CreateUserRequest(username="newuser", email="newuser@example.com", password="hunter22"),
     )
 
     assert user.name == "newuser"
     assert user.email == "newuser@example.com"
+    assert user.is_admin is False
+    assert user.password_hash != "hunter22"
 
 
-async def test_register_rejects_duplicate_email(
+async def test_create_user_can_create_an_admin(
     auth_service: ModuleType, session: AsyncSession
 ) -> None:
-    from backlog_manager_backend.schemas.auth import RegisterParams
+    from backlog_manager_backend.schemas.user import CreateUserRequest
 
-    await auth_service.register(
-        session, RegisterParams(username="first", email="dupe@example.com", password="hunter2")
+    user = await auth_service.create_user(
+        session,
+        CreateUserRequest(
+            username="newadmin", email="newadmin@example.com", password="hunter22", is_admin=True
+        ),
+    )
+
+    assert user.is_admin is True
+
+
+async def test_create_user_rejects_duplicate_email(
+    auth_service: ModuleType, session: AsyncSession
+) -> None:
+    from backlog_manager_backend.schemas.user import CreateUserRequest
+
+    await auth_service.create_user(
+        session,
+        CreateUserRequest(username="first", email="dupe@example.com", password="hunter22"),
     )
 
     with pytest.raises(ConflictError):
-        await auth_service.register(
+        await auth_service.create_user(
             session,
-            RegisterParams(username="second", email="dupe@example.com", password="hunter2"),
+            CreateUserRequest(username="second", email="dupe@example.com", password="hunter22"),
+        )
+
+
+async def test_create_user_rejects_short_password(
+    auth_service: ModuleType, session: AsyncSession
+) -> None:
+    from backlog_manager_backend.schemas.user import CreateUserRequest
+
+    with pytest.raises(ValidationError):
+        await auth_service.create_user(
+            session,
+            CreateUserRequest(username="shortpw", email="shortpw@example.com", password="short"),
         )
 
 
@@ -52,15 +82,16 @@ async def test_login_returns_token_for_correct_credentials(
     auth_service: ModuleType, session: AsyncSession
 ) -> None:
     from backlog_manager_backend.auth.tokens import decode_access_token
-    from backlog_manager_backend.schemas.auth import LoginParams, RegisterParams
+    from backlog_manager_backend.schemas.auth import LoginParams
+    from backlog_manager_backend.schemas.user import CreateUserRequest
 
-    user = await auth_service.register(
+    user = await auth_service.create_user(
         session,
-        RegisterParams(username="loginuser", email="loginuser@example.com", password="hunter2"),
+        CreateUserRequest(username="loginuser", email="loginuser@example.com", password="hunter22"),
     )
 
     token = await auth_service.login(
-        session, LoginParams(email="loginuser@example.com", password="hunter2")
+        session, LoginParams(email="loginuser@example.com", password="hunter22")
     )
 
     assert decode_access_token(token) == user.id
@@ -69,16 +100,17 @@ async def test_login_returns_token_for_correct_credentials(
 async def test_login_rejects_wrong_password(
     auth_service: ModuleType, session: AsyncSession
 ) -> None:
-    from backlog_manager_backend.schemas.auth import LoginParams, RegisterParams
+    from backlog_manager_backend.schemas.auth import LoginParams
+    from backlog_manager_backend.schemas.user import CreateUserRequest
 
-    await auth_service.register(
+    await auth_service.create_user(
         session,
-        RegisterParams(username="wrongpw", email="wrongpw@example.com", password="hunter2"),
+        CreateUserRequest(username="wrongpw", email="wrongpw@example.com", password="hunter22"),
     )
 
     with pytest.raises(ValidationError):
         await auth_service.login(
-            session, LoginParams(email="wrongpw@example.com", password="not-hunter2")
+            session, LoginParams(email="wrongpw@example.com", password="not-hunter22")
         )
 
 
@@ -87,7 +119,7 @@ async def test_login_rejects_unknown_email(auth_service: ModuleType, session: As
 
     with pytest.raises(ValidationError):
         await auth_service.login(
-            session, LoginParams(email="nobody@example.com", password="hunter2")
+            session, LoginParams(email="nobody@example.com", password="hunter22")
         )
 
 

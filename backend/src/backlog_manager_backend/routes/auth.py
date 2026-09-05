@@ -1,29 +1,22 @@
 from litestar import post
 from litestar.di import NamedDependency
-from litestar.exceptions import ClientException, NotAuthorizedException
-from litestar.status_codes import HTTP_200_OK, HTTP_201_CREATED, HTTP_409_CONFLICT
+from litestar.exceptions import NotAuthorizedException
+from litestar.middleware.rate_limit import RateLimitConfig
+from litestar.status_codes import HTTP_200_OK
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backlog_manager_backend.errors import ConflictError, ValidationError
-from backlog_manager_backend.schemas.auth import (
-    LoginParams,
-    PublicUser,
-    RegisterParams,
-    TokenResponse,
-)
+from backlog_manager_backend.errors import ValidationError
+from backlog_manager_backend.schemas.auth import LoginParams, TokenResponse
 from backlog_manager_backend.services import auth_service
 
-
-@post("/api/auth/register", status_code=HTTP_201_CREATED)
-async def register(data: RegisterParams, db_session: NamedDependency[AsyncSession]) -> PublicUser:
-    try:
-        user = await auth_service.register(db_session, data)
-    except ConflictError as error:
-        raise ClientException(str(error), status_code=HTTP_409_CONFLICT) from error
-    return PublicUser.from_user(user)
+# Login is the highest-value brute-force target in the whole API (it's the
+# one endpoint that turns a guessed password into a valid session) - capped
+# tighter than any other endpoint, independent of whether the credentials
+# guessed happen to be correct.
+_login_rate_limit = RateLimitConfig(rate_limit=("minute", 10))
 
 
-@post("/api/auth/login", status_code=HTTP_200_OK)
+@post("/api/auth/login", status_code=HTTP_200_OK, middleware=[_login_rate_limit.middleware])
 async def login(data: LoginParams, db_session: NamedDependency[AsyncSession]) -> TokenResponse:
     try:
         access_token = await auth_service.login(db_session, data)
