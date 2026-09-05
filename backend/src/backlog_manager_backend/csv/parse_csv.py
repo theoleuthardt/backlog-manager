@@ -177,7 +177,7 @@ async def import_backlog_entries_from_csv(
                     title=title,
                     genre=_safe_string(record.get(config.genre_column), "Unknown"),
                     platform=_safe_string(record.get(config.platform_column), "Unknown"),
-                    status="Not Started",
+                    status=_safe_string(record.get(config.status_column), "Not Started"),
                     owned=True,
                     interest=5,
                     image_link=game_data.image_url,
