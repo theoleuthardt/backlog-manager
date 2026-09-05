@@ -39,7 +39,10 @@ import {
   AlertDialogTrigger,
 } from "shadcn_components/ui/alert-dialog";
 import type { BacklogEntryProps } from "~/app/types";
-import { api } from "~/trpc/react";
+import {
+  useUpdateBacklogEntry,
+  useDeleteBacklogEntry,
+} from "~/hooks/useBacklog";
 
 export const BacklogEntry = (props: BacklogEntryProps) => {
   const [imageLink, setImageLink] = useState(props.imageLink);
@@ -69,9 +72,8 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
     }
   };
 
-  const utils = api.useUtils();
-  const updateEntryMutation = api.backlog.updateEntry.useMutation();
-  const deleteEntryMutation = api.backlog.deleteEntry.useMutation();
+  const updateEntryMutation = useUpdateBacklogEntry();
+  const deleteEntryMutation = useDeleteBacklogEntry();
 
   const handleUpdate = async () => {
     setIsLoading(true);
@@ -110,16 +112,9 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
 
       if (Object.keys(changes).length > 0) {
         await updateEntryMutation.mutateAsync({
-          backlogEntryId: props.id,
-          ...changes,
+          entryId: props.id,
+          changes,
         });
-        setUpdateStatus("success");
-        toast.success("Entry updated successfully!");
-
-        await utils.backlog.getEntries.invalidate();
-
-        await utils.backlog.getEntries.invalidate();
-
         setUpdateStatus("success");
         toast.success("Entry updated successfully!");
 
@@ -146,11 +141,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      await deleteEntryMutation.mutateAsync({
-        backlogEntryId: props.id,
-      });
-
-      await utils.backlog.getEntries.invalidate();
+      await deleteEntryMutation.mutateAsync(props.id);
 
       toast.success(`"${props.title}" deleted successfully!`);
       setDeleteDialogOpen(false);

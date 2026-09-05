@@ -15,6 +15,7 @@ import { ExportCSVContent } from "./ExportCSVContent";
 import { EntryCreationDialog } from "components/EntryCreationDialog";
 import { DashboardContent } from "./DashboardContent";
 import { CreationToolForm } from "./CreationToolForm";
+import { RequireAuth } from "./RequireAuth";
 
 export {
   Navbar,
@@ -34,4 +35,5 @@ export {
   EntryCreationDialog,
   DashboardContent,
   CreationToolForm,
+  RequireAuth,
 };

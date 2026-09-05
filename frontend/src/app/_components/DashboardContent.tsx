@@ -15,18 +15,11 @@ import { Checkbox } from "shadcn_components/ui/checkbox";
 import { Slider } from "shadcn_components/ui/slider";
 import { Label } from "shadcn_components/ui/label";
 import Image from "next/image";
-import { api } from "~/trpc/react";
+import { useBacklogEntries } from "~/hooks/useBacklog";
 import { Loader2 } from "lucide-react";
 
 export const DashboardContent = () => {
-  const {
-    data: backlogData,
-    isLoading,
-    error,
-  } = api.backlog.getEntries.useQuery(undefined, {
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-  });
+  const { data: backlogData, isLoading, error } = useBacklogEntries();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
@@ -49,10 +42,7 @@ export const DashboardContent = () => {
 
   const maxPlaytime = useMemo(() => {
     if (!backlogData) return 100;
-    const max = Math.max(
-      ...backlogData.map((entry) => entry.playtime ?? 0),
-      0,
-    );
+    const max = Math.max(...backlogData.map((entry) => entry.playtime ?? 0), 0);
     return max % 2 === 0 ? max : max + 1;
   }, [backlogData]);
 

@@ -1,5 +1,7 @@
 import { type Metadata } from "next";
 
+import { RequireAuth } from "components";
+
 export const metadata: Metadata = {
   title: "Dashboard",
   description: "Your Backlog Manager Dashboard",
@@ -9,5 +11,5 @@ export const metadata: Metadata = {
 export default function DashboardLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  return <>{children}</>;
+  return <RequireAuth>{children}</RequireAuth>;
 }
