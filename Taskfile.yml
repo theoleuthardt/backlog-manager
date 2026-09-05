@@ -138,3 +138,8 @@ tasks:
     dir: "{{.FRONTEND_DIR}}"
     cmds:
       - npm run generate-api-types
+
+  vscode:setup-python:
+    desc: Point VS Code/VSCodium's Python tooling at backend/.venv (run once per machine/checkout)
+    cmds:
+      - bash scripts/setup-vscode-python.bash
