@@ -25,12 +25,6 @@ export default async function LoginPage() {
                 >
                   Login
                 </Link>
-                <Link
-                  href="/register"
-                  className="rounded-full bg-green-600 px-10 py-3 font-semibold text-white transition hover:bg-green-700"
-                >
-                  Register
-                </Link>
               </div>
             </>
           ) : (
