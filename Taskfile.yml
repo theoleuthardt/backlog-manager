@@ -1,0 +1,128 @@
+version: "3"
+
+vars:
+  FRONTEND_DIR: frontend
+  BACKEND_DIR: backend
+
+tasks:
+  default:
+    desc: List all available tasks
+    cmds:
+      - task --list
+    silent: true
+
+  install:
+    desc: Install frontend and backend dependencies
+    cmds:
+      - task: frontend:install
+      - task: backend:install
+
+  dev:
+    desc: Run the Next.js dev server
+    cmds:
+      - task: frontend:dev
+
+  build:
+    desc: Build the frontend for production
+    cmds:
+      - task: frontend:build
+
+  lint:
+    desc: Lint frontend and backend
+    cmds:
+      - task: frontend:lint
+      - task: backend:lint
+
+  test:
+    desc: Run frontend and backend test suites
+    cmds:
+      - task: frontend:test
+      - task: backend:test
+
+  check:
+    desc: Lint + typecheck the frontend, lint the backend
+    cmds:
+      - task: frontend:check
+      - task: backend:lint
+
+  db:up:
+    desc: Start local Postgres + pgAdmin via compose.yml
+    cmds:
+      - docker compose up -d db db-monitoring
+
+  db:down:
+    desc: Stop the local Postgres + pgAdmin (only those two services)
+    cmds:
+      - docker compose stop db db-monitoring
+
+  frontend:install:
+    desc: Install frontend dependencies
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm install
+
+  frontend:dev:
+    desc: Start the Next.js dev server (Turbo)
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run dev
+
+  frontend:build:
+    desc: Build the Next.js app for production
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run build
+
+  frontend:lint:
+    desc: Lint the frontend (eslint)
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run lint
+
+  frontend:check:
+    desc: Lint + typecheck the frontend
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run check
+
+  frontend:test:
+    desc: Run frontend tests (vitest, against a real Postgres via testcontainers)
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npx vitest run
+
+  backend:install:
+    desc: Install backend dependencies (uv sync)
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - uv sync
+
+  backend:dev:
+    desc: Start the Litestar dev server
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - uv run uvicorn backlog_manager_backend.app:app --reload --port 8000
+
+  backend:lint:
+    desc: Lint the backend (ruff)
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - uv run ruff check .
+
+  backend:test:
+    desc: Run backend tests (pytest, against a real Postgres via testcontainers)
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - uv run pytest
+
+  backend:migrate:
+    desc: Apply pending Alembic migrations
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - uv run alembic upgrade head
+
+  backend:migration:
+    desc: 'Create a new Alembic migration: task backend:migration -- "message"'
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - uv run alembic revision --autogenerate -m "{{.CLI_ARGS}}"

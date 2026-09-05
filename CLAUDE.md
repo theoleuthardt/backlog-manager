@@ -10,7 +10,20 @@ Users can track games with metadata from HowLongToBeat and IGDB, organize games 
 
 ## Commands
 
-Root `package.json` only has convenience scripts delegating to `frontend/` (`--prefix frontend`) - run `npm install --prefix frontend` once first, or `cd frontend` and use these directly:
+**Preferred: `task <name>`** (see `Taskfile.yml`, requires [go-task](https://taskfile.dev)) — wraps both the frontend (npm) and backend (uv) toolchains plus the local Postgres compose stack under one command surface. `task` (no args) lists everything available; the most common ones:
+
+```bash
+task install       # npm install (frontend) + uv sync (backend)
+task dev           # Next.js dev server
+task backend:dev   # Litestar dev server (uvicorn --reload)
+task db:up         # local Postgres + pgAdmin via compose.yml
+task test          # frontend (vitest) + backend (pytest) suites
+task lint          # frontend (eslint) + backend (ruff)
+task backend:migration -- "add foo column"   # new Alembic revision
+task backend:migrate                          # alembic upgrade head
+```
+
+The commands below still work directly if you'd rather not use Task. Root `package.json` only has convenience scripts delegating to `frontend/` (`--prefix frontend`) - run `npm install --prefix frontend` once first, or `cd frontend` and use these directly:
 
 ```bash
 # Development
