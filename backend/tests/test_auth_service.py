@@ -105,3 +105,30 @@ async def test_login_rejects_oauth_only_account_with_empty_password_hash(
         await auth_service.login(
             session, LoginParams(email="oauthuser@example.com", password="anything")
         )
+
+
+async def test_login_verifies_a_password_hash_even_for_unknown_email(
+    auth_service: ModuleType, session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Regression test for a timing side-channel: skipping Argon2
+    verification for an unknown email would make that path measurably
+    faster than a wrong-password attempt against a real account,
+    letting an attacker enumerate registered emails by response time.
+    Asserts the structural fix (verify_password always runs against
+    some hash) rather than measuring wall-clock time, which would be
+    flaky in CI."""
+    from backlog_manager_backend.schemas.auth import LoginParams
+
+    calls: list[str] = []
+    monkeypatch.setattr(
+        auth_service,
+        "verify_password",
+        lambda password_hash, password: calls.append(password_hash) or False,
+    )
+
+    with pytest.raises(ValidationError):
+        await auth_service.login(
+            session, LoginParams(email="nobody@example.com", password="anything")
+        )
+
+    assert calls == [auth_service._DUMMY_PASSWORD_HASH]
