@@ -165,6 +165,24 @@ async def test_enroll_two_factor_rejects_when_already_enabled(
     assert second_enroll_response.status_code == 409
 
 
+async def test_verify_two_factor_rejects_a_repeat_call_once_enabled(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    app = create_app()
+
+    with TestClient(app=app) as client:
+        headers = await create_and_login(client, "reverifyroute@example.com")
+        secret, _backup_codes = await _enroll_and_verify(client, headers)
+
+        second_verify_response = client.post(
+            "/api/auth/2fa/verify", json={"code": pyotp.TOTP(secret).now()}, headers=headers
+        )
+
+    assert second_verify_response.status_code == 409
+
+
 async def test_login_requires_a_second_step_once_two_factor_is_enabled(
     postgres_url: str, create_and_login
 ) -> None:

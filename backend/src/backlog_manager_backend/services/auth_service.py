@@ -102,7 +102,15 @@ async def enroll_two_factor(session: AsyncSession, user: User) -> TwoFactorEnrol
 
 async def verify_two_factor_enrollment(session: AsyncSession, user: User, code: str) -> list[str]:
     """On success, turns 2FA on and returns a fresh set of backup codes
-    in plaintext - the only time they're ever available unhashed."""
+    in plaintext - the only time they're ever available unhashed.
+    Rejects an already-enabled account (mirrors enroll_two_factor's own
+    guard) so a repeated verification call can't silently append another
+    active backup-code set. Backup codes are created BEFORE totp_enabled
+    is flipped, not after: if code creation fails, the account correctly
+    stays not-enabled and the same enrollment can just be retried, rather
+    than ending up enabled with zero recovery codes."""
+    if user.totp_enabled:
+        raise ConflictError("Two-factor authentication is already enabled")
     if not user.totp_secret_encrypted:
         raise ValidationError("No two-factor enrollment in progress")
 
@@ -110,12 +118,11 @@ async def verify_two_factor_enrollment(session: AsyncSession, user: User, code: 
     if not verify_totp_code(secret, code):
         raise ValidationError("Invalid two-factor code")
 
-    await user_repo.update_user(session, UpdateUserParams(user_id=user.id, totp_enabled=True))
-
     backup_codes = generate_backup_codes()
     await backup_code_repo.create_backup_codes(
         session, user.id, [hash_password(backup_code) for backup_code in backup_codes]
     )
+    await user_repo.update_user(session, UpdateUserParams(user_id=user.id, totp_enabled=True))
     return backup_codes
 
 

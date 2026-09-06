@@ -51,7 +51,12 @@ def create_access_token(user_id: int) -> str:
 
 def decode_access_token(token: str) -> int:
     payload = _decode(token)
-    if payload.get("purpose") != _ACCESS_TOKEN_PURPOSE:
+    # A missing purpose claim means this token was issued before the claim
+    # existed - it was always an access token (challenge tokens are new and
+    # always set purpose), so it's still accepted rather than logging out
+    # every existing session on deploy. Only an explicit, different purpose
+    # (e.g. a 2fa_challenge token) is rejected.
+    if payload.get("purpose", _ACCESS_TOKEN_PURPOSE) != _ACCESS_TOKEN_PURPOSE:
         raise TokenError("Token is not an access token")
     return _extract_subject(payload)
 

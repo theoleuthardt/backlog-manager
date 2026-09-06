@@ -248,6 +248,33 @@ async def test_verify_two_factor_enrollment_rejects_when_nothing_enrolled(
         await auth_service.verify_two_factor_enrollment(session, user, "000000")
 
 
+async def test_verify_two_factor_enrollment_rejects_a_repeat_call_once_enabled(
+    auth_service: ModuleType, session: AsyncSession
+) -> None:
+    """A second successful verification (e.g. a double-submit) must not
+    silently append another active backup-code set on top of the first."""
+    import pyotp
+
+    from backlog_manager_backend.repositories import backup_code_repo
+
+    user = await _create_user(auth_service, session, "repeatverify@example.com")
+    enrollment = await auth_service.enroll_two_factor(session, user)
+    user = await user_repo.get_user_by_id(session, user.id)
+    first_backup_codes = await auth_service.verify_two_factor_enrollment(
+        session, user, pyotp.TOTP(enrollment.secret).now()
+    )
+    user = await user_repo.get_user_by_id(session, user.id)
+
+    with pytest.raises(ConflictError):
+        await auth_service.verify_two_factor_enrollment(
+            session, user, pyotp.TOTP(enrollment.secret).now()
+        )
+
+    assert await backup_code_repo.verify_and_consume_backup_code(
+        session, user.id, first_backup_codes[0]
+    ) is True
+
+
 async def _enroll_and_enable(auth_service: ModuleType, session: AsyncSession, email: str):
     import pyotp
 

@@ -48,6 +48,12 @@ export default function LoginPage() {
     }
   };
 
+  const handleStartOver = () => {
+    setChallengeToken(null);
+    setCode("");
+    setError(null);
+  };
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-black">
       <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 text-white">
@@ -84,6 +90,13 @@ export default function LoginPage() {
                 className="rounded-full bg-blue-600 px-10 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSubmitting ? "Verifying..." : "Verify"}
+              </button>
+              <button
+                type="button"
+                onClick={handleStartOver}
+                className="text-sm text-gray-400 underline transition hover:text-gray-200"
+              >
+                Start over
               </button>
             </form>
           </>

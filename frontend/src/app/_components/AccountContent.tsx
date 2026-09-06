@@ -77,6 +77,7 @@ export function AccountContent() {
   const closeEnroll = () => {
     setIsEnrollOpen(false);
     setBackupCodes([]);
+    enrollMutation.reset();
   };
 
   const handleDisable = () => {
@@ -185,8 +186,12 @@ export function AccountContent() {
               <DialogFooter>
                 <Button
                   onClick={() => {
-                    void navigator.clipboard.writeText(backupCodes.join("\n"));
-                    toast.success("Backup codes copied to clipboard");
+                    navigator.clipboard
+                      .writeText(backupCodes.join("\n"))
+                      .then(() => toast.success("Backup codes copied to clipboard"))
+                      .catch(() =>
+                        toast.error("Could not copy the backup codes. Copy them manually."),
+                      );
                   }}
                   variant="outline"
                 >

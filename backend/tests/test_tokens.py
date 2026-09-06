@@ -92,3 +92,20 @@ def test_decode_two_factor_challenge_token_rejects_a_real_access_token(tokens: M
 
     with pytest.raises(tokens.TokenError):
         tokens.decode_two_factor_challenge_token(access_token)
+
+
+def test_decode_access_token_accepts_a_legacy_token_with_no_purpose_claim(
+    tokens: ModuleType,
+) -> None:
+    """Tokens issued before the purpose claim existed have no `purpose` at
+    all - they must still decode as access tokens, or every session up to
+    the 30-day lifetime gets logged out the moment this claim ships."""
+    from jose import jwt
+
+    legacy_token = jwt.encode(
+        {"sub": "42", "exp": int(time.time()) + 60},
+        tokens.settings.auth_secret,
+        algorithm="HS256",
+    )
+
+    assert tokens.decode_access_token(legacy_token) == 42

@@ -12,9 +12,13 @@ export async function enrollTwoFactor(): Promise<TwoFactorEnrollment> {
   return { secret: data.secret, otpauthUrl: data.otpauth_url };
 }
 
+function normalizeCode(code: string): string {
+  return code.replace(/\s/g, "");
+}
+
 export async function verifyTwoFactorEnrollment(code: string): Promise<string[]> {
   const { data, error } = await apiClient.POST("/api/auth/2fa/verify", {
-    body: { code },
+    body: { code: normalizeCode(code) },
   });
   if (error) throw new Error(apiErrorMessage(error, "Invalid two-factor code"));
   return data.backup_codes;
@@ -29,7 +33,7 @@ export async function disableTwoFactor(password: string): Promise<void> {
 
 export async function verifyTwoFactorLogin(challengeToken: string, code: string): Promise<void> {
   const { data, error } = await apiClient.POST("/api/auth/2fa/login-verify", {
-    body: { challenge_token: challengeToken, code },
+    body: { challenge_token: challengeToken, code: normalizeCode(code) },
   });
   if (error) throw new Error(apiErrorMessage(error, "Invalid two-factor code"));
   setToken(data.access_token);

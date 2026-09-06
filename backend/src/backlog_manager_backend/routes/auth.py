@@ -81,6 +81,8 @@ async def verify_two_factor(
         backup_codes = await auth_service.verify_two_factor_enrollment(
             db_session, current_user, data.code
         )
+    except ConflictError as error:
+        raise ClientException(str(error), status_code=HTTP_409_CONFLICT) from error
     except ValidationError as error:
         raise ClientException(str(error)) from error
     return TwoFactorVerifyEnrollmentResponse(backup_codes=backup_codes)
