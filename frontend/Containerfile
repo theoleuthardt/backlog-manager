@@ -27,9 +27,8 @@ COPY . .
 ARG NODE_ENV
 ENV NODE_ENV=$NODE_ENV
 
-# NEXT_PUBLIC_* variables are inlined into the client bundle at build time,
-# not read at container runtime - the backend URL must be supplied here as
-# a build arg (see compose.yml's build.args), not just as a runtime env var.
+# NEXT_PUBLIC_* vars are inlined into the client bundle at build time,
+# not read at container runtime.
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 

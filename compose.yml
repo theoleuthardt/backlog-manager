@@ -5,29 +5,13 @@ services:
       context: ./frontend
       dockerfile: Containerfile
       args:
-        # Always "production" here, regardless of .env's own NODE_ENV
-        # (which describes the overall local-dev vs. deployed flavor of
-        # the stack, not this specific build step) - `next build` only
-        # ever produces one correct kind of output, and passing
-        # "development" through as a literal NODE_ENV during the build
-        # silently mixes React's dev/prod runtimes across chunks,
-        # crashing prerendering with a misleading null useContext/
-        # useState error on a random page each time. Pre-existing bug in
-        # this exact args block, just never exercised until this issue's
-        # compose wiring added the first real end-to-end
-        # `podman compose up --build` test.
+        # Not .env's NODE_ENV - `next build` always needs "production".
         NODE_ENV: production
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     environment:
       - NODE_ENV=production
-      # Explicitly 0.0.0.0, not .env's own HOSTNAME=localhost (meant for
-      # human-readable dev logging elsewhere, and loaded into this
-      # container regardless via env_file above unless overridden here)
-      # - the standalone Next.js server binds exactly to whatever
-      # HOSTNAME says, and "localhost" resolves to the IPv6 loopback
-      # (::1) inside the container, which the port mapping below can't
-      # reach from outside. 0.0.0.0 means all interfaces within the
-      # container's own network namespace.
+      # Not .env's HOSTNAME=localhost - the container needs to bind all
+      # interfaces to be reachable via the port mapping below.
       - HOSTNAME=0.0.0.0
       - PORT=${NEXTJS_PORT}
     ports:

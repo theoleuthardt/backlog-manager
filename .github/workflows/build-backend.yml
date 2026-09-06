@@ -20,6 +20,8 @@ on:
         default: false
         type: boolean
 
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -52,12 +54,15 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build summary
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         run: |
-          echo "### Backend Docker Build Successful :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "### Backend Docker Build Successful :rocket:" >> "$GITHUB_STEP_SUMMARY"
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.push_to_dockerhub }}" = "true" ]; then
-            echo "Image built and pushed to DockerHub with tag: \`${{ secrets.DOCKERHUB_USERNAME }}/backlog-manager-backend:${{ inputs.image_tag }}\`" >> $GITHUB_STEP_SUMMARY
+            printf 'Image built and pushed to DockerHub with tag: `%s/backlog-manager-backend:%s`\n' "$DOCKERHUB_USERNAME" "$IMAGE_TAG" >> "$GITHUB_STEP_SUMMARY"
           elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "Image built successfully with tag: \`backlog-manager-backend:${{ inputs.image_tag }}\`" >> $GITHUB_STEP_SUMMARY
+            printf 'Image built successfully with tag: `backlog-manager-backend:%s`\n' "$IMAGE_TAG" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "Image built successfully with tag: \`backlog-manager-backend:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "Image built successfully with tag: \`backlog-manager-backend:${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
           fi
