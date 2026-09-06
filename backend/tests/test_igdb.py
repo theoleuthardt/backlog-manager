@@ -5,7 +5,12 @@ import pytest
 
 from backlog_manager_backend.integrations.igdb import (
     generate_igdb_token,
+    get_covers_on_igdb,
+    get_games_on_igdb,
+    get_games_time_to_beat_on_igdb,
     get_genre_on_igdb,
+    get_genres_on_igdb,
+    get_platforms_on_igdb,
     search_game_on_igdb,
 )
 
@@ -116,3 +121,143 @@ async def test_get_genre_on_igdb_returns_parsed_genre(monkeypatch: pytest.Monkey
     genres = await get_genre_on_igdb(10, "cid", "tok")
 
     assert genres[0].name == "Adventure"
+
+
+async def test_get_games_on_igdb_batches_ids_into_one_request(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/v4/games"
+        body = request.content.decode()
+        assert "id = (1,2,3)" in body
+        assert "limit" in body
+        return httpx.Response(200, json=[{"id": 1, "name": "A"}, {"id": 2, "name": "B"}])
+
+    _mock_client(handler, monkeypatch)
+
+    games = await get_games_on_igdb([1, 2, 3], "cid", "tok")
+
+    assert [game.id for game in games] == [1, 2]
+
+
+async def test_get_games_on_igdb_makes_no_request_for_empty_ids(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise AssertionError("should not be called for an empty id list")
+
+    _mock_client(handler, monkeypatch)
+
+    assert await get_games_on_igdb([], "cid", "tok") == []
+
+
+async def test_get_covers_on_igdb_batches_ids_into_one_request(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/v4/covers"
+        body = request.content.decode()
+        assert "id = (5,6)" in body
+        assert "limit" in body
+        return httpx.Response(200, json=[{"id": 5, "image_id": "abc"}])
+
+    _mock_client(handler, monkeypatch)
+
+    covers = await get_covers_on_igdb([5, 6], "cid", "tok")
+
+    assert covers[0].image_id == "abc"
+
+
+async def test_get_covers_on_igdb_makes_no_request_for_empty_ids(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise AssertionError("should not be called for an empty id list")
+
+    _mock_client(handler, monkeypatch)
+
+    assert await get_covers_on_igdb([], "cid", "tok") == []
+
+
+async def test_get_genres_on_igdb_batches_ids_into_one_request(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/v4/genres"
+        body = request.content.decode()
+        assert "id = (10,11)" in body
+        assert "limit" in body
+        return httpx.Response(200, json=[{"id": 10, "name": "Adventure"}, {"id": 11, "name": "RPG"}])
+
+    _mock_client(handler, monkeypatch)
+
+    genres = await get_genres_on_igdb([10, 11], "cid", "tok")
+
+    assert [genre.name for genre in genres] == ["Adventure", "RPG"]
+
+
+async def test_get_genres_on_igdb_makes_no_request_for_empty_ids(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise AssertionError("should not be called for an empty id list")
+
+    _mock_client(handler, monkeypatch)
+
+    assert await get_genres_on_igdb([], "cid", "tok") == []
+
+
+async def test_get_platforms_on_igdb_batches_ids_into_one_request(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/v4/platforms"
+        body = request.content.decode()
+        assert "id = (6,7)" in body
+        assert "limit" in body
+        return httpx.Response(200, json=[{"id": 6, "name": "PC"}, {"id": 7, "name": "Switch"}])
+
+    _mock_client(handler, monkeypatch)
+
+    platforms = await get_platforms_on_igdb([6, 7], "cid", "tok")
+
+    assert [platform.name for platform in platforms] == ["PC", "Switch"]
+
+
+async def test_get_platforms_on_igdb_makes_no_request_for_empty_ids(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise AssertionError("should not be called for an empty id list")
+
+    _mock_client(handler, monkeypatch)
+
+    assert await get_platforms_on_igdb([], "cid", "tok") == []
+
+
+async def test_get_games_time_to_beat_on_igdb_batches_ids_into_one_request(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/v4/game_time_to_beats"
+        body = request.content.decode()
+        assert "game_id = (1,2)" in body
+        assert "limit" in body
+        return httpx.Response(200, json=[{"id": 1, "game_id": 1, "normally": 3600}])
+
+    _mock_client(handler, monkeypatch)
+
+    times = await get_games_time_to_beat_on_igdb([1, 2], "cid", "tok")
+
+    assert times[0].game_id == 1
+
+
+async def test_get_games_time_to_beat_on_igdb_makes_no_request_for_empty_ids(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise AssertionError("should not be called for an empty id list")
+
+    _mock_client(handler, monkeypatch)
+
+    assert await get_games_time_to_beat_on_igdb([], "cid", "tok") == []

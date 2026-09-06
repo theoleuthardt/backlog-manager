@@ -16,6 +16,9 @@ def configured_igdb(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
     monkeypatch.setattr(module, "_cached_token", None)
     monkeypatch.setattr(module, "_genre_cache", {})
     monkeypatch.setattr(module, "_platform_cache", {})
+    monkeypatch.setattr(module, "_game_cache", {})
+    monkeypatch.setattr(module, "_cover_cache", {})
+    monkeypatch.setattr(module, "_time_to_beat_cache", {})
     monkeypatch.setattr(module.settings, "igdb_client_id", "cid")
     monkeypatch.setattr(module.settings, "igdb_client_secret", "secret")
     return module
@@ -172,7 +175,7 @@ async def test_enriched_search(
         if request.url.path == "/v4/covers":
             return httpx.Response(200, json=[{"id": 5, "image_id": "cover123"}])
         if request.url.path == "/v4/game_time_to_beats":
-            return httpx.Response(200, json=[{"id": 1, "normally": 3600}])
+            return httpx.Response(200, json=[{"id": 1, "game_id": 1, "normally": 3600}])
         raise AssertionError(f"unexpected request: {request.url}")
 
     _mock_igdb(handler, monkeypatch)
@@ -186,6 +189,73 @@ async def test_enriched_search(
     assert (
         body[0]["image_url"] == "https://images.igdb.com/igdb/image/upload/t_cover_big/cover123.jpg"
     )
+
+
+async def test_enriched_search_batches_multiple_results(
+    configured_igdb: ModuleType, monkeypatch: pytest.MonkeyPatch, postgres_url: str
+) -> None:
+    """End-to-end regression test for issue #105 through the real route:
+    2 search results must only hit each IGDB endpoint once, not once per
+    result."""
+    from backlog_manager_backend.app import create_app
+
+    call_counts: dict[str, int] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "id.twitch.tv":
+            return httpx.Response(
+                200, json={"access_token": "tok", "expires_in": 3600, "token_type": "bearer"}
+            )
+        call_counts[request.url.path] = call_counts.get(request.url.path, 0) + 1
+        if request.url.path == "/v4/search":
+            return httpx.Response(
+                200,
+                json=[
+                    {"id": 1, "game": 1, "name": "Celeste"},
+                    {"id": 2, "game": 2, "name": "Hollow Knight"},
+                ],
+            )
+        if request.url.path == "/v4/games":
+            return httpx.Response(
+                200,
+                json=[
+                    {"id": 1, "name": "Celeste", "cover": 5, "genres": [10], "platforms": [6]},
+                    {"id": 2, "name": "Hollow Knight", "cover": 8, "genres": [10], "platforms": [6]},
+                ],
+            )
+        if request.url.path == "/v4/covers":
+            return httpx.Response(
+                200, json=[{"id": 5, "image_id": "abc"}, {"id": 8, "image_id": "def"}]
+            )
+        if request.url.path == "/v4/genres":
+            return httpx.Response(200, json=[{"id": 10, "name": "Platformer"}])
+        if request.url.path == "/v4/platforms":
+            return httpx.Response(200, json=[{"id": 6, "name": "PC"}])
+        if request.url.path == "/v4/game_time_to_beats":
+            return httpx.Response(
+                200,
+                json=[
+                    {"id": 1, "game_id": 1, "normally": 3600},
+                    {"id": 2, "game_id": 2, "normally": 7200},
+                ],
+            )
+        raise AssertionError(f"unexpected request: {request.url}")
+
+    _mock_igdb(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get("/api/games/enriched-search", params={"search_term": "metroidvania"})
+
+    assert response.status_code == 200
+    assert len(response.json()) == 2
+    assert call_counts == {
+        "/v4/search": 1,
+        "/v4/games": 1,
+        "/v4/covers": 1,
+        "/v4/genres": 1,
+        "/v4/platforms": 1,
+        "/v4/game_time_to_beats": 1,
+    }
 
 
 async def test_enriched_search_returns_503_when_igdb_not_configured(postgres_url: str) -> None:

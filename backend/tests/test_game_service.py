@@ -26,6 +26,9 @@ def game_service(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
     monkeypatch.setattr(module, "_cached_token", None)
     monkeypatch.setattr(module, "_genre_cache", {})
     monkeypatch.setattr(module, "_platform_cache", {})
+    monkeypatch.setattr(module, "_game_cache", {})
+    monkeypatch.setattr(module, "_cover_cache", {})
+    monkeypatch.setattr(module, "_time_to_beat_cache", {})
     monkeypatch.setattr(module.settings, "igdb_client_id", "cid")
     monkeypatch.setattr(module.settings, "igdb_client_secret", "secret")
     return module
@@ -60,44 +63,58 @@ async def test_get_valid_token_fetches_and_caches(
     assert call_count == 1
 
 
-async def test_get_cached_genre_only_fetches_once(
+async def test_search_reuses_cached_genre_and_platform_names(
     game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    call_count = 0
+    genres_call_count = 0
+    platforms_call_count = 0
 
-    async def fake_get_genre(genre_id: int, client_id: str, access_token: str) -> list[IGDBGenre]:
-        nonlocal call_count
-        call_count += 1
-        return [IGDBGenre(id=genre_id, name="Adventure")]
+    async def fake_search_game_on_igdb(
+        search_term: str, client_id: str, access_token: str
+    ) -> list[IGDBSearchResult]:
+        return [IGDBSearchResult(id=1, game=1, name="Celeste")]
 
-    monkeypatch.setattr(game_service, "get_genre_on_igdb", fake_get_genre)
+    async def fake_get_games_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameData]:
+        return [IGDBGameData(id=1, name="Celeste", cover=None, genres=[10], platforms=[6])]
 
-    first = await game_service.get_cached_genre(10, "cid", "tok")
-    second = await game_service.get_cached_genre(10, "cid", "tok")
+    async def fake_get_genres_on_igdb(
+        genre_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGenre]:
+        nonlocal genres_call_count
+        genres_call_count += 1
+        return [IGDBGenre(id=10, name="Platformer")]
 
-    assert first == "Adventure"
-    assert second == "Adventure"
-    assert call_count == 1
+    async def fake_get_platforms_on_igdb(
+        platform_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBPlatform]:
+        nonlocal platforms_call_count
+        platforms_call_count += 1
+        return [IGDBPlatform(id=6, name="PC")]
 
+    async def fake_get_games_time_to_beat_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameTimeToBeat]:
+        return [IGDBGameTimeToBeat(id=1, game_id=1, normally=3600)]
 
-async def test_process_in_batches_preserves_order_and_batches(
-    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    sleep_calls = 0
+    async def fake_get_valid_token() -> str:
+        return "tok"
 
-    async def instant_sleep(_seconds: float) -> None:
-        nonlocal sleep_calls
-        sleep_calls += 1
+    monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
+    monkeypatch.setattr(game_service, "get_games_on_igdb", fake_get_games_on_igdb)
+    monkeypatch.setattr(game_service, "get_genres_on_igdb", fake_get_genres_on_igdb)
+    monkeypatch.setattr(game_service, "get_platforms_on_igdb", fake_get_platforms_on_igdb)
+    monkeypatch.setattr(
+        game_service, "get_games_time_to_beat_on_igdb", fake_get_games_time_to_beat_on_igdb
+    )
+    monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
 
-    monkeypatch.setattr(game_service.asyncio, "sleep", instant_sleep)
+    await game_service.search("Celeste")
+    await game_service.search("Celeste")
 
-    async def double(item: int) -> int:
-        return item * 2
-
-    results = await game_service.process_in_batches([1, 2, 3, 4, 5], batch_size=2, processor=double)
-
-    assert results == [2, 4, 6, 8, 10]
-    assert sleep_calls == 2
+    assert genres_call_count == 1
+    assert platforms_call_count == 1
 
 
 async def test_search_falls_back_to_hltb_when_igdb_has_no_beat_time(
@@ -108,28 +125,28 @@ async def test_search_falls_back_to_hltb_when_igdb_has_no_beat_time(
     ) -> list[IGDBSearchResult]:
         return [IGDBSearchResult(id=1, game=1, name="Celeste")]
 
-    async def fake_get_game_on_igdb(
-        game_id: str, client_id: str, access_token: str
+    async def fake_get_games_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
     ) -> list[IGDBGameData]:
         return [IGDBGameData(id=1, name="Celeste", cover=5, genres=[10], platforms=[6])]
 
-    async def fake_get_cover_on_igdb(
-        cover_id: int, client_id: str, access_token: str
+    async def fake_get_covers_on_igdb(
+        cover_ids: list[int], client_id: str, access_token: str
     ) -> list[IGDBCover]:
         return [IGDBCover(id=5, image_id="abc123")]
 
-    async def fake_get_genre_on_igdb(
-        genre_id: int, client_id: str, access_token: str
+    async def fake_get_genres_on_igdb(
+        genre_ids: list[int], client_id: str, access_token: str
     ) -> list[IGDBGenre]:
         return [IGDBGenre(id=10, name="Platformer")]
 
-    async def fake_get_platform_on_igdb(
-        platform_id: int, client_id: str, access_token: str
+    async def fake_get_platforms_on_igdb(
+        platform_ids: list[int], client_id: str, access_token: str
     ) -> list[IGDBPlatform]:
         return [IGDBPlatform(id=6, name="PC")]
 
-    async def fake_get_game_time_to_beat_on_igdb(
-        game_id: int, client_id: str, access_token: str
+    async def fake_get_games_time_to_beat_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
     ) -> list[IGDBGameTimeToBeat]:
         return []
 
@@ -151,12 +168,12 @@ async def test_search_falls_back_to_hltb_when_igdb_has_no_beat_time(
         return "tok"
 
     monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
-    monkeypatch.setattr(game_service, "get_game_on_igdb", fake_get_game_on_igdb)
-    monkeypatch.setattr(game_service, "get_cover_on_igdb", fake_get_cover_on_igdb)
-    monkeypatch.setattr(game_service, "get_genre_on_igdb", fake_get_genre_on_igdb)
-    monkeypatch.setattr(game_service, "get_platform_on_igdb", fake_get_platform_on_igdb)
+    monkeypatch.setattr(game_service, "get_games_on_igdb", fake_get_games_on_igdb)
+    monkeypatch.setattr(game_service, "get_covers_on_igdb", fake_get_covers_on_igdb)
+    monkeypatch.setattr(game_service, "get_genres_on_igdb", fake_get_genres_on_igdb)
+    monkeypatch.setattr(game_service, "get_platforms_on_igdb", fake_get_platforms_on_igdb)
     monkeypatch.setattr(
-        game_service, "get_game_time_to_beat_on_igdb", fake_get_game_time_to_beat_on_igdb
+        game_service, "get_games_time_to_beat_on_igdb", fake_get_games_time_to_beat_on_igdb
     )
     monkeypatch.setattr(game_service, "search_game_on_hltb", fake_search_game_on_hltb)
     monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
@@ -176,6 +193,211 @@ async def test_search_falls_back_to_hltb_when_igdb_has_no_beat_time(
             completionist=37.0,
         )
     ]
+
+
+async def test_search_batches_multiple_results_into_one_call_each(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Direct regression test for issue #105's N+1 slowdown: enriching
+    multiple search results must hit each IGDB endpoint exactly once,
+    not once per result."""
+    call_counts: dict[str, int] = {
+        "games": 0,
+        "covers": 0,
+        "genres": 0,
+        "platforms": 0,
+        "time_to_beat": 0,
+    }
+
+    async def fake_search_game_on_igdb(
+        search_term: str, client_id: str, access_token: str
+    ) -> list[IGDBSearchResult]:
+        return [
+            IGDBSearchResult(id=1, game=1, name="Celeste"),
+            IGDBSearchResult(id=2, game=2, name="Hollow Knight"),
+        ]
+
+    async def fake_get_games_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameData]:
+        call_counts["games"] += 1
+        return [
+            IGDBGameData(id=1, name="Celeste", cover=5, genres=[10], platforms=[6]),
+            IGDBGameData(id=2, name="Hollow Knight", cover=8, genres=[10], platforms=[6]),
+        ]
+
+    async def fake_get_covers_on_igdb(
+        cover_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBCover]:
+        call_counts["covers"] += 1
+        return [IGDBCover(id=5, image_id="abc"), IGDBCover(id=8, image_id="def")]
+
+    async def fake_get_genres_on_igdb(
+        genre_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGenre]:
+        call_counts["genres"] += 1
+        return [IGDBGenre(id=10, name="Platformer")]
+
+    async def fake_get_platforms_on_igdb(
+        platform_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBPlatform]:
+        call_counts["platforms"] += 1
+        return [IGDBPlatform(id=6, name="PC")]
+
+    async def fake_get_games_time_to_beat_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameTimeToBeat]:
+        call_counts["time_to_beat"] += 1
+        return [
+            IGDBGameTimeToBeat(id=1, game_id=1, normally=3600),
+            IGDBGameTimeToBeat(id=2, game_id=2, normally=7200),
+        ]
+
+    async def fake_get_valid_token() -> str:
+        return "tok"
+
+    monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
+    monkeypatch.setattr(game_service, "get_games_on_igdb", fake_get_games_on_igdb)
+    monkeypatch.setattr(game_service, "get_covers_on_igdb", fake_get_covers_on_igdb)
+    monkeypatch.setattr(game_service, "get_genres_on_igdb", fake_get_genres_on_igdb)
+    monkeypatch.setattr(game_service, "get_platforms_on_igdb", fake_get_platforms_on_igdb)
+    monkeypatch.setattr(
+        game_service, "get_games_time_to_beat_on_igdb", fake_get_games_time_to_beat_on_igdb
+    )
+    monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
+
+    results = await game_service.search("metroidvania")
+
+    assert len(results) == 2
+    assert call_counts == {"games": 1, "covers": 1, "genres": 1, "platforms": 1, "time_to_beat": 1}
+
+
+async def test_search_reuses_cached_game_and_cover_data(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    games_call_count = 0
+    covers_call_count = 0
+
+    async def fake_search_game_on_igdb(
+        search_term: str, client_id: str, access_token: str
+    ) -> list[IGDBSearchResult]:
+        return [IGDBSearchResult(id=1, game=1, name="Celeste")]
+
+    async def fake_get_games_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameData]:
+        nonlocal games_call_count
+        games_call_count += 1
+        return [IGDBGameData(id=1, name="Celeste", cover=5, genres=[], platforms=[])]
+
+    async def fake_get_covers_on_igdb(
+        cover_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBCover]:
+        nonlocal covers_call_count
+        covers_call_count += 1
+        return [IGDBCover(id=5, image_id="abc")]
+
+    async def fake_get_games_time_to_beat_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameTimeToBeat]:
+        return [IGDBGameTimeToBeat(id=1, game_id=1, normally=3600)]
+
+    async def fake_get_valid_token() -> str:
+        return "tok"
+
+    monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
+    monkeypatch.setattr(game_service, "get_games_on_igdb", fake_get_games_on_igdb)
+    monkeypatch.setattr(game_service, "get_covers_on_igdb", fake_get_covers_on_igdb)
+    monkeypatch.setattr(
+        game_service, "get_games_time_to_beat_on_igdb", fake_get_games_time_to_beat_on_igdb
+    )
+    monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
+
+    await game_service.search("Celeste")
+    await game_service.search("Celeste")
+
+    assert games_call_count == 1
+    assert covers_call_count == 1
+
+
+async def test_search_caches_hltb_fallback_time_to_beat(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    hltb_call_count = 0
+
+    async def fake_search_game_on_igdb(
+        search_term: str, client_id: str, access_token: str
+    ) -> list[IGDBSearchResult]:
+        return [IGDBSearchResult(id=1, game=1, name="Celeste")]
+
+    async def fake_get_games_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameData]:
+        return [IGDBGameData(id=1, name="Celeste", cover=None, genres=[], platforms=[])]
+
+    async def fake_get_games_time_to_beat_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameTimeToBeat]:
+        return []
+
+    async def fake_search_game_on_hltb(search_term: str) -> list[HltbResultData]:
+        nonlocal hltb_call_count
+        hltb_call_count += 1
+        return [
+            HltbResultData(
+                id=999,
+                hltb_id=999,
+                title="Celeste",
+                image_url="https://example.com/celeste.jpg",
+                main_story=8.5,
+                main_story_with_extras=12.0,
+                completionist=37.0,
+                last_updated_at="2024-01-01",
+            )
+        ]
+
+    async def fake_get_valid_token() -> str:
+        return "tok"
+
+    monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
+    monkeypatch.setattr(game_service, "get_games_on_igdb", fake_get_games_on_igdb)
+    monkeypatch.setattr(
+        game_service, "get_games_time_to_beat_on_igdb", fake_get_games_time_to_beat_on_igdb
+    )
+    monkeypatch.setattr(game_service, "search_game_on_hltb", fake_search_game_on_hltb)
+    monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
+
+    await game_service.search("Celeste")
+    await game_service.search("Celeste")
+
+    assert hltb_call_count == 1
+
+
+async def test_search_returns_empty_list_when_games_batch_fails(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A single flaky batched games call now affects the whole search
+    (a deliberate trade-off vs. the old per-item isolation) - it must
+    degrade gracefully to an empty list, not raise."""
+
+    async def fake_search_game_on_igdb(
+        search_term: str, client_id: str, access_token: str
+    ) -> list[IGDBSearchResult]:
+        return [IGDBSearchResult(id=1, game=1, name="Celeste")]
+
+    async def fake_get_games_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameData]:
+        return []
+
+    async def fake_get_valid_token() -> str:
+        return "tok"
+
+    monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
+    monkeypatch.setattr(game_service, "get_games_on_igdb", fake_get_games_on_igdb)
+    monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
+
+    assert await game_service.search("Celeste") == []
 
 
 async def test_search_raises_without_client_id(
