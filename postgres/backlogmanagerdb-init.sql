@@ -11,8 +11,19 @@ CREATE TABLE IF NOT EXISTS "blm-system"."Users"(
     "PasswordHash" VARCHAR(255) NOT NULL,
     "SteamId" VARCHAR(255),
     "IsAdmin" BOOLEAN NOT NULL DEFAULT FALSE,
+    "TotpSecretEncrypted" TEXT,
+    "TotpEnabled" BOOLEAN NOT NULL DEFAULT FALSE,
     "CreatedAt" TIMESTAMP NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP),
     "UpdatedAt" TIMESTAMP NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP)
+);
+
+CREATE TABLE IF NOT EXISTS "blm-system"."UserBackupCodes" (
+    "BackupCodeID" BIGSERIAL PRIMARY KEY,
+    "UserID"       BIGINT NOT NULL,
+    "CodeHash"     VARCHAR(255) NOT NULL,
+    "CreatedAt"    TIMESTAMP NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP),
+    FOREIGN KEY ("UserID") REFERENCES "blm-system"."Users"("UserID")
+    ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 

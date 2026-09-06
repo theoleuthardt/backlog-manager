@@ -14,14 +14,17 @@ import {
   login as apiLogin,
   logout as apiLogout,
   type CurrentUser,
+  type LoginOutcome,
 } from "~/lib/api/auth";
 import { getToken, onTokenCleared } from "~/lib/api/token";
+import { verifyTwoFactorLogin as apiVerifyTwoFactorLogin } from "~/lib/api/twoFactor";
 
 interface AuthContextType {
   user: CurrentUser | null;
   /** True until the initial "is there a valid stored token" check resolves. */
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<LoginOutcome>;
+  completeTwoFactorLogin: (challengeToken: string, code: string) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -91,9 +94,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [refreshUser]);
 
   const login = useCallback(
-    async (email: string, password: string) => {
+    async (email: string, password: string): Promise<LoginOutcome> => {
       sessionGeneration.current++;
-      await apiLogin(email, password);
+      const outcome = await apiLogin(email, password);
+      if (outcome.status === "success") {
+        await refreshUser();
+      }
+      return outcome;
+    },
+    [refreshUser],
+  );
+
+  const completeTwoFactorLogin = useCallback(
+    async (challengeToken: string, code: string) => {
+      sessionGeneration.current++;
+      await apiVerifyTwoFactorLogin(challengeToken, code);
       await refreshUser();
     },
     [refreshUser],
@@ -108,7 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, login, logout, refreshUser }}
+      value={{ user, isLoading, login, completeTwoFactorLogin, logout, refreshUser }}
     >
       {children}
     </AuthContext.Provider>

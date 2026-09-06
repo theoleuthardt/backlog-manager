@@ -13,6 +13,7 @@ function toCurrentUser(user: {
   name: string;
   email: string;
   is_admin: boolean;
+  is_two_factor_enabled: boolean;
   created_at: string;
   updated_at: string;
 }): CurrentUser {
@@ -21,6 +22,7 @@ function toCurrentUser(user: {
     name: user.name,
     email: user.email,
     isAdmin: user.is_admin,
+    isTwoFactorEnabled: user.is_two_factor_enabled,
     createdAt: user.created_at,
     updatedAt: user.updated_at,
   };

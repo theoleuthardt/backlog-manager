@@ -38,6 +38,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/2fa/login-verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** LoginVerify */
+        post: operations["ApiAuth2FaLoginVerifyLoginVerify"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/2fa/enroll": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** EnrollTwoFactor */
+        post: operations["ApiAuth2FaEnrollEnrollTwoFactor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/2fa/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** VerifyTwoFactor */
+        post: operations["ApiAuth2FaVerifyVerifyTwoFactor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/2fa/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** DisableTwoFactor */
+        post: operations["ApiAuth2FaDisableDisableTwoFactor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/backlog/entries": {
         parameters: {
             query?: never;
@@ -643,6 +711,13 @@ export interface components {
             email: string;
             password: string;
         };
+        /** LoginResult */
+        LoginResult: {
+            access_token?: string | null;
+            /** @default false */
+            requires_2fa?: boolean;
+            challenge_token?: string | null;
+        };
         /** MissingGame */
         MissingGame: {
             title: string;
@@ -660,6 +735,7 @@ export interface components {
             name: string;
             email: string;
             is_admin: boolean;
+            is_two_factor_enabled: boolean;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -680,6 +756,28 @@ export interface components {
             access_token: string;
             /** @default bearer */
             token_type?: string;
+        };
+        /** TwoFactorDisableParams */
+        TwoFactorDisableParams: {
+            password: string;
+        };
+        /** TwoFactorEnrollResponse */
+        TwoFactorEnrollResponse: {
+            secret: string;
+            otpauth_url: string;
+        };
+        /** TwoFactorLoginVerifyParams */
+        TwoFactorLoginVerifyParams: {
+            challenge_token: string;
+            code: string;
+        };
+        /** TwoFactorVerifyEnrollmentParams */
+        TwoFactorVerifyEnrollmentParams: {
+            code: string;
+        };
+        /** TwoFactorVerifyEnrollmentResponse */
+        TwoFactorVerifyEnrollmentResponse: {
+            backup_codes: string[];
         };
         /** UpdateBacklogEntryRequest */
         UpdateBacklogEntryRequest: {
@@ -767,8 +865,143 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    "application/json": components["schemas"]["LoginResult"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiAuth2FaLoginVerifyLoginVerify: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TwoFactorLoginVerifyParams"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
                     "application/json": components["schemas"]["TokenResponse"];
                 };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiAuth2FaEnrollEnrollTwoFactor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TwoFactorEnrollResponse"];
+                };
+            };
+        };
+    };
+    ApiAuth2FaVerifyVerifyTwoFactor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TwoFactorVerifyEnrollmentParams"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TwoFactorVerifyEnrollmentResponse"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiAuth2FaDisableDisableTwoFactor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TwoFactorDisableParams"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Bad request syntax or unsupported method */
             400: {

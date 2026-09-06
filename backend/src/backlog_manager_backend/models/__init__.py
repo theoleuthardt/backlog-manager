@@ -19,5 +19,13 @@ from backlog_manager_backend.models.category_backlog_entry import (
     CategoryBacklogEntry,
 )
 from backlog_manager_backend.models.user import User
+from backlog_manager_backend.models.user_backup_code import UserBackupCode
 
-__all__ = ["BacklogEntry", "Base", "Category", "CategoryBacklogEntry", "User"]
+__all__ = [
+    "BacklogEntry",
+    "Base",
+    "Category",
+    "CategoryBacklogEntry",
+    "User",
+    "UserBackupCode",
+]

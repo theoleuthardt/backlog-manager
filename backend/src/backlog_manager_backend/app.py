@@ -7,7 +7,7 @@ from litestar.openapi.spec import Components, SecurityScheme
 from backlog_manager_backend.bootstrap import bootstrap_initial_admin
 from backlog_manager_backend.config import settings
 from backlog_manager_backend.db import engine, provide_db_session
-from backlog_manager_backend.routes.auth import login
+from backlog_manager_backend.routes.auth import login, login_verify, two_factor_router
 from backlog_manager_backend.routes.backlog import backlog_router
 from backlog_manager_backend.routes.csv import csv_router
 from backlog_manager_backend.routes.games import (
@@ -35,6 +35,8 @@ def create_app() -> Litestar:
         route_handlers=[
             health,
             login,
+            login_verify,
+            two_factor_router,
             backlog_router,
             user_router,
             admin_user_router,

@@ -6,18 +6,30 @@ export interface CurrentUser {
   name: string;
   email: string;
   isAdmin: boolean;
+  isTwoFactorEnabled: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
-export async function login(email: string, password: string): Promise<void> {
+export type LoginOutcome =
+  | { status: "success" }
+  | { status: "requires_2fa"; challengeToken: string };
+
+export async function login(email: string, password: string): Promise<LoginOutcome> {
   const { data, error } = await apiClient.POST("/api/auth/login", {
     body: { email, password },
   });
   if (error) {
     throw new Error(apiErrorMessage(error, "Login failed"));
   }
+  if (data.requires_2fa && data.challenge_token) {
+    return { status: "requires_2fa", challengeToken: data.challenge_token };
+  }
+  if (!data.access_token) {
+    throw new Error("Login failed");
+  }
   setToken(data.access_token);
+  return { status: "success" };
 }
 
 export function logout(): void {
@@ -34,6 +46,7 @@ export async function getCurrentUser(): Promise<CurrentUser> {
     name: data.name,
     email: data.email,
     isAdmin: data.is_admin,
+    isTwoFactorEnabled: data.is_two_factor_enabled,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
   };
