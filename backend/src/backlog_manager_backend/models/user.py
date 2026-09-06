@@ -17,6 +17,8 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column("PasswordHash")
     steam_id: Mapped[str | None] = mapped_column("SteamId")
     is_admin: Mapped[bool] = mapped_column("IsAdmin", server_default=text("false"))
+    totp_secret_encrypted: Mapped[str | None] = mapped_column("TotpSecretEncrypted")
+    totp_enabled: Mapped[bool] = mapped_column("TotpEnabled", server_default=text("false"))
     created_at: Mapped[datetime] = mapped_column(
         "CreatedAt", server_default=TIMESTAMP_DEFAULT
     )

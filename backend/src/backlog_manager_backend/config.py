@@ -6,6 +6,11 @@ class Settings(BaseSettings):
 
     postgres_url: str
     auth_secret: str
+    # Fernet key used to encrypt TOTP secrets at rest - distinct from
+    # auth_secret since Fernet requires a specific key format (32 url-safe
+    # base64 bytes), not an arbitrary string. Generate via:
+    # python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+    totp_encryption_key: str
     igdb_client_id: str | None = None
     igdb_client_secret: str | None = None
     # There is no public self-registration endpoint - if set, and no users

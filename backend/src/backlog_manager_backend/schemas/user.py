@@ -11,6 +11,8 @@ class User(msgspec.Struct):
     updated_at: datetime
     password_hash: str | None = None
     is_admin: bool = False
+    totp_secret_encrypted: str | None = None
+    totp_enabled: bool = False
 
 
 class CreateUserParams(msgspec.Struct):
@@ -32,6 +34,12 @@ class UpdateUserParams(msgspec.Struct):
     password_hash: str | msgspec.UnsetType = msgspec.UNSET
     steam_id: str | None | msgspec.UnsetType = msgspec.UNSET
     is_admin: bool | msgspec.UnsetType = msgspec.UNSET
+    # Set only by the 2FA enroll/verify/disable service functions - never
+    # exposed on UpdateOwnUserRequest/UpdateUserAdminRequest, or a client
+    # could flip totp_enabled on over the generic profile-update endpoint
+    # without ever proving possession of the secret.
+    totp_secret_encrypted: str | None | msgspec.UnsetType = msgspec.UNSET
+    totp_enabled: bool | msgspec.UnsetType = msgspec.UNSET
 
 
 class PublicUser(msgspec.Struct):
@@ -41,6 +49,7 @@ class PublicUser(msgspec.Struct):
     name: str
     email: str
     is_admin: bool
+    is_two_factor_enabled: bool
     created_at: datetime
     updated_at: datetime
 
@@ -51,6 +60,7 @@ class PublicUser(msgspec.Struct):
             name=user.name,
             email=user.email,
             is_admin=user.is_admin,
+            is_two_factor_enabled=user.totp_enabled,
             created_at=user.created_at,
             updated_at=user.updated_at,
         )

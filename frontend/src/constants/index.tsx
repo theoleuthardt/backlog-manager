@@ -5,6 +5,7 @@ import { gameSearchbarDummyResults } from "./gameSearchbarDummyResults";
 import { creationToolNavLinks } from "./navbarLinks";
 import { importCSVNavLinks } from "./navbarLinks";
 import { exportCSVNavLinks } from "./navbarLinks";
+import { accountNavLinks } from "./navbarLinks";
 
 export { type NavbarLink } from "~/app/types";
 export {
@@ -15,4 +16,5 @@ export {
   creationToolNavLinks,
   importCSVNavLinks,
   exportCSVNavLinks,
+  accountNavLinks,
 };

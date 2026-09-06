@@ -37,6 +37,8 @@ def _to_schema(model: UserModel) -> User:
         email=model.email,
         password_hash=model.password_hash,
         is_admin=model.is_admin,
+        totp_secret_encrypted=model.totp_secret_encrypted,
+        totp_enabled=model.totp_enabled,
         created_at=model.created_at,
         updated_at=model.updated_at,
     )
@@ -102,6 +104,10 @@ async def update_user(session: AsyncSession, params: UpdateUserParams) -> User:
         model.steam_id = params.steam_id
     if params.is_admin is not msgspec.UNSET:
         model.is_admin = params.is_admin
+    if params.totp_secret_encrypted is not msgspec.UNSET:
+        model.totp_secret_encrypted = params.totp_secret_encrypted
+    if params.totp_enabled is not msgspec.UNSET:
+        model.totp_enabled = params.totp_enabled
     model.updated_at = now_truncated_to_minute()
 
     try:
