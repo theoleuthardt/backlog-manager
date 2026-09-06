@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Backlog Manager is a video game backlog manager. The frontend is a Next.js app (T3 Stack) living in `frontend/`; the backend is a standalone Python/Litestar service living in `backend/` (fully migrated off Next.js/tRPC — see issue #103/#104 for that history). The frontend calls the backend directly over REST with a JWT Bearer token (no NextAuth, no tRPC). Only the backend is hosted as a public, always-on service (at `blm.theocloud.dev`); the frontend ships as a Tauri desktop app built from the Next.js codebase rather than being centrally hosted the same way.
+Backlog Manager is a video game backlog manager. The frontend is a Next.js app (originally scaffolded with create-t3-app; tRPC and NextAuth have since been removed) living in `frontend/`; the backend is a standalone Python/Litestar service living in `backend/` (fully migrated off Next.js/tRPC — see issue #103/#104 for that history). The frontend calls the backend directly over REST with a JWT Bearer token. Only the backend is hosted as a public, always-on service (at `blm.theocloud.dev`); the frontend ships as a Tauri desktop app built from the Next.js codebase rather than being centrally hosted the same way.
 
 Users can track games with metadata from HowLongToBeat and IGDB, organize games into categories via drag & drop, connect Steam accounts for playtime sync, and import/export CSV files.
 
