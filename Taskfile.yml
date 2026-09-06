@@ -21,6 +21,7 @@ tasks:
     desc: Run the Next.js dev server
     cmds:
       - task: frontend:dev
+      - task: backend:dev
 
   build:
     desc: Build the frontend for production
