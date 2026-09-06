@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "NODE_OPTIONS='--max-old-space-size=4096' next build",
+    "build": "NODE_OPTIONS='--max-old-space-size=4096' next build --webpack",
     "check": "eslint . && tsc --noEmit",
     "dev": "NODE_OPTIONS='--max-old-space-size=4096' next dev --turbo",
     "dev:webpack": "NODE_OPTIONS='--max-old-space-size=4096' next dev --webpack",
@@ -13,7 +13,7 @@
     "generate-api-types": "openapi-typescript ../backend/openapi.json -o ./src/lib/api/schema.d.ts --default-non-nullable=false",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "preview": "NODE_OPTIONS='--max-old-space-size=4096' next build && next start",
+    "preview": "NODE_OPTIONS='--max-old-space-size=4096' next build --webpack && next start",
     "start": "next start",
     "typecheck": "tsc --noEmit"
   },
