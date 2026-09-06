@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Backlog Manager is a video game backlog manager. It's mid-migration (see issue #103/#104): the frontend is a Next.js app (T3 Stack) living in `frontend/`, and the backend is being rewritten from Next.js/tRPC into a standalone Python/Litestar service living in `backend/`. The Litestar backend currently only has a `/health` check — all real business logic (backlog CRUD, auth, CSV import/export, IGDB/HowLongToBeat integration) still lives in `frontend/src/server/` and is served via tRPC, unchanged, until the migration's later steps land.
+Backlog Manager is a video game backlog manager. The frontend is a Next.js app (originally scaffolded with create-t3-app; tRPC and NextAuth have since been removed) living in `frontend/`; the backend is a standalone Python/Litestar service living in `backend/` (fully migrated off Next.js/tRPC — see issue #103/#104 for that history). The frontend calls the backend directly over REST with a JWT Bearer token. Only the backend is hosted as a public, always-on service (at `blm.theocloud.dev`); the frontend ships as a Tauri desktop app built from the Next.js codebase rather than being centrally hosted the same way.
 
 Users can track games with metadata from HowLongToBeat and IGDB, organize games into categories via drag & drop, connect Steam accounts for playtime sync, and import/export CSV files.
 
@@ -64,9 +64,9 @@ uv run ruff check .  # Lint
 
 ## Architecture
 
-**Frontend stack:** Next.js 15+ with App Router, tRPC for type-safe API, PostgreSQL via pg package, NextAuth v5 for authentication, Tailwind CSS + shadcn/ui components. Lives entirely in `frontend/`.
+**Frontend stack:** Next.js 15+ with App Router, calling the backend directly over REST via a typed `openapi-fetch` client generated from the backend's OpenAPI schema, JWT Bearer token in `localStorage` for auth (no NextAuth), Tailwind CSS + shadcn/ui components. Lives entirely in `frontend/`. Distributed as a Tauri desktop app (static export) rather than centrally hosted.
 
-**Backend stack:** Python/Litestar, uv-managed, SQLAlchemy 2.0 async + asyncpg. Lives entirely in `backend/`. Has a full DB access layer now (`models/`, `repositories/`, `schemas/`, Alembic baselined onto the existing schema — issue #110) plus a `/health` check, but no real HTTP routes/auth yet; the frontend still talks to its own tRPC backend until that lands. See issue #104 for the full migration plan and rationale.
+**Backend stack:** Python/Litestar, uv-managed, SQLAlchemy 2.0 async + asyncpg, full REST API (backlog CRUD, auth incl. TOTP 2FA, CSV import/export, IGDB/HowLongToBeat integrations). Lives entirely in `backend/`. This is the only piece of the app hosted as a public, always-on service, at `blm.theocloud.dev`. See issue #104 for the migration history off Next.js/tRPC.
 
 **Path Aliases** (relative to `frontend/`):
 - `~/` → `./src/*`
@@ -74,22 +74,23 @@ uv run ruff check .  # Lint
 - `shadcn_components/*` → `./src/components/*` (shadcn/ui components)
 
 **Key Directories** (all under `frontend/`):
-- `src/server/api/routers/` - tRPC routers (backlog, user, igdb, csv)
-- `src/server/services/` - Business logic services
-- `src/server/db/CRUD/` - Database operations (create, read, update, delete)
-- `src/server/integrations/` - External APIs (HowLongToBeat, IGDB)
+- `src/lib/api/` - typed REST client (`client.ts`, generated `schema.d.ts`) + one module per domain (`auth.ts`, `backlog.ts`, `csv.ts`, `games.ts`, `user.ts`, `twoFactor.ts`), each mapping the backend's snake_case responses to the frontend's camelCase shapes
+- `src/hooks/` - React Query hooks wrapping `lib/api/*` calls
+- `src/app/context/AuthContext.tsx` - auth state (login, 2FA challenge, current user), replaces NextAuth's `SessionProvider`
 - `src/app/_components/` - React components
 - `src/components/ui/` - shadcn/ui primitives
-- `test/` - Vitest tests with testcontainers for PostgreSQL
+- `test/` - Vitest tests (frontend no longer has its own DB access layer to test against testcontainers - that's the backend's job now)
 
-**tRPC Setup:**
-- `publicProcedure` - Unauthenticated endpoints
-- `protectedProcedure` - Requires auth session
-- Routers defined in `frontend/src/server/api/root.ts`
+**Key Directories** (all under `backend/src/backlog_manager_backend/`):
+- `routes/` - Litestar HTTP handlers (`auth.py`, `backlog.py`, `csv.py`, `games.py`, `user.py`, `health.py`)
+- `services/` - business logic (`auth_service.py`, `game_service.py`, ...)
+- `repositories/` - SQLAlchemy data access, one module per entity
+- `models/` - SQLAlchemy declarative models
+- `schemas/` - msgspec request/response structs
+- `integrations/` - external APIs (`igdb.py`, `howlongtobeat.py`)
+- `auth/` - password hashing, JWT tokens, TOTP/2FA
 
-**Database:** Two parallel access layers exist during the migration, both against the same schema (`postgres/backlogmanagerdb-init.sql`, unchanged by either):
-- Frontend: direct PostgreSQL via connection pool (`frontend/src/server/db/index.ts`), no ORM — still what actually serves the app today.
-- Backend: SQLAlchemy 2.0 async models/repositories (`backend/src/backlog_manager_backend/{models,repositories,schemas}/`), Alembic baselined onto the existing schema (`backend/alembic/`, stamped rather than migrated from scratch) — built, tested, not yet wired to any route.
+**Database:** SQLAlchemy 2.0 async models/repositories (`backend/src/backlog_manager_backend/{models,repositories,schemas}/`) against PostgreSQL (`postgres/backlogmanagerdb-init.sql`), Alembic baselined onto the existing schema (`backend/alembic/`, stamped rather than migrated from scratch) and used for all schema changes since. The old frontend-side raw-`pg` access layer (`frontend/src/server/db/`) no longer exists.
 
 ## ESLint Rules
 

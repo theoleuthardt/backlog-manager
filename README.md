@@ -1,6 +1,6 @@
 # Backlog Manager 🎮📒
 
-A web-based backlog manager as NextJS full stack app with authentication and PostgreSQL database, deployed via Podman.
+A backlog manager to manage and organize games, with a Python/Litestar backend API and a Next.js frontend distributed as a Tauri desktop app.
 This is a private project of mine and still work in progress. 
 
 ## Overview 
@@ -26,10 +26,9 @@ games according to categories such as "Games I still want to play", "Games I'm c
 
 ## Architecture
 
-- **Frontend:** NextJS (T3 Stack), in `frontend/`
-- **Backend:** migrating from TypeScript/tRPC to Python/Litestar (`backend/`) — see issue #104. Business logic currently still lives in `frontend/src/server/` until the migration's later steps land.
-- **Database:** PostgreSQL (pg-package on the frontend today; SQLAlchemy planned for the backend)
-- **Deployment:** Podman/Multi-Platform Apps with Tauri
+- **Frontend:** NextJS, in `frontend/` — calls the backend directly over REST, see issue #104 for the migration history.
+- **Backend:** Python/Litestar, in `backend/` as standalone REST API, SQLAlchemy 2.0 async + asyncpg against PostgreSQL.
+- **Deployment:** only the backend is hosted as a public, always-on service, at `blm.theocloud.dev` (Podman/Containerfile-based). The frontend is not centrally hosted the same way, it ships as a Tauri desktop app built from the Next.js codebase (static export) for the various platforms.
 
 ## Local Development
 
