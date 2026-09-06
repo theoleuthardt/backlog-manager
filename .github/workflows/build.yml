@@ -42,6 +42,12 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Require API URL for published images
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.push_to_dockerhub }}
+        env:
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+        run: test -n "$NEXT_PUBLIC_API_URL"
+
       - name: Build Docker image and Push to DockerHub if requested
         uses: docker/build-push-action@v5
         with:
