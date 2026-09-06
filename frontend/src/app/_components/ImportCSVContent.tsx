@@ -44,6 +44,11 @@ const COLUMN_OPTIONS = [
 
 export const ImportCSVContent = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // The backend import request keeps running after a cancel is sent (it
+  // only checks the cancel flag between records) - this tracks which
+  // session_id was cancelled so its eventual settlement doesn't overwrite
+  // the cancellation message with a stale success/error result.
+  const cancelledSessionIdRef = useRef<string | null>(null);
   const csvImport = useCSVImport();
   const {
     state,
@@ -125,11 +130,13 @@ export const ImportCSVContent = () => {
   const handleCancelImport = useCallback(async () => {
     if (sessionId) {
       try {
+        cancelledSessionIdRef.current = sessionId;
         await cancelCSVMutation.mutateAsync(sessionId);
         toast.info("Import cancelled");
         completeImport("Import was cancelled by the user");
         cancelImport();
       } catch (error) {
+        cancelledSessionIdRef.current = null;
         toast.error(
           error instanceof Error ? error.message : "Failed to cancel import",
         );
@@ -138,12 +145,13 @@ export const ImportCSVContent = () => {
   }, [sessionId, cancelCSVMutation, cancelImport, completeImport]);
 
   const processCSVFile = async (file: File) => {
+    let newSessionId = "";
     try {
       const fileContent = await file.text();
       const lines = fileContent.trim().split("\n");
       const recordCount = Math.max(0, lines.length - 1);
 
-      const newSessionId = uuidv4();
+      newSessionId = uuidv4();
       startImport(newSessionId, recordCount);
 
       const result = await importCSV.mutateAsync({
@@ -154,12 +162,16 @@ export const ImportCSVContent = () => {
         statusColumn,
         sessionId: newSessionId,
       });
-      handleImportComplete(result);
+      if (cancelledSessionIdRef.current !== newSessionId) {
+        handleImportComplete(result);
+      }
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Error processing CSV file",
-      );
-      completeImport("");
+      if (cancelledSessionIdRef.current !== newSessionId) {
+        toast.error(
+          error instanceof Error ? error.message : "Error processing CSV file",
+        );
+        completeImport("");
+      }
     }
   };
 

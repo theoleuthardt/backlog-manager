@@ -45,11 +45,13 @@ export const MissingGamesModal = ({
   }
 
   const handleSelectGame = async (gameData: GameSearchResult) => {
+    if (createMissingGameMutation.isPending) return;
     try {
       await createMissingGameMutation.mutateAsync({
         title: gameData.title,
         genre: currentGame.genre,
         platform: currentGame.platform,
+        status: currentGame.status,
         imageLink: gameData.imageUrl,
         mainTime: gameData.mainStory,
         mainPlusExtraTime: gameData.mainStoryWithExtras,
@@ -121,14 +123,16 @@ export const MissingGamesModal = ({
         </div>
 
         {searchResults.length > 0 && (
-          <div className="mb-6 max-h-64 overflow-y-auto">
+          <div
+            className={`mb-6 max-h-64 overflow-y-auto ${createMissingGameMutation.isPending ? "pointer-events-none opacity-50" : ""}`}
+          >
             <p className="mb-2 text-sm text-gray-400">Results:</p>
             <div className="space-y-2">
               {searchResults.map((game) => (
                 <div
                   key={game.hltbId}
                   className="cursor-pointer rounded border border-gray-700 bg-gray-900 p-3 transition-colors hover:border-white"
-                  onClick={() => handleSelectGame(game)}
+                  onClick={() => void handleSelectGame(game)}
                 >
                   <div className="flex items-start gap-3">
                     {game.imageUrl && (

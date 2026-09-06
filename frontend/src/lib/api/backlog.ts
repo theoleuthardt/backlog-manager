@@ -33,7 +33,11 @@ export interface CreateBacklogEntryInput {
   title: string;
   genre: string[];
   platform: string[];
-  status: BacklogStatus;
+  // The backend doesn't enforce an enum here (plain `str`) - CSV imports in
+  // particular can carry an arbitrary status value from the source file.
+  // BacklogStatus stays around for call sites backed by an actual status
+  // dropdown (CreationToolForm, BacklogEntry).
+  status: string;
   owned: boolean;
   interest: number;
   imageLink?: string;

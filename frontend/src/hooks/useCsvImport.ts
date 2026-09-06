@@ -13,7 +13,8 @@ export function useImportProgress(sessionId: string | null, enabled: boolean) {
     queryKey: ["csv-import-progress", sessionId],
     queryFn: () => csvApi.getImportProgress(sessionId ?? ""),
     enabled: sessionId !== null && enabled,
-    refetchInterval: 200,
+    retry: false,
+    refetchInterval: (query) => (query.state.error ? false : 200),
   });
 }
 
@@ -29,6 +30,7 @@ export function useCreateMissingGameEntry() {
     mutationFn: (input: {
       genre: string;
       platform: string;
+      status: string;
       imageLink: string | null;
       mainTime: number;
       mainPlusExtraTime: number;
@@ -45,7 +47,7 @@ export function useCreateMissingGameEntry() {
           .split(",")
           .map((p) => p.trim())
           .filter(Boolean),
-        status: "Not Started",
+        status: input.status,
         owned: true,
         interest: 5,
         imageLink: input.imageLink ?? undefined,

@@ -58,12 +58,21 @@ export function CreationToolForm() {
     setCreateStatus("idle");
 
     try {
-      if (!genre.trim()) {
+      const genreList = genre
+        .split(",")
+        .map((g) => g.trim())
+        .filter(Boolean);
+      const platformList = platform
+        .split(",")
+        .map((p) => p.trim())
+        .filter(Boolean);
+
+      if (genreList.length === 0) {
         toast.error("Please enter at least one genre");
         setIsLoading(false);
         return;
       }
-      if (!platform.trim()) {
+      if (platformList.length === 0) {
         toast.error("Please enter at least one platform");
         setIsLoading(false);
         return;
@@ -76,14 +85,8 @@ export function CreationToolForm() {
 
       await createEntryMutation.mutateAsync({
         title,
-        genre: genre
-          .split(",")
-          .map((g) => g.trim())
-          .filter(Boolean),
-        platform: platform
-          .split(",")
-          .map((p) => p.trim())
-          .filter(Boolean),
+        genre: genreList,
+        platform: platformList,
         status: status as
           | "Not Started"
           | "In Progress"

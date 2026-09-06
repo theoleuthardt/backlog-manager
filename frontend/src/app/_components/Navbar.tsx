@@ -4,9 +4,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import type { NavbarLink, NavbarProps } from "~/app/types";
+import { useAuth } from "~/app/context/AuthContext";
 
 export function Navbar(props: NavbarProps) {
   const router = useRouter();
+  const { logout } = useAuth();
 
   const handleClick = (e: React.MouseEvent, link: NavbarLink) => {
     e.preventDefault();
@@ -21,7 +23,8 @@ export function Navbar(props: NavbarProps) {
         break;
 
       case "logout":
-        router.push("/api/auth/signout");
+        logout();
+        router.push("/login");
         break;
 
       case "navigate":

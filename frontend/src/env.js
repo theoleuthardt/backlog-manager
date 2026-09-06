@@ -19,10 +19,17 @@ export const env = createEnv({
    */
   client: {
     // Baked in at build time - points the openapi-fetch client (see
-    // src/lib/api/client.ts) at the Litestar backend.
+    // src/lib/api/client.ts) at the Litestar backend. The client attaches
+    // the stored Bearer token to every request, so in production this must
+    // be https: - plain http would send that token in cleartext.
     NEXT_PUBLIC_API_URL:
       process.env.NODE_ENV === "production"
-        ? z.string().url()
+        ? z
+            .string()
+            .url()
+            .refine((url) => new URL(url).protocol === "https:", {
+              message: "NEXT_PUBLIC_API_URL must use https in production",
+            })
         : z.string().url().default("http://localhost:8000"),
   },
 
