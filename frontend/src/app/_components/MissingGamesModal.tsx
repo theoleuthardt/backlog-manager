@@ -6,21 +6,10 @@ import { Button } from "shadcn_components/ui/button";
 import { X } from "lucide-react";
 import { Spinner } from "~/components/ui/spinner";
 import { SearchBar } from "./SearchBar";
-import { api } from "~/trpc/react";
-import type { MissingGame } from "~/server/csv/parseCSV";
-
-interface GameSearchResult {
-  id: number;
-  hltbId: number;
-  title: string;
-  imageUrl: string | null;
-  steamAppId: number | null;
-  genres?: string[];
-  platforms?: string[];
-  mainStory: number;
-  mainStoryWithExtras: number;
-  completionist: number;
-}
+import { useGameSearch } from "~/hooks/useGameSearch";
+import { useCreateMissingGameEntry } from "~/hooks/useCsvImport";
+import type { MissingGame } from "~/lib/api/csv";
+import type { GameSearchResult } from "~/lib/api/games";
 
 interface MissingGamesModalProps {
   missingGames: MissingGame[];
@@ -38,29 +27,12 @@ export const MissingGamesModal = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
 
-  const gameSearchQuery = api.igdb.search.useQuery(
-    { searchTerm: debouncedQuery },
-    {
-      enabled: debouncedQuery.length > 0,
-    }
-  );
+  const gameSearchQuery = useGameSearch(debouncedQuery);
 
-  const searchResults = searchQuery.length > 0 ? (gameSearchQuery.data ?? []) : [];
+  const searchResults =
+    searchQuery.length > 0 ? (gameSearchQuery.data ?? []) : [];
 
-  const createMissingGameMutation = api.csv.createMissingGameEntry.useMutation({
-    onSuccess: () => {
-      setSearchQuery("");
-
-      if (currentIndex < missingGames.length - 1) {
-        setCurrentIndex(currentIndex + 1);
-      } else {
-        onClose();
-      }
-    },
-    onError: (error) => {
-      console.error("Failed to create missing game entry:", error);
-    },
-  });
+  const createMissingGameMutation = useCreateMissingGameEntry();
 
   if (!isOpen || missingGames.length === 0) {
     return null;
@@ -73,10 +45,27 @@ export const MissingGamesModal = ({
   }
 
   const handleSelectGame = async (gameData: GameSearchResult) => {
-    await createMissingGameMutation.mutateAsync({
-      missingGame: currentGame,
-      gameData,
-    });
+    if (createMissingGameMutation.isPending) return;
+    try {
+      await createMissingGameMutation.mutateAsync({
+        title: gameData.title,
+        genre: currentGame.genre,
+        platform: currentGame.platform,
+        status: currentGame.status,
+        imageLink: gameData.imageUrl,
+        mainTime: gameData.mainStory,
+        mainPlusExtraTime: gameData.mainStoryWithExtras,
+        completionTime: gameData.completionist,
+      });
+      setSearchQuery("");
+      if (currentIndex < missingGames.length - 1) {
+        setCurrentIndex(currentIndex + 1);
+      } else {
+        onClose();
+      }
+    } catch (error) {
+      console.error("Failed to create missing game entry:", error);
+    }
   };
 
   const handleSkip = () => {
@@ -90,24 +79,24 @@ export const MissingGamesModal = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-black border-2 border-white text-white rounded-lg p-6 max-w-2xl w-full mx-4">
-        <div className="flex justify-between items-center mb-4">
+    <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
+      <div className="mx-4 w-full max-w-2xl rounded-lg border-2 border-white bg-black p-6 text-white">
+        <div className="mb-4 flex items-center justify-between">
           <h2 className="text-2xl font-bold">
             Missing Game: {currentIndex + 1} of {missingGames.length}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="text-gray-400 transition-colors hover:text-white"
           >
             <X size={24} />
           </button>
         </div>
 
-        <div className="mb-6 p-4 bg-gray-900 rounded border border-gray-700">
+        <div className="mb-6 rounded border border-gray-700 bg-gray-900 p-4">
           <p className="text-sm text-gray-400">Game from CSV:</p>
           <p className="text-lg font-semibold">{currentGame.title}</p>
-          <div className="mt-2 text-sm text-gray-400 grid grid-cols-3 gap-4">
+          <div className="mt-2 grid grid-cols-3 gap-4 text-sm text-gray-400">
             <div>Genre: {currentGame.genre}</div>
             <div>Platform: {currentGame.platform}</div>
             <div>Status: {currentGame.status}</div>
@@ -115,8 +104,10 @@ export const MissingGamesModal = ({
         </div>
 
         <div className="mb-6">
-          <p className="text-sm text-gray-400 mb-2">Search for the game in howLongToBeat:</p>
-          <div className="flex gap-2 items-center">
+          <p className="mb-2 text-sm text-gray-400">
+            Search for the game in howLongToBeat:
+          </p>
+          <div className="flex items-center gap-2">
             <SearchBar
               value={searchQuery}
               placeholder="Search game..."
@@ -132,14 +123,16 @@ export const MissingGamesModal = ({
         </div>
 
         {searchResults.length > 0 && (
-          <div className="mb-6 max-h-64 overflow-y-auto">
-            <p className="text-sm text-gray-400 mb-2">Results:</p>
+          <div
+            className={`mb-6 max-h-64 overflow-y-auto ${createMissingGameMutation.isPending ? "pointer-events-none opacity-50" : ""}`}
+          >
+            <p className="mb-2 text-sm text-gray-400">Results:</p>
             <div className="space-y-2">
               {searchResults.map((game) => (
                 <div
                   key={game.hltbId}
-                  className="p-3 bg-gray-900 rounded border border-gray-700 hover:border-white cursor-pointer transition-colors"
-                  onClick={() => handleSelectGame(game)}
+                  className="cursor-pointer rounded border border-gray-700 bg-gray-900 p-3 transition-colors hover:border-white"
+                  onClick={() => void handleSelectGame(game)}
                 >
                   <div className="flex items-start gap-3">
                     {game.imageUrl && (
@@ -148,12 +141,12 @@ export const MissingGamesModal = ({
                         alt={game.title}
                         width={48}
                         height={48}
-                        className="object-cover rounded"
+                        className="rounded object-cover"
                       />
                     )}
                     <div className="flex-1">
                       <p className="font-semibold">{game.title}</p>
-                      <div className="text-xs text-gray-400 mt-1">
+                      <div className="mt-1 text-xs text-gray-400">
                         <span>Main: {game.mainStory}h</span>
                         <span className="mx-2">|</span>
                         <span>+Extra: {game.mainStoryWithExtras}h</span>
@@ -168,11 +161,11 @@ export const MissingGamesModal = ({
           </div>
         )}
 
-        <div className="flex gap-2 justify-end">
+        <div className="flex justify-end gap-2">
           <Button
             onClick={handleSkip}
             variant="outline"
-            className="border-2 border-white text-black bg-white hover:text-white hover:bg-gray-900"
+            className="border-2 border-white bg-white text-black hover:bg-gray-900 hover:text-white"
           >
             Skip
           </Button>

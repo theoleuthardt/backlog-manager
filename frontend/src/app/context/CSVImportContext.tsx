@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useCallback } from "react";
-import type { MissingGame } from "~/server/csv/parseCSV";
+import type { MissingGame } from "~/lib/api/csv";
 
 export interface ImportState {
   isLoading: boolean;
@@ -25,7 +25,7 @@ interface CSVImportContextType {
   updateProgress: (createdRecords: number) => void;
   completeImport: (
     completionMessage: string,
-    missingGames?: MissingGame[]
+    missingGames?: MissingGame[],
   ) => void;
   resetImport: () => void;
   setMissingGamesModal: (show: boolean) => void;
@@ -33,14 +33,14 @@ interface CSVImportContextType {
     titleColumn: string,
     genreColumn: string,
     platformColumn: string,
-    statusColumn: string
+    statusColumn: string,
   ) => void;
   showCancelConfirmation: (show: boolean) => void;
   cancelImport: () => void;
 }
 
 const CSVImportContext = createContext<CSVImportContextType | undefined>(
-  undefined
+  undefined,
 );
 
 const DEFAULT_STATE: ImportState = {
@@ -64,20 +64,17 @@ export const CSVImportProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [state, setState] = useState<ImportState>(DEFAULT_STATE);
 
-  const startImport = useCallback(
-    (sessionId: string, totalRecords: number) => {
-      setState((prev) => ({
-        ...prev,
-        isLoading: true,
-        sessionId,
-        totalRecords,
-        createdRecords: 0,
-        completionMessage: null,
-        missingGames: [],
-      }));
-    },
-    []
-  );
+  const startImport = useCallback((sessionId: string, totalRecords: number) => {
+    setState((prev) => ({
+      ...prev,
+      isLoading: true,
+      sessionId,
+      totalRecords,
+      createdRecords: 0,
+      completionMessage: null,
+      missingGames: [],
+    }));
+  }, []);
 
   const updateProgress = useCallback((createdRecords: number) => {
     setState((prev) => ({
@@ -96,7 +93,7 @@ export const CSVImportProvider: React.FC<{ children: React.ReactNode }> = ({
         showMissingGamesModal: (missingGames?.length ?? 0) > 0,
       }));
     },
-    []
+    [],
   );
 
   const resetImport = useCallback(() => {
@@ -115,7 +112,7 @@ export const CSVImportProvider: React.FC<{ children: React.ReactNode }> = ({
       titleColumn: string,
       genreColumn: string,
       platformColumn: string,
-      statusColumn: string
+      statusColumn: string,
     ) => {
       setState((prev) => ({
         ...prev,
@@ -125,7 +122,7 @@ export const CSVImportProvider: React.FC<{ children: React.ReactNode }> = ({
         statusColumn,
       }));
     },
-    []
+    [],
   );
 
   const showCancelConfirmation = useCallback((show: boolean) => {

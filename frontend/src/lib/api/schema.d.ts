@@ -236,6 +236,193 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/csv/parse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** ParseCsv */
+        post: operations["ApiCsvParseParseCsv"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/csv/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** ImportCsv */
+        post: operations["ApiCsvImportImportCsv"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/csv/import/{session_id}/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GetCsvImportProgress */
+        get: operations["ApiCsvImportSessionIdProgressGetCsvImportProgress"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/csv/import/{session_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** CancelCsvImport */
+        post: operations["ApiCsvImportSessionIdCancelCancelCsvImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/games/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** SearchGame */
+        get: operations["ApiGamesSearchSearchGame"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/games/enriched-search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** EnrichedSearch */
+        get: operations["ApiGamesEnrichedSearchEnrichedSearch"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/games/{game_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GetGame */
+        get: operations["ApiGamesGameIdGetGame"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/games/{game_id}/time-to-beat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GetGameTimeToBeat */
+        get: operations["ApiGamesGameIdTimeToBeatGetGameTimeToBeat"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/games/platforms/{platform_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GetPlatform */
+        get: operations["ApiGamesPlatformsPlatformIdGetPlatform"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/games/covers/{cover_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GetCover */
+        get: operations["ApiGamesCoversCoverIdGetCover"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/games/genres/{genre_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GetGenre */
+        get: operations["ApiGamesGenresGenreIdGetGenre"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -306,10 +493,166 @@ export interface components {
             /** @default false */
             is_admin?: boolean;
         };
+        /** EnrichedResult */
+        EnrichedResult: {
+            id: number;
+            hltb_id: number;
+            title: string;
+            image_url: string | null;
+            genres: string[];
+            platforms: string[];
+            main_story: number;
+            main_story_with_extras: number;
+            completionist: number;
+            steam_app_id?: null;
+        };
+        /** IGDBCover */
+        IGDBCover: {
+            id: number;
+            alpha_channel?: boolean | null;
+            animated?: boolean | null;
+            checksum?: string | null;
+            game?: number | null;
+            game_localization?: number | null;
+            height?: number | null;
+            image_id?: string | null;
+            url?: string | null;
+            width?: number | null;
+        };
+        /** IGDBGameData */
+        IGDBGameData: {
+            id: number;
+            age_ratings?: number[] | null;
+            aggregated_rating?: number | null;
+            aggregated_rating_count?: number | null;
+            alternative_names?: number[] | null;
+            artworks?: number[] | null;
+            bundles?: number[] | null;
+            cover?: number | null;
+            created_at?: number | null;
+            dlcs?: number[] | null;
+            expansions?: number[] | null;
+            external_games?: number[] | null;
+            first_release_date?: number | null;
+            franchises?: number[] | null;
+            game_engines?: number[] | null;
+            game_modes?: number[] | null;
+            genres?: number[] | null;
+            hypes?: number | null;
+            involved_companies?: number[] | null;
+            keywords?: number[] | null;
+            name?: string | null;
+            platforms?: number[] | null;
+            player_perspectives?: number[] | null;
+            rating?: number | null;
+            rating_count?: number | null;
+            release_dates?: number[] | null;
+            screenshots?: number[] | null;
+            similar_games?: number[] | null;
+            slug?: string | null;
+            storyline?: string | null;
+            summary?: string | null;
+            tags?: number[] | null;
+            themes?: number[] | null;
+            total_rating?: number | null;
+            total_rating_count?: number | null;
+            updated_at?: number | null;
+            url?: string | null;
+            videos?: number[] | null;
+            websites?: number[] | null;
+            checksum?: string | null;
+            language_supports?: number[] | null;
+            game_localizations?: number[] | null;
+            collections?: number[] | null;
+            game_type?: number | null;
+        };
+        /** IGDBGameTimeToBeat */
+        IGDBGameTimeToBeat: {
+            id: number;
+            checksum?: string | null;
+            completely?: number | null;
+            count?: number | null;
+            created_at?: number | null;
+            game_id?: number | null;
+            hastily?: number | null;
+            normally?: number | null;
+            updated_at?: number | null;
+        };
+        /** IGDBGenre */
+        IGDBGenre: {
+            id: number;
+            checksum?: string | null;
+            created_at?: number | null;
+            name?: string | null;
+            slug?: string | null;
+            updated_at?: number | null;
+            url?: string | null;
+        };
+        /** IGDBPlatform */
+        IGDBPlatform: {
+            id: number;
+            abbreviation?: string | null;
+            alternative_name?: string | null;
+            category?: number | null;
+            checksum?: string | null;
+            created_at?: number | null;
+            generation?: number | null;
+            name?: string | null;
+            platform_family?: number | null;
+            platform_logo?: number | null;
+            platform_type?: number | null;
+            slug?: string | null;
+            summary?: string | null;
+            updated_at?: number | null;
+            url?: string | null;
+            versions?: number[] | null;
+            websites?: number[] | null;
+        };
+        /** IGDBSearchResult */
+        IGDBSearchResult: {
+            id: number;
+            alternative_name?: string | null;
+            game?: number | null;
+            name?: string | null;
+            published_at?: number | null;
+        };
+        /** ImportCsvRequest */
+        ImportCsvRequest: {
+            content: string;
+            title_column: string;
+            genre_column: string;
+            platform_column: string;
+            status_column: string;
+            session_id?: string | null;
+        };
+        /** ImportProgressResponse */
+        ImportProgressResponse: {
+            processed: number;
+        };
+        /** ImportResult */
+        ImportResult: {
+            /** @default 0 */
+            success?: number;
+            /** @default 0 */
+            failed?: number;
+            errors?: components["schemas"]["RecordError"][];
+            missing_games?: components["schemas"]["MissingGame"][];
+        };
         /** LoginParams */
         LoginParams: {
             email: string;
             password: string;
+        };
+        /** MissingGame */
+        MissingGame: {
+            title: string;
+            genre: string;
+            platform: string;
+            status: string;
+        };
+        /** ParseCsvRequest */
+        ParseCsvRequest: {
+            content: string;
         };
         /** PublicUser */
         PublicUser: {
@@ -326,6 +669,11 @@ export interface components {
         PublicUsername: {
             id: number;
             name: string;
+        };
+        /** RecordError */
+        RecordError: {
+            title: string;
+            error: string;
         };
         /** TokenResponse */
         TokenResponse: {
@@ -1186,6 +1534,417 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiCsvParseParseCsv: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ParseCsvRequest"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiCsvImportImportCsv: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportCsvRequest"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportResult"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiCsvImportSessionIdProgressGetCsvImportProgress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportProgressResponse"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiCsvImportSessionIdCancelCancelCsvImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiGamesSearchSearchGame: {
+        parameters: {
+            query: {
+                search_term: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IGDBSearchResult"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiGamesEnrichedSearchEnrichedSearch: {
+        parameters: {
+            query: {
+                search_term: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrichedResult"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiGamesGameIdGetGame: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                game_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IGDBGameData"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiGamesGameIdTimeToBeatGetGameTimeToBeat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                game_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IGDBGameTimeToBeat"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiGamesPlatformsPlatformIdGetPlatform: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                platform_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IGDBPlatform"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiGamesCoversCoverIdGetCover: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cover_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IGDBCover"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiGamesGenresGenreIdGetGenre: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                genre_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IGDBGenre"][];
+                };
             };
             /** @description Bad request syntax or unsupported method */
             400: {

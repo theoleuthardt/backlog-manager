@@ -15,7 +15,7 @@ import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Spinner } from "~/components/ui/spinner";
 import type { EntryCreationDialogProps } from "~/app/types";
-import { api } from "~/trpc/react";
+import { useGameSearch } from "~/hooks/useGameSearch";
 import { useDebounce } from "~/hooks/useDebounce";
 
 export const EntryCreationDialog = ({
@@ -28,16 +28,8 @@ export const EntryCreationDialog = ({
   const [selectedIndex, setSelectedIndex] = React.useState<number | null>(null);
 
   const debouncedSearchQuery = useDebounce(searchQuery, 800);
-  const { data: searchResults = [], isLoading } = api.igdb.search.useQuery(
-    { searchTerm: debouncedSearchQuery },
-    {
-      enabled: debouncedSearchQuery.length > 0,
-      refetchOnWindowFocus: false,
-      staleTime: 1000 * 60 * 5,
-      gcTime: 1000 * 60 * 10,
-      retry: 3,
-    },
-  );
+  const { data: searchResults = [], isLoading } =
+    useGameSearch(debouncedSearchQuery);
 
   const resultsVisible = searchQuery.length > 0;
 

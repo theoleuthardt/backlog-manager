@@ -3,8 +3,8 @@ import React, { useState } from "react";
 import { Button } from "shadcn_components/ui/button";
 import Image from "next/image";
 import { toast } from "sonner";
-import { api } from "~/trpc/react";
-import type { BacklogEntry } from "~/server/db/utils/mapper";
+import { getEntries } from "~/lib/api/backlog";
+import type { BacklogEntryData } from "~/lib/api/backlog";
 
 export const ExportCSVContent = () => {
   const [isExporting, setIsExporting] = useState(false);
@@ -13,19 +13,15 @@ export const ExportCSVContent = () => {
   const [processedEntries, setProcessedEntries] = useState(0);
   const [completionMessage, setCompletionMessage] = useState("");
 
-  const exportQuery = api.csv.exportEntries.useQuery(undefined, {
-    enabled: false,
-  });
-
-  const convertToCSV = (data: BacklogEntry[]) => {
+  const convertToCSV = (data: BacklogEntryData[]) => {
     if (data.length === 0) return "";
 
     // Create CSV rows
     const rows = data.map((entry) => {
       return [
         `"${(entry.title ?? "").replace(/"/g, '""')}"`,
-        `"${(entry.genre ?? "").replace(/"/g, '""')}"`,
-        `"${(entry.platform ?? "").replace(/"/g, '""')}"`,
+        `"${entry.genre.join(", ").replace(/"/g, '""')}"`,
+        `"${entry.platform.join(", ").replace(/"/g, '""')}"`,
         `"${(entry.status ?? "").replace(/"/g, '""')}"`,
         entry.owned ? "true" : "false",
         entry.interest ?? "",
@@ -65,13 +61,7 @@ export const ExportCSVContent = () => {
 
       toast.info("Fetching backlog entries...");
 
-      const result = await exportQuery.refetch();
-
-      if (!result.data?.success || !result.data.data) {
-        throw new Error(result.data?.error ?? "Failed to fetch entries");
-      }
-
-      const entries = result.data.data;
+      const entries = await getEntries();
       setTotalEntries(entries.length);
 
       if (entries.length === 0) {
@@ -93,7 +83,9 @@ export const ExportCSVContent = () => {
 
       const csvContent = convertToCSV(entries);
 
-      await new Promise((resolve) => setTimeout(resolve, entries.length * 10 + 100));
+      await new Promise((resolve) =>
+        setTimeout(resolve, entries.length * 10 + 100),
+      );
       clearInterval(progressInterval);
 
       setProcessedEntries(entries.length);
@@ -104,10 +96,14 @@ export const ExportCSVContent = () => {
       downloadCSV(csvContent, filename);
 
       toast.success(`Successfully exported ${entries.length} entries!`);
-      setCompletionMessage(`✓ Successfully exported ${entries.length} backlog entries!`);
+      setCompletionMessage(
+        `✓ Successfully exported ${entries.length} backlog entries!`,
+      );
     } catch (error) {
       console.error("Export error:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to export entries");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to export entries",
+      );
       setCompletionMessage("Export failed. Please try again.");
     } finally {
       setIsExporting(false);
@@ -117,12 +113,7 @@ export const ExportCSVContent = () => {
   return (
     <div className="flex flex-col items-center justify-center gap-8 py-12">
       <div className="flex flex-col items-center gap-4">
-        <Image
-          src="/csv_export.png"
-          alt="export CSV"
-          width={64}
-          height={64}
-        />
+        <Image src="/csv_export.png" alt="export CSV" width={64} height={64} />
         <h1 className="text-3xl font-bold">Export Backlog to CSV</h1>
         <p className="max-w-md text-center text-gray-400">
           Export all your backlog entries to a CSV file
@@ -130,7 +121,7 @@ export const ExportCSVContent = () => {
       </div>
 
       <Button
-        className="border-2 border-white font-bold text-white bg-black hover:bg-white hover:text-black"
+        className="border-2 border-white bg-black font-bold text-white hover:bg-white hover:text-black"
         variant="outline"
         onClick={() => void handleExport()}
         disabled={isExporting}
@@ -141,7 +132,7 @@ export const ExportCSVContent = () => {
 
       {isExporting && totalEntries > 0 && (
         <div className="w-full max-w-md space-y-2">
-          <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+          <div className="h-2 overflow-hidden rounded-full bg-white/20">
             <div
               className="h-full bg-white transition-all duration-300"
               style={{
@@ -149,7 +140,7 @@ export const ExportCSVContent = () => {
               }}
             />
           </div>
-          <p className="text-center text-gray-400 text-sm">
+          <p className="text-center text-sm text-gray-400">
             Processing entries: {processedEntries} / {totalEntries}
           </p>
         </div>

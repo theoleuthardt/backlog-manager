@@ -7,13 +7,6 @@ export const env = createEnv({
    * isn't built with invalid env vars.
    */
   server: {
-    AUTH_SECRET:
-      process.env.NODE_ENV === "production"
-        ? z.string()
-        : z.string().optional(),
-    IGDB_CLIENT_ID: z.string(),
-    IGDB_CLIENT_SECRET: z.string(),
-    POSTGRES_URL: z.string().url(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -26,11 +19,17 @@ export const env = createEnv({
    */
   client: {
     // Baked in at build time - points the openapi-fetch client (see
-    // src/lib/api/client.ts) at the Litestar backend. Not consumed by
-    // anything yet; the tRPC -> REST migration is a separate, later step.
+    // src/lib/api/client.ts) at the Litestar backend. The client attaches
+    // the stored Bearer token to every request, so in production this must
+    // be https: - plain http would send that token in cleartext.
     NEXT_PUBLIC_API_URL:
       process.env.NODE_ENV === "production"
-        ? z.string().url()
+        ? z
+            .string()
+            .url()
+            .refine((url) => new URL(url).protocol === "https:", {
+              message: "NEXT_PUBLIC_API_URL must use https in production",
+            })
         : z.string().url().default("http://localhost:8000"),
   },
 
@@ -39,10 +38,6 @@ export const env = createEnv({
    * middlewares) or client-side so we need to destruct manually.
    */
   runtimeEnv: {
-    AUTH_SECRET: process.env.AUTH_SECRET,
-    IGDB_CLIENT_ID: process.env.IGDB_CLIENT_ID,
-    IGDB_CLIENT_SECRET: process.env.IGDB_CLIENT_SECRET,
-    POSTGRES_URL: process.env.POSTGRES_URL,
     NODE_ENV: process.env.NODE_ENV,
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
   },

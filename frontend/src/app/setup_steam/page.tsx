@@ -2,17 +2,17 @@
 
 import { useState, useEffect, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
-import { api } from "~/trpc/react";
+import { useAuth } from "~/app/context/AuthContext";
+import { updateCurrentUser } from "~/lib/api/user";
 
 export default function SteamIdSetupPage() {
   const [steamId, setSteamId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
-  const { data: session, status } = useSession();
-  const updateCurrentUser = api.user.updateCurrentUser.useMutation();
+  const { user, refreshUser } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSteamId(e.target.value);
@@ -22,23 +22,22 @@ export default function SteamIdSetupPage() {
     e.preventDefault();
     setError(null);
 
-    if (status !== "authenticated" || !session?.user?.id) {
+    if (!user) {
       setError("You must be logged in to update your Steam ID.");
       return;
     }
 
+    setIsSubmitting(true);
     try {
-      await updateCurrentUser.mutateAsync({
-        steamId,
-      });
-      console.log("Updating SteamID to:", steamId);
+      await updateCurrentUser({ steamId });
+      await refreshUser();
       setSuccess(true);
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message ?? "Failed to update Steam ID");
-      } else {
-        setError("Failed to update Steam ID");
-      }
+      setError(
+        err instanceof Error ? err.message : "Failed to update Steam ID",
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -47,10 +46,6 @@ export default function SteamIdSetupPage() {
       router.push("/dashboard");
     }
   }, [success, router]);
-
-  if (status === "loading") {
-    return <p>Loading...</p>;
-  }
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-black px-4 text-white">
@@ -62,7 +57,10 @@ export default function SteamIdSetupPage() {
           It seems you have not yet provided your Steam ID. Please enter it
           here.
         </p>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form
+          onSubmit={(e) => void handleSubmit(e)}
+          className="flex flex-col gap-4"
+        >
           {error && <p className="text-red-400">{error}</p>}
           <input
             type="text"
@@ -75,9 +73,10 @@ export default function SteamIdSetupPage() {
           />
           <button
             type="submit"
-            className="w-full rounded-full bg-green-600 px-6 py-3 font-semibold text-white transition hover:bg-green-700"
+            disabled={isSubmitting}
+            className="w-full rounded-full bg-green-600 px-6 py-3 font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Save Steam ID
+            {isSubmitting ? "Saving..." : "Save Steam ID"}
           </button>
         </form>
       </div>

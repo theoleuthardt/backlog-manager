@@ -3,7 +3,8 @@ import "../styles/globals.css";
 import { type Metadata } from "next";
 import { Geist } from "next/font/google";
 
-import { TRPCReactProvider } from "~/trpc/react";
+import { ApiProvider } from "~/lib/api/provider";
+import { AuthProvider } from "~/app/context/AuthContext";
 import { Toaster } from "~/components/ui/sonner";
 import { CSVImportProvider } from "~/app/context/CSVImportContext";
 
@@ -24,9 +25,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geist.variable}`}>
       <body>
-        <TRPCReactProvider>
-          <CSVImportProvider>{children}</CSVImportProvider>
-        </TRPCReactProvider>
+        <ApiProvider>
+          <AuthProvider>
+            <CSVImportProvider>{children}</CSVImportProvider>
+          </AuthProvider>
+        </ApiProvider>
         <Toaster />
       </body>
     </html>
