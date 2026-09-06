@@ -5,20 +5,36 @@ services:
       context: ./frontend
       dockerfile: Containerfile
       args:
-        NODE_ENV: ${NODE_ENV}
+        # Not .env's NODE_ENV - `next build` always needs "production".
+        NODE_ENV: production
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     environment:
-      # Runtime environment variables (not build-time)
-      - NODE_ENV=${NODE_ENV}
-      - HOSTNAME=${HOSTNAME}
+      - NODE_ENV=production
+      # Not .env's HOSTNAME=localhost - the container needs to bind all
+      # interfaces to be reachable via the port mapping below.
+      - HOSTNAME=0.0.0.0
       - PORT=${NEXTJS_PORT}
-      - AUTH_SECRET=${AUTH_SECRET}
-      - AUTH_DISCORD_ID=${AUTH_DISCORD_ID}
-      - AUTH_DISCORD_SECRET=${AUTH_DISCORD_SECRET}
-      - AUTH_GITHUB_ID=${AUTH_GITHUB_ID}
-      - AUTH_GITHUB_SECRET=${AUTH_GITHUB_SECRET}
-      - POSTGRES_URL=${POSTGRES_URL}
     ports:
       - "${NEXTJS_PORT}:3000"
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  backend:
+    env_file: .env
+    build:
+      context: ./backend
+      dockerfile: Containerfile
+    environment:
+      - POSTGRES_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - AUTH_SECRET=${AUTH_SECRET}
+      - IGDB_CLIENT_ID=${IGDB_CLIENT_ID}
+      - IGDB_CLIENT_SECRET=${IGDB_CLIENT_SECRET}
+      - INITIAL_ADMIN_EMAIL=${INITIAL_ADMIN_EMAIL}
+      - INITIAL_ADMIN_PASSWORD=${INITIAL_ADMIN_PASSWORD}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+    ports:
+      - "${BACKEND_PORT}:8000"
     restart: unless-stopped
     depends_on:
       - db

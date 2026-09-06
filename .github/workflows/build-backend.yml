@@ -1,12 +1,12 @@
-name: Docker Build & Push
+name: Backend Docker Build & Push
 
 on:
   pull_request:
     branches:
       - main
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
+    paths:
+      - 'backend/**'
+      - '.github/workflows/build-backend.yml'
   workflow_dispatch:
     inputs:
       image_tag:
@@ -25,7 +25,7 @@ permissions:
 
 jobs:
   build:
-    name: Build NextJS Docker Image
+    name: Build Backend Docker Image
     runs-on: ubuntu-latest
 
     steps:
@@ -42,23 +42,14 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Require API URL for published images
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.push_to_dockerhub }}
-        env:
-          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
-        run: test -n "$NEXT_PUBLIC_API_URL"
-
       - name: Build Docker image and Push to DockerHub if requested
         uses: docker/build-push-action@v5
         with:
-          context: ./frontend
-          file: ./frontend/Containerfile
+          context: ./backend
+          file: ./backend/Containerfile
           push: ${{ github.event_name == 'workflow_dispatch' && inputs.push_to_dockerhub }}
-          build-args: |
-            NODE_ENV=production
-            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'http://localhost:8000' }}
           tags: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.push_to_dockerhub && format('{0}/{1}:{2}', secrets.DOCKERHUB_USERNAME, 'backlog-manager', inputs.image_tag) || format('backlog-manager:{0}', github.event_name == 'workflow_dispatch' && inputs.image_tag || github.sha) }}
+            ${{ github.event_name == 'workflow_dispatch' && inputs.push_to_dockerhub && format('{0}/{1}:{2}', secrets.DOCKERHUB_USERNAME, 'backlog-manager-backend', inputs.image_tag) || format('backlog-manager-backend:{0}', github.event_name == 'workflow_dispatch' && inputs.image_tag || github.sha) }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -67,11 +58,11 @@ jobs:
           IMAGE_TAG: ${{ inputs.image_tag }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         run: |
-          echo "### Docker Build Successful :rocket:" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Backend Docker Build Successful :rocket:" >> "$GITHUB_STEP_SUMMARY"
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.push_to_dockerhub }}" = "true" ]; then
-            printf 'Image built and pushed to DockerHub with tag: `%s/backlog-manager:%s`\n' "$DOCKERHUB_USERNAME" "$IMAGE_TAG" >> "$GITHUB_STEP_SUMMARY"
+            printf 'Image built and pushed to DockerHub with tag: `%s/backlog-manager-backend:%s`\n' "$DOCKERHUB_USERNAME" "$IMAGE_TAG" >> "$GITHUB_STEP_SUMMARY"
           elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            printf 'Image built successfully with tag: `backlog-manager:%s`\n' "$IMAGE_TAG" >> "$GITHUB_STEP_SUMMARY"
+            printf 'Image built successfully with tag: `backlog-manager-backend:%s`\n' "$IMAGE_TAG" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "Image built successfully with tag: \`backlog-manager:${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
+            echo "Image built successfully with tag: \`backlog-manager-backend:${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
           fi

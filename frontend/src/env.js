@@ -18,18 +18,30 @@ export const env = createEnv({
    * `NEXT_PUBLIC_`.
    */
   client: {
-    // Baked in at build time - points the openapi-fetch client (see
-    // src/lib/api/client.ts) at the Litestar backend. The client attaches
-    // the stored Bearer token to every request, so in production this must
-    // be https: - plain http would send that token in cleartext.
+    // Must be https: in production (the Bearer token would otherwise go
+    // out in cleartext) - loopback hosts are exempt since `next build`
+    // always runs with NODE_ENV=production internally, even for a local
+    // container build against http://localhost:8000.
     NEXT_PUBLIC_API_URL:
       process.env.NODE_ENV === "production"
         ? z
             .string()
             .url()
-            .refine((url) => new URL(url).protocol === "https:", {
-              message: "NEXT_PUBLIC_API_URL must use https in production",
-            })
+            .refine(
+              (url) => {
+                const parsed = new URL(url);
+                const isLoopback = [
+                  "localhost",
+                  "127.0.0.1",
+                  "[::1]",
+                ].includes(parsed.hostname);
+                return parsed.protocol === "https:" || isLoopback;
+              },
+              {
+                message:
+                  "NEXT_PUBLIC_API_URL must use https in production (loopback hosts like localhost are exempt)",
+              },
+            )
         : z.string().url().default("http://localhost:8000"),
   },
 
