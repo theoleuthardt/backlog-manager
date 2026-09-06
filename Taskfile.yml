@@ -18,8 +18,8 @@ tasks:
       - task: backend:install
 
   dev:
-    desc: Run the Next.js dev server
-    cmds:
+    desc: Run the Next.js and backend dev servers
+    deps:
       - task: frontend:dev
       - task: backend:dev
 

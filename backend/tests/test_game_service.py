@@ -373,6 +373,59 @@ async def test_search_caches_hltb_fallback_time_to_beat(
     assert hltb_call_count == 1
 
 
+async def test_search_falls_back_to_hltb_when_igdb_time_to_beat_is_all_zero(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An IGDB time-to-beat record with all durations zero/None must not
+    be cached as "resolved" - that would permanently skip the HLTB
+    fallback for a game IGDB has no real duration data for."""
+
+    async def fake_search_game_on_igdb(
+        search_term: str, client_id: str, access_token: str
+    ) -> list[IGDBSearchResult]:
+        return [IGDBSearchResult(id=1, game=1, name="Celeste")]
+
+    async def fake_get_games_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameData]:
+        return [IGDBGameData(id=1, name="Celeste", cover=None, genres=[], platforms=[])]
+
+    async def fake_get_games_time_to_beat_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameTimeToBeat]:
+        return [IGDBGameTimeToBeat(id=1, game_id=1, hastily=None, normally=None, completely=None)]
+
+    async def fake_search_game_on_hltb(search_term: str) -> list[HltbResultData]:
+        return [
+            HltbResultData(
+                id=999,
+                hltb_id=999,
+                title="Celeste",
+                image_url="https://example.com/celeste.jpg",
+                main_story=8.5,
+                main_story_with_extras=12.0,
+                completionist=37.0,
+                last_updated_at="2024-01-01",
+            )
+        ]
+
+    async def fake_get_valid_token() -> str:
+        return "tok"
+
+    monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
+    monkeypatch.setattr(game_service, "get_games_on_igdb", fake_get_games_on_igdb)
+    monkeypatch.setattr(
+        game_service, "get_games_time_to_beat_on_igdb", fake_get_games_time_to_beat_on_igdb
+    )
+    monkeypatch.setattr(game_service, "search_game_on_hltb", fake_search_game_on_hltb)
+    monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
+
+    results = await game_service.search("Celeste")
+
+    assert results[0].hltb_id == 999
+    assert results[0].main_story == 8.5
+
+
 async def test_search_returns_empty_list_when_games_batch_fails(
     game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:

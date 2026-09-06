@@ -163,7 +163,13 @@ async def _enrich_search_results(
             for entry in await get_games_time_to_beat_on_igdb(
                 uncached_time_to_beat_ids, client_id, access_token
             ):
-                if entry.game_id is not None:
+                # An all-zero/empty IGDB record must not be cached as
+                # "resolved" - that would permanently block the HLTB
+                # fallback below for a game IGDB has no real duration
+                # data for.
+                if entry.game_id is not None and any(
+                    (entry.hastily, entry.normally, entry.completely)
+                ):
                     _time_to_beat_cache[entry.game_id] = (
                         entry.game_id,
                         _seconds_to_hours(entry.hastily),
