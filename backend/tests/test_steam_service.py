@@ -188,6 +188,43 @@ async def test_import_library_skips_a_game_that_becomes_a_duplicate_mid_import(
     assert created[0].title == "Portal 2"
 
 
+async def test_import_library_skips_a_game_that_fails_for_a_non_conflict_reason(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Hardening for issue #154's Steam-sync-drops-games report: only
+    ConflictError (an already-imported duplicate) was ever caught per
+    item, so any other exception raised while creating one entry (a
+    decode quirk, an unmapped database error, ...) would propagate out
+    of the whole loop and abort the entire import, silently discarding
+    every game after the one that failed - even though earlier entries
+    in the loop had already been committed individually. One bad game
+    must not prevent the rest of the library from being imported."""
+    user = await _make_user(session)
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [
+            SteamOwnedGame(appid=504230, name="Celeste", playtime_forever=510),
+            SteamOwnedGame(appid=1465360, name="SnowRunner", playtime_forever=120),
+            SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=90),
+        ]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+
+    original_create_backlog_entry = backlog_entry_repo.create_backlog_entry
+
+    async def flaky_create_backlog_entry(session: AsyncSession, params: CreateBacklogEntryParams) -> object:
+        if params.steam_app_id == 1465360:
+            raise RuntimeError("unexpected failure creating this one entry")
+        return await original_create_backlog_entry(session, params)
+
+    monkeypatch.setattr(backlog_entry_repo, "create_backlog_entry", flaky_create_backlog_entry)
+
+    created = await steam_service.import_library(session, user, "api-key")
+
+    titles = {entry.title for entry in created}
+    assert titles == {"Celeste", "Portal 2"}
+
+
 async def test_sync_playtimes_and_import_raises_when_steam_not_linked(
     session: AsyncSession,
 ) -> None:

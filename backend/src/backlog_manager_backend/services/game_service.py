@@ -29,6 +29,15 @@ logger = structlog.get_logger()
 
 _SEARCH_RESULT_LIMIT = 8
 
+# IGDB category enum (from the /games endpoint's `category` field):
+# 0 main_game, 8 remake, 9 remaster, 10 expanded_game rank as "real
+# games" a title search should surface; everything else (dlc_addon,
+# expansion, bundle, standalone_expansion, mod, episode, season, port,
+# fork, pack, update, and an absent category) ranks lowest rather than
+# being excluded outright, since IGDB's categorization is not perfect.
+_MAIN_GAME_CATEGORY_RANKS = {0: 0, 8: 1, 9: 1, 10: 1}
+_OTHER_CATEGORY_RANK = 2
+
 _cached_token: dict[str, object] | None = None
 _genre_cache: dict[int, str] = {}
 _platform_cache: dict[int, str] = {}
@@ -189,7 +198,14 @@ async def _enrich_search_results(
     single batched games call now fails the whole search (returns []),
     trading today's "list gets shorter" behavior for far fewer, far
     less rate-limit-exposed requests; per-game genre/platform/cover
-    assembly failures stay isolated below."""
+    assembly failures stay isolated below.
+
+    Raw search hits are resolved to game ids, deduped (multiple hits -
+    alternate names, character matches - can resolve to the same game)
+    and ranked by category (main_game/remake/remaster/expanded_game
+    first) before being truncated to _SEARCH_RESULT_LIMIT - see issue
+    #154. Everything past that point (covers, genres, platforms,
+    beat-time, SteamGridDB) only runs for the final, truncated set."""
     game_ids = [
         result.game if result.game is not None else result.id for result in search_results
     ]
@@ -201,7 +217,22 @@ async def _enrich_search_results(
                 _game_cache[game.id] = game
         except httpx.HTTPError:
             logger.error("Failed to fetch games batch")
-    games_by_id = {game_id: _game_cache[game_id] for game_id in game_ids if game_id in _game_cache}
+
+    seen_game_ids: set[int] = set()
+    unique_game_ids: list[int] = []
+    for game_id in game_ids:
+        if game_id in _game_cache and game_id not in seen_game_ids:
+            seen_game_ids.add(game_id)
+            unique_game_ids.append(game_id)
+
+    ranked_game_ids = sorted(
+        unique_game_ids,
+        key=lambda game_id: _MAIN_GAME_CATEGORY_RANKS.get(
+            _game_cache[game_id].category, _OTHER_CATEGORY_RANK
+        ),
+    )[:_SEARCH_RESULT_LIMIT]
+
+    games_by_id = {game_id: _game_cache[game_id] for game_id in ranked_game_ids}
     games = list(games_by_id.values())
 
     cover_ids = [game.cover for game in games if game.cover]
@@ -272,7 +303,7 @@ async def _enrich_search_results(
     steamgriddb_covers_by_game_id = await _resolve_steamgriddb_covers_by_game_id(games)
 
     results: list[EnrichedResult] = []
-    for game_id in game_ids:
+    for game_id in ranked_game_ids:
         game = games_by_id.get(game_id)
         if game is None:
             continue
@@ -329,16 +360,18 @@ async def search(search_term: str) -> list[EnrichedResult]:
     genres, platforms and beat-time data (falling back to HowLongToBeat
     when IGDB has no beat-time data). Batches every lookup into at most
     one request per data type for the whole page of results - see
-    issue #105."""
+    issue #105. The raw IGDB search hits are resolved, deduped and
+    ranked by category (main_game/remake/remaster/expanded_game first)
+    before being truncated to _SEARCH_RESULT_LIMIT in
+    _enrich_search_results - see issue #154, where DLC/alternate-version
+    hits were crowding the base game out of the top results."""
     client_id = settings.igdb_client_id
     if not client_id:
         raise RuntimeError("IGDB_CLIENT_ID not configured")
 
     access_token = await get_valid_token()
     search_results = await search_game_on_igdb(search_term, client_id, access_token)
-    return await _enrich_search_results(
-        search_results[:_SEARCH_RESULT_LIMIT], client_id, access_token
-    )
+    return await _enrich_search_results(search_results, client_id, access_token)
 
 
 def _normalize_game_title(title: str) -> str:
