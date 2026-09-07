@@ -10,6 +10,7 @@ export interface UpdateCurrentUserInput {
   steamApiKey?: string;
   igdbClientId?: string;
   igdbClientSecret?: string;
+  steamgriddbApiKey?: string;
   steamAutoImportEnabled?: boolean;
 }
 
@@ -25,6 +26,7 @@ function toCurrentUser(user: components["schemas"]["PublicUser"]): CurrentUser {
     steamId: user.steam_id ?? undefined,
     hasSteamApiKey: user.has_steam_api_key ?? false,
     hasIgdbCredentials: user.has_igdb_credentials ?? false,
+    hasSteamgriddbApiKey: user.has_steamgriddb_api_key ?? false,
     steamAutoImportEnabled: user.steam_auto_import_enabled ?? false,
   };
 }
@@ -41,6 +43,7 @@ export async function updateCurrentUser(
       steam_api_key: input.steamApiKey,
       igdb_client_id: input.igdbClientId,
       igdb_client_secret: input.igdbClientSecret,
+      steamgriddb_api_key: input.steamgriddbApiKey,
       steam_auto_import_enabled: input.steamAutoImportEnabled,
     },
   });

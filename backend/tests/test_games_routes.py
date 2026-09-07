@@ -208,6 +208,17 @@ async def test_enriched_search(
     )
 
 
+async def test_enriched_search_requires_authentication(
+    configured_igdb: ModuleType, postgres_url: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        response = client.get("/api/games/enriched-search", params={"search_term": "Celeste"})
+
+    assert response.status_code == 401
+
+
 async def test_enriched_search_batches_multiple_results(
     configured_igdb: ModuleType, monkeypatch: pytest.MonkeyPatch, postgres_url: str, create_and_login
 ) -> None:
@@ -417,7 +428,10 @@ def _reset_steamgriddb_cache(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 async def test_get_steamgriddb_covers_returns_urls(
-    _reset_steamgriddb_cache: None, postgres_url: str, monkeypatch: pytest.MonkeyPatch
+    _reset_steamgriddb_cache: None,
+    postgres_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+    create_and_login,
 ) -> None:
     from backlog_manager_backend.app import create_app
     from backlog_manager_backend.services import game_service as module
@@ -443,16 +457,31 @@ async def test_get_steamgriddb_covers_returns_urls(
     _mock_igdb(handler, monkeypatch)
 
     with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "steamgriddbcovers@example.com")
         response = client.get(
-            "/api/games/steamgriddb-covers", params={"steam_app_id": 220}
+            "/api/games/steamgriddb-covers", headers=headers, params={"steam_app_id": 220}
         )
 
     assert response.status_code == 200
     assert response.json() == ["https://cdn2.steamgriddb.com/grid/1.png"]
 
 
+async def test_get_steamgriddb_covers_requires_authentication(
+    _reset_steamgriddb_cache: None, postgres_url: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        response = client.get("/api/games/steamgriddb-covers", params={"steam_app_id": 220})
+
+    assert response.status_code == 401
+
+
 async def test_get_steamgriddb_covers_returns_503_when_not_configured(
-    _reset_steamgriddb_cache: None, postgres_url: str, monkeypatch: pytest.MonkeyPatch
+    _reset_steamgriddb_cache: None,
+    postgres_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+    create_and_login,
 ) -> None:
     from backlog_manager_backend.app import create_app
     from backlog_manager_backend.services import game_service as module
@@ -460,15 +489,19 @@ async def test_get_steamgriddb_covers_returns_503_when_not_configured(
     monkeypatch.setattr(module.settings, "steamgriddb_api_key", None)
 
     with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "steamgriddbcoversunconfigured@example.com")
         response = client.get(
-            "/api/games/steamgriddb-covers", params={"steam_app_id": 220}
+            "/api/games/steamgriddb-covers", headers=headers, params={"steam_app_id": 220}
         )
 
     assert response.status_code == 503
 
 
 async def test_get_steamgriddb_covers_returns_503_on_transport_failure(
-    _reset_steamgriddb_cache: None, postgres_url: str, monkeypatch: pytest.MonkeyPatch
+    _reset_steamgriddb_cache: None,
+    postgres_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+    create_and_login,
 ) -> None:
     from backlog_manager_backend.app import create_app
     from backlog_manager_backend.services import game_service as module
@@ -481,8 +514,84 @@ async def test_get_steamgriddb_covers_returns_503_on_transport_failure(
     _mock_igdb(handler, monkeypatch)
 
     with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "steamgriddbcoversdown@example.com")
         response = client.get(
-            "/api/games/steamgriddb-covers", params={"steam_app_id": 220}
+            "/api/games/steamgriddb-covers", headers=headers, params={"steam_app_id": 220}
+        )
+
+    assert response.status_code == 503
+
+
+async def test_get_steamgriddb_covers_prefers_users_own_key_over_server_fallback(
+    _reset_steamgriddb_cache: None,
+    postgres_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+    create_and_login,
+) -> None:
+    from cryptography.fernet import Fernet
+
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.routes import user as user_routes
+    from backlog_manager_backend.services import game_service as module
+
+    monkeypatch.setattr(module.settings, "steamgriddb_api_key", "server-api-key")
+    monkeypatch.setattr(
+        user_routes.settings, "steam_api_key_encryption_key", Fernet.generate_key().decode()
+    )
+
+    used_keys: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        used_keys.append(request.headers.get("Authorization", ""))
+        return httpx.Response(200, json={"success": True, "data": []})
+
+    _mock_igdb(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "steamgriddbownkey@example.com")
+        client.put(
+            "/api/user/me",
+            headers=headers,
+            json={"steamgriddb_api_key": "users-own-key"},
+        )
+
+        response = client.get(
+            "/api/games/steamgriddb-covers", headers=headers, params={"steam_app_id": 221}
+        )
+
+    assert response.status_code == 200
+    assert used_keys == ["Bearer users-own-key"]
+
+
+async def test_get_steamgriddb_covers_returns_503_on_undecryptable_stored_key(
+    _reset_steamgriddb_cache: None,
+    postgres_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+    create_and_login,
+) -> None:
+    from cryptography.fernet import Fernet
+
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.routes import user as user_routes
+
+    monkeypatch.setattr(
+        user_routes.settings, "steam_api_key_encryption_key", Fernet.generate_key().decode()
+    )
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "steamgriddbrotatedkey@example.com")
+        client.put(
+            "/api/user/me",
+            headers=headers,
+            json={"steamgriddb_api_key": "users-own-key"},
+        )
+
+        monkeypatch.setattr(
+            user_routes.settings, "steam_api_key_encryption_key", Fernet.generate_key().decode()
+        )
+
+        response = client.get(
+            "/api/games/steamgriddb-covers", headers=headers, params={"steam_app_id": 222}
         )
 
     assert response.status_code == 503

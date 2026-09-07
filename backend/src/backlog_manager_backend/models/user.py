@@ -18,6 +18,7 @@ class User(Base):
     steam_id: Mapped[str | None] = mapped_column("SteamId")
     steam_api_key_encrypted: Mapped[str | None] = mapped_column("SteamApiKeyEncrypted")
     igdb_credentials_encrypted: Mapped[str | None] = mapped_column("IgdbCredentialsEncrypted")
+    steamgriddb_api_key_encrypted: Mapped[str | None] = mapped_column("SteamGridDbApiKeyEncrypted")
     steam_auto_import_enabled: Mapped[bool] = mapped_column(
         "SteamAutoImportEnabled", server_default=text("false")
     )

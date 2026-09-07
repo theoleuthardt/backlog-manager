@@ -62,6 +62,9 @@ export function AccountContent() {
   const [igdbClientSecret, setIgdbClientSecret] = useState("");
   const [isSavingIgdbCredentials, setIsSavingIgdbCredentials] = useState(false);
 
+  const [steamgriddbApiKey, setSteamgriddbApiKey] = useState("");
+  const [isSavingSteamgriddbApiKey, setIsSavingSteamgriddbApiKey] = useState(false);
+
   const enrollMutation = useEnrollTwoFactor();
   const verifyMutation = useVerifyTwoFactorEnrollment();
   const disableMutation = useDisableTwoFactor();
@@ -153,6 +156,41 @@ export function AccountContent() {
       );
     } finally {
       setIsSavingIgdbCredentials(false);
+    }
+  };
+
+  const handleSaveSteamgriddbApiKey = async () => {
+    setIsSavingSteamgriddbApiKey(true);
+    try {
+      await updateCurrentUser({ steamgriddbApiKey });
+      await refreshUser();
+      setSteamgriddbApiKey("");
+      toast.success("SteamGridDB API key saved");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to save SteamGridDB API key",
+      );
+    } finally {
+      setIsSavingSteamgriddbApiKey(false);
+    }
+  };
+
+  const handleRemoveSteamgriddbApiKey = async () => {
+    setIsSavingSteamgriddbApiKey(true);
+    try {
+      await updateCurrentUser({ steamgriddbApiKey: "" });
+      await refreshUser();
+      toast.success("SteamGridDB API key removed");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to remove SteamGridDB API key",
+      );
+    } finally {
+      setIsSavingSteamgriddbApiKey(false);
     }
   };
 
@@ -447,6 +485,51 @@ export function AccountContent() {
           </a>{" "}
           to get an IGDB Client ID and Client Secret.
         </p>
+      </div>
+
+      <div className="rounded-lg border-2 border-white bg-black p-6">
+        <h2 className="mb-2 text-xl font-semibold">SteamGridDB</h2>
+        <p className="mb-4 text-sm text-gray-300">
+          Used to fetch cover art when searching for games or picking a
+          different cover for a backlog entry.
+        </p>
+        <p className="mb-2 text-sm text-gray-300">
+          {user.hasSteamgriddbApiKey
+            ? "Your own SteamGridDB API key is set and used for fetching cover art."
+            : "Optionally set your own SteamGridDB API key. Falls back to the server's key otherwise."}
+        </p>
+        <div className="flex max-w-sm gap-2">
+          <Input
+            type="password"
+            value={steamgriddbApiKey}
+            onChange={(e) => setSteamgriddbApiKey(e.target.value)}
+            placeholder={
+              user.hasSteamgriddbApiKey
+                ? "Enter a new key to replace it"
+                : "SteamGridDB API key"
+            }
+            className="border-white/40 bg-black text-white placeholder:text-gray-500"
+          />
+          <Button
+            className={FILLED_BUTTON}
+            onClick={() => void handleSaveSteamgriddbApiKey()}
+            disabled={
+              isSavingSteamgriddbApiKey || steamgriddbApiKey.trim().length === 0
+            }
+          >
+            {isSavingSteamgriddbApiKey ? "Saving..." : "Save"}
+          </Button>
+          {user.hasSteamgriddbApiKey && (
+            <Button
+              variant="outline"
+              className={OUTLINE_BUTTON}
+              onClick={() => void handleRemoveSteamgriddbApiKey()}
+              disabled={isSavingSteamgriddbApiKey}
+            >
+              Remove
+            </Button>
+          )}
+        </div>
       </div>
 
       <Dialog open={isEnrollOpen} onOpenChange={(open) => !open && closeEnroll()}>
