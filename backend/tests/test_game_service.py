@@ -930,6 +930,29 @@ async def test_get_game_covers_caches_across_calls(
     assert call_count == 1
 
 
+async def test_get_game_covers_still_requires_a_key_once_the_cache_is_warm(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A cache entry warmed by one caller's key must not let a later
+    caller with neither a personal nor a server-fallback key silently
+    receive that cached result - the missing-key check has to run
+    before the cache lookup, not after."""
+
+    async def fake_get_grids_by_steam_app_id(
+        steam_app_id: int, api_key: str
+    ) -> list[SteamGridDBGrid]:
+        return [SteamGridDBGrid(id=1, url="https://example.com/cover.png", thumb="")]
+
+    monkeypatch.setattr(
+        game_service, "get_grids_by_steam_app_id", fake_get_grids_by_steam_app_id
+    )
+
+    await game_service.get_game_covers(220, "key")
+
+    with pytest.raises(RuntimeError, match="SteamGridDB API key not configured"):
+        await game_service.get_game_covers(220, None)
+
+
 async def test_get_game_covers_evicts_oldest_entry_once_cache_is_full(
     game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:

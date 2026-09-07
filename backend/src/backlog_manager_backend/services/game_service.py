@@ -160,11 +160,11 @@ async def get_game_covers(steam_app_id: int, api_key: str | None) -> list[str]:
     failure) rather than swallowing, unlike _try_get_steamgriddb_covers
     below - a user who opened the picker needs to know it failed rather
     than seeing an empty grid."""
-    if steam_app_id in _steamgriddb_cover_cache:
-        return _steamgriddb_cover_cache[steam_app_id]
-
     if not api_key:
         raise RuntimeError("SteamGridDB API key not configured")
+
+    if steam_app_id in _steamgriddb_cover_cache:
+        return _steamgriddb_cover_cache[steam_app_id]
 
     grids = await get_grids_by_steam_app_id(steam_app_id, api_key)
     urls = [grid.url for grid in sorted(grids, key=lambda grid: grid.score, reverse=True)]
