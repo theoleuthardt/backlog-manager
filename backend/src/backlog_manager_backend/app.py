@@ -20,6 +20,7 @@ from backlog_manager_backend.routes.games import (
     search_game,
 )
 from backlog_manager_backend.routes.health import health
+from backlog_manager_backend.routes.images import proxy_image
 from backlog_manager_backend.routes.user import admin_user_router, user_router
 
 
@@ -34,6 +35,7 @@ def create_app() -> Litestar:
     return Litestar(
         route_handlers=[
             health,
+            proxy_image,
             login,
             login_verify,
             two_factor_router,

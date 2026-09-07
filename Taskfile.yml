@@ -140,6 +140,24 @@ tasks:
     cmds:
       - npm run generate-api-types
 
+  frontend:tauri:dev:
+    desc: Run the desktop app in dev mode (see docs/TAURI.md)
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run tauri:dev
+
+  frontend:tauri:build:
+    desc: Build desktop installers for the current platform (see docs/TAURI.md)
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run tauri:build
+
+  frontend:tauri:build:debug:
+    desc: Build an unoptimized debug desktop build (faster, easier to troubleshoot)
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run tauri:build:debug
+
   vscode:setup-python:
     desc: Point VS Code/VSCodium's Python tooling at backend/.venv (run once per machine/checkout)
     cmds:

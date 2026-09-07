@@ -5,10 +5,12 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import type { NavbarLink, NavbarProps } from "~/app/types";
 import { useAuth } from "~/app/context/AuthContext";
+import { useIsTauriMacOS } from "~/hooks/useIsTauri";
 
 export function Navbar(props: NavbarProps) {
   const router = useRouter();
   const { logout } = useAuth();
+  const isTauriMacOS = useIsTauriMacOS();
 
   const handleClick = (e: React.MouseEvent, link: NavbarLink) => {
     e.preventDefault();
@@ -37,8 +39,11 @@ export function Navbar(props: NavbarProps) {
   };
 
   return (
-    <nav className="mx-auto flex w-full items-center justify-between rounded-4xl bg-transparent px-8 py-4 text-white">
-      <div className="flex items-center space-x-2">
+    <nav
+      {...(isTauriMacOS ? { "data-tauri-drag-region": true } : {})}
+      className={`mx-auto flex w-full items-center justify-between rounded-4xl bg-transparent px-8 py-4 text-white ${isTauriMacOS ? "pt-8" : ""}`}
+    >
+      <div className={`flex items-center space-x-2 ${isTauriMacOS ? "ml-16" : ""}`}>
         <Link href={"/"}>
           <Image
             src="/logo_mana.png"
