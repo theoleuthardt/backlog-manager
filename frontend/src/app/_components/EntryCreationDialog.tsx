@@ -19,8 +19,8 @@ import { useGameSearch } from "~/hooks/useGameSearch";
 import { useDebounce } from "~/hooks/useDebounce";
 
 export const EntryCreationDialog = ({
-  triggerIcon = "/search.png",
-  triggerAlt = "search",
+  triggerIcon = "/add.png",
+  triggerAlt = "add",
   triggerClassName = "",
   showText = true,
 }: EntryCreationDialogProps = {}) => {
