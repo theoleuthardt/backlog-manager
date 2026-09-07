@@ -1,4 +1,5 @@
 import asyncio
+import re
 import time
 
 import httpx
@@ -15,6 +16,7 @@ from backlog_manager_backend.integrations.igdb import (
     get_platforms_on_igdb,
     search_game_on_igdb,
 )
+from backlog_manager_backend.integrations.steam import get_app_list as get_steam_app_list
 from backlog_manager_backend.integrations.types import (
     EnrichedResult,
     IGDBCover,
@@ -38,6 +40,13 @@ _cover_cache: dict[int, IGDBCover] = {}
 # repeat search for a game IGDB has no beat-time data for doesn't re-fire
 # a live HLTB scrape every time.
 _time_to_beat_cache: dict[int, tuple[int, float, float, float]] = {}
+
+_STEAM_APP_LIST_TTL_SECONDS = 24 * 60 * 60
+# Normalized title -> Steam App ID, built from Steam's full app catalogue
+# (hundreds of thousands of entries) - refetched at most once per TTL
+# rather than per lookup. IGDB has no Steam App ID mapping of its own.
+_steam_app_id_by_title: dict[str, int] = {}
+_steam_app_list_cached_at: float | None = None
 
 
 async def get_valid_token() -> str:
@@ -246,3 +255,41 @@ async def search(search_term: str) -> list[EnrichedResult]:
     return await _enrich_search_results(
         search_results[:_SEARCH_RESULT_LIMIT], client_id, access_token
     )
+
+
+def _normalize_game_title(title: str) -> str:
+    return re.sub(r"[™®©]", "", title).strip().lower()
+
+
+async def _ensure_steam_app_list_cached() -> None:
+    """Refreshes the title->Steam-App-ID lookup at most once per
+    _STEAM_APP_LIST_TTL_SECONDS. A fetch failure just leaves the
+    existing (possibly empty) cache in place - find_steam_app_id then
+    resolves to None, same as "no match found"."""
+    global _steam_app_list_cached_at
+    if (
+        _steam_app_list_cached_at is not None
+        and time.monotonic() - _steam_app_list_cached_at < _STEAM_APP_LIST_TTL_SECONDS
+    ):
+        return
+
+    try:
+        apps = await get_steam_app_list()
+    except httpx.HTTPError:
+        logger.error("Failed to fetch Steam app list")
+        return
+
+    _steam_app_id_by_title.clear()
+    for app in apps:
+        _steam_app_id_by_title.setdefault(_normalize_game_title(app.name), app.appid)
+    _steam_app_list_cached_at = time.monotonic()
+
+
+async def find_steam_app_id(title: str) -> int | None:
+    """Looks up a Steam App ID by exact (case/trademark-symbol
+    insensitive) title match against Steam's public app catalogue -
+    used to prefill the Steam App ID field when creating a backlog
+    entry from an IGDB search result, since IGDB has no Steam App ID
+    mapping of its own."""
+    await _ensure_steam_app_list_cached()
+    return _steam_app_id_by_title.get(_normalize_game_title(title))

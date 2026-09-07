@@ -17,6 +17,7 @@ from backlog_manager_backend.routes.games import (
     get_game_time_to_beat,
     get_genre,
     get_platform,
+    get_steam_app_id,
     search_game,
 )
 from backlog_manager_backend.routes.health import health
@@ -52,6 +53,7 @@ def create_app() -> Litestar:
             get_platform,
             get_cover,
             get_genre,
+            get_steam_app_id,
         ],
         dependencies={"db_session": Provide(provide_db_session)},
         on_startup=[bootstrap_initial_admin],

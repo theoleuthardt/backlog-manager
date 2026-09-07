@@ -69,6 +69,11 @@ async def enriched_search(search_term: FromQuery[str]) -> list[EnrichedResult]:
         raise ServiceUnavailableException(_IGDB_NOT_CONFIGURED) from error
 
 
+@get("/api/games/steam-app-id")
+async def get_steam_app_id(title: FromQuery[str]) -> int | None:
+    return await game_service.find_steam_app_id(title)
+
+
 @get("/api/games/{game_id:int}")
 async def get_game(game_id: FromPath[int]) -> list[IGDBGameData]:
     client_id, access_token = await _igdb_credentials()

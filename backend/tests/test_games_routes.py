@@ -327,3 +327,66 @@ async def test_enriched_search_returns_503_on_transport_failure(
         response = client.get("/api/games/enriched-search", params={"search_term": "Celeste"})
 
     assert response.status_code == 503
+
+
+@pytest.fixture
+def _reset_steam_app_cache(monkeypatch: pytest.MonkeyPatch) -> None:
+    from backlog_manager_backend.services import game_service as module
+
+    monkeypatch.setattr(module, "_steam_app_id_by_title", {})
+    monkeypatch.setattr(module, "_steam_app_list_cached_at", None)
+
+
+async def test_get_steam_app_id_matches_by_title(
+    _reset_steam_app_cache: None, postgres_url: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200, json={"applist": {"apps": [{"appid": 504230, "name": "Celeste"}]}}
+        )
+
+    _mock_igdb(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get("/api/games/steam-app-id", params={"title": "Celeste"})
+
+    assert response.status_code == 200
+    assert response.json() == 504230
+
+
+async def test_get_steam_app_id_returns_null_when_no_match(
+    _reset_steam_app_cache: None, postgres_url: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"applist": {"apps": []}})
+
+    _mock_igdb(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get(
+            "/api/games/steam-app-id", params={"title": "Some Unreleased Game"}
+        )
+
+    assert response.status_code == 200
+    assert response.json() is None
+
+
+async def test_get_steam_app_id_returns_null_on_transport_failure(
+    _reset_steam_app_cache: None, postgres_url: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("connection refused", request=request)
+
+    _mock_igdb(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get("/api/games/steam-app-id", params={"title": "Celeste"})
+
+    assert response.status_code == 200
+    assert response.json() is None

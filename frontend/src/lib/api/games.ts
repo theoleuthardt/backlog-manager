@@ -25,8 +25,9 @@ export async function enrichedSearch(
     hltbId: result.hltb_id,
     title: result.title,
     imageUrl: result.image_url,
-    // Always null from the backend - IGDB has no Steam App ID mapping,
-    // this field only exists for parity with the old tRPC shape.
+    // IGDB has no Steam App ID mapping - looked up separately (by
+    // title, against Steam's app catalogue) via getSteamAppId once a
+    // result is selected, see useSteamAppId.
     steamAppId: null,
     genres: result.genres,
     platforms: result.platforms,
@@ -34,4 +35,13 @@ export async function enrichedSearch(
     mainStoryWithExtras: result.main_story_with_extras,
     completionist: result.completionist,
   }));
+}
+
+export async function getSteamAppId(title: string): Promise<number | null> {
+  const { data, error } = await apiClient.GET("/api/games/steam-app-id", {
+    params: { query: { title } },
+  });
+  if (error)
+    throw new Error(apiErrorMessage(error, "Failed to look up Steam App ID"));
+  return data;
 }
