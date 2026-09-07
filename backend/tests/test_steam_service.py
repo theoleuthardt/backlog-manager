@@ -1,9 +1,10 @@
+import asyncio
 from decimal import Decimal
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backlog_manager_backend.errors import ValidationError
+from backlog_manager_backend.errors import ConflictError, ValidationError
 from backlog_manager_backend.integrations.types import SteamOwnedGame
 from backlog_manager_backend.repositories import backlog_entry_repo, user_repo
 from backlog_manager_backend.schemas.backlog_entry import CreateBacklogEntryParams
@@ -80,3 +81,193 @@ async def test_sync_playtimes_skips_entries_already_up_to_date(
     updated = await steam_service.sync_playtimes(session, user, "api-key")
 
     assert updated == []
+
+
+async def test_import_library_raises_when_steam_not_linked(session: AsyncSession) -> None:
+    user = await _make_user(session, steam_id=None)
+
+    with pytest.raises(ValidationError):
+        await steam_service.import_library(session, user, "api-key")
+
+
+async def test_import_library_creates_entries_for_new_owned_games(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    await _make_entry(session, user.id, steam_app_id=504230, playtime=Decimal("8.50"))
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        assert steam_id == user.steam_id
+        assert api_key == "api-key"
+        return [
+            SteamOwnedGame(appid=504230, name="Celeste", playtime_forever=510),
+            SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=120),
+        ]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+
+    created = await steam_service.import_library(session, user, "api-key")
+
+    assert len(created) == 1
+    assert created[0].title == "Portal 2"
+    assert created[0].steam_app_id == 620
+    assert created[0].playtime == Decimal("2.00")
+    assert created[0].status == "Not Started"
+    assert created[0].owned is True
+
+
+async def test_import_library_creates_nothing_when_all_games_already_linked(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    await _make_entry(session, user.id, steam_app_id=504230, playtime=Decimal("8.50"))
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [SteamOwnedGame(appid=504230, name="Celeste", playtime_forever=510)]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+
+    created = await steam_service.import_library(session, user, "api-key")
+
+    assert created == []
+
+
+async def test_import_library_uses_a_provided_owned_games_snapshot(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    call_count = 0
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        nonlocal call_count
+        call_count += 1
+        return []
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+
+    created = await steam_service.import_library(
+        session, user, "api-key", [SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=120)]
+    )
+
+    assert call_count == 0
+    assert len(created) == 1
+    assert created[0].title == "Portal 2"
+
+
+async def test_import_library_skips_a_game_that_becomes_a_duplicate_mid_import(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [
+            SteamOwnedGame(appid=504230, name="Celeste", playtime_forever=510),
+            SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=120),
+        ]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+
+    original_create_backlog_entry = backlog_entry_repo.create_backlog_entry
+
+    async def flaky_create_backlog_entry(session: AsyncSession, params: CreateBacklogEntryParams) -> object:
+        if params.steam_app_id == 504230:
+            raise ConflictError("A resource with this identifier already exists")
+        return await original_create_backlog_entry(session, params)
+
+    monkeypatch.setattr(backlog_entry_repo, "create_backlog_entry", flaky_create_backlog_entry)
+
+    created = await steam_service.import_library(session, user, "api-key")
+
+    assert len(created) == 1
+    assert created[0].title == "Portal 2"
+
+
+async def test_sync_playtimes_and_import_raises_when_steam_not_linked(
+    session: AsyncSession,
+) -> None:
+    user = await _make_user(session, steam_id=None)
+
+    with pytest.raises(ValidationError):
+        await steam_service.sync_playtimes_and_import(session, user, "api-key", auto_import=True)
+
+
+async def test_sync_playtimes_and_import_fetches_owned_games_only_once(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    await _make_entry(session, user.id, steam_app_id=504230, playtime=Decimal("1.00"))
+    call_count = 0
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        nonlocal call_count
+        call_count += 1
+        return [
+            SteamOwnedGame(appid=504230, name="Celeste", playtime_forever=510),
+            SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=120),
+        ]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+
+    updated = await steam_service.sync_playtimes_and_import(
+        session, user, "api-key", auto_import=True
+    )
+
+    assert call_count == 1
+    titles = {entry.title for entry in updated}
+    assert titles == {"Celeste", "Portal 2"}
+
+
+async def test_sync_playtimes_and_import_skips_import_when_auto_import_is_off(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    await _make_entry(session, user.id, steam_app_id=504230, playtime=Decimal("1.00"))
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [
+            SteamOwnedGame(appid=504230, name="Celeste", playtime_forever=510),
+            SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=120),
+        ]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+
+    updated = await steam_service.sync_playtimes_and_import(
+        session, user, "api-key", auto_import=False
+    )
+
+    titles = {entry.title for entry in updated}
+    assert titles == {"Celeste"}
+
+
+async def test_import_library_concurrent_calls_do_not_create_duplicate_entries(
+    postgres_url: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.db import async_session
+
+    async with async_session() as setup_session:
+        user = await user_repo.create_user(
+            setup_session,
+            CreateUserParams(
+                username="concurrentsteamuser",
+                email="concurrentsteamuser@example.com",
+                password_hash="h",
+                steam_id="76561197960287930",
+            ),
+        )
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [SteamOwnedGame(appid=504230, name="Celeste", playtime_forever=510)]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+
+    async def run_import() -> list[object]:
+        async with async_session() as session:
+            return await steam_service.import_library(session, user, "api-key")
+
+    first_created, second_created = await asyncio.gather(run_import(), run_import())
+
+    assert len(first_created) + len(second_created) == 1
+
+    async with async_session() as verify_session:
+        entries = await backlog_entry_repo.get_backlog_entries_by_user(verify_session, user.id)
+    assert len(entries) == 1

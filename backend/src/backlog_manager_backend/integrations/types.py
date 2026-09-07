@@ -165,3 +165,19 @@ class SteamOwnedGamesResult(msgspec.Struct):
 
 class SteamGetOwnedGamesEnvelope(msgspec.Struct):
     response: SteamOwnedGamesResult
+
+
+class SteamApp(msgspec.Struct):
+    appid: int
+    name: str
+
+
+class SteamAppListResult(msgspec.Struct):
+    """apps is always present in practice (Steam's full catalogue), but
+    defaults to [] defensively like SteamOwnedGamesResult.games."""
+
+    apps: list[SteamApp] = []
+
+
+class SteamGetAppListEnvelope(msgspec.Struct):
+    applist: SteamAppListResult

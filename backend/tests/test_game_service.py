@@ -1,5 +1,7 @@
+import asyncio
 from types import ModuleType
 
+import httpx
 import pytest
 
 from backlog_manager_backend.integrations.types import (
@@ -12,6 +14,7 @@ from backlog_manager_backend.integrations.types import (
     IGDBPlatform,
     IGDBSearchResult,
     IGDBTokenResponse,
+    SteamApp,
 )
 
 
@@ -29,6 +32,9 @@ def game_service(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
     monkeypatch.setattr(module, "_game_cache", {})
     monkeypatch.setattr(module, "_cover_cache", {})
     monkeypatch.setattr(module, "_time_to_beat_cache", {})
+    monkeypatch.setattr(module, "_steam_app_id_by_title", {})
+    monkeypatch.setattr(module, "_steam_app_list_cached_at", None)
+    monkeypatch.setattr(module, "_steam_app_list_last_attempt_at", None)
     monkeypatch.setattr(module.settings, "igdb_client_id", "cid")
     monkeypatch.setattr(module.settings, "igdb_client_secret", "secret")
     return module
@@ -460,3 +466,120 @@ async def test_search_raises_without_client_id(
 
     with pytest.raises(RuntimeError, match="IGDB_CLIENT_ID not configured"):
         await game_service.search("Celeste")
+
+
+async def test_find_steam_app_id_matches_by_exact_title(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def fake_get_steam_app_list() -> list[SteamApp]:
+        return [
+            SteamApp(appid=504230, name="Celeste"),
+            SteamApp(appid=367520, name="Hollow Knight"),
+        ]
+
+    monkeypatch.setattr(game_service, "get_steam_app_list", fake_get_steam_app_list)
+
+    assert await game_service.find_steam_app_id("Celeste") == 504230
+
+
+async def test_find_steam_app_id_is_case_and_trademark_symbol_insensitive(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def fake_get_steam_app_list() -> list[SteamApp]:
+        return [SteamApp(appid=8930, name="Sid Meier's Civilization® VI")]
+
+    monkeypatch.setattr(game_service, "get_steam_app_list", fake_get_steam_app_list)
+
+    assert (
+        await game_service.find_steam_app_id("sid meier's civilization vi") == 8930
+    )
+
+
+async def test_find_steam_app_id_returns_none_when_no_match(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def fake_get_steam_app_list() -> list[SteamApp]:
+        return [SteamApp(appid=504230, name="Celeste")]
+
+    monkeypatch.setattr(game_service, "get_steam_app_list", fake_get_steam_app_list)
+
+    assert await game_service.find_steam_app_id("Some Unreleased Game") is None
+
+
+async def test_find_steam_app_id_caches_the_app_list_across_lookups(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    call_count = 0
+
+    async def fake_get_steam_app_list() -> list[SteamApp]:
+        nonlocal call_count
+        call_count += 1
+        return [SteamApp(appid=504230, name="Celeste")]
+
+    monkeypatch.setattr(game_service, "get_steam_app_list", fake_get_steam_app_list)
+
+    await game_service.find_steam_app_id("Celeste")
+    await game_service.find_steam_app_id("Hollow Knight")
+
+    assert call_count == 1
+
+
+async def test_find_steam_app_id_returns_none_when_fetch_fails(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def fake_get_steam_app_list() -> list[SteamApp]:
+        raise httpx.ConnectError("connection refused")
+
+    monkeypatch.setattr(game_service, "get_steam_app_list", fake_get_steam_app_list)
+
+    assert await game_service.find_steam_app_id("Celeste") is None
+
+
+async def test_find_steam_app_id_backs_off_after_a_failed_fetch(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    call_count = 0
+
+    async def failing_get_steam_app_list() -> list[SteamApp]:
+        nonlocal call_count
+        call_count += 1
+        raise httpx.ConnectError("connection refused")
+
+    monkeypatch.setattr(game_service, "get_steam_app_list", failing_get_steam_app_list)
+
+    assert await game_service.find_steam_app_id("Celeste") is None
+    assert await game_service.find_steam_app_id("Celeste") is None
+
+    assert call_count == 1
+
+
+async def test_find_steam_app_id_coalesces_concurrent_refreshes(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    call_count = 0
+    started = asyncio.Event()
+    proceed = asyncio.Event()
+
+    async def slow_get_steam_app_list() -> list[SteamApp]:
+        nonlocal call_count
+        call_count += 1
+        started.set()
+        await proceed.wait()
+        return [SteamApp(appid=504230, name="Celeste")]
+
+    monkeypatch.setattr(game_service, "get_steam_app_list", slow_get_steam_app_list)
+
+    async def lookup_after_fetch_started() -> int | None:
+        await started.wait()
+        return await game_service.find_steam_app_id("Celeste")
+
+    first_task = asyncio.create_task(game_service.find_steam_app_id("Celeste"))
+    second_task = asyncio.create_task(lookup_after_fetch_started())
+    await started.wait()
+    proceed.set()
+
+    first_result, second_result = await asyncio.gather(first_task, second_task)
+
+    assert call_count == 1
+    assert first_result == 504230
+    assert second_result == 504230

@@ -2,11 +2,17 @@ import httpx
 import msgspec
 import structlog
 
-from backlog_manager_backend.integrations.types import SteamGetOwnedGamesEnvelope, SteamOwnedGame
+from backlog_manager_backend.integrations.types import (
+    SteamApp,
+    SteamGetAppListEnvelope,
+    SteamGetOwnedGamesEnvelope,
+    SteamOwnedGame,
+)
 
 logger = structlog.get_logger()
 
 _BASE_URL = "https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/"
+_APP_LIST_URL = "https://api.steampowered.com/ISteamApps/GetAppList/v2/"
 
 
 async def get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
@@ -43,3 +49,32 @@ async def get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
         raise httpx.DecodingError("Steam Web API returned an invalid response") from error
 
     return envelope.response.games
+
+
+async def get_app_list() -> list[SteamApp]:
+    """Steam's public catalogue of every app (games, DLC, tools, demos,
+    ...) - unlike GetOwnedGames, this needs no API key. Used to look up
+    a Steam App ID by title. Raises on failure like get_owned_games;
+    the caller (game_service.find_steam_app_id) treats that as
+    non-fatal, since this is a best-effort lookup."""
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(20.0)) as client:
+            response = await client.get(_APP_LIST_URL)
+    except httpx.HTTPError as error:
+        logger.error("GetAppList error", error=str(error))
+        raise
+
+    if response.status_code >= 400:
+        raise httpx.HTTPStatusError(
+            f"Steam Web API error: {response.status_code}",
+            request=response.request,
+            response=response,
+        )
+
+    try:
+        envelope = msgspec.json.decode(response.content, type=SteamGetAppListEnvelope)
+    except msgspec.DecodeError as error:
+        logger.error("GetAppList decode error", error=str(error))
+        raise httpx.DecodingError("Steam Web API returned an invalid response") from error
+
+    return envelope.applist.apps

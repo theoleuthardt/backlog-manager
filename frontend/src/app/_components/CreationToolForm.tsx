@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { useCreateBacklogEntry } from "~/hooks/useBacklog";
+import { useSteamAppId } from "~/hooks/useGameSearch";
 import { toast } from "sonner";
 
 export function CreationToolForm() {
@@ -47,12 +48,20 @@ export function CreationToolForm() {
   const [note, setNote] = useState("");
   const [playtime, setPlaytime] = useState(0);
   const [steamAppId, setSteamAppId] = useState(steamAppIdFromUrl);
+  const [steamAppIdTouched, setSteamAppIdTouched] = useState(false);
+  const shouldLookUpSteamAppId = title.length > 0 && steamAppIdFromUrl.trim() === "";
+  const steamAppIdQuery = useSteamAppId(shouldLookUpSteamAppId ? title : "");
   const [isLoading, setIsLoading] = useState(false);
   const [createStatus, setCreateStatus] = useState<
     "idle" | "success" | "error"
   >("idle");
 
   const createEntryMutation = useCreateBacklogEntry();
+
+  const displayedSteamAppId =
+    steamAppIdTouched || steamAppIdQuery.data == null
+      ? steamAppId
+      : steamAppIdQuery.data.toString();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,9 +77,9 @@ export function CreationToolForm() {
         .split(",")
         .map((p) => p.trim())
         .filter(Boolean);
-      const steamAppIdNumber = Number(steamAppId);
+      const steamAppIdNumber = Number(displayedSteamAppId);
       const parsedSteamAppId =
-        steamAppId.trim() &&
+        displayedSteamAppId.trim() &&
         Number.isSafeInteger(steamAppIdNumber) &&
         steamAppIdNumber >= 0
           ? steamAppIdNumber
@@ -320,15 +329,24 @@ export function CreationToolForm() {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="steamAppId" className="text-sm">
+                <Label
+                  htmlFor="steamAppId"
+                  className="flex items-center gap-1.5 text-sm"
+                >
                   Steam App ID (optional)
+                  {steamAppIdQuery.isFetching && (
+                    <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
+                  )}
                 </Label>
                 <Input
                   id="steamAppId"
                   type="number"
                   min="0"
-                  value={steamAppId}
-                  onChange={(e) => setSteamAppId(e.target.value)}
+                  value={displayedSteamAppId}
+                  onChange={(e) => {
+                    setSteamAppIdTouched(true);
+                    setSteamAppId(e.target.value);
+                  }}
                   placeholder="e.g. 504230"
                   className="bg-black text-white"
                 />
@@ -412,7 +430,11 @@ export function CreationToolForm() {
             <div className="mt-4 flex justify-center lg:justify-end">
               <Button
                 type="submit"
-                disabled={isLoading || createStatus === "success"}
+                disabled={
+                  isLoading ||
+                  createStatus === "success" ||
+                  (shouldLookUpSteamAppId && steamAppIdQuery.isPending)
+                }
                 className={`w-full border-2 px-8 py-5 text-base font-bold transition-colors duration-300 lg:w-auto lg:min-w-[200px] ${submitButtonColorClasses}`}
               >
                 {submitButtonContent}

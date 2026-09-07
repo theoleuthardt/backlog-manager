@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { enrichedSearch } from "~/lib/api/games";
+import { enrichedSearch, getSteamAppId } from "~/lib/api/games";
 
 export function useGameSearch(searchTerm: string) {
   return useQuery({
@@ -10,5 +10,17 @@ export function useGameSearch(searchTerm: string) {
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 10,
     retry: 3,
+  });
+}
+
+export function useSteamAppId(title: string) {
+  return useQuery({
+    queryKey: ["steam-app-id", title],
+    queryFn: () => getSteamAppId(title),
+    enabled: title.length > 0,
+    refetchOnWindowFocus: false,
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60,
+    retry: 1,
   });
 }

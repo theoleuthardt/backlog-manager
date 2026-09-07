@@ -31,8 +31,8 @@ export const DashboardContent = () => {
       onSuccess: (updated) => {
         toast.success(
           updated.length > 0
-            ? `Updated playtime for ${updated.length} game${updated.length === 1 ? "" : "s"}`
-            : "Playtimes are already up to date",
+            ? `Synced ${updated.length} game${updated.length === 1 ? "" : "s"} from Steam`
+            : "Steam is already up to date",
         );
       },
       onError: (mutationError) => {
@@ -491,7 +491,6 @@ export const DashboardContent = () => {
                 id={entry.id}
                 title={entry.title}
                 playtime={entry.playtime}
-                steamAppId={entry.steamAppId}
                 imageLink={entry.imageLink}
                 imageAlt={entry.imageAlt}
                 genre={entry.genre}

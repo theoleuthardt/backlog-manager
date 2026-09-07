@@ -97,7 +97,13 @@ The project enforces strict ESLint rules:
 
 ## Code Comments
 
-Do not add inline comments unless they are explicit code documentation (a function/class docstring, or an existing established comment convention in the surrounding file). No narrative or rationale comments scattered through function bodies.
+**Do not write comments that are not real code documentation.** No narrative comments, no "why I did this" asides, no step-by-step play-by-play scattered through function bodies. This applies in every language (Python, TypeScript/TSX, everywhere) and to every file, new or existing.
+
+The ONLY comments allowed:
+- A function/class docstring (Python `"""..."""`, or the top-of-function/class comment block a file already uses for the same purpose).
+- A comment that continues an established convention already present in that exact file (e.g. the file already annotates every module-level cache variable one line above its declaration - matching that is fine; introducing a new one-off comment style is not).
+
+If you're about to write `// this falls back to X because Y` or `# note: Z happens here` above a plain statement, expression, or const - delete it. Put that reasoning in the docstring of the enclosing function instead, or leave it out entirely if the code is self-explanatory. When genuinely unsure whether a comment qualifies, don't add it.
 
 ## Testing Philosophy
 

@@ -1,4 +1,5 @@
 import asyncio
+import re
 import time
 
 import httpx
@@ -15,6 +16,7 @@ from backlog_manager_backend.integrations.igdb import (
     get_platforms_on_igdb,
     search_game_on_igdb,
 )
+from backlog_manager_backend.integrations.steam import get_app_list as get_steam_app_list
 from backlog_manager_backend.integrations.types import (
     EnrichedResult,
     IGDBCover,
@@ -38,6 +40,14 @@ _cover_cache: dict[int, IGDBCover] = {}
 # repeat search for a game IGDB has no beat-time data for doesn't re-fire
 # a live HLTB scrape every time.
 _time_to_beat_cache: dict[int, tuple[int, float, float, float]] = {}
+
+_STEAM_APP_LIST_TTL_SECONDS = 24 * 60 * 60
+_STEAM_APP_LIST_RETRY_BACKOFF_SECONDS = 60
+
+_steam_app_id_by_title: dict[str, int] = {}
+_steam_app_list_cached_at: float | None = None
+_steam_app_list_last_attempt_at: float | None = None
+_steam_app_list_lock = asyncio.Lock()
 
 
 async def get_valid_token() -> str:
@@ -246,3 +256,62 @@ async def search(search_term: str) -> list[EnrichedResult]:
     return await _enrich_search_results(
         search_results[:_SEARCH_RESULT_LIMIT], client_id, access_token
     )
+
+
+def _normalize_game_title(title: str) -> str:
+    return re.sub(r"[™®©]", "", title).strip().lower()
+
+
+def _steam_app_list_is_fresh() -> bool:
+    return (
+        _steam_app_list_cached_at is not None
+        and time.monotonic() - _steam_app_list_cached_at < _STEAM_APP_LIST_TTL_SECONDS
+    )
+
+
+def _steam_app_list_fetch_is_backed_off() -> bool:
+    return (
+        _steam_app_list_last_attempt_at is not None
+        and time.monotonic() - _steam_app_list_last_attempt_at
+        < _STEAM_APP_LIST_RETRY_BACKOFF_SECONDS
+    )
+
+
+async def _ensure_steam_app_list_cached() -> None:
+    """Refreshes the title->Steam-App-ID lookup at most once per
+    _STEAM_APP_LIST_TTL_SECONDS (Steam's full catalogue is hundreds of
+    thousands of apps, too large to fetch per lookup). Concurrent
+    callers coalesce onto a single in-flight fetch via the module lock
+    rather than each starting their own; a fetch failure leaves the
+    existing (possibly empty) cache in place and is retried no sooner
+    than _STEAM_APP_LIST_RETRY_BACKOFF_SECONDS later, so a Steam outage
+    can't turn every incoming lookup into its own failing fetch."""
+    global _steam_app_list_cached_at, _steam_app_list_last_attempt_at
+    if _steam_app_list_is_fresh():
+        return
+
+    async with _steam_app_list_lock:
+        if _steam_app_list_is_fresh() or _steam_app_list_fetch_is_backed_off():
+            return
+
+        _steam_app_list_last_attempt_at = time.monotonic()
+        try:
+            apps = await get_steam_app_list()
+        except httpx.HTTPError:
+            logger.error("Failed to fetch Steam app list")
+            return
+
+        _steam_app_id_by_title.clear()
+        for app in apps:
+            _steam_app_id_by_title.setdefault(_normalize_game_title(app.name), app.appid)
+        _steam_app_list_cached_at = time.monotonic()
+
+
+async def find_steam_app_id(title: str) -> int | None:
+    """Looks up a Steam App ID by exact (case/trademark-symbol
+    insensitive) title match against Steam's public app catalogue -
+    used to prefill the Steam App ID field when creating a backlog
+    entry from an IGDB search result, since IGDB has no Steam App ID
+    mapping of its own."""
+    await _ensure_steam_app_list_cached()
+    return _steam_app_id_by_title.get(_normalize_game_title(title))

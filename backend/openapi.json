@@ -1937,6 +1937,34 @@
         ]
       }
     },
+    "/api/user/steam/import": {
+      "post": {
+        "summary": "ImportSteamLibrary",
+        "operationId": "ApiUserSteamImportImportSteamLibrary",
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BacklogEntryResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/csv/parse": {
       "post": {
         "summary": "ParseCsv",
@@ -2670,6 +2698,84 @@
                     "$ref": "#/components/schemas/IGDBGenre"
                   },
                   "type": "array"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request syntax or unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Validation Exception",
+                  "examples": [
+                    {
+                      "status_code": 400,
+                      "detail": "Bad Request",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/games/steam-app-id": {
+      "get": {
+        "summary": "GetSteamAppId",
+        "operationId": "ApiGamesSteamAppIdGetSteamAppId",
+        "parameters": [
+          {
+            "name": "title",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "deprecated": false,
+            "allowEmptyValue": false,
+            "allowReserved": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
                 }
               }
             }
@@ -4399,6 +4505,10 @@
           "has_steam_api_key": {
             "type": "boolean",
             "default": false
+          },
+          "steam_auto_import_enabled": {
+            "type": "boolean",
+            "default": false
           }
         },
         "type": "object",
@@ -4761,6 +4871,13 @@
                 "type": "null"
               }
             ]
+          },
+          "steam_auto_import_enabled": {
+            "oneOf": [
+              {
+                "type": "boolean"
+              }
+            ]
           }
         },
         "type": "object",
@@ -4807,6 +4924,13 @@
               },
               {
                 "type": "null"
+              }
+            ]
+          },
+          "steam_auto_import_enabled": {
+            "oneOf": [
+              {
+                "type": "boolean"
               }
             ]
           },

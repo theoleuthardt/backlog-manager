@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS "blm-system"."Users"(
     "PasswordHash" VARCHAR(255) NOT NULL,
     "SteamId" VARCHAR(255),
     "SteamApiKeyEncrypted" TEXT,
+    "SteamAutoImportEnabled" BOOLEAN NOT NULL DEFAULT FALSE,
     "IsAdmin" BOOLEAN NOT NULL DEFAULT FALSE,
     "TotpSecretEncrypted" TEXT,
     "TotpEnabled" BOOLEAN NOT NULL DEFAULT FALSE,
@@ -63,7 +64,8 @@ CREATE TABLE IF NOT EXISTS "blm-system"."BacklogEntries" (
     "CreatedAt"      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP),
     "UpdatedAt"      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP),
     FOREIGN KEY ("UserID") REFERENCES "blm-system"."Users"("UserID")
-        ON DELETE CASCADE ON UPDATE CASCADE
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    UNIQUE ("UserID", "SteamAppId")
 );
 
 CREATE TABLE IF NOT EXISTS "blm-system"."CategoryBacklogEntries" (

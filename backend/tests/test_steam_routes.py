@@ -187,3 +187,192 @@ async def test_sync_steam_playtimes_requires_authentication(postgres_url: str) -
         response = client.post("/api/user/steam/sync")
 
     assert response.status_code == 401
+
+
+async def test_import_steam_library_creates_entries_for_new_owned_games(
+    postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    _configure_steam_api_key(monkeypatch)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "response": {
+                    "games": [{"appid": 620, "name": "Portal 2", "playtime_forever": 120}]
+                }
+            },
+        )
+
+    _mock_steam(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "steamimport@example.com")
+        client.put(
+            "/api/user/me", headers=headers, json={"steam_id": "76561197960287930"}
+        )
+
+        response = client.post("/api/user/steam/import", headers=headers)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body) == 1
+    assert body[0]["title"] == "Portal 2"
+    assert body[0]["steam_app_id"] == 620
+    assert body[0]["status"] == "Not Started"
+    assert body[0]["owned"] is True
+
+
+async def test_import_steam_library_skips_already_linked_games(
+    postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    _configure_steam_api_key(monkeypatch)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "response": {
+                    "games": [{"appid": 504230, "name": "Celeste", "playtime_forever": 510}]
+                }
+            },
+        )
+
+    _mock_steam(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "steamimportskip@example.com")
+        client.put(
+            "/api/user/me", headers=headers, json={"steam_id": "76561197960287930"}
+        )
+        client.post(
+            "/api/backlog/entries",
+            headers=headers,
+            json={
+                "title": "Celeste",
+                "genre": ["Platformer"],
+                "platform": ["PC"],
+                "status": "In Progress",
+                "owned": True,
+                "interest": 8,
+                "steam_app_id": 504230,
+            },
+        )
+
+        response = client.post("/api/user/steam/import", headers=headers)
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+async def test_import_steam_library_requires_linked_account(
+    postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    _configure_steam_api_key(monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "noimport@example.com")
+        response = client.post("/api/user/steam/import", headers=headers)
+
+    assert response.status_code == 400
+
+
+async def test_import_steam_library_requires_authentication(postgres_url: str) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        response = client.post("/api/user/steam/import")
+
+    assert response.status_code == 401
+
+
+async def test_sync_steam_playtimes_also_imports_new_games_when_auto_import_enabled(
+    postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    _configure_steam_api_key(monkeypatch)
+    call_count = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal call_count
+        call_count += 1
+        return httpx.Response(
+            200,
+            json={
+                "response": {
+                    "games": [
+                        {"appid": 504230, "name": "Celeste", "playtime_forever": 510},
+                        {"appid": 620, "name": "Portal 2", "playtime_forever": 120},
+                    ]
+                }
+            },
+        )
+
+    _mock_steam(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "autoimport@example.com")
+        client.put(
+            "/api/user/me",
+            headers=headers,
+            json={"steam_id": "76561197960287930", "steam_auto_import_enabled": True},
+        )
+        client.post(
+            "/api/backlog/entries",
+            headers=headers,
+            json={
+                "title": "Celeste",
+                "genre": ["Platformer"],
+                "platform": ["PC"],
+                "status": "In Progress",
+                "owned": True,
+                "interest": 8,
+                "steam_app_id": 504230,
+            },
+        )
+
+        response = client.post("/api/user/steam/sync", headers=headers)
+
+    assert response.status_code == 200
+    body = response.json()
+    titles = {entry["title"] for entry in body}
+    assert titles == {"Celeste", "Portal 2"}
+    assert call_count == 1
+
+
+async def test_sync_steam_playtimes_does_not_import_when_auto_import_disabled(
+    postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    _configure_steam_api_key(monkeypatch)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "response": {
+                    "games": [{"appid": 620, "name": "Portal 2", "playtime_forever": 120}]
+                }
+            },
+        )
+
+    _mock_steam(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "noautoimport@example.com")
+        client.put(
+            "/api/user/me", headers=headers, json={"steam_id": "76561197960287930"}
+        )
+
+        response = client.post("/api/user/steam/sync", headers=headers)
+
+    assert response.status_code == 200
+    assert response.json() == []

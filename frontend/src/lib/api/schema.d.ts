@@ -338,6 +338,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/user/steam/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** ImportSteamLibrary */
+        post: operations["ApiUserSteamImportImportSteamLibrary"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/csv/parse": {
         parameters: {
             query?: never;
@@ -517,6 +534,23 @@ export interface paths {
         };
         /** GetGenre */
         get: operations["ApiGamesGenresGenreIdGetGenre"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/games/steam-app-id": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GetSteamAppId */
+        get: operations["ApiGamesSteamAppIdGetSteamAppId"];
         put?: never;
         post?: never;
         delete?: never;
@@ -781,6 +815,8 @@ export interface components {
             steam_id?: string | null;
             /** @default false */
             has_steam_api_key?: boolean;
+            /** @default false */
+            steam_auto_import_enabled?: boolean;
         };
         /** PublicUsername */
         PublicUsername: {
@@ -852,6 +888,7 @@ export interface components {
             password?: string;
             steam_id?: string | null;
             steam_api_key?: string | null;
+            steam_auto_import_enabled?: boolean;
         };
         /** UpdateUserAdminRequest */
         UpdateUserAdminRequest: {
@@ -860,6 +897,7 @@ export interface components {
             password?: string;
             steam_id?: string | null;
             steam_api_key?: string | null;
+            steam_auto_import_enabled?: boolean;
             is_admin?: boolean;
         };
     };
@@ -1887,6 +1925,26 @@ export interface operations {
             };
         };
     };
+    ApiUserSteamImportImportSteamLibrary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BacklogEntryResponse"][];
+                };
+            };
+        };
+    };
     ApiCsvParseParseCsv: {
         parameters: {
             query?: never;
@@ -2279,6 +2337,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["IGDBGenre"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiGamesSteamAppIdGetSteamAppId: {
+        parameters: {
+            query: {
+                title: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": number | null;
                 };
             };
             /** @description Bad request syntax or unsupported method */
