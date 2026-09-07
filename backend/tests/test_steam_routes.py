@@ -472,6 +472,31 @@ async def test_get_steam_achievements_returns_503_on_transport_failure(
     assert response.status_code == 503
 
 
+async def test_get_steam_achievements_response_is_not_cached(
+    postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    _configure_steam_api_key(monkeypatch)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if "GetPlayerAchievements" in request.url.path:
+            return httpx.Response(200, json={"playerstats": {"success": False}})
+        return httpx.Response(200, json={"game": {}})
+
+    _mock_steam(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "achievementscache@example.com")
+        client.put("/api/user/me", headers=headers, json={"steam_id": "76561197960287930"})
+
+        response = client.get(
+            "/api/user/steam/achievements", headers=headers, params={"steam_app_id": 504230}
+        )
+
+    assert response.headers["cache-control"] == "no-store"
+
+
 async def test_get_steam_achievements_requires_authentication(postgres_url: str) -> None:
     from backlog_manager_backend.app import create_app
 

@@ -1,6 +1,7 @@
 import httpx
 from cryptography.fernet import InvalidToken
 from litestar import Router, get, post
+from litestar.datastructures import CacheControlHeader
 from litestar.di import NamedDependency, Provide
 from litestar.exceptions import ClientException, ServiceUnavailableException
 from litestar.params import FromQuery
@@ -17,6 +18,7 @@ from backlog_manager_backend.services import steam_service
 
 _STEAM_NOT_CONFIGURED = "Steam Web API integration is not configured"
 _STEAM_UNAVAILABLE = "Steam Web API is currently unreachable"
+_NO_STORE = CacheControlHeader(no_store=True)
 
 
 def _resolve_api_key(user: User) -> str:
@@ -86,4 +88,5 @@ steam_router = Router(
     route_handlers=[sync_steam_playtimes, import_steam_library, get_steam_achievements],
     dependencies={"current_user": Provide(get_current_user)},
     security=BEARER_SECURITY_REQUIREMENT,
+    cache_control=_NO_STORE,
 )
