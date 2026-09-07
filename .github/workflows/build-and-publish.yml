@@ -51,14 +51,14 @@ jobs:
             NODE_ENV=production
             NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
           tags: |
-            ghcr.io/${{ github.repository_owner }}/backlog-manager:latest
-            ghcr.io/${{ github.repository_owner }}/backlog-manager:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/backlog-manager-frontend:latest
+            ghcr.io/${{ github.repository_owner }}/backlog-manager-frontend:${{ github.sha }}
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,mode=max,scope=frontend
 
       - name: Build summary
         env:
-          IMAGE: ghcr.io/${{ github.repository_owner }}/backlog-manager
+          IMAGE: ghcr.io/${{ github.repository_owner }}/backlog-manager-frontend
           SHA: ${{ github.sha }}
         run: |
           echo "### Frontend image published :rocket:" >> "$GITHUB_STEP_SUMMARY"
