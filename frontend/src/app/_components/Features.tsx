@@ -17,7 +17,7 @@ export const Features = () => {
           <div className="grid gap-8 md:grid-cols-3">
             <ScrollSection
               delay={0}
-              className="rounded-xl border-2 border-white bg-transparent p-8 text-center transition-all duration-300 hover:shadow-lg"
+              className="rounded-xl border-2 border-white bg-transparent p-8 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
             >
               <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-transparent">
                 <Image
@@ -37,7 +37,7 @@ export const Features = () => {
 
             <ScrollSection
               delay={200}
-              className="rounded-xl border-2 border-white bg-transparent p-8 text-center transition-all duration-300 hover:shadow-lg"
+              className="rounded-xl border-2 border-white bg-transparent p-8 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
             >
               <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-transparent">
                 <Image src="/filter.png" alt="filter" width={64} height={64} />
@@ -53,7 +53,7 @@ export const Features = () => {
 
             <ScrollSection
               delay={400}
-              className="rounded-xl border-2 border-white bg-transparent p-8 text-center transition-all duration-300 hover:shadow-lg"
+              className="rounded-xl border-2 border-white bg-transparent p-8 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
             >
               <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-transparent">
                 <Image

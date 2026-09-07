@@ -2,6 +2,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import type { NavbarLink, NavbarProps } from "~/app/types";
 import { useAuth } from "~/app/context/AuthContext";
@@ -43,14 +44,21 @@ export function Navbar(props: NavbarProps) {
       {...(isTauriMacOS ? { "data-tauri-drag-region": true } : {})}
       className={`mx-auto flex w-full items-center justify-between rounded-4xl bg-transparent px-8 py-4 text-white ${isTauriMacOS ? "pt-8" : ""}`}
     >
-      <div className={`flex items-center space-x-2 ${isTauriMacOS ? "ml-16" : ""}`}>
+      <div
+        className={`flex items-center space-x-2 ${isTauriMacOS ? "ml-16" : ""}`}
+      >
         <Link href={"/"}>
-          <Image
-            src="/logo_mana.png"
-            alt="Backlog-Manager"
-            width={64}
-            height={64}
-          />
+          <motion.div
+            whileHover={{ scale: 1.08, rotate: -4 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Image
+              src="/logo_mana.png"
+              alt="Backlog-Manager"
+              width={64}
+              height={64}
+            />
+          </motion.div>
         </Link>
         <Link href={"/"}>
           <span className="hidden text-xl font-bold md:block">
@@ -62,9 +70,15 @@ export function Navbar(props: NavbarProps) {
         {props.navbarLinks.map((link) => {
           if (link.type === "component") {
             return (
-              <div className="!h-8 !w-8 !border-0 !p-0" key={link.id}>
+              <motion.div
+                className="!h-8 !w-8 !border-0 !p-0"
+                key={link.id}
+                whileHover={{ scale: 1.2, y: -3, rotate: -4 }}
+                whileTap={{ scale: 0.92 }}
+                transition={{ type: "spring", stiffness: 400, damping: 20 }}
+              >
                 {link.component}
-              </div>
+              </motion.div>
             );
           }
           return (
@@ -72,9 +86,15 @@ export function Navbar(props: NavbarProps) {
               key={link.id}
               href={link.href ?? "#"}
               onClick={(e) => handleClick(e, link)}
-              className="bg-transparent hover:underline"
+              className="bg-transparent"
             >
-              {link.content}
+              <motion.div
+                whileHover={{ scale: 1.2, y: -3, rotate: -4 }}
+                whileTap={{ scale: 0.92 }}
+                transition={{ type: "spring", stiffness: 400, damping: 20 }}
+              >
+                {link.content}
+              </motion.div>
             </Link>
           );
         })}
