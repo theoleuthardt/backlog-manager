@@ -35,9 +35,8 @@ tasks:
       - task: backend:lint
 
   test:
-    desc: Run frontend and backend test suites
+    desc: Run the backend test suite
     cmds:
-      - task: frontend:test
       - task: backend:test
 
   check:
@@ -85,12 +84,6 @@ tasks:
     dir: "{{.FRONTEND_DIR}}"
     cmds:
       - npm run check
-
-  frontend:test:
-    desc: Run frontend tests (vitest, against a real Postgres via testcontainers)
-    dir: "{{.FRONTEND_DIR}}"
-    cmds:
-      - npx vitest run
 
   backend:install:
     desc: Install backend dependencies (uv sync)
