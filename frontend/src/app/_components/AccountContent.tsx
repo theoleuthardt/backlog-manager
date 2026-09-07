@@ -213,6 +213,21 @@ export function AccountContent() {
             {isSavingSteamId ? "Saving..." : "Save"}
           </Button>
         </div>
+        <p className="mt-2 text-xs text-gray-500">
+          Not sure what this is? Open your Steam profile page and look at
+          its URL - if it ends in a long number, that&apos;s your
+          SteamID64, paste it above. If it ends in a custom name instead,
+          look it up with{" "}
+          <a
+            href="https://steamdb.com/en/tools/steam-id-finder"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 underline hover:text-blue-300"
+          >
+            SteamDB&apos;s SteamID finder
+          </a>
+          .
+        </p>
 
         <p className="mt-6 mb-2 text-sm text-gray-300">
           {user.hasSteamApiKey
