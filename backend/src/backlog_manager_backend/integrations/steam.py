@@ -19,7 +19,11 @@ async def get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
     """Raises on failure (timeout, non-2xx, malformed body) rather than
     swallowing it, unlike search_game_on_hltb - a sync the user
     explicitly triggered should surface an error instead of silently
-    doing nothing."""
+    doing nothing.
+
+    include_played_free_games=1 is required or Steam silently drops
+    every free-to-play game (Team Fortress 2, Dota 2, ...) from the
+    response regardless of playtime."""
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
             response = await client.get(
@@ -28,6 +32,7 @@ async def get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
                     "key": api_key,
                     "steamid": steam_id,
                     "include_appinfo": 1,
+                    "include_played_free_games": 1,
                     "format": "json",
                 },
             )
