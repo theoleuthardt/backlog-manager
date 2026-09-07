@@ -19,6 +19,19 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
+    op.execute(
+        """
+        UPDATE "blm-system"."BacklogEntries" AS entries
+        SET "SteamAppId" = NULL
+        WHERE "SteamAppId" IS NOT NULL
+          AND "BacklogEntryID" NOT IN (
+              SELECT MIN("BacklogEntryID")
+              FROM "blm-system"."BacklogEntries"
+              WHERE "SteamAppId" IS NOT NULL
+              GROUP BY "UserID", "SteamAppId"
+          )
+        """
+    )
     op.create_unique_constraint(
         "BacklogEntries_UserID_SteamAppId_key",
         "BacklogEntries",

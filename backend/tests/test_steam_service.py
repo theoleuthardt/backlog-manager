@@ -1,3 +1,4 @@
+import asyncio
 from decimal import Decimal
 
 import pytest
@@ -241,3 +242,43 @@ async def test_sync_playtimes_and_import_skips_import_when_auto_import_is_off(
 
     titles = {entry.title for entry in updated}
     assert titles == {"Celeste"}
+
+
+async def test_import_library_concurrent_calls_do_not_create_duplicate_entries(
+    postgres_url: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Real concurrency test with two independent sessions/connections
+    (unlike the mid-import ConflictError simulation above, which only
+    proves the catch works once triggered) - proves the database's
+    unique constraint, not just the existing_app_ids check, is what
+    actually stops a race between two concurrent imports for the same
+    user from creating duplicate entries."""
+    from backlog_manager_backend.db import async_session
+
+    async with async_session() as setup_session:
+        user = await user_repo.create_user(
+            setup_session,
+            CreateUserParams(
+                username="concurrentsteamuser",
+                email="concurrentsteamuser@example.com",
+                password_hash="h",
+                steam_id="76561197960287930",
+            ),
+        )
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [SteamOwnedGame(appid=504230, name="Celeste", playtime_forever=510)]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+
+    async def run_import() -> list[object]:
+        async with async_session() as session:
+            return await steam_service.import_library(session, user, "api-key")
+
+    first_created, second_created = await asyncio.gather(run_import(), run_import())
+
+    assert len(first_created) + len(second_created) == 1
+
+    async with async_session() as verify_session:
+        entries = await backlog_entry_repo.get_backlog_entries_by_user(verify_session, user.id)
+    assert len(entries) == 1
