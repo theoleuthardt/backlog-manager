@@ -32,6 +32,7 @@ def _to_schema(model: BacklogEntryModel) -> BacklogEntry:
         main_time=model.main_time,
         main_plus_extra_time=model.main_plus_extra_time,
         completion_time=model.completion_time,
+        playtime=model.playtime,
         review_stars=model.review_stars,
         review=model.review,
         note=model.note,
@@ -55,6 +56,7 @@ async def create_backlog_entry(
         main_time=params.main_time,
         main_plus_extra_time=params.main_plus_extra_time,
         completion_time=params.completion_time,
+        playtime=params.playtime,
         review_stars=params.review_stars,
         review=params.review,
         note=params.note,
@@ -142,6 +144,8 @@ async def update_backlog_entry(
         model.main_plus_extra_time = params.main_plus_extra_time
     if params.completion_time is not msgspec.UNSET:
         model.completion_time = params.completion_time
+    if params.playtime is not msgspec.UNSET:
+        model.playtime = params.playtime
     if params.review_stars is not msgspec.UNSET:
         model.review_stars = params.review_stars
     if params.review is not msgspec.UNSET:

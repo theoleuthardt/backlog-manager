@@ -86,12 +86,14 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
         status?: string;
         owned?: boolean;
         interest?: number;
+        playtime?: number;
         reviewStars?: number;
         review?: string;
         note?: string;
       } = {};
 
       if (imageLink !== props.imageLink) changes.imageLink = imageLink;
+      if (playtime !== (props.playtime ?? 0)) changes.playtime = playtime;
       if (genre !== (props.genre?.join(", ") ?? ""))
         changes.genre = genre
           .split(",")

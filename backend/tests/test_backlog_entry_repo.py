@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -73,6 +75,40 @@ async def test_get_backlog_entries_by_status(session: AsyncSession) -> None:
     )
 
     assert [e.title for e in entries] == ["Playing"]
+
+
+async def test_create_backlog_entry_with_playtime(session: AsyncSession) -> None:
+    user = await _make_user(session)
+    entry = await backlog_entry_repo.create_backlog_entry(
+        session,
+        CreateBacklogEntryParams(
+            user_id=user.id,
+            title="Elden Ring",
+            genre="RPG",
+            platform="PC",
+            status="In Progress",
+            owned=True,
+            interest=8,
+            playtime=Decimal("12.5"),
+        ),
+    )
+
+    assert entry.playtime == Decimal("12.5")
+
+
+async def test_update_backlog_entry_playtime(session: AsyncSession) -> None:
+    user = await _make_user(session)
+    entry = await _make_entry(session, user.id)
+    assert entry.playtime is None
+
+    updated = await backlog_entry_repo.update_backlog_entry(
+        session,
+        UpdateBacklogEntryParams(
+            backlog_entry_id=entry.backlog_entry_id, playtime=Decimal(30)
+        ),
+    )
+
+    assert updated.playtime == Decimal(30)
 
 
 async def test_update_backlog_entry_to_completed_sets_completed_at(

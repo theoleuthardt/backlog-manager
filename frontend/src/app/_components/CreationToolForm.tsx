@@ -95,6 +95,7 @@ export function CreationToolForm() {
           | "Dropped",
         owned,
         interest,
+        playtime,
         imageLink: imageUrl,
         mainTime:
           Number.isFinite(mainStory) && mainStory > 0 ? mainStory : undefined,

@@ -35,6 +35,7 @@ class BacklogEntry(Base):
     main_time: Mapped[Decimal | None] = mapped_column("MainTime")
     main_plus_extra_time: Mapped[Decimal | None] = mapped_column("MainPlusExtraTime")
     completion_time: Mapped[Decimal | None] = mapped_column("CompletionTime")
+    playtime: Mapped[Decimal | None] = mapped_column("Playtime")
     status: Mapped[str] = mapped_column("Status")
     owned: Mapped[bool] = mapped_column("Owned")
     interest: Mapped[int] = mapped_column("Interest")
