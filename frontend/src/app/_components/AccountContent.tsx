@@ -165,7 +165,7 @@ export function AccountContent() {
                       onChange={(e) => setCode(e.target.value)}
                       placeholder="123456"
                       autoComplete="one-time-code"
-                      className="border-white/40 bg-black text-white placeholder:text-gray-500"
+                      className="border-white/40 bg-black text-white placeholder:text-gray-300"
                     />
                   </div>
                 </div>
@@ -250,7 +250,7 @@ export function AccountContent() {
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel
-              className="bg-black text-white hover:bg-gray-800"
+              className={OUTLINE_BUTTON}
               onClick={() => setDisablePassword("")}
             >
               Cancel
