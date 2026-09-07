@@ -75,8 +75,11 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const { data: steamGridDbCovers, isLoading: isLoadingCovers } =
-    useSteamGridDbCovers(props.steamAppId, coverPickerOpen);
+  const {
+    data: steamGridDbCovers,
+    isLoading: isLoadingCovers,
+    isError: coversFailedToLoad,
+  } = useSteamGridDbCovers(props.steamAppId, coverPickerOpen);
 
   const handleUpdateImage = () => {
     if (newImageUrl.trim()) {
@@ -296,6 +299,10 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                         <div className="flex items-center justify-center py-6">
                           <Loader2 className="h-5 w-5 animate-spin" />
                         </div>
+                      ) : coversFailedToLoad ? (
+                        <p className="text-sm text-red-400">
+                          Failed to load covers. Please try again.
+                        </p>
                       ) : steamGridDbCovers &&
                         steamGridDbCovers.length > 0 ? (
                         <div className="grid max-h-64 grid-cols-3 gap-2 overflow-y-auto">

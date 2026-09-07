@@ -642,6 +642,30 @@ async def test_get_game_covers_caches_across_calls(
     assert call_count == 1
 
 
+async def test_get_game_covers_evicts_oldest_entry_once_cache_is_full(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(game_service.settings, "steamgriddb_api_key", "key")
+    monkeypatch.setattr(game_service, "_STEAMGRIDDB_COVER_CACHE_MAX_SIZE", 2)
+
+    async def fake_get_grids_by_steam_app_id(
+        steam_app_id: int, api_key: str
+    ) -> list[SteamGridDBGrid]:
+        return [SteamGridDBGrid(id=steam_app_id, url=f"https://example.com/{steam_app_id}.png", thumb="")]
+
+    monkeypatch.setattr(
+        game_service, "get_grids_by_steam_app_id", fake_get_grids_by_steam_app_id
+    )
+
+    await game_service.get_game_covers(1)
+    await game_service.get_game_covers(2)
+    await game_service.get_game_covers(3)
+
+    assert 1 not in game_service._steamgriddb_cover_cache
+    assert 2 in game_service._steamgriddb_cover_cache
+    assert 3 in game_service._steamgriddb_cover_cache
+
+
 async def test_search_prefers_steamgriddb_cover_over_igdb(
     game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:

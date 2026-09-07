@@ -50,6 +50,12 @@ _steam_app_list_cached_at: float | None = None
 _steam_app_list_last_attempt_at: float | None = None
 _steam_app_list_lock = asyncio.Lock()
 
+# Bounded (unlike the IGDB caches above, whose keys only ever come from
+# IGDB's own search results) since steam_app_id is a caller-supplied
+# query param on the public cover-picker endpoint - an unbounded cache
+# keyed by it would let repeated requests for distinct (real or made
+# up) app ids grow memory for the life of the worker.
+_STEAMGRIDDB_COVER_CACHE_MAX_SIZE = 500
 _steamgriddb_cover_cache: dict[int, list[str]] = {}
 
 
@@ -126,6 +132,9 @@ async def get_game_covers(steam_app_id: int) -> list[str]:
 
     grids = await get_grids_by_steam_app_id(steam_app_id, api_key)
     urls = [grid.url for grid in sorted(grids, key=lambda grid: grid.score, reverse=True)]
+
+    if len(_steamgriddb_cover_cache) >= _STEAMGRIDDB_COVER_CACHE_MAX_SIZE:
+        _steamgriddb_cover_cache.pop(next(iter(_steamgriddb_cover_cache)))
     _steamgriddb_cover_cache[steam_app_id] = urls
     return urls
 
@@ -138,6 +147,37 @@ async def _try_get_steamgriddb_covers(steam_app_id: int) -> list[str]:
         return await get_game_covers(steam_app_id)
     except (RuntimeError, httpx.HTTPError):
         return []
+
+
+async def _resolve_steamgriddb_covers_by_game_id(
+    games: list[IGDBGameData],
+) -> dict[int, list[str]]:
+    """Resolves Steam App IDs for a page of search results (cheap - an
+    in-memory dict lookup once the catalogue is warm) then fetches
+    SteamGridDB covers for all of them concurrently instead of one
+    game at a time - a SteamGridDB outage would otherwise delay the
+    whole search by one request timeout per game, up to
+    _SEARCH_RESULT_LIMIT of them."""
+    if not settings.steamgriddb_api_key:
+        return {}
+
+    steam_app_ids_by_game_id: dict[int, int] = {}
+    for game in games:
+        if game.name:
+            steam_app_id = await find_steam_app_id(game.name)
+            if steam_app_id is not None:
+                steam_app_ids_by_game_id[game.id] = steam_app_id
+
+    if not steam_app_ids_by_game_id:
+        return {}
+
+    cover_lists = await asyncio.gather(
+        *(
+            _try_get_steamgriddb_covers(steam_app_id)
+            for steam_app_id in steam_app_ids_by_game_id.values()
+        )
+    )
+    return dict(zip(steam_app_ids_by_game_id.keys(), cover_lists, strict=True))
 
 
 async def _enrich_search_results(
@@ -229,6 +269,8 @@ async def _enrich_search_results(
         if game.id in _time_to_beat_cache:
             time_to_beat_by_game_id[game.id] = _time_to_beat_cache[game.id]
 
+    steamgriddb_covers_by_game_id = await _resolve_steamgriddb_covers_by_game_id(games)
+
     results: list[EnrichedResult] = []
     for game_id in game_ids:
         game = games_by_id.get(game_id)
@@ -244,15 +286,12 @@ async def _enrich_search_results(
                 )
 
             # SteamGridDB is preferred over the IGDB cover above when
-            # configured and a Steam App ID can be resolved for this
+            # configured and a Steam App ID could be resolved for this
             # title - see issue #106, it has far better cover-art
             # availability than IGDB.
-            if settings.steamgriddb_api_key and game.name:
-                steam_app_id = await find_steam_app_id(game.name)
-                if steam_app_id is not None:
-                    steamgriddb_urls = await _try_get_steamgriddb_covers(steam_app_id)
-                    if steamgriddb_urls:
-                        image_url = steamgriddb_urls[0]
+            steamgriddb_urls = steamgriddb_covers_by_game_id.get(game.id, [])
+            if steamgriddb_urls:
+                image_url = steamgriddb_urls[0]
 
             genres = [
                 _genre_cache[genre_id] for genre_id in (game.genres or []) if genre_id in _genre_cache
