@@ -1,6 +1,10 @@
-import { Navbar, Footer, Features, UniverseBackground } from "components";
-import { Button } from "shadcn_components/ui/button";
-import Link from "next/link";
+import {
+  Navbar,
+  Footer,
+  Features,
+  UniverseBackground,
+  HeroCta,
+} from "components";
 import { landingPageNavLinks } from "~/constants";
 
 export default function Home() {
@@ -20,14 +24,7 @@ export default function Home() {
                   Organize your games and track your progress with ease.
                 </p>
                 <div className="flex flex-col items-center justify-center gap-5 sm:flex-row">
-                  <Link href="/login">
-                    <Button
-                      variant="outline"
-                      className="border-black text-black transition-colors duration-300 hover:cursor-pointer hover:border-white hover:bg-transparent hover:text-white"
-                    >
-                      Get Started today!
-                    </Button>
-                  </Link>
+                  <HeroCta />
                 </div>
               </div>
             </main>
