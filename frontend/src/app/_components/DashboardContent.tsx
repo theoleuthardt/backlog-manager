@@ -15,11 +15,35 @@ import { Checkbox } from "shadcn_components/ui/checkbox";
 import { Slider } from "shadcn_components/ui/slider";
 import { Label } from "shadcn_components/ui/label";
 import Image from "next/image";
-import { useBacklogEntries } from "~/hooks/useBacklog";
-import { Loader2 } from "lucide-react";
+import { useBacklogEntries, useSyncSteamPlaytimes } from "~/hooks/useBacklog";
+import { Loader2, RefreshCw } from "lucide-react";
+import { Button } from "shadcn_components/ui/button";
+import { toast } from "sonner";
+import { useAuth } from "~/app/context/AuthContext";
 
 export const DashboardContent = () => {
+  const { user } = useAuth();
   const { data: backlogData, isLoading, error } = useBacklogEntries();
+  const syncSteamPlaytimesMutation = useSyncSteamPlaytimes();
+
+  const handleSyncSteamPlaytimes = () => {
+    syncSteamPlaytimesMutation.mutate(undefined, {
+      onSuccess: (updated) => {
+        toast.success(
+          updated.length > 0
+            ? `Updated playtime for ${updated.length} game${updated.length === 1 ? "" : "s"}`
+            : "Playtimes are already up to date",
+        );
+      },
+      onError: (mutationError) => {
+        toast.error(
+          mutationError instanceof Error
+            ? mutationError.message
+            : "Failed to sync Steam playtimes",
+        );
+      },
+    });
+  };
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
@@ -425,9 +449,27 @@ export const DashboardContent = () => {
           </div>
         </div>
       </div>
-      <div id="entryList" className="mr-4 flex-1 overflow-hidden p-4">
+      <div id="entryList" className="mr-4 flex flex-1 flex-col overflow-hidden p-4">
+        {user?.steamId && (
+          <div className="mb-4 flex justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSyncSteamPlaytimes}
+              disabled={syncSteamPlaytimesMutation.isPending}
+              className="gap-2 border-white bg-black text-white hover:bg-white hover:text-black"
+            >
+              {syncSteamPlaytimesMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              Sync Steam Playtimes
+            </Button>
+          </div>
+        )}
         {filteredData.length === 0 ? (
-          <div className="flex h-full items-center justify-center">
+          <div className="flex flex-1 items-center justify-center">
             <div className="text-center">
               <h2 className="mb-2 text-2xl font-bold text-white">
                 {backlogData && backlogData.length > 0
@@ -442,13 +484,14 @@ export const DashboardContent = () => {
             </div>
           </div>
         ) : (
-          <div className="grid h-full grid-cols-[repeat(auto-fill,minmax(150px,max-content))] content-start gap-x-2 gap-y-2 overflow-y-auto">
+          <div className="grid min-h-0 flex-1 grid-cols-[repeat(auto-fill,minmax(150px,max-content))] content-start gap-x-2 gap-y-2 overflow-y-auto">
             {filteredData.map((entry) => (
               <BacklogEntry
                 key={entry.id}
                 id={entry.id}
                 title={entry.title}
                 playtime={entry.playtime}
+                steamAppId={entry.steamAppId}
                 imageLink={entry.imageLink}
                 imageAlt={entry.imageAlt}
                 genre={entry.genre}

@@ -21,6 +21,7 @@ from backlog_manager_backend.routes.games import (
 )
 from backlog_manager_backend.routes.health import health
 from backlog_manager_backend.routes.images import proxy_image
+from backlog_manager_backend.routes.steam import steam_router
 from backlog_manager_backend.routes.user import admin_user_router, user_router
 
 
@@ -42,6 +43,7 @@ def create_app() -> Litestar:
             backlog_router,
             user_router,
             admin_user_router,
+            steam_router,
             csv_router,
             search_game,
             enriched_search,

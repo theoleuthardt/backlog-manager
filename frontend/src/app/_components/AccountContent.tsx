@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "~/app/context/AuthContext";
+import { updateCurrentUser } from "~/lib/api/user";
 import {
   useEnrollTwoFactor,
   useVerifyTwoFactorEnrollment,
@@ -48,11 +49,69 @@ export function AccountContent() {
   const [isDisableOpen, setIsDisableOpen] = useState(false);
   const [disablePassword, setDisablePassword] = useState("");
 
+  const [steamId, setSteamId] = useState("");
+  const [steamIdLoadedFor, setSteamIdLoadedFor] = useState<number | null>(null);
+  const [isSavingSteamId, setIsSavingSteamId] = useState(false);
+
+  const [steamApiKey, setSteamApiKey] = useState("");
+  const [isSavingSteamApiKey, setIsSavingSteamApiKey] = useState(false);
+
   const enrollMutation = useEnrollTwoFactor();
   const verifyMutation = useVerifyTwoFactorEnrollment();
   const disableMutation = useDisableTwoFactor();
 
+  if (user && steamIdLoadedFor !== user.id) {
+    setSteamIdLoadedFor(user.id);
+    setSteamId(user.steamId ?? "");
+  }
+
   if (!user) return null;
+
+  const handleSaveSteamId = async () => {
+    setIsSavingSteamId(true);
+    try {
+      await updateCurrentUser({ steamId });
+      await refreshUser();
+      toast.success("Steam ID saved");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to save Steam ID",
+      );
+    } finally {
+      setIsSavingSteamId(false);
+    }
+  };
+
+  const handleSaveSteamApiKey = async () => {
+    setIsSavingSteamApiKey(true);
+    try {
+      await updateCurrentUser({ steamApiKey });
+      await refreshUser();
+      setSteamApiKey("");
+      toast.success("Steam API key saved");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to save Steam API key",
+      );
+    } finally {
+      setIsSavingSteamApiKey(false);
+    }
+  };
+
+  const handleRemoveSteamApiKey = async () => {
+    setIsSavingSteamApiKey(true);
+    try {
+      await updateCurrentUser({ steamApiKey: "" });
+      await refreshUser();
+      toast.success("Steam API key removed");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to remove Steam API key",
+      );
+    } finally {
+      setIsSavingSteamApiKey(false);
+    }
+  };
 
   const openEnroll = () => {
     setCode("");
@@ -131,6 +190,78 @@ export function AccountContent() {
             Enable Two-Factor Authentication
           </Button>
         )}
+      </div>
+
+      <div className="rounded-lg border-2 border-white bg-black p-6">
+        <h2 className="mb-2 text-xl font-semibold">Steam</h2>
+        <p className="mb-4 text-sm text-gray-300">
+          Link your Steam ID to sync playtimes for backlog entries you&apos;ve
+          tagged with a Steam App ID.
+        </p>
+        <div className="flex max-w-sm gap-2">
+          <Input
+            value={steamId}
+            onChange={(e) => setSteamId(e.target.value)}
+            placeholder="Steam ID (e.g. 76561197960287930)"
+            className="border-white/40 bg-black text-white placeholder:text-gray-500"
+          />
+          <Button
+            className={FILLED_BUTTON}
+            onClick={() => void handleSaveSteamId()}
+            disabled={isSavingSteamId || steamId === (user.steamId ?? "")}
+          >
+            {isSavingSteamId ? "Saving..." : "Save"}
+          </Button>
+        </div>
+        <p className="mt-2 text-xs text-gray-500">
+          Not sure what this is? Open your Steam profile page and look at
+          its URL - if it ends in a long number, that&apos;s your
+          SteamID64, paste it above. If it ends in a custom name instead,
+          look it up with{" "}
+          <a
+            href="https://steamdb.com/en/tools/steam-id-finder"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 underline hover:text-blue-300"
+          >
+            SteamDB&apos;s SteamID finder
+          </a>
+          .
+        </p>
+
+        <p className="mt-6 mb-2 text-sm text-gray-300">
+          {user.hasSteamApiKey
+            ? "Your own Steam Web API key is set and used for syncing playtimes."
+            : "Optionally set your own Steam Web API key. Falls back to the server's key otherwise."}
+        </p>
+        <div className="flex max-w-sm gap-2">
+          <Input
+            type="password"
+            value={steamApiKey}
+            onChange={(e) => setSteamApiKey(e.target.value)}
+            placeholder={
+              user.hasSteamApiKey ? "Enter a new key to replace it" : "Steam Web API key"
+            }
+            className="border-white/40 bg-black text-white placeholder:text-gray-500"
+          />
+          <Button
+            className={FILLED_BUTTON}
+            onClick={() => void handleSaveSteamApiKey()}
+            disabled={isSavingSteamApiKey || steamApiKey.trim().length === 0}
+          >
+            {isSavingSteamApiKey ? "Saving..." : "Save"}
+          </Button>
+          {user.hasSteamApiKey && (
+            <Button
+              variant="outline"
+              className={OUTLINE_BUTTON}
+              onClick={() => void handleRemoveSteamApiKey()}
+              disabled={isSavingSteamApiKey}
+            >
+              Remove
+            </Button>
+          )}
+        </div>
       </div>
 
       <Dialog open={isEnrollOpen} onOpenChange={(open) => !open && closeEnroll()}>

@@ -1,0 +1,26 @@
+meta {
+  name: Set Steam ID
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{backendUrl}}/api/user/me
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "steam_id": "76561197960287930"
+  }
+}
+
+docs {
+  Links a Steam account by its SteamID64. Required before "Sync Steam
+  Playtimes" can resolve which library to fetch.
+}

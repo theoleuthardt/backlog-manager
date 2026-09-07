@@ -16,6 +16,7 @@ class User(Base):
     email: Mapped[str] = mapped_column("Email", unique=True)
     password_hash: Mapped[str] = mapped_column("PasswordHash")
     steam_id: Mapped[str | None] = mapped_column("SteamId")
+    steam_api_key_encrypted: Mapped[str | None] = mapped_column("SteamApiKeyEncrypted")
     is_admin: Mapped[bool] = mapped_column("IsAdmin", server_default=text("false"))
     totp_secret_encrypted: Mapped[str | None] = mapped_column("TotpSecretEncrypted")
     totp_enabled: Mapped[bool] = mapped_column("TotpEnabled", server_default=text("false"))

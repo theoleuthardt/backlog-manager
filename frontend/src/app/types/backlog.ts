@@ -18,6 +18,7 @@ export interface BacklogEntryProps {
   mainTime?: number;
   mainPlusExtraTime?: number;
   completionTime?: number;
+  steamAppId?: number;
   className?: string;
 }
 
@@ -41,6 +42,7 @@ export interface BacklogEntryData {
   mainTime?: number;
   mainPlusExtraTime?: number;
   completionTime?: number;
+  steamAppId?: number;
 }
 
 /**

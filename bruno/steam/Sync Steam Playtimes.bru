@@ -1,0 +1,25 @@
+meta {
+  name: Sync Steam Playtimes
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{backendUrl}}/api/user/steam/sync
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Fetches the linked Steam library (GetOwnedGames) and overwrites
+  playtime for every backlog entry whose steam_app_id matches an owned
+  game, converting Steam's minutes to hours. Returns the updated
+  entries.
+
+  400 if no Steam ID is linked (see "Set Steam ID"), 503 if neither the
+  caller nor the server has a Steam Web API key configured.
+}

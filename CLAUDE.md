@@ -95,6 +95,10 @@ The project enforces strict ESLint rules:
 - Remove unused variables
 - Don't annotate types that can be inferred
 
+## Code Comments
+
+Do not add inline comments unless they are explicit code documentation (a function/class docstring, or an existing established comment convention in the surrounding file). No narrative or rationale comments scattered through function bodies.
+
 ## Testing Philosophy
 
 Always work test-driven: write the test that expresses the desired behavior before (or alongside) the implementation, then make the implementation satisfy it.

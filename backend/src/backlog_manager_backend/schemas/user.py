@@ -13,6 +13,8 @@ class User(msgspec.Struct):
     is_admin: bool = False
     totp_secret_encrypted: str | None = None
     totp_enabled: bool = False
+    steam_id: str | None = None
+    steam_api_key_encrypted: str | None = None
 
 
 class CreateUserParams(msgspec.Struct):
@@ -33,6 +35,7 @@ class UpdateUserParams(msgspec.Struct):
     email: str | msgspec.UnsetType = msgspec.UNSET
     password_hash: str | msgspec.UnsetType = msgspec.UNSET
     steam_id: str | None | msgspec.UnsetType = msgspec.UNSET
+    steam_api_key_encrypted: str | None | msgspec.UnsetType = msgspec.UNSET
     is_admin: bool | msgspec.UnsetType = msgspec.UNSET
     # Set only by the 2FA enroll/verify/disable service functions - never
     # exposed on UpdateOwnUserRequest/UpdateUserAdminRequest, or a client
@@ -52,6 +55,8 @@ class PublicUser(msgspec.Struct):
     is_two_factor_enabled: bool
     created_at: datetime
     updated_at: datetime
+    steam_id: str | None = None
+    has_steam_api_key: bool = False
 
     @classmethod
     def from_user(cls, user: User) -> "PublicUser":
@@ -63,6 +68,8 @@ class PublicUser(msgspec.Struct):
             is_two_factor_enabled=user.totp_enabled,
             created_at=user.created_at,
             updated_at=user.updated_at,
+            steam_id=user.steam_id,
+            has_steam_api_key=bool(user.steam_api_key_encrypted),
         )
 
 
@@ -92,6 +99,7 @@ class UpdateOwnUserRequest(msgspec.Struct):
     email: str | msgspec.UnsetType = msgspec.UNSET
     password: str | msgspec.UnsetType = msgspec.UNSET
     steam_id: str | None | msgspec.UnsetType = msgspec.UNSET
+    steam_api_key: str | None | msgspec.UnsetType = msgspec.UNSET
 
 
 class UpdateUserAdminRequest(msgspec.Struct):
@@ -102,6 +110,7 @@ class UpdateUserAdminRequest(msgspec.Struct):
     email: str | msgspec.UnsetType = msgspec.UNSET
     password: str | msgspec.UnsetType = msgspec.UNSET
     steam_id: str | None | msgspec.UnsetType = msgspec.UNSET
+    steam_api_key: str | None | msgspec.UnsetType = msgspec.UNSET
     is_admin: bool | msgspec.UnsetType = msgspec.UNSET
 
 

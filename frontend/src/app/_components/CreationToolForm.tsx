@@ -31,6 +31,7 @@ export function CreationToolForm() {
   const completionist = Number.parseFloat(
     searchParams.get("completionist") ?? "0",
   );
+  const steamAppIdFromUrl = searchParams.get("steamAppId") ?? "";
 
   const hasHltbData =
     mainStory > 0 || mainStoryWithExtras > 0 || completionist > 0;
@@ -45,6 +46,7 @@ export function CreationToolForm() {
   const [review, setReview] = useState("");
   const [note, setNote] = useState("");
   const [playtime, setPlaytime] = useState(0);
+  const [steamAppId, setSteamAppId] = useState(steamAppIdFromUrl);
   const [isLoading, setIsLoading] = useState(false);
   const [createStatus, setCreateStatus] = useState<
     "idle" | "success" | "error"
@@ -66,6 +68,13 @@ export function CreationToolForm() {
         .split(",")
         .map((p) => p.trim())
         .filter(Boolean);
+      const steamAppIdNumber = Number(steamAppId);
+      const parsedSteamAppId =
+        steamAppId.trim() &&
+        Number.isSafeInteger(steamAppIdNumber) &&
+        steamAppIdNumber >= 0
+          ? steamAppIdNumber
+          : undefined;
 
       if (genreList.length === 0) {
         toast.error("Please enter at least one genre");
@@ -96,6 +105,7 @@ export function CreationToolForm() {
         owned,
         interest,
         playtime,
+        steamAppId: parsedSteamAppId,
         imageLink: imageUrl,
         mainTime:
           Number.isFinite(mainStory) && mainStory > 0 ? mainStory : undefined,
@@ -305,6 +315,21 @@ export function CreationToolForm() {
                   onChange={(e) =>
                     setPlaytime(Number.parseFloat(e.target.value) || 0)
                   }
+                  className="bg-black text-white"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="steamAppId" className="text-sm">
+                  Steam App ID (optional)
+                </Label>
+                <Input
+                  id="steamAppId"
+                  type="number"
+                  min="0"
+                  value={steamAppId}
+                  onChange={(e) => setSteamAppId(e.target.value)}
+                  placeholder="e.g. 504230"
                   className="bg-black text-white"
                 />
               </div>
