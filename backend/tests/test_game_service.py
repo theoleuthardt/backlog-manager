@@ -435,6 +435,115 @@ async def test_search_falls_back_to_hltb_when_igdb_time_to_beat_is_all_zero(
     assert results[0].main_story == 8.5
 
 
+async def test_search_ranks_main_game_over_dlc_hits_that_crowd_it_out(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Regression test for issue #154: IGDB's /search endpoint matches
+    DLC, bundles and alternate versions alongside the base game, and
+    previously the raw search hits were truncated to
+    _SEARCH_RESULT_LIMIT *before* being resolved to real games - so a
+    title with more than _SEARCH_RESULT_LIMIT DLC/version hits could
+    push the actual base game out of the raw slice entirely, and it
+    would never appear in the results at all."""
+    raw_hit_count = 10
+
+    async def fake_search_game_on_igdb(
+        search_term: str, client_id: str, access_token: str
+    ) -> list[IGDBSearchResult]:
+        return [
+            IGDBSearchResult(id=game_id, game=game_id, name="SnowRunner - Season Pass")
+            for game_id in range(1, raw_hit_count)
+        ] + [IGDBSearchResult(id=raw_hit_count, game=raw_hit_count, name="SnowRunner")]
+
+    async def fake_get_games_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameData]:
+        games = [
+            IGDBGameData(
+                id=game_id,
+                name="SnowRunner - Season Pass",
+                category=1,
+                genres=[],
+                platforms=[],
+            )
+            for game_id in range(1, raw_hit_count)
+        ]
+        games.append(
+            IGDBGameData(
+                id=raw_hit_count, name="SnowRunner", category=0, genres=[], platforms=[]
+            )
+        )
+        return games
+
+    async def fake_get_games_time_to_beat_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameTimeToBeat]:
+        return [
+            IGDBGameTimeToBeat(id=game_id, game_id=game_id, normally=3600)
+            for game_id in game_ids
+        ]
+
+    async def fake_get_valid_token() -> str:
+        return "tok"
+
+    monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
+    monkeypatch.setattr(game_service, "get_games_on_igdb", fake_get_games_on_igdb)
+    monkeypatch.setattr(
+        game_service, "get_games_time_to_beat_on_igdb", fake_get_games_time_to_beat_on_igdb
+    )
+    monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
+
+    results = await game_service.search("SnowRunner")
+
+    assert len(results) == game_service._SEARCH_RESULT_LIMIT
+    assert results[0].id == raw_hit_count
+    assert results[0].title == "SnowRunner"
+
+
+async def test_search_dedupes_multiple_raw_hits_resolving_to_the_same_game(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Regression test for issue #154: an alternate name and a
+    character match can both resolve (via IGDBSearchResult.game) to the
+    same underlying game id - that must not produce duplicate entries
+    in the result list."""
+
+    async def fake_search_game_on_igdb(
+        search_term: str, client_id: str, access_token: str
+    ) -> list[IGDBSearchResult]:
+        return [
+            IGDBSearchResult(id=101, game=1, name="Dave the Diver (alt name)"),
+            IGDBSearchResult(id=102, game=1, name="Dave"),
+            IGDBSearchResult(id=1, game=None, name="Dave the Diver"),
+        ]
+
+    async def fake_get_games_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameData]:
+        return [IGDBGameData(id=1, name="Dave the Diver", category=0, genres=[], platforms=[])]
+
+    async def fake_get_games_time_to_beat_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameTimeToBeat]:
+        return [IGDBGameTimeToBeat(id=1, game_id=1, normally=3600)]
+
+    async def fake_get_valid_token() -> str:
+        return "tok"
+
+    monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
+    monkeypatch.setattr(game_service, "get_games_on_igdb", fake_get_games_on_igdb)
+    monkeypatch.setattr(
+        game_service, "get_games_time_to_beat_on_igdb", fake_get_games_time_to_beat_on_igdb
+    )
+    monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
+
+    results = await game_service.search("Dave the Diver")
+
+    assert len(results) == 1
+    assert results[0].id == 1
+    assert results[0].title == "Dave the Diver"
+
+
 async def test_search_returns_empty_list_when_games_batch_fails(
     game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:

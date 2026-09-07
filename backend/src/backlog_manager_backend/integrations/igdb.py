@@ -84,14 +84,23 @@ async def _query_igdb[T](
         ) from error
 
 
+_SEARCH_RAW_RESULT_LIMIT = 50
+
+
 async def search_game_on_igdb(
     search_term: str, client_id: str, access_token: str
 ) -> list[IGDBSearchResult]:
+    """Raw IGDB `/search` hits for a title - alternate names, DLC,
+    bundles and character names all match alongside the base game, and
+    IGDB defaults to only 10 results per query if no `limit` is given.
+    A generous raw limit here gives the caller (game_service.search)
+    enough candidates to resolve, dedupe and rank by category before
+    truncating to what's actually shown."""
     escaped_term = search_term.replace('"', '\\"')
     body = (
         "fields alternative_name,character,checksum,collection,company,description,"
         "game,name,platform,published_at,test_dummy,theme; "
-        f'where name ~ *"{escaped_term}"*;'
+        f'where name ~ *"{escaped_term}"*; limit {_SEARCH_RAW_RESULT_LIMIT};'
     )
     try:
         return await _query_igdb("search", body, client_id, access_token, list[IGDBSearchResult])

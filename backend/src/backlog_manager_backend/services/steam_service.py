@@ -1,6 +1,7 @@
 from decimal import ROUND_HALF_UP, Decimal
 
 import httpx
+import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.errors import ConflictError, ValidationError
@@ -22,6 +23,8 @@ from backlog_manager_backend.schemas.backlog_entry import (
     UpdateBacklogEntryParams,
 )
 from backlog_manager_backend.schemas.user import User
+
+logger = structlog.get_logger()
 
 _MINUTES_PER_HOUR = Decimal(60)
 _IMPORTED_PLATFORM = "PC"
@@ -99,6 +102,17 @@ async def import_library(
     actual guarantee; a ConflictError from that constraint is treated
     as "already imported" and skipped rather than failing the import.
 
+    Every other exception raised while creating one entry is also
+    caught, rolled back, and logged rather than left to propagate -
+    see issue #154: each entry is committed individually, so one game
+    failing partway through a large library (a decode quirk, an
+    unmapped database error, ...) must not silently discard every game
+    after it while leaving the earlier ones committed. The rollback
+    matters even when nothing else in the loop touches the session
+    directly: a failed commit can leave the session's transaction
+    unusable, which would otherwise make every subsequent create in
+    this same loop fail too.
+
     Accepts an already-fetched owned_games snapshot - see
     sync_playtimes's docstring for why."""
     if not user.steam_id:
@@ -134,6 +148,14 @@ async def import_library(
                 )
             )
         except ConflictError:
+            continue
+        except Exception:
+            await session.rollback()
+            logger.exception(
+                "Failed to import Steam-owned game into backlog",
+                steam_app_id=game.appid,
+                title=game.name,
+            )
             continue
     return created
 
