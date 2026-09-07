@@ -2,6 +2,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import type { NavbarLink, NavbarProps } from "~/app/types";
 import { useAuth } from "~/app/context/AuthContext";
@@ -43,14 +44,21 @@ export function Navbar(props: NavbarProps) {
       {...(isTauriMacOS ? { "data-tauri-drag-region": true } : {})}
       className={`mx-auto flex w-full items-center justify-between rounded-4xl bg-transparent px-8 py-4 text-white ${isTauriMacOS ? "pt-8" : ""}`}
     >
-      <div className={`flex items-center space-x-2 ${isTauriMacOS ? "ml-16" : ""}`}>
+      <div
+        className={`flex items-center space-x-2 ${isTauriMacOS ? "ml-16" : ""}`}
+      >
         <Link href={"/"}>
-          <Image
-            src="/logo_mana.png"
-            alt="Backlog-Manager"
-            width={64}
-            height={64}
-          />
+          <motion.div
+            whileHover={{ scale: 1.08, rotate: -4 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Image
+              src="/logo_mana.png"
+              alt="Backlog-Manager"
+              width={64}
+              height={64}
+            />
+          </motion.div>
         </Link>
         <Link href={"/"}>
           <span className="hidden text-xl font-bold md:block">
@@ -72,9 +80,10 @@ export function Navbar(props: NavbarProps) {
               key={link.id}
               href={link.href ?? "#"}
               onClick={(e) => handleClick(e, link)}
-              className="bg-transparent hover:underline"
+              className="group relative bg-transparent"
             >
               {link.content}
+              <span className="absolute -bottom-1 left-0 h-px w-full origin-left scale-x-0 bg-white transition-transform duration-300 ease-out group-hover:scale-x-100" />
             </Link>
           );
         })}

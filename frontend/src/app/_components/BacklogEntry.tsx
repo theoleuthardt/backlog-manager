@@ -1,4 +1,5 @@
 "use client";
+import { motion } from "motion/react";
 import {
   Dialog,
   DialogContent,
@@ -47,9 +48,7 @@ import {
 export const BacklogEntry = (props: BacklogEntryProps) => {
   const [imageLink, setImageLink] = useState(props.imageLink);
   const [newImageUrl, setNewImageUrl] = useState("");
-  const [playtime, setPlaytime] = useState<number | undefined>(
-    props.playtime,
-  );
+  const [playtime, setPlaytime] = useState<number | undefined>(props.playtime);
   const [genre, setGenre] = useState(props.genre?.join(", ") ?? "");
   const [platform, setPlatform] = useState(props.platform?.join(", ") ?? "");
   const [status, setStatus] = useState(props.status ?? "");
@@ -168,14 +167,19 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
     >
       <Dialog>
         <DialogTrigger asChild>
-          <div className="leading-[0]">
+          <motion.div
+            className="leading-[0]"
+            whileHover={{ scale: 1.05, y: -4 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+          >
             <GameImage
               src={props.imageLink ?? ""}
               alt={props.imageAlt ?? ""}
               width={150}
               height={225}
             />
-          </div>
+          </motion.div>
         </DialogTrigger>
         <DialogContent
           className="h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] !max-w-none border-2 border-white bg-black p-0"
