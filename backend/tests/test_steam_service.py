@@ -157,11 +157,6 @@ async def test_import_library_uses_a_provided_owned_games_snapshot(
 async def test_import_library_skips_a_game_that_becomes_a_duplicate_mid_import(
     session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """The existing_app_ids check only catches duplicates that were
-    already committed before import_library started - a concurrent
-    import for the same user closes that race via the database's
-    unique constraint instead. This simulates that race by making the
-    repository raise ConflictError for one specific game."""
     user = await _make_user(session)
 
     async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
@@ -247,12 +242,6 @@ async def test_sync_playtimes_and_import_skips_import_when_auto_import_is_off(
 async def test_import_library_concurrent_calls_do_not_create_duplicate_entries(
     postgres_url: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Real concurrency test with two independent sessions/connections
-    (unlike the mid-import ConflictError simulation above, which only
-    proves the catch works once triggered) - proves the database's
-    unique constraint, not just the existing_app_ids check, is what
-    actually stops a race between two concurrent imports for the same
-    user from creating duplicate entries."""
     from backlog_manager_backend.db import async_session
 
     async with async_session() as setup_session:
