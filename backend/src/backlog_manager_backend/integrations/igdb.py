@@ -84,7 +84,7 @@ async def _query_igdb[T](
         ) from error
 
 
-_SEARCH_RAW_RESULT_LIMIT = 50
+_SEARCH_RAW_RESULT_LIMIT = 500
 
 
 async def search_game_on_igdb(
@@ -93,9 +93,12 @@ async def search_game_on_igdb(
     """Raw IGDB `/search` hits for a title - alternate names, DLC,
     bundles and character names all match alongside the base game, and
     IGDB defaults to only 10 results per query if no `limit` is given.
-    A generous raw limit here gives the caller (game_service.search)
-    enough candidates to resolve, dedupe and rank by category before
-    truncating to what's actually shown."""
+    500 (IGDB's own per-request maximum) costs no more than a smaller
+    limit in requests - it's one call either way - but a heavily
+    DLC'd franchise can have dozens of hits ahead of the base game
+    (SnowRunner has 65 non-base-game hits alone), so a small raw limit
+    can drop the base game before game_service.search ever gets a
+    chance to filter/rank by game type."""
     escaped_term = search_term.replace('"', '\\"')
     body = (
         "fields alternative_name,character,checksum,collection,company,description,"
@@ -111,7 +114,7 @@ async def search_game_on_igdb(
 async def get_game_on_igdb(game_id: str, client_id: str, access_token: str) -> list[IGDBGameData]:
     body = (
         "fields age_ratings,aggregated_rating,aggregated_rating_count,alternative_names,"
-        "artworks,bundles,category,checksum,collection,collections,cover,created_at,dlcs,"
+        "artworks,bundles,checksum,collection,collections,cover,created_at,dlcs,"
         "expanded_games,expansions,external_games,first_release_date,follows,forks,"
         "franchise,franchises,game_engines,game_localizations,game_modes,game_status,"
         "game_type,genres,hypes,involved_companies,keywords,language_supports,"
@@ -190,7 +193,7 @@ async def get_games_on_igdb(
         return []
     body = (
         "fields age_ratings,aggregated_rating,aggregated_rating_count,alternative_names,"
-        "artworks,bundles,category,checksum,collection,collections,cover,created_at,dlcs,"
+        "artworks,bundles,checksum,collection,collections,cover,created_at,dlcs,"
         "expanded_games,expansions,external_games,first_release_date,follows,forks,"
         "franchise,franchises,game_engines,game_localizations,game_modes,game_status,"
         "game_type,genres,hypes,involved_companies,keywords,language_supports,"

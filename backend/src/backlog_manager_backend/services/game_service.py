@@ -27,16 +27,21 @@ from backlog_manager_backend.integrations.types import (
 
 logger = structlog.get_logger()
 
-_SEARCH_RESULT_LIMIT = 8
+_SEARCH_RESULT_LIMIT = 20
 
-# IGDB category enum (from the /games endpoint's `category` field):
-# 0 main_game, 8 remake, 9 remaster, 10 expanded_game rank as "real
-# games" a title search should surface; everything else (dlc_addon,
-# expansion, bundle, standalone_expansion, mod, episode, season, port,
-# fork, pack, update, and an absent category) ranks lowest rather than
-# being excluded outright, since IGDB's categorization is not perfect.
-_MAIN_GAME_CATEGORY_RANKS = {0: 0, 8: 1, 9: 1, 10: 1}
-_OTHER_CATEGORY_RANK = 2
+# IGDB's /games endpoint's `game_type` enum (formerly called `category`
+# in IGDB's docs and in this codebase - that name still exists as a
+# field you can request, but IGDB silently returns nothing for it; the
+# working field for the same enum is `game_type`). 0 main_game, 8
+# remake, 9 remaster, 10 expanded_game rank as "real games" a title
+# search should surface, ranked in that order; everything else
+# (dlc_addon, expansion, bundle, standalone_expansion, mod, episode,
+# season, port, fork, pack, update) is excluded from search results
+# entirely by _is_dlc_like below, not just ranked last - see issue
+# #154, where these were crowding the base game out of the top results.
+_MAIN_GAME_TYPE_RANKS = {0: 0, 8: 1, 9: 1, 10: 1}
+_OTHER_GAME_TYPE_RANK = 2
+_EXCLUDED_GAME_TYPES = {1, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14}
 
 _cached_token: dict[str, object] | None = None
 _genre_cache: dict[int, str] = {}
@@ -93,6 +98,16 @@ async def get_valid_token() -> str:
         "expires_at": time.monotonic() + (token_response.expires_in - 300),
     }
     return token_response.access_token
+
+
+def _is_dlc_like(game: IGDBGameData) -> bool:
+    """True for anything a title search shouldn't surface as its own
+    result: a game_type IGDB tags as DLC/expansion/bundle/etc, or - for
+    the rarer case where game_type itself is missing - any entry that
+    links back to a parent_game, which no base game does."""
+    if game.game_type in _EXCLUDED_GAME_TYPES:
+        return True
+    return game.game_type is None and game.parent_game is not None
 
 
 def _seconds_to_hours(seconds: int | None) -> float:
@@ -190,7 +205,7 @@ async def _resolve_steamgriddb_covers_by_game_id(
 
 
 async def _enrich_search_results(
-    search_results: list[IGDBSearchResult], client_id: str, access_token: str
+    search_results: list[IGDBSearchResult], client_id: str, access_token: str, search_term: str
 ) -> list[EnrichedResult]:
     """Batches every IGDB lookup needed to enrich a page of search
     results into (at most) one request per data type, instead of one
@@ -201,10 +216,14 @@ async def _enrich_search_results(
     assembly failures stay isolated below.
 
     Raw search hits are resolved to game ids, deduped (multiple hits -
-    alternate names, character matches - can resolve to the same game)
-    and ranked by category (main_game/remake/remaster/expanded_game
-    first) before being truncated to _SEARCH_RESULT_LIMIT - see issue
-    #154. Everything past that point (covers, genres, platforms,
+    alternate names, character matches - can resolve to the same game),
+    filtered to drop anything DLC-like, and ranked by game type
+    (main_game/remake/remaster/expanded_game first, an exact
+    case-insensitive title match breaking ties within a type - IGDB
+    tags some editions, e.g. "SnowRunner: Premium Edition", as their
+    own main_game rather than a DLC of the base game) before being
+    truncated to _SEARCH_RESULT_LIMIT - see issue #154. Everything past
+    that point (covers, genres, platforms,
     beat-time, SteamGridDB) only runs for the final, truncated set."""
     game_ids = [
         result.game if result.game is not None else result.id for result in search_results
@@ -225,12 +244,21 @@ async def _enrich_search_results(
             seen_game_ids.add(game_id)
             unique_game_ids.append(game_id)
 
-    ranked_game_ids = sorted(
-        unique_game_ids,
-        key=lambda game_id: _MAIN_GAME_CATEGORY_RANKS.get(
-            _game_cache[game_id].category, _OTHER_CATEGORY_RANK
-        ),
-    )[:_SEARCH_RESULT_LIMIT]
+    candidate_game_ids = [
+        game_id for game_id in unique_game_ids if not _is_dlc_like(_game_cache[game_id])
+    ]
+
+    normalized_search_term = search_term.strip().casefold()
+
+    def _sort_key(game_id: int) -> tuple[int, bool]:
+        game = _game_cache[game_id]
+        is_exact_title_match = (game.name or "").strip().casefold() == normalized_search_term
+        return (
+            _MAIN_GAME_TYPE_RANKS.get(game.game_type, _OTHER_GAME_TYPE_RANK),
+            not is_exact_title_match,
+        )
+
+    ranked_game_ids = sorted(candidate_game_ids, key=_sort_key)[:_SEARCH_RESULT_LIMIT]
 
     games_by_id = {game_id: _game_cache[game_id] for game_id in ranked_game_ids}
     games = list(games_by_id.values())
@@ -360,18 +388,19 @@ async def search(search_term: str) -> list[EnrichedResult]:
     genres, platforms and beat-time data (falling back to HowLongToBeat
     when IGDB has no beat-time data). Batches every lookup into at most
     one request per data type for the whole page of results - see
-    issue #105. The raw IGDB search hits are resolved, deduped and
-    ranked by category (main_game/remake/remaster/expanded_game first)
-    before being truncated to _SEARCH_RESULT_LIMIT in
-    _enrich_search_results - see issue #154, where DLC/alternate-version
-    hits were crowding the base game out of the top results."""
+    issue #105. The raw IGDB search hits are resolved, deduped, filtered
+    to drop anything DLC-like, and ranked by game type (main_game/
+    remake/remaster/expanded_game first) before being truncated to
+    _SEARCH_RESULT_LIMIT in _enrich_search_results - see issue #154,
+    where DLC/alternate-version hits were crowding the base game out of
+    the top results."""
     client_id = settings.igdb_client_id
     if not client_id:
         raise RuntimeError("IGDB_CLIENT_ID not configured")
 
     access_token = await get_valid_token()
     search_results = await search_game_on_igdb(search_term, client_id, access_token)
-    return await _enrich_search_results(search_results, client_id, access_token)
+    return await _enrich_search_results(search_results, client_id, access_token, search_term)
 
 
 def _normalize_game_title(title: str) -> str:

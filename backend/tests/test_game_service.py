@@ -435,7 +435,7 @@ async def test_search_falls_back_to_hltb_when_igdb_time_to_beat_is_all_zero(
     assert results[0].main_story == 8.5
 
 
-async def test_search_ranks_main_game_over_dlc_hits_that_crowd_it_out(
+async def test_search_excludes_dlc_hits_that_crowd_out_the_base_game(
     game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Regression test for issue #154: IGDB's /search endpoint matches
@@ -444,7 +444,16 @@ async def test_search_ranks_main_game_over_dlc_hits_that_crowd_it_out(
     _SEARCH_RESULT_LIMIT *before* being resolved to real games - so a
     title with more than _SEARCH_RESULT_LIMIT DLC/version hits could
     push the actual base game out of the raw slice entirely, and it
-    would never appear in the results at all."""
+    would never appear in the results at all.
+
+    Follow-up fix (found after #154 shipped): the ranking itself read
+    IGDBGameData.game_type via the wrong field name (`category`, which
+    IGDB's API silently returns nothing for - see game_service.py's
+    _is_dlc_like docstring), so every entry ranked identically and the
+    base game still didn't surface. DLC-like game_types are now
+    excluded from results outright rather than merely ranked last, per
+    an explicit follow-up request on #154 - a title search should never
+    show a DLC as if it were its own game."""
     raw_hit_count = 10
 
     async def fake_search_game_on_igdb(
@@ -462,7 +471,8 @@ async def test_search_ranks_main_game_over_dlc_hits_that_crowd_it_out(
             IGDBGameData(
                 id=game_id,
                 name="SnowRunner - Season Pass",
-                category=1,
+                game_type=7,
+                parent_game=raw_hit_count,
                 genres=[],
                 platforms=[],
             )
@@ -470,7 +480,7 @@ async def test_search_ranks_main_game_over_dlc_hits_that_crowd_it_out(
         ]
         games.append(
             IGDBGameData(
-                id=raw_hit_count, name="SnowRunner", category=0, genres=[], platforms=[]
+                id=raw_hit_count, name="SnowRunner", game_type=0, genres=[], platforms=[]
             )
         )
         return games
@@ -495,9 +505,106 @@ async def test_search_ranks_main_game_over_dlc_hits_that_crowd_it_out(
 
     results = await game_service.search("SnowRunner")
 
-    assert len(results) == game_service._SEARCH_RESULT_LIMIT
+    assert len(results) == 1
     assert results[0].id == raw_hit_count
     assert results[0].title == "SnowRunner"
+
+
+async def test_search_excludes_entry_with_no_game_type_but_a_parent_game(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Safety net for issue #154: IGDB doesn't always populate
+    game_type, but a real base game never has a parent_game - an entry
+    with neither game_type nor parent_game is kept (ambiguous, IGDB's
+    categorization isn't perfect), but one with a parent_game and no
+    game_type is still excluded as DLC-like."""
+
+    async def fake_search_game_on_igdb(
+        search_term: str, client_id: str, access_token: str
+    ) -> list[IGDBSearchResult]:
+        return [
+            IGDBSearchResult(id=1, game=1, name="Celeste"),
+            IGDBSearchResult(id=2, game=2, name="Celeste - Farewell"),
+        ]
+
+    async def fake_get_games_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameData]:
+        return [
+            IGDBGameData(id=1, name="Celeste", genres=[], platforms=[]),
+            IGDBGameData(id=2, name="Celeste - Farewell", parent_game=1, genres=[], platforms=[]),
+        ]
+
+    async def fake_get_games_time_to_beat_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameTimeToBeat]:
+        return [IGDBGameTimeToBeat(id=1, game_id=1, normally=3600)]
+
+    async def fake_get_valid_token() -> str:
+        return "tok"
+
+    monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
+    monkeypatch.setattr(game_service, "get_games_on_igdb", fake_get_games_on_igdb)
+    monkeypatch.setattr(
+        game_service, "get_games_time_to_beat_on_igdb", fake_get_games_time_to_beat_on_igdb
+    )
+    monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
+
+    results = await game_service.search("Celeste")
+
+    assert len(results) == 1
+    assert results[0].id == 1
+    assert results[0].title == "Celeste"
+
+
+async def test_search_ranks_exact_title_match_over_a_same_type_edition(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """IGDB tags some editions (e.g. "SnowRunner: Premium Edition") as
+    their own main_game rather than as DLC of the base game, so
+    _is_dlc_like alone can't tell them apart - an exact (case
+    insensitive) title match against the search term breaks the tie so
+    the plain base game still ranks first."""
+
+    async def fake_search_game_on_igdb(
+        search_term: str, client_id: str, access_token: str
+    ) -> list[IGDBSearchResult]:
+        return [
+            IGDBSearchResult(id=1, game=1, name="SnowRunner: Premium Edition"),
+            IGDBSearchResult(id=2, game=2, name="SnowRunner"),
+        ]
+
+    async def fake_get_games_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameData]:
+        return [
+            IGDBGameData(
+                id=1, name="SnowRunner: Premium Edition", game_type=0, genres=[], platforms=[]
+            ),
+            IGDBGameData(id=2, name="SnowRunner", game_type=0, genres=[], platforms=[]),
+        ]
+
+    async def fake_get_games_time_to_beat_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameTimeToBeat]:
+        return [
+            IGDBGameTimeToBeat(id=1, game_id=1, normally=3600),
+            IGDBGameTimeToBeat(id=2, game_id=2, normally=3600),
+        ]
+
+    async def fake_get_valid_token() -> str:
+        return "tok"
+
+    monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
+    monkeypatch.setattr(game_service, "get_games_on_igdb", fake_get_games_on_igdb)
+    monkeypatch.setattr(
+        game_service, "get_games_time_to_beat_on_igdb", fake_get_games_time_to_beat_on_igdb
+    )
+    monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
+
+    results = await game_service.search("snowrunner")
+
+    assert [result.title for result in results] == ["SnowRunner", "SnowRunner: Premium Edition"]
 
 
 async def test_search_dedupes_multiple_raw_hits_resolving_to_the_same_game(
@@ -520,7 +627,7 @@ async def test_search_dedupes_multiple_raw_hits_resolving_to_the_same_game(
     async def fake_get_games_on_igdb(
         game_ids: list[int], client_id: str, access_token: str
     ) -> list[IGDBGameData]:
-        return [IGDBGameData(id=1, name="Dave the Diver", category=0, genres=[], platforms=[])]
+        return [IGDBGameData(id=1, name="Dave the Diver", game_type=0, genres=[], platforms=[])]
 
     async def fake_get_games_time_to_beat_on_igdb(
         game_ids: list[int], client_id: str, access_token: str
