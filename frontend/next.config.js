@@ -18,9 +18,18 @@ loadEnv({ path: new URL("../.env", import.meta.url) });
  */
 await import("./src/env.js");
 
+// The Tauri desktop build needs a static export (`output: 'export'`) - no
+// Next.js server runs inside the app, it's a WebView loading static files
+// (see docs/TAURI.md). Branching on an env var here, rather than keeping a
+// separate next.config.tauri.js swapped in at build time, avoids ever
+// touching this file on disk: a build that gets killed mid-run (CI
+// cancellation, a crashed process, ...) can't leave the repo with the
+// wrong config committed, which a file-swap script's cleanup step could.
+const isTauriBuild = process.env.TAURI_BUILD === "1";
+
 /** @type {import("next").NextConfig} */
 const config = {
-  output: "standalone",
+  output: isTauriBuild ? "export" : "standalone",
   allowedDevOrigins: [
     "local-origin.dev",
     "*.local-origin.dev",
@@ -34,27 +43,29 @@ const config = {
 
   turbopack: {},
 
-  images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "howlongtobeat.com",
-        pathname: "/**",
+  images: isTauriBuild
+    ? { unoptimized: true }
+    : {
+        remotePatterns: [
+          {
+            protocol: "https",
+            hostname: "howlongtobeat.com",
+            pathname: "/**",
+          },
+          {
+            protocol: "https",
+            hostname: "images.igdb.com",
+            pathname: "/**",
+          },
+        ],
+        domains: [],
+        unoptimized: false,
+        localPatterns: [
+          {
+            pathname: "/**",
+          },
+        ],
       },
-      {
-        protocol: "https",
-        hostname: "images.igdb.com",
-        pathname: "/**",
-      },
-    ],
-    domains: [],
-    unoptimized: false,
-    localPatterns: [
-      {
-        pathname: "/**",
-      },
-    ],
-  },
 };
 
 export default config;

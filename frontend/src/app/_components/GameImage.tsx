@@ -3,6 +3,7 @@ import Image from "next/image";
 import React, { useState } from "react";
 import type { GameImageProps } from "~/app/types";
 import { Spinner } from "~/components/ui/spinner";
+import { env } from "~/env";
 
 export function GameImage(props: GameImageProps) {
   const [isLoading, setIsLoading] = useState(true);
@@ -13,7 +14,7 @@ export function GameImage(props: GameImageProps) {
     if (hasError || !hasValidSrc) {
       return "/entryPlaceholder.png";
     }
-    return `/api/image-proxy?url=${encodeURIComponent(props.src)}`;
+    return `${env.NEXT_PUBLIC_API_URL}/api/images/proxy?url=${encodeURIComponent(props.src)}`;
   };
 
   const imageSrc = getImageSrc();

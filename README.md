@@ -42,5 +42,6 @@ task db:up     # start local Postgres + pgAdmin
 task dev       # Next.js dev server
 ```
 
-See `Taskfile.yml` (`task --list`) for the full command surface, and
-`CLAUDE.md` for more detail on the project's structure and workflows.
+See `Taskfile.yml` (`task --list`) for the full command surface,
+`CLAUDE.md` for more detail on the project's structure and workflows,
+and [`docs/TAURI.md`](docs/TAURI.md) for the desktop app build.

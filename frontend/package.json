@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "NODE_OPTIONS='--max-old-space-size=4096' next build --webpack",
+    "build:tauri": "TAURI_BUILD=1 NODE_OPTIONS='--max-old-space-size=4096' next build --webpack",
     "check": "eslint . && tsc --noEmit",
     "dev": "NODE_OPTIONS='--max-old-space-size=4096' next dev --turbo",
     "dev:webpack": "NODE_OPTIONS='--max-old-space-size=4096' next dev --webpack",
@@ -15,7 +16,11 @@
     "lint:fix": "eslint . --fix",
     "preview": "NODE_OPTIONS='--max-old-space-size=4096' next build --webpack && next start",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "tauri:build:debug": "tauri build --debug"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -52,6 +57,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@tailwindcss/postcss": "^4.0.15",
+    "@tauri-apps/cli": "^2.11.4",
     "@types/node": "^20.14.10",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
