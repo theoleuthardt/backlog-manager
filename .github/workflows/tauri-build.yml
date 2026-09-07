@@ -37,14 +37,20 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: "20"
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
+          # v5 auto-caches based on package.json's "packageManager" field on
+          # top of the explicit cache config above - keep the exact previous
+          # behavior instead of layering both.
+          package-manager-cache: false
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -97,7 +103,7 @@ jobs:
         run: npm run tauri:build
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: backlog-manager-${{ matrix.platform }}
           if-no-files-found: error

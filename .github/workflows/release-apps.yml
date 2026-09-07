@@ -21,9 +21,10 @@ jobs:
       tag: ${{ steps.compute.outputs.tag }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Compute next version
         id: compute
@@ -55,7 +56,7 @@ jobs:
 
     steps:
       - name: Download platform artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           pattern: backlog-manager-*
           path: dist
@@ -69,7 +70,7 @@ jobs:
           name: Backlog Manager ${{ needs.version.outputs.tag }}
           generate_release_notes: true
           fail_on_unmatched_files: true
-          files: dist/*
+          files: dist/**/*
 
       - name: Release summary
         env:
