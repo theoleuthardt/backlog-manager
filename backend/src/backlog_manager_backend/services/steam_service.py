@@ -103,11 +103,15 @@ async def import_library(
     as "already imported" and skipped rather than failing the import.
 
     Every other exception raised while creating one entry is also
-    caught and logged rather than left to propagate - see issue #154:
-    each entry is committed individually, so one game failing partway
-    through a large library (a decode quirk, an unmapped database
-    error, ...) must not silently discard every game after it while
-    leaving the earlier ones committed.
+    caught, rolled back, and logged rather than left to propagate -
+    see issue #154: each entry is committed individually, so one game
+    failing partway through a large library (a decode quirk, an
+    unmapped database error, ...) must not silently discard every game
+    after it while leaving the earlier ones committed. The rollback
+    matters even when nothing else in the loop touches the session
+    directly: a failed commit can leave the session's transaction
+    unusable, which would otherwise make every subsequent create in
+    this same loop fail too.
 
     Accepts an already-fetched owned_games snapshot - see
     sync_playtimes's docstring for why."""
@@ -146,6 +150,7 @@ async def import_library(
         except ConflictError:
             continue
         except Exception:
+            await session.rollback()
             logger.exception(
                 "Failed to import Steam-owned game into backlog",
                 steam_app_id=game.appid,

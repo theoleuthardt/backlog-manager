@@ -198,7 +198,16 @@ async def test_import_library_skips_a_game_that_fails_for_a_non_conflict_reason(
     of the whole loop and abort the entire import, silently discarding
     every game after the one that failed - even though earlier entries
     in the loop had already been committed individually. One bad game
-    must not prevent the rest of the library from being imported."""
+    must not prevent the rest of the library from being imported.
+
+    The failing entry raises during the real `session.commit()` (a
+    genuine aborted-transaction error from Postgres), not from a mock
+    that never touches the session - this exercises import_library's
+    `except Exception` branch actually needing to roll the session
+    back before the next iteration's commit, not just needing to
+    catch-and-continue."""
+    from sqlalchemy import text
+
     user = await _make_user(session)
 
     async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
@@ -214,7 +223,7 @@ async def test_import_library_skips_a_game_that_fails_for_a_non_conflict_reason(
 
     async def flaky_create_backlog_entry(session: AsyncSession, params: CreateBacklogEntryParams) -> object:
         if params.steam_app_id == 1465360:
-            raise RuntimeError("unexpected failure creating this one entry")
+            await session.execute(text("SELECT 1/0"))
         return await original_create_backlog_entry(session, params)
 
     monkeypatch.setattr(backlog_entry_repo, "create_backlog_entry", flaky_create_backlog_entry)
