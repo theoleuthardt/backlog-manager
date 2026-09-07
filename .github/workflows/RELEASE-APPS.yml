@@ -1,0 +1,78 @@
+name: Release Apps
+
+# Prod release stage - manual only, no push/tag trigger. Computes the next
+# version automatically (patch bump on the latest v*.*.* tag, or the
+# version already in frontend/package.json if there is no tag yet), builds
+# the desktop app for Windows, macOS and Linux via tauri-build.yml, then
+# publishes a GitHub Release under that version with every platform's
+# installer attached.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: Compute release version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.compute.outputs.version }}
+      tag: ${{ steps.compute.outputs.tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute next version
+        id: compute
+        run: |
+          LATEST_TAG=$(git tag -l 'v*.*.*' --sort=-v:refname | head -n1)
+          if [ -z "$LATEST_TAG" ]; then
+            VERSION=$(node -p "require('./frontend/package.json').version")
+          else
+            BASE="${LATEST_TAG#v}"
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE"
+            VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build desktop apps
+    needs: version
+    uses: ./.github/workflows/tauri-build.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
+
+  release:
+    name: Publish GitHub Release
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download platform artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: backlog-manager-*
+          path: dist
+          merge-multiple: true
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.version.outputs.tag }}
+          name: Backlog Manager ${{ needs.version.outputs.tag }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: dist/*
+
+      - name: Release summary
+        env:
+          TAG: ${{ needs.version.outputs.tag }}
+        run: |
+          echo "### Release published :rocket:" >> "$GITHUB_STEP_SUMMARY"
+          echo "Backlog Manager \`$TAG\` - see the Releases page for download links." >> "$GITHUB_STEP_SUMMARY"

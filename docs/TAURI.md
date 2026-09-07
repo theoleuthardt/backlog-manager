@@ -64,7 +64,8 @@ sudo pacman -S --needed webkit2gtk-4.1 base-devel curl wget file openssl \
 
 ## CI
 
-`.github/workflows/tauri-build.yml` builds installers for Windows, macOS and Linux on a version tag push (or manually via `workflow_dispatch`). It only builds - no code signing, no publishing. Signing needs real certificates ([Windows](https://v2.tauri.app/distribute/sign/windows/), [macOS](https://v2.tauri.app/distribute/sign/macos/), [Linux](https://v2.tauri.app/distribute/sign/linux/)) that aren't part of this repo.
+- `.github/workflows/tauri-build.yml` builds installers for Windows, macOS and Linux. It only builds - no code signing, no publishing. Signing needs real certificates ([Windows](https://v2.tauri.app/distribute/sign/windows/), [macOS](https://v2.tauri.app/distribute/sign/macos/), [Linux](https://v2.tauri.app/distribute/sign/linux/)) that aren't part of this repo. Runnable manually via `workflow_dispatch` for ad-hoc testing, or called by `RELEASE-APPS.yml` below.
+- `.github/workflows/RELEASE-APPS.yml` is the prod release pipeline - manual (`workflow_dispatch`) only, never on a push/tag. It computes the next version automatically (patch bump on the latest `v*.*.*` tag, or `frontend/package.json`'s version if there's no tag yet), builds all three platforms via `tauri-build.yml`, and publishes a GitHub Release under that version with every platform's installer attached.
 
 ## Known limitation
 
