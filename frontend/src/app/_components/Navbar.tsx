@@ -73,7 +73,7 @@ export function Navbar(props: NavbarProps) {
               <motion.div
                 className="!h-8 !w-8 !border-0 !p-0"
                 key={link.id}
-                whileHover={{ scale: 1.2, y: -3 }}
+                whileHover={{ scale: 1.2, y: -3, rotate: -4 }}
                 whileTap={{ scale: 0.92 }}
                 transition={{ type: "spring", stiffness: 400, damping: 20 }}
               >
@@ -89,7 +89,7 @@ export function Navbar(props: NavbarProps) {
               className="bg-transparent"
             >
               <motion.div
-                whileHover={{ scale: 1.2, y: -3 }}
+                whileHover={{ scale: 1.2, y: -3, rotate: -4 }}
                 whileTap={{ scale: 0.92 }}
                 transition={{ type: "spring", stiffness: 400, damping: 20 }}
               >
