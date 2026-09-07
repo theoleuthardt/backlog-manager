@@ -10,9 +10,11 @@ import {
   useVerifyTwoFactorEnrollment,
   useDisableTwoFactor,
 } from "~/hooks/useTwoFactor";
+import { useImportSteamLibrary } from "~/hooks/useBacklog";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { Checkbox } from "~/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -59,6 +61,8 @@ export function AccountContent() {
   const enrollMutation = useEnrollTwoFactor();
   const verifyMutation = useVerifyTwoFactorEnrollment();
   const disableMutation = useDisableTwoFactor();
+  const importSteamLibraryMutation = useImportSteamLibrary();
+  const [isSavingAutoImport, setIsSavingAutoImport] = useState(false);
 
   if (user && steamIdLoadedFor !== user.id) {
     setSteamIdLoadedFor(user.id);
@@ -110,6 +114,44 @@ export function AccountContent() {
       );
     } finally {
       setIsSavingSteamApiKey(false);
+    }
+  };
+
+  const handleImportSteamLibrary = () => {
+    importSteamLibraryMutation.mutate(undefined, {
+      onSuccess: (created) => {
+        toast.success(
+          created.length > 0
+            ? `Imported ${created.length} game${created.length === 1 ? "" : "s"} from your Steam library`
+            : "No new games to import, your backlog already has everything",
+        );
+      },
+      onError: (error) => {
+        toast.error(
+          error instanceof Error ? error.message : "Failed to import Steam library",
+        );
+      },
+    });
+  };
+
+  const handleToggleAutoImport = async (checked: boolean) => {
+    setIsSavingAutoImport(true);
+    try {
+      await updateCurrentUser({ steamAutoImportEnabled: checked });
+      await refreshUser();
+      toast.success(
+        checked
+          ? "New Steam games will now be imported automatically on sync"
+          : "Automatic Steam library import turned off",
+      );
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to update automatic import setting",
+      );
+    } finally {
+      setIsSavingAutoImport(false);
     }
   };
 
@@ -261,6 +303,38 @@ export function AccountContent() {
               Remove
             </Button>
           )}
+        </div>
+
+        <p className="mt-6 mb-2 text-sm text-gray-300">
+          Import owned Steam games that aren&apos;t in your backlog yet as new
+          entries.
+        </p>
+        <Button
+          className={FILLED_BUTTON}
+          onClick={handleImportSteamLibrary}
+          disabled={!user.steamId || importSteamLibraryMutation.isPending}
+        >
+          {importSteamLibraryMutation.isPending
+            ? "Importing..."
+            : "Import my Steam library"}
+        </Button>
+
+        <div className="mt-4 flex items-start gap-2">
+          <Checkbox
+            id="steam-auto-import"
+            checked={user.steamAutoImportEnabled}
+            disabled={!user.steamId || isSavingAutoImport}
+            onCheckedChange={(checked) =>
+              void handleToggleAutoImport(checked === true)
+            }
+          />
+          <Label
+            htmlFor="steam-auto-import"
+            className="text-sm font-normal text-gray-300"
+          >
+            Automatically import new Steam games every time playtimes are
+            synced
+          </Label>
         </div>
       </div>
 

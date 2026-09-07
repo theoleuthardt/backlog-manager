@@ -80,3 +80,52 @@ async def test_sync_playtimes_skips_entries_already_up_to_date(
     updated = await steam_service.sync_playtimes(session, user, "api-key")
 
     assert updated == []
+
+
+async def test_import_library_raises_when_steam_not_linked(session: AsyncSession) -> None:
+    user = await _make_user(session, steam_id=None)
+
+    with pytest.raises(ValidationError):
+        await steam_service.import_library(session, user, "api-key")
+
+
+async def test_import_library_creates_entries_for_new_owned_games(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    await _make_entry(session, user.id, steam_app_id=504230, playtime=Decimal("8.50"))
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        assert steam_id == user.steam_id
+        assert api_key == "api-key"
+        return [
+            SteamOwnedGame(appid=504230, name="Celeste", playtime_forever=510),
+            SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=120),
+        ]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+
+    created = await steam_service.import_library(session, user, "api-key")
+
+    assert len(created) == 1
+    assert created[0].title == "Portal 2"
+    assert created[0].steam_app_id == 620
+    assert created[0].playtime == Decimal("2.00")
+    assert created[0].status == "Not Started"
+    assert created[0].owned is True
+
+
+async def test_import_library_creates_nothing_when_all_games_already_linked(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    await _make_entry(session, user.id, steam_app_id=504230, playtime=Decimal("8.50"))
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [SteamOwnedGame(appid=504230, name="Celeste", playtime_forever=510)]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+
+    created = await steam_service.import_library(session, user, "api-key")
+
+    assert created == []

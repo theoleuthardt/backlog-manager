@@ -7,6 +7,7 @@ export interface UpdateCurrentUserInput {
   password?: string;
   steamId?: string;
   steamApiKey?: string;
+  steamAutoImportEnabled?: boolean;
 }
 
 function toCurrentUser(user: {
@@ -19,6 +20,7 @@ function toCurrentUser(user: {
   updated_at: string;
   steam_id?: string | null;
   has_steam_api_key?: boolean;
+  steam_auto_import_enabled?: boolean;
 }): CurrentUser {
   return {
     id: user.id,
@@ -30,6 +32,7 @@ function toCurrentUser(user: {
     updatedAt: user.updated_at,
     steamId: user.steam_id ?? undefined,
     hasSteamApiKey: user.has_steam_api_key ?? false,
+    steamAutoImportEnabled: user.steam_auto_import_enabled ?? false,
   };
 }
 
@@ -43,6 +46,7 @@ export async function updateCurrentUser(
       password: input.password,
       steam_id: input.steamId,
       steam_api_key: input.steamApiKey,
+      steam_auto_import_enabled: input.steamAutoImportEnabled,
     },
   });
   if (error) throw new Error(apiErrorMessage(error, "Failed to update user"));

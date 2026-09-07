@@ -37,6 +37,10 @@ async def sync_steam_playtimes(
 
     try:
         updated = await steam_service.sync_playtimes(db_session, current_user, api_key)
+        if current_user.steam_auto_import_enabled:
+            updated = updated + await steam_service.import_library(
+                db_session, current_user, api_key
+            )
     except ValidationError as error:
         raise ClientException(str(error)) from error
     except httpx.HTTPError as error:
@@ -45,9 +49,26 @@ async def sync_steam_playtimes(
     return [BacklogEntryResponse.from_entry(entry) for entry in updated]
 
 
+@post("/api/user/steam/import", status_code=200)
+async def import_steam_library(
+    db_session: NamedDependency[AsyncSession],
+    current_user: NamedDependency[User],
+) -> list[BacklogEntryResponse]:
+    api_key = _resolve_api_key(current_user)
+
+    try:
+        created = await steam_service.import_library(db_session, current_user, api_key)
+    except ValidationError as error:
+        raise ClientException(str(error)) from error
+    except httpx.HTTPError as error:
+        raise ServiceUnavailableException(_STEAM_UNAVAILABLE) from error
+
+    return [BacklogEntryResponse.from_entry(entry) for entry in created]
+
+
 steam_router = Router(
     path="",
-    route_handlers=[sync_steam_playtimes],
+    route_handlers=[sync_steam_playtimes, import_steam_library],
     dependencies={"current_user": Provide(get_current_user)},
     security=BEARER_SECURITY_REQUIREMENT,
 )

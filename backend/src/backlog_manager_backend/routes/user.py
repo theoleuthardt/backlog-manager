@@ -84,6 +84,7 @@ async def update_own_user(
                 password_hash=_hash_if_present(data.password),
                 steam_id=data.steam_id,
                 steam_api_key_encrypted=_encrypt_steam_api_key_if_present(data.steam_api_key),
+                steam_auto_import_enabled=data.steam_auto_import_enabled,
             ),
         )
     except ConflictError as error:
@@ -171,6 +172,7 @@ async def update_user_admin(
                 password_hash=_hash_if_present(data.password),
                 steam_id=data.steam_id,
                 steam_api_key_encrypted=_encrypt_steam_api_key_if_present(data.steam_api_key),
+                steam_auto_import_enabled=data.steam_auto_import_enabled,
                 is_admin=data.is_admin,
             ),
         )

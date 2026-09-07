@@ -338,6 +338,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/user/steam/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** ImportSteamLibrary */
+        post: operations["ApiUserSteamImportImportSteamLibrary"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/csv/parse": {
         parameters: {
             query?: never;
@@ -781,6 +798,8 @@ export interface components {
             steam_id?: string | null;
             /** @default false */
             has_steam_api_key?: boolean;
+            /** @default false */
+            steam_auto_import_enabled?: boolean;
         };
         /** PublicUsername */
         PublicUsername: {
@@ -852,6 +871,7 @@ export interface components {
             password?: string;
             steam_id?: string | null;
             steam_api_key?: string | null;
+            steam_auto_import_enabled?: boolean;
         };
         /** UpdateUserAdminRequest */
         UpdateUserAdminRequest: {
@@ -860,6 +880,7 @@ export interface components {
             password?: string;
             steam_id?: string | null;
             steam_api_key?: string | null;
+            steam_auto_import_enabled?: boolean;
             is_admin?: boolean;
         };
     };
@@ -1868,6 +1889,26 @@ export interface operations {
         };
     };
     ApiUserSteamSyncSyncSteamPlaytimes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BacklogEntryResponse"][];
+                };
+            };
+        };
+    };
+    ApiUserSteamImportImportSteamLibrary: {
         parameters: {
             query?: never;
             header?: never;

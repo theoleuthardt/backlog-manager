@@ -5,10 +5,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backlog_manager_backend.errors import ValidationError
 from backlog_manager_backend.integrations.steam import get_owned_games
 from backlog_manager_backend.repositories import backlog_entry_repo
-from backlog_manager_backend.schemas.backlog_entry import BacklogEntry, UpdateBacklogEntryParams
+from backlog_manager_backend.schemas.backlog_entry import (
+    BacklogEntry,
+    CreateBacklogEntryParams,
+    UpdateBacklogEntryParams,
+)
 from backlog_manager_backend.schemas.user import User
 
 _MINUTES_PER_HOUR = Decimal(60)
+_IMPORTED_PLATFORM = "PC"
+_IMPORTED_STATUS = "Not Started"
+_IMPORTED_INTEREST = 5
 
 
 def _minutes_to_hours(minutes: int) -> Decimal:
@@ -45,3 +52,42 @@ async def sync_playtimes(session: AsyncSession, user: User, api_key: str) -> lis
             )
         )
     return updated
+
+
+async def import_library(session: AsyncSession, user: User, api_key: str) -> list[BacklogEntry]:
+    """Creates a backlog entry for every Steam-owned game not already
+    linked to one by steam_app_id. Metadata beyond title/steam_app_id/
+    playtime is deliberately minimal (no IGDB/HLTB enrichment) - see
+    issue #153's open questions; a user can fill in genre etc. by hand
+    afterwards."""
+    if not user.steam_id:
+        raise ValidationError("Steam account is not linked")
+
+    owned_games = await get_owned_games(user.steam_id, api_key)
+    existing_app_ids = {
+        entry.steam_app_id
+        for entry in await backlog_entry_repo.get_backlog_entries_by_user(session, user.id)
+        if entry.steam_app_id is not None
+    }
+
+    created: list[BacklogEntry] = []
+    for game in owned_games:
+        if game.appid in existing_app_ids:
+            continue
+        created.append(
+            await backlog_entry_repo.create_backlog_entry(
+                session,
+                CreateBacklogEntryParams(
+                    user_id=user.id,
+                    title=game.name,
+                    genre="",
+                    platform=_IMPORTED_PLATFORM,
+                    status=_IMPORTED_STATUS,
+                    owned=True,
+                    interest=_IMPORTED_INTEREST,
+                    playtime=_minutes_to_hours(game.playtime_forever),
+                    steam_app_id=game.appid,
+                ),
+            )
+        )
+    return created

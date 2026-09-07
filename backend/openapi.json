@@ -1937,6 +1937,34 @@
         ]
       }
     },
+    "/api/user/steam/import": {
+      "post": {
+        "summary": "ImportSteamLibrary",
+        "operationId": "ApiUserSteamImportImportSteamLibrary",
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BacklogEntryResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/csv/parse": {
       "post": {
         "summary": "ParseCsv",
@@ -4399,6 +4427,10 @@
           "has_steam_api_key": {
             "type": "boolean",
             "default": false
+          },
+          "steam_auto_import_enabled": {
+            "type": "boolean",
+            "default": false
           }
         },
         "type": "object",
@@ -4761,6 +4793,13 @@
                 "type": "null"
               }
             ]
+          },
+          "steam_auto_import_enabled": {
+            "oneOf": [
+              {
+                "type": "boolean"
+              }
+            ]
           }
         },
         "type": "object",
@@ -4807,6 +4846,13 @@
               },
               {
                 "type": "null"
+              }
+            ]
+          },
+          "steam_auto_import_enabled": {
+            "oneOf": [
+              {
+                "type": "boolean"
               }
             ]
           },
