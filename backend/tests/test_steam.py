@@ -3,7 +3,11 @@ from collections.abc import Callable
 import httpx
 import pytest
 
-from backlog_manager_backend.integrations.steam import get_owned_games
+from backlog_manager_backend.integrations.steam import (
+    get_achievement_schema,
+    get_owned_games,
+    get_player_achievements,
+)
 
 _SAMPLE_RESPONSE = {
     "response": {
@@ -95,3 +99,147 @@ async def test_get_owned_games_raises_on_timeout(monkeypatch: pytest.MonkeyPatch
 
     with pytest.raises(httpx.HTTPError):
         await get_owned_games("1234", "api-key")
+
+
+_SAMPLE_PLAYER_ACHIEVEMENTS_RESPONSE = {
+    "playerstats": {
+        "steamID": "1234",
+        "gameName": "Celeste",
+        "achievements": [
+            {
+                "apiname": "ach_a",
+                "achieved": 1,
+                "unlocktime": 1000,
+                "name": "Achievement A",
+                "description": "Do the thing",
+            },
+            {"apiname": "ach_b", "achieved": 0, "unlocktime": 0, "name": "Achievement B"},
+        ],
+        "success": True,
+    }
+}
+
+
+async def test_get_player_achievements_returns_parsed_results(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.params["key"] == "api-key"
+        assert request.url.params["steamid"] == "1234"
+        assert request.url.params["appid"] == "504230"
+        return httpx.Response(200, json=_SAMPLE_PLAYER_ACHIEVEMENTS_RESPONSE)
+
+    _mock_client(handler, monkeypatch)
+
+    stats = await get_player_achievements("1234", 504230, "api-key")
+
+    assert stats.success is True
+    assert len(stats.achievements) == 2
+    assert stats.achievements[0].apiname == "ach_a"
+    assert stats.achievements[0].achieved == 1
+
+
+async def test_get_player_achievements_returns_unsuccessful_when_app_has_no_stats(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200, json={"playerstats": {"success": False, "error": "Requested app has no stats"}}
+        )
+
+    _mock_client(handler, monkeypatch)
+
+    stats = await get_player_achievements("1234", 504230, "api-key")
+
+    assert stats.success is False
+    assert stats.achievements == []
+
+
+async def test_get_player_achievements_raises_on_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(403)
+
+    _mock_client(handler, monkeypatch)
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await get_player_achievements("1234", 504230, "bad-key")
+
+
+async def test_get_player_achievements_raises_on_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectTimeout("timed out")
+
+    _mock_client(handler, monkeypatch)
+
+    with pytest.raises(httpx.HTTPError):
+        await get_player_achievements("1234", 504230, "api-key")
+
+
+_SAMPLE_SCHEMA_RESPONSE = {
+    "game": {
+        "gameName": "Celeste",
+        "gameVersion": "1",
+        "availableGameStats": {
+            "achievements": [
+                {
+                    "name": "ach_a",
+                    "defaultvalue": 0,
+                    "displayName": "Achievement A",
+                    "hidden": 0,
+                    "description": "Do the thing",
+                    "icon": "https://example.com/a.jpg",
+                    "icongray": "https://example.com/a_gray.jpg",
+                }
+            ]
+        },
+    }
+}
+
+
+async def test_get_achievement_schema_returns_parsed_results(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.params["key"] == "api-key"
+        assert request.url.params["appid"] == "504230"
+        return httpx.Response(200, json=_SAMPLE_SCHEMA_RESPONSE)
+
+    _mock_client(handler, monkeypatch)
+
+    schema = await get_achievement_schema(504230, "api-key")
+
+    assert len(schema) == 1
+    assert schema[0].name == "ach_a"
+    assert schema[0].display_name == "Achievement A"
+    assert schema[0].icon == "https://example.com/a.jpg"
+
+
+async def test_get_achievement_schema_returns_empty_list_when_game_has_no_stats(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"game": {"gameName": "Celeste", "gameVersion": "1"}})
+
+    _mock_client(handler, monkeypatch)
+
+    assert await get_achievement_schema(504230, "api-key") == []
+
+
+async def test_get_achievement_schema_raises_on_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(403)
+
+    _mock_client(handler, monkeypatch)
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await get_achievement_schema(504230, "bad-key")
+
+
+async def test_get_achievement_schema_raises_on_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectTimeout("timed out")
+
+    _mock_client(handler, monkeypatch)
+
+    with pytest.raises(httpx.HTTPError):
+        await get_achievement_schema(504230, "api-key")

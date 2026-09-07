@@ -196,3 +196,67 @@ class SteamAppListResult(msgspec.Struct):
 
 class SteamGetAppListEnvelope(msgspec.Struct):
     applist: SteamAppListResult
+
+
+class SteamAchievement(msgspec.Struct):
+    """name/description are only present when the request passed a
+    language (l=...) - see get_player_achievements."""
+
+    apiname: str
+    achieved: int
+    unlocktime: int = 0
+    name: str | None = None
+    description: str | None = None
+
+
+class SteamPlayerStats(msgspec.Struct, rename={"game_name": "gameName"}):
+    """success is false (achievements omitted) when the requested app
+    has no stats, or the profile/game details aren't public - not an
+    error, just no achievement data available."""
+
+    success: bool = False
+    game_name: str | None = None
+    achievements: list[SteamAchievement] = []
+
+
+class SteamGetPlayerAchievementsEnvelope(msgspec.Struct):
+    playerstats: SteamPlayerStats
+
+
+class SteamAchievementSchema(msgspec.Struct, rename={"display_name": "displayName"}):
+    name: str
+    display_name: str = ""
+    description: str | None = None
+    icon: str | None = None
+    icongray: str | None = None
+    hidden: int = 0
+
+
+class SteamAvailableGameStats(msgspec.Struct):
+    achievements: list[SteamAchievementSchema] = []
+
+
+class SteamGameSchema(msgspec.Struct, rename={"available_game_stats": "availableGameStats"}):
+    """available_game_stats is omitted entirely when the app has no
+    stats at all, same as SteamPlayerStats.achievements above."""
+
+    available_game_stats: SteamAvailableGameStats | None = None
+
+
+class SteamGetSchemaForGameEnvelope(msgspec.Struct):
+    game: SteamGameSchema
+
+
+class AchievementInfo(msgspec.Struct):
+    apiname: str
+    display_name: str
+    description: str | None
+    icon: str | None
+    achieved: bool
+    unlock_time: int
+
+
+class AchievementProgress(msgspec.Struct):
+    unlocked: int
+    total: int
+    achievements: list[AchievementInfo]

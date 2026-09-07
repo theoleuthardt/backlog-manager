@@ -347,6 +347,140 @@ async def test_sync_steam_playtimes_also_imports_new_games_when_auto_import_enab
     assert call_count == 1
 
 
+@pytest.fixture(autouse=True)
+def _reset_achievement_schema_cache(monkeypatch: pytest.MonkeyPatch) -> None:
+    from backlog_manager_backend.services import steam_service
+
+    monkeypatch.setattr(steam_service, "_achievement_schema_cache", {})
+
+
+async def test_get_steam_achievements_returns_progress(
+    postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    _configure_steam_api_key(monkeypatch)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if "GetPlayerAchievements" in request.url.path:
+            return httpx.Response(
+                200,
+                json={
+                    "playerstats": {
+                        "success": True,
+                        "achievements": [
+                            {
+                                "apiname": "ach_a",
+                                "achieved": 1,
+                                "unlocktime": 1000,
+                                "name": "A",
+                                "description": "desc a",
+                            },
+                            {"apiname": "ach_b", "achieved": 0, "unlocktime": 0, "name": "B"},
+                        ],
+                    }
+                },
+            )
+        return httpx.Response(
+            200,
+            json={
+                "game": {
+                    "availableGameStats": {
+                        "achievements": [
+                            {
+                                "name": "ach_a",
+                                "displayName": "Achievement A",
+                                "description": "Do the thing",
+                                "icon": "https://example.com/a.jpg",
+                            }
+                        ]
+                    }
+                }
+            },
+        )
+
+    _mock_steam(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "achievements@example.com")
+        client.put("/api/user/me", headers=headers, json={"steam_id": "76561197960287930"})
+
+        response = client.get(
+            "/api/user/steam/achievements",
+            headers=headers,
+            params={"steam_app_id": 504230},
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["unlocked"] == 1
+    assert body["total"] == 2
+    assert body["achievements"][0]["display_name"] == "Achievement A"
+    assert body["achievements"][0]["icon"] == "https://example.com/a.jpg"
+
+
+async def test_get_steam_achievements_requires_linked_account(
+    postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    _configure_steam_api_key(monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "noachievements@example.com")
+        response = client.get(
+            "/api/user/steam/achievements", headers=headers, params={"steam_app_id": 504230}
+        )
+
+    assert response.status_code == 400
+
+
+async def test_get_steam_achievements_returns_503_when_not_configured(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "achievementsunconfigured@example.com")
+        response = client.get(
+            "/api/user/steam/achievements", headers=headers, params={"steam_app_id": 504230}
+        )
+
+    assert response.status_code == 503
+
+
+async def test_get_steam_achievements_returns_503_on_transport_failure(
+    postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    _configure_steam_api_key(monkeypatch)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("connection refused", request=request)
+
+    _mock_steam(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "achievementsdown@example.com")
+        client.put("/api/user/me", headers=headers, json={"steam_id": "76561197960287930"})
+
+        response = client.get(
+            "/api/user/steam/achievements", headers=headers, params={"steam_app_id": 504230}
+        )
+
+    assert response.status_code == 503
+
+
+async def test_get_steam_achievements_requires_authentication(postgres_url: str) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        response = client.get("/api/user/steam/achievements", params={"steam_app_id": 504230})
+
+    assert response.status_code == 401
+
+
 async def test_sync_steam_playtimes_does_not_import_when_auto_import_disabled(
     postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
 ) -> None:

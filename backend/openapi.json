@@ -1965,6 +1965,82 @@
         ]
       }
     },
+    "/api/user/steam/achievements": {
+      "get": {
+        "summary": "GetSteamAchievements",
+        "operationId": "ApiUserSteamAchievementsGetSteamAchievements",
+        "parameters": [
+          {
+            "name": "steam_app_id",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true,
+            "deprecated": false,
+            "allowEmptyValue": false,
+            "allowReserved": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AchievementProgress"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request syntax or unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Validation Exception",
+                  "examples": [
+                    {
+                      "status_code": 400,
+                      "detail": "Bad Request",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/csv/parse": {
       "post": {
         "summary": "ParseCsv",
@@ -2899,6 +2975,75 @@
   },
   "components": {
     "schemas": {
+      "AchievementInfo": {
+        "properties": {
+          "apiname": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "description": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "icon": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "achieved": {
+            "type": "boolean"
+          },
+          "unlock_time": {
+            "type": "integer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "achieved",
+          "apiname",
+          "description",
+          "display_name",
+          "icon",
+          "unlock_time"
+        ],
+        "title": "AchievementInfo"
+      },
+      "AchievementProgress": {
+        "properties": {
+          "unlocked": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "achievements": {
+            "items": {
+              "$ref": "#/components/schemas/AchievementInfo"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object",
+        "required": [
+          "achievements",
+          "total",
+          "unlocked"
+        ],
+        "title": "AchievementProgress"
+      },
       "BacklogEntryResponse": {
         "properties": {
           "id": {

@@ -3,16 +3,22 @@ import msgspec
 import structlog
 
 from backlog_manager_backend.integrations.types import (
+    SteamAchievementSchema,
     SteamApp,
     SteamGetAppListEnvelope,
     SteamGetOwnedGamesEnvelope,
+    SteamGetPlayerAchievementsEnvelope,
+    SteamGetSchemaForGameEnvelope,
     SteamOwnedGame,
+    SteamPlayerStats,
 )
 
 logger = structlog.get_logger()
 
 _BASE_URL = "https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/"
 _APP_LIST_URL = "https://api.steampowered.com/ISteamApps/GetAppList/v2/"
+_PLAYER_ACHIEVEMENTS_URL = "https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/"
+_SCHEMA_FOR_GAME_URL = "https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/"
 
 
 async def get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
@@ -83,3 +89,73 @@ async def get_app_list() -> list[SteamApp]:
         raise httpx.DecodingError("Steam Web API returned an invalid response") from error
 
     return envelope.applist.apps
+
+
+async def get_player_achievements(steam_id: str, app_id: int, api_key: str) -> SteamPlayerStats:
+    """Raises on transport/HTTP/decode failure like get_owned_games.
+    playerstats.success is false (not an exception) when the app has
+    no stats, or the profile/game details aren't public - callers
+    treat that as "no achievement data available" rather than an
+    error. l=english so the response includes each achievement's
+    name/description, not just its apiname/achieved flag."""
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
+            response = await client.get(
+                _PLAYER_ACHIEVEMENTS_URL,
+                params={
+                    "appid": app_id,
+                    "key": api_key,
+                    "steamid": steam_id,
+                    "l": "english",
+                    "format": "json",
+                },
+            )
+    except httpx.HTTPError as error:
+        logger.error("GetPlayerAchievements error", error=str(error))
+        raise
+
+    if response.status_code >= 400:
+        raise httpx.HTTPStatusError(
+            f"Steam Web API error: {response.status_code}",
+            request=response.request,
+            response=response,
+        )
+
+    try:
+        envelope = msgspec.json.decode(response.content, type=SteamGetPlayerAchievementsEnvelope)
+    except msgspec.DecodeError as error:
+        logger.error("GetPlayerAchievements decode error", error=str(error))
+        raise httpx.DecodingError("Steam Web API returned an invalid response") from error
+
+    return envelope.playerstats
+
+
+async def get_achievement_schema(app_id: int, api_key: str) -> list[SteamAchievementSchema]:
+    """Static per-game achievement metadata (display name, description,
+    icon URLs) - unlike get_player_achievements, this carries no
+    per-user data, so callers can cache it indefinitely per app_id."""
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
+            response = await client.get(
+                _SCHEMA_FOR_GAME_URL,
+                params={"appid": app_id, "key": api_key, "format": "json"},
+            )
+    except httpx.HTTPError as error:
+        logger.error("GetSchemaForGame error", error=str(error))
+        raise
+
+    if response.status_code >= 400:
+        raise httpx.HTTPStatusError(
+            f"Steam Web API error: {response.status_code}",
+            request=response.request,
+            response=response,
+        )
+
+    try:
+        envelope = msgspec.json.decode(response.content, type=SteamGetSchemaForGameEnvelope)
+    except msgspec.DecodeError as error:
+        logger.error("GetSchemaForGame decode error", error=str(error))
+        raise httpx.DecodingError("Steam Web API returned an invalid response") from error
+
+    available_game_stats = envelope.game.available_game_stats
+    return available_game_stats.achievements if available_game_stats else []

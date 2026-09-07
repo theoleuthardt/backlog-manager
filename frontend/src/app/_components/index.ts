@@ -18,6 +18,7 @@ import { CreationToolForm } from "./CreationToolForm";
 import { RequireAuth } from "./RequireAuth";
 import { AccountContent } from "./AccountContent";
 import { HeroCta } from "./HeroCta";
+import { AchievementProgress } from "./AchievementProgress";
 
 export {
   Navbar,
@@ -40,4 +41,5 @@ export {
   RequireAuth,
   AccountContent,
   HeroCta,
+  AchievementProgress,
 };
