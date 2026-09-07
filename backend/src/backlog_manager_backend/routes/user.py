@@ -49,11 +49,15 @@ def _hash_if_present(password: str | object) -> str | object:
 def _encrypt_steam_api_key_if_present(steam_api_key: str | None | object) -> str | None | object:
     if not isinstance(steam_api_key, str):
         return steam_api_key
-    if not steam_api_key.strip():
+    trimmed = steam_api_key.strip()
+    if not trimmed:
         return None
     if not settings.steam_api_key_encryption_key:
         raise ServiceUnavailableException("Steam API key storage is not configured")
-    return encrypt(steam_api_key, settings.steam_api_key_encryption_key)
+    try:
+        return encrypt(trimmed, settings.steam_api_key_encryption_key)
+    except ValueError as error:
+        raise ServiceUnavailableException("Steam API key storage is not configured") from error
 
 
 @get("/api/user/me", security=BEARER_SECURITY_REQUIREMENT)

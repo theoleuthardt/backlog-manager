@@ -293,9 +293,12 @@ async def test_update_own_user_clears_steam_api_key_with_empty_string(
 
 
 async def test_update_own_user_returns_503_when_steam_key_storage_not_configured(
-    postgres_url: str, create_and_login
+    postgres_url: str, create_and_login, monkeypatch
 ) -> None:
     from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.routes import user as user_routes
+
+    monkeypatch.setattr(user_routes.settings, "steam_api_key_encryption_key", None)
 
     app = create_app()
 
@@ -306,3 +309,49 @@ async def test_update_own_user_returns_503_when_steam_key_storage_not_configured
         )
 
     assert response.status_code == 503
+
+
+async def test_update_own_user_returns_503_when_encryption_key_is_malformed(
+    postgres_url: str, create_and_login, monkeypatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.routes import user as user_routes
+
+    monkeypatch.setattr(user_routes.settings, "steam_api_key_encryption_key", "not-a-valid-fernet-key")
+
+    app = create_app()
+
+    with TestClient(app=app) as client:
+        headers = await create_and_login(client, "badencryptionkey@example.com")
+        response = client.put(
+            "/api/user/me", headers=headers, json={"steam_api_key": "my-steam-key"}
+        )
+
+    assert response.status_code == 503
+
+
+async def test_update_own_user_trims_steam_api_key_before_storing(
+    postgres_url: str, create_and_login, monkeypatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.auth.encryption import decrypt
+    from backlog_manager_backend.db import async_session
+    from backlog_manager_backend.repositories import user_repo
+    from backlog_manager_backend.routes import user as user_routes
+
+    key = Fernet.generate_key().decode()
+    monkeypatch.setattr(user_routes.settings, "steam_api_key_encryption_key", key)
+
+    app = create_app()
+
+    with TestClient(app=app) as client:
+        headers = await create_and_login(client, "trimsteamkey@example.com")
+        client.put(
+            "/api/user/me", headers=headers, json={"steam_api_key": "  my-steam-key  "}
+        )
+
+    async with async_session() as session:
+        stored = await user_repo.get_user_by_email(session, "trimsteamkey@example.com")
+
+    assert stored is not None
+    assert decrypt(stored.steam_api_key_encrypted, key) == "my-steam-key"

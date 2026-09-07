@@ -1,4 +1,5 @@
 import httpx
+from cryptography.fernet import InvalidToken
 from litestar import Router, post
 from litestar.di import NamedDependency, Provide
 from litestar.exceptions import ClientException, ServiceUnavailableException
@@ -18,7 +19,10 @@ _STEAM_UNAVAILABLE = "Steam Web API is currently unreachable"
 
 def _resolve_api_key(user: User) -> str:
     if user.steam_api_key_encrypted and settings.steam_api_key_encryption_key:
-        return decrypt(user.steam_api_key_encrypted, settings.steam_api_key_encryption_key)
+        try:
+            return decrypt(user.steam_api_key_encrypted, settings.steam_api_key_encryption_key)
+        except (InvalidToken, ValueError) as error:
+            raise ServiceUnavailableException(_STEAM_UNAVAILABLE) from error
     if settings.steam_web_api_key:
         return settings.steam_web_api_key
     raise ServiceUnavailableException(_STEAM_NOT_CONFIGURED)
