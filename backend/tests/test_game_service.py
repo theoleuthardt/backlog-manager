@@ -27,7 +27,7 @@ def game_service(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
     import, which requires that env var to already be set."""
     from backlog_manager_backend.services import game_service as module
 
-    monkeypatch.setattr(module, "_cached_token", None)
+    monkeypatch.setattr(module, "_token_cache", {})
     monkeypatch.setattr(module, "_genre_cache", {})
     monkeypatch.setattr(module, "_platform_cache", {})
     monkeypatch.setattr(module, "_game_cache", {})
@@ -44,12 +44,13 @@ def game_service(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
 
 
 async def test_get_valid_token_raises_without_credentials(
-    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+    game_service: ModuleType,
 ) -> None:
-    monkeypatch.setattr(game_service.settings, "igdb_client_id", None)
+    with pytest.raises(RuntimeError, match="IGDB credentials not configured"):
+        await game_service.get_valid_token("", "secret")
 
     with pytest.raises(RuntimeError, match="IGDB credentials not configured"):
-        await game_service.get_valid_token()
+        await game_service.get_valid_token("cid", "")
 
 
 async def test_get_valid_token_fetches_and_caches(
@@ -64,12 +65,64 @@ async def test_get_valid_token_fetches_and_caches(
 
     monkeypatch.setattr(game_service, "generate_igdb_token", fake_generate_token)
 
-    first = await game_service.get_valid_token()
-    second = await game_service.get_valid_token()
+    first = await game_service.get_valid_token("cid", "secret")
+    second = await game_service.get_valid_token("cid", "secret")
 
     assert first == "tok"
     assert second == "tok"
     assert call_count == 1
+
+
+async def test_get_valid_token_does_not_share_cached_token_across_client_ids(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Different IGDB credentials (a user's own vs. another user's, or
+    the global fallback) must never share a cached access token - that
+    would silently spend one credential's quota against a request made
+    under a different one."""
+
+    async def fake_generate_token(client_id: str, client_secret: str) -> IGDBTokenResponse:
+        return IGDBTokenResponse(
+            access_token=f"tok-for-{client_id}", expires_in=3600, token_type="bearer"
+        )
+
+    monkeypatch.setattr(game_service, "generate_igdb_token", fake_generate_token)
+
+    first_user_token = await game_service.get_valid_token("cid-a", "secret-a")
+    second_user_token = await game_service.get_valid_token("cid-b", "secret-b")
+    first_user_token_again = await game_service.get_valid_token("cid-a", "secret-a")
+
+    assert first_user_token == "tok-for-cid-a"
+    assert second_user_token == "tok-for-cid-b"
+    assert first_user_token_again == "tok-for-cid-a"
+
+
+async def test_get_valid_token_refetches_once_a_different_clients_token_expired(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Expiring one client_id's cached token must not affect another
+    client_id's still-valid cached token - each entry in the per-client
+    cache expires independently."""
+    call_counts: dict[str, int] = {"cid-a": 0, "cid-b": 0}
+
+    async def fake_generate_token(client_id: str, client_secret: str) -> IGDBTokenResponse:
+        call_counts[client_id] += 1
+        expires_in = 0 if client_id == "cid-a" else 3600
+        return IGDBTokenResponse(
+            access_token=f"tok-for-{client_id}-{call_counts[client_id]}",
+            expires_in=expires_in,
+            token_type="bearer",
+        )
+
+    monkeypatch.setattr(game_service, "generate_igdb_token", fake_generate_token)
+
+    await game_service.get_valid_token("cid-a", "secret-a")
+    await game_service.get_valid_token("cid-b", "secret-b")
+    await game_service.get_valid_token("cid-a", "secret-a")
+    await game_service.get_valid_token("cid-b", "secret-b")
+
+    assert call_counts["cid-a"] == 2
+    assert call_counts["cid-b"] == 1
 
 
 async def test_search_reuses_cached_genre_and_platform_names(
@@ -107,7 +160,7 @@ async def test_search_reuses_cached_genre_and_platform_names(
     ) -> list[IGDBGameTimeToBeat]:
         return [IGDBGameTimeToBeat(id=1, game_id=1, normally=3600)]
 
-    async def fake_get_valid_token() -> str:
+    async def fake_get_valid_token(client_id: str, client_secret: str) -> str:
         return "tok"
 
     monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
@@ -119,8 +172,8 @@ async def test_search_reuses_cached_genre_and_platform_names(
     )
     monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
 
-    await game_service.search("Celeste")
-    await game_service.search("Celeste")
+    await game_service.search("Celeste", "cid", "secret")
+    await game_service.search("Celeste", "cid", "secret")
 
     assert genres_call_count == 1
     assert platforms_call_count == 1
@@ -173,7 +226,7 @@ async def test_search_falls_back_to_hltb_when_igdb_has_no_beat_time(
             )
         ]
 
-    async def fake_get_valid_token() -> str:
+    async def fake_get_valid_token(client_id: str, client_secret: str) -> str:
         return "tok"
 
     monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
@@ -187,7 +240,7 @@ async def test_search_falls_back_to_hltb_when_igdb_has_no_beat_time(
     monkeypatch.setattr(game_service, "search_game_on_hltb", fake_search_game_on_hltb)
     monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
 
-    results = await game_service.search("Celeste")
+    results = await game_service.search("Celeste", "cid", "secret")
 
     assert results == [
         EnrichedResult(
@@ -262,7 +315,7 @@ async def test_search_batches_multiple_results_into_one_call_each(
             IGDBGameTimeToBeat(id=2, game_id=2, normally=7200),
         ]
 
-    async def fake_get_valid_token() -> str:
+    async def fake_get_valid_token(client_id: str, client_secret: str) -> str:
         return "tok"
 
     monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
@@ -275,7 +328,7 @@ async def test_search_batches_multiple_results_into_one_call_each(
     )
     monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
 
-    results = await game_service.search("metroidvania")
+    results = await game_service.search("metroidvania", "cid", "secret")
 
     assert len(results) == 2
     assert call_counts == {"games": 1, "covers": 1, "genres": 1, "platforms": 1, "time_to_beat": 1}
@@ -311,7 +364,7 @@ async def test_search_reuses_cached_game_and_cover_data(
     ) -> list[IGDBGameTimeToBeat]:
         return [IGDBGameTimeToBeat(id=1, game_id=1, normally=3600)]
 
-    async def fake_get_valid_token() -> str:
+    async def fake_get_valid_token(client_id: str, client_secret: str) -> str:
         return "tok"
 
     monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
@@ -322,8 +375,8 @@ async def test_search_reuses_cached_game_and_cover_data(
     )
     monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
 
-    await game_service.search("Celeste")
-    await game_service.search("Celeste")
+    await game_service.search("Celeste", "cid", "secret")
+    await game_service.search("Celeste", "cid", "secret")
 
     assert games_call_count == 1
     assert covers_call_count == 1
@@ -365,7 +418,7 @@ async def test_search_caches_hltb_fallback_time_to_beat(
             )
         ]
 
-    async def fake_get_valid_token() -> str:
+    async def fake_get_valid_token(client_id: str, client_secret: str) -> str:
         return "tok"
 
     monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
@@ -376,8 +429,8 @@ async def test_search_caches_hltb_fallback_time_to_beat(
     monkeypatch.setattr(game_service, "search_game_on_hltb", fake_search_game_on_hltb)
     monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
 
-    await game_service.search("Celeste")
-    await game_service.search("Celeste")
+    await game_service.search("Celeste", "cid", "secret")
+    await game_service.search("Celeste", "cid", "secret")
 
     assert hltb_call_count == 1
 
@@ -418,7 +471,7 @@ async def test_search_falls_back_to_hltb_when_igdb_time_to_beat_is_all_zero(
             )
         ]
 
-    async def fake_get_valid_token() -> str:
+    async def fake_get_valid_token(client_id: str, client_secret: str) -> str:
         return "tok"
 
     monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
@@ -429,7 +482,7 @@ async def test_search_falls_back_to_hltb_when_igdb_time_to_beat_is_all_zero(
     monkeypatch.setattr(game_service, "search_game_on_hltb", fake_search_game_on_hltb)
     monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
 
-    results = await game_service.search("Celeste")
+    results = await game_service.search("Celeste", "cid", "secret")
 
     assert results[0].hltb_id == 999
     assert results[0].main_story == 8.5
@@ -493,7 +546,7 @@ async def test_search_excludes_dlc_hits_that_crowd_out_the_base_game(
             for game_id in game_ids
         ]
 
-    async def fake_get_valid_token() -> str:
+    async def fake_get_valid_token(client_id: str, client_secret: str) -> str:
         return "tok"
 
     monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
@@ -503,7 +556,7 @@ async def test_search_excludes_dlc_hits_that_crowd_out_the_base_game(
     )
     monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
 
-    results = await game_service.search("SnowRunner")
+    results = await game_service.search("SnowRunner", "cid", "secret")
 
     assert len(results) == 1
     assert results[0].id == raw_hit_count
@@ -634,7 +687,7 @@ async def test_search_dedupes_multiple_raw_hits_resolving_to_the_same_game(
     ) -> list[IGDBGameTimeToBeat]:
         return [IGDBGameTimeToBeat(id=1, game_id=1, normally=3600)]
 
-    async def fake_get_valid_token() -> str:
+    async def fake_get_valid_token(client_id: str, client_secret: str) -> str:
         return "tok"
 
     monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
@@ -644,7 +697,7 @@ async def test_search_dedupes_multiple_raw_hits_resolving_to_the_same_game(
     )
     monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
 
-    results = await game_service.search("Dave the Diver")
+    results = await game_service.search("Dave the Diver", "cid", "secret")
 
     assert len(results) == 1
     assert results[0].id == 1
@@ -668,23 +721,21 @@ async def test_search_returns_empty_list_when_games_batch_fails(
     ) -> list[IGDBGameData]:
         return []
 
-    async def fake_get_valid_token() -> str:
+    async def fake_get_valid_token(client_id: str, client_secret: str) -> str:
         return "tok"
 
     monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
     monkeypatch.setattr(game_service, "get_games_on_igdb", fake_get_games_on_igdb)
     monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
 
-    assert await game_service.search("Celeste") == []
+    assert await game_service.search("Celeste", "cid", "secret") == []
 
 
-async def test_search_raises_without_client_id(
-    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+async def test_search_raises_without_credentials(
+    game_service: ModuleType,
 ) -> None:
-    monkeypatch.setattr(game_service.settings, "igdb_client_id", None)
-
-    with pytest.raises(RuntimeError, match="IGDB_CLIENT_ID not configured"):
-        await game_service.search("Celeste")
+    with pytest.raises(RuntimeError, match="IGDB credentials not configured"):
+        await game_service.search("Celeste", "", "")
 
 
 async def test_find_steam_app_id_matches_by_exact_title(
@@ -925,7 +976,7 @@ async def test_search_prefers_steamgriddb_cover_over_igdb(
     ) -> list[SteamGridDBGrid]:
         return [SteamGridDBGrid(id=1, url="https://example.com/steamgriddb.png", thumb="")]
 
-    async def fake_get_valid_token() -> str:
+    async def fake_get_valid_token(client_id: str, client_secret: str) -> str:
         return "tok"
 
     monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
@@ -942,7 +993,7 @@ async def test_search_prefers_steamgriddb_cover_over_igdb(
     )
     monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
 
-    results = await game_service.search("Celeste")
+    results = await game_service.search("Celeste", "cid", "secret")
 
     assert results[0].image_url == "https://example.com/steamgriddb.png"
 
@@ -990,7 +1041,7 @@ async def test_search_falls_back_to_igdb_cover_when_steamgriddb_has_none(
     ) -> list[SteamGridDBGrid]:
         return []
 
-    async def fake_get_valid_token() -> str:
+    async def fake_get_valid_token(client_id: str, client_secret: str) -> str:
         return "tok"
 
     monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
@@ -1007,7 +1058,7 @@ async def test_search_falls_back_to_igdb_cover_when_steamgriddb_has_none(
     )
     monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
 
-    results = await game_service.search("Celeste")
+    results = await game_service.search("Celeste", "cid", "secret")
 
     assert results[0].image_url == (
         "https://images.igdb.com/igdb/image/upload/t_cover_big/abc123.jpg"

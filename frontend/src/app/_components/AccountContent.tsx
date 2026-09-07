@@ -58,6 +58,10 @@ export function AccountContent() {
   const [steamApiKey, setSteamApiKey] = useState("");
   const [isSavingSteamApiKey, setIsSavingSteamApiKey] = useState(false);
 
+  const [igdbClientId, setIgdbClientId] = useState("");
+  const [igdbClientSecret, setIgdbClientSecret] = useState("");
+  const [isSavingIgdbCredentials, setIsSavingIgdbCredentials] = useState(false);
+
   const enrollMutation = useEnrollTwoFactor();
   const verifyMutation = useVerifyTwoFactorEnrollment();
   const disableMutation = useDisableTwoFactor();
@@ -114,6 +118,41 @@ export function AccountContent() {
       );
     } finally {
       setIsSavingSteamApiKey(false);
+    }
+  };
+
+  const handleSaveIgdbCredentials = async () => {
+    setIsSavingIgdbCredentials(true);
+    try {
+      await updateCurrentUser({
+        igdbClientId,
+        igdbClientSecret,
+      });
+      await refreshUser();
+      setIgdbClientId("");
+      setIgdbClientSecret("");
+      toast.success("IGDB credentials saved");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to save IGDB credentials",
+      );
+    } finally {
+      setIsSavingIgdbCredentials(false);
+    }
+  };
+
+  const handleRemoveIgdbCredentials = async () => {
+    setIsSavingIgdbCredentials(true);
+    try {
+      await updateCurrentUser({ igdbClientId: "", igdbClientSecret: "" });
+      await refreshUser();
+      toast.success("IGDB credentials removed");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to remove IGDB credentials",
+      );
+    } finally {
+      setIsSavingIgdbCredentials(false);
     }
   };
 
@@ -336,6 +375,78 @@ export function AccountContent() {
             synced
           </Label>
         </div>
+      </div>
+
+      <div className="rounded-lg border-2 border-white bg-black p-6">
+        <h2 className="mb-2 text-xl font-semibold">IGDB</h2>
+        <p className="mb-4 text-sm text-gray-300">
+          Used to search for games and fetch metadata (genres, platforms,
+          release info) when creating or updating a backlog entry.
+        </p>
+        <p className="mb-2 text-sm text-gray-300">
+          {user.hasIgdbCredentials
+            ? "Your own IGDB Client ID and Client Secret are set and used for game search."
+            : "Optionally set your own IGDB Client ID and Client Secret. Falls back to the server's credentials otherwise."}
+        </p>
+        <div className="flex max-w-sm flex-col gap-2">
+          <Input
+            type="text"
+            value={igdbClientId}
+            onChange={(e) => setIgdbClientId(e.target.value)}
+            placeholder={
+              user.hasIgdbCredentials
+                ? "Enter a new Client ID to replace it"
+                : "IGDB Client ID"
+            }
+            className="border-white/40 bg-black text-white placeholder:text-gray-500"
+          />
+          <Input
+            type="password"
+            value={igdbClientSecret}
+            onChange={(e) => setIgdbClientSecret(e.target.value)}
+            placeholder={
+              user.hasIgdbCredentials
+                ? "Enter a new Client Secret to replace it"
+                : "IGDB Client Secret"
+            }
+            className="border-white/40 bg-black text-white placeholder:text-gray-500"
+          />
+          <div className="flex gap-2">
+            <Button
+              className={FILLED_BUTTON}
+              onClick={() => void handleSaveIgdbCredentials()}
+              disabled={
+                isSavingIgdbCredentials ||
+                igdbClientId.trim().length === 0 ||
+                igdbClientSecret.trim().length === 0
+              }
+            >
+              {isSavingIgdbCredentials ? "Saving..." : "Save"}
+            </Button>
+            {user.hasIgdbCredentials && (
+              <Button
+                variant="outline"
+                className={OUTLINE_BUTTON}
+                onClick={() => void handleRemoveIgdbCredentials()}
+                disabled={isSavingIgdbCredentials}
+              >
+                Remove
+              </Button>
+            )}
+          </div>
+        </div>
+        <p className="mt-2 text-xs text-gray-500">
+          Create a Twitch application at{" "}
+          <a
+            href="https://dev.twitch.tv/console/apps"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 underline hover:text-blue-300"
+          >
+            dev.twitch.tv/console/apps
+          </a>{" "}
+          to get an IGDB Client ID and Client Secret.
+        </p>
       </div>
 
       <Dialog open={isEnrollOpen} onOpenChange={(open) => !open && closeEnroll()}>

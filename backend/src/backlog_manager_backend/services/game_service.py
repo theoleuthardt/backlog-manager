@@ -43,7 +43,12 @@ _MAIN_GAME_TYPE_RANKS = {0: 0, 8: 1, 9: 1, 10: 1}
 _OTHER_GAME_TYPE_RANK = 2
 _EXCLUDED_GAME_TYPES = {1, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14}
 
-_cached_token: dict[str, object] | None = None
+# Keyed by client_id rather than a single global slot - different IGDB
+# credentials (a user's own vs. another user's, or the global fallback)
+# must never share a cached access token, since that would silently
+# spend one credential's quota against a request made under a
+# different one.
+_token_cache: dict[str, dict[str, object]] = {}
 _genre_cache: dict[int, str] = {}
 _platform_cache: dict[int, str] = {}
 # Unbounded, no-TTL, same style as the genre/platform caches above -
@@ -73,27 +78,28 @@ _STEAMGRIDDB_COVER_CACHE_MAX_SIZE = 500
 _steamgriddb_cover_cache: dict[int, list[str]] = {}
 
 
-async def get_valid_token() -> str:
-    """Gets a valid IGDB access token, using the cached one if it hasn't
-    expired yet (expires_in is in seconds; refreshed 5 minutes early)."""
-    global _cached_token
-
-    client_id = settings.igdb_client_id
-    client_secret = settings.igdb_client_secret
+async def get_valid_token(client_id: str, client_secret: str) -> str:
+    """Gets a valid IGDB access token for the given credentials, using
+    the cached one if it hasn't expired yet (expires_in is in seconds;
+    refreshed 5 minutes early). Cached per client_id (see _token_cache)
+    so a caller's credentials never resolve to a token generated for
+    someone else's - each user (and the global fallback) can have their
+    own IGDB client_id/client_secret pair."""
     if not client_id or not client_secret:
         raise RuntimeError(
             "IGDB credentials not configured. Please set IGDB_CLIENT_ID and "
             "IGDB_CLIENT_SECRET environment variables."
         )
 
-    if _cached_token is not None and _cached_token["expires_at"] > time.monotonic():
-        return str(_cached_token["access_token"])
+    cached = _token_cache.get(client_id)
+    if cached is not None and cached["expires_at"] > time.monotonic():
+        return str(cached["access_token"])
 
     token_response = await generate_igdb_token(client_id, client_secret)
     if not token_response.access_token:
         raise RuntimeError("Failed to generate IGDB access token")
 
-    _cached_token = {
+    _token_cache[client_id] = {
         "access_token": token_response.access_token,
         "expires_at": time.monotonic() + (token_response.expires_in - 300),
     }
@@ -383,7 +389,7 @@ async def _enrich_search_results(
     return results
 
 
-async def search(search_term: str) -> list[EnrichedResult]:
+async def search(search_term: str, client_id: str, client_secret: str) -> list[EnrichedResult]:
     """Enriched search: finds games on IGDB, then fills in cover image,
     genres, platforms and beat-time data (falling back to HowLongToBeat
     when IGDB has no beat-time data). Batches every lookup into at most
@@ -393,12 +399,10 @@ async def search(search_term: str) -> list[EnrichedResult]:
     remake/remaster/expanded_game first) before being truncated to
     _SEARCH_RESULT_LIMIT in _enrich_search_results - see issue #154,
     where DLC/alternate-version hits were crowding the base game out of
-    the top results."""
-    client_id = settings.igdb_client_id
-    if not client_id:
-        raise RuntimeError("IGDB_CLIENT_ID not configured")
-
-    access_token = await get_valid_token()
+    the top results. `client_id`/`client_secret` are the caller's
+    resolved IGDB credentials (their own, or the global settings
+    fallback) - see routes/games.py::_resolve_igdb_credentials."""
+    access_token = await get_valid_token(client_id, client_secret)
     search_results = await search_game_on_igdb(search_term, client_id, access_token)
     return await _enrich_search_results(search_results, client_id, access_token, search_term)
 

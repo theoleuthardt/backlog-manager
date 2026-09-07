@@ -717,6 +717,7 @@ export interface components {
             alternative_names?: number[] | null;
             artworks?: number[] | null;
             bundles?: number[] | null;
+            category?: number | null;
             cover?: number | null;
             created_at?: number | null;
             dlcs?: number[] | null;
@@ -865,6 +866,8 @@ export interface components {
             /** @default false */
             has_steam_api_key?: boolean;
             /** @default false */
+            has_igdb_credentials?: boolean;
+            /** @default false */
             steam_auto_import_enabled?: boolean;
         };
         /** PublicUsername */
@@ -937,6 +940,8 @@ export interface components {
             password?: string;
             steam_id?: string | null;
             steam_api_key?: string | null;
+            igdb_client_id?: string | null;
+            igdb_client_secret?: string | null;
             steam_auto_import_enabled?: boolean;
         };
         /** UpdateUserAdminRequest */
@@ -946,6 +951,8 @@ export interface components {
             password?: string;
             steam_id?: string | null;
             steam_api_key?: string | null;
+            igdb_client_id?: string | null;
+            igdb_client_secret?: string | null;
             steam_auto_import_enabled?: boolean;
             is_admin?: boolean;
         };
@@ -1966,6 +1973,7 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "cache-control"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -1986,6 +1994,7 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "cache-control"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2008,6 +2017,7 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "cache-control"?: string;
                     [name: string]: unknown;
                 };
                 content: {

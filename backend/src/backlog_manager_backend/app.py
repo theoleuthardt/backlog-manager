@@ -11,15 +11,9 @@ from backlog_manager_backend.routes.auth import login, login_verify, two_factor_
 from backlog_manager_backend.routes.backlog import backlog_router
 from backlog_manager_backend.routes.csv import csv_router
 from backlog_manager_backend.routes.games import (
-    enriched_search,
-    get_cover,
-    get_game,
-    get_game_time_to_beat,
-    get_genre,
-    get_platform,
+    authenticated_games_router,
     get_steam_app_id,
     get_steamgriddb_covers,
-    search_game,
 )
 from backlog_manager_backend.routes.health import health
 from backlog_manager_backend.routes.images import proxy_image
@@ -47,13 +41,7 @@ def create_app() -> Litestar:
             admin_user_router,
             steam_router,
             csv_router,
-            search_game,
-            enriched_search,
-            get_game,
-            get_game_time_to_beat,
-            get_platform,
-            get_cover,
-            get_genre,
+            authenticated_games_router,
             get_steam_app_id,
             get_steamgriddb_covers,
         ],

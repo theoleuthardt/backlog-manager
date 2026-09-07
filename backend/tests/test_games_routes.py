@@ -13,7 +13,7 @@ def configured_igdb(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
     on import)."""
     from backlog_manager_backend.services import game_service as module
 
-    monkeypatch.setattr(module, "_cached_token", None)
+    monkeypatch.setattr(module, "_token_cache", {})
     monkeypatch.setattr(module, "_genre_cache", {})
     monkeypatch.setattr(module, "_platform_cache", {})
     monkeypatch.setattr(module, "_game_cache", {})
@@ -49,14 +49,17 @@ def _token_or(data_response: object) -> Callable[[httpx.Request], httpx.Response
 
 
 async def test_search_game(
-    configured_igdb: ModuleType, monkeypatch: pytest.MonkeyPatch, postgres_url: str
+    configured_igdb: ModuleType, monkeypatch: pytest.MonkeyPatch, postgres_url: str, create_and_login
 ) -> None:
     from backlog_manager_backend.app import create_app
 
     _mock_igdb(_token_or([{"id": 1, "name": "Zelda", "game": 1}]), monkeypatch)
 
     with TestClient(app=create_app()) as client:
-        response = client.get("/api/games/search", params={"search_term": "Zelda"})
+        headers = await create_and_login(client, "search1@example.com")
+        response = client.get(
+            "/api/games/search", params={"search_term": "Zelda"}, headers=headers
+        )
 
     assert response.status_code == 200
     body = response.json()
@@ -67,97 +70,108 @@ async def test_search_game(
 
 
 async def test_search_game_requires_search_term(
-    configured_igdb: ModuleType, postgres_url: str
+    configured_igdb: ModuleType, postgres_url: str, create_and_login
 ) -> None:
     from backlog_manager_backend.app import create_app
 
     with TestClient(app=create_app()) as client:
-        response = client.get("/api/games/search")
+        headers = await create_and_login(client, "search2@example.com")
+        response = client.get("/api/games/search", headers=headers)
 
     assert response.status_code == 400
 
 
-async def test_search_game_returns_503_when_igdb_not_configured(postgres_url: str) -> None:
+async def test_search_game_returns_503_when_igdb_not_configured(
+    postgres_url: str, create_and_login
+) -> None:
     from backlog_manager_backend.app import create_app
 
     with TestClient(app=create_app()) as client:
-        response = client.get("/api/games/search", params={"search_term": "Zelda"})
+        headers = await create_and_login(client, "search3@example.com")
+        response = client.get(
+            "/api/games/search", params={"search_term": "Zelda"}, headers=headers
+        )
 
     assert response.status_code == 503
 
 
 async def test_get_game(
-    configured_igdb: ModuleType, monkeypatch: pytest.MonkeyPatch, postgres_url: str
+    configured_igdb: ModuleType, monkeypatch: pytest.MonkeyPatch, postgres_url: str, create_and_login
 ) -> None:
     from backlog_manager_backend.app import create_app
 
     _mock_igdb(_token_or([{"id": 141503, "name": "Hollow Knight"}]), monkeypatch)
 
     with TestClient(app=create_app()) as client:
-        response = client.get("/api/games/141503")
+        headers = await create_and_login(client, "getgame@example.com")
+        response = client.get("/api/games/141503", headers=headers)
 
     assert response.status_code == 200
     assert response.json()[0]["name"] == "Hollow Knight"
 
 
 async def test_get_game_time_to_beat(
-    configured_igdb: ModuleType, monkeypatch: pytest.MonkeyPatch, postgres_url: str
+    configured_igdb: ModuleType, monkeypatch: pytest.MonkeyPatch, postgres_url: str, create_and_login
 ) -> None:
     from backlog_manager_backend.app import create_app
 
     _mock_igdb(_token_or([{"id": 1, "game_id": 141503, "normally": 3600}]), monkeypatch)
 
     with TestClient(app=create_app()) as client:
-        response = client.get("/api/games/141503/time-to-beat")
+        headers = await create_and_login(client, "timetobeat@example.com")
+        response = client.get("/api/games/141503/time-to-beat", headers=headers)
 
     assert response.status_code == 200
     assert response.json()[0]["game_id"] == 141503
 
 
 async def test_get_platform(
-    configured_igdb: ModuleType, monkeypatch: pytest.MonkeyPatch, postgres_url: str
+    configured_igdb: ModuleType, monkeypatch: pytest.MonkeyPatch, postgres_url: str, create_and_login
 ) -> None:
     from backlog_manager_backend.app import create_app
 
     _mock_igdb(_token_or([{"id": 169, "name": "PC (Microsoft Windows)"}]), monkeypatch)
 
     with TestClient(app=create_app()) as client:
-        response = client.get("/api/games/platforms/169")
+        headers = await create_and_login(client, "platform@example.com")
+        response = client.get("/api/games/platforms/169", headers=headers)
 
     assert response.status_code == 200
     assert response.json()[0]["name"] == "PC (Microsoft Windows)"
 
 
 async def test_get_cover(
-    configured_igdb: ModuleType, monkeypatch: pytest.MonkeyPatch, postgres_url: str
+    configured_igdb: ModuleType, monkeypatch: pytest.MonkeyPatch, postgres_url: str, create_and_login
 ) -> None:
     from backlog_manager_backend.app import create_app
 
     _mock_igdb(_token_or([{"id": 1, "image_id": "abc123"}]), monkeypatch)
 
     with TestClient(app=create_app()) as client:
-        response = client.get("/api/games/covers/1")
+        headers = await create_and_login(client, "cover@example.com")
+        response = client.get("/api/games/covers/1", headers=headers)
 
     assert response.status_code == 200
     assert response.json()[0]["image_id"] == "abc123"
 
 
 async def test_get_genre(
-    configured_igdb: ModuleType, monkeypatch: pytest.MonkeyPatch, postgres_url: str
+    configured_igdb: ModuleType, monkeypatch: pytest.MonkeyPatch, postgres_url: str, create_and_login
 ) -> None:
     from backlog_manager_backend.app import create_app
 
     _mock_igdb(_token_or([{"id": 10, "name": "Adventure"}]), monkeypatch)
 
     with TestClient(app=create_app()) as client:
-        response = client.get("/api/games/genres/10")
+        headers = await create_and_login(client, "genre@example.com")
+        response = client.get("/api/games/genres/10", headers=headers)
 
     assert response.status_code == 200
     assert response.json()[0]["name"] == "Adventure"
 
 
 async def test_enriched_search(
-    configured_igdb: ModuleType, monkeypatch: pytest.MonkeyPatch, postgres_url: str
+    configured_igdb: ModuleType, monkeypatch: pytest.MonkeyPatch, postgres_url: str, create_and_login
 ) -> None:
     from backlog_manager_backend.app import create_app
 
@@ -181,7 +195,10 @@ async def test_enriched_search(
     _mock_igdb(handler, monkeypatch)
 
     with TestClient(app=create_app()) as client:
-        response = client.get("/api/games/enriched-search", params={"search_term": "Celeste"})
+        headers = await create_and_login(client, "enriched1@example.com")
+        response = client.get(
+            "/api/games/enriched-search", params={"search_term": "Celeste"}, headers=headers
+        )
 
     assert response.status_code == 200
     body = response.json()
@@ -192,7 +209,7 @@ async def test_enriched_search(
 
 
 async def test_enriched_search_batches_multiple_results(
-    configured_igdb: ModuleType, monkeypatch: pytest.MonkeyPatch, postgres_url: str
+    configured_igdb: ModuleType, monkeypatch: pytest.MonkeyPatch, postgres_url: str, create_and_login
 ) -> None:
     """End-to-end regression test for issue #105 through the real route:
     2 search results must only hit each IGDB endpoint once, not once per
@@ -244,7 +261,10 @@ async def test_enriched_search_batches_multiple_results(
     _mock_igdb(handler, monkeypatch)
 
     with TestClient(app=create_app()) as client:
-        response = client.get("/api/games/enriched-search", params={"search_term": "metroidvania"})
+        headers = await create_and_login(client, "enriched2@example.com")
+        response = client.get(
+            "/api/games/enriched-search", params={"search_term": "metroidvania"}, headers=headers
+        )
 
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -258,17 +278,22 @@ async def test_enriched_search_batches_multiple_results(
     }
 
 
-async def test_enriched_search_returns_503_when_igdb_not_configured(postgres_url: str) -> None:
+async def test_enriched_search_returns_503_when_igdb_not_configured(
+    postgres_url: str, create_and_login
+) -> None:
     from backlog_manager_backend.app import create_app
 
     with TestClient(app=create_app()) as client:
-        response = client.get("/api/games/enriched-search", params={"search_term": "Celeste"})
+        headers = await create_and_login(client, "enriched3@example.com")
+        response = client.get(
+            "/api/games/enriched-search", params={"search_term": "Celeste"}, headers=headers
+        )
 
     assert response.status_code == 503
 
 
 async def test_search_game_returns_503_on_transport_failure(
-    configured_igdb: ModuleType, monkeypatch: pytest.MonkeyPatch, postgres_url: str
+    configured_igdb: ModuleType, monkeypatch: pytest.MonkeyPatch, postgres_url: str, create_and_login
 ) -> None:
     """Regression test: a connection failure during the actual IGDB data
     query (after a token was already obtained) used to propagate
@@ -286,13 +311,16 @@ async def test_search_game_returns_503_on_transport_failure(
     _mock_igdb(handler, monkeypatch)
 
     with TestClient(app=create_app()) as client:
-        response = client.get("/api/games/search", params={"search_term": "Zelda"})
+        headers = await create_and_login(client, "transport1@example.com")
+        response = client.get(
+            "/api/games/search", params={"search_term": "Zelda"}, headers=headers
+        )
 
     assert response.status_code == 503
 
 
 async def test_search_game_returns_503_when_token_request_fails(
-    configured_igdb: ModuleType, monkeypatch: pytest.MonkeyPatch, postgres_url: str
+    configured_igdb: ModuleType, monkeypatch: pytest.MonkeyPatch, postgres_url: str, create_and_login
 ) -> None:
     """Same failure class, one step earlier: a transport failure while
     acquiring the IGDB access token itself."""
@@ -304,13 +332,16 @@ async def test_search_game_returns_503_when_token_request_fails(
     _mock_igdb(handler, monkeypatch)
 
     with TestClient(app=create_app()) as client:
-        response = client.get("/api/games/search", params={"search_term": "Zelda"})
+        headers = await create_and_login(client, "transport2@example.com")
+        response = client.get(
+            "/api/games/search", params={"search_term": "Zelda"}, headers=headers
+        )
 
     assert response.status_code == 503
 
 
 async def test_enriched_search_returns_503_on_transport_failure(
-    configured_igdb: ModuleType, monkeypatch: pytest.MonkeyPatch, postgres_url: str
+    configured_igdb: ModuleType, monkeypatch: pytest.MonkeyPatch, postgres_url: str, create_and_login
 ) -> None:
     from backlog_manager_backend.app import create_app
 
@@ -324,7 +355,10 @@ async def test_enriched_search_returns_503_on_transport_failure(
     _mock_igdb(handler, monkeypatch)
 
     with TestClient(app=create_app()) as client:
-        response = client.get("/api/games/enriched-search", params={"search_term": "Celeste"})
+        headers = await create_and_login(client, "transport3@example.com")
+        response = client.get(
+            "/api/games/enriched-search", params={"search_term": "Celeste"}, headers=headers
+        )
 
     assert response.status_code == 503
 

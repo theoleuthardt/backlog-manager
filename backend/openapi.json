@@ -1916,7 +1916,15 @@
         "responses": {
           "200": {
             "description": "Request fulfilled, document follows",
-            "headers": {},
+            "headers": {
+              "cache-control": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -1944,7 +1952,15 @@
         "responses": {
           "200": {
             "description": "Request fulfilled, document follows",
-            "headers": {},
+            "headers": {
+              "cache-control": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -1985,7 +2001,15 @@
         "responses": {
           "200": {
             "description": "Request fulfilled, document follows",
-            "headers": {},
+            "headers": {
+              "cache-control": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -2383,7 +2407,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/api/games/enriched-search": {
@@ -2457,7 +2486,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/api/games/{game_id}": {
@@ -2529,7 +2563,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/api/games/{game_id}/time-to-beat": {
@@ -2601,7 +2640,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/api/games/platforms/{platform_id}": {
@@ -2673,7 +2717,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/api/games/covers/{cover_id}": {
@@ -2745,7 +2794,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/api/games/genres/{genre_id}": {
@@ -2817,7 +2871,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/api/games/steam-app-id": {
@@ -3686,6 +3745,16 @@
                   "type": "integer"
                 },
                 "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "category": {
+            "oneOf": [
+              {
+                "type": "integer"
               },
               {
                 "type": "null"
@@ -4725,6 +4794,10 @@
             "type": "boolean",
             "default": false
           },
+          "has_igdb_credentials": {
+            "type": "boolean",
+            "default": false
+          },
           "steam_auto_import_enabled": {
             "type": "boolean",
             "default": false
@@ -5091,6 +5164,26 @@
               }
             ]
           },
+          "igdb_client_id": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "igdb_client_secret": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "steam_auto_import_enabled": {
             "oneOf": [
               {
@@ -5137,6 +5230,26 @@
             ]
           },
           "steam_api_key": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "igdb_client_id": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "igdb_client_secret": {
             "oneOf": [
               {
                 "type": "string"

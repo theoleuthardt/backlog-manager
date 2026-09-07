@@ -11,6 +11,7 @@ export interface CurrentUser {
   updatedAt: string;
   steamId?: string;
   hasSteamApiKey: boolean;
+  hasIgdbCredentials: boolean;
   steamAutoImportEnabled: boolean;
 }
 
@@ -54,6 +55,7 @@ export async function getCurrentUser(): Promise<CurrentUser> {
     updatedAt: data.updated_at,
     steamId: data.steam_id ?? undefined,
     hasSteamApiKey: data.has_steam_api_key ?? false,
+    hasIgdbCredentials: data.has_igdb_credentials ?? false,
     steamAutoImportEnabled: data.steam_auto_import_enabled ?? false,
   };
 }
