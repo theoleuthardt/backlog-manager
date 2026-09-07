@@ -17,6 +17,7 @@ import { DashboardContent } from "./DashboardContent";
 import { CreationToolForm } from "./CreationToolForm";
 import { RequireAuth } from "./RequireAuth";
 import { AccountContent } from "./AccountContent";
+import { HeroCta } from "./HeroCta";
 
 export {
   Navbar,
@@ -38,4 +39,5 @@ export {
   CreationToolForm,
   RequireAuth,
   AccountContent,
+  HeroCta,
 };

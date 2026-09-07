@@ -145,6 +145,12 @@ export default function LoginPage() {
         ) : (
           <div className="flex flex-col items-center gap-4">
             <p className="mb-6 text-2xl">You are logged in as {user.name}.</p>
+            <button
+              onClick={() => router.push("/dashboard")}
+              className="rounded-full bg-blue-600 px-10 py-3 font-semibold text-white transition hover:bg-blue-700"
+            >
+              Go to Dashboard
+            </button>
             <p className="mb-4 text-center text-lg text-gray-300">
               If you want to logout, click the button below.
             </p>

@@ -17,7 +17,7 @@ task install       # npm install (frontend) + uv sync (backend)
 task dev           # Next.js dev server
 task backend:dev   # Litestar dev server (uvicorn --reload)
 task db:up         # local Postgres + pgAdmin via compose.yml
-task test          # frontend (vitest) + backend (pytest) suites
+task test          # backend (pytest) suite
 task lint          # frontend (eslint) + backend (ruff)
 task backend:migration -- "add foo column"   # new Alembic revision
 task backend:migrate                          # alembic upgrade head
@@ -44,12 +44,9 @@ npm run typecheck    # TypeScript check
 # Formatting
 npm run format:check # Check Prettier formatting
 npm run format:write # Apply Prettier formatting
-
-# Testing (run from frontend/, not delegated from root)
-npx vitest run       # Run all tests once
-npx vitest           # Run tests in watch mode
-npx vitest run test/createReadDBTests.test.ts  # Run single test file
 ```
+
+The frontend has no test suite; only the backend is tested (pytest).
 
 Backend (`backend/`, uv-managed):
 ```bash
@@ -79,7 +76,6 @@ uv run ruff check .  # Lint
 - `src/app/context/AuthContext.tsx` - auth state (login, 2FA challenge, current user), replaces NextAuth's `SessionProvider`
 - `src/app/_components/` - React components
 - `src/components/ui/` - shadcn/ui primitives
-- `test/` - Vitest tests (frontend no longer has its own DB access layer to test against testcontainers - that's the backend's job now)
 
 **Key Directories** (all under `backend/src/backlog_manager_backend/`):
 - `routes/` - Litestar HTTP handlers (`auth.py`, `backlog.py`, `csv.py`, `games.py`, `user.py`, `health.py`)
