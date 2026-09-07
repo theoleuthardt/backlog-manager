@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "NODE_OPTIONS='--max-old-space-size=4096' next build --webpack",
-    "build:tauri": "TAURI_BUILD=1 NODE_OPTIONS='--max-old-space-size=4096' next build --webpack",
+    "build:tauri": "cross-env TAURI_BUILD=1 NODE_OPTIONS=--max-old-space-size=4096 next build --webpack",
     "check": "eslint . && tsc --noEmit",
     "dev": "NODE_OPTIONS='--max-old-space-size=4096' next dev --turbo",
     "dev:webpack": "NODE_OPTIONS='--max-old-space-size=4096' next dev --webpack",
@@ -63,6 +63,7 @@
     "@types/react-dom": "19.2.3",
     "@types/uuid": "^10.0.0",
     "baseline-browser-mapping": "^2.8.32",
+    "cross-env": "^10.1.0",
     "dotenv": "^17.2.3",
     "eslint": "^9.23.0",
     "eslint-config-next": "16.3.4",

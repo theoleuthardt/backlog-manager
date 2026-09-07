@@ -13,6 +13,19 @@ logger = structlog.get_logger()
 # generic anonymizing image fetcher for arbitrary URLs.
 _ALLOWED_HOSTS = {"howlongtobeat.com", "images.igdb.com"}
 
+# Only inert raster formats are ever returned - forwarding an upstream's
+# Content-Type verbatim (e.g. text/html from a misconfigured host, or
+# image/svg+xml, which can embed <script>) would let this endpoint serve
+# attacker-influenced content the browser might render as more than a
+# picture.
+_ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"}
+
+# A generous ceiling for a game cover image - bounds memory use per request
+# regardless of what an allowlisted host (or a compromised/misconfigured
+# one) claims or actually sends, since an unauthenticated caller could
+# otherwise request a very large resource repeatedly to exhaust memory.
+_MAX_IMAGE_BYTES = 10 * 1024 * 1024
+
 _TIMEOUT = httpx.Timeout(15.0)
 
 _BASE_HEADERS = {
@@ -22,6 +35,13 @@ _BASE_HEADERS = {
     ),
     "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
 }
+
+_INVALID_URL = Response("Invalid URL", status_code=HTTP_400_BAD_REQUEST, media_type="text/plain")
+_NOT_FOUND = Response("Image not found", status_code=HTTP_404_NOT_FOUND, media_type="text/plain")
+_TOO_LARGE = Response("Image too large", status_code=HTTP_400_BAD_REQUEST, media_type="text/plain")
+_UNSUPPORTED_TYPE = Response(
+    "Unsupported content type", status_code=HTTP_400_BAD_REQUEST, media_type="text/plain"
+)
 
 
 def _headers_for(host: str) -> dict[str, str]:
@@ -38,28 +58,41 @@ def _headers_for(host: str) -> dict[str, str]:
 
 @get("/api/images/proxy")
 async def proxy_image(url: FromQuery[str]) -> Response:
-    host = urlparse(url).hostname
-    if host not in _ALLOWED_HOSTS:
-        return Response("Invalid URL", status_code=HTTP_400_BAD_REQUEST, media_type="text/plain")
+    parsed = urlparse(url)
+    if parsed.scheme != "https" or parsed.hostname not in _ALLOWED_HOSTS:
+        return _INVALID_URL
 
     try:
-        async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
-            upstream = await client.get(url, headers=_headers_for(host))
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as client, client.stream(
+            "GET", url, headers=_headers_for(parsed.hostname)
+        ) as upstream:
+            if upstream.status_code >= 400:
+                logger.error("Upstream image error", url=url, status_code=upstream.status_code)
+                return _NOT_FOUND
+
+            content_type = upstream.headers.get("content-type", "").split(";")[0].strip().lower()
+            if content_type not in _ALLOWED_CONTENT_TYPES:
+                logger.error(
+                    "Rejected unsupported image content type", url=url, content_type=content_type
+                )
+                return _UNSUPPORTED_TYPE
+
+            content_length = upstream.headers.get("content-length")
+            if content_length is not None and int(content_length) > _MAX_IMAGE_BYTES:
+                return _TOO_LARGE
+
+            body = bytearray()
+            async for chunk in upstream.aiter_bytes():
+                body.extend(chunk)
+                if len(body) > _MAX_IMAGE_BYTES:
+                    return _TOO_LARGE
     except httpx.HTTPError as error:
         logger.error("Error proxying image", url=url, error=str(error))
-        return Response(
-            "Failed to fetch image", status_code=HTTP_404_NOT_FOUND, media_type="text/plain"
-        )
-
-    if upstream.status_code >= 400:
-        logger.error("Upstream image error", url=url, status_code=upstream.status_code)
-        return Response(
-            "Image not found", status_code=HTTP_404_NOT_FOUND, media_type="text/plain"
-        )
+        return _NOT_FOUND
 
     return Response(
-        upstream.content,
-        media_type=upstream.headers.get("content-type", "image/jpeg"),
+        bytes(body),
+        media_type=content_type,
         headers={
             "Cache-Control": "public, max-age=86400, immutable",
             "Access-Control-Allow-Origin": "*",

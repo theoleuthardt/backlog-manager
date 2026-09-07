@@ -37,16 +37,16 @@ npm run tauri:build   # produces installers in src-tauri/target/release/bundle/
 ### Linux
 ```bash
 # Debian/Ubuntu
-sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file \
+sudo apt install libwebkit2gtk-4.1-dev libxdo-dev build-essential curl wget file \
   libssl-dev libayatana-appindicator3-dev librsvg2-dev
 
 # Fedora
-sudo dnf install webkit2gtk4.1-devel openssl-devel curl wget file \
+sudo dnf install webkit2gtk4.1-devel libxdo-devel openssl-devel curl wget file \
   libappindicator-gtk3-devel librsvg2-devel
 
 # Arch
-sudo pacman -S --needed webkit2gtk base-devel curl wget file openssl \
-  appmenu-gtk-module libappindicator-gtk3 librsvg
+sudo pacman -S --needed webkit2gtk-4.1 base-devel curl wget file openssl \
+  appmenu-gtk-module libappindicator-gtk3 librsvg xdotool
 ```
 
 ## Scripts

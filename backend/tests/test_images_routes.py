@@ -117,3 +117,69 @@ async def test_proxy_image_returns_404_on_transport_failure(
         )
 
     assert response.status_code == 404
+
+
+async def test_proxy_image_rejects_non_https_url(
+    monkeypatch: pytest.MonkeyPatch, postgres_url: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise AssertionError("should never call out for a non-https URL")
+
+    _mock_client(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get(
+            "/api/images/proxy",
+            params={"url": "http://images.igdb.com/igdb/image/upload/t_cover_big/abc.jpg"},
+        )
+
+    assert response.status_code == 400
+
+
+async def test_proxy_image_rejects_unsupported_content_type(
+    monkeypatch: pytest.MonkeyPatch, postgres_url: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200, content=b"<script>alert(1)</script>", headers={"content-type": "image/svg+xml"}
+        )
+
+    _mock_client(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get(
+            "/api/images/proxy",
+            params={"url": "https://images.igdb.com/igdb/image/upload/t_cover_big/abc.svg"},
+        )
+
+    assert response.status_code == 400
+
+
+async def test_proxy_image_rejects_oversized_response(
+    monkeypatch: pytest.MonkeyPatch, postgres_url: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.routes import images as images_module
+
+    monkeypatch.setattr(images_module, "_MAX_IMAGE_BYTES", 10)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            content=b"way more than ten bytes of image data" * 10,
+            headers={"content-type": "image/jpeg"},
+        )
+
+    _mock_client(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get(
+            "/api/images/proxy",
+            params={"url": "https://images.igdb.com/igdb/image/upload/t_cover_big/huge.jpg"},
+        )
+
+    assert response.status_code == 400
