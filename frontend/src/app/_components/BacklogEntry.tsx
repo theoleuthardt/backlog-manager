@@ -47,7 +47,9 @@ import {
 export const BacklogEntry = (props: BacklogEntryProps) => {
   const [imageLink, setImageLink] = useState(props.imageLink);
   const [newImageUrl, setNewImageUrl] = useState("");
-  const [playtime, setPlaytime] = useState(props.playtime ?? 0);
+  const [playtime, setPlaytime] = useState<number | undefined>(
+    props.playtime,
+  );
   const [genre, setGenre] = useState(props.genre?.join(", ") ?? "");
   const [platform, setPlatform] = useState(props.platform?.join(", ") ?? "");
   const [status, setStatus] = useState(props.status ?? "");
@@ -86,12 +88,15 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
         status?: string;
         owned?: boolean;
         interest?: number;
+        playtime?: number;
         reviewStars?: number;
         review?: string;
         note?: string;
       } = {};
 
       if (imageLink !== props.imageLink) changes.imageLink = imageLink;
+      if (playtime !== undefined && playtime !== props.playtime)
+        changes.playtime = playtime;
       if (genre !== (props.genre?.join(", ") ?? ""))
         changes.genre = genre
           .split(",")
@@ -261,8 +266,14 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                     <Input
                       id="playtime"
                       type="number"
-                      value={playtime}
-                      onChange={(e) => setPlaytime(Number(e.target.value))}
+                      value={playtime ?? ""}
+                      onChange={(e) =>
+                        setPlaytime(
+                          e.target.value === ""
+                            ? undefined
+                            : Number(e.target.value),
+                        )
+                      }
                       className="bg-black text-white"
                     />
                   </div>

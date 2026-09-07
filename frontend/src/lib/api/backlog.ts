@@ -24,9 +24,7 @@ export interface BacklogEntryData {
   mainTime?: number;
   mainPlusExtraTime?: number;
   completionTime?: number;
-  /** No playtime column in the DB yet - kept for the UI's sake, matching
-   * the old tRPC router's own TODO. */
-  playtime: number;
+  playtime?: number;
 }
 
 export interface CreateBacklogEntryInput {
@@ -44,6 +42,7 @@ export interface CreateBacklogEntryInput {
   mainTime?: number;
   mainPlusExtraTime?: number;
   completionTime?: number;
+  playtime?: number;
   reviewStars?: number;
   review?: string;
   note?: string;
@@ -60,6 +59,7 @@ export interface UpdateBacklogEntryInput {
   mainTime?: number;
   mainPlusExtraTime?: number;
   completionTime?: number;
+  playtime?: number;
   reviewStars?: number;
   review?: string;
   note?: string;
@@ -97,7 +97,7 @@ function toEntryData(
     mainTime: toNumber(entry.main_time),
     mainPlusExtraTime: toNumber(entry.main_plus_extra_time),
     completionTime: toNumber(entry.completion_time),
-    playtime: 0,
+    playtime: toNumber(entry.playtime),
   };
 }
 
@@ -157,6 +157,7 @@ export async function createEntry(
       main_time: input.mainTime?.toString(),
       main_plus_extra_time: input.mainPlusExtraTime?.toString(),
       completion_time: input.completionTime?.toString(),
+      playtime: input.playtime?.toString(),
       review_stars: input.reviewStars,
       review: input.review,
       note: input.note,
@@ -186,6 +187,7 @@ export async function updateEntry(
         main_time: changes.mainTime?.toString(),
         main_plus_extra_time: changes.mainPlusExtraTime?.toString(),
         completion_time: changes.completionTime?.toString(),
+        playtime: changes.playtime?.toString(),
         review_stars: changes.reviewStars,
         review: changes.review,
         note: changes.note,

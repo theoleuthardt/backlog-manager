@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/images/proxy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** ProxyImage */
+        get: operations["ApiImagesProxyProxyImage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/login": {
         parameters: {
             query?: never;
@@ -513,6 +530,7 @@ export interface components {
             main_time?: string | null;
             main_plus_extra_time?: string | null;
             completion_time?: string | null;
+            playtime?: string | null;
             review_stars?: number | null;
             review?: string | null;
             note?: string | null;
@@ -540,6 +558,7 @@ export interface components {
             main_time?: string | null;
             main_plus_extra_time?: string | null;
             completion_time?: string | null;
+            playtime?: string | null;
             review_stars?: number | null;
             review?: string | null;
             note?: string | null;
@@ -792,6 +811,7 @@ export interface components {
             main_time?: string | null;
             main_plus_extra_time?: string | null;
             completion_time?: string | null;
+            playtime?: string | null;
             review_stars?: number | null;
             review?: string | null;
             note?: string | null;
@@ -842,6 +862,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    ApiImagesProxyProxyImage: {
+        parameters: {
+            query: {
+                url: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
                 };
             };
         };
