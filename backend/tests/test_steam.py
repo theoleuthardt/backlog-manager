@@ -33,6 +33,7 @@ async def test_get_owned_games_returns_parsed_results(monkeypatch: pytest.Monkey
     def handler(request: httpx.Request) -> httpx.Response:
         assert request.url.params["key"] == "api-key"
         assert request.url.params["steamid"] == "1234"
+        assert request.url.params["include_played_free_games"] == "1"
         return httpx.Response(200, json=_SAMPLE_RESPONSE)
 
     _mock_client(handler, monkeypatch)
