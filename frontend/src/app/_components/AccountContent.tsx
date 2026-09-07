@@ -53,14 +53,13 @@ export function AccountContent() {
   const [steamIdLoadedFor, setSteamIdLoadedFor] = useState<number | null>(null);
   const [isSavingSteamId, setIsSavingSteamId] = useState(false);
 
+  const [steamApiKey, setSteamApiKey] = useState("");
+  const [isSavingSteamApiKey, setIsSavingSteamApiKey] = useState(false);
+
   const enrollMutation = useEnrollTwoFactor();
   const verifyMutation = useVerifyTwoFactorEnrollment();
   const disableMutation = useDisableTwoFactor();
 
-  // Seeds the input from the loaded user exactly once per user (rather
-  // than in an Effect, which would cause an extra render) - after that,
-  // the input is the source of truth until the user saves or navigates
-  // away.
   if (user && steamIdLoadedFor !== user.id) {
     setSteamIdLoadedFor(user.id);
     setSteamId(user.steamId ?? "");
@@ -80,6 +79,37 @@ export function AccountContent() {
       );
     } finally {
       setIsSavingSteamId(false);
+    }
+  };
+
+  const handleSaveSteamApiKey = async () => {
+    setIsSavingSteamApiKey(true);
+    try {
+      await updateCurrentUser({ steamApiKey });
+      await refreshUser();
+      setSteamApiKey("");
+      toast.success("Steam API key saved");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to save Steam API key",
+      );
+    } finally {
+      setIsSavingSteamApiKey(false);
+    }
+  };
+
+  const handleRemoveSteamApiKey = async () => {
+    setIsSavingSteamApiKey(true);
+    try {
+      await updateCurrentUser({ steamApiKey: "" });
+      await refreshUser();
+      toast.success("Steam API key removed");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to remove Steam API key",
+      );
+    } finally {
+      setIsSavingSteamApiKey(false);
     }
   };
 
@@ -182,6 +212,40 @@ export function AccountContent() {
           >
             {isSavingSteamId ? "Saving..." : "Save"}
           </Button>
+        </div>
+
+        <p className="mt-6 mb-2 text-sm text-gray-300">
+          {user.hasSteamApiKey
+            ? "Your own Steam Web API key is set and used for syncing playtimes."
+            : "Optionally set your own Steam Web API key. Falls back to the server's key otherwise."}
+        </p>
+        <div className="flex max-w-sm gap-2">
+          <Input
+            type="password"
+            value={steamApiKey}
+            onChange={(e) => setSteamApiKey(e.target.value)}
+            placeholder={
+              user.hasSteamApiKey ? "Enter a new key to replace it" : "Steam Web API key"
+            }
+            className="border-white/40 bg-black text-white placeholder:text-gray-500"
+          />
+          <Button
+            className={FILLED_BUTTON}
+            onClick={() => void handleSaveSteamApiKey()}
+            disabled={isSavingSteamApiKey || steamApiKey.trim().length === 0}
+          >
+            {isSavingSteamApiKey ? "Saving..." : "Save"}
+          </Button>
+          {user.hasSteamApiKey && (
+            <Button
+              variant="outline"
+              className={OUTLINE_BUTTON}
+              onClick={() => void handleRemoveSteamApiKey()}
+              disabled={isSavingSteamApiKey}
+            >
+              Remove
+            </Button>
+          )}
         </div>
       </div>
 

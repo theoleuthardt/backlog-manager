@@ -42,6 +42,7 @@ def _to_schema(model: UserModel) -> User:
         created_at=model.created_at,
         updated_at=model.updated_at,
         steam_id=model.steam_id,
+        steam_api_key_encrypted=model.steam_api_key_encrypted,
     )
 
 
@@ -103,6 +104,8 @@ async def update_user(session: AsyncSession, params: UpdateUserParams) -> User:
         model.password_hash = params.password_hash
     if params.steam_id is not msgspec.UNSET:
         model.steam_id = params.steam_id
+    if params.steam_api_key_encrypted is not msgspec.UNSET:
+        model.steam_api_key_encrypted = params.steam_api_key_encrypted
     if params.is_admin is not msgspec.UNSET:
         model.is_admin = params.is_admin
     if params.totp_secret_encrypted is not msgspec.UNSET:

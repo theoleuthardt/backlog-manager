@@ -115,6 +115,42 @@ async def test_sync_steam_playtimes_returns_503_on_transport_failure(
     assert response.status_code == 503
 
 
+async def test_sync_steam_playtimes_prefers_users_own_key_over_server_fallback(
+    postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from cryptography.fernet import Fernet
+
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.routes import steam as steam_routes
+    from backlog_manager_backend.routes import user as user_routes
+
+    monkeypatch.setattr(steam_routes.settings, "steam_web_api_key", "server-api-key")
+    monkeypatch.setattr(
+        user_routes.settings, "steam_api_key_encryption_key", Fernet.generate_key().decode()
+    )
+
+    used_keys: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        used_keys.append(request.url.params["key"])
+        return httpx.Response(200, json={"response": {"games": []}})
+
+    _mock_steam(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "ownsteamkey@example.com")
+        client.put(
+            "/api/user/me",
+            headers=headers,
+            json={"steam_id": "76561197960287930", "steam_api_key": "users-own-key"},
+        )
+
+        response = client.post("/api/user/steam/sync", headers=headers)
+
+    assert response.status_code == 200
+    assert used_keys == ["users-own-key"]
+
+
 async def test_sync_steam_playtimes_requires_authentication(postgres_url: str) -> None:
     from backlog_manager_backend.app import create_app
 

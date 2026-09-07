@@ -10,6 +10,7 @@ export interface CurrentUser {
   createdAt: string;
   updatedAt: string;
   steamId?: string;
+  hasSteamApiKey: boolean;
 }
 
 export type LoginOutcome =
@@ -51,5 +52,6 @@ export async function getCurrentUser(): Promise<CurrentUser> {
     createdAt: data.created_at,
     updatedAt: data.updated_at,
     steamId: data.steam_id ?? undefined,
+    hasSteamApiKey: data.has_steam_api_key ?? false,
   };
 }

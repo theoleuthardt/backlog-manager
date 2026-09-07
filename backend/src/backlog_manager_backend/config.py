@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     igdb_client_id: str | None = None
     igdb_client_secret: str | None = None
     steam_web_api_key: str | None = None
+    steam_api_key_encryption_key: str | None = None
     # There is no public self-registration endpoint - if set, and no users
     # exist yet, the app creates this one admin account on startup. Not
     # read again after that first run.

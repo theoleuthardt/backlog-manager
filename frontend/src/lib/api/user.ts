@@ -6,6 +6,7 @@ export interface UpdateCurrentUserInput {
   email?: string;
   password?: string;
   steamId?: string;
+  steamApiKey?: string;
 }
 
 function toCurrentUser(user: {
@@ -17,6 +18,7 @@ function toCurrentUser(user: {
   created_at: string;
   updated_at: string;
   steam_id?: string | null;
+  has_steam_api_key?: boolean;
 }): CurrentUser {
   return {
     id: user.id,
@@ -27,6 +29,7 @@ function toCurrentUser(user: {
     createdAt: user.created_at,
     updatedAt: user.updated_at,
     steamId: user.steam_id ?? undefined,
+    hasSteamApiKey: user.has_steam_api_key ?? false,
   };
 }
 
@@ -39,6 +42,7 @@ export async function updateCurrentUser(
       email: input.email,
       password: input.password,
       steam_id: input.steamId,
+      steam_api_key: input.steamApiKey,
     },
   });
   if (error) throw new Error(apiErrorMessage(error, "Failed to update user"));

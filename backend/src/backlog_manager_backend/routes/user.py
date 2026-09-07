@@ -1,7 +1,7 @@
 from litestar import Router, delete, get, post, put
 from litestar.datastructures import CacheControlHeader
 from litestar.di import NamedDependency, Provide
-from litestar.exceptions import ClientException, NotFoundException
+from litestar.exceptions import ClientException, NotFoundException, ServiceUnavailableException
 from litestar.params import FromPath
 from litestar.status_codes import HTTP_201_CREATED, HTTP_204_NO_CONTENT, HTTP_409_CONFLICT
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,7 +11,9 @@ from backlog_manager_backend.auth.dependencies import (
     get_current_user,
     require_admin,
 )
+from backlog_manager_backend.auth.encryption import encrypt
 from backlog_manager_backend.auth.passwords import hash_password
+from backlog_manager_backend.config import settings
 from backlog_manager_backend.errors import ConflictError, NotFoundError, ValidationError
 from backlog_manager_backend.repositories import user_repo
 from backlog_manager_backend.schemas.user import (
@@ -44,6 +46,16 @@ def _hash_if_present(password: str | object) -> str | object:
     return hash_password(password) if isinstance(password, str) else password
 
 
+def _encrypt_steam_api_key_if_present(steam_api_key: str | None | object) -> str | None | object:
+    if not isinstance(steam_api_key, str):
+        return steam_api_key
+    if not steam_api_key.strip():
+        return None
+    if not settings.steam_api_key_encryption_key:
+        raise ServiceUnavailableException("Steam API key storage is not configured")
+    return encrypt(steam_api_key, settings.steam_api_key_encryption_key)
+
+
 @get("/api/user/me", security=BEARER_SECURITY_REQUIREMENT)
 async def get_own_user(current_user: NamedDependency[User]) -> PublicUser:
     return PublicUser.from_user(current_user)
@@ -67,6 +79,7 @@ async def update_own_user(
                 email=data.email,
                 password_hash=_hash_if_present(data.password),
                 steam_id=data.steam_id,
+                steam_api_key_encrypted=_encrypt_steam_api_key_if_present(data.steam_api_key),
             ),
         )
     except ConflictError as error:
@@ -153,6 +166,7 @@ async def update_user_admin(
                 email=data.email,
                 password_hash=_hash_if_present(data.password),
                 steam_id=data.steam_id,
+                steam_api_key_encrypted=_encrypt_steam_api_key_if_present(data.steam_api_key),
                 is_admin=data.is_admin,
             ),
         )
