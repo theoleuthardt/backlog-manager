@@ -1,3 +1,4 @@
+import asyncio
 from types import ModuleType
 
 import httpx
@@ -33,6 +34,7 @@ def game_service(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
     monkeypatch.setattr(module, "_time_to_beat_cache", {})
     monkeypatch.setattr(module, "_steam_app_id_by_title", {})
     monkeypatch.setattr(module, "_steam_app_list_cached_at", None)
+    monkeypatch.setattr(module, "_steam_app_list_last_attempt_at", None)
     monkeypatch.setattr(module.settings, "igdb_client_id", "cid")
     monkeypatch.setattr(module.settings, "igdb_client_secret", "secret")
     return module
@@ -531,3 +533,53 @@ async def test_find_steam_app_id_returns_none_when_fetch_fails(
     monkeypatch.setattr(game_service, "get_steam_app_list", fake_get_steam_app_list)
 
     assert await game_service.find_steam_app_id("Celeste") is None
+
+
+async def test_find_steam_app_id_backs_off_after_a_failed_fetch(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    call_count = 0
+
+    async def failing_get_steam_app_list() -> list[SteamApp]:
+        nonlocal call_count
+        call_count += 1
+        raise httpx.ConnectError("connection refused")
+
+    monkeypatch.setattr(game_service, "get_steam_app_list", failing_get_steam_app_list)
+
+    assert await game_service.find_steam_app_id("Celeste") is None
+    assert await game_service.find_steam_app_id("Celeste") is None
+
+    assert call_count == 1
+
+
+async def test_find_steam_app_id_coalesces_concurrent_refreshes(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    call_count = 0
+    started = asyncio.Event()
+    proceed = asyncio.Event()
+
+    async def slow_get_steam_app_list() -> list[SteamApp]:
+        nonlocal call_count
+        call_count += 1
+        started.set()
+        await proceed.wait()
+        return [SteamApp(appid=504230, name="Celeste")]
+
+    monkeypatch.setattr(game_service, "get_steam_app_list", slow_get_steam_app_list)
+
+    async def lookup_after_fetch_started() -> int | None:
+        await started.wait()
+        return await game_service.find_steam_app_id("Celeste")
+
+    first_task = asyncio.create_task(game_service.find_steam_app_id("Celeste"))
+    second_task = asyncio.create_task(lookup_after_fetch_started())
+    await started.wait()
+    proceed.set()
+
+    first_result, second_result = await asyncio.gather(first_task, second_task)
+
+    assert call_count == 1
+    assert first_result == 504230
+    assert second_result == 504230

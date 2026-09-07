@@ -48,6 +48,7 @@ export function CreationToolForm() {
   const [note, setNote] = useState("");
   const [playtime, setPlaytime] = useState(0);
   const [steamAppId, setSteamAppId] = useState(steamAppIdFromUrl);
+  const [steamAppIdTouched, setSteamAppIdTouched] = useState(false);
   const shouldLookUpSteamAppId = title.length > 0 && steamAppIdFromUrl.trim() === "";
   const steamAppIdQuery = useSteamAppId(shouldLookUpSteamAppId ? title : "");
   const [isLoading, setIsLoading] = useState(false);
@@ -58,9 +59,9 @@ export function CreationToolForm() {
   const createEntryMutation = useCreateBacklogEntry();
 
   const displayedSteamAppId =
-    steamAppId !== ""
+    steamAppIdTouched || steamAppIdQuery.data == null
       ? steamAppId
-      : (steamAppIdQuery.data?.toString() ?? "");
+      : steamAppIdQuery.data.toString();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -342,7 +343,10 @@ export function CreationToolForm() {
                   type="number"
                   min="0"
                   value={displayedSteamAppId}
-                  onChange={(e) => setSteamAppId(e.target.value)}
+                  onChange={(e) => {
+                    setSteamAppIdTouched(true);
+                    setSteamAppId(e.target.value);
+                  }}
                   placeholder="e.g. 504230"
                   className="bg-black text-white"
                 />
@@ -426,7 +430,11 @@ export function CreationToolForm() {
             <div className="mt-4 flex justify-center lg:justify-end">
               <Button
                 type="submit"
-                disabled={isLoading || createStatus === "success"}
+                disabled={
+                  isLoading ||
+                  createStatus === "success" ||
+                  (shouldLookUpSteamAppId && steamAppIdQuery.isPending)
+                }
                 className={`w-full border-2 px-8 py-5 text-base font-bold transition-colors duration-300 lg:w-auto lg:min-w-[200px] ${submitButtonColorClasses}`}
               >
                 {submitButtonContent}
