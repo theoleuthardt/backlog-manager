@@ -375,6 +375,85 @@ async def test_get_steam_app_id_returns_null_when_no_match(
     assert response.json() is None
 
 
+@pytest.fixture
+def _reset_steamgriddb_cache(monkeypatch: pytest.MonkeyPatch) -> None:
+    from backlog_manager_backend.services import game_service as module
+
+    monkeypatch.setattr(module, "_steamgriddb_cover_cache", {})
+
+
+async def test_get_steamgriddb_covers_returns_urls(
+    _reset_steamgriddb_cache: None, postgres_url: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.services import game_service as module
+
+    monkeypatch.setattr(module.settings, "steamgriddb_api_key", "key")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "success": True,
+                "data": [
+                    {
+                        "id": 1,
+                        "url": "https://cdn2.steamgriddb.com/grid/1.png",
+                        "thumb": "https://cdn2.steamgriddb.com/thumb/1.png",
+                        "score": 10,
+                    }
+                ],
+            },
+        )
+
+    _mock_igdb(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get(
+            "/api/games/steamgriddb-covers", params={"steam_app_id": 220}
+        )
+
+    assert response.status_code == 200
+    assert response.json() == ["https://cdn2.steamgriddb.com/grid/1.png"]
+
+
+async def test_get_steamgriddb_covers_returns_503_when_not_configured(
+    _reset_steamgriddb_cache: None, postgres_url: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.services import game_service as module
+
+    monkeypatch.setattr(module.settings, "steamgriddb_api_key", None)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get(
+            "/api/games/steamgriddb-covers", params={"steam_app_id": 220}
+        )
+
+    assert response.status_code == 503
+
+
+async def test_get_steamgriddb_covers_returns_503_on_transport_failure(
+    _reset_steamgriddb_cache: None, postgres_url: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.services import game_service as module
+
+    monkeypatch.setattr(module.settings, "steamgriddb_api_key", "key")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("connection refused", request=request)
+
+    _mock_igdb(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get(
+            "/api/games/steamgriddb-covers", params={"steam_app_id": 220}
+        )
+
+    assert response.status_code == 503
+
+
 async def test_get_steam_app_id_returns_null_on_transport_failure(
     _reset_steam_app_cache: None, postgres_url: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:

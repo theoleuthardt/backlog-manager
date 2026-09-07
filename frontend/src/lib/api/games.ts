@@ -45,3 +45,17 @@ export async function getSteamAppId(title: string): Promise<number | null> {
     throw new Error(apiErrorMessage(error, "Failed to look up Steam App ID"));
   return data;
 }
+
+export async function getSteamGridDbCovers(
+  steamAppId: number,
+): Promise<string[]> {
+  const { data, error } = await apiClient.GET(
+    "/api/games/steamgriddb-covers",
+    {
+      params: { query: { steam_app_id: steamAppId } },
+    },
+  );
+  if (error)
+    throw new Error(apiErrorMessage(error, "Failed to load cover options"));
+  return data;
+}

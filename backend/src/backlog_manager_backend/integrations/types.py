@@ -167,6 +167,21 @@ class SteamGetOwnedGamesEnvelope(msgspec.Struct):
     response: SteamOwnedGamesResult
 
 
+class SteamGridDBGrid(msgspec.Struct):
+    id: int
+    url: str
+    thumb: str
+    score: int = 0
+
+
+class SteamGridDBGridsEnvelope(msgspec.Struct):
+    """success is false (with data omitted) when SteamGridDB has no
+    grids for the requested app - not an error, just an empty result."""
+
+    success: bool
+    data: list[SteamGridDBGrid] = []
+
+
 class SteamApp(msgspec.Struct):
     appid: int
     name: str

@@ -9,7 +9,15 @@ import {
 } from "shadcn_components/ui/dialog";
 import { Button } from "shadcn_components/ui/button";
 import { GameImage } from "components/GameImage";
-import { XIcon, Loader2, Edit2, Check, X, Trash2 } from "lucide-react";
+import {
+  XIcon,
+  Loader2,
+  Edit2,
+  Check,
+  X,
+  Trash2,
+  Images,
+} from "lucide-react";
 import { useState } from "react";
 import { Input } from "shadcn_components/ui/input";
 import { Label } from "shadcn_components/ui/label";
@@ -44,6 +52,7 @@ import {
   useUpdateBacklogEntry,
   useDeleteBacklogEntry,
 } from "~/hooks/useBacklog";
+import { useSteamGridDbCovers } from "~/hooks/useGameSearch";
 
 export const BacklogEntry = (props: BacklogEntryProps) => {
   const [imageLink, setImageLink] = useState(props.imageLink);
@@ -62,8 +71,15 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
     "idle" | "success" | "error"
   >("idle");
   const [imagePopoverOpen, setImagePopoverOpen] = useState(false);
+  const [coverPickerOpen, setCoverPickerOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const {
+    data: steamGridDbCovers,
+    isLoading: isLoadingCovers,
+    isError: coversFailedToLoad,
+  } = useSteamGridDbCovers(props.steamAppId, coverPickerOpen);
 
   const handleUpdateImage = () => {
     if (newImageUrl.trim()) {
@@ -71,6 +87,11 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
       setNewImageUrl("");
       setImagePopoverOpen(false);
     }
+  };
+
+  const handleSelectCover = (url: string) => {
+    setImageLink(url);
+    setCoverPickerOpen(false);
   };
 
   const updateEntryMutation = useUpdateBacklogEntry();
@@ -255,6 +276,56 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                   </div>
                 </PopoverContent>
               </Popover>
+
+              {props.steamAppId !== undefined && (
+                <Popover
+                  open={coverPickerOpen}
+                  onOpenChange={setCoverPickerOpen}
+                >
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-40 gap-2 bg-black text-white hover:bg-white hover:text-black"
+                    >
+                      <Images className="h-4 w-4" />
+                      Choose Cover
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 bg-black text-white">
+                    <div className="space-y-2">
+                      <Label>SteamGridDB Covers</Label>
+                      {isLoadingCovers ? (
+                        <div className="flex items-center justify-center py-6">
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        </div>
+                      ) : coversFailedToLoad ? (
+                        <p className="text-sm text-red-400">
+                          Failed to load covers. Please try again.
+                        </p>
+                      ) : steamGridDbCovers &&
+                        steamGridDbCovers.length > 0 ? (
+                        <div className="grid max-h-64 grid-cols-3 gap-2 overflow-y-auto">
+                          {steamGridDbCovers.map((url) => (
+                            <button
+                              key={url}
+                              type="button"
+                              onClick={() => handleSelectCover(url)}
+                              className="overflow-hidden rounded border border-white/20 hover:border-white"
+                            >
+                              <GameImage src={url} alt="Cover option" width={90} height={135} />
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-400">
+                          No SteamGridDB covers available for this game.
+                        </p>
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
             </div>
 
             <div id="form-container" className="flex flex-1 flex-col">
