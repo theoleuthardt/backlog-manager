@@ -36,11 +36,9 @@ async def sync_steam_playtimes(
     api_key = _resolve_api_key(current_user)
 
     try:
-        updated = await steam_service.sync_playtimes(db_session, current_user, api_key)
-        if current_user.steam_auto_import_enabled:
-            updated = updated + await steam_service.import_library(
-                db_session, current_user, api_key
-            )
+        updated = await steam_service.sync_playtimes_and_import(
+            db_session, current_user, api_key, auto_import=current_user.steam_auto_import_enabled
+        )
     except ValidationError as error:
         raise ClientException(str(error)) from error
     except httpx.HTTPError as error:

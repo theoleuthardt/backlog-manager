@@ -1,13 +1,18 @@
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import BigInteger, CheckConstraint, ForeignKey
+from sqlalchemy import BigInteger, CheckConstraint, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backlog_manager_backend.models import TIMESTAMP_DEFAULT, Base
 
 
 class BacklogEntry(Base):
+    """The UserID+SteamAppId unique constraint only rejects two entries
+    for the same user sharing the same non-null Steam App ID - Postgres
+    treats every NULL SteamAppId as distinct, so it doesn't limit how
+    many entries without one a user can have."""
+
     __tablename__ = "BacklogEntries"
     __table_args__ = (
         CheckConstraint(
@@ -17,6 +22,9 @@ class BacklogEntry(Base):
         CheckConstraint(
             '"Interest" >= 1 AND "Interest" <= 10',
             name="BacklogEntries_Interest_check",
+        ),
+        UniqueConstraint(
+            "UserID", "SteamAppId", name="BacklogEntries_UserID_SteamAppId_key"
         ),
         {"schema": "blm-system"},
     )
