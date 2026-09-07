@@ -27,6 +27,8 @@ from backlog_manager_backend.services import game_service
 
 _IGDB_NOT_CONFIGURED = "IGDB integration is not configured"
 _IGDB_UNAVAILABLE = "IGDB is currently unreachable"
+_STEAMGRIDDB_NOT_CONFIGURED = "SteamGridDB integration is not configured"
+_STEAMGRIDDB_UNAVAILABLE = "SteamGridDB is currently unreachable"
 
 
 async def _igdb_credentials() -> tuple[str, str]:
@@ -72,6 +74,16 @@ async def enriched_search(search_term: FromQuery[str]) -> list[EnrichedResult]:
 @get("/api/games/steam-app-id")
 async def get_steam_app_id(title: FromQuery[str]) -> int | None:
     return await game_service.find_steam_app_id(title)
+
+
+@get("/api/games/steamgriddb-covers")
+async def get_steamgriddb_covers(steam_app_id: FromQuery[int]) -> list[str]:
+    try:
+        return await game_service.get_game_covers(steam_app_id)
+    except RuntimeError as error:
+        raise ServiceUnavailableException(_STEAMGRIDDB_NOT_CONFIGURED) from error
+    except httpx.HTTPError as error:
+        raise ServiceUnavailableException(_STEAMGRIDDB_UNAVAILABLE) from error
 
 
 @get("/api/games/{game_id:int}")

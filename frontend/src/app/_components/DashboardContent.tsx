@@ -504,6 +504,7 @@ export const DashboardContent = () => {
                 mainTime={entry.mainTime}
                 mainPlusExtraTime={entry.mainPlusExtraTime}
                 completionTime={entry.completionTime}
+                steamAppId={entry.steamAppId}
               />
             ))}
           </div>

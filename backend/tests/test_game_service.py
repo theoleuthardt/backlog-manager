@@ -15,6 +15,7 @@ from backlog_manager_backend.integrations.types import (
     IGDBSearchResult,
     IGDBTokenResponse,
     SteamApp,
+    SteamGridDBGrid,
 )
 
 
@@ -35,8 +36,10 @@ def game_service(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
     monkeypatch.setattr(module, "_steam_app_id_by_title", {})
     monkeypatch.setattr(module, "_steam_app_list_cached_at", None)
     monkeypatch.setattr(module, "_steam_app_list_last_attempt_at", None)
+    monkeypatch.setattr(module, "_steamgriddb_cover_cache", {})
     monkeypatch.setattr(module.settings, "igdb_client_id", "cid")
     monkeypatch.setattr(module.settings, "igdb_client_secret", "secret")
+    monkeypatch.setattr(module.settings, "steamgriddb_api_key", None)
     return module
 
 
@@ -583,3 +586,189 @@ async def test_find_steam_app_id_coalesces_concurrent_refreshes(
     assert call_count == 1
     assert first_result == 504230
     assert second_result == 504230
+
+
+async def test_get_game_covers_raises_without_api_key(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(game_service.settings, "steamgriddb_api_key", None)
+
+    with pytest.raises(RuntimeError, match="SteamGridDB API key not configured"):
+        await game_service.get_game_covers(220)
+
+
+async def test_get_game_covers_returns_urls_sorted_by_score(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(game_service.settings, "steamgriddb_api_key", "key")
+
+    async def fake_get_grids_by_steam_app_id(
+        steam_app_id: int, api_key: str
+    ) -> list[SteamGridDBGrid]:
+        return [
+            SteamGridDBGrid(id=1, url="https://example.com/low.png", thumb="", score=10),
+            SteamGridDBGrid(id=2, url="https://example.com/high.png", thumb="", score=90),
+        ]
+
+    monkeypatch.setattr(
+        game_service, "get_grids_by_steam_app_id", fake_get_grids_by_steam_app_id
+    )
+
+    covers = await game_service.get_game_covers(220)
+
+    assert covers == ["https://example.com/high.png", "https://example.com/low.png"]
+
+
+async def test_get_game_covers_caches_across_calls(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(game_service.settings, "steamgriddb_api_key", "key")
+    call_count = 0
+
+    async def fake_get_grids_by_steam_app_id(
+        steam_app_id: int, api_key: str
+    ) -> list[SteamGridDBGrid]:
+        nonlocal call_count
+        call_count += 1
+        return [SteamGridDBGrid(id=1, url="https://example.com/cover.png", thumb="")]
+
+    monkeypatch.setattr(
+        game_service, "get_grids_by_steam_app_id", fake_get_grids_by_steam_app_id
+    )
+
+    await game_service.get_game_covers(220)
+    await game_service.get_game_covers(220)
+
+    assert call_count == 1
+
+
+async def test_search_prefers_steamgriddb_cover_over_igdb(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(game_service.settings, "steamgriddb_api_key", "key")
+
+    async def fake_search_game_on_igdb(
+        search_term: str, client_id: str, access_token: str
+    ) -> list[IGDBSearchResult]:
+        return [IGDBSearchResult(id=1, game=1, name="Celeste")]
+
+    async def fake_get_games_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameData]:
+        return [IGDBGameData(id=1, name="Celeste", cover=5, genres=[], platforms=[])]
+
+    async def fake_get_covers_on_igdb(
+        cover_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBCover]:
+        return [IGDBCover(id=5, image_id="abc123")]
+
+    async def fake_get_genres_on_igdb(
+        genre_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGenre]:
+        return []
+
+    async def fake_get_platforms_on_igdb(
+        platform_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBPlatform]:
+        return []
+
+    async def fake_get_games_time_to_beat_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameTimeToBeat]:
+        return [IGDBGameTimeToBeat(id=1, game_id=1, normally=3600)]
+
+    async def fake_get_steam_app_list() -> list[SteamApp]:
+        return [SteamApp(appid=504230, name="Celeste")]
+
+    async def fake_get_grids_by_steam_app_id(
+        steam_app_id: int, api_key: str
+    ) -> list[SteamGridDBGrid]:
+        return [SteamGridDBGrid(id=1, url="https://example.com/steamgriddb.png", thumb="")]
+
+    async def fake_get_valid_token() -> str:
+        return "tok"
+
+    monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
+    monkeypatch.setattr(game_service, "get_games_on_igdb", fake_get_games_on_igdb)
+    monkeypatch.setattr(game_service, "get_covers_on_igdb", fake_get_covers_on_igdb)
+    monkeypatch.setattr(game_service, "get_genres_on_igdb", fake_get_genres_on_igdb)
+    monkeypatch.setattr(game_service, "get_platforms_on_igdb", fake_get_platforms_on_igdb)
+    monkeypatch.setattr(
+        game_service, "get_games_time_to_beat_on_igdb", fake_get_games_time_to_beat_on_igdb
+    )
+    monkeypatch.setattr(game_service, "get_steam_app_list", fake_get_steam_app_list)
+    monkeypatch.setattr(
+        game_service, "get_grids_by_steam_app_id", fake_get_grids_by_steam_app_id
+    )
+    monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
+
+    results = await game_service.search("Celeste")
+
+    assert results[0].image_url == "https://example.com/steamgriddb.png"
+
+
+async def test_search_falls_back_to_igdb_cover_when_steamgriddb_has_none(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(game_service.settings, "steamgriddb_api_key", "key")
+
+    async def fake_search_game_on_igdb(
+        search_term: str, client_id: str, access_token: str
+    ) -> list[IGDBSearchResult]:
+        return [IGDBSearchResult(id=1, game=1, name="Celeste")]
+
+    async def fake_get_games_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameData]:
+        return [IGDBGameData(id=1, name="Celeste", cover=5, genres=[], platforms=[])]
+
+    async def fake_get_covers_on_igdb(
+        cover_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBCover]:
+        return [IGDBCover(id=5, image_id="abc123")]
+
+    async def fake_get_genres_on_igdb(
+        genre_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGenre]:
+        return []
+
+    async def fake_get_platforms_on_igdb(
+        platform_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBPlatform]:
+        return []
+
+    async def fake_get_games_time_to_beat_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameTimeToBeat]:
+        return [IGDBGameTimeToBeat(id=1, game_id=1, normally=3600)]
+
+    async def fake_get_steam_app_list() -> list[SteamApp]:
+        return [SteamApp(appid=504230, name="Celeste")]
+
+    async def fake_get_grids_by_steam_app_id(
+        steam_app_id: int, api_key: str
+    ) -> list[SteamGridDBGrid]:
+        return []
+
+    async def fake_get_valid_token() -> str:
+        return "tok"
+
+    monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
+    monkeypatch.setattr(game_service, "get_games_on_igdb", fake_get_games_on_igdb)
+    monkeypatch.setattr(game_service, "get_covers_on_igdb", fake_get_covers_on_igdb)
+    monkeypatch.setattr(game_service, "get_genres_on_igdb", fake_get_genres_on_igdb)
+    monkeypatch.setattr(game_service, "get_platforms_on_igdb", fake_get_platforms_on_igdb)
+    monkeypatch.setattr(
+        game_service, "get_games_time_to_beat_on_igdb", fake_get_games_time_to_beat_on_igdb
+    )
+    monkeypatch.setattr(game_service, "get_steam_app_list", fake_get_steam_app_list)
+    monkeypatch.setattr(
+        game_service, "get_grids_by_steam_app_id", fake_get_grids_by_steam_app_id
+    )
+    monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
+
+    results = await game_service.search("Celeste")
+
+    assert results[0].image_url == (
+        "https://images.igdb.com/igdb/image/upload/t_cover_big/abc123.jpg"
+    )
