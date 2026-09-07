@@ -9,6 +9,7 @@ export interface CurrentUser {
   isTwoFactorEnabled: boolean;
   createdAt: string;
   updatedAt: string;
+  steamId?: string;
 }
 
 export type LoginOutcome =
@@ -49,5 +50,6 @@ export async function getCurrentUser(): Promise<CurrentUser> {
     isTwoFactorEnabled: data.is_two_factor_enabled,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
+    steamId: data.steam_id ?? undefined,
   };
 }

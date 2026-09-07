@@ -13,6 +13,7 @@ class User(msgspec.Struct):
     is_admin: bool = False
     totp_secret_encrypted: str | None = None
     totp_enabled: bool = False
+    steam_id: str | None = None
 
 
 class CreateUserParams(msgspec.Struct):
@@ -52,6 +53,7 @@ class PublicUser(msgspec.Struct):
     is_two_factor_enabled: bool
     created_at: datetime
     updated_at: datetime
+    steam_id: str | None = None
 
     @classmethod
     def from_user(cls, user: User) -> "PublicUser":
@@ -63,6 +65,7 @@ class PublicUser(msgspec.Struct):
             is_two_factor_enabled=user.totp_enabled,
             created_at=user.created_at,
             updated_at=user.updated_at,
+            steam_id=user.steam_id,
         )
 
 

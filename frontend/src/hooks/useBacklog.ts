@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as backlogApi from "~/lib/api/backlog";
+import { syncSteamPlaytimes } from "~/lib/api/steam";
 
 const ENTRIES_KEY = ["backlog-entries"] as const;
 
@@ -40,6 +41,16 @@ export function useDeleteBacklogEntry() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: backlogApi.deleteEntry,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ENTRIES_KEY });
+    },
+  });
+}
+
+export function useSyncSteamPlaytimes() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: syncSteamPlaytimes,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ENTRIES_KEY });
     },

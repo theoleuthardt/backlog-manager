@@ -25,6 +25,7 @@ export interface BacklogEntryData {
   mainPlusExtraTime?: number;
   completionTime?: number;
   playtime?: number;
+  steamAppId?: number;
 }
 
 export interface CreateBacklogEntryInput {
@@ -43,6 +44,7 @@ export interface CreateBacklogEntryInput {
   mainPlusExtraTime?: number;
   completionTime?: number;
   playtime?: number;
+  steamAppId?: number;
   reviewStars?: number;
   review?: string;
   note?: string;
@@ -60,6 +62,7 @@ export interface UpdateBacklogEntryInput {
   mainPlusExtraTime?: number;
   completionTime?: number;
   playtime?: number;
+  steamAppId?: number;
   reviewStars?: number;
   review?: string;
   note?: string;
@@ -78,7 +81,7 @@ function toNumber(value: string | null | undefined): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-function toEntryData(
+export function toEntryData(
   entry: components["schemas"]["BacklogEntryResponse"],
 ): BacklogEntryData {
   return {
@@ -98,6 +101,7 @@ function toEntryData(
     mainPlusExtraTime: toNumber(entry.main_plus_extra_time),
     completionTime: toNumber(entry.completion_time),
     playtime: toNumber(entry.playtime),
+    steamAppId: entry.steam_app_id ?? undefined,
   };
 }
 
@@ -158,6 +162,7 @@ export async function createEntry(
       main_plus_extra_time: input.mainPlusExtraTime?.toString(),
       completion_time: input.completionTime?.toString(),
       playtime: input.playtime?.toString(),
+      steam_app_id: input.steamAppId,
       review_stars: input.reviewStars,
       review: input.review,
       note: input.note,
@@ -188,6 +193,7 @@ export async function updateEntry(
         main_plus_extra_time: changes.mainPlusExtraTime?.toString(),
         completion_time: changes.completionTime?.toString(),
         playtime: changes.playtime?.toString(),
+        steam_app_id: changes.steamAppId,
         review_stars: changes.reviewStars,
         review: changes.review,
         note: changes.note,

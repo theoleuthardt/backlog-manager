@@ -321,6 +321,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/user/steam/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** SyncSteamPlaytimes */
+        post: operations["ApiUserSteamSyncSyncSteamPlaytimes"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/csv/parse": {
         parameters: {
             query?: never;
@@ -531,6 +548,7 @@ export interface components {
             main_plus_extra_time?: string | null;
             completion_time?: string | null;
             playtime?: string | null;
+            steam_app_id?: number | null;
             review_stars?: number | null;
             review?: string | null;
             note?: string | null;
@@ -559,6 +577,7 @@ export interface components {
             main_plus_extra_time?: string | null;
             completion_time?: string | null;
             playtime?: string | null;
+            steam_app_id?: number | null;
             review_stars?: number | null;
             review?: string | null;
             note?: string | null;
@@ -759,6 +778,7 @@ export interface components {
             created_at: string;
             /** Format: date-time */
             updated_at: string;
+            steam_id?: string | null;
         };
         /** PublicUsername */
         PublicUsername: {
@@ -812,6 +832,7 @@ export interface components {
             main_plus_extra_time?: string | null;
             completion_time?: string | null;
             playtime?: string | null;
+            steam_app_id?: number | null;
             review_stars?: number | null;
             review?: string | null;
             note?: string | null;
@@ -1838,6 +1859,26 @@ export interface operations {
                             [key: string]: unknown;
                         } | unknown[];
                     };
+                };
+            };
+        };
+    };
+    ApiUserSteamSyncSyncSteamPlaytimes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BacklogEntryResponse"][];
                 };
             };
         };

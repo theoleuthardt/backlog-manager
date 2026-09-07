@@ -144,3 +144,24 @@ class EnrichedResult(msgspec.Struct):
     main_story_with_extras: float
     completionist: float
     steam_app_id: None = None
+
+
+class SteamOwnedGame(msgspec.Struct):
+    """Field names already match GetOwnedGames' JSON response verbatim -
+    no rename= needed, unlike HltbResultData."""
+
+    appid: int
+    name: str
+    playtime_forever: int
+
+
+class SteamOwnedGamesResult(msgspec.Struct):
+    """games is omitted entirely by the Steam API if the account's game
+    list is private, hence the default empty list rather than a
+    required field."""
+
+    games: list[SteamOwnedGame] = []
+
+
+class SteamGetOwnedGamesEnvelope(msgspec.Struct):
+    response: SteamOwnedGamesResult

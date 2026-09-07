@@ -1909,6 +1909,34 @@
         ]
       }
     },
+    "/api/user/steam/sync": {
+      "post": {
+        "summary": "SyncSteamPlaytimes",
+        "operationId": "ApiUserSteamSyncSyncSteamPlaytimes",
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BacklogEntryResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/csv/parse": {
       "post": {
         "summary": "ParseCsv",
@@ -2789,6 +2817,16 @@
               }
             ]
           },
+          "steam_app_id": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "review_stars": {
             "oneOf": [
               {
@@ -2978,6 +3016,16 @@
             "oneOf": [
               {
                 "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "steam_app_id": {
+            "oneOf": [
+              {
+                "type": "integer"
               },
               {
                 "type": "null"
@@ -4337,6 +4385,16 @@
           "updated_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "steam_id": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -4575,6 +4633,16 @@
             "oneOf": [
               {
                 "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "steam_app_id": {
+            "oneOf": [
+              {
+                "type": "integer"
               },
               {
                 "type": "null"

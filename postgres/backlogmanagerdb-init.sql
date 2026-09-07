@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS "blm-system"."BacklogEntries" (
     "MainPlusExtraTime" NUMERIC(10,2),
     "CompletionTime" NUMERIC(10,2),
     "Playtime"       NUMERIC(10,2),
+    "SteamAppId"     BIGINT,
     "Status"         VARCHAR(20) NOT NULL CHECK ("Status" IN ('Not Started', 'In Progress', 'Completed', 'On Hold', 'Dropped')),
     "Owned"          BOOLEAN NOT NULL            DEFAULT FALSE,
     "Interest"       INTEGER NOT NULL CHECK ("Interest" >= 1 AND "Interest" <= 10),

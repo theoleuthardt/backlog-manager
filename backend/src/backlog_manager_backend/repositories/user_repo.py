@@ -41,6 +41,7 @@ def _to_schema(model: UserModel) -> User:
         totp_enabled=model.totp_enabled,
         created_at=model.created_at,
         updated_at=model.updated_at,
+        steam_id=model.steam_id,
     )
 
 

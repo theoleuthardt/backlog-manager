@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "~/app/context/AuthContext";
+import { updateCurrentUser } from "~/lib/api/user";
 import {
   useEnrollTwoFactor,
   useVerifyTwoFactorEnrollment,
@@ -48,11 +49,39 @@ export function AccountContent() {
   const [isDisableOpen, setIsDisableOpen] = useState(false);
   const [disablePassword, setDisablePassword] = useState("");
 
+  const [steamId, setSteamId] = useState("");
+  const [steamIdLoadedFor, setSteamIdLoadedFor] = useState<number | null>(null);
+  const [isSavingSteamId, setIsSavingSteamId] = useState(false);
+
   const enrollMutation = useEnrollTwoFactor();
   const verifyMutation = useVerifyTwoFactorEnrollment();
   const disableMutation = useDisableTwoFactor();
 
+  // Seeds the input from the loaded user exactly once per user (rather
+  // than in an Effect, which would cause an extra render) - after that,
+  // the input is the source of truth until the user saves or navigates
+  // away.
+  if (user && steamIdLoadedFor !== user.id) {
+    setSteamIdLoadedFor(user.id);
+    setSteamId(user.steamId ?? "");
+  }
+
   if (!user) return null;
+
+  const handleSaveSteamId = async () => {
+    setIsSavingSteamId(true);
+    try {
+      await updateCurrentUser({ steamId });
+      await refreshUser();
+      toast.success("Steam ID saved");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to save Steam ID",
+      );
+    } finally {
+      setIsSavingSteamId(false);
+    }
+  };
 
   const openEnroll = () => {
     setCode("");
@@ -131,6 +160,29 @@ export function AccountContent() {
             Enable Two-Factor Authentication
           </Button>
         )}
+      </div>
+
+      <div className="rounded-lg border-2 border-white bg-black p-6">
+        <h2 className="mb-2 text-xl font-semibold">Steam</h2>
+        <p className="mb-4 text-sm text-gray-300">
+          Link your Steam ID to sync playtimes for backlog entries you&apos;ve
+          tagged with a Steam App ID.
+        </p>
+        <div className="flex max-w-sm gap-2">
+          <Input
+            value={steamId}
+            onChange={(e) => setSteamId(e.target.value)}
+            placeholder="Steam ID (e.g. 76561197960287930)"
+            className="border-white/40 bg-black text-white placeholder:text-gray-500"
+          />
+          <Button
+            className={FILLED_BUTTON}
+            onClick={() => void handleSaveSteamId()}
+            disabled={isSavingSteamId || steamId === (user.steamId ?? "")}
+          >
+            {isSavingSteamId ? "Saving..." : "Save"}
+          </Button>
+        </div>
       </div>
 
       <Dialog open={isEnrollOpen} onOpenChange={(open) => !open && closeEnroll()}>

@@ -21,6 +21,7 @@ class BacklogEntry(msgspec.Struct):
     main_plus_extra_time: Decimal | None = None
     completion_time: Decimal | None = None
     playtime: Decimal | None = None
+    steam_app_id: int | None = None
     review_stars: int | None = None
     review: str | None = None
     note: str | None = None
@@ -41,6 +42,7 @@ class CreateBacklogEntryParams(msgspec.Struct):
     main_plus_extra_time: Decimal | None = None
     completion_time: Decimal | None = None
     playtime: Decimal | None = None
+    steam_app_id: int | None = None
     review_stars: int | None = None
     review: str | None = None
     note: str | None = None
@@ -66,6 +68,7 @@ class UpdateBacklogEntryParams(msgspec.Struct):
     main_plus_extra_time: Decimal | None | msgspec.UnsetType = msgspec.UNSET
     completion_time: Decimal | None | msgspec.UnsetType = msgspec.UNSET
     playtime: Decimal | None | msgspec.UnsetType = msgspec.UNSET
+    steam_app_id: int | None | msgspec.UnsetType = msgspec.UNSET
     review_stars: int | None | msgspec.UnsetType = msgspec.UNSET
     review: str | None | msgspec.UnsetType = msgspec.UNSET
     note: str | None | msgspec.UnsetType = msgspec.UNSET
@@ -110,6 +113,7 @@ class BacklogEntryResponse(msgspec.Struct):
     main_plus_extra_time: Decimal | None = None
     completion_time: Decimal | None = None
     playtime: Decimal | None = None
+    steam_app_id: int | None = None
     review_stars: int | None = None
     review: str | None = None
     note: str | None = None
@@ -133,6 +137,7 @@ class BacklogEntryResponse(msgspec.Struct):
             main_plus_extra_time=entry.main_plus_extra_time,
             completion_time=entry.completion_time,
             playtime=entry.playtime,
+            steam_app_id=entry.steam_app_id,
             review_stars=entry.review_stars,
             review=entry.review,
             note=entry.note,
@@ -153,6 +158,7 @@ class CreateBacklogEntryRequest(msgspec.Struct):
     main_plus_extra_time: Decimal | None = None
     completion_time: Decimal | None = None
     playtime: Decimal | None = None
+    steam_app_id: int | None = None
     review_stars: float | None = None
     review: str | None = None
     note: str | None = None
@@ -175,6 +181,7 @@ class UpdateBacklogEntryRequest(msgspec.Struct):
     main_plus_extra_time: Decimal | None | msgspec.UnsetType = msgspec.UNSET
     completion_time: Decimal | None | msgspec.UnsetType = msgspec.UNSET
     playtime: Decimal | None | msgspec.UnsetType = msgspec.UNSET
+    steam_app_id: int | None | msgspec.UnsetType = msgspec.UNSET
     review_stars: float | None | msgspec.UnsetType = msgspec.UNSET
     review: str | None | msgspec.UnsetType = msgspec.UNSET
     note: str | None | msgspec.UnsetType = msgspec.UNSET

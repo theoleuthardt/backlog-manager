@@ -49,6 +49,9 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
   const [imageLink, setImageLink] = useState(props.imageLink);
   const [newImageUrl, setNewImageUrl] = useState("");
   const [playtime, setPlaytime] = useState<number | undefined>(props.playtime);
+  const [steamAppId, setSteamAppId] = useState<number | undefined>(
+    props.steamAppId,
+  );
   const [genre, setGenre] = useState(props.genre?.join(", ") ?? "");
   const [platform, setPlatform] = useState(props.platform?.join(", ") ?? "");
   const [status, setStatus] = useState(props.status ?? "");
@@ -88,6 +91,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
         owned?: boolean;
         interest?: number;
         playtime?: number;
+        steamAppId?: number;
         reviewStars?: number;
         review?: string;
         note?: string;
@@ -96,6 +100,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
       if (imageLink !== props.imageLink) changes.imageLink = imageLink;
       if (playtime !== undefined && playtime !== props.playtime)
         changes.playtime = playtime;
+      if (steamAppId !== props.steamAppId) changes.steamAppId = steamAppId;
       if (genre !== (props.genre?.join(", ") ?? ""))
         changes.genre = genre
           .split(",")
@@ -273,6 +278,25 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                       value={playtime ?? ""}
                       onChange={(e) =>
                         setPlaytime(
+                          e.target.value === ""
+                            ? undefined
+                            : Number(e.target.value),
+                        )
+                      }
+                      className="bg-black text-white"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="steamAppId" className="text-white">
+                      Steam App ID
+                    </Label>
+                    <Input
+                      id="steamAppId"
+                      type="number"
+                      value={steamAppId ?? ""}
+                      onChange={(e) =>
+                        setSteamAppId(
                           e.target.value === ""
                             ? undefined
                             : Number(e.target.value),

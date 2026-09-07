@@ -16,6 +16,7 @@ function toCurrentUser(user: {
   is_two_factor_enabled: boolean;
   created_at: string;
   updated_at: string;
+  steam_id?: string | null;
 }): CurrentUser {
   return {
     id: user.id,
@@ -25,6 +26,7 @@ function toCurrentUser(user: {
     isTwoFactorEnabled: user.is_two_factor_enabled,
     createdAt: user.created_at,
     updatedAt: user.updated_at,
+    steamId: user.steam_id ?? undefined,
   };
 }
 
