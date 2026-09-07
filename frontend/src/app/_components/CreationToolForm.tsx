@@ -68,6 +68,13 @@ export function CreationToolForm() {
         .split(",")
         .map((p) => p.trim())
         .filter(Boolean);
+      const steamAppIdNumber = Number(steamAppId);
+      const parsedSteamAppId =
+        steamAppId.trim() &&
+        Number.isSafeInteger(steamAppIdNumber) &&
+        steamAppIdNumber >= 0
+          ? steamAppIdNumber
+          : undefined;
 
       if (genreList.length === 0) {
         toast.error("Please enter at least one genre");
@@ -98,7 +105,7 @@ export function CreationToolForm() {
         owned,
         interest,
         playtime,
-        steamAppId: steamAppId.trim() ? Number.parseInt(steamAppId, 10) : undefined,
+        steamAppId: parsedSteamAppId,
         imageLink: imageUrl,
         mainTime:
           Number.isFinite(mainStory) && mainStory > 0 ? mainStory : undefined,

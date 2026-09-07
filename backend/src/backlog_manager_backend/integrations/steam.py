@@ -36,5 +36,10 @@ async def get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
             response=response,
         )
 
-    envelope = msgspec.json.decode(response.content, type=SteamGetOwnedGamesEnvelope)
+    try:
+        envelope = msgspec.json.decode(response.content, type=SteamGetOwnedGamesEnvelope)
+    except msgspec.DecodeError as error:
+        logger.error("GetOwnedGames decode error", error=str(error))
+        raise httpx.DecodingError("Steam Web API returned an invalid response") from error
+
     return envelope.response.games

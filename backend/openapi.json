@@ -4395,6 +4395,10 @@
                 "type": "null"
               }
             ]
+          },
+          "has_steam_api_key": {
+            "type": "boolean",
+            "default": false
           }
         },
         "type": "object",
@@ -4747,6 +4751,16 @@
                 "type": "null"
               }
             ]
+          },
+          "steam_api_key": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -4777,6 +4791,16 @@
             ]
           },
           "steam_id": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "steam_api_key": {
             "oneOf": [
               {
                 "type": "string"

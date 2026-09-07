@@ -779,6 +779,8 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
             steam_id?: string | null;
+            /** @default false */
+            has_steam_api_key?: boolean;
         };
         /** PublicUsername */
         PublicUsername: {
@@ -849,6 +851,7 @@ export interface components {
             email?: string;
             password?: string;
             steam_id?: string | null;
+            steam_api_key?: string | null;
         };
         /** UpdateUserAdminRequest */
         UpdateUserAdminRequest: {
@@ -856,6 +859,7 @@ export interface components {
             email?: string;
             password?: string;
             steam_id?: string | null;
+            steam_api_key?: string | null;
             is_admin?: boolean;
         };
     };

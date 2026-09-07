@@ -491,6 +491,7 @@ export const DashboardContent = () => {
                 id={entry.id}
                 title={entry.title}
                 playtime={entry.playtime}
+                steamAppId={entry.steamAppId}
                 imageLink={entry.imageLink}
                 imageAlt={entry.imageAlt}
                 genre={entry.genre}

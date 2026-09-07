@@ -66,6 +66,26 @@ async def test_get_owned_games_raises_on_error(monkeypatch: pytest.MonkeyPatch) 
         await get_owned_games("1234", "bad-key")
 
 
+async def test_get_owned_games_raises_on_malformed_json(monkeypatch: pytest.MonkeyPatch) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"not json")
+
+    _mock_client(handler, monkeypatch)
+
+    with pytest.raises(httpx.HTTPError):
+        await get_owned_games("1234", "api-key")
+
+
+async def test_get_owned_games_raises_on_schema_mismatch(monkeypatch: pytest.MonkeyPatch) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"response": {"games": [{"appid": "not-an-int"}]}})
+
+    _mock_client(handler, monkeypatch)
+
+    with pytest.raises(httpx.HTTPError):
+        await get_owned_games("1234", "api-key")
+
+
 async def test_get_owned_games_raises_on_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         raise httpx.ConnectTimeout("timed out")

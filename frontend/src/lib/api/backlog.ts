@@ -62,7 +62,7 @@ export interface UpdateBacklogEntryInput {
   mainPlusExtraTime?: number;
   completionTime?: number;
   playtime?: number;
-  steamAppId?: number;
+  steamAppId?: number | null;
   reviewStars?: number;
   review?: string;
   note?: string;
