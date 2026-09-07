@@ -43,8 +43,6 @@ export const dashboardNavLinks: NavbarLink[] = [
       <Tooltip>
         <TooltipTrigger asChild>
           <EntryCreationDialog
-            triggerIcon="/search.png"
-            triggerAlt="search"
             triggerClassName="!h-8 !w-8 !p-0 !border-0 !bg-transparent hover:!bg-transparent cursor-pointer"
             showText={false}
           />
