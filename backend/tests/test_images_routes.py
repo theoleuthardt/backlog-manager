@@ -63,6 +63,73 @@ async def test_proxy_image_sends_referer_and_origin_for_hltb(
     assert response.content == b"cover"
 
 
+async def test_proxy_image_streams_steam_achievement_icon(
+    monkeypatch: pytest.MonkeyPatch, postgres_url: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    icon_url = (
+        "https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/620/"
+        "e3a2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2.jpg"
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert str(request.url) == icon_url
+        return httpx.Response(200, content=b"achievement-icon", headers={"content-type": "image/jpeg"})
+
+    _mock_client(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get("/api/images/proxy", params={"url": icon_url})
+
+    assert response.status_code == 200
+    assert response.content == b"achievement-icon"
+
+
+@pytest.mark.parametrize(
+    "icon_url",
+    [
+        "https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/620/hash.jpg",
+        "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/620/hash.jpg",
+        "https://shared.fastly.steamstatic.com/community_assets/images/apps/620/hash.jpg",
+        "https://steamstatic.com/some/path/hash.jpg",
+    ],
+)
+async def test_proxy_image_allows_steamstatic_subdomains(
+    icon_url: str, monkeypatch: pytest.MonkeyPatch, postgres_url: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"icon", headers={"content-type": "image/jpeg"})
+
+    _mock_client(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get("/api/images/proxy", params={"url": icon_url})
+
+    assert response.status_code == 200
+
+
+async def test_proxy_image_rejects_steamstatic_lookalike_host(
+    monkeypatch: pytest.MonkeyPatch, postgres_url: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise AssertionError("should never call out for a lookalike host")
+
+    _mock_client(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get(
+            "/api/images/proxy",
+            params={"url": "https://evilsteamstatic.com/steal-my-data.jpg"},
+        )
+
+    assert response.status_code == 400
+
+
 async def test_proxy_image_rejects_non_allowlisted_host(
     monkeypatch: pytest.MonkeyPatch, postgres_url: str
 ) -> None:
