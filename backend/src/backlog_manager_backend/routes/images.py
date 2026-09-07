@@ -13,6 +13,23 @@ logger = structlog.get_logger()
 # generic anonymizing image fetcher for arbitrary URLs.
 _ALLOWED_HOSTS = {"howlongtobeat.com", "images.igdb.com"}
 
+# Steam achievement icons (from ISteamUserStats/GetSchemaForGame) are served
+# from steamstatic.com, but Valve fronts that content with several
+# interchangeable CDN edge subdomains (cdn.akamai.steamstatic.com,
+# cdn.cloudflare.steamstatic.com, shared.fastly.steamstatic.com, ...), so the
+# whole apex domain and its subdomains are allowed rather than one fixed host.
+_ALLOWED_HOST_SUFFIXES = (".steamstatic.com",)
+_ALLOWED_APEX_HOSTS = {"steamstatic.com"}
+
+
+def _is_allowed_host(hostname: str | None) -> bool:
+    if hostname is None:
+        return False
+    if hostname in _ALLOWED_HOSTS or hostname in _ALLOWED_APEX_HOSTS:
+        return True
+    return hostname.endswith(_ALLOWED_HOST_SUFFIXES)
+
+
 # Only inert raster formats are ever returned - forwarding an upstream's
 # Content-Type verbatim (e.g. text/html from a misconfigured host, or
 # image/svg+xml, which can embed <script>) would let this endpoint serve
@@ -59,7 +76,7 @@ def _headers_for(host: str) -> dict[str, str]:
 @get("/api/images/proxy")
 async def proxy_image(url: FromQuery[str]) -> Response:
     parsed = urlparse(url)
-    if parsed.scheme != "https" or parsed.hostname not in _ALLOWED_HOSTS:
+    if parsed.scheme != "https" or not _is_allowed_host(parsed.hostname):
         return _INVALID_URL
 
     try:

@@ -1,15 +1,21 @@
 "use client";
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Loader2, Trophy } from "lucide-react";
+import { Loader2, Trophy } from "lucide-react";
 import { GameImage } from "components/GameImage";
 import { useSteamAchievements } from "~/hooks/useBacklog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogTrigger,
+} from "shadcn_components/ui/dialog";
 
 interface AchievementProgressProps {
   steamAppId?: number;
 }
 
 export function AchievementProgress({ steamAppId }: AchievementProgressProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [open, setOpen] = useState(false);
   const { data, isLoading, isError } = useSteamAchievements(steamAppId);
 
   if (steamAppId === undefined) return null;
@@ -42,47 +48,49 @@ export function AchievementProgress({ steamAppId }: AchievementProgressProps) {
           style={{ width: `${percentage}%` }}
         />
       </div>
-      <button
-        type="button"
-        onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-1 text-xs text-gray-400 hover:text-white"
-      >
-        {expanded ? "Hide" : "Show"} all achievements
-        {expanded ? (
-          <ChevronUp className="h-3 w-3" />
-        ) : (
-          <ChevronDown className="h-3 w-3" />
-        )}
-      </button>
-      {expanded && (
-        <div className="max-h-48 space-y-1 overflow-y-auto pr-1">
-          {data.achievements.map((achievement) => (
-            <div
-              key={achievement.apiname}
-              className={`flex items-center gap-2 rounded p-1 ${
-                achievement.achieved ? "" : "opacity-40"
-              }`}
-            >
-              <GameImage
-                src={achievement.icon ?? ""}
-                alt={achievement.displayName}
-                width={24}
-                height={24}
-              />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-medium text-white">
-                  {achievement.displayName}
-                </p>
-                {achievement.description && (
-                  <p className="truncate text-xs text-gray-400">
-                    {achievement.description}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <button
+            type="button"
+            className="flex items-center gap-1 text-xs text-gray-400 hover:text-white"
+          >
+            Show all achievements
+          </button>
+        </DialogTrigger>
+        <DialogContent className="flex h-[calc(100vh-6rem)] w-[calc(100vw-6rem)] max-w-2xl flex-col border-2 border-white bg-black p-6">
+          <DialogTitle className="flex items-center gap-1.5 text-white">
+            <Trophy className="h-4 w-4" />
+            Achievements ({data.unlocked}/{data.total})
+          </DialogTitle>
+          <div className="flex-1 space-y-1 overflow-y-auto pr-1">
+            {data.achievements.map((achievement) => (
+              <div
+                key={achievement.apiname}
+                className={`flex items-center gap-2 rounded p-1 ${
+                  achievement.achieved ? "" : "opacity-40"
+                }`}
+              >
+                <GameImage
+                  src={achievement.icon ?? ""}
+                  alt={achievement.displayName}
+                  width={32}
+                  height={32}
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-white">
+                    {achievement.displayName}
                   </p>
-                )}
+                  {achievement.description && (
+                    <p className="truncate text-xs text-gray-400">
+                      {achievement.description}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
