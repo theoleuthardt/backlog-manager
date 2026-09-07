@@ -6,9 +6,9 @@ name: Tauri Build
 # have). Callable in two ways:
 #   - workflow_dispatch: manual ad-hoc build for testing, using whatever
 #     version is already committed in package.json/tauri.conf.json.
-#   - workflow_call: invoked by RELEASE-APPS.yml with an explicit `version`
+#   - workflow_call: invoked by release-apps.yml with an explicit `version`
 #     input, which gets stamped into the build before it runs. No tag-push
-#     trigger here - RELEASE-APPS.yml is the only thing that creates release
+#     trigger here - release-apps.yml is the only thing that creates release
 #     tags, and it already calls this workflow directly, so a tag-push
 #     trigger would just build everything a second time.
 on:
@@ -72,15 +72,21 @@ jobs:
         if: inputs.version != ''
         working-directory: frontend
         shell: bash
+        env:
+          VERSION: ${{ inputs.version }}
         run: |
-          npm version "${{ inputs.version }}" --no-git-tag-version --allow-same-version
-          node -e "
-            const fs = require('fs');
-            const path = 'src-tauri/tauri.conf.json';
-            const config = JSON.parse(fs.readFileSync(path, 'utf8'));
-            config.version = '${{ inputs.version }}';
-            fs.writeFileSync(path, JSON.stringify(config, null, 2) + '\n');
-          "
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+            echo "Version must use MAJOR.MINOR.PATCH format, got: $VERSION" >&2
+            exit 1
+          }
+          npm version "$VERSION" --no-git-tag-version --allow-same-version
+          node -e '
+            const fs = require("fs");
+            const path = "src-tauri/tauri.conf.json";
+            const config = JSON.parse(fs.readFileSync(path, "utf8"));
+            config.version = process.env.VERSION;
+            fs.writeFileSync(path, JSON.stringify(config, null, 2) + "\n");
+          '
 
       - name: Build Tauri app
         working-directory: frontend
@@ -94,7 +100,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: backlog-manager-${{ matrix.platform }}
-          if-no-files-found: ignore
+          if-no-files-found: error
           path: |
             frontend/src-tauri/target/release/bundle/dmg/*.dmg
             frontend/src-tauri/target/release/bundle/appimage/*.AppImage
