@@ -1,20 +1,24 @@
 import httpx
 from cryptography.fernet import InvalidToken
-from litestar import Router, post
+from litestar import Router, get, post
+from litestar.datastructures import CacheControlHeader
 from litestar.di import NamedDependency, Provide
 from litestar.exceptions import ClientException, ServiceUnavailableException
+from litestar.params import FromQuery
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.auth.dependencies import BEARER_SECURITY_REQUIREMENT, get_current_user
 from backlog_manager_backend.auth.encryption import decrypt
 from backlog_manager_backend.config import settings
 from backlog_manager_backend.errors import ValidationError
+from backlog_manager_backend.integrations.types import AchievementProgress
 from backlog_manager_backend.schemas.backlog_entry import BacklogEntryResponse
 from backlog_manager_backend.schemas.user import User
 from backlog_manager_backend.services import steam_service
 
 _STEAM_NOT_CONFIGURED = "Steam Web API integration is not configured"
 _STEAM_UNAVAILABLE = "Steam Web API is currently unreachable"
+_NO_STORE = CacheControlHeader(no_store=True)
 
 
 def _resolve_api_key(user: User) -> str:
@@ -64,9 +68,25 @@ async def import_steam_library(
     return [BacklogEntryResponse.from_entry(entry) for entry in created]
 
 
+@get("/api/user/steam/achievements")
+async def get_steam_achievements(
+    steam_app_id: FromQuery[int],
+    current_user: NamedDependency[User],
+) -> AchievementProgress:
+    api_key = _resolve_api_key(current_user)
+
+    try:
+        return await steam_service.get_achievement_progress(current_user, api_key, steam_app_id)
+    except ValidationError as error:
+        raise ClientException(str(error)) from error
+    except httpx.HTTPError as error:
+        raise ServiceUnavailableException(_STEAM_UNAVAILABLE) from error
+
+
 steam_router = Router(
     path="",
-    route_handlers=[sync_steam_playtimes, import_steam_library],
+    route_handlers=[sync_steam_playtimes, import_steam_library, get_steam_achievements],
     dependencies={"current_user": Provide(get_current_user)},
     security=BEARER_SECURITY_REQUIREMENT,
+    cache_control=_NO_STORE,
 )

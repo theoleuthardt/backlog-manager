@@ -9,6 +9,7 @@ import {
 } from "shadcn_components/ui/dialog";
 import { Button } from "shadcn_components/ui/button";
 import { GameImage } from "components/GameImage";
+import { AchievementProgress } from "components/AchievementProgress";
 import {
   XIcon,
   Loader2,
@@ -461,6 +462,10 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                       </div>
                     </div>
                   </div>
+                </div>
+
+                <div id="achievements-section">
+                  <AchievementProgress steamAppId={props.steamAppId} />
                 </div>
 
                 <div id="note-review-section" className="flex gap-4">

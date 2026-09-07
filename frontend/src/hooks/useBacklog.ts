@@ -1,6 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as backlogApi from "~/lib/api/backlog";
-import { importSteamLibrary, syncSteamPlaytimes } from "~/lib/api/steam";
+import {
+  getSteamAchievements,
+  importSteamLibrary,
+  syncSteamPlaytimes,
+} from "~/lib/api/steam";
 
 const ENTRIES_KEY = ["backlog-entries"] as const;
 
@@ -64,5 +68,20 @@ export function useImportSteamLibrary() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ENTRIES_KEY });
     },
+  });
+}
+
+export function useSteamAchievements(
+  steamAppId: number | undefined,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: ["steam-achievements", steamAppId],
+    queryFn: () => getSteamAchievements(steamAppId!),
+    enabled: enabled && steamAppId !== undefined,
+    refetchOnWindowFocus: false,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    retry: 1,
   });
 }

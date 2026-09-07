@@ -1,10 +1,20 @@
 from decimal import ROUND_HALF_UP, Decimal
 
+import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.errors import ConflictError, ValidationError
-from backlog_manager_backend.integrations.steam import get_owned_games
-from backlog_manager_backend.integrations.types import SteamOwnedGame
+from backlog_manager_backend.integrations.steam import (
+    get_achievement_schema,
+    get_owned_games,
+    get_player_achievements,
+)
+from backlog_manager_backend.integrations.types import (
+    AchievementInfo,
+    AchievementProgress,
+    SteamAchievementSchema,
+    SteamOwnedGame,
+)
 from backlog_manager_backend.repositories import backlog_entry_repo
 from backlog_manager_backend.schemas.backlog_entry import (
     BacklogEntry,
@@ -18,6 +28,12 @@ _IMPORTED_PLATFORM = "PC"
 _IMPORTED_STATUS = "Not Started"
 _IMPORTED_INTEREST = 5
 _STEAM_NOT_LINKED = "Steam account is not linked"
+
+# Bounded like game_service._steamgriddb_cover_cache - app_id here is
+# also a caller-supplied query param, not something only ever sourced
+# from Steam's own catalogue.
+_ACHIEVEMENT_SCHEMA_CACHE_MAX_SIZE = 500
+_achievement_schema_cache: dict[int, list[SteamAchievementSchema]] = {}
 
 
 def _minutes_to_hours(minutes: int) -> Decimal:
@@ -137,3 +153,63 @@ async def sync_playtimes_and_import(
     if auto_import:
         updated = updated + await import_library(session, user, api_key, owned_games)
     return updated
+
+
+async def _get_achievement_schema_cached(
+    steam_app_id: int, api_key: str
+) -> list[SteamAchievementSchema]:
+    """Best-effort: a SteamGridDB-style outage here must not fail the
+    whole achievements request, since the schema only supplies display
+    name/description/icon polish - get_player_achievements already
+    returns usable name/description on its own (see
+    get_achievement_progress)."""
+    if steam_app_id in _achievement_schema_cache:
+        return _achievement_schema_cache[steam_app_id]
+
+    try:
+        schema = await get_achievement_schema(steam_app_id, api_key)
+    except httpx.HTTPError:
+        return []
+
+    if len(_achievement_schema_cache) >= _ACHIEVEMENT_SCHEMA_CACHE_MAX_SIZE:
+        _achievement_schema_cache.pop(next(iter(_achievement_schema_cache)))
+    _achievement_schema_cache[steam_app_id] = schema
+    return schema
+
+
+async def get_achievement_progress(
+    user: User, api_key: str, steam_app_id: int
+) -> AchievementProgress:
+    """Combines GetPlayerAchievements (per-user achieved status) with
+    GetSchemaForGame (static per-game display name/description/icon)
+    into one payload, powering the achievement progress bar and
+    overview in the Creation Tool and Update Dialog - see issue #73.
+    playerstats.success being false (app has no stats, or the
+    profile/game isn't public) yields an empty result rather than an
+    error - there's simply no achievement data to show."""
+    if not user.steam_id:
+        raise ValidationError(_STEAM_NOT_LINKED)
+
+    player_stats = await get_player_achievements(user.steam_id, steam_app_id, api_key)
+    if not player_stats.success or not player_stats.achievements:
+        return AchievementProgress(unlocked=0, total=0, achievements=[])
+
+    schema_by_apiname = {
+        entry.name: entry
+        for entry in await _get_achievement_schema_cached(steam_app_id, api_key)
+    }
+
+    achievements = [
+        AchievementInfo(
+            apiname=achievement.apiname,
+            display_name=schema.display_name if schema else (achievement.name or achievement.apiname),
+            description=schema.description if schema else achievement.description,
+            icon=schema.icon if schema else None,
+            achieved=bool(achievement.achieved),
+            unlock_time=achievement.unlocktime,
+        )
+        for achievement in player_stats.achievements
+        for schema in (schema_by_apiname.get(achievement.apiname),)
+    ]
+    unlocked = sum(1 for achievement in achievements if achievement.achieved)
+    return AchievementProgress(unlocked=unlocked, total=len(achievements), achievements=achievements)

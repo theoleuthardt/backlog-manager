@@ -1,11 +1,17 @@
 import asyncio
 from decimal import Decimal
 
+import httpx
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.errors import ConflictError, ValidationError
-from backlog_manager_backend.integrations.types import SteamOwnedGame
+from backlog_manager_backend.integrations.types import (
+    SteamAchievement,
+    SteamAchievementSchema,
+    SteamOwnedGame,
+    SteamPlayerStats,
+)
 from backlog_manager_backend.repositories import backlog_entry_repo, user_repo
 from backlog_manager_backend.schemas.backlog_entry import CreateBacklogEntryParams
 from backlog_manager_backend.schemas.user import CreateUserParams
@@ -271,3 +277,146 @@ async def test_import_library_concurrent_calls_do_not_create_duplicate_entries(
     async with async_session() as verify_session:
         entries = await backlog_entry_repo.get_backlog_entries_by_user(verify_session, user.id)
     assert len(entries) == 1
+
+
+async def test_get_achievement_progress_raises_when_steam_not_linked(
+    session: AsyncSession,
+) -> None:
+    user = await _make_user(session, steam_id=None)
+
+    with pytest.raises(ValidationError):
+        await steam_service.get_achievement_progress(user, "api-key", 504230)
+
+
+async def test_get_achievement_progress_returns_empty_when_app_has_no_stats(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_get_player_achievements(
+        steam_id: str, app_id: int, api_key: str
+    ) -> SteamPlayerStats:
+        return SteamPlayerStats(success=False, achievements=[])
+
+    monkeypatch.setattr(steam_service, "get_player_achievements", fake_get_player_achievements)
+
+    progress = await steam_service.get_achievement_progress(user, "api-key", 504230)
+
+    assert progress.unlocked == 0
+    assert progress.total == 0
+    assert progress.achievements == []
+
+
+async def test_get_achievement_progress_combines_player_stats_and_schema(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    monkeypatch.setattr(steam_service, "_achievement_schema_cache", {})
+
+    async def fake_get_player_achievements(
+        steam_id: str, app_id: int, api_key: str
+    ) -> SteamPlayerStats:
+        return SteamPlayerStats(
+            success=True,
+            achievements=[
+                SteamAchievement(
+                    apiname="ach_a", achieved=1, unlocktime=1000, name="A", description="fallback"
+                ),
+                SteamAchievement(apiname="ach_b", achieved=0, unlocktime=0, name="B"),
+            ],
+        )
+
+    async def fake_get_achievement_schema(
+        app_id: int, api_key: str
+    ) -> list[SteamAchievementSchema]:
+        return [
+            SteamAchievementSchema(
+                name="ach_a",
+                display_name="Achievement A",
+                description="Do the thing",
+                icon="https://example.com/a.jpg",
+            )
+        ]
+
+    monkeypatch.setattr(steam_service, "get_player_achievements", fake_get_player_achievements)
+    monkeypatch.setattr(steam_service, "get_achievement_schema", fake_get_achievement_schema)
+
+    progress = await steam_service.get_achievement_progress(user, "api-key", 504230)
+
+    assert progress.unlocked == 1
+    assert progress.total == 2
+    first, second = progress.achievements
+    assert first.apiname == "ach_a"
+    assert first.display_name == "Achievement A"
+    assert first.description == "Do the thing"
+    assert first.icon == "https://example.com/a.jpg"
+    assert first.achieved is True
+    assert second.apiname == "ach_b"
+    assert second.display_name == "B"
+    assert second.icon is None
+    assert second.achieved is False
+
+
+async def test_get_achievement_progress_falls_back_when_schema_fetch_fails(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    monkeypatch.setattr(steam_service, "_achievement_schema_cache", {})
+
+    async def fake_get_player_achievements(
+        steam_id: str, app_id: int, api_key: str
+    ) -> SteamPlayerStats:
+        return SteamPlayerStats(
+            success=True,
+            achievements=[
+                SteamAchievement(
+                    apiname="ach_a", achieved=1, unlocktime=1000, name="A", description="desc"
+                )
+            ],
+        )
+
+    async def failing_get_achievement_schema(
+        app_id: int, api_key: str
+    ) -> list[SteamAchievementSchema]:
+        raise httpx.ConnectError("connection refused")
+
+    monkeypatch.setattr(steam_service, "get_player_achievements", fake_get_player_achievements)
+    monkeypatch.setattr(steam_service, "get_achievement_schema", failing_get_achievement_schema)
+
+    progress = await steam_service.get_achievement_progress(user, "api-key", 504230)
+
+    assert progress.total == 1
+    assert progress.achievements[0].display_name == "A"
+    assert progress.achievements[0].description == "desc"
+    assert progress.achievements[0].icon is None
+
+
+async def test_get_achievement_progress_caches_schema_across_calls(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    monkeypatch.setattr(steam_service, "_achievement_schema_cache", {})
+    call_count = 0
+
+    async def fake_get_player_achievements(
+        steam_id: str, app_id: int, api_key: str
+    ) -> SteamPlayerStats:
+        return SteamPlayerStats(
+            success=True,
+            achievements=[SteamAchievement(apiname="ach_a", achieved=1, name="A")],
+        )
+
+    async def fake_get_achievement_schema(
+        app_id: int, api_key: str
+    ) -> list[SteamAchievementSchema]:
+        nonlocal call_count
+        call_count += 1
+        return []
+
+    monkeypatch.setattr(steam_service, "get_player_achievements", fake_get_player_achievements)
+    monkeypatch.setattr(steam_service, "get_achievement_schema", fake_get_achievement_schema)
+
+    await steam_service.get_achievement_progress(user, "api-key", 504230)
+    await steam_service.get_achievement_progress(user, "api-key", 504230)
+
+    assert call_count == 1

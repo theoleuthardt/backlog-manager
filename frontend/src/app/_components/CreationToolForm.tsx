@@ -1,5 +1,5 @@
 "use client";
-import { GameImage } from "components/index";
+import { AchievementProgress, GameImage } from "components/index";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Input } from "~/components/ui/input";
@@ -62,6 +62,13 @@ export function CreationToolForm() {
     steamAppIdTouched || steamAppIdQuery.data == null
       ? steamAppId
       : steamAppIdQuery.data.toString();
+  const displayedSteamAppIdNumber = Number(displayedSteamAppId);
+  const resolvedSteamAppId =
+    displayedSteamAppId.trim() &&
+    Number.isSafeInteger(displayedSteamAppIdNumber) &&
+    displayedSteamAppIdNumber >= 0
+      ? displayedSteamAppIdNumber
+      : undefined;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,14 +84,6 @@ export function CreationToolForm() {
         .split(",")
         .map((p) => p.trim())
         .filter(Boolean);
-      const steamAppIdNumber = Number(displayedSteamAppId);
-      const parsedSteamAppId =
-        displayedSteamAppId.trim() &&
-        Number.isSafeInteger(steamAppIdNumber) &&
-        steamAppIdNumber >= 0
-          ? steamAppIdNumber
-          : undefined;
-
       if (genreList.length === 0) {
         toast.error("Please enter at least one genre");
         setIsLoading(false);
@@ -114,7 +113,7 @@ export function CreationToolForm() {
         owned,
         interest,
         playtime,
-        steamAppId: parsedSteamAppId,
+        steamAppId: resolvedSteamAppId,
         imageLink: imageUrl,
         mainTime:
           Number.isFinite(mainStory) && mainStory > 0 ? mainStory : undefined,
@@ -350,6 +349,10 @@ export function CreationToolForm() {
                   placeholder="e.g. 504230"
                   className="bg-black text-white"
                 />
+              </div>
+
+              <div className="space-y-1 lg:col-span-2">
+                <AchievementProgress steamAppId={resolvedSteamAppId} />
               </div>
 
               <div className="space-y-1">
