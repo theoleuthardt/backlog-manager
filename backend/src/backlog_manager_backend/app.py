@@ -13,7 +13,6 @@ from backlog_manager_backend.routes.csv import csv_router
 from backlog_manager_backend.routes.games import (
     authenticated_games_router,
     get_steam_app_id,
-    get_steamgriddb_covers,
 )
 from backlog_manager_backend.routes.health import health
 from backlog_manager_backend.routes.images import proxy_image
@@ -43,7 +42,6 @@ def create_app() -> Litestar:
             csv_router,
             authenticated_games_router,
             get_steam_app_id,
-            get_steamgriddb_covers,
         ],
         dependencies={"db_session": Provide(provide_db_session)},
         on_startup=[bootstrap_initial_admin],

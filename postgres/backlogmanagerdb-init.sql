@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS "blm-system"."Users"(
     "SteamId" VARCHAR(255),
     "SteamApiKeyEncrypted" TEXT,
     "IgdbCredentialsEncrypted" TEXT,
+    "SteamGridDbApiKeyEncrypted" TEXT,
     "SteamAutoImportEnabled" BOOLEAN NOT NULL DEFAULT FALSE,
     "IsAdmin" BOOLEAN NOT NULL DEFAULT FALSE,
     "TotpSecretEncrypted" TEXT,

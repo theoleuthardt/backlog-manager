@@ -2879,16 +2879,16 @@
         ]
       }
     },
-    "/api/games/steam-app-id": {
+    "/api/games/steamgriddb-covers": {
       "get": {
-        "summary": "GetSteamAppId",
-        "operationId": "ApiGamesSteamAppIdGetSteamAppId",
+        "summary": "GetSteamgriddbCovers",
+        "operationId": "ApiGamesSteamgriddbCoversGetSteamgriddbCovers",
         "parameters": [
           {
-            "name": "title",
+            "name": "steam_app_id",
             "in": "query",
             "schema": {
-              "type": "string"
+              "type": "integer"
             },
             "required": true,
             "deprecated": false,
@@ -2903,14 +2903,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "type": "integer"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
                 }
               }
             }
@@ -2954,19 +2950,24 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
-    "/api/games/steamgriddb-covers": {
+    "/api/games/steam-app-id": {
       "get": {
-        "summary": "GetSteamgriddbCovers",
-        "operationId": "ApiGamesSteamgriddbCoversGetSteamgriddbCovers",
+        "summary": "GetSteamAppId",
+        "operationId": "ApiGamesSteamAppIdGetSteamAppId",
         "parameters": [
           {
-            "name": "steam_app_id",
+            "name": "title",
             "in": "query",
             "schema": {
-              "type": "integer"
+              "type": "string"
             },
             "required": true,
             "deprecated": false,
@@ -2981,10 +2982,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "type": "string"
-                  },
-                  "type": "array"
+                  "oneOf": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
                 }
               }
             }
@@ -3751,16 +3756,6 @@
               }
             ]
           },
-          "category": {
-            "oneOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
           "cover": {
             "oneOf": [
               {
@@ -4185,6 +4180,16 @@
             ]
           },
           "game_type": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parent_game": {
             "oneOf": [
               {
                 "type": "integer"
@@ -4798,6 +4803,10 @@
             "type": "boolean",
             "default": false
           },
+          "has_steamgriddb_api_key": {
+            "type": "boolean",
+            "default": false
+          },
           "steam_auto_import_enabled": {
             "type": "boolean",
             "default": false
@@ -5184,6 +5193,16 @@
               }
             ]
           },
+          "steamgriddb_api_key": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "steam_auto_import_enabled": {
             "oneOf": [
               {
@@ -5250,6 +5269,16 @@
             ]
           },
           "igdb_client_secret": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "steamgriddb_api_key": {
             "oneOf": [
               {
                 "type": "string"

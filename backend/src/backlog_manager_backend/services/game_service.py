@@ -5,7 +5,6 @@ import time
 import httpx
 import structlog
 
-from backlog_manager_backend.config import settings
 from backlog_manager_backend.integrations.howlongtobeat import search_game_on_hltb
 from backlog_manager_backend.integrations.igdb import (
     generate_igdb_token,
@@ -150,19 +149,21 @@ async def _resolve_time_to_beat(game: IGDBGameData) -> tuple[int, float, float, 
     return result
 
 
-async def get_game_covers(steam_app_id: int) -> list[str]:
+async def get_game_covers(steam_app_id: int, api_key: str | None) -> list[str]:
     """All SteamGridDB grid image URLs available for a game, highest
     community score first - powers the cover-selection UI for editing
-    an existing entry's picture. Raises (RuntimeError if unconfigured,
-    httpx.HTTPError on a request failure) rather than swallowing,
-    unlike _try_get_steamgriddb_covers below - a user who opened the
-    picker needs to know it failed rather than seeing an empty grid."""
-    if steam_app_id in _steamgriddb_cover_cache:
-        return _steamgriddb_cover_cache[steam_app_id]
-
-    api_key = settings.steamgriddb_api_key
+    an existing entry's picture. `api_key` is the caller's resolved key
+    (their own, or the global settings.steamgriddb_api_key fallback) -
+    see routes/games.py::_resolve_steamgriddb_api_key. Raises
+    (RuntimeError if unconfigured, httpx.HTTPError on a request
+    failure) rather than swallowing, unlike _try_get_steamgriddb_covers
+    below - a user who opened the picker needs to know it failed rather
+    than seeing an empty grid."""
     if not api_key:
         raise RuntimeError("SteamGridDB API key not configured")
+
+    if steam_app_id in _steamgriddb_cover_cache:
+        return _steamgriddb_cover_cache[steam_app_id]
 
     grids = await get_grids_by_steam_app_id(steam_app_id, api_key)
     urls = [grid.url for grid in sorted(grids, key=lambda grid: grid.score, reverse=True)]
@@ -173,18 +174,18 @@ async def get_game_covers(steam_app_id: int) -> list[str]:
     return urls
 
 
-async def _try_get_steamgriddb_covers(steam_app_id: int) -> list[str]:
+async def _try_get_steamgriddb_covers(steam_app_id: int, api_key: str | None) -> list[str]:
     """Best-effort variant of get_game_covers for search enrichment -
     a SteamGridDB failure or missing API key here must not fail the
     whole search, unlike the dedicated cover-picker endpoint."""
     try:
-        return await get_game_covers(steam_app_id)
+        return await get_game_covers(steam_app_id, api_key)
     except (RuntimeError, httpx.HTTPError):
         return []
 
 
 async def _resolve_steamgriddb_covers_by_game_id(
-    games: list[IGDBGameData],
+    games: list[IGDBGameData], api_key: str | None
 ) -> dict[int, list[str]]:
     """Resolves Steam App IDs for a page of search results (cheap - an
     in-memory dict lookup once the catalogue is warm) then fetches
@@ -192,7 +193,7 @@ async def _resolve_steamgriddb_covers_by_game_id(
     game at a time - a SteamGridDB outage would otherwise delay the
     whole search by one request timeout per game, up to
     _SEARCH_RESULT_LIMIT of them."""
-    if not settings.steamgriddb_api_key:
+    if not api_key:
         return {}
 
     steam_app_ids_by_game_id: dict[int, int] = {}
@@ -207,7 +208,7 @@ async def _resolve_steamgriddb_covers_by_game_id(
 
     cover_lists = await asyncio.gather(
         *(
-            _try_get_steamgriddb_covers(steam_app_id)
+            _try_get_steamgriddb_covers(steam_app_id, api_key)
             for steam_app_id in steam_app_ids_by_game_id.values()
         )
     )
@@ -215,7 +216,11 @@ async def _resolve_steamgriddb_covers_by_game_id(
 
 
 async def _enrich_search_results(
-    search_results: list[IGDBSearchResult], client_id: str, access_token: str, search_term: str
+    search_results: list[IGDBSearchResult],
+    client_id: str,
+    access_token: str,
+    search_term: str,
+    steamgriddb_api_key: str | None,
 ) -> list[EnrichedResult]:
     """Batches every IGDB lookup needed to enrich a page of search
     results into (at most) one request per data type, instead of one
@@ -338,7 +343,9 @@ async def _enrich_search_results(
         if game.id in _time_to_beat_cache:
             time_to_beat_by_game_id[game.id] = _time_to_beat_cache[game.id]
 
-    steamgriddb_covers_by_game_id = await _resolve_steamgriddb_covers_by_game_id(games)
+    steamgriddb_covers_by_game_id = await _resolve_steamgriddb_covers_by_game_id(
+        games, steamgriddb_api_key
+    )
 
     results: list[EnrichedResult] = []
     for game_id in ranked_game_ids:
@@ -393,7 +400,9 @@ async def _enrich_search_results(
     return results
 
 
-async def search(search_term: str, client_id: str, client_secret: str) -> list[EnrichedResult]:
+async def search(
+    search_term: str, client_id: str, client_secret: str, steamgriddb_api_key: str | None
+) -> list[EnrichedResult]:
     """Enriched search: finds games on IGDB, then fills in cover image,
     genres, platforms and beat-time data (falling back to HowLongToBeat
     when IGDB has no beat-time data). Batches every lookup into at most
@@ -405,10 +414,14 @@ async def search(search_term: str, client_id: str, client_secret: str) -> list[E
     where DLC/alternate-version hits were crowding the base game out of
     the top results. `client_id`/`client_secret` are the caller's
     resolved IGDB credentials (their own, or the global settings
-    fallback) - see routes/games.py::_resolve_igdb_credentials."""
+    fallback) - see routes/games.py::_resolve_igdb_credentials.
+    `steamgriddb_api_key` is the calling user's resolved key (their own,
+    or the global fallback) - see routes/games.py::_resolve_steamgriddb_api_key."""
     access_token = await get_valid_token(client_id, client_secret)
     search_results = await search_game_on_igdb(search_term, client_id, access_token)
-    return await _enrich_search_results(search_results, client_id, access_token, search_term)
+    return await _enrich_search_results(
+        search_results, client_id, access_token, search_term, steamgriddb_api_key
+    )
 
 
 def _normalize_game_title(title: str) -> str:

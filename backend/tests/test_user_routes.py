@@ -504,3 +504,149 @@ async def test_update_own_user_trims_igdb_credentials_before_storing(
     )
     assert decrypted.client_id == "my-client-id"
     assert decrypted.client_secret == "my-secret"
+
+
+async def test_update_own_user_sets_steamgriddb_api_key(
+    postgres_url: str, create_and_login, monkeypatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.routes import user as user_routes
+
+    monkeypatch.setattr(
+        user_routes.settings, "steam_api_key_encryption_key", Fernet.generate_key().decode()
+    )
+
+    app = create_app()
+
+    with TestClient(app=app) as client:
+        headers = await create_and_login(client, "steamgriddbkeyuser@example.com")
+
+        update_response = client.put(
+            "/api/user/me", headers=headers, json={"steamgriddb_api_key": "my-steamgriddb-key"}
+        )
+        me_response = client.get("/api/user/me", headers=headers)
+
+    assert update_response.status_code == 200
+    assert update_response.json()["has_steamgriddb_api_key"] is True
+    assert "steamgriddb_api_key" not in update_response.json()
+    assert "steamgriddb_api_key_encrypted" not in update_response.json()
+    assert me_response.json()["has_steamgriddb_api_key"] is True
+
+
+async def test_update_own_user_clears_steamgriddb_api_key_with_empty_string(
+    postgres_url: str, create_and_login, monkeypatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.routes import user as user_routes
+
+    monkeypatch.setattr(
+        user_routes.settings, "steam_api_key_encryption_key", Fernet.generate_key().decode()
+    )
+
+    app = create_app()
+
+    with TestClient(app=app) as client:
+        headers = await create_and_login(client, "clearsteamgriddbkey@example.com")
+        client.put(
+            "/api/user/me", headers=headers, json={"steamgriddb_api_key": "my-steamgriddb-key"}
+        )
+
+        clear_response = client.put(
+            "/api/user/me", headers=headers, json={"steamgriddb_api_key": ""}
+        )
+
+    assert clear_response.status_code == 200
+    assert clear_response.json()["has_steamgriddb_api_key"] is False
+
+
+async def test_update_own_user_returns_503_when_steamgriddb_key_storage_not_configured(
+    postgres_url: str, create_and_login, monkeypatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.routes import user as user_routes
+
+    monkeypatch.setattr(user_routes.settings, "steam_api_key_encryption_key", None)
+
+    app = create_app()
+
+    with TestClient(app=app) as client:
+        headers = await create_and_login(client, "nosteamgriddbkeystorage@example.com")
+        response = client.put(
+            "/api/user/me", headers=headers, json={"steamgriddb_api_key": "my-steamgriddb-key"}
+        )
+
+    assert response.status_code == 503
+
+
+async def test_update_own_user_returns_503_when_steamgriddb_encryption_key_is_malformed(
+    postgres_url: str, create_and_login, monkeypatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.routes import user as user_routes
+
+    monkeypatch.setattr(user_routes.settings, "steam_api_key_encryption_key", "not-a-valid-fernet-key")
+
+    app = create_app()
+
+    with TestClient(app=app) as client:
+        headers = await create_and_login(client, "badsteamgriddbencryptionkey@example.com")
+        response = client.put(
+            "/api/user/me", headers=headers, json={"steamgriddb_api_key": "my-steamgriddb-key"}
+        )
+
+    assert response.status_code == 503
+
+
+async def test_update_own_user_trims_steamgriddb_api_key_before_storing(
+    postgres_url: str, create_and_login, monkeypatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.auth.encryption import decrypt
+    from backlog_manager_backend.db import async_session
+    from backlog_manager_backend.repositories import user_repo
+    from backlog_manager_backend.routes import user as user_routes
+
+    key = Fernet.generate_key().decode()
+    monkeypatch.setattr(user_routes.settings, "steam_api_key_encryption_key", key)
+
+    app = create_app()
+
+    with TestClient(app=app) as client:
+        headers = await create_and_login(client, "trimsteamgriddbkey@example.com")
+        client.put(
+            "/api/user/me",
+            headers=headers,
+            json={"steamgriddb_api_key": "  my-steamgriddb-key  "},
+        )
+
+    async with async_session() as session:
+        stored = await user_repo.get_user_by_email(session, "trimsteamgriddbkey@example.com")
+
+    assert stored is not None
+    assert decrypt(stored.steamgriddb_api_key_encrypted, key) == "my-steamgriddb-key"
+
+
+async def test_update_own_user_can_set_both_steam_and_steamgriddb_keys_independently(
+    postgres_url: str, create_and_login, monkeypatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.routes import user as user_routes
+
+    monkeypatch.setattr(
+        user_routes.settings, "steam_api_key_encryption_key", Fernet.generate_key().decode()
+    )
+
+    app = create_app()
+
+    with TestClient(app=app) as client:
+        headers = await create_and_login(client, "bothkeys@example.com")
+
+        client.put("/api/user/me", headers=headers, json={"steam_api_key": "steam-key"})
+        response = client.put(
+            "/api/user/me", headers=headers, json={"steamgriddb_api_key": "griddb-key"}
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["has_steam_api_key"] is True
+    assert body["has_steamgriddb_api_key"] is True

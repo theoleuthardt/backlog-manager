@@ -61,6 +61,20 @@ def _resolve_igdb_credentials(user: User) -> tuple[str, str]:
     raise ServiceUnavailableException(_IGDB_NOT_CONFIGURED)
 
 
+def _resolve_steamgriddb_api_key(user: User) -> str | None:
+    """Per-user-key-with-global-fallback, mirroring
+    routes/steam.py::_resolve_api_key - except a missing key here
+    resolves to None rather than raising, since callers (game_service)
+    already treat "no key" as a legitimate, non-fatal state (skip
+    SteamGridDB, don't fail the whole search)."""
+    if user.steamgriddb_api_key_encrypted and settings.steam_api_key_encryption_key:
+        try:
+            return decrypt(user.steamgriddb_api_key_encrypted, settings.steam_api_key_encryption_key)
+        except (InvalidToken, ValueError) as error:
+            raise ServiceUnavailableException(_STEAMGRIDDB_UNAVAILABLE) from error
+    return settings.steamgriddb_api_key
+
+
 async def _igdb_credentials(user: User) -> tuple[str, str]:
     client_id, client_secret = _resolve_igdb_credentials(user)
     try:
@@ -99,8 +113,11 @@ async def enriched_search(
     search_term: FromQuery[str], current_user: NamedDependency[User]
 ) -> list[EnrichedResult]:
     client_id, client_secret = _resolve_igdb_credentials(current_user)
+    steamgriddb_api_key = _resolve_steamgriddb_api_key(current_user)
     try:
-        return await _call_igdb(game_service.search(search_term, client_id, client_secret))
+        return await _call_igdb(
+            game_service.search(search_term, client_id, client_secret, steamgriddb_api_key)
+        )
     except RuntimeError as error:
         raise ServiceUnavailableException(_IGDB_NOT_CONFIGURED) from error
 
@@ -111,9 +128,13 @@ async def get_steam_app_id(title: FromQuery[str]) -> int | None:
 
 
 @get("/api/games/steamgriddb-covers")
-async def get_steamgriddb_covers(steam_app_id: FromQuery[int]) -> list[str]:
+async def get_steamgriddb_covers(
+    steam_app_id: FromQuery[int], current_user: NamedDependency[User]
+) -> list[str]:
     try:
-        return await game_service.get_game_covers(steam_app_id)
+        return await game_service.get_game_covers(
+            steam_app_id, _resolve_steamgriddb_api_key(current_user)
+        )
     except RuntimeError as error:
         raise ServiceUnavailableException(_STEAMGRIDDB_NOT_CONFIGURED) from error
     except httpx.HTTPError as error:
@@ -170,6 +191,7 @@ authenticated_games_router = Router(
         get_platform,
         get_cover,
         get_genre,
+        get_steamgriddb_covers,
     ],
     dependencies={"current_user": Provide(get_current_user)},
     security=BEARER_SECURITY_REQUIREMENT,

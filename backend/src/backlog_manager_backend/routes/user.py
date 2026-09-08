@@ -48,18 +48,29 @@ def _hash_if_present(password: str | object) -> str | object:
     return hash_password(password) if isinstance(password, str) else password
 
 
-def _encrypt_steam_api_key_if_present(steam_api_key: str | None | object) -> str | None | object:
-    if not isinstance(steam_api_key, str):
-        return steam_api_key
-    trimmed = steam_api_key.strip()
+def _encrypt_api_key_if_present(
+    api_key: str | None | object, *, not_configured_message: str
+) -> str | None | object:
+    """Shared encrypt-on-write helper for every per-user API key column
+    (Steam, SteamGridDB, ...) - they all reuse the same Fernet key
+    (settings.steam_api_key_encryption_key) since it's just a shared
+    secret for encrypting arbitrary per-user values at rest, not
+    something specific to Steam."""
+    if not isinstance(api_key, str):
+        return api_key
+    trimmed = api_key.strip()
     if not trimmed:
         return None
     if not settings.steam_api_key_encryption_key:
-        raise ServiceUnavailableException("Steam API key storage is not configured")
+        raise ServiceUnavailableException(not_configured_message)
     try:
         return encrypt(trimmed, settings.steam_api_key_encryption_key)
     except ValueError as error:
-        raise ServiceUnavailableException("Steam API key storage is not configured") from error
+        raise ServiceUnavailableException(not_configured_message) from error
+
+
+_STEAM_API_KEY_NOT_CONFIGURED = "Steam API key storage is not configured"
+_STEAMGRIDDB_API_KEY_NOT_CONFIGURED = "SteamGridDB API key storage is not configured"
 
 
 _IGDB_CREDENTIALS_NOT_CONFIGURED = "IGDB credential storage is not configured"
@@ -73,7 +84,7 @@ def _encrypt_igdb_credentials_if_present(
     blob (IGDBCredentials) rather than as two independent columns, so
     the database can never hold a client_id without its secret or vice
     versa - reuses the same Fernet key as
-    _encrypt_steam_api_key_if_present, since it's just a shared secret
+    _encrypt_api_key_if_present, since it's just a shared secret
     for encrypting arbitrary per-user values at rest. UNSET on both
     (neither field sent) means "leave unchanged"; both blank means
     "clear"; exactly one blank, or exactly one UNSET while the other
@@ -123,9 +134,15 @@ async def update_own_user(
                 email=data.email,
                 password_hash=_hash_if_present(data.password),
                 steam_id=data.steam_id,
-                steam_api_key_encrypted=_encrypt_steam_api_key_if_present(data.steam_api_key),
+                steam_api_key_encrypted=_encrypt_api_key_if_present(
+                    data.steam_api_key, not_configured_message=_STEAM_API_KEY_NOT_CONFIGURED
+                ),
                 igdb_credentials_encrypted=_encrypt_igdb_credentials_if_present(
                     data.igdb_client_id, data.igdb_client_secret
+                ),
+                steamgriddb_api_key_encrypted=_encrypt_api_key_if_present(
+                    data.steamgriddb_api_key,
+                    not_configured_message=_STEAMGRIDDB_API_KEY_NOT_CONFIGURED,
                 ),
                 steam_auto_import_enabled=data.steam_auto_import_enabled,
             ),
@@ -214,9 +231,15 @@ async def update_user_admin(
                 email=data.email,
                 password_hash=_hash_if_present(data.password),
                 steam_id=data.steam_id,
-                steam_api_key_encrypted=_encrypt_steam_api_key_if_present(data.steam_api_key),
+                steam_api_key_encrypted=_encrypt_api_key_if_present(
+                    data.steam_api_key, not_configured_message=_STEAM_API_KEY_NOT_CONFIGURED
+                ),
                 igdb_credentials_encrypted=_encrypt_igdb_credentials_if_present(
                     data.igdb_client_id, data.igdb_client_secret
+                ),
+                steamgriddb_api_key_encrypted=_encrypt_api_key_if_present(
+                    data.steamgriddb_api_key,
+                    not_configured_message=_STEAMGRIDDB_API_KEY_NOT_CONFIGURED,
                 ),
                 steam_auto_import_enabled=data.steam_auto_import_enabled,
                 is_admin=data.is_admin,
