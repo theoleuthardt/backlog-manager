@@ -39,7 +39,6 @@ class IGDBGameData(msgspec.Struct):
     alternative_names: list[int] | None = None
     artworks: list[int] | None = None
     bundles: list[int] | None = None
-    category: int | None = None
     cover: int | None = None
     created_at: int | None = None
     dlcs: list[int] | None = None
@@ -77,6 +76,7 @@ class IGDBGameData(msgspec.Struct):
     game_localizations: list[int] | None = None
     collections: list[int] | None = None
     game_type: int | None = None
+    parent_game: int | None = None
 
 
 class IGDBPlatform(msgspec.Struct):
