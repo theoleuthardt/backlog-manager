@@ -3072,6 +3072,9 @@
           },
           "unlock_time": {
             "type": "integer"
+          },
+          "hidden": {
+            "type": "boolean"
           }
         },
         "type": "object",
@@ -3080,6 +3083,7 @@
           "apiname",
           "description",
           "display_name",
+          "hidden",
           "icon",
           "unlock_time"
         ],

@@ -605,6 +605,7 @@ export interface components {
             icon: string | null;
             achieved: boolean;
             unlock_time: number;
+            hidden: boolean;
         };
         /** AchievementProgress */
         AchievementProgress: {

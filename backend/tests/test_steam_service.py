@@ -397,10 +397,48 @@ async def test_get_achievement_progress_combines_player_stats_and_schema(
     assert first.description == "Do the thing"
     assert first.icon == "https://example.com/a.jpg"
     assert first.achieved is True
+    assert first.hidden is False
     assert second.apiname == "ach_b"
     assert second.display_name == "B"
     assert second.icon is None
     assert second.achieved is False
+    assert second.hidden is False
+
+
+async def test_get_achievement_progress_marks_hidden_achievements(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Steam omits description for a secret achievement until it's
+    unlocked - that's the schema's hidden flag, not missing data, so
+    it's surfaced on AchievementInfo rather than just silently leaving
+    description blank."""
+    user = await _make_user(session)
+    monkeypatch.setattr(steam_service, "_achievement_schema_cache", {})
+
+    async def fake_get_player_achievements(
+        steam_id: str, app_id: int, api_key: str
+    ) -> SteamPlayerStats:
+        return SteamPlayerStats(
+            success=True,
+            achievements=[SteamAchievement(apiname="secret", achieved=0, unlocktime=0)],
+        )
+
+    async def fake_get_achievement_schema(
+        app_id: int, api_key: str
+    ) -> list[SteamAchievementSchema]:
+        return [
+            SteamAchievementSchema(
+                name="secret", display_name="???", description=None, hidden=1
+            )
+        ]
+
+    monkeypatch.setattr(steam_service, "get_player_achievements", fake_get_player_achievements)
+    monkeypatch.setattr(steam_service, "get_achievement_schema", fake_get_achievement_schema)
+
+    progress = await steam_service.get_achievement_progress(user, "api-key", 504230)
+
+    assert progress.achievements[0].hidden is True
+    assert progress.achievements[0].description is None
 
 
 async def test_get_achievement_progress_falls_back_when_schema_fetch_fails(

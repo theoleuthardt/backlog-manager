@@ -22,6 +22,7 @@ export interface AchievementInfo {
   icon: string | null;
   achieved: boolean;
   unlockTime: number;
+  hidden: boolean;
 }
 
 export interface AchievementProgress {
@@ -48,6 +49,7 @@ export async function getSteamAchievements(
       icon: achievement.icon,
       achieved: achievement.achieved,
       unlockTime: achievement.unlock_time,
+      hidden: achievement.hidden,
     })),
   };
 }

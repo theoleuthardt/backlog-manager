@@ -229,6 +229,7 @@ async def get_achievement_progress(
             icon=schema.icon if schema else None,
             achieved=bool(achievement.achieved),
             unlock_time=achievement.unlocktime,
+            hidden=bool(schema.hidden) if schema else False,
         )
         for achievement in player_stats.achievements
         for schema in (schema_by_apiname.get(achievement.apiname),)
