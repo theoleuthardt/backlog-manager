@@ -111,6 +111,117 @@ async def test_proxy_image_allows_steamstatic_subdomains(
     assert response.status_code == 200
 
 
+@pytest.mark.parametrize(
+    "cover_url",
+    [
+        "https://cdn2.steamgriddb.com/grid/hash.png",
+        "https://steamgriddb.com/some/path/hash.png",
+    ],
+)
+async def test_proxy_image_allows_steamgriddb_subdomains(
+    cover_url: str, monkeypatch: pytest.MonkeyPatch, postgres_url: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"cover", headers={"content-type": "image/png"})
+
+    _mock_client(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get("/api/images/proxy", params={"url": cover_url})
+
+    assert response.status_code == 200
+
+
+async def test_proxy_image_rejects_steamgriddb_lookalike_host(
+    monkeypatch: pytest.MonkeyPatch, postgres_url: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise AssertionError("should never call out for a lookalike host")
+
+    _mock_client(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get(
+            "/api/images/proxy",
+            params={"url": "https://evilsteamgriddb.com/steal-my-data.png"},
+        )
+
+    assert response.status_code == 400
+
+
+async def test_proxy_image_follows_redirect_from_media_steampowered_to_steamstatic(
+    monkeypatch: pytest.MonkeyPatch, postgres_url: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    icon_url = (
+        "https://media.steampowered.com/steamcommunity/public/images/apps/620/hash.jpg"
+    )
+    cdn_url = "https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/620/hash.jpg"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if str(request.url) == icon_url:
+            return httpx.Response(302, headers={"location": cdn_url})
+        if str(request.url) == cdn_url:
+            return httpx.Response(200, content=b"icon", headers={"content-type": "image/jpeg"})
+        raise AssertionError(f"unexpected request: {request.url}")
+
+    _mock_client(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get("/api/images/proxy", params={"url": icon_url})
+
+    assert response.status_code == 200
+    assert response.content == b"icon"
+
+
+async def test_proxy_image_rejects_redirect_to_a_non_allowlisted_host(
+    monkeypatch: pytest.MonkeyPatch, postgres_url: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    icon_url = "https://media.steampowered.com/redirect-me.jpg"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if str(request.url) == icon_url:
+            return httpx.Response(
+                302, headers={"location": "https://evil.example.com/steal.jpg"}
+            )
+        raise AssertionError("should never follow a redirect to a non-allowlisted host")
+
+    _mock_client(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get("/api/images/proxy", params={"url": icon_url})
+
+    assert response.status_code == 404
+
+
+async def test_proxy_image_rejects_too_many_redirects(
+    monkeypatch: pytest.MonkeyPatch, postgres_url: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            302, headers={"location": "https://media.steampowered.com/next.jpg"}
+        )
+
+    _mock_client(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get(
+            "/api/images/proxy",
+            params={"url": "https://media.steampowered.com/start.jpg"},
+        )
+
+    assert response.status_code == 404
+
+
 async def test_proxy_image_rejects_steamstatic_lookalike_host(
     monkeypatch: pytest.MonkeyPatch, postgres_url: str
 ) -> None:
