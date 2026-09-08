@@ -1,5 +1,6 @@
 import { apiClient, apiErrorMessage } from "./client";
 import type { CurrentUser } from "./auth";
+import type { components } from "./schema";
 
 export interface UpdateCurrentUserInput {
   username?: string;
@@ -7,21 +8,12 @@ export interface UpdateCurrentUserInput {
   password?: string;
   steamId?: string;
   steamApiKey?: string;
+  igdbClientId?: string;
+  igdbClientSecret?: string;
   steamAutoImportEnabled?: boolean;
 }
 
-function toCurrentUser(user: {
-  id: number;
-  name: string;
-  email: string;
-  is_admin: boolean;
-  is_two_factor_enabled: boolean;
-  created_at: string;
-  updated_at: string;
-  steam_id?: string | null;
-  has_steam_api_key?: boolean;
-  steam_auto_import_enabled?: boolean;
-}): CurrentUser {
+function toCurrentUser(user: components["schemas"]["PublicUser"]): CurrentUser {
   return {
     id: user.id,
     name: user.name,
@@ -32,6 +24,7 @@ function toCurrentUser(user: {
     updatedAt: user.updated_at,
     steamId: user.steam_id ?? undefined,
     hasSteamApiKey: user.has_steam_api_key ?? false,
+    hasIgdbCredentials: user.has_igdb_credentials ?? false,
     steamAutoImportEnabled: user.steam_auto_import_enabled ?? false,
   };
 }
@@ -46,6 +39,8 @@ export async function updateCurrentUser(
       password: input.password,
       steam_id: input.steamId,
       steam_api_key: input.steamApiKey,
+      igdb_client_id: input.igdbClientId,
+      igdb_client_secret: input.igdbClientSecret,
       steam_auto_import_enabled: input.steamAutoImportEnabled,
     },
   });

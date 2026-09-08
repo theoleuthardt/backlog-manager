@@ -23,6 +23,17 @@ class IGDBTokenResponse(msgspec.Struct):
     token_type: str
 
 
+class IGDBCredentials(msgspec.Struct):
+    """The shape encrypted (as one JSON blob, see
+    routes/user.py::_encrypt_igdb_credentials_if_present) into a user's
+    igdb_credentials_encrypted column - client_id and client_secret are
+    stored together so the database can never hold one without the
+    other."""
+
+    client_id: str
+    client_secret: str
+
+
 class IGDBSearchResult(msgspec.Struct):
     id: int
     alternative_name: str | None = None

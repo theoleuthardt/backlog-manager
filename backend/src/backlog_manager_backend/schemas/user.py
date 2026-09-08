@@ -15,6 +15,7 @@ class User(msgspec.Struct):
     totp_enabled: bool = False
     steam_id: str | None = None
     steam_api_key_encrypted: str | None = None
+    igdb_credentials_encrypted: str | None = None
     steam_auto_import_enabled: bool = False
 
 
@@ -37,6 +38,7 @@ class UpdateUserParams(msgspec.Struct):
     password_hash: str | msgspec.UnsetType = msgspec.UNSET
     steam_id: str | None | msgspec.UnsetType = msgspec.UNSET
     steam_api_key_encrypted: str | None | msgspec.UnsetType = msgspec.UNSET
+    igdb_credentials_encrypted: str | None | msgspec.UnsetType = msgspec.UNSET
     steam_auto_import_enabled: bool | msgspec.UnsetType = msgspec.UNSET
     is_admin: bool | msgspec.UnsetType = msgspec.UNSET
     # Set only by the 2FA enroll/verify/disable service functions - never
@@ -59,6 +61,7 @@ class PublicUser(msgspec.Struct):
     updated_at: datetime
     steam_id: str | None = None
     has_steam_api_key: bool = False
+    has_igdb_credentials: bool = False
     steam_auto_import_enabled: bool = False
 
     @classmethod
@@ -73,6 +76,7 @@ class PublicUser(msgspec.Struct):
             updated_at=user.updated_at,
             steam_id=user.steam_id,
             has_steam_api_key=bool(user.steam_api_key_encrypted),
+            has_igdb_credentials=bool(user.igdb_credentials_encrypted),
             steam_auto_import_enabled=user.steam_auto_import_enabled,
         )
 
@@ -104,6 +108,8 @@ class UpdateOwnUserRequest(msgspec.Struct):
     password: str | msgspec.UnsetType = msgspec.UNSET
     steam_id: str | None | msgspec.UnsetType = msgspec.UNSET
     steam_api_key: str | None | msgspec.UnsetType = msgspec.UNSET
+    igdb_client_id: str | None | msgspec.UnsetType = msgspec.UNSET
+    igdb_client_secret: str | None | msgspec.UnsetType = msgspec.UNSET
     steam_auto_import_enabled: bool | msgspec.UnsetType = msgspec.UNSET
 
 
@@ -116,6 +122,8 @@ class UpdateUserAdminRequest(msgspec.Struct):
     password: str | msgspec.UnsetType = msgspec.UNSET
     steam_id: str | None | msgspec.UnsetType = msgspec.UNSET
     steam_api_key: str | None | msgspec.UnsetType = msgspec.UNSET
+    igdb_client_id: str | None | msgspec.UnsetType = msgspec.UNSET
+    igdb_client_secret: str | None | msgspec.UnsetType = msgspec.UNSET
     steam_auto_import_enabled: bool | msgspec.UnsetType = msgspec.UNSET
     is_admin: bool | msgspec.UnsetType = msgspec.UNSET
 

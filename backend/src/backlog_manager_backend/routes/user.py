@@ -1,3 +1,4 @@
+import msgspec
 from litestar import Router, delete, get, post, put
 from litestar.datastructures import CacheControlHeader
 from litestar.di import NamedDependency, Provide
@@ -15,6 +16,7 @@ from backlog_manager_backend.auth.encryption import encrypt
 from backlog_manager_backend.auth.passwords import hash_password
 from backlog_manager_backend.config import settings
 from backlog_manager_backend.errors import ConflictError, NotFoundError, ValidationError
+from backlog_manager_backend.integrations.types import IGDBCredentials
 from backlog_manager_backend.repositories import user_repo
 from backlog_manager_backend.schemas.user import (
     CreateUserRequest,
@@ -60,6 +62,44 @@ def _encrypt_steam_api_key_if_present(steam_api_key: str | None | object) -> str
         raise ServiceUnavailableException("Steam API key storage is not configured") from error
 
 
+_IGDB_CREDENTIALS_NOT_CONFIGURED = "IGDB credential storage is not configured"
+_IGDB_CREDENTIALS_INCOMPLETE = "Both IGDB Client ID and Client Secret must be set together"
+
+
+def _encrypt_igdb_credentials_if_present(
+    client_id: str | None | object, client_secret: str | None | object
+) -> str | None | object:
+    """client_id and client_secret are encrypted together as one JSON
+    blob (IGDBCredentials) rather than as two independent columns, so
+    the database can never hold a client_id without its secret or vice
+    versa - reuses the same Fernet key as
+    _encrypt_steam_api_key_if_present, since it's just a shared secret
+    for encrypting arbitrary per-user values at rest. UNSET on both
+    (neither field sent) means "leave unchanged"; both blank means
+    "clear"; exactly one blank, or exactly one UNSET while the other
+    is sent, is rejected rather than silently dropping (or clearing)
+    the other half of an existing pair."""
+    if client_id is msgspec.UNSET and client_secret is msgspec.UNSET:
+        return msgspec.UNSET
+    if client_id is msgspec.UNSET or client_secret is msgspec.UNSET:
+        raise ClientException(_IGDB_CREDENTIALS_INCOMPLETE)
+    normalized_client_id = client_id.strip() if isinstance(client_id, str) else None
+    normalized_client_secret = client_secret.strip() if isinstance(client_secret, str) else None
+    if not normalized_client_id and not normalized_client_secret:
+        return None
+    if not normalized_client_id or not normalized_client_secret:
+        raise ClientException(_IGDB_CREDENTIALS_INCOMPLETE)
+    if not settings.steam_api_key_encryption_key:
+        raise ServiceUnavailableException(_IGDB_CREDENTIALS_NOT_CONFIGURED)
+    payload = msgspec.json.encode(
+        IGDBCredentials(client_id=normalized_client_id, client_secret=normalized_client_secret)
+    ).decode()
+    try:
+        return encrypt(payload, settings.steam_api_key_encryption_key)
+    except ValueError as error:
+        raise ServiceUnavailableException(_IGDB_CREDENTIALS_NOT_CONFIGURED) from error
+
+
 @get("/api/user/me", security=BEARER_SECURITY_REQUIREMENT)
 async def get_own_user(current_user: NamedDependency[User]) -> PublicUser:
     return PublicUser.from_user(current_user)
@@ -84,6 +124,9 @@ async def update_own_user(
                 password_hash=_hash_if_present(data.password),
                 steam_id=data.steam_id,
                 steam_api_key_encrypted=_encrypt_steam_api_key_if_present(data.steam_api_key),
+                igdb_credentials_encrypted=_encrypt_igdb_credentials_if_present(
+                    data.igdb_client_id, data.igdb_client_secret
+                ),
                 steam_auto_import_enabled=data.steam_auto_import_enabled,
             ),
         )
@@ -172,6 +215,9 @@ async def update_user_admin(
                 password_hash=_hash_if_present(data.password),
                 steam_id=data.steam_id,
                 steam_api_key_encrypted=_encrypt_steam_api_key_if_present(data.steam_api_key),
+                igdb_credentials_encrypted=_encrypt_igdb_credentials_if_present(
+                    data.igdb_client_id, data.igdb_client_secret
+                ),
                 steam_auto_import_enabled=data.steam_auto_import_enabled,
                 is_admin=data.is_admin,
             ),
