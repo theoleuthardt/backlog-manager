@@ -621,7 +621,7 @@ async def test_search_excludes_entry_with_no_game_type_but_a_parent_game(
     ) -> list[IGDBGameTimeToBeat]:
         return [IGDBGameTimeToBeat(id=1, game_id=1, normally=3600)]
 
-    async def fake_get_valid_token() -> str:
+    async def fake_get_valid_token(client_id: str, client_secret: str) -> str:
         return "tok"
 
     monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
@@ -631,7 +631,7 @@ async def test_search_excludes_entry_with_no_game_type_but_a_parent_game(
     )
     monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
 
-    results = await game_service.search("Celeste")
+    results = await game_service.search("Celeste", "cid", "secret")
 
     assert len(results) == 1
     assert results[0].id == 1
@@ -673,7 +673,7 @@ async def test_search_ranks_exact_title_match_over_a_same_type_edition(
             IGDBGameTimeToBeat(id=2, game_id=2, normally=3600),
         ]
 
-    async def fake_get_valid_token() -> str:
+    async def fake_get_valid_token(client_id: str, client_secret: str) -> str:
         return "tok"
 
     monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
@@ -683,7 +683,7 @@ async def test_search_ranks_exact_title_match_over_a_same_type_edition(
     )
     monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
 
-    results = await game_service.search("snowrunner")
+    results = await game_service.search("snowrunner", "cid", "secret")
 
     assert [result.title for result in results] == ["SnowRunner", "SnowRunner: Premium Edition"]
 
