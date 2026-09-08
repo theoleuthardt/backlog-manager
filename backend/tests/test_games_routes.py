@@ -11,6 +11,7 @@ def configured_igdb(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
     """Imported lazily - see test_game_service.py's game_service fixture
     for why (services.game_service -> config eagerly builds Settings()
     on import)."""
+    from backlog_manager_backend.config import settings
     from backlog_manager_backend.services import game_service as module
 
     monkeypatch.setattr(module, "_token_cache", {})
@@ -19,8 +20,8 @@ def configured_igdb(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
     monkeypatch.setattr(module, "_game_cache", {})
     monkeypatch.setattr(module, "_cover_cache", {})
     monkeypatch.setattr(module, "_time_to_beat_cache", {})
-    monkeypatch.setattr(module.settings, "igdb_client_id", "cid")
-    monkeypatch.setattr(module.settings, "igdb_client_secret", "secret")
+    monkeypatch.setattr(settings, "igdb_client_id", "cid")
+    monkeypatch.setattr(settings, "igdb_client_secret", "secret")
     return module
 
 
@@ -434,9 +435,9 @@ async def test_get_steamgriddb_covers_returns_urls(
     create_and_login,
 ) -> None:
     from backlog_manager_backend.app import create_app
-    from backlog_manager_backend.services import game_service as module
+    from backlog_manager_backend.routes import user as user_routes
 
-    monkeypatch.setattr(module.settings, "steamgriddb_api_key", "key")
+    monkeypatch.setattr(user_routes.settings, "steamgriddb_api_key", "key")
 
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(
@@ -484,9 +485,9 @@ async def test_get_steamgriddb_covers_returns_503_when_not_configured(
     create_and_login,
 ) -> None:
     from backlog_manager_backend.app import create_app
-    from backlog_manager_backend.services import game_service as module
+    from backlog_manager_backend.routes import user as user_routes
 
-    monkeypatch.setattr(module.settings, "steamgriddb_api_key", None)
+    monkeypatch.setattr(user_routes.settings, "steamgriddb_api_key", None)
 
     with TestClient(app=create_app()) as client:
         headers = await create_and_login(client, "steamgriddbcoversunconfigured@example.com")
@@ -504,9 +505,9 @@ async def test_get_steamgriddb_covers_returns_503_on_transport_failure(
     create_and_login,
 ) -> None:
     from backlog_manager_backend.app import create_app
-    from backlog_manager_backend.services import game_service as module
+    from backlog_manager_backend.routes import user as user_routes
 
-    monkeypatch.setattr(module.settings, "steamgriddb_api_key", "key")
+    monkeypatch.setattr(user_routes.settings, "steamgriddb_api_key", "key")
 
     def handler(request: httpx.Request) -> httpx.Response:
         raise httpx.ConnectError("connection refused", request=request)
@@ -532,9 +533,8 @@ async def test_get_steamgriddb_covers_prefers_users_own_key_over_server_fallback
 
     from backlog_manager_backend.app import create_app
     from backlog_manager_backend.routes import user as user_routes
-    from backlog_manager_backend.services import game_service as module
 
-    monkeypatch.setattr(module.settings, "steamgriddb_api_key", "server-api-key")
+    monkeypatch.setattr(user_routes.settings, "steamgriddb_api_key", "server-api-key")
     monkeypatch.setattr(
         user_routes.settings, "steam_api_key_encryption_key", Fernet.generate_key().decode()
     )

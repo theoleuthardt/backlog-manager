@@ -37,9 +37,6 @@ def game_service(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
     monkeypatch.setattr(module, "_steam_app_list_cached_at", None)
     monkeypatch.setattr(module, "_steam_app_list_last_attempt_at", None)
     monkeypatch.setattr(module, "_steamgriddb_cover_cache", {})
-    monkeypatch.setattr(module.settings, "igdb_client_id", "cid")
-    monkeypatch.setattr(module.settings, "igdb_client_secret", "secret")
-    monkeypatch.setattr(module.settings, "steamgriddb_api_key", None)
     return module
 
 

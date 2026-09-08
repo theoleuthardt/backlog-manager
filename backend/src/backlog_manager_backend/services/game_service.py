@@ -5,7 +5,6 @@ import time
 import httpx
 import structlog
 
-from backlog_manager_backend.config import settings
 from backlog_manager_backend.integrations.howlongtobeat import search_game_on_hltb
 from backlog_manager_backend.integrations.igdb import (
     generate_igdb_token,
