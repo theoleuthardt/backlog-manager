@@ -279,11 +279,8 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
               </Popover>
 
               {props.steamAppId !== undefined && (
-                <Popover
-                  open={coverPickerOpen}
-                  onOpenChange={setCoverPickerOpen}
-                >
-                  <PopoverTrigger asChild>
+                <Dialog open={coverPickerOpen} onOpenChange={setCoverPickerOpen}>
+                  <DialogTrigger asChild>
                     <Button
                       variant="outline"
                       size="sm"
@@ -292,10 +289,25 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                       <Images className="h-4 w-4" />
                       Choose Cover
                     </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80 bg-black text-white">
-                    <div className="space-y-2">
-                      <Label>SteamGridDB Covers</Label>
+                  </DialogTrigger>
+                  <DialogContent
+                    showCloseButton={false}
+                    className="flex h-[calc(100vh-6rem)] w-[calc(100vw-6rem)] max-w-2xl flex-col border-2 border-white bg-black p-6"
+                  >
+                    <DialogClose asChild>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-4 right-4 z-50 h-8 w-8 focus:ring-0 focus:ring-offset-0 focus:outline-none focus-visible:ring-0"
+                      >
+                        <XIcon className="h-4 w-4 text-black" />
+                      </Button>
+                    </DialogClose>
+                    <DialogTitle className="flex items-center gap-1.5 text-white">
+                      <Images className="h-4 w-4" />
+                      SteamGridDB Covers
+                    </DialogTitle>
+                    <div className="flex-1 overflow-y-auto pr-1">
                       {isLoadingCovers ? (
                         <div className="flex items-center justify-center py-6">
                           <Loader2 className="h-5 w-5 animate-spin" />
@@ -306,7 +318,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                         </p>
                       ) : steamGridDbCovers &&
                         steamGridDbCovers.length > 0 ? (
-                        <div className="grid max-h-64 grid-cols-3 gap-2 overflow-y-auto">
+                        <div className="grid grid-cols-4 gap-3 sm:grid-cols-5 md:grid-cols-6">
                           {steamGridDbCovers.map((url) => (
                             <button
                               key={url}
@@ -314,7 +326,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                               onClick={() => handleSelectCover(url)}
                               className="overflow-hidden rounded border border-white/20 hover:border-white"
                             >
-                              <GameImage src={url} alt="Cover option" width={90} height={135} />
+                              <GameImage src={url} alt="Cover option" width={150} height={225} />
                             </button>
                           ))}
                         </div>
@@ -324,8 +336,8 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                         </p>
                       )}
                     </div>
-                  </PopoverContent>
-                </Popover>
+                  </DialogContent>
+                </Dialog>
               )}
             </div>
 
