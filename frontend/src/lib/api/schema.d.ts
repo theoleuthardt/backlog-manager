@@ -559,23 +559,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/games/steam-app-id": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** GetSteamAppId */
-        get: operations["ApiGamesSteamAppIdGetSteamAppId"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/games/steamgriddb-covers": {
         parameters: {
             query?: never;
@@ -585,6 +568,23 @@ export interface paths {
         };
         /** GetSteamgriddbCovers */
         get: operations["ApiGamesSteamgriddbCoversGetSteamgriddbCovers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/games/steam-app-id": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GetSteamAppId */
+        get: operations["ApiGamesSteamAppIdGetSteamAppId"];
         put?: never;
         post?: never;
         delete?: never;
@@ -717,7 +717,6 @@ export interface components {
             alternative_names?: number[] | null;
             artworks?: number[] | null;
             bundles?: number[] | null;
-            category?: number | null;
             cover?: number | null;
             created_at?: number | null;
             dlcs?: number[] | null;
@@ -755,6 +754,7 @@ export interface components {
             game_localizations?: number[] | null;
             collections?: number[] | null;
             game_type?: number | null;
+            parent_game?: number | null;
         };
         /** IGDBGameTimeToBeat */
         IGDBGameTimeToBeat: {
@@ -868,6 +868,8 @@ export interface components {
             /** @default false */
             has_igdb_credentials?: boolean;
             /** @default false */
+            has_steamgriddb_api_key?: boolean;
+            /** @default false */
             steam_auto_import_enabled?: boolean;
         };
         /** PublicUsername */
@@ -942,6 +944,7 @@ export interface components {
             steam_api_key?: string | null;
             igdb_client_id?: string | null;
             igdb_client_secret?: string | null;
+            steamgriddb_api_key?: string | null;
             steam_auto_import_enabled?: boolean;
         };
         /** UpdateUserAdminRequest */
@@ -953,6 +956,7 @@ export interface components {
             steam_api_key?: string | null;
             igdb_client_id?: string | null;
             igdb_client_secret?: string | null;
+            steamgriddb_api_key?: string | null;
             steam_auto_import_enabled?: boolean;
             is_admin?: boolean;
         };
@@ -2452,10 +2456,10 @@ export interface operations {
             };
         };
     };
-    ApiGamesSteamAppIdGetSteamAppId: {
+    ApiGamesSteamgriddbCoversGetSteamgriddbCovers: {
         parameters: {
             query: {
-                title: string;
+                steam_app_id: number;
             };
             header?: never;
             path?: never;
@@ -2469,7 +2473,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": number | null;
+                    "application/json": string[];
                 };
             };
             /** @description Bad request syntax or unsupported method */
@@ -2489,10 +2493,10 @@ export interface operations {
             };
         };
     };
-    ApiGamesSteamgriddbCoversGetSteamgriddbCovers: {
+    ApiGamesSteamAppIdGetSteamAppId: {
         parameters: {
             query: {
-                steam_app_id: number;
+                title: string;
             };
             header?: never;
             path?: never;
@@ -2506,7 +2510,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": string[];
+                    "application/json": number | null;
                 };
             };
             /** @description Bad request syntax or unsupported method */
