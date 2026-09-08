@@ -125,6 +125,34 @@ async def test_get_valid_token_refetches_once_a_different_clients_token_expired(
     assert call_counts["cid-b"] == 1
 
 
+async def test_get_valid_token_does_not_share_cached_token_across_secrets_for_the_same_client_id(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A cache keyed only by client_id would let a second, unrelated
+    credential pair that happens to reuse the same client_id (e.g. a
+    rotated secret, or two different users who each entered the same
+    Client ID) receive a token generated for the other secret - see
+    CodeRabbit's finding on #167. The cache must be keyed by the full
+    (client_id, client_secret) pair."""
+    call_count = 0
+
+    async def fake_generate_token(client_id: str, client_secret: str) -> IGDBTokenResponse:
+        nonlocal call_count
+        call_count += 1
+        return IGDBTokenResponse(
+            access_token=f"tok-for-{client_secret}", expires_in=3600, token_type="bearer"
+        )
+
+    monkeypatch.setattr(game_service, "generate_igdb_token", fake_generate_token)
+
+    first_secret_token = await game_service.get_valid_token("cid-shared", "secret-1")
+    second_secret_token = await game_service.get_valid_token("cid-shared", "secret-2")
+
+    assert first_secret_token == "tok-for-secret-1"
+    assert second_secret_token == "tok-for-secret-2"
+    assert call_count == 2
+
+
 async def test_search_reuses_cached_genre_and_platform_names(
     game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -355,3 +355,152 @@ async def test_update_own_user_trims_steam_api_key_before_storing(
 
     assert stored is not None
     assert decrypt(stored.steam_api_key_encrypted, key) == "my-steam-key"
+
+
+async def test_update_own_user_sets_igdb_credentials(
+    postgres_url: str, create_and_login, monkeypatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.routes import user as user_routes
+
+    monkeypatch.setattr(
+        user_routes.settings, "steam_api_key_encryption_key", Fernet.generate_key().decode()
+    )
+
+    app = create_app()
+
+    with TestClient(app=app) as client:
+        headers = await create_and_login(client, "igdbkeyuser@example.com")
+
+        update_response = client.put(
+            "/api/user/me",
+            headers=headers,
+            json={"igdb_client_id": "my-client-id", "igdb_client_secret": "my-client-secret"},
+        )
+
+    assert update_response.status_code == 200
+    assert update_response.json()["has_igdb_credentials"] is True
+    assert "igdb_client_id" not in update_response.json()
+    assert "igdb_client_secret" not in update_response.json()
+    assert "igdb_credentials_encrypted" not in update_response.json()
+
+
+async def test_update_own_user_clears_igdb_credentials_with_empty_strings(
+    postgres_url: str, create_and_login, monkeypatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.routes import user as user_routes
+
+    monkeypatch.setattr(
+        user_routes.settings, "steam_api_key_encryption_key", Fernet.generate_key().decode()
+    )
+
+    app = create_app()
+
+    with TestClient(app=app) as client:
+        headers = await create_and_login(client, "clearigdbkey@example.com")
+        client.put(
+            "/api/user/me",
+            headers=headers,
+            json={"igdb_client_id": "my-client-id", "igdb_client_secret": "my-client-secret"},
+        )
+
+        clear_response = client.put(
+            "/api/user/me",
+            headers=headers,
+            json={"igdb_client_id": "", "igdb_client_secret": ""},
+        )
+
+    assert clear_response.status_code == 200
+    assert clear_response.json()["has_igdb_credentials"] is False
+
+
+async def test_update_own_user_rejects_one_sided_igdb_credentials(
+    postgres_url: str, create_and_login, monkeypatch
+) -> None:
+    """Only sending one of client_id/client_secret must be rejected,
+    not silently treated as clearing the whole pair - see CodeRabbit's
+    finding on #167: omitting one field (leaving it UNSET) while
+    explicitly blanking or setting the other must not be able to wipe
+    an existing credential pair's untouched half."""
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.routes import user as user_routes
+
+    monkeypatch.setattr(
+        user_routes.settings, "steam_api_key_encryption_key", Fernet.generate_key().decode()
+    )
+
+    app = create_app()
+
+    with TestClient(app=app) as client:
+        headers = await create_and_login(client, "onesidedigdbkey@example.com")
+        client.put(
+            "/api/user/me",
+            headers=headers,
+            json={"igdb_client_id": "my-client-id", "igdb_client_secret": "my-client-secret"},
+        )
+
+        only_secret_sent = client.put(
+            "/api/user/me", headers=headers, json={"igdb_client_secret": ""}
+        )
+        me_after = client.get("/api/user/me", headers=headers)
+
+    assert only_secret_sent.status_code == 400
+    assert me_after.json()["has_igdb_credentials"] is True
+
+
+async def test_update_own_user_returns_503_when_igdb_credential_storage_not_configured(
+    postgres_url: str, create_and_login, monkeypatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.routes import user as user_routes
+
+    monkeypatch.setattr(user_routes.settings, "steam_api_key_encryption_key", None)
+
+    app = create_app()
+
+    with TestClient(app=app) as client:
+        headers = await create_and_login(client, "noigdbkeystorage@example.com")
+        response = client.put(
+            "/api/user/me",
+            headers=headers,
+            json={"igdb_client_id": "my-client-id", "igdb_client_secret": "my-client-secret"},
+        )
+
+    assert response.status_code == 503
+
+
+async def test_update_own_user_trims_igdb_credentials_before_storing(
+    postgres_url: str, create_and_login, monkeypatch
+) -> None:
+    import msgspec
+
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.auth.encryption import decrypt
+    from backlog_manager_backend.db import async_session
+    from backlog_manager_backend.integrations.types import IGDBCredentials
+    from backlog_manager_backend.repositories import user_repo
+    from backlog_manager_backend.routes import user as user_routes
+
+    key = Fernet.generate_key().decode()
+    monkeypatch.setattr(user_routes.settings, "steam_api_key_encryption_key", key)
+
+    app = create_app()
+
+    with TestClient(app=app) as client:
+        headers = await create_and_login(client, "trimigdbkey@example.com")
+        client.put(
+            "/api/user/me",
+            headers=headers,
+            json={"igdb_client_id": "  my-client-id  ", "igdb_client_secret": "  my-secret  "},
+        )
+
+    async with async_session() as session:
+        stored = await user_repo.get_user_by_email(session, "trimigdbkey@example.com")
+
+    assert stored is not None
+    decrypted = msgspec.json.decode(
+        decrypt(stored.igdb_credentials_encrypted, key), type=IGDBCredentials
+    )
+    assert decrypted.client_id == "my-client-id"
+    assert decrypted.client_secret == "my-secret"

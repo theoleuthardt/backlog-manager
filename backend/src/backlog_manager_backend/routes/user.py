@@ -76,10 +76,13 @@ def _encrypt_igdb_credentials_if_present(
     _encrypt_steam_api_key_if_present, since it's just a shared secret
     for encrypting arbitrary per-user values at rest. UNSET on both
     (neither field sent) means "leave unchanged"; both blank means
-    "clear"; exactly one blank is rejected rather than silently
-    dropping the other."""
+    "clear"; exactly one blank, or exactly one UNSET while the other
+    is sent, is rejected rather than silently dropping (or clearing)
+    the other half of an existing pair."""
     if client_id is msgspec.UNSET and client_secret is msgspec.UNSET:
         return msgspec.UNSET
+    if client_id is msgspec.UNSET or client_secret is msgspec.UNSET:
+        raise ClientException(_IGDB_CREDENTIALS_INCOMPLETE)
     normalized_client_id = client_id.strip() if isinstance(client_id, str) else None
     normalized_client_secret = client_secret.strip() if isinstance(client_secret, str) else None
     if not normalized_client_id and not normalized_client_secret:
