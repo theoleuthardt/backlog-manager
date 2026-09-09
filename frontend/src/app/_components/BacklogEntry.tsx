@@ -217,7 +217,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
           </motion.div>
         </DialogTrigger>
         <DialogContent
-          className="h-[calc(100vh-1rem)] w-[calc(100vw-2rem)] !max-w-none border-2 border-white bg-black p-0"
+          className="flex h-[calc(100vh-1rem)] w-[calc(100vw-2rem)] !max-w-none flex-col border-2 border-white bg-black p-0"
           onOpenAutoFocus={(e: { preventDefault: () => void }) => {
             e.preventDefault();
           }}
@@ -233,7 +233,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
             </Button>
           </DialogClose>
 
-          <div className="border-b border-white/20 px-6 py-4">
+          <div className="shrink-0 border-b border-white/20 px-6 py-4">
             <DialogTitle className="text-center text-3xl text-white">
               {props.title}
             </DialogTitle>
@@ -241,7 +241,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
 
           <div
             id="dialog-content-wrapper"
-            className="flex h-[calc(100%-4.5rem)] gap-8 p-6"
+            className="flex min-h-0 flex-1 gap-8 p-6"
           >
             <div
               id="game-image-section"
@@ -250,8 +250,8 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
               <GameImage
                 src={imageLink}
                 alt={props.imageAlt ?? ""}
-                width={150}
-                height={225}
+                width={220}
+                height={330}
               />
               <Popover
                 open={imagePopoverOpen}
@@ -445,7 +445,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
             <div id="form-container" className="flex flex-1 flex-col">
               <div
                 id="scrollable-form-content"
-                className="min-h-0 flex-1 space-y-6 overflow-y-auto pr-2"
+                className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto pr-2"
               >
                 <div id="basic-info-section" className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
@@ -581,7 +581,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                   <AchievementProgress steamAppId={props.steamAppId} />
                 </div>
 
-                <div id="note-review-section" className="flex gap-4">
+                <div id="note-review-section" className="flex flex-1 gap-4">
                   <div
                     id="note-section"
                     className="flex flex-1 flex-col space-y-2"
@@ -619,7 +619,10 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                       />
                     </div>
 
-                    <div id="review-section" className="space-y-2">
+                    <div
+                      id="review-section"
+                      className="flex flex-1 flex-col space-y-2"
+                    >
                       <Label htmlFor="review" className="text-white">
                         Review
                       </Label>
@@ -629,7 +632,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                         onChange={(e) => setReview(e.target.value)}
                         disabled={status !== "Completed"}
                         placeholder="Write your review here..."
-                        className="min-h-[100px] bg-black text-white disabled:opacity-50"
+                        className="min-h-[100px] flex-1 resize-none bg-black text-white disabled:opacity-50"
                       />
                     </div>
                   </div>
