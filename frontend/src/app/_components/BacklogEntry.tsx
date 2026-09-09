@@ -331,7 +331,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                         </p>
                       ) : steamGridDbCovers &&
                         steamGridDbCovers.length > 0 ? (
-                        <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] justify-items-center gap-2">
+                        <div className="grid grid-cols-[repeat(auto-fill,150px)] justify-center gap-2">
                           {steamGridDbCovers.map((url) => (
                             <button
                               key={url}
