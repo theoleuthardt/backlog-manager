@@ -32,16 +32,36 @@ def _resolve_api_key(user: User) -> str:
     raise ServiceUnavailableException(_STEAM_NOT_CONFIGURED)
 
 
+def _resolve_steamgriddb_api_key(user: User) -> str | None:
+    """Mirrors routes/games.py::_resolve_steamgriddb_api_key - a missing
+    key here resolves to None rather than raising, since import_library
+    already treats "no key" as a legitimate, non-fatal state (skip
+    cover lookup, import the game anyway)."""
+    if user.steamgriddb_api_key_encrypted and settings.steam_api_key_encryption_key:
+        try:
+            return decrypt(
+                user.steamgriddb_api_key_encrypted, settings.steam_api_key_encryption_key
+            )
+        except (InvalidToken, ValueError):
+            return None
+    return settings.steamgriddb_api_key
+
+
 @post("/api/user/steam/sync", status_code=200)
 async def sync_steam_playtimes(
     db_session: NamedDependency[AsyncSession],
     current_user: NamedDependency[User],
 ) -> list[BacklogEntryResponse]:
     api_key = _resolve_api_key(current_user)
+    steamgriddb_api_key = _resolve_steamgriddb_api_key(current_user)
 
     try:
         updated = await steam_service.sync_playtimes_and_import(
-            db_session, current_user, api_key, auto_import=current_user.steam_auto_import_enabled
+            db_session,
+            current_user,
+            api_key,
+            auto_import=current_user.steam_auto_import_enabled,
+            steamgriddb_api_key=steamgriddb_api_key,
         )
     except ValidationError as error:
         raise ClientException(str(error)) from error
@@ -57,9 +77,12 @@ async def import_steam_library(
     current_user: NamedDependency[User],
 ) -> list[BacklogEntryResponse]:
     api_key = _resolve_api_key(current_user)
+    steamgriddb_api_key = _resolve_steamgriddb_api_key(current_user)
 
     try:
-        created = await steam_service.import_library(db_session, current_user, api_key)
+        created = await steam_service.import_library(
+            db_session, current_user, api_key, steamgriddb_api_key=steamgriddb_api_key
+        )
     except ValidationError as error:
         raise ClientException(str(error)) from error
     except httpx.HTTPError as error:

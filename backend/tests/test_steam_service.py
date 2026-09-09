@@ -120,6 +120,58 @@ async def test_import_library_creates_entries_for_new_owned_games(
     assert created[0].playtime == Decimal("2.00")
     assert created[0].status == "Not Started"
     assert created[0].owned is True
+    assert created[0].image_link is None
+
+
+async def test_import_library_sets_cover_when_steamgriddb_key_is_given(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=120)]
+
+    async def fake_get_game_covers(steam_app_id: int, api_key: str) -> list[str]:
+        assert steam_app_id == 620
+        assert api_key == "griddb-key"
+        return ["https://cdn2.steamgriddb.com/grid/1.png"]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+    monkeypatch.setattr(steam_service.game_service, "get_game_covers", fake_get_game_covers)
+
+    created = await steam_service.import_library(
+        session, user, "api-key", steamgriddb_api_key="griddb-key"
+    )
+
+    assert created[0].image_link == "https://cdn2.steamgriddb.com/grid/1.png"
+
+
+async def test_import_library_continues_without_a_cover_when_steamgriddb_fails(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A SteamGridDB outage (or a missing key) while importing must not
+    fail the import - the game still gets created, just without a
+    cover, the same as if steamgriddb_api_key were never passed."""
+    user = await _make_user(session)
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=120)]
+
+    async def fake_get_game_covers(steam_app_id: int, api_key: str) -> list[str]:
+        request = httpx.Request("GET", "https://example.com")
+        raise httpx.HTTPStatusError(
+            "boom", request=request, response=httpx.Response(503, request=request)
+        )
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+    monkeypatch.setattr(steam_service.game_service, "get_game_covers", fake_get_game_covers)
+
+    created = await steam_service.import_library(
+        session, user, "api-key", steamgriddb_api_key="griddb-key"
+    )
+
+    assert len(created) == 1
+    assert created[0].image_link is None
 
 
 async def test_import_library_creates_nothing_when_all_games_already_linked(

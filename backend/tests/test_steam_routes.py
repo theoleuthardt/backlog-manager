@@ -269,6 +269,56 @@ async def test_import_steam_library_skips_already_linked_games(
     assert response.json() == []
 
 
+async def test_import_steam_library_sets_cover_from_steamgriddb(
+    postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.routes import steam as steam_routes
+
+    _configure_steam_api_key(monkeypatch)
+    monkeypatch.setattr(steam_routes.settings, "steamgriddb_api_key", "server-griddb-key")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if "steamgriddb.com" in request.url.host:
+            return httpx.Response(
+                200,
+                json={
+                    "success": True,
+                    "data": [
+                        {
+                            "id": 1,
+                            "url": "https://cdn2.steamgriddb.com/grid/1.png",
+                            "thumb": "https://cdn2.steamgriddb.com/thumb/1.png",
+                            "score": 50,
+                        }
+                    ],
+                },
+            )
+        return httpx.Response(
+            200,
+            json={
+                "response": {
+                    "games": [{"appid": 620, "name": "Portal 2", "playtime_forever": 120}]
+                }
+            },
+        )
+
+    _mock_steam(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "steamimportcover@example.com")
+        client.put(
+            "/api/user/me", headers=headers, json={"steam_id": "76561197960287930"}
+        )
+
+        response = client.post("/api/user/steam/import", headers=headers)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body) == 1
+    assert body[0]["image_link"] == "https://cdn2.steamgriddb.com/grid/1.png"
+
+
 async def test_import_steam_library_requires_linked_account(
     postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -23,6 +23,7 @@ from backlog_manager_backend.schemas.backlog_entry import (
     UpdateBacklogEntryParams,
 )
 from backlog_manager_backend.schemas.user import User
+from backlog_manager_backend.services import game_service
 
 logger = structlog.get_logger()
 
@@ -85,16 +86,33 @@ async def sync_playtimes(
     return updated
 
 
+async def _try_get_cover(steam_app_id: int, steamgriddb_api_key: str | None) -> str | None:
+    """Best-effort SteamGridDB cover lookup for one freshly-imported
+    game - a missing key, outage, or no-covers-available result must
+    not fail the import, it should just leave that entry without a
+    cover, the same as a manually-created entry."""
+    if not steamgriddb_api_key:
+        return None
+    try:
+        covers = await game_service.get_game_covers(steam_app_id, steamgriddb_api_key)
+    except (RuntimeError, httpx.HTTPError):
+        return None
+    return covers[0] if covers else None
+
+
 async def import_library(
     session: AsyncSession,
     user: User,
     api_key: str,
     owned_games: list[SteamOwnedGame] | None = None,
+    steamgriddb_api_key: str | None = None,
 ) -> list[BacklogEntry]:
     """Creates a backlog entry for every Steam-owned game not already
     linked to one by steam_app_id. Metadata beyond title/steam_app_id/
     playtime is deliberately minimal (no IGDB/HLTB enrichment); a user
-    can fill in genre etc. by hand afterwards.
+    can fill in genre etc. by hand afterwards. `steamgriddb_api_key`,
+    when the caller has one (their own, or the global fallback), fills
+    in a cover image per game too - best-effort, see _try_get_cover.
 
     The existing-entries check above only prevents most duplicates - a
     concurrent import for the same user can still race past it, so the
@@ -131,6 +149,7 @@ async def import_library(
         if game.appid in existing_app_ids:
             continue
         try:
+            image_link = await _try_get_cover(game.appid, steamgriddb_api_key)
             created.append(
                 await backlog_entry_repo.create_backlog_entry(
                     session,
@@ -144,6 +163,7 @@ async def import_library(
                         interest=_IMPORTED_INTEREST,
                         playtime=_minutes_to_hours(game.playtime_forever),
                         steam_app_id=game.appid,
+                        image_link=image_link,
                     ),
                 )
             )
@@ -161,7 +181,12 @@ async def import_library(
 
 
 async def sync_playtimes_and_import(
-    session: AsyncSession, user: User, api_key: str, *, auto_import: bool
+    session: AsyncSession,
+    user: User,
+    api_key: str,
+    *,
+    auto_import: bool,
+    steamgriddb_api_key: str | None = None,
 ) -> list[BacklogEntry]:
     """Single entry point for the "Sync Steam Playtimes" action: fetches
     the owned-games snapshot once and reuses it for both sync_playtimes
@@ -173,7 +198,9 @@ async def sync_playtimes_and_import(
 
     updated = await sync_playtimes(session, user, api_key, owned_games)
     if auto_import:
-        updated = updated + await import_library(session, user, api_key, owned_games)
+        updated = updated + await import_library(
+            session, user, api_key, owned_games, steamgriddb_api_key=steamgriddb_api_key
+        )
     return updated
 
 
