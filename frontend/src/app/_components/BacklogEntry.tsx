@@ -90,13 +90,26 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
     }
   };
 
-  const handleSelectCover = (url: string) => {
-    setImageLink(url);
-    setCoverPickerOpen(false);
-  };
-
   const updateEntryMutation = useUpdateBacklogEntry();
   const deleteEntryMutation = useDeleteBacklogEntry();
+
+  const handleSelectCover = async (url: string) => {
+    setCoverPickerOpen(false);
+    try {
+      await updateEntryMutation.mutateAsync({
+        entryId: props.id,
+        changes: { imageLink: url },
+      });
+      setImageLink(url);
+      toast.success("Cover updated");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? `Failed to update cover: ${error.message}`
+          : "Failed to update cover. Please try again.",
+      );
+    }
+  };
 
   const handleUpdate = async () => {
     setIsLoading(true);
