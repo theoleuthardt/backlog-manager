@@ -80,7 +80,7 @@ async def _fetch_following_allowed_redirects(
     client: httpx.AsyncClient, url: str
 ) -> httpx.Response | None:
     current_url = url
-    for _ in range(_MAX_REDIRECTS):
+    for _ in range(_MAX_REDIRECTS + 1):
         request = client.build_request(
             "GET", current_url, headers=_headers_for(urlparse(current_url).hostname)
         )

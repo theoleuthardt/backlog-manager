@@ -222,6 +222,36 @@ async def test_proxy_image_rejects_too_many_redirects(
     assert response.status_code == 404
 
 
+async def test_proxy_image_follows_exactly_max_redirects_before_the_final_response(
+    monkeypatch: pytest.MonkeyPatch, postgres_url: str
+) -> None:
+    """_MAX_REDIRECTS redirects followed by a real response must still
+    succeed - only exceeding that count should be rejected."""
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.routes import images as images_module
+
+    hop_count = images_module._MAX_REDIRECTS
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        hop = int(request.url.path.removeprefix("/hop-").removesuffix(".jpg"))
+        if hop < hop_count:
+            return httpx.Response(
+                302, headers={"location": f"https://media.steampowered.com/hop-{hop + 1}.jpg"}
+            )
+        return httpx.Response(200, content=b"icon", headers={"content-type": "image/jpeg"})
+
+    _mock_client(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get(
+            "/api/images/proxy",
+            params={"url": "https://media.steampowered.com/hop-0.jpg"},
+        )
+
+    assert response.status_code == 200
+    assert response.content == b"icon"
+
+
 async def test_proxy_image_rejects_steamstatic_lookalike_host(
     monkeypatch: pytest.MonkeyPatch, postgres_url: str
 ) -> None:
