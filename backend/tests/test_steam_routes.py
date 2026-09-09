@@ -348,11 +348,13 @@ async def test_sync_steam_playtimes_also_imports_new_games_when_auto_import_enab
     from backlog_manager_backend.app import create_app
 
     _configure_steam_api_key(monkeypatch)
-    call_count = 0
+    owned_games_call_count = 0
 
     def handler(request: httpx.Request) -> httpx.Response:
-        nonlocal call_count
-        call_count += 1
+        if request.url.host == "hltbapi1.azurewebsites.net":
+            return httpx.Response(200, json=[])
+        nonlocal owned_games_call_count
+        owned_games_call_count += 1
         return httpx.Response(
             200,
             json={
@@ -394,7 +396,7 @@ async def test_sync_steam_playtimes_also_imports_new_games_when_auto_import_enab
     body = response.json()
     titles = {entry["title"] for entry in body}
     assert titles == {"Celeste", "Portal 2"}
-    assert call_count == 1
+    assert owned_games_call_count == 1
 
 
 @pytest.fixture(autouse=True)

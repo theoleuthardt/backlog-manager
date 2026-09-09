@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.errors import ConflictError, ValidationError
 from backlog_manager_backend.integrations.types import (
+    HltbResultData,
     SteamAchievement,
     SteamAchievementSchema,
     SteamOwnedGame,
@@ -16,6 +17,19 @@ from backlog_manager_backend.repositories import backlog_entry_repo, user_repo
 from backlog_manager_backend.schemas.backlog_entry import CreateBacklogEntryParams
 from backlog_manager_backend.schemas.user import CreateUserParams
 from backlog_manager_backend.services import steam_service
+
+
+@pytest.fixture(autouse=True)
+def _no_hltb_match_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    """import_library looks up HowLongToBeat times unconditionally for
+    every game - default every test to a real (empty) function rather
+    than a live network call, since most tests here don't care about
+    hltb fields. Tests that do override this via their own monkeypatch."""
+
+    async def fake_search_game_on_hltb(search_term: str) -> list[HltbResultData]:
+        return []
+
+    monkeypatch.setattr(steam_service, "search_game_on_hltb", fake_search_game_on_hltb)
 
 
 async def _make_user(session: AsyncSession, steam_id: str | None = "76561197960287930") -> object:
@@ -172,6 +186,58 @@ async def test_import_library_continues_without_a_cover_when_steamgriddb_fails(
 
     assert len(created) == 1
     assert created[0].image_link is None
+
+
+async def test_import_library_sets_hltb_times_when_a_match_is_found(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=120)]
+
+    async def fake_search_game_on_hltb(search_term: str) -> list[HltbResultData]:
+        assert search_term == "Portal 2"
+        return [
+            HltbResultData(
+                id=1,
+                hltb_id=1,
+                title="Portal 2",
+                image_url="https://example.com/portal2.jpg",
+                main_story=8.5,
+                main_story_with_extras=11.0,
+                completionist=21.5,
+                last_updated_at="2024-01-01",
+            )
+        ]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+    monkeypatch.setattr(steam_service, "search_game_on_hltb", fake_search_game_on_hltb)
+
+    created = await steam_service.import_library(session, user, "api-key")
+
+    assert created[0].main_time == Decimal("8.5")
+    assert created[0].main_plus_extra_time == Decimal("11.0")
+    assert created[0].completion_time == Decimal("21.5")
+
+
+async def test_import_library_leaves_times_blank_when_hltb_has_no_match(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The autouse _no_hltb_match_by_default fixture already returns no
+    match - this just makes the resulting behavior explicit."""
+    user = await _make_user(session)
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [SteamOwnedGame(appid=620, name="Some Obscure Game", playtime_forever=120)]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+
+    created = await steam_service.import_library(session, user, "api-key")
+
+    assert created[0].main_time is None
+    assert created[0].main_plus_extra_time is None
+    assert created[0].completion_time is None
 
 
 async def test_import_library_creates_nothing_when_all_games_already_linked(

@@ -5,6 +5,7 @@ import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.errors import ConflictError, ValidationError
+from backlog_manager_backend.integrations.howlongtobeat import search_game_on_hltb
 from backlog_manager_backend.integrations.steam import (
     get_achievement_schema,
     get_owned_games,
@@ -100,6 +101,22 @@ async def _try_get_cover(steam_app_id: int, steamgriddb_api_key: str | None) -> 
     return covers[0] if covers else None
 
 
+async def _try_get_hltb_times(title: str) -> tuple[Decimal | None, Decimal | None, Decimal | None]:
+    """Best-effort HowLongToBeat lookup for one freshly-imported game,
+    by title (HLTB has no Steam App ID lookup) - search_game_on_hltb
+    already returns [] rather than raising on failure, so there's
+    nothing to catch here, just a possible empty match."""
+    results = await search_game_on_hltb(title)
+    if not results:
+        return None, None, None
+    match = results[0]
+    return (
+        Decimal(str(match.main_story)),
+        Decimal(str(match.main_story_with_extras)),
+        Decimal(str(match.completionist)),
+    )
+
+
 async def import_library(
     session: AsyncSession,
     user: User,
@@ -109,10 +126,13 @@ async def import_library(
 ) -> list[BacklogEntry]:
     """Creates a backlog entry for every Steam-owned game not already
     linked to one by steam_app_id. Metadata beyond title/steam_app_id/
-    playtime is deliberately minimal (no IGDB/HLTB enrichment); a user
-    can fill in genre etc. by hand afterwards. `steamgriddb_api_key`,
+    playtime is deliberately minimal (no IGDB enrichment, no genre); a
+    user can fill in genre etc. by hand afterwards. `steamgriddb_api_key`,
     when the caller has one (their own, or the global fallback), fills
-    in a cover image per game too - best-effort, see _try_get_cover.
+    in a cover image per game too - best-effort, see _try_get_cover. A
+    HowLongToBeat time-to-beat lookup by title also runs for every
+    game unconditionally (no key needed) - best-effort, see
+    _try_get_hltb_times.
 
     The existing-entries check above only prevents most duplicates - a
     concurrent import for the same user can still race past it, so the
@@ -150,6 +170,9 @@ async def import_library(
             continue
         try:
             image_link = await _try_get_cover(game.appid, steamgriddb_api_key)
+            main_time, main_plus_extra_time, completion_time = await _try_get_hltb_times(
+                game.name
+            )
             created.append(
                 await backlog_entry_repo.create_backlog_entry(
                     session,
@@ -164,6 +187,9 @@ async def import_library(
                         playtime=_minutes_to_hours(game.playtime_forever),
                         steam_app_id=game.appid,
                         image_link=image_link,
+                        main_time=main_time,
+                        main_plus_extra_time=main_plus_extra_time,
+                        completion_time=completion_time,
                     ),
                 )
             )
