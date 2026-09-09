@@ -11,7 +11,12 @@ logger = structlog.get_logger()
 # Only these hosts are ever proxied - this is a public, unauthenticated
 # passthrough, so an open allowlist would let this endpoint be abused as a
 # generic anonymizing image fetcher for arbitrary URLs.
-_ALLOWED_HOSTS = {"howlongtobeat.com", "images.igdb.com", "media.steampowered.com"}
+_ALLOWED_HOSTS = {
+    "howlongtobeat.com",
+    "images.igdb.com",
+    "media.steampowered.com",
+    "steamcdn-a.akamaihd.net",
+}
 
 # steamstatic.com (Steam achievement icons) and steamgriddb.com (cover art)
 # each use several interchangeable CDN subdomains, so the apex + subdomains

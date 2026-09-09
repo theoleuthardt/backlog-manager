@@ -86,6 +86,53 @@ async def test_proxy_image_streams_steam_achievement_icon(
     assert response.content == b"achievement-icon"
 
 
+async def test_proxy_image_streams_steam_achievement_icon_from_akamaihd(
+    monkeypatch: pytest.MonkeyPatch, postgres_url: str
+) -> None:
+    """GetSchemaForGame's icon URLs are actually served from
+    steamcdn-a.akamaihd.net in practice, not steamstatic.com or
+    media.steampowered.com - confirmed against the real Steam Web API.
+    Only this exact host is allowed, not the whole akamaihd.net domain,
+    which fronts unrelated third-party content too."""
+    from backlog_manager_backend.app import create_app
+
+    icon_url = (
+        "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/208650/"
+        "f4c6527e2d55eca5d1f2bdb6d5d8efd1a901262e.jpg"
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert str(request.url) == icon_url
+        return httpx.Response(200, content=b"achievement-icon", headers={"content-type": "image/jpeg"})
+
+    _mock_client(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get("/api/images/proxy", params={"url": icon_url})
+
+    assert response.status_code == 200
+    assert response.content == b"achievement-icon"
+
+
+async def test_proxy_image_rejects_other_akamaihd_hosts(
+    monkeypatch: pytest.MonkeyPatch, postgres_url: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise AssertionError("should never call out for an unrelated akamaihd.net host")
+
+    _mock_client(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get(
+            "/api/images/proxy",
+            params={"url": "https://some-other-customer.akamaihd.net/steal-my-data.jpg"},
+        )
+
+    assert response.status_code == 400
+
+
 @pytest.mark.parametrize(
     "icon_url",
     [
