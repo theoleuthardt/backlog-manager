@@ -61,7 +61,7 @@ export function AchievementProgress({ steamAppId }: AchievementProgressProps) {
         </DialogTrigger>
         <DialogContent
           showCloseButton={false}
-          className="flex h-[calc(100vh-6rem)] w-[calc(100vw-6rem)] max-w-2xl flex-col border-2 border-white bg-black p-6"
+          className="flex h-[calc(100vh-6rem)] w-[calc(100vw-6rem)] !max-w-2xl flex-col border-2 border-white bg-black p-6"
         >
           <DialogClose asChild>
             <Button
