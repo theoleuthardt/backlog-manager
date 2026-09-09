@@ -352,6 +352,94 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                   </DialogContent>
                 </Dialog>
               )}
+
+              <div
+                id="update-button-section"
+                className="mt-auto flex w-full flex-col gap-2"
+              >
+                <Button
+                  id="update-entry-button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleUpdate}
+                  disabled={isLoading || updateStatus === "success"}
+                  className={`w-full gap-2 transition-colors duration-300 ${
+                    updateStatus === "success"
+                      ? "bg-green-600 text-white hover:bg-green-600"
+                      : updateStatus === "error"
+                        ? "bg-red-600 text-white hover:bg-red-600"
+                        : "bg-black text-white hover:bg-white hover:text-black"
+                  }`}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Updating...
+                    </>
+                  ) : updateStatus === "success" ? (
+                    <>
+                      <Check className="mr-2 h-4 w-4" />
+                      Updated!
+                    </>
+                  ) : updateStatus === "error" ? (
+                    <>
+                      <X className="mr-2 h-4 w-4" />
+                      Failed
+                    </>
+                  ) : (
+                    "Update Entry"
+                  )}
+                </Button>
+
+                <AlertDialog
+                  open={deleteDialogOpen}
+                  onOpenChange={setDeleteDialogOpen}
+                >
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="w-full gap-2 bg-red-600 text-white hover:bg-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete Entry
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="border-2 border-red-600 bg-black">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-xl text-white">
+                        Delete &quot;{props.title}&quot;?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription className="text-gray-300">
+                        This action cannot be undone. This will permanently
+                        delete this backlog entry from your collection.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel className="bg-black text-white hover:bg-gray-800">
+                        Cancel
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDelete}
+                        disabled={isDeleting}
+                        className="bg-red-600 text-white hover:bg-red-700"
+                      >
+                        {isDeleting ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Deleting...
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="h-4 w-4" />
+                            Delete
+                          </>
+                        )}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </div>
 
             <div id="form-container" className="flex flex-1 flex-col">
@@ -547,93 +635,6 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                   </div>
                 </div>
 
-                <div
-                  id="update-button-section"
-                  className="flex justify-between pt-4 pb-4"
-                >
-                  <AlertDialog
-                    open={deleteDialogOpen}
-                    onOpenChange={setDeleteDialogOpen}
-                  >
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="min-w-[150px] gap-2 bg-red-600 text-white hover:bg-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Delete Entry
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="border-2 border-red-600 bg-black">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle className="text-xl text-white">
-                          Delete &quot;{props.title}&quot;?
-                        </AlertDialogTitle>
-                        <AlertDialogDescription className="text-gray-300">
-                          This action cannot be undone. This will permanently
-                          delete this backlog entry from your collection.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel className="bg-black text-white hover:bg-gray-800">
-                          Cancel
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleDelete}
-                          disabled={isDeleting}
-                          className="bg-red-600 text-white hover:bg-red-700"
-                        >
-                          {isDeleting ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Deleting...
-                            </>
-                          ) : (
-                            <>
-                              <Trash2 className="h-4 w-4" />
-                              Delete
-                            </>
-                          )}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-
-                  <Button
-                    id="update-entry-button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleUpdate}
-                    disabled={isLoading || updateStatus === "success"}
-                    className={`min-w-[200px] gap-2 transition-colors duration-300 ${
-                      updateStatus === "success"
-                        ? "bg-green-600 text-white hover:bg-green-600"
-                        : updateStatus === "error"
-                          ? "bg-red-600 text-white hover:bg-red-600"
-                          : "bg-black text-white hover:bg-white hover:text-black"
-                    }`}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Updating...
-                      </>
-                    ) : updateStatus === "success" ? (
-                      <>
-                        <Check className="mr-2 h-4 w-4" />
-                        Updated!
-                      </>
-                    ) : updateStatus === "error" ? (
-                      <>
-                        <X className="mr-2 h-4 w-4" />
-                        Failed
-                      </>
-                    ) : (
-                      "Update Entry"
-                    )}
-                  </Button>
-                </div>
               </div>
             </div>
           </div>
