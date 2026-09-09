@@ -217,7 +217,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
           </motion.div>
         </DialogTrigger>
         <DialogContent
-          className="h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] !max-w-none border-2 border-white bg-black p-0"
+          className="h-[calc(100vh-1rem)] w-[calc(100vw-2rem)] !max-w-none border-2 border-white bg-black p-0"
           onOpenAutoFocus={(e: { preventDefault: () => void }) => {
             e.preventDefault();
           }}
@@ -233,7 +233,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
             </Button>
           </DialogClose>
 
-          <div className="border-b border-white/20 p-6">
+          <div className="border-b border-white/20 px-6 py-4">
             <DialogTitle className="text-center text-3xl text-white">
               {props.title}
             </DialogTitle>
@@ -241,7 +241,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
 
           <div
             id="dialog-content-wrapper"
-            className="flex h-[calc(100%-5rem)] gap-8 p-6"
+            className="flex h-[calc(100%-4.5rem)] gap-8 p-6"
           >
             <div
               id="game-image-section"
@@ -355,7 +355,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
 
               <div
                 id="update-button-section"
-                className="mt-auto flex w-full flex-col gap-2"
+                className="mt-auto flex flex-col items-center gap-2"
               >
                 <Button
                   id="update-entry-button"
@@ -363,7 +363,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                   size="sm"
                   onClick={handleUpdate}
                   disabled={isLoading || updateStatus === "success"}
-                  className={`w-full gap-2 transition-colors duration-300 ${
+                  className={`w-40 gap-2 transition-colors duration-300 ${
                     updateStatus === "success"
                       ? "bg-green-600 text-white hover:bg-green-600"
                       : updateStatus === "error"
@@ -399,7 +399,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                     <Button
                       variant="destructive"
                       size="sm"
-                      className="w-full gap-2 bg-red-600 text-white hover:bg-red-700"
+                      className="w-40 gap-2 bg-red-600 text-white hover:bg-red-700"
                     >
                       <Trash2 className="h-4 w-4" />
                       Delete Entry
