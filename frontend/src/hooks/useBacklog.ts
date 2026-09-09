@@ -1,9 +1,11 @@
+import { useCallback, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as backlogApi from "~/lib/api/backlog";
 import {
   getSteamAchievements,
-  importSteamLibrary,
-  syncSteamPlaytimes,
+  importSteamLibraryStream,
+  syncSteamPlaytimesStream,
+  type SteamSyncProgress,
 } from "~/lib/api/steam";
 
 const ENTRIES_KEY = ["backlog-entries"] as const;
@@ -51,24 +53,43 @@ export function useDeleteBacklogEntry() {
   });
 }
 
-export function useSyncSteamPlaytimes() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: syncSteamPlaytimes,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ENTRIES_KEY });
-    },
-  });
+interface SteamStreamState {
+  run: () => Promise<backlogApi.BacklogEntryData[]>;
+  isRunning: boolean;
+  progress: SteamSyncProgress | null;
 }
 
-export function useImportSteamLibrary() {
+function useSteamStream(
+  streamFn: (
+    onProgress: (progress: SteamSyncProgress) => void,
+  ) => Promise<backlogApi.BacklogEntryData[]>,
+): SteamStreamState {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: importSteamLibrary,
-    onSuccess: async () => {
+  const [isRunning, setIsRunning] = useState(false);
+  const [progress, setProgress] = useState<SteamSyncProgress | null>(null);
+
+  const run = useCallback(async () => {
+    setIsRunning(true);
+    setProgress(null);
+    try {
+      const entries = await streamFn(setProgress);
       await queryClient.invalidateQueries({ queryKey: ENTRIES_KEY });
-    },
-  });
+      return entries;
+    } finally {
+      setIsRunning(false);
+      setProgress(null);
+    }
+  }, [streamFn, queryClient]);
+
+  return { run, isRunning, progress };
+}
+
+export function useSyncSteamPlaytimesStream(): SteamStreamState {
+  return useSteamStream(syncSteamPlaytimesStream);
+}
+
+export function useImportSteamLibraryStream(): SteamStreamState {
+  return useSteamStream(importSteamLibraryStream);
 }
 
 export function useSteamAchievements(

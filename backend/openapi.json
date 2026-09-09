@@ -1981,6 +1981,68 @@
         ]
       }
     },
+    "/api/user/steam/sync/stream": {
+      "post": {
+        "summary": "SyncSteamPlaytimesStream",
+        "operationId": "ApiUserSteamSyncStreamSyncSteamPlaytimesStream",
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {
+              "cache-control": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/user/steam/import/stream": {
+      "post": {
+        "summary": "ImportSteamLibraryStream",
+        "operationId": "ApiUserSteamImportStreamImportSteamLibraryStream",
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {
+              "cache-control": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/user/steam/achievements": {
       "get": {
         "summary": "GetSteamAchievements",

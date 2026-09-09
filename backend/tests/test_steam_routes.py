@@ -1,8 +1,29 @@
+import json
 from collections.abc import Callable
 
 import httpx
 import pytest
 from litestar.testing import TestClient
+
+
+def _parse_sse(body: str) -> list[tuple[str | None, str]]:
+    """Splits a raw SSE response body into (event, data) pairs, mirroring
+    how a browser's EventSource (or the frontend's manual fetch-based
+    reader, since EventSource can't send an Authorization header) would
+    see each message - messages are separated by a blank line, each
+    made of `event: ...` / `data: ...` fields."""
+    messages: list[tuple[str | None, str]] = []
+    for raw_message in body.strip("\r\n").split("\r\n\r\n"):
+        event: str | None = None
+        data_lines: list[str] = []
+        for line in raw_message.split("\r\n"):
+            if line.startswith("event: "):
+                event = line.removeprefix("event: ")
+            elif line.startswith("data: "):
+                data_lines.append(line.removeprefix("data: "))
+        if data_lines:
+            messages.append((event, "\n".join(data_lines)))
+    return messages
 
 
 def _mock_steam(
@@ -587,3 +608,119 @@ async def test_sync_steam_playtimes_does_not_import_when_auto_import_disabled(
 
     assert response.status_code == 200
     assert response.json() == []
+
+
+async def test_import_steam_library_stream_reports_progress_then_done(
+    postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    _configure_steam_api_key(monkeypatch)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "hltbapi1.azurewebsites.net":
+            return httpx.Response(200, json=[])
+        return httpx.Response(
+            200,
+            json={
+                "response": {
+                    "games": [
+                        {"appid": 504230, "name": "Celeste", "playtime_forever": 510},
+                        {"appid": 620, "name": "Portal 2", "playtime_forever": 120},
+                    ]
+                }
+            },
+        )
+
+    _mock_steam(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "steamimportstream@example.com")
+        client.put("/api/user/me", headers=headers, json={"steam_id": "76561197960287930"})
+
+        response = client.post("/api/user/steam/import/stream", headers=headers)
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/event-stream")
+    messages = _parse_sse(response.text)
+
+    progress_events = [json.loads(data) for event, data in messages if event == "progress"]
+    assert progress_events == [
+        {"processed": 1, "total": 2},
+        {"processed": 2, "total": 2},
+    ]
+
+    done_events = [json.loads(data) for event, data in messages if event == "done"]
+    assert len(done_events) == 1
+    titles = {entry["title"] for entry in done_events[0]}
+    assert titles == {"Celeste", "Portal 2"}
+
+
+async def test_sync_steam_playtimes_stream_reports_progress_only_for_auto_import(
+    postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    _configure_steam_api_key(monkeypatch)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "hltbapi1.azurewebsites.net":
+            return httpx.Response(200, json=[])
+        return httpx.Response(
+            200,
+            json={
+                "response": {
+                    "games": [{"appid": 620, "name": "Portal 2", "playtime_forever": 120}]
+                }
+            },
+        )
+
+    _mock_steam(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "steamsyncstream@example.com")
+        client.put(
+            "/api/user/me",
+            headers=headers,
+            json={"steam_id": "76561197960287930", "steam_auto_import_enabled": True},
+        )
+
+        response = client.post("/api/user/steam/sync/stream", headers=headers)
+
+    assert response.status_code == 200
+    messages = _parse_sse(response.text)
+
+    progress_events = [json.loads(data) for event, data in messages if event == "progress"]
+    assert progress_events == [{"processed": 1, "total": 1}]
+
+    done_events = [json.loads(data) for event, data in messages if event == "done"]
+    assert len(done_events) == 1
+    assert done_events[0][0]["title"] == "Portal 2"
+
+
+async def test_sync_steam_playtimes_stream_sends_error_event_when_not_linked(
+    postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    _configure_steam_api_key(monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "nosteamstream@example.com")
+        response = client.post("/api/user/steam/sync/stream", headers=headers)
+
+    assert response.status_code == 200
+    messages = _parse_sse(response.text)
+    assert len(messages) == 1
+    event, data = messages[0]
+    assert event == "error"
+    assert data == "Steam account is not linked"
+
+
+async def test_sync_steam_playtimes_stream_requires_authentication(postgres_url: str) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        response = client.post("/api/user/steam/sync/stream")
+
+    assert response.status_code == 401

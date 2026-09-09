@@ -10,7 +10,7 @@ import {
   useVerifyTwoFactorEnrollment,
   useDisableTwoFactor,
 } from "~/hooks/useTwoFactor";
-import { useImportSteamLibrary } from "~/hooks/useBacklog";
+import { useImportSteamLibraryStream } from "~/hooks/useBacklog";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -63,12 +63,17 @@ export function AccountContent() {
   const [isSavingIgdbCredentials, setIsSavingIgdbCredentials] = useState(false);
 
   const [steamgriddbApiKey, setSteamgriddbApiKey] = useState("");
-  const [isSavingSteamgriddbApiKey, setIsSavingSteamgriddbApiKey] = useState(false);
+  const [isSavingSteamgriddbApiKey, setIsSavingSteamgriddbApiKey] =
+    useState(false);
 
   const enrollMutation = useEnrollTwoFactor();
   const verifyMutation = useVerifyTwoFactorEnrollment();
   const disableMutation = useDisableTwoFactor();
-  const importSteamLibraryMutation = useImportSteamLibrary();
+  const {
+    run: importSteamLibrary,
+    isRunning: isImportingSteamLibrary,
+    progress: steamImportProgress,
+  } = useImportSteamLibraryStream();
   const [isSavingAutoImport, setIsSavingAutoImport] = useState(false);
 
   if (user && steamIdLoadedFor !== user.id) {
@@ -117,7 +122,9 @@ export function AccountContent() {
       toast.success("Steam API key removed");
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to remove Steam API key",
+        error instanceof Error
+          ? error.message
+          : "Failed to remove Steam API key",
       );
     } finally {
       setIsSavingSteamApiKey(false);
@@ -137,7 +144,9 @@ export function AccountContent() {
       toast.success("IGDB credentials saved");
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to save IGDB credentials",
+        error instanceof Error
+          ? error.message
+          : "Failed to save IGDB credentials",
       );
     } finally {
       setIsSavingIgdbCredentials(false);
@@ -152,7 +161,9 @@ export function AccountContent() {
       toast.success("IGDB credentials removed");
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to remove IGDB credentials",
+        error instanceof Error
+          ? error.message
+          : "Failed to remove IGDB credentials",
       );
     } finally {
       setIsSavingIgdbCredentials(false);
@@ -194,21 +205,21 @@ export function AccountContent() {
     }
   };
 
-  const handleImportSteamLibrary = () => {
-    importSteamLibraryMutation.mutate(undefined, {
-      onSuccess: (created) => {
-        toast.success(
-          created.length > 0
-            ? `Imported ${created.length} game${created.length === 1 ? "" : "s"} from your Steam library`
-            : "No new games to import, your backlog already has everything",
-        );
-      },
-      onError: (error) => {
-        toast.error(
-          error instanceof Error ? error.message : "Failed to import Steam library",
-        );
-      },
-    });
+  const handleImportSteamLibrary = async () => {
+    try {
+      const created = await importSteamLibrary();
+      toast.success(
+        created.length > 0
+          ? `Imported ${created.length} game${created.length === 1 ? "" : "s"} from your Steam library`
+          : "No new games to import, your backlog already has everything",
+      );
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to import Steam library",
+      );
+    }
   };
 
   const handleToggleAutoImport = async (checked: boolean) => {
@@ -237,7 +248,11 @@ export function AccountContent() {
     setEnrollStep("qr");
     enrollMutation.mutate(undefined, {
       onError: (error) => {
-        toast.error(error instanceof Error ? error.message : "Failed to start two-factor setup");
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Failed to start two-factor setup",
+        );
         setIsEnrollOpen(false);
       },
     });
@@ -252,7 +267,9 @@ export function AccountContent() {
         void refreshUser();
       },
       onError: (error) => {
-        toast.error(error instanceof Error ? error.message : "Invalid two-factor code");
+        toast.error(
+          error instanceof Error ? error.message : "Invalid two-factor code",
+        );
       },
     });
   };
@@ -273,7 +290,9 @@ export function AccountContent() {
       },
       onError: (error) => {
         toast.error(
-          error instanceof Error ? error.message : "Failed to disable two-factor authentication",
+          error instanceof Error
+            ? error.message
+            : "Failed to disable two-factor authentication",
         );
       },
     });
@@ -290,7 +309,9 @@ export function AccountContent() {
       </div>
 
       <div className="rounded-lg border-2 border-white bg-black p-6">
-        <h2 className="mb-2 text-xl font-semibold">Two-Factor Authentication</h2>
+        <h2 className="mb-2 text-xl font-semibold">
+          Two-Factor Authentication
+        </h2>
         <p className="mb-4 text-sm text-gray-300">
           {user.isTwoFactorEnabled
             ? "Two-factor authentication is enabled on your account."
@@ -333,10 +354,9 @@ export function AccountContent() {
           </Button>
         </div>
         <p className="mt-2 text-xs text-gray-500">
-          Not sure what this is? Open your Steam profile page and look at
-          its URL - if it ends in a long number, that&apos;s your
-          SteamID64, paste it above. If it ends in a custom name instead,
-          look it up with{" "}
+          Not sure what this is? Open your Steam profile page and look at its
+          URL - if it ends in a long number, that&apos;s your SteamID64, paste
+          it above. If it ends in a custom name instead, look it up with{" "}
           <a
             href="https://steamdb.com/en/tools/steam-id-finder"
             target="_blank"
@@ -359,7 +379,9 @@ export function AccountContent() {
             value={steamApiKey}
             onChange={(e) => setSteamApiKey(e.target.value)}
             placeholder={
-              user.hasSteamApiKey ? "Enter a new key to replace it" : "Steam Web API key"
+              user.hasSteamApiKey
+                ? "Enter a new key to replace it"
+                : "Steam Web API key"
             }
             className="border-white/40 bg-black text-white placeholder:text-gray-500"
           />
@@ -389,10 +411,12 @@ export function AccountContent() {
         <Button
           className={FILLED_BUTTON}
           onClick={handleImportSteamLibrary}
-          disabled={!user.steamId || importSteamLibraryMutation.isPending}
+          disabled={!user.steamId || isImportingSteamLibrary}
         >
-          {importSteamLibraryMutation.isPending
-            ? "Importing..."
+          {isImportingSteamLibrary
+            ? steamImportProgress
+              ? `Importing ${steamImportProgress.processed}/${steamImportProgress.total}...`
+              : "Importing..."
             : "Import my Steam library"}
         </Button>
 
@@ -409,8 +433,7 @@ export function AccountContent() {
             htmlFor="steam-auto-import"
             className="text-sm font-normal text-gray-300"
           >
-            Automatically import new Steam games every time playtimes are
-            synced
+            Automatically import new Steam games every time playtimes are synced
           </Label>
         </div>
       </div>
@@ -532,7 +555,10 @@ export function AccountContent() {
         </div>
       </div>
 
-      <Dialog open={isEnrollOpen} onOpenChange={(open) => !open && closeEnroll()}>
+      <Dialog
+        open={isEnrollOpen}
+        onOpenChange={(open) => !open && closeEnroll()}
+      >
         <DialogContent className="border-2 border-white bg-black text-white">
           {enrollStep === "qr" ? (
             <>
@@ -548,11 +574,16 @@ export function AccountContent() {
               {enrollMutation.data && (
                 <div className="flex flex-col items-center gap-4">
                   <div className="rounded bg-white p-4">
-                    <QRCodeSVG value={enrollMutation.data.otpauthUrl} size={192} />
+                    <QRCodeSVG
+                      value={enrollMutation.data.otpauthUrl}
+                      size={192}
+                    />
                   </div>
                   <p className="text-center text-xs break-all text-gray-300">
                     Can&apos;t scan it? Enter this code manually:{" "}
-                    <span className="font-mono text-white">{enrollMutation.data.secret}</span>
+                    <span className="font-mono text-white">
+                      {enrollMutation.data.secret}
+                    </span>
                   </p>
                   <div className="w-full space-y-2">
                     <Label htmlFor="totp-code" className="text-white">
@@ -578,19 +609,27 @@ export function AccountContent() {
                 <Button
                   className={FILLED_BUTTON}
                   onClick={handleVerify}
-                  disabled={!enrollMutation.data || verifyMutation.isPending || code.length === 0}
+                  disabled={
+                    !enrollMutation.data ||
+                    verifyMutation.isPending ||
+                    code.length === 0
+                  }
                 >
-                  {verifyMutation.isPending ? "Verifying..." : "Verify and enable"}
+                  {verifyMutation.isPending
+                    ? "Verifying..."
+                    : "Verify and enable"}
                 </Button>
               </DialogFooter>
             </>
           ) : (
             <>
               <DialogHeader>
-                <DialogTitle className="text-white">Save your backup codes</DialogTitle>
+                <DialogTitle className="text-white">
+                  Save your backup codes
+                </DialogTitle>
                 <DialogDescription className="text-gray-300">
-                  Store these somewhere safe. Each code can be used once to
-                  sign in if you lose access to your authenticator app. They
+                  Store these somewhere safe. Each code can be used once to sign
+                  in if you lose access to your authenticator app. They
                   won&apos;t be shown again.
                 </DialogDescription>
               </DialogHeader>
@@ -606,9 +645,13 @@ export function AccountContent() {
                   onClick={() => {
                     navigator.clipboard
                       .writeText(backupCodes.join("\n"))
-                      .then(() => toast.success("Backup codes copied to clipboard"))
+                      .then(() =>
+                        toast.success("Backup codes copied to clipboard"),
+                      )
                       .catch(() =>
-                        toast.error("Could not copy the backup codes. Copy them manually."),
+                        toast.error(
+                          "Could not copy the backup codes. Copy them manually.",
+                        ),
                       );
                   }}
                 >
@@ -658,7 +701,9 @@ export function AccountContent() {
               className={OUTLINE_BUTTON}
               variant="outline"
               onClick={handleDisable}
-              disabled={disableMutation.isPending || disablePassword.length === 0}
+              disabled={
+                disableMutation.isPending || disablePassword.length === 0
+              }
             >
               {disableMutation.isPending ? "Disabling..." : "Disable"}
             </Button>

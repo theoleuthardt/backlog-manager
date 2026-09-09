@@ -1,3 +1,4 @@
+from collections.abc import Awaitable, Callable
 from decimal import ROUND_HALF_UP, Decimal
 
 import httpx
@@ -27,6 +28,8 @@ from backlog_manager_backend.schemas.user import User
 from backlog_manager_backend.services import game_service
 
 logger = structlog.get_logger()
+
+ProgressCallback = Callable[[int, int], Awaitable[None]]
 
 _MINUTES_PER_HOUR = Decimal(60)
 _IMPORTED_PLATFORM = "PC"
@@ -123,6 +126,7 @@ async def import_library(
     api_key: str,
     owned_games: list[SteamOwnedGame] | None = None,
     steamgriddb_api_key: str | None = None,
+    on_progress: ProgressCallback | None = None,
 ) -> list[BacklogEntry]:
     """Creates a backlog entry for every Steam-owned game not already
     linked to one by steam_app_id. Metadata beyond title/steam_app_id/
@@ -152,7 +156,11 @@ async def import_library(
     this same loop fail too.
 
     Accepts an already-fetched owned_games snapshot - see
-    sync_playtimes's docstring for why."""
+    sync_playtimes's docstring for why. `on_progress`, when given, is
+    awaited after every game in owned_games is considered (whether it
+    was actually imported, already existed, or failed), so callers can
+    report "N of len(owned_games) processed" even on a re-sync where
+    most games are skipped as already-imported."""
     if not user.steam_id:
         raise ValidationError(_STEAM_NOT_LINKED)
     if owned_games is None:
@@ -165,8 +173,11 @@ async def import_library(
     }
 
     created: list[BacklogEntry] = []
-    for game in owned_games:
+    total = len(owned_games)
+    for processed, game in enumerate(owned_games, start=1):
         if game.appid in existing_app_ids:
+            if on_progress:
+                await on_progress(processed, total)
             continue
         try:
             image_link = await _try_get_cover(game.appid, steamgriddb_api_key)
@@ -203,6 +214,9 @@ async def import_library(
                 title=game.name,
             )
             continue
+        finally:
+            if on_progress:
+                await on_progress(processed, total)
     return created
 
 
@@ -213,11 +227,15 @@ async def sync_playtimes_and_import(
     *,
     auto_import: bool,
     steamgriddb_api_key: str | None = None,
+    on_progress: ProgressCallback | None = None,
 ) -> list[BacklogEntry]:
     """Single entry point for the "Sync Steam Playtimes" action: fetches
     the owned-games snapshot once and reuses it for both sync_playtimes
     and (when auto_import is on) import_library, instead of each
-    fetching its own snapshot from Steam's API."""
+    fetching its own snapshot from Steam's API. `on_progress` is only
+    ever driven by import_library - sync_playtimes has no per-game
+    external API calls, so it finishes near-instantly and isn't worth
+    reporting progress for."""
     if not user.steam_id:
         raise ValidationError(_STEAM_NOT_LINKED)
     owned_games = await get_owned_games(user.steam_id, api_key)
@@ -225,7 +243,12 @@ async def sync_playtimes_and_import(
     updated = await sync_playtimes(session, user, api_key, owned_games)
     if auto_import:
         updated = updated + await import_library(
-            session, user, api_key, owned_games, steamgriddb_api_key=steamgriddb_api_key
+            session,
+            user,
+            api_key,
+            owned_games,
+            steamgriddb_api_key=steamgriddb_api_key,
+            on_progress=on_progress,
         )
     return updated
 
