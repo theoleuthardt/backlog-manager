@@ -305,7 +305,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                   </DialogTrigger>
                   <DialogContent
                     showCloseButton={false}
-                    className="flex h-[calc(100vh-6rem)] w-[calc(100vw-6rem)] max-w-2xl flex-col border-2 border-white bg-black p-6"
+                    className="flex h-[calc(100vh-6rem)] w-[calc(100vw-6rem)] max-w-6xl flex-col border-2 border-white bg-black p-6"
                   >
                     <DialogClose asChild>
                       <Button
@@ -331,7 +331,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                         </p>
                       ) : steamGridDbCovers &&
                         steamGridDbCovers.length > 0 ? (
-                        <div className="grid grid-cols-4 gap-3 sm:grid-cols-5 md:grid-cols-6">
+                        <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] justify-items-center gap-3">
                           {steamGridDbCovers.map((url) => (
                             <button
                               key={url}
@@ -357,7 +357,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
             <div id="form-container" className="flex flex-1 flex-col">
               <div
                 id="scrollable-form-content"
-                className="flex-1 space-y-6 pr-2"
+                className="min-h-0 flex-1 space-y-6 overflow-y-auto pr-2"
               >
                 <div id="basic-info-section" className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
