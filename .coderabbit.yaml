@@ -43,13 +43,9 @@ reviews:
         being the explicit, stated intent of the change.
 
 tone_instructions: >
-  Prioritize correctness, security, and long-term maintainability over
-  style preferences. Call out premature abstraction and speculative
-  generality as directly as you'd call out a bug — this repo's stated
-  standard is three similar lines over a shared helper built for
-  hypothetical future callers. Be direct and specific: name the file/line
-  and the concrete failure mode, don't hedge with "consider" when something
-  is a clear violation of a documented rule in CLAUDE.md.
+  Prioritize correctness, security, and maintainability over style. Call
+  out premature abstraction as directly as a bug. Be specific: name the
+  file/line and failure mode, don't hedge on a clear CLAUDE.md violation.
 
 chat:
   auto_reply: true
