@@ -1,0 +1,23 @@
+meta {
+  name: Import Steam Library (Stream)
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{backendUrl}}/api/user/steam/import/stream
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  SSE variant of "Import Steam Library" (media_type: text/event-stream),
+  same event shape and caveat as "Sync Steam Playtimes (Stream)" -
+  Bruno's plain HTTP request type will just return the raw
+  event-stream body once the connection closes, not live progress. Run
+  auth/Login and user/Set Steam ID first.
+}

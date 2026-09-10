@@ -1,0 +1,23 @@
+meta {
+  name: Delete Own Account
+  type: http
+  seq: 11
+}
+
+delete {
+  url: {{backendUrl}}/api/user/me
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  DESTRUCTIVE AND IRREVERSIBLE - permanently deletes the logged-in
+  user's account and, via cascading foreign keys, all of their backlog
+  entries and categories. There is no confirmation step or soft-delete;
+  only run this against a disposable test account. 204 on success. Run
+  auth/Login first (with the account you actually intend to delete).
+}

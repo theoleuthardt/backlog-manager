@@ -1,0 +1,29 @@
+meta {
+  name: Sync Steam Playtimes (Stream)
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{backendUrl}}/api/user/steam/sync/stream
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  SSE variant of "Sync Steam Playtimes" (media_type: text/event-stream):
+  emits a `progress` event ({"processed", "total"}) after every game
+  considered, then a final `done` event carrying the same entry list
+  "Sync Steam Playtimes" returns directly, or an `error` event in its
+  place if the sync fails partway through.
+
+  Bruno's plain HTTP request type has no special SSE handling, so
+  running this here just returns the raw concatenated event-stream body
+  once the connection closes rather than showing live progress - use a
+  real SSE/EventSource client to see incremental updates. Run
+  auth/Login and user/Set Steam ID first.
+}

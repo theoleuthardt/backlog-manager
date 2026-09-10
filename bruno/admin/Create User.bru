@@ -1,0 +1,43 @@
+meta {
+  name: Create User
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{backendUrl}}/api/admin/users
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "username": "newuser",
+    "email": "newuser@test.com",
+    "password": "test1234",
+    "steam_id": null,
+    "is_admin": false
+  }
+}
+
+script:post-response {
+  if (res.body.id) {
+    bru.setEnvVar("adminUserId", res.body.id);
+  }
+}
+
+docs {
+  Admin-only. Creates a new user account and stores its id in the
+  adminUserId environment variable, used by the rest of this folder.
+  There is no public self-registration endpoint - this is the only way
+  to create additional users.
+
+  Run auth/Login with an account that has is_admin=true first (every
+  route in this folder requires it - a non-admin bearer token gets a
+  403). 409 if username/email is already taken, 400 if the password
+  fails strength validation.
+}

@@ -1,0 +1,36 @@
+meta {
+  name: Update Backlog Entry
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{backendUrl}}/api/backlog/entries/{{entryId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "status": "Completed",
+    "playtime": 140,
+    "review_stars": 5,
+    "review": "Incredible open world design."
+  }
+}
+
+docs {
+  Partially updates a backlog entry - only the fields present in the
+  body are changed, everything else is left as-is. Sending a field as
+  explicit null clears it (where nullable); omitting it entirely leaves
+  it unchanged. Run auth/Login and "Create Backlog Entry" first so
+  entryId is set.
+
+  404 if the entry doesn't exist or isn't owned by the caller. genre/
+  platform, if sent, follow the same comma-rejection rule as "Create
+  Backlog Entry".
+}

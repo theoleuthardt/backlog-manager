@@ -1,0 +1,26 @@
+meta {
+  name: Get Backlog Entries
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{backendUrl}}/api/backlog/entries
+  body: none
+  auth: bearer
+}
+
+params:query {
+  ~status: In Progress
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Lists every backlog entry owned by the logged-in user. Enable the
+  status query param above to filter to one status instead (an exact,
+  case-sensitive match against the stored value). Run auth/Login and
+  "Create Backlog Entry" first.
+}

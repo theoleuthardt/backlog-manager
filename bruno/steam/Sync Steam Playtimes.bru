@@ -1,7 +1,7 @@
 meta {
   name: Sync Steam Playtimes
   type: http
-  seq: 6
+  seq: 1
 }
 
 post {
@@ -15,11 +15,15 @@ auth:bearer {
 }
 
 docs {
-  Fetches the linked Steam library (GetOwnedGames) and overwrites
+  Fetches the linked Steam library (GetOwnedGames, plus any Steam
+  Family members set via user/Set Steam Family IDs) and overwrites
   playtime for every backlog entry whose steam_app_id matches an owned
-  game, converting Steam's minutes to hours. Returns the updated
-  entries.
+  game, converting Steam's minutes to hours. Also imports newly-seen
+  owned games as new backlog entries if user/Set Steam Auto Import is
+  enabled for this user. Returns the updated (and, if auto-import ran,
+  newly created) entries.
 
-  400 if no Steam ID is linked (see "Set Steam ID"), 503 if neither the
-  caller nor the server has a Steam Web API key configured.
+  Run auth/Login and user/Set Steam ID first. 400 if no Steam ID is
+  linked, 503 if neither the caller nor the server has a Steam Web API
+  key configured.
 }

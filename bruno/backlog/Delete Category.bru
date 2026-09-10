@@ -1,0 +1,23 @@
+meta {
+  name: Delete Category
+  type: http
+  seq: 12
+}
+
+delete {
+  url: {{backendUrl}}/api/backlog/categories/{{categoryId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Permanently deletes a category (and its associations to any backlog
+  entries - the entries themselves are untouched). Run auth/Login and
+  "Create Category" first so categoryId is set.
+
+  404 if the category doesn't exist or isn't owned by the caller.
+}

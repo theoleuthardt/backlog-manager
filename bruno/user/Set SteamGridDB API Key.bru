@@ -1,0 +1,34 @@
+meta {
+  name: Set SteamGridDB API Key
+  type: http
+  seq: 6
+}
+
+put {
+  url: {{backendUrl}}/api/user/me
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "steamgriddb_api_key": "your-steamgriddb-api-key"
+  }
+}
+
+docs {
+  Stores the caller's own SteamGridDB API key, encrypted at rest, taking
+  priority over the server-wide STEAMGRIDDB_API_KEY fallback when
+  fetching alternate cover art (see games/Get SteamGridDB Covers). Get a
+  key at https://www.steamgriddb.com/profile/preferences/api. Sending
+  an empty string clears it, same pattern as user/Remove Steam API Key.
+  Run auth/Login first.
+
+  Returns 503 if the backend doesn't have STEAM_API_KEY_ENCRYPTION_KEY
+  configured (the same Fernet key backs every per-user credential
+  column, not just Steam's).
+}

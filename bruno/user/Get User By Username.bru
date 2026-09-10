@@ -1,0 +1,17 @@
+meta {
+  name: Get User By Username
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{backendUrl}}/api/user/by-username/testuser
+  body: none
+  auth: none
+}
+
+docs {
+  Public, unauthenticated lookup returning only a user's id and name -
+  no email, is_admin, or timestamps (unlike user/Get Own Profile or
+  admin/Get User). 404 if no user has that username.
+}

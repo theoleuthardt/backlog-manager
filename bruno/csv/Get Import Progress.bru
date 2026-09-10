@@ -1,0 +1,26 @@
+meta {
+  name: Get Import Progress
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{backendUrl}}/api/csv/import/{{csvSessionId}}/progress
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Polls how many rows a running (or finished) "Import CSV" call
+  identified by session_id has processed so far. Run auth/Login and
+  start an "Import CSV" with a session_id set first.
+
+  404 if session_id is registered to a different user. An
+  unrecognized/never-used session_id is NOT an error - it just reports
+  processed: 0, since the server can't distinguish "not started yet"
+  from "never existed".
+}

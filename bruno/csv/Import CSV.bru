@@ -1,0 +1,38 @@
+meta {
+  name: Import CSV
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{backendUrl}}/api/csv/import
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "content": "Title,Genre,Platform,Status\nElden Ring,RPG,PC,In Progress\nHades,Roguelike,PC,Completed\n",
+    "title_column": "Title",
+    "genre_column": "Genre",
+    "platform_column": "Platform",
+    "status_column": "Status",
+    "session_id": "{{csvSessionId}}"
+  }
+}
+
+docs {
+  Parses the CSV and creates one backlog entry per row for the
+  logged-in user. session_id is optional and caller-chosen (e.g. a
+  client-generated UUID) - set it to let "Get Import Progress" and
+  "Cancel Import" track/cancel this specific run while it's in flight;
+  omit it for a one-shot import with no progress polling. Run
+  auth/Login first, and set csvSessionId in the environment (any
+  string) if you want to exercise progress/cancel.
+
+  409 if session_id is already in use by another in-flight import.
+}

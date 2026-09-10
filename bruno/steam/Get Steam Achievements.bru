@@ -1,0 +1,32 @@
+meta {
+  name: Get Steam Achievements
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{backendUrl}}/api/user/steam/achievements?steam_app_id=1245620
+  body: none
+  auth: bearer
+}
+
+params:query {
+  steam_app_id: 1245620
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Returns achievement progress (unlocked/total counts plus each
+  achievement's name, description, icon, and unlock state) for one
+  Steam app, for the account linked via user/Set Steam ID. 1245620 =
+  Elden Ring. Run auth/Login and user/Set Steam ID first.
+
+  400 for a validation error (e.g. no Steam ID linked), 503 if neither
+  the caller nor the server has a Steam Web API key configured, or if
+  Steam is unreachable. If the game has no stats, or the profile/game
+  isn't public, this still returns 200 with unlocked: 0, total: 0,
+  achievements: [] rather than an error.
+}

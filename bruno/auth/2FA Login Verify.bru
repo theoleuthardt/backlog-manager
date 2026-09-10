@@ -1,0 +1,31 @@
+meta {
+  name: 2FA Login Verify
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{backendUrl}}/api/auth/2fa/login-verify
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "challenge_token": "replace-with-challenge_token-from-Login-response",
+    "code": "123456"
+  }
+}
+
+script:post-response {
+  if (res.body.access_token) {
+    bru.setEnvVar("authToken", res.body.access_token);
+  }
+}
+
+docs {
+  Completes a login for an account with 2FA enrolled. challenge_token
+  comes from "Login"'s response when requires_2fa is true; code is a
+  current TOTP code (or a backup code). Rate-limited to 10
+  requests/minute. 401 for an invalid/expired challenge_token or code.
+}

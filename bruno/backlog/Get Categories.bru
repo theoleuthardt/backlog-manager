@@ -1,0 +1,20 @@
+meta {
+  name: Get Categories
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{backendUrl}}/api/backlog/categories
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Lists every category owned by the logged-in user. Run auth/Login and
+  "Create Category" first.
+}

@@ -1,0 +1,36 @@
+meta {
+  name: Create Category
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{backendUrl}}/api/backlog/categories
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "category_name": "Currently Playing",
+    "color": "#4287f5",
+    "description": "Games I'm actively working through right now."
+  }
+}
+
+script:post-response {
+  if (res.body.id) {
+    bru.setEnvVar("categoryId", res.body.id);
+  }
+}
+
+docs {
+  Creates a category for the logged-in user and stores its id in the
+  categoryId environment variable, used by the rest of this folder.
+  color and description both default server-side ("#000000" / "No
+  description") if omitted. Run auth/Login first, then this.
+}

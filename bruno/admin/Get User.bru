@@ -1,0 +1,22 @@
+meta {
+  name: Get User
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{backendUrl}}/api/admin/users/{{adminUserId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Admin-only. Fetches one user by id. Run auth/Login with an
+  is_admin=true account, then "Create User", first.
+
+  404 if no user has that id.
+}

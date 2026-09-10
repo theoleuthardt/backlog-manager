@@ -1,0 +1,33 @@
+meta {
+  name: Update User
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{backendUrl}}/api/admin/users/{{adminUserId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "username": "newuser",
+    "email": "newuser@test.com",
+    "is_admin": true
+  }
+}
+
+docs {
+  Admin-only. Partially updates any user by id - same fields as
+  user/Update Own Profile plus is_admin, the only way to promote or
+  demote another user's admin status. Run auth/Login with an
+  is_admin=true account, then "Create User", first.
+
+  404 if no user has that id, 409 if username/email is already taken,
+  400 if a supplied password fails strength validation.
+}

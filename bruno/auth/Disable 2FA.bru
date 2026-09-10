@@ -1,0 +1,27 @@
+meta {
+  name: Disable 2FA
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{backendUrl}}/api/auth/2fa/disable
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "password": "test1234"
+  }
+}
+
+docs {
+  Disables 2FA for the logged-in user, requiring the account password
+  (not a TOTP code) as confirmation. 204 on success, 400/401 for a
+  wrong password.
+}

@@ -1,0 +1,20 @@
+meta {
+  name: List All Users
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{backendUrl}}/api/admin/users
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Admin-only. Lists every user account on the server. Run auth/Login
+  with an is_admin=true account first.
+}

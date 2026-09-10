@@ -1,0 +1,22 @@
+meta {
+  name: Get Categories For Entry
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{backendUrl}}/api/backlog/entries/{{entryId}}/categories
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Lists every category attached to one backlog entry. Run auth/Login,
+  "Create Backlog Entry", and "Add Category To Entry" first.
+
+  404 if the entry doesn't exist or isn't owned by the caller.
+}

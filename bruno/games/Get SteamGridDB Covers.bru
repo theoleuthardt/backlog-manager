@@ -1,0 +1,30 @@
+meta {
+  name: Get SteamGridDB Covers
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{backendUrl}}/api/games/steamgriddb-covers?steam_app_id=1245620
+  body: none
+  auth: bearer
+}
+
+params:query {
+  steam_app_id: 1245620
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Alternate cover art candidates for a Steam app id, sourced from
+  SteamGridDB (falls back to the server-wide SteamGridDB key if the
+  caller has no key of their own set - see user/Set SteamGridDB API
+  Key). 1245620 = Elden Ring. Run auth/Login first.
+
+  Returns an empty list if SteamGridDB has no grids for the app (not an
+  error). 503 if neither the caller nor the server has a SteamGridDB API
+  key configured, or if SteamGridDB is unreachable.
+}

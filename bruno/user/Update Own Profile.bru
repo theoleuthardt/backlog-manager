@@ -1,0 +1,34 @@
+meta {
+  name: Update Own Profile
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{backendUrl}}/api/user/me
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "username": "testuser",
+    "email": "test@test.com"
+  }
+}
+
+docs {
+  Partially updates the logged-in user's own profile - only fields
+  present in the body change, everything else (including password,
+  Steam/IGDB/SteamGridDB credentials, is_admin) is left as-is. There is
+  no is_admin field on this endpoint; a user can never change their own
+  admin status here (see admin/Update User for that). Run auth/Login
+  first.
+
+  409 if username/email is already taken by another user, 400 for a
+  password that fails strength validation if "password" is included.
+}
