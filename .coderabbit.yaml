@@ -1,0 +1,55 @@
+# CodeRabbit configuration — see https://docs.coderabbit.ai/reference/configuration
+# Kept in sync with the review standards documented in CLAUDE.md (see its
+# "Software Engineering Standards" and "Code Comments" sections).
+
+reviews:
+  profile: assertive
+  path_instructions:
+    - path: "backend/src/backlog_manager_backend/routes/**/*.py"
+      instructions: >
+        These are Litestar HTTP handlers: they should parse input, delegate
+        to a service or repository, and map errors to status codes — flag
+        any business logic (anything beyond that) that belongs in
+        services/ or repositories/ instead. Check that every route touching
+        user-owned data (backlog entries, categories) verifies ownership
+        before reading or mutating it, and that any new externally-reachable
+        endpoint validates its input at the boundary.
+    - path: "backend/src/backlog_manager_backend/**/*.py"
+      instructions: >
+        Flag narrative or "why I did this" inline comments — the only
+        comments this repo allows are function/class docstrings and
+        comments continuing an established per-file convention (see
+        CLAUDE.md's "Code Comments" section). Flag secrets, API keys, or
+        password hashes that could end up logged or included in a response.
+        Flag hand-built SQL instead of SQLAlchemy Core/ORM.
+    - path: "frontend/src/**/*.{ts,tsx}"
+      instructions: >
+        Flag `||` where `??` is the correct nullish check, unused
+        variables/exports, and type annotations TypeScript can already
+        infer (this repo's ESLint config enforces all three — see
+        CLAUDE.md's "ESLint Rules"). Flag narrative inline comments under
+        the same rule as the backend. Flag any new API call bypassing the
+        typed client in `src/lib/api/` in favor of a raw `fetch`.
+    - path: "bruno/**/*.bru"
+      instructions: >
+        Check that a new or changed backend route has a matching request
+        here, that auth (`auth: bearer` + `{{authToken}}`) matches what the
+        route actually requires, and that the `docs {}` block states any
+        non-obvious status codes the route can return.
+    - path: "backend/alembic/versions/**/*.py"
+      instructions: >
+        Migrations must be reversible (a real `downgrade()`, not `pass`)
+        and must not silently drop or truncate existing data without that
+        being the explicit, stated intent of the change.
+
+tone_instructions: >
+  Prioritize correctness, security, and long-term maintainability over
+  style preferences. Call out premature abstraction and speculative
+  generality as directly as you'd call out a bug — this repo's stated
+  standard is three similar lines over a shared helper built for
+  hypothetical future callers. Be direct and specific: name the file/line
+  and the concrete failure mode, don't hedge with "consider" when something
+  is a clear violation of a documented rule in CLAUDE.md.
+
+chat:
+  auto_reply: true

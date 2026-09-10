@@ -1,0 +1,23 @@
+meta {
+  name: Get Own Profile
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{backendUrl}}/api/user/me
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Returns the logged-in user's profile. Sensitive fields (Steam/
+  SteamGridDB/IGDB credentials) are only ever exposed as booleans
+  (has_steam_api_key, has_igdb_credentials, has_steamgriddb_api_key) -
+  the encrypted values themselves are never returned. Run auth/Login
+  first.
+}

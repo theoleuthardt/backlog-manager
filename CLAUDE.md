@@ -78,7 +78,7 @@ uv run ruff check .  # Lint
 - `src/components/ui/` - shadcn/ui primitives
 
 **Key Directories** (all under `backend/src/backlog_manager_backend/`):
-- `routes/` - Litestar HTTP handlers (`auth.py`, `backlog.py`, `csv.py`, `games.py`, `user.py`, `health.py`)
+- `routes/` - Litestar HTTP handlers (`auth.py`, `backlog.py`, `csv.py`, `games.py`, `images.py`, `steam.py`, `user.py`, `health.py`)
 - `services/` - business logic (`auth_service.py`, `game_service.py`, ...)
 - `repositories/` - SQLAlchemy data access, one module per entity
 - `models/` - SQLAlchemy declarative models
@@ -87,6 +87,12 @@ uv run ruff check .  # Lint
 - `auth/` - password hashing, JWT tokens, TOTP/2FA
 
 **Database:** SQLAlchemy 2.0 async models/repositories (`backend/src/backlog_manager_backend/{models,repositories,schemas}/`) against PostgreSQL (`postgres/backlogmanagerdb-init.sql`), Alembic baselined onto the existing schema (`backend/alembic/`, stamped rather than migrated from scratch) and used for all schema changes since. The old frontend-side raw-`pg` access layer (`frontend/src/server/db/`) no longer exists.
+
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the reasoning behind these choices (why REST/JWT replaced tRPC/NextAuth, the per-user-credential-with-server-wide-fallback pattern shared by IGDB/Steam/SteamGridDB, the image proxy's security posture) rather than just the shape of it.
+
+## API Testing (Bruno)
+
+The [`bruno/`](bruno/) collection covers every backend route, organized into one folder per route module (`auth/`, `backlog/`, `csv/`, `games/`, `user/`, `admin/`, `steam/`, `images/`, `health/`). Run `auth/Login` first — its `script:post-response` stores the access token in the shared `authToken` environment variable that every other authenticated request uses. When adding a new backend route, add a matching `.bru` request in the same change.
 
 ## ESLint Rules
 
@@ -110,6 +116,65 @@ If you're about to write `// this falls back to X because Y` or `# note: Z happe
 Always work test-driven: write the test that expresses the desired behavior before (or alongside) the implementation, then make the implementation satisfy it.
 
 Once a test correctly expresses the desired behavior, treat it as fixed — do not edit or weaken that test to make a failure go away. If a test fails, the default assumption is that the code is wrong, not the test. Only change a test when the desired behavior itself has genuinely changed (and say so explicitly), never as a shortcut to get a suite green.
+
+## Software Engineering Standards
+
+These apply to every change in this repo, human- or agent-authored, and are
+what both Claude Code and CodeRabbit (see `.coderabbit.yaml`) review against:
+
+- **No premature abstraction.** A bug fix doesn't need a surrounding
+  refactor; a one-shot operation doesn't need a helper. Three similar lines
+  beat a shared abstraction built for hypothetical future callers.
+- **Validate at boundaries, trust internals.** User input and external API
+  responses (IGDB, Steam, HowLongToBeat, SteamGridDB) get validated at the
+  point they enter the system. Internal code and framework guarantees
+  (SQLAlchemy, msgspec, Litestar's own request parsing) are trusted, not
+  re-checked defensively at every call site.
+- **No dead code.** Delete unused functions, exports, and commented-out code
+  outright rather than leaving them "in case" or prefixing with `_`/`unused`.
+  Git history is the record of what existed before, not the working tree.
+- **Security-conscious by default.** Never trust an unauthenticated
+  endpoint's input (see `routes/images.py`'s host/content-type/size
+  allowlisting for the pattern); never log or return secrets (API keys,
+  password hashes, encrypted blobs) even in error paths; parameterize every
+  query (SQLAlchemy Core/ORM does this — don't hand-build SQL strings).
+- **Small, focused changes.** One issue, one branch, one PR (see the
+  workflow below) — a PR that also happens to refactor an unrelated area
+  makes review and rollback harder for no benefit tied to the issue at hand.
+- **Comment policy is enforced, not aspirational** — see
+  [Code Comments](#code-comments) above. A PR reintroducing narrative
+  comments is a real review finding, not a style nitpick.
+
+## Working with Claude Code
+
+This is the loop this repo is actually built with day to day — copy it
+rather than improvising a different one:
+
+1. **Everything goes through an issue first.** Even small fixes get a
+   GitHub issue before a branch exists, so there's always a title and
+   description to point Claude Code at and to close automatically from the
+   PR. See [Issue Management Workflow](#issue-management-workflow) below.
+2. **Test-driven, always** — see [Testing Philosophy](#testing-philosophy).
+   Ask Claude Code to write the failing test first, look at it, *then* ask
+   for the implementation. A test is a contract once it's confirmed correct;
+   don't let an agent (or yourself) loosen one just to get a run green.
+3. **Use `task`, not raw `npm`/`uv`/`docker` invocations** — see
+   [Commands](#commands). This is what keeps Claude Code's tool calls
+   consistent across the frontend/backend split and the local Postgres
+   stack, and it's what CLAUDE.md tells every agent session to prefer.
+4. **Lint and typecheck before calling anything done**: `task lint` (or
+   `npm run check` / `uv run ruff check .` directly). CodeRabbit will flag
+   what these catch anyway — catching it locally first is faster.
+5. **For UI changes, actually run the app** (`task dev`) and click through
+   the feature before saying it's done. Passing type checks is not the same
+   as a working feature.
+6. **Keep CLAUDE.md itself current.** If you (or an agent) learn something
+   about the codebase's structure or conventions that isn't written down
+   here, add it — this file is the single source of truth both Claude Code
+   sessions and CodeRabbit reviews are expected to already know.
+7. **Commit messages and PR descriptions** follow Conventional Commits
+   (`feat:`, `fix:`, `docs:`, ...) and close their issue explicitly
+   (`Closes #<n>`) — see step 4 of the workflow below.
 
 ## Issue Management Workflow
 

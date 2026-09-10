@@ -1,0 +1,22 @@
+meta {
+  name: Get Genre
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{backendUrl}}/api/games/genres/10
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Genre details by IGDB genre id. 10 = Racing. Run auth/Login first.
+
+  503 if neither the caller nor the server has IGDB credentials
+  configured, or if IGDB is unreachable.
+}

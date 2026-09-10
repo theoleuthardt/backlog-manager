@@ -1,0 +1,27 @@
+meta {
+  name: Search Game (Raw)
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{backendUrl}}/api/games/search?search_term=Zelda
+  body: none
+  auth: bearer
+}
+
+params:query {
+  search_term: Zelda
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Raw IGDB /search results, unenriched. Returns id/name/game (the linked
+  game id used by "Get Game") for each match. Run auth/Login first.
+
+  503 if neither the caller nor the server has IGDB credentials
+  configured, or if IGDB is unreachable.
+}

@@ -1,0 +1,25 @@
+meta {
+  name: Get Game Time To Beat
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{backendUrl}}/api/games/141503/time-to-beat
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  IGDB's own beat-time data (hastily/normally/completely, in seconds) by
+  game id. 141503 = Elden Ring. If IGDB has no entry for a game, "Search
+  Games (Enriched)" falls back to HowLongToBeat instead. Run auth/Login
+  first.
+
+  503 if neither the caller nor the server has IGDB credentials
+  configured, or if IGDB is unreachable.
+}
