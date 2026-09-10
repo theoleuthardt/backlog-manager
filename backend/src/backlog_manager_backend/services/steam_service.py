@@ -120,6 +120,36 @@ async def _try_get_hltb_times(title: str) -> tuple[Decimal | None, Decimal | Non
     )
 
 
+async def _merge_family_games(
+    owned_games: list[SteamOwnedGame], family_steam_ids: list[str], api_key: str
+) -> list[SteamOwnedGame]:
+    """Adds games owned by Steam Family members that aren't already in
+    the user's own library, for import_library's family_steam_ids
+    support. Family-only games get playtime_forever=0 - GetOwnedGames
+    reports the *family member's* playtime for their own steamid, not
+    the current user's, so carrying it over would misrepresent it as
+    the current user's played time. A family member whose GetOwnedGames
+    call fails (private profile, bad ID, Steam outage) is skipped
+    rather than failing the whole import."""
+    merged = list(owned_games)
+    seen_appids = {game.appid for game in owned_games}
+    for family_steam_id in family_steam_ids:
+        try:
+            family_games = await get_owned_games(family_steam_id, api_key)
+        except httpx.HTTPError:
+            logger.warning(
+                "Failed to fetch Steam family member's library, skipping",
+                steam_id=family_steam_id,
+            )
+            continue
+        for game in family_games:
+            if game.appid in seen_appids:
+                continue
+            seen_appids.add(game.appid)
+            merged.append(SteamOwnedGame(appid=game.appid, name=game.name, playtime_forever=0))
+    return merged
+
+
 async def import_library(
     session: AsyncSession,
     user: User,
@@ -127,6 +157,7 @@ async def import_library(
     owned_games: list[SteamOwnedGame] | None = None,
     steamgriddb_api_key: str | None = None,
     on_progress: ProgressCallback | None = None,
+    family_steam_ids: list[str] | None = None,
 ) -> list[BacklogEntry]:
     """Creates a backlog entry for every Steam-owned game not already
     linked to one by steam_app_id. Metadata beyond title/steam_app_id/
@@ -156,15 +187,21 @@ async def import_library(
     this same loop fail too.
 
     Accepts an already-fetched owned_games snapshot - see
-    sync_playtimes's docstring for why. `on_progress`, when given, is
-    awaited after every game in owned_games is considered (whether it
-    was actually imported, already existed, or failed), so callers can
-    report "N of len(owned_games) processed" even on a re-sync where
-    most games are skipped as already-imported."""
+    sync_playtimes's docstring for why - and merges in each
+    family_steam_ids member's library (Steam Family sharing) via
+    _merge_family_games before the import loop runs, so those games get
+    imported the same way. `on_progress`, when given, is awaited after
+    every game considered (whether it was actually imported, already
+    existed, or failed), so callers can report "N of total processed"
+    even on a re-sync where most games are skipped as already-imported."""
     if not user.steam_id:
         raise ValidationError(_STEAM_NOT_LINKED)
     if owned_games is None:
         owned_games = await get_owned_games(user.steam_id, api_key)
+
+    games_to_import = owned_games
+    if family_steam_ids:
+        games_to_import = await _merge_family_games(owned_games, family_steam_ids, api_key)
 
     existing_app_ids = {
         entry.steam_app_id
@@ -173,8 +210,8 @@ async def import_library(
     }
 
     created: list[BacklogEntry] = []
-    total = len(owned_games)
-    for processed, game in enumerate(owned_games, start=1):
+    total = len(games_to_import)
+    for processed, game in enumerate(games_to_import, start=1):
         if game.appid in existing_app_ids:
             if on_progress:
                 await on_progress(processed, total)
@@ -228,6 +265,7 @@ async def sync_playtimes_and_import(
     auto_import: bool,
     steamgriddb_api_key: str | None = None,
     on_progress: ProgressCallback | None = None,
+    family_steam_ids: list[str] | None = None,
 ) -> list[BacklogEntry]:
     """Single entry point for the "Sync Steam Playtimes" action: fetches
     the owned-games snapshot once and reuses it for both sync_playtimes
@@ -235,7 +273,10 @@ async def sync_playtimes_and_import(
     fetching its own snapshot from Steam's API. `on_progress` is only
     ever driven by import_library - sync_playtimes has no per-game
     external API calls, so it finishes near-instantly and isn't worth
-    reporting progress for."""
+    reporting progress for. `family_steam_ids` only affects
+    import_library too - sync_playtimes only ever updates entries
+    already linked to the user's own steam_app_id, and family members'
+    playtime isn't the user's own (see _merge_family_games)."""
     if not user.steam_id:
         raise ValidationError(_STEAM_NOT_LINKED)
     owned_games = await get_owned_games(user.steam_id, api_key)
@@ -249,6 +290,7 @@ async def sync_playtimes_and_import(
             owned_games,
             steamgriddb_api_key=steamgriddb_api_key,
             on_progress=on_progress,
+            family_steam_ids=family_steam_ids,
         )
     return updated
 

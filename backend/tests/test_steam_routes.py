@@ -340,6 +340,45 @@ async def test_import_steam_library_sets_cover_from_steamgriddb(
     assert body[0]["image_link"] == "https://cdn2.steamgriddb.com/grid/1.png"
 
 
+async def test_import_steam_library_includes_family_members_games(
+    postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    _configure_steam_api_key(monkeypatch)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "hltbapi1.azurewebsites.net":
+            return httpx.Response(200, json=[])
+        steam_id = request.url.params["steamid"]
+        if steam_id == "76561197960287930":
+            games = [{"appid": 504230, "name": "Celeste", "playtime_forever": 510}]
+        else:
+            assert steam_id == "76561198000000001"
+            games = [{"appid": 620, "name": "Portal 2", "playtime_forever": 999}]
+        return httpx.Response(200, json={"response": {"games": games}})
+
+    _mock_steam(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "steamfamilyimport@example.com")
+        client.put(
+            "/api/user/me",
+            headers=headers,
+            json={
+                "steam_id": "76561197960287930",
+                "steam_family_ids": "76561198000000001",
+            },
+        )
+
+        response = client.post("/api/user/steam/import", headers=headers)
+
+    assert response.status_code == 200
+    body = response.json()
+    titles_by_playtime = {entry["title"]: entry["playtime"] for entry in body}
+    assert titles_by_playtime == {"Celeste": "8.50", "Portal 2": "0.00"}
+
+
 async def test_import_steam_library_requires_linked_account(
     postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
 ) -> None:

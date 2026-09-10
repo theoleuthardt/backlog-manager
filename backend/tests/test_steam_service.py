@@ -306,6 +306,88 @@ async def test_import_library_skips_a_game_that_becomes_a_duplicate_mid_import(
     assert created[0].title == "Portal 2"
 
 
+async def test_import_library_includes_family_members_games(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        if steam_id == user.steam_id:
+            return [SteamOwnedGame(appid=504230, name="Celeste", playtime_forever=510)]
+        assert steam_id == "family-member-1"
+        return [SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=999)]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+
+    created = await steam_service.import_library(
+        session, user, "api-key", family_steam_ids=["family-member-1"]
+    )
+
+    titles = {entry.title for entry in created}
+    assert titles == {"Celeste", "Portal 2"}
+
+
+async def test_import_library_zeroes_playtime_for_family_only_games(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        if steam_id == user.steam_id:
+            return []
+        return [SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=999)]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+
+    created = await steam_service.import_library(
+        session, user, "api-key", family_steam_ids=["family-member-1"]
+    )
+
+    assert len(created) == 1
+    assert created[0].title == "Portal 2"
+    assert created[0].playtime == Decimal("0.00")
+
+
+async def test_import_library_does_not_duplicate_a_game_owned_by_user_and_family(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=120)]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+
+    created = await steam_service.import_library(
+        session, user, "api-key", family_steam_ids=["family-member-1", "family-member-2"]
+    )
+
+    assert len(created) == 1
+    assert created[0].playtime == Decimal("2.00")
+
+
+async def test_import_library_skips_a_family_member_whose_fetch_fails(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        if steam_id == user.steam_id:
+            return []
+        if steam_id == "broken-member":
+            raise httpx.ConnectError("connection refused", request=httpx.Request("GET", "https://example.com"))
+        return [SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=120)]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+
+    created = await steam_service.import_library(
+        session, user, "api-key", family_steam_ids=["broken-member", "working-member"]
+    )
+
+    assert len(created) == 1
+    assert created[0].title == "Portal 2"
+
+
 async def test_import_library_skips_a_game_that_fails_for_a_non_conflict_reason(
     session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:

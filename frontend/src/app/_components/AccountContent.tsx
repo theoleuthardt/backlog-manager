@@ -58,6 +58,9 @@ export function AccountContent() {
   const [steamApiKey, setSteamApiKey] = useState("");
   const [isSavingSteamApiKey, setIsSavingSteamApiKey] = useState(false);
 
+  const [steamFamilyIds, setSteamFamilyIds] = useState("");
+  const [isSavingSteamFamilyIds, setIsSavingSteamFamilyIds] = useState(false);
+
   const [igdbClientId, setIgdbClientId] = useState("");
   const [igdbClientSecret, setIgdbClientSecret] = useState("");
   const [isSavingIgdbCredentials, setIsSavingIgdbCredentials] = useState(false);
@@ -79,6 +82,7 @@ export function AccountContent() {
   if (user && steamIdLoadedFor !== user.id) {
     setSteamIdLoadedFor(user.id);
     setSteamId(user.steamId ?? "");
+    setSteamFamilyIds(user.steamFamilyIds ?? "");
   }
 
   if (!user) return null;
@@ -95,6 +99,23 @@ export function AccountContent() {
       );
     } finally {
       setIsSavingSteamId(false);
+    }
+  };
+
+  const handleSaveSteamFamilyIds = async () => {
+    setIsSavingSteamFamilyIds(true);
+    try {
+      await updateCurrentUser({ steamFamilyIds });
+      await refreshUser();
+      toast.success("Steam Family member IDs saved");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to save Steam Family member IDs",
+      );
+    } finally {
+      setIsSavingSteamFamilyIds(false);
     }
   };
 
@@ -436,6 +457,34 @@ export function AccountContent() {
             Automatically import new Steam games every time playtimes are synced
           </Label>
         </div>
+
+        <p className="mt-6 mb-2 text-sm text-gray-300">
+          Steam Family members whose libraries should also be included when
+          syncing or importing. Comma-separated SteamID64s.
+        </p>
+        <div className="flex max-w-sm gap-2">
+          <Input
+            value={steamFamilyIds}
+            onChange={(e) => setSteamFamilyIds(e.target.value)}
+            placeholder="76561197960287930, 76561198000000001"
+            className="border-white/40 bg-black text-white placeholder:text-gray-500"
+          />
+          <Button
+            className={FILLED_BUTTON}
+            onClick={() => void handleSaveSteamFamilyIds()}
+            disabled={
+              isSavingSteamFamilyIds ||
+              steamFamilyIds === (user.steamFamilyIds ?? "")
+            }
+          >
+            {isSavingSteamFamilyIds ? "Saving..." : "Save"}
+          </Button>
+        </div>
+        <p className="mt-2 text-xs text-gray-500">
+          Games only a family member owns are imported without playtime - Steam
+          only reports playtime for the account being queried, not what
+          you&apos;ve personally played.
+        </p>
       </div>
 
       <div className="rounded-lg border-2 border-white bg-black p-6">

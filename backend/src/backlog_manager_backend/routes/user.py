@@ -145,6 +145,7 @@ async def update_own_user(
                     not_configured_message=_STEAMGRIDDB_API_KEY_NOT_CONFIGURED,
                 ),
                 steam_auto_import_enabled=data.steam_auto_import_enabled,
+                steam_family_ids=data.steam_family_ids,
             ),
         )
     except ConflictError as error:
@@ -242,6 +243,7 @@ async def update_user_admin(
                     not_configured_message=_STEAMGRIDDB_API_KEY_NOT_CONFIGURED,
                 ),
                 steam_auto_import_enabled=data.steam_auto_import_enabled,
+                steam_family_ids=data.steam_family_ids,
                 is_admin=data.is_admin,
             ),
         )

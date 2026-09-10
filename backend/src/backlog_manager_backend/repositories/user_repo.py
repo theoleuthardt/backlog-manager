@@ -46,6 +46,7 @@ def _to_schema(model: UserModel) -> User:
         igdb_credentials_encrypted=model.igdb_credentials_encrypted,
         steamgriddb_api_key_encrypted=model.steamgriddb_api_key_encrypted,
         steam_auto_import_enabled=model.steam_auto_import_enabled,
+        steam_family_ids=model.steam_family_ids,
     )
 
 
@@ -115,6 +116,8 @@ async def update_user(session: AsyncSession, params: UpdateUserParams) -> User:
         model.steamgriddb_api_key_encrypted = params.steamgriddb_api_key_encrypted
     if params.steam_auto_import_enabled is not msgspec.UNSET:
         model.steam_auto_import_enabled = params.steam_auto_import_enabled
+    if params.steam_family_ids is not msgspec.UNSET:
+        model.steam_family_ids = params.steam_family_ids
     if params.is_admin is not msgspec.UNSET:
         model.is_admin = params.is_admin
     if params.totp_secret_encrypted is not msgspec.UNSET:
