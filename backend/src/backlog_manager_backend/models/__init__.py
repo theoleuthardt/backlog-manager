@@ -21,14 +21,18 @@ from backlog_manager_backend.models.category import Category
 from backlog_manager_backend.models.category_backlog_entry import (
     CategoryBacklogEntry,
 )
+from backlog_manager_backend.models.game_price import GamePrice
 from backlog_manager_backend.models.user import User
 from backlog_manager_backend.models.user_backup_code import UserBackupCode
+from backlog_manager_backend.models.user_game_price_alert import UserGamePriceAlert
 
 __all__ = [
     "BacklogEntry",
     "Base",
     "Category",
     "CategoryBacklogEntry",
+    "GamePrice",
     "User",
     "UserBackupCode",
+    "UserGamePriceAlert",
 ]

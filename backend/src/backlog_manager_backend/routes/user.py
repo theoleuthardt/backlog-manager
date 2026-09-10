@@ -76,6 +76,7 @@ def _encrypt_api_key_if_present(
 
 _STEAM_API_KEY_NOT_CONFIGURED = "Steam API key storage is not configured"
 _STEAMGRIDDB_API_KEY_NOT_CONFIGURED = "SteamGridDB API key storage is not configured"
+_DISCORD_WEBHOOK_URL_NOT_CONFIGURED = "Discord webhook URL storage is not configured"
 
 
 _IGDB_CREDENTIALS_NOT_CONFIGURED = "IGDB credential storage is not configured"
@@ -148,6 +149,10 @@ async def update_own_user(
                 steamgriddb_api_key_encrypted=_encrypt_api_key_if_present(
                     data.steamgriddb_api_key,
                     not_configured_message=_STEAMGRIDDB_API_KEY_NOT_CONFIGURED,
+                ),
+                discord_webhook_url_encrypted=_encrypt_api_key_if_present(
+                    data.discord_webhook_url,
+                    not_configured_message=_DISCORD_WEBHOOK_URL_NOT_CONFIGURED,
                 ),
                 steam_auto_import_enabled=data.steam_auto_import_enabled,
                 steam_family_ids=data.steam_family_ids,
@@ -246,6 +251,10 @@ async def update_user_admin(
                 steamgriddb_api_key_encrypted=_encrypt_api_key_if_present(
                     data.steamgriddb_api_key,
                     not_configured_message=_STEAMGRIDDB_API_KEY_NOT_CONFIGURED,
+                ),
+                discord_webhook_url_encrypted=_encrypt_api_key_if_present(
+                    data.discord_webhook_url,
+                    not_configured_message=_DISCORD_WEBHOOK_URL_NOT_CONFIGURED,
                 ),
                 steam_auto_import_enabled=data.steam_auto_import_enabled,
                 steam_family_ids=data.steam_family_ids,

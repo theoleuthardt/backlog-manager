@@ -10,15 +10,8 @@ import {
 import { Button } from "shadcn_components/ui/button";
 import { GameImage } from "components/GameImage";
 import { AchievementProgress } from "components/AchievementProgress";
-import {
-  XIcon,
-  Loader2,
-  Edit2,
-  Check,
-  X,
-  Trash2,
-  Images,
-} from "lucide-react";
+import { GamePriceSection } from "components/GamePriceSection";
+import { XIcon, Loader2, Edit2, Check, X, Trash2, Images } from "lucide-react";
 import { useState } from "react";
 import { Input } from "shadcn_components/ui/input";
 import { Label } from "shadcn_components/ui/label";
@@ -292,7 +285,10 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
               </Popover>
 
               {props.steamAppId !== undefined && (
-                <Dialog open={coverPickerOpen} onOpenChange={setCoverPickerOpen}>
+                <Dialog
+                  open={coverPickerOpen}
+                  onOpenChange={setCoverPickerOpen}
+                >
                   <DialogTrigger asChild>
                     <Button
                       variant="outline"
@@ -329,8 +325,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                         <p className="text-sm text-red-400">
                           Failed to load covers. Please try again.
                         </p>
-                      ) : steamGridDbCovers &&
-                        steamGridDbCovers.length > 0 ? (
+                      ) : steamGridDbCovers && steamGridDbCovers.length > 0 ? (
                         <div className="grid grid-cols-[repeat(auto-fill,150px)] justify-center gap-2">
                           {steamGridDbCovers.map((url) => (
                             <button
@@ -339,7 +334,12 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                               onClick={() => handleSelectCover(url)}
                               className="overflow-hidden rounded border border-white/20 hover:border-white"
                             >
-                              <GameImage src={url} alt="Cover option" width={150} height={225} />
+                              <GameImage
+                                src={url}
+                                alt="Cover option"
+                                width={150}
+                                height={225}
+                              />
                             </button>
                           ))}
                         </div>
@@ -530,18 +530,28 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                     <Label htmlFor="status" className="text-white">
                       Status
                     </Label>
-                    <Select value={status} onValueChange={setStatus}>
-                      <SelectTrigger className="bg-black text-white">
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Not Started">Not Started</SelectItem>
-                        <SelectItem value="In Progress">In Progress</SelectItem>
-                        <SelectItem value="Completed">Completed</SelectItem>
-                        <SelectItem value="On Hold">On Hold</SelectItem>
-                        <SelectItem value="Dropped">Dropped</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="flex items-center gap-2">
+                      <Select value={status} onValueChange={setStatus}>
+                        <SelectTrigger className="bg-black text-white">
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Not Started">
+                            Not Started
+                          </SelectItem>
+                          <SelectItem value="In Progress">
+                            In Progress
+                          </SelectItem>
+                          <SelectItem value="Completed">Completed</SelectItem>
+                          <SelectItem value="On Hold">On Hold</SelectItem>
+                          <SelectItem value="Dropped">Dropped</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <GamePriceSection
+                        steamAppId={props.steamAppId}
+                        title={props.title}
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -637,7 +647,6 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                     </div>
                   </div>
                 </div>
-
               </div>
             </div>
           </div>

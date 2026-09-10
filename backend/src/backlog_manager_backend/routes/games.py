@@ -7,6 +7,7 @@ from litestar import Router, get
 from litestar.di import NamedDependency, Provide
 from litestar.exceptions import ServiceUnavailableException
 from litestar.params import FromPath, FromQuery
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.auth.dependencies import BEARER_SECURITY_REQUIREMENT, get_current_user
 from backlog_manager_backend.auth.encryption import decrypt
@@ -29,8 +30,9 @@ from backlog_manager_backend.integrations.types import (
     IGDBPlatform,
     IGDBSearchResult,
 )
+from backlog_manager_backend.schemas.game_price import GamePrice
 from backlog_manager_backend.schemas.user import User
-from backlog_manager_backend.services import game_service
+from backlog_manager_backend.services import game_service, price_service
 
 _IGDB_NOT_CONFIGURED = "IGDB integration is not configured"
 _IGDB_UNAVAILABLE = "IGDB is currently unreachable"
@@ -182,6 +184,20 @@ async def get_genre(
     return await _call_igdb(get_genre_on_igdb(genre_id, client_id, access_token))
 
 
+@get("/api/games/{steam_app_id:int}/price")
+async def get_game_price(
+    steam_app_id: FromPath[int],
+    db_session: NamedDependency[AsyncSession],
+    current_user: NamedDependency[User],
+) -> GamePrice:
+    """current_user is unused (price data isn't user-specific) but must
+    stay declared - see authenticated_games_router's dependencies: a
+    router-level dependency only runs for handlers that declare it as a
+    parameter, so dropping this would silently leave the route
+    unauthenticated."""
+    return await price_service.get_price_info(db_session, steam_app_id)
+
+
 authenticated_games_router = Router(
     path="",
     route_handlers=[
@@ -193,6 +209,7 @@ authenticated_games_router = Router(
         get_cover,
         get_genre,
         get_steamgriddb_covers,
+        get_game_price,
     ],
     dependencies={"current_user": Provide(get_current_user)},
     security=BEARER_SECURITY_REQUIREMENT,

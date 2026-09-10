@@ -16,6 +16,7 @@ _ALLOWED_HOSTS = {
     "images.igdb.com",
     "media.steampowered.com",
     "steamcdn-a.akamaihd.net",
+    "www.cheapshark.com",
 }
 
 # steamstatic.com (Steam achievement icons) and steamgriddb.com (cover art)

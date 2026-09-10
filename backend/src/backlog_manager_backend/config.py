@@ -16,6 +16,14 @@ class Settings(BaseSettings):
     steam_web_api_key: str | None = None
     steam_api_key_encryption_key: str | None = None
     steamgriddb_api_key: str | None = None
+    # Server-wide fallback for users who haven't set their own Discord
+    # webhook in Account settings, same per-user-with-fallback pattern as
+    # the IGDB/Steam/SteamGridDB keys above (see docs/PRICE_TRACKING.md).
+    discord_webhook_url: str | None = None
+    # Global/ops-configured only, unlike the above - gates
+    # POST /api/prices/check, the only endpoint in this API not meant to
+    # be called by a logged-in user - see routes/prices.py.
+    price_check_cron_secret: str | None = None
     # There is no public self-registration endpoint - if set, and no users
     # exist yet, the app creates this one admin account on startup. Not
     # read again after that first run.

@@ -1,0 +1,22 @@
+meta {
+  name: Get Game Price
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{backendUrl}}/api/games/220/price
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Current per-store deals and the all-time-low price for a Steam App ID,
+  from CheapShark - see docs/PRICE_TRACKING.md. Serves a cached row
+  (refreshed at most once an hour) rather than always hitting CheapShark
+  live. Run auth/Login first.
+}

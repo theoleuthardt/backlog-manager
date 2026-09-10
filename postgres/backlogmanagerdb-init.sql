@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS "blm-system"."Users"(
     "SteamFamilyIds" TEXT,
     "IgdbCredentialsEncrypted" TEXT,
     "SteamGridDbApiKeyEncrypted" TEXT,
+    "DiscordWebhookUrlEncrypted" TEXT,
     "SteamAutoImportEnabled" BOOLEAN NOT NULL DEFAULT FALSE,
     "IsAdmin" BOOLEAN NOT NULL DEFAULT FALSE,
     "TotpSecretEncrypted" TEXT,
@@ -80,6 +81,26 @@ CREATE TABLE IF NOT EXISTS "blm-system"."CategoryBacklogEntries" (
     FOREIGN KEY ("CategoryID") REFERENCES "blm-system"."Categories"("CategoryID")
         ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY ("BacklogEntryID") REFERENCES "blm-system"."BacklogEntries"("BacklogEntryID")
+        ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS "blm-system"."GamePrices" (
+    "SteamAppId"            BIGINT PRIMARY KEY,
+    "CheapsharkGameId"      BIGINT,
+    "Deals"                 JSON,
+    "CheapestPriceEver"     NUMERIC(10,2),
+    "CheapestPriceEverDate" DATE,
+    "OnSale"                BOOLEAN NOT NULL DEFAULT FALSE,
+    "CheckedAt"             TIMESTAMP WITHOUT TIME ZONE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS "blm-system"."UserGamePriceAlerts" (
+    "UserID"           BIGINT NOT NULL,
+    "SteamAppId"       BIGINT NOT NULL,
+    "LastAlertedPrice" NUMERIC(10,2) NOT NULL,
+    "UpdatedAt"        TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP),
+    PRIMARY KEY ("UserID", "SteamAppId"),
+    FOREIGN KEY ("UserID") REFERENCES "blm-system"."Users"("UserID")
         ON DELETE CASCADE ON UPDATE CASCADE
 );
 

@@ -20,6 +20,9 @@ class User(Base):
     steam_family_ids: Mapped[str | None] = mapped_column("SteamFamilyIds")
     igdb_credentials_encrypted: Mapped[str | None] = mapped_column("IgdbCredentialsEncrypted")
     steamgriddb_api_key_encrypted: Mapped[str | None] = mapped_column("SteamGridDbApiKeyEncrypted")
+    discord_webhook_url_encrypted: Mapped[str | None] = mapped_column(
+        "DiscordWebhookUrlEncrypted"
+    )
     steam_auto_import_enabled: Mapped[bool] = mapped_column(
         "SteamAutoImportEnabled", server_default=text("false")
     )
