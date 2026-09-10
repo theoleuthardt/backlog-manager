@@ -1998,7 +1998,7 @@
               }
             },
             "content": {
-              "application/json": {
+              "text/event-stream": {
                 "schema": {}
               }
             }
@@ -2029,7 +2029,7 @@
               }
             },
             "content": {
-              "application/json": {
+              "text/event-stream": {
                 "schema": {}
               }
             }
@@ -4876,6 +4876,16 @@
           "steam_auto_import_enabled": {
             "type": "boolean",
             "default": false
+          },
+          "steam_family_ids": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -5275,6 +5285,16 @@
                 "type": "boolean"
               }
             ]
+          },
+          "steam_family_ids": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -5358,6 +5378,16 @@
             "oneOf": [
               {
                 "type": "boolean"
+              }
+            ]
+          },
+          "steam_family_ids": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
               }
             ]
           },

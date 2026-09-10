@@ -4,7 +4,7 @@ import { getToken } from "./token";
 function parseSseMessage(raw: string): { event: string | null; data: string } {
   let event: string | null = null;
   const dataLines: string[] = [];
-  for (const line of raw.split("\n")) {
+  for (const line of raw.split(/\r\n|\n/)) {
     if (line.startsWith("event: ")) {
       event = line.slice("event: ".length);
     } else if (line.startsWith("data: ")) {
@@ -41,15 +41,22 @@ export async function streamSse<TProgress, TResult>(
   let result: TResult | undefined;
   let streamError: string | undefined;
 
+  const boundaryPattern = /\r\n\r\n|\n\n/;
+
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
-    buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, "\n");
+    // Accumulate the raw, un-normalized chunk - a chunk boundary can land
+    // mid-separator (e.g. "...\r\n\r" then "\n..."), so normalizing each
+    // chunk before concatenating (rather than searching the combined
+    // buffer, as done below) would fail to recognize the reassembled
+    // separator.
+    buffer += decoder.decode(value, { stream: true });
 
-    let boundary = buffer.indexOf("\n\n");
-    while (boundary !== -1) {
-      const raw = buffer.slice(0, boundary);
-      buffer = buffer.slice(boundary + 2);
+    let match = boundaryPattern.exec(buffer);
+    while (match !== null) {
+      const raw = buffer.slice(0, match.index);
+      buffer = buffer.slice(match.index + match[0].length);
       if (raw) {
         const { event, data } = parseSseMessage(raw);
         if (event === "progress") {
@@ -60,7 +67,7 @@ export async function streamSse<TProgress, TResult>(
           streamError = data;
         }
       }
-      boundary = buffer.indexOf("\n\n");
+      match = boundaryPattern.exec(buffer);
     }
   }
 

@@ -245,7 +245,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
           >
             <div
               id="game-image-section"
-              className="flex w-64 shrink-0 flex-col items-center gap-4"
+              className="flex min-h-0 w-64 shrink-0 flex-col items-center gap-4 overflow-y-auto"
             >
               <GameImage
                 src={imageLink}

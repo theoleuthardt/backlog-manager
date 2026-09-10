@@ -56,6 +56,25 @@ def _resolve_steamgriddb_api_key(user: User) -> str | None:
     return settings.steamgriddb_api_key
 
 
+def _resolve_family_steam_ids(user: User) -> list[str]:
+    """Steam Family sharing support: steam_family_ids is a plain
+    comma-separated list of the other members' SteamID64s (mirroring
+    how genre/platform are stored on a backlog entry) - no separate
+    table, since these IDs don't need anything beyond the string
+    itself. Deduplicated and order-preserving so a repeated ID doesn't
+    fetch that member's library twice."""
+    if not user.steam_family_ids:
+        return []
+    seen: set[str] = set()
+    family_ids: list[str] = []
+    for raw_id in user.steam_family_ids.split(","):
+        steam_id = raw_id.strip()
+        if steam_id and steam_id not in seen:
+            seen.add(steam_id)
+            family_ids.append(steam_id)
+    return family_ids
+
+
 async def _stream_steam_operation(
     run: Callable[[steam_service.ProgressCallback], Awaitable[list[BacklogEntry]]],
 ) -> AsyncIterator[ServerSentEventMessage]:
@@ -121,6 +140,7 @@ async def sync_steam_playtimes(
             api_key,
             auto_import=current_user.steam_auto_import_enabled,
             steamgriddb_api_key=steamgriddb_api_key,
+            family_steam_ids=_resolve_family_steam_ids(current_user),
         )
     except ValidationError as error:
         raise ClientException(str(error)) from error
@@ -140,7 +160,11 @@ async def import_steam_library(
 
     try:
         created = await steam_service.import_library(
-            db_session, current_user, api_key, steamgriddb_api_key=steamgriddb_api_key
+            db_session,
+            current_user,
+            api_key,
+            steamgriddb_api_key=steamgriddb_api_key,
+            family_steam_ids=_resolve_family_steam_ids(current_user),
         )
     except ValidationError as error:
         raise ClientException(str(error)) from error
@@ -150,7 +174,7 @@ async def import_steam_library(
     return [BacklogEntryResponse.from_entry(entry) for entry in created]
 
 
-@post("/api/user/steam/sync/stream", status_code=200)
+@post("/api/user/steam/sync/stream", status_code=200, media_type="text/event-stream")
 async def sync_steam_playtimes_stream(
     current_user: NamedDependency[User],
 ) -> ServerSentEvent:
@@ -161,6 +185,7 @@ async def sync_steam_playtimes_stream(
     directly, or an `error` event in place of the raised exception."""
     api_key = _resolve_api_key(current_user)
     steamgriddb_api_key = _resolve_steamgriddb_api_key(current_user)
+    family_steam_ids = _resolve_family_steam_ids(current_user)
 
     async def run(on_progress: steam_service.ProgressCallback) -> list[BacklogEntry]:
         async with async_session() as db_session:
@@ -171,12 +196,13 @@ async def sync_steam_playtimes_stream(
                 auto_import=current_user.steam_auto_import_enabled,
                 steamgriddb_api_key=steamgriddb_api_key,
                 on_progress=on_progress,
+                family_steam_ids=family_steam_ids,
             )
 
     return ServerSentEvent(_stream_steam_operation(run))
 
 
-@post("/api/user/steam/import/stream", status_code=200)
+@post("/api/user/steam/import/stream", status_code=200, media_type="text/event-stream")
 async def import_steam_library_stream(
     current_user: NamedDependency[User],
 ) -> ServerSentEvent:
@@ -184,6 +210,7 @@ async def import_steam_library_stream(
     sync_steam_playtimes_stream's docstring."""
     api_key = _resolve_api_key(current_user)
     steamgriddb_api_key = _resolve_steamgriddb_api_key(current_user)
+    family_steam_ids = _resolve_family_steam_ids(current_user)
 
     async def run(on_progress: steam_service.ProgressCallback) -> list[BacklogEntry]:
         async with async_session() as db_session:
@@ -193,6 +220,7 @@ async def import_steam_library_stream(
                 api_key,
                 steamgriddb_api_key=steamgriddb_api_key,
                 on_progress=on_progress,
+                family_steam_ids=family_steam_ids,
             )
 
     return ServerSentEvent(_stream_steam_operation(run))
