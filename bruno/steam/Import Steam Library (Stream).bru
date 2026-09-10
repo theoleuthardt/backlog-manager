@@ -20,4 +20,9 @@ docs {
   Bruno's plain HTTP request type will just return the raw
   event-stream body once the connection closes, not live progress. Run
   auth/Login and user/Set Steam ID first.
+
+  503 if neither the caller nor the server has a Steam Web API key
+  configured - this is a real top-level HTTP response, raised before
+  the SSE stream opens. A missing Steam ID, by contrast, surfaces as an
+  `error` event inside an HTTP 200 stream, not as a 400.
 }

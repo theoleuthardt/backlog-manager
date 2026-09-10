@@ -16,10 +16,12 @@ export const apiClient = createClient<paths>({
 });
 
 /**
- * Attaches the stored Bearer token to every request. A 401 response here
- * always means "this token is no longer valid" (expired, or the user was
- * deleted) - the login endpoint itself never sends an Authorization
- * header, so it can't loop back into this branch - and clears the token.
+ * Attaches the stored Bearer token to every request, login included if a
+ * (possibly stale) token is already present. A 401 response here always
+ * means "this token is no longer valid" (expired, the user was deleted,
+ * or - for a login request specifically - the credentials themselves
+ * were wrong) - either way the stored token can't be trusted anymore,
+ * so it's cleared.
  */
 apiClient.use({
   onRequest({ request }) {

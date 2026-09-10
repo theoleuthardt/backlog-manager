@@ -106,8 +106,10 @@ The project enforces strict ESLint rules:
 **Do not write comments that are not real code documentation.** No narrative comments, no "why I did this" asides, no step-by-step play-by-play scattered through function bodies. This applies in every language (Python, TypeScript/TSX, everywhere) and to every file, new or existing.
 
 The ONLY comments allowed:
-- A function/class docstring (Python `"""..."""`, or the top-of-function/class comment block a file already uses for the same purpose).
+- A function/class/module docstring (Python `"""..."""` — including a module docstring at the top of a file, or one attached to a module-level constant that has no enclosing function/class to hold it instead — or the top-of-function/class comment block a file already uses for the same purpose).
 - A comment that continues an established convention already present in that exact file (e.g. the file already annotates every module-level cache variable one line above its declaration - matching that is fine; introducing a new one-off comment style is not).
+
+This does not extend to non-code files (YAML/JSON/TOML config) - keep those free of narrative comments too; state configuration intent in the surrounding documentation (README/CLAUDE.md) instead of inline `#` comments in the config file itself.
 
 If you're about to write `// this falls back to X because Y` or `# note: Z happens here` above a plain statement, expression, or const - delete it. Put that reasoning in the docstring of the enclosing function instead, or leave it out entirely if the code is self-explanatory. When genuinely unsure whether a comment qualifies, don't add it.
 

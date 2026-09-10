@@ -7,7 +7,7 @@ instead — this file is about the shape of the system, not where files live.
 
 ## System overview
 
-```
+```text
 ┌─────────────────────┐        REST + JWT Bearer        ┌──────────────────────┐
 │  Next.js frontend    │ ──────────────────────────────► │  Litestar backend    │
 │  (frontend/)         │ ◄────────────────────────────── │  (backend/)          │
@@ -26,9 +26,12 @@ instead — this file is about the shape of the system, not where files live.
 ```
 
 Only the backend is hosted as a public, always-on service (`blm.theocloud.dev`).
-The frontend is never centrally hosted the same way — it's built once and
-distributed as static assets: either the web build's static export, or bundled
-into the [Tauri desktop app](TAURI.md) for macOS/Windows/Linux.
+The frontend is never centrally hosted the same way: the plain web build
+(`next build`, `output: "standalone"`) is a normal server-rendered Next.js
+app that would need its own always-on host, which this project doesn't run;
+in practice the frontend instead ships as the [Tauri desktop app](TAURI.md)
+(`TAURI_BUILD=1`, `output: "export"`) — a true static export bundled into a
+native WebView for macOS/Windows/Linux.
 
 ## Why REST + JWT instead of tRPC/NextAuth
 

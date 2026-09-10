@@ -21,8 +21,9 @@ body:json {
 }
 
 docs {
-  Parses raw CSV text into a list of records (header row + one map per
-  data row) without touching the database - lets a client preview the
-  columns before choosing title_column/genre_column/etc. for "Import
-  CSV". Run auth/Login first.
+  Parses raw CSV text into a list of row maps without touching the
+  database. This lets a client preview the columns (the first row,
+  header or not, comes back as an ordinary row map like any other)
+  before choosing title_column/genre_column/etc. for "Import CSV". Run
+  auth/Login first.
 }
