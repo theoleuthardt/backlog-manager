@@ -42,12 +42,15 @@ const COLUMN_OPTIONS = [
   "Z",
 ];
 
+/**
+ * The backend import request keeps running after a cancel is sent (it
+ * only checks the cancel flag between records) - `cancelledSessionIdRef`
+ * tracks which session_id was cancelled so its eventual settlement
+ * doesn't overwrite the cancellation message with a stale success/error
+ * result.
+ */
 export const ImportCSVContent = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  // The backend import request keeps running after a cancel is sent (it
-  // only checks the cancel flag between records) - this tracks which
-  // session_id was cancelled so its eventual settlement doesn't overwrite
-  // the cancellation message with a stale success/error result.
   const cancelledSessionIdRef = useRef<string | null>(null);
   const csvImport = useCSVImport();
   const {

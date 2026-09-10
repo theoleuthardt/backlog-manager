@@ -37,9 +37,6 @@ _IMPORTED_STATUS = "Not Started"
 _IMPORTED_INTEREST = 5
 _STEAM_NOT_LINKED = "Steam account is not linked"
 
-# Bounded like game_service._steamgriddb_cover_cache - app_id here is
-# also a caller-supplied query param, not something only ever sourced
-# from Steam's own catalogue.
 _ACHIEVEMENT_SCHEMA_CACHE_MAX_SIZE = 500
 _achievement_schema_cache: dict[int, list[SteamAchievementSchema]] = {}
 
@@ -302,7 +299,11 @@ async def _get_achievement_schema_cached(
     whole achievements request, since the schema only supplies display
     name/description/icon polish - get_player_achievements already
     returns usable name/description on its own (see
-    get_achievement_progress)."""
+    get_achievement_progress). The cache is bounded to
+    _ACHIEVEMENT_SCHEMA_CACHE_MAX_SIZE entries, like
+    game_service._steamgriddb_cover_cache, since steam_app_id here is
+    also a caller-supplied query param rather than something only ever
+    sourced from Steam's own catalogue."""
     if steam_app_id in _achievement_schema_cache:
         return _achievement_schema_cache[steam_app_id]
 

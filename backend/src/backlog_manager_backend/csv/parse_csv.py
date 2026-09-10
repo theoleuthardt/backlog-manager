@@ -139,6 +139,13 @@ async def import_backlog_entries_from_csv(
     config: ColumnConfig,
     session_id: str | None = None,
 ) -> ImportResult:
+    """The `finally` block below runs on every exit path (success,
+    exception, or this coroutine being cancelled) so a session_id is
+    always freed once this import is done, rather than leaking
+    progress/cancel/ownership state for a session_id nobody will ever
+    import with again. set_import_session_owner() still protects a
+    *concurrent* request racing on the same session_id while this
+    import is still running - the collision case it guards against."""
     result = ImportResult(errors=[], missing_games=[])
     processed_count = 0
 
@@ -197,10 +204,6 @@ async def import_backlog_entries_from_csv(
                 continue
 
             try:
-                # TODO: status is hardcoded because Status is currently a fixed
-                # enum on the DB side, so an arbitrary CSV value can't be
-                # persisted as-is yet. See
-                # https://github.com/theoleuthardt/backlog-manager/issues/64
                 await create_backlog_entry(
                     session,
                     CreateBacklogEntryParams(
@@ -228,12 +231,5 @@ async def import_backlog_entries_from_csv(
 
         return result
     finally:
-        # Runs on every exit path (success, exception, or this coroutine
-        # being cancelled) so a session_id is always freed once this
-        # import is done, rather than leaking progress/cancel/ownership
-        # state for a session_id nobody will ever import with again.
-        # set_import_session_owner() above still protects a *concurrent*
-        # request racing on the same session_id while this import is
-        # still running - the collision case it guards against.
         if session_id:
             clear_import_progress(session_id)

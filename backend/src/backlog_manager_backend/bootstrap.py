@@ -27,7 +27,10 @@ async def bootstrap_initial_admin() -> None:
     A misconfigured value (e.g. too short a password) fails startup
     rather than silently leaving the deployment without an admin -
     there would be no way to create one afterward, since every
-    account-creating endpoint requires one already."""
+    account-creating endpoint requires one already.
+
+    A ConflictError from create_user means another process won a
+    concurrent bootstrap race - fine, an admin exists now either way."""
     if not settings.initial_admin_email or not settings.initial_admin_password:
         return
 
@@ -52,8 +55,6 @@ async def bootstrap_initial_admin() -> None:
                 ),
             )
         except ConflictError as error:
-            # Another process won a concurrent bootstrap race - fine, an
-            # admin exists now either way.
             logger.error("Failed to bootstrap initial admin user", error=str(error))
             return
 

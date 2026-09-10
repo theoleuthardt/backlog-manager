@@ -1,6 +1,7 @@
+"""Domain error types, and mapping PostgreSQL SQLSTATE codes to them."""
+
 from sqlalchemy.exc import IntegrityError
 
-# PostgreSQL SQLSTATE codes, mirroring the original TS pg-error-code switch.
 _UNIQUE_VIOLATION = "23505"
 _FOREIGN_KEY_VIOLATION = "23503"
 _NOT_NULL_VIOLATION = "23502"

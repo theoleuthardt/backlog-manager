@@ -27,7 +27,13 @@ async def close_db_connection() -> None:
 def create_app() -> Litestar:
     """A factory (rather than a bare module-level instance) so tests can
     get a fresh app - and, critically, a fresh rate-limit store - per
-    test instead of sharing one across the whole test session."""
+    test instead of sharing one across the whole test session.
+
+    The frontend calls this API directly, cross-origin, with no Next.js
+    proxy in front. `cors_config` leaves allow_credentials at its False
+    default: auth is a Bearer token in the Authorization header, not a
+    cookie, so the browser never needs to send credentials on a
+    cross-origin request here."""
     return Litestar(
         route_handlers=[
             health,
@@ -46,11 +52,6 @@ def create_app() -> Litestar:
         dependencies={"db_session": Provide(provide_db_session)},
         on_startup=[bootstrap_initial_admin],
         on_shutdown=[close_db_connection],
-        # The frontend calls this API directly, cross-origin - no Next.js
-        # proxy in front. allow_credentials stays False (the default):
-        # auth is a Bearer token in the Authorization header, not a
-        # cookie, so the browser never needs to send credentials on a
-        # cross-origin request here.
         cors_config=CORSConfig(
             allow_origins=settings.cors_allowed_origins_list,
             allow_methods=["GET", "POST", "PUT", "DELETE"],

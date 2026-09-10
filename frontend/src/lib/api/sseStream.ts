@@ -20,6 +20,12 @@ function parseSseMessage(raw: string): { event: string | null; data: string } {
  * and dispatches each `event: .../data: ...` message it decodes.
  * Resolves with the payload of the terminal `done` message, or rejects
  * with the payload of a terminal `error` message.
+ *
+ * Each raw chunk read from the stream is accumulated un-normalized into
+ * `buffer` - a chunk boundary can land mid-separator (e.g. "...\r\n\r"
+ * then "\n..."), so normalizing each chunk before concatenating (rather
+ * than searching the combined buffer) would fail to recognize the
+ * reassembled separator.
  */
 export async function streamSse<TProgress, TResult>(
   path: string,
@@ -46,11 +52,6 @@ export async function streamSse<TProgress, TResult>(
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
-    // Accumulate the raw, un-normalized chunk - a chunk boundary can land
-    // mid-separator (e.g. "...\r\n\r" then "\n..."), so normalizing each
-    // chunk before concatenating (rather than searching the combined
-    // buffer, as done below) would fail to recognize the reassembled
-    // separator.
     buffer += decoder.decode(value, { stream: true });
 
     let match = boundaryPattern.exec(buffer);

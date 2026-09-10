@@ -76,14 +76,15 @@ def _resolve_steamgriddb_api_key(user: User) -> str | None:
 
 
 async def _igdb_credentials(user: User) -> tuple[str, str]:
+    """An httpx.HTTPError here is the same class of failure as
+    _call_igdb below, just one step earlier (acquiring the token
+    itself, before any data query runs)."""
     client_id, client_secret = _resolve_igdb_credentials(user)
     try:
         access_token = await game_service.get_valid_token(client_id, client_secret)
     except RuntimeError as error:
         raise ServiceUnavailableException(_IGDB_NOT_CONFIGURED) from error
     except httpx.HTTPError as error:
-        # Same class of failure as _call_igdb below, just one step earlier
-        # (acquiring the token itself, before any data query runs).
         raise ServiceUnavailableException(_IGDB_UNAVAILABLE) from error
     return client_id, access_token
 

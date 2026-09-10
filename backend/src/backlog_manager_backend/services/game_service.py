@@ -239,7 +239,14 @@ async def _enrich_search_results(
     own main_game rather than a DLC of the base game) before being
     truncated to _SEARCH_RESULT_LIMIT - see issue #154. Everything past
     that point (covers, genres, platforms,
-    beat-time, SteamGridDB) only runs for the final, truncated set."""
+    beat-time, SteamGridDB) only runs for the final, truncated set.
+
+    An all-zero/empty IGDB time-to-beat record must not be cached as
+    "resolved" - that would permanently block the HLTB fallback for a
+    game IGDB has no real duration data for. SteamGridDB covers are
+    preferred over the IGDB cover when configured and a Steam App ID
+    could be resolved for the title, since SteamGridDB has far better
+    cover-art availability than IGDB."""
     game_ids = [
         result.game if result.game is not None else result.id for result in search_results
     ]
@@ -320,10 +327,6 @@ async def _enrich_search_results(
             for entry in await get_games_time_to_beat_on_igdb(
                 uncached_time_to_beat_ids, client_id, access_token
             ):
-                # An all-zero/empty IGDB record must not be cached as
-                # "resolved" - that would permanently block the HLTB
-                # fallback below for a game IGDB has no real duration
-                # data for.
                 if entry.game_id is not None and any(
                     (entry.hastily, entry.normally, entry.completely)
                 ):
@@ -361,10 +364,6 @@ async def _enrich_search_results(
                     f"t_cover_big/{cover.image_id}.jpg"
                 )
 
-            # SteamGridDB is preferred over the IGDB cover above when
-            # configured and a Steam App ID could be resolved for this
-            # title - see issue #106, it has far better cover-art
-            # availability than IGDB.
             steamgriddb_urls = steamgriddb_covers_by_game_id.get(game.id, [])
             if steamgriddb_urls:
                 image_url = steamgriddb_urls[0]

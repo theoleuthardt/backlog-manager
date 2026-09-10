@@ -16,7 +16,6 @@ export const ExportCSVContent = () => {
   const convertToCSV = (data: BacklogEntryData[]) => {
     if (data.length === 0) return "";
 
-    // Create CSV rows
     const rows = data.map((entry) => {
       return [
         `"${(entry.title ?? "").replace(/"/g, '""')}"`,
