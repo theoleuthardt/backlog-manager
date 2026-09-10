@@ -266,6 +266,7 @@ class AchievementInfo(msgspec.Struct):
     icon: str | None
     achieved: bool
     unlock_time: int
+    hidden: bool
 
 
 class AchievementProgress(msgspec.Struct):

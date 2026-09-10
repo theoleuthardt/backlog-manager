@@ -90,13 +90,26 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
     }
   };
 
-  const handleSelectCover = (url: string) => {
-    setImageLink(url);
-    setCoverPickerOpen(false);
-  };
-
   const updateEntryMutation = useUpdateBacklogEntry();
   const deleteEntryMutation = useDeleteBacklogEntry();
+
+  const handleSelectCover = async (url: string) => {
+    setCoverPickerOpen(false);
+    try {
+      await updateEntryMutation.mutateAsync({
+        entryId: props.id,
+        changes: { imageLink: url },
+      });
+      setImageLink(url);
+      toast.success("Cover updated");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? `Failed to update cover: ${error.message}`
+          : "Failed to update cover. Please try again.",
+      );
+    }
+  };
 
   const handleUpdate = async () => {
     setIsLoading(true);
@@ -204,7 +217,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
           </motion.div>
         </DialogTrigger>
         <DialogContent
-          className="h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] !max-w-none border-2 border-white bg-black p-0"
+          className="flex h-[calc(100vh-1rem)] w-[calc(100vw-2rem)] !max-w-none flex-col border-2 border-white bg-black p-0"
           onOpenAutoFocus={(e: { preventDefault: () => void }) => {
             e.preventDefault();
           }}
@@ -220,7 +233,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
             </Button>
           </DialogClose>
 
-          <div className="border-b border-white/20 p-6">
+          <div className="shrink-0 border-b border-white/20 px-6 py-4">
             <DialogTitle className="text-center text-3xl text-white">
               {props.title}
             </DialogTitle>
@@ -228,17 +241,17 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
 
           <div
             id="dialog-content-wrapper"
-            className="flex h-[calc(100%-5rem)] gap-8 p-6"
+            className="flex min-h-0 flex-1 gap-8 p-6"
           >
             <div
               id="game-image-section"
-              className="flex w-64 shrink-0 flex-col items-center gap-4"
+              className="flex min-h-0 w-64 shrink-0 flex-col items-center gap-4 overflow-y-auto"
             >
               <GameImage
                 src={imageLink}
                 alt={props.imageAlt ?? ""}
-                width={150}
-                height={225}
+                width={220}
+                height={330}
               />
               <Popover
                 open={imagePopoverOpen}
@@ -279,11 +292,8 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
               </Popover>
 
               {props.steamAppId !== undefined && (
-                <Popover
-                  open={coverPickerOpen}
-                  onOpenChange={setCoverPickerOpen}
-                >
-                  <PopoverTrigger asChild>
+                <Dialog open={coverPickerOpen} onOpenChange={setCoverPickerOpen}>
+                  <DialogTrigger asChild>
                     <Button
                       variant="outline"
                       size="sm"
@@ -292,10 +302,25 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                       <Images className="h-4 w-4" />
                       Choose Cover
                     </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80 bg-black text-white">
-                    <div className="space-y-2">
-                      <Label>SteamGridDB Covers</Label>
+                  </DialogTrigger>
+                  <DialogContent
+                    showCloseButton={false}
+                    className="flex h-[calc(100vh-6rem)] w-[calc(100vw-6rem)] !max-w-6xl flex-col border-2 border-white bg-black p-6"
+                  >
+                    <DialogClose asChild>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-4 right-4 z-50 h-8 w-8 focus:ring-0 focus:ring-offset-0 focus:outline-none focus-visible:ring-0"
+                      >
+                        <XIcon className="h-4 w-4 text-black" />
+                      </Button>
+                    </DialogClose>
+                    <DialogTitle className="flex items-center gap-1.5 text-white">
+                      <Images className="h-4 w-4" />
+                      SteamGridDB Covers
+                    </DialogTitle>
+                    <div className="flex-1 overflow-y-auto pr-1">
                       {isLoadingCovers ? (
                         <div className="flex items-center justify-center py-6">
                           <Loader2 className="h-5 w-5 animate-spin" />
@@ -306,7 +331,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                         </p>
                       ) : steamGridDbCovers &&
                         steamGridDbCovers.length > 0 ? (
-                        <div className="grid max-h-64 grid-cols-3 gap-2 overflow-y-auto">
+                        <div className="grid grid-cols-[repeat(auto-fill,150px)] justify-center gap-2">
                           {steamGridDbCovers.map((url) => (
                             <button
                               key={url}
@@ -314,7 +339,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                               onClick={() => handleSelectCover(url)}
                               className="overflow-hidden rounded border border-white/20 hover:border-white"
                             >
-                              <GameImage src={url} alt="Cover option" width={90} height={135} />
+                              <GameImage src={url} alt="Cover option" width={150} height={225} />
                             </button>
                           ))}
                         </div>
@@ -324,15 +349,103 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                         </p>
                       )}
                     </div>
-                  </PopoverContent>
-                </Popover>
+                  </DialogContent>
+                </Dialog>
               )}
+
+              <div
+                id="update-button-section"
+                className="mt-auto flex flex-col items-center gap-2"
+              >
+                <Button
+                  id="update-entry-button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleUpdate}
+                  disabled={isLoading || updateStatus === "success"}
+                  className={`w-40 gap-2 transition-colors duration-300 ${
+                    updateStatus === "success"
+                      ? "bg-green-600 text-white hover:bg-green-600"
+                      : updateStatus === "error"
+                        ? "bg-red-600 text-white hover:bg-red-600"
+                        : "bg-black text-white hover:bg-white hover:text-black"
+                  }`}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Updating...
+                    </>
+                  ) : updateStatus === "success" ? (
+                    <>
+                      <Check className="mr-2 h-4 w-4" />
+                      Updated!
+                    </>
+                  ) : updateStatus === "error" ? (
+                    <>
+                      <X className="mr-2 h-4 w-4" />
+                      Failed
+                    </>
+                  ) : (
+                    "Update Entry"
+                  )}
+                </Button>
+
+                <AlertDialog
+                  open={deleteDialogOpen}
+                  onOpenChange={setDeleteDialogOpen}
+                >
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="w-40 gap-2 bg-red-600 text-white hover:bg-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete Entry
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="border-2 border-red-600 bg-black">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-xl text-white">
+                        Delete &quot;{props.title}&quot;?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription className="text-gray-300">
+                        This action cannot be undone. This will permanently
+                        delete this backlog entry from your collection.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel className="bg-black text-white hover:bg-gray-800">
+                        Cancel
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDelete}
+                        disabled={isDeleting}
+                        className="bg-red-600 text-white hover:bg-red-700"
+                      >
+                        {isDeleting ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Deleting...
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="h-4 w-4" />
+                            Delete
+                          </>
+                        )}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </div>
 
             <div id="form-container" className="flex flex-1 flex-col">
               <div
                 id="scrollable-form-content"
-                className="flex-1 space-y-6 pr-2"
+                className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto pr-2"
               >
                 <div id="basic-info-section" className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
@@ -468,7 +581,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                   <AchievementProgress steamAppId={props.steamAppId} />
                 </div>
 
-                <div id="note-review-section" className="flex gap-4">
+                <div id="note-review-section" className="flex flex-1 gap-4">
                   <div
                     id="note-section"
                     className="flex flex-1 flex-col space-y-2"
@@ -506,7 +619,10 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                       />
                     </div>
 
-                    <div id="review-section" className="space-y-2">
+                    <div
+                      id="review-section"
+                      className="flex flex-1 flex-col space-y-2"
+                    >
                       <Label htmlFor="review" className="text-white">
                         Review
                       </Label>
@@ -516,99 +632,12 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                         onChange={(e) => setReview(e.target.value)}
                         disabled={status !== "Completed"}
                         placeholder="Write your review here..."
-                        className="min-h-[100px] bg-black text-white disabled:opacity-50"
+                        className="min-h-[100px] flex-1 resize-none bg-black text-white disabled:opacity-50"
                       />
                     </div>
                   </div>
                 </div>
 
-                <div
-                  id="update-button-section"
-                  className="flex justify-between pt-4 pb-4"
-                >
-                  <AlertDialog
-                    open={deleteDialogOpen}
-                    onOpenChange={setDeleteDialogOpen}
-                  >
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="min-w-[150px] gap-2 bg-red-600 text-white hover:bg-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Delete Entry
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="border-2 border-red-600 bg-black">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle className="text-xl text-white">
-                          Delete &quot;{props.title}&quot;?
-                        </AlertDialogTitle>
-                        <AlertDialogDescription className="text-gray-300">
-                          This action cannot be undone. This will permanently
-                          delete this backlog entry from your collection.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel className="bg-black text-white hover:bg-gray-800">
-                          Cancel
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleDelete}
-                          disabled={isDeleting}
-                          className="bg-red-600 text-white hover:bg-red-700"
-                        >
-                          {isDeleting ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Deleting...
-                            </>
-                          ) : (
-                            <>
-                              <Trash2 className="h-4 w-4" />
-                              Delete
-                            </>
-                          )}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-
-                  <Button
-                    id="update-entry-button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleUpdate}
-                    disabled={isLoading || updateStatus === "success"}
-                    className={`min-w-[200px] gap-2 transition-colors duration-300 ${
-                      updateStatus === "success"
-                        ? "bg-green-600 text-white hover:bg-green-600"
-                        : updateStatus === "error"
-                          ? "bg-red-600 text-white hover:bg-red-600"
-                          : "bg-black text-white hover:bg-white hover:text-black"
-                    }`}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Updating...
-                      </>
-                    ) : updateStatus === "success" ? (
-                      <>
-                        <Check className="mr-2 h-4 w-4" />
-                        Updated!
-                      </>
-                    ) : updateStatus === "error" ? (
-                      <>
-                        <X className="mr-2 h-4 w-4" />
-                        Failed
-                      </>
-                    ) : (
-                      "Update Entry"
-                    )}
-                  </Button>
-                </div>
               </div>
             </div>
           </div>

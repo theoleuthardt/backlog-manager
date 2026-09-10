@@ -15,7 +15,10 @@ import { Checkbox } from "shadcn_components/ui/checkbox";
 import { Slider } from "shadcn_components/ui/slider";
 import { Label } from "shadcn_components/ui/label";
 import Image from "next/image";
-import { useBacklogEntries, useSyncSteamPlaytimes } from "~/hooks/useBacklog";
+import {
+  useBacklogEntries,
+  useSyncSteamPlaytimesStream,
+} from "~/hooks/useBacklog";
 import { Loader2, RefreshCw } from "lucide-react";
 import { Button } from "shadcn_components/ui/button";
 import { toast } from "sonner";
@@ -24,25 +27,27 @@ import { useAuth } from "~/app/context/AuthContext";
 export const DashboardContent = () => {
   const { user } = useAuth();
   const { data: backlogData, isLoading, error } = useBacklogEntries();
-  const syncSteamPlaytimesMutation = useSyncSteamPlaytimes();
+  const {
+    run: syncSteamPlaytimes,
+    isRunning: isSyncingSteam,
+    progress: steamSyncProgress,
+  } = useSyncSteamPlaytimesStream();
 
-  const handleSyncSteamPlaytimes = () => {
-    syncSteamPlaytimesMutation.mutate(undefined, {
-      onSuccess: (updated) => {
-        toast.success(
-          updated.length > 0
-            ? `Synced ${updated.length} game${updated.length === 1 ? "" : "s"} from Steam`
-            : "Steam is already up to date",
-        );
-      },
-      onError: (mutationError) => {
-        toast.error(
-          mutationError instanceof Error
-            ? mutationError.message
-            : "Failed to sync Steam playtimes",
-        );
-      },
-    });
+  const handleSyncSteamPlaytimes = async () => {
+    try {
+      const updated = await syncSteamPlaytimes();
+      toast.success(
+        updated.length > 0
+          ? `Synced ${updated.length} game${updated.length === 1 ? "" : "s"} from Steam`
+          : "Steam is already up to date",
+      );
+    } catch (syncError) {
+      toast.error(
+        syncError instanceof Error
+          ? syncError.message
+          : "Failed to sync Steam playtimes",
+      );
+    }
   };
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
@@ -449,22 +454,27 @@ export const DashboardContent = () => {
           </div>
         </div>
       </div>
-      <div id="entryList" className="mr-4 flex flex-1 flex-col overflow-hidden p-4">
+      <div
+        id="entryList"
+        className="mr-4 flex flex-1 flex-col overflow-hidden p-4"
+      >
         {user?.steamId && (
           <div className="mb-4 flex justify-end">
             <Button
               variant="outline"
               size="sm"
               onClick={handleSyncSteamPlaytimes}
-              disabled={syncSteamPlaytimesMutation.isPending}
+              disabled={isSyncingSteam}
               className="gap-2 border-white bg-black text-white hover:bg-white hover:text-black"
             >
-              {syncSteamPlaytimesMutation.isPending ? (
+              {isSyncingSteam ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <RefreshCw className="h-4 w-4" />
               )}
-              Sync Steam Playtimes
+              {isSyncingSteam && steamSyncProgress
+                ? `Syncing ${steamSyncProgress.processed}/${steamSyncProgress.total}...`
+                : "Sync Steam Playtimes"}
             </Button>
           </div>
         )}

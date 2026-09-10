@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.errors import ConflictError, ValidationError
 from backlog_manager_backend.integrations.types import (
+    HltbResultData,
     SteamAchievement,
     SteamAchievementSchema,
     SteamOwnedGame,
@@ -16,6 +17,19 @@ from backlog_manager_backend.repositories import backlog_entry_repo, user_repo
 from backlog_manager_backend.schemas.backlog_entry import CreateBacklogEntryParams
 from backlog_manager_backend.schemas.user import CreateUserParams
 from backlog_manager_backend.services import steam_service
+
+
+@pytest.fixture(autouse=True)
+def _no_hltb_match_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    """import_library looks up HowLongToBeat times unconditionally for
+    every game - default every test to a real (empty) function rather
+    than a live network call, since most tests here don't care about
+    hltb fields. Tests that do override this via their own monkeypatch."""
+
+    async def fake_search_game_on_hltb(search_term: str) -> list[HltbResultData]:
+        return []
+
+    monkeypatch.setattr(steam_service, "search_game_on_hltb", fake_search_game_on_hltb)
 
 
 async def _make_user(session: AsyncSession, steam_id: str | None = "76561197960287930") -> object:
@@ -120,6 +134,110 @@ async def test_import_library_creates_entries_for_new_owned_games(
     assert created[0].playtime == Decimal("2.00")
     assert created[0].status == "Not Started"
     assert created[0].owned is True
+    assert created[0].image_link is None
+
+
+async def test_import_library_sets_cover_when_steamgriddb_key_is_given(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=120)]
+
+    async def fake_get_game_covers(steam_app_id: int, api_key: str) -> list[str]:
+        assert steam_app_id == 620
+        assert api_key == "griddb-key"
+        return ["https://cdn2.steamgriddb.com/grid/1.png"]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+    monkeypatch.setattr(steam_service.game_service, "get_game_covers", fake_get_game_covers)
+
+    created = await steam_service.import_library(
+        session, user, "api-key", steamgriddb_api_key="griddb-key"
+    )
+
+    assert created[0].image_link == "https://cdn2.steamgriddb.com/grid/1.png"
+
+
+async def test_import_library_continues_without_a_cover_when_steamgriddb_fails(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A SteamGridDB outage (or a missing key) while importing must not
+    fail the import - the game still gets created, just without a
+    cover, the same as if steamgriddb_api_key were never passed."""
+    user = await _make_user(session)
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=120)]
+
+    async def fake_get_game_covers(steam_app_id: int, api_key: str) -> list[str]:
+        request = httpx.Request("GET", "https://example.com")
+        raise httpx.HTTPStatusError(
+            "boom", request=request, response=httpx.Response(503, request=request)
+        )
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+    monkeypatch.setattr(steam_service.game_service, "get_game_covers", fake_get_game_covers)
+
+    created = await steam_service.import_library(
+        session, user, "api-key", steamgriddb_api_key="griddb-key"
+    )
+
+    assert len(created) == 1
+    assert created[0].image_link is None
+
+
+async def test_import_library_sets_hltb_times_when_a_match_is_found(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=120)]
+
+    async def fake_search_game_on_hltb(search_term: str) -> list[HltbResultData]:
+        assert search_term == "Portal 2"
+        return [
+            HltbResultData(
+                id=1,
+                hltb_id=1,
+                title="Portal 2",
+                image_url="https://example.com/portal2.jpg",
+                main_story=8.5,
+                main_story_with_extras=11.0,
+                completionist=21.5,
+                last_updated_at="2024-01-01",
+            )
+        ]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+    monkeypatch.setattr(steam_service, "search_game_on_hltb", fake_search_game_on_hltb)
+
+    created = await steam_service.import_library(session, user, "api-key")
+
+    assert created[0].main_time == Decimal("8.5")
+    assert created[0].main_plus_extra_time == Decimal("11.0")
+    assert created[0].completion_time == Decimal("21.5")
+
+
+async def test_import_library_leaves_times_blank_when_hltb_has_no_match(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The autouse _no_hltb_match_by_default fixture already returns no
+    match - this just makes the resulting behavior explicit."""
+    user = await _make_user(session)
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [SteamOwnedGame(appid=620, name="Some Obscure Game", playtime_forever=120)]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+
+    created = await steam_service.import_library(session, user, "api-key")
+
+    assert created[0].main_time is None
+    assert created[0].main_plus_extra_time is None
+    assert created[0].completion_time is None
 
 
 async def test_import_library_creates_nothing_when_all_games_already_linked(
@@ -183,6 +301,88 @@ async def test_import_library_skips_a_game_that_becomes_a_duplicate_mid_import(
     monkeypatch.setattr(backlog_entry_repo, "create_backlog_entry", flaky_create_backlog_entry)
 
     created = await steam_service.import_library(session, user, "api-key")
+
+    assert len(created) == 1
+    assert created[0].title == "Portal 2"
+
+
+async def test_import_library_includes_family_members_games(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        if steam_id == user.steam_id:
+            return [SteamOwnedGame(appid=504230, name="Celeste", playtime_forever=510)]
+        assert steam_id == "family-member-1"
+        return [SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=999)]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+
+    created = await steam_service.import_library(
+        session, user, "api-key", family_steam_ids=["family-member-1"]
+    )
+
+    titles = {entry.title for entry in created}
+    assert titles == {"Celeste", "Portal 2"}
+
+
+async def test_import_library_zeroes_playtime_for_family_only_games(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        if steam_id == user.steam_id:
+            return []
+        return [SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=999)]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+
+    created = await steam_service.import_library(
+        session, user, "api-key", family_steam_ids=["family-member-1"]
+    )
+
+    assert len(created) == 1
+    assert created[0].title == "Portal 2"
+    assert created[0].playtime == Decimal("0.00")
+
+
+async def test_import_library_does_not_duplicate_a_game_owned_by_user_and_family(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=120)]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+
+    created = await steam_service.import_library(
+        session, user, "api-key", family_steam_ids=["family-member-1", "family-member-2"]
+    )
+
+    assert len(created) == 1
+    assert created[0].playtime == Decimal("2.00")
+
+
+async def test_import_library_skips_a_family_member_whose_fetch_fails(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        if steam_id == user.steam_id:
+            return []
+        if steam_id == "broken-member":
+            raise httpx.ConnectError("connection refused", request=httpx.Request("GET", "https://example.com"))
+        return [SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=120)]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+
+    created = await steam_service.import_library(
+        session, user, "api-key", family_steam_ids=["broken-member", "working-member"]
+    )
 
     assert len(created) == 1
     assert created[0].title == "Portal 2"
@@ -397,10 +597,48 @@ async def test_get_achievement_progress_combines_player_stats_and_schema(
     assert first.description == "Do the thing"
     assert first.icon == "https://example.com/a.jpg"
     assert first.achieved is True
+    assert first.hidden is False
     assert second.apiname == "ach_b"
     assert second.display_name == "B"
     assert second.icon is None
     assert second.achieved is False
+    assert second.hidden is False
+
+
+async def test_get_achievement_progress_marks_hidden_achievements(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Steam omits description for a secret achievement until it's
+    unlocked - that's the schema's hidden flag, not missing data, so
+    it's surfaced on AchievementInfo rather than just silently leaving
+    description blank."""
+    user = await _make_user(session)
+    monkeypatch.setattr(steam_service, "_achievement_schema_cache", {})
+
+    async def fake_get_player_achievements(
+        steam_id: str, app_id: int, api_key: str
+    ) -> SteamPlayerStats:
+        return SteamPlayerStats(
+            success=True,
+            achievements=[SteamAchievement(apiname="secret", achieved=0, unlocktime=0)],
+        )
+
+    async def fake_get_achievement_schema(
+        app_id: int, api_key: str
+    ) -> list[SteamAchievementSchema]:
+        return [
+            SteamAchievementSchema(
+                name="secret", display_name="???", description=None, hidden=1
+            )
+        ]
+
+    monkeypatch.setattr(steam_service, "get_player_achievements", fake_get_player_achievements)
+    monkeypatch.setattr(steam_service, "get_achievement_schema", fake_get_achievement_schema)
+
+    progress = await steam_service.get_achievement_progress(user, "api-key", 504230)
+
+    assert progress.achievements[0].hidden is True
+    assert progress.achievements[0].description is None
 
 
 async def test_get_achievement_progress_falls_back_when_schema_fetch_fails(

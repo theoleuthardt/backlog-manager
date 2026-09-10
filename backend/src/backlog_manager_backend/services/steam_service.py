@@ -1,3 +1,4 @@
+from collections.abc import Awaitable, Callable
 from decimal import ROUND_HALF_UP, Decimal
 
 import httpx
@@ -5,6 +6,7 @@ import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.errors import ConflictError, ValidationError
+from backlog_manager_backend.integrations.howlongtobeat import search_game_on_hltb
 from backlog_manager_backend.integrations.steam import (
     get_achievement_schema,
     get_owned_games,
@@ -23,8 +25,11 @@ from backlog_manager_backend.schemas.backlog_entry import (
     UpdateBacklogEntryParams,
 )
 from backlog_manager_backend.schemas.user import User
+from backlog_manager_backend.services import game_service
 
 logger = structlog.get_logger()
+
+ProgressCallback = Callable[[int, int], Awaitable[None]]
 
 _MINUTES_PER_HOUR = Decimal(60)
 _IMPORTED_PLATFORM = "PC"
@@ -85,16 +90,84 @@ async def sync_playtimes(
     return updated
 
 
+async def _try_get_cover(steam_app_id: int, steamgriddb_api_key: str | None) -> str | None:
+    """Best-effort SteamGridDB cover lookup for one freshly-imported
+    game - a missing key, outage, or no-covers-available result must
+    not fail the import, it should just leave that entry without a
+    cover, the same as a manually-created entry."""
+    if not steamgriddb_api_key:
+        return None
+    try:
+        covers = await game_service.get_game_covers(steam_app_id, steamgriddb_api_key)
+    except (RuntimeError, httpx.HTTPError):
+        return None
+    return covers[0] if covers else None
+
+
+async def _try_get_hltb_times(title: str) -> tuple[Decimal | None, Decimal | None, Decimal | None]:
+    """Best-effort HowLongToBeat lookup for one freshly-imported game,
+    by title (HLTB has no Steam App ID lookup) - search_game_on_hltb
+    already returns [] rather than raising on failure, so there's
+    nothing to catch here, just a possible empty match."""
+    results = await search_game_on_hltb(title)
+    if not results:
+        return None, None, None
+    match = results[0]
+    return (
+        Decimal(str(match.main_story)),
+        Decimal(str(match.main_story_with_extras)),
+        Decimal(str(match.completionist)),
+    )
+
+
+async def _merge_family_games(
+    owned_games: list[SteamOwnedGame], family_steam_ids: list[str], api_key: str
+) -> list[SteamOwnedGame]:
+    """Adds games owned by Steam Family members that aren't already in
+    the user's own library, for import_library's family_steam_ids
+    support. Family-only games get playtime_forever=0 - GetOwnedGames
+    reports the *family member's* playtime for their own steamid, not
+    the current user's, so carrying it over would misrepresent it as
+    the current user's played time. A family member whose GetOwnedGames
+    call fails (private profile, bad ID, Steam outage) is skipped
+    rather than failing the whole import."""
+    merged = list(owned_games)
+    seen_appids = {game.appid for game in owned_games}
+    for family_steam_id in family_steam_ids:
+        try:
+            family_games = await get_owned_games(family_steam_id, api_key)
+        except httpx.HTTPError:
+            logger.warning(
+                "Failed to fetch Steam family member's library, skipping",
+                steam_id=family_steam_id,
+            )
+            continue
+        for game in family_games:
+            if game.appid in seen_appids:
+                continue
+            seen_appids.add(game.appid)
+            merged.append(SteamOwnedGame(appid=game.appid, name=game.name, playtime_forever=0))
+    return merged
+
+
 async def import_library(
     session: AsyncSession,
     user: User,
     api_key: str,
     owned_games: list[SteamOwnedGame] | None = None,
+    steamgriddb_api_key: str | None = None,
+    on_progress: ProgressCallback | None = None,
+    family_steam_ids: list[str] | None = None,
 ) -> list[BacklogEntry]:
     """Creates a backlog entry for every Steam-owned game not already
     linked to one by steam_app_id. Metadata beyond title/steam_app_id/
-    playtime is deliberately minimal (no IGDB/HLTB enrichment); a user
-    can fill in genre etc. by hand afterwards.
+    playtime is deliberately minimal (no IGDB enrichment, no genre); a
+    user can fill in genre etc. by hand afterwards. `steamgriddb_api_key`,
+    when the caller has one (their own, or the global fallback), fills
+    in a cover image per game too - best-effort, see _try_get_cover. A
+    HowLongToBeat time-to-beat lookup by title also runs for every
+    game unconditionally (no key needed) - best-effort, see
+    _try_get_hltb_times.
 
     The existing-entries check above only prevents most duplicates - a
     concurrent import for the same user can still race past it, so the
@@ -114,11 +187,21 @@ async def import_library(
     this same loop fail too.
 
     Accepts an already-fetched owned_games snapshot - see
-    sync_playtimes's docstring for why."""
+    sync_playtimes's docstring for why - and merges in each
+    family_steam_ids member's library (Steam Family sharing) via
+    _merge_family_games before the import loop runs, so those games get
+    imported the same way. `on_progress`, when given, is awaited after
+    every game considered (whether it was actually imported, already
+    existed, or failed), so callers can report "N of total processed"
+    even on a re-sync where most games are skipped as already-imported."""
     if not user.steam_id:
         raise ValidationError(_STEAM_NOT_LINKED)
     if owned_games is None:
         owned_games = await get_owned_games(user.steam_id, api_key)
+
+    games_to_import = owned_games
+    if family_steam_ids:
+        games_to_import = await _merge_family_games(owned_games, family_steam_ids, api_key)
 
     existing_app_ids = {
         entry.steam_app_id
@@ -127,10 +210,17 @@ async def import_library(
     }
 
     created: list[BacklogEntry] = []
-    for game in owned_games:
+    total = len(games_to_import)
+    for processed, game in enumerate(games_to_import, start=1):
         if game.appid in existing_app_ids:
+            if on_progress:
+                await on_progress(processed, total)
             continue
         try:
+            image_link = await _try_get_cover(game.appid, steamgriddb_api_key)
+            main_time, main_plus_extra_time, completion_time = await _try_get_hltb_times(
+                game.name
+            )
             created.append(
                 await backlog_entry_repo.create_backlog_entry(
                     session,
@@ -144,6 +234,10 @@ async def import_library(
                         interest=_IMPORTED_INTEREST,
                         playtime=_minutes_to_hours(game.playtime_forever),
                         steam_app_id=game.appid,
+                        image_link=image_link,
+                        main_time=main_time,
+                        main_plus_extra_time=main_plus_extra_time,
+                        completion_time=completion_time,
                     ),
                 )
             )
@@ -157,23 +251,47 @@ async def import_library(
                 title=game.name,
             )
             continue
+        finally:
+            if on_progress:
+                await on_progress(processed, total)
     return created
 
 
 async def sync_playtimes_and_import(
-    session: AsyncSession, user: User, api_key: str, *, auto_import: bool
+    session: AsyncSession,
+    user: User,
+    api_key: str,
+    *,
+    auto_import: bool,
+    steamgriddb_api_key: str | None = None,
+    on_progress: ProgressCallback | None = None,
+    family_steam_ids: list[str] | None = None,
 ) -> list[BacklogEntry]:
     """Single entry point for the "Sync Steam Playtimes" action: fetches
     the owned-games snapshot once and reuses it for both sync_playtimes
     and (when auto_import is on) import_library, instead of each
-    fetching its own snapshot from Steam's API."""
+    fetching its own snapshot from Steam's API. `on_progress` is only
+    ever driven by import_library - sync_playtimes has no per-game
+    external API calls, so it finishes near-instantly and isn't worth
+    reporting progress for. `family_steam_ids` only affects
+    import_library too - sync_playtimes only ever updates entries
+    already linked to the user's own steam_app_id, and family members'
+    playtime isn't the user's own (see _merge_family_games)."""
     if not user.steam_id:
         raise ValidationError(_STEAM_NOT_LINKED)
     owned_games = await get_owned_games(user.steam_id, api_key)
 
     updated = await sync_playtimes(session, user, api_key, owned_games)
     if auto_import:
-        updated = updated + await import_library(session, user, api_key, owned_games)
+        updated = updated + await import_library(
+            session,
+            user,
+            api_key,
+            owned_games,
+            steamgriddb_api_key=steamgriddb_api_key,
+            on_progress=on_progress,
+            family_steam_ids=family_steam_ids,
+        )
     return updated
 
 
@@ -229,6 +347,7 @@ async def get_achievement_progress(
             icon=schema.icon if schema else None,
             achieved=bool(achievement.achieved),
             unlock_time=achievement.unlocktime,
+            hidden=bool(schema.hidden) if schema else False,
         )
         for achievement in player_stats.achievements
         for schema in (schema_by_apiname.get(achievement.apiname),)

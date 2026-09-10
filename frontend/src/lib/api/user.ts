@@ -12,6 +12,7 @@ export interface UpdateCurrentUserInput {
   igdbClientSecret?: string;
   steamgriddbApiKey?: string;
   steamAutoImportEnabled?: boolean;
+  steamFamilyIds?: string;
 }
 
 function toCurrentUser(user: components["schemas"]["PublicUser"]): CurrentUser {
@@ -28,6 +29,7 @@ function toCurrentUser(user: components["schemas"]["PublicUser"]): CurrentUser {
     hasIgdbCredentials: user.has_igdb_credentials ?? false,
     hasSteamgriddbApiKey: user.has_steamgriddb_api_key ?? false,
     steamAutoImportEnabled: user.steam_auto_import_enabled ?? false,
+    steamFamilyIds: user.steam_family_ids ?? undefined,
   };
 }
 
@@ -45,6 +47,7 @@ export async function updateCurrentUser(
       igdb_client_secret: input.igdbClientSecret,
       steamgriddb_api_key: input.steamgriddbApiKey,
       steam_auto_import_enabled: input.steamAutoImportEnabled,
+      steam_family_ids: input.steamFamilyIds,
     },
   });
   if (error) throw new Error(apiErrorMessage(error, "Failed to update user"));

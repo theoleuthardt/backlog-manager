@@ -18,6 +18,7 @@ class User(msgspec.Struct):
     igdb_credentials_encrypted: str | None = None
     steamgriddb_api_key_encrypted: str | None = None
     steam_auto_import_enabled: bool = False
+    steam_family_ids: str | None = None
 
 
 class CreateUserParams(msgspec.Struct):
@@ -42,6 +43,7 @@ class UpdateUserParams(msgspec.Struct):
     igdb_credentials_encrypted: str | None | msgspec.UnsetType = msgspec.UNSET
     steamgriddb_api_key_encrypted: str | None | msgspec.UnsetType = msgspec.UNSET
     steam_auto_import_enabled: bool | msgspec.UnsetType = msgspec.UNSET
+    steam_family_ids: str | None | msgspec.UnsetType = msgspec.UNSET
     is_admin: bool | msgspec.UnsetType = msgspec.UNSET
     # Set only by the 2FA enroll/verify/disable service functions - never
     # exposed on UpdateOwnUserRequest/UpdateUserAdminRequest, or a client
@@ -66,6 +68,7 @@ class PublicUser(msgspec.Struct):
     has_igdb_credentials: bool = False
     has_steamgriddb_api_key: bool = False
     steam_auto_import_enabled: bool = False
+    steam_family_ids: str | None = None
 
     @classmethod
     def from_user(cls, user: User) -> "PublicUser":
@@ -82,6 +85,7 @@ class PublicUser(msgspec.Struct):
             has_igdb_credentials=bool(user.igdb_credentials_encrypted),
             has_steamgriddb_api_key=bool(user.steamgriddb_api_key_encrypted),
             steam_auto_import_enabled=user.steam_auto_import_enabled,
+            steam_family_ids=user.steam_family_ids,
         )
 
 
@@ -116,6 +120,7 @@ class UpdateOwnUserRequest(msgspec.Struct):
     igdb_client_secret: str | None | msgspec.UnsetType = msgspec.UNSET
     steamgriddb_api_key: str | None | msgspec.UnsetType = msgspec.UNSET
     steam_auto_import_enabled: bool | msgspec.UnsetType = msgspec.UNSET
+    steam_family_ids: str | None | msgspec.UnsetType = msgspec.UNSET
 
 
 class UpdateUserAdminRequest(msgspec.Struct):
@@ -131,6 +136,7 @@ class UpdateUserAdminRequest(msgspec.Struct):
     igdb_client_secret: str | None | msgspec.UnsetType = msgspec.UNSET
     steamgriddb_api_key: str | None | msgspec.UnsetType = msgspec.UNSET
     steam_auto_import_enabled: bool | msgspec.UnsetType = msgspec.UNSET
+    steam_family_ids: str | None | msgspec.UnsetType = msgspec.UNSET
     is_admin: bool | msgspec.UnsetType = msgspec.UNSET
 
 

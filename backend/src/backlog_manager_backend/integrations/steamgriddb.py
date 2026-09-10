@@ -16,12 +16,16 @@ async def get_grids_by_steam_app_id(steam_app_id: int, api_key: str) -> list[Ste
     ID. Returns [] rather than raising when SteamGridDB has no grids
     for this app (404, or 200 with success: false) - that's an empty
     match, not a failure; still raises on transport/HTTP/decode errors
-    like get_owned_games."""
+    like get_owned_games. Restricted to the 2:3 portrait "grid" sizes
+    (600x900, 342x482) - without a dimensions filter SteamGridDB also
+    returns wide banner/hero-style grids, which get cropped down to a
+    thin sliver when forced into the app's portrait cover boxes."""
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
             response = await client.get(
                 _GRIDS_BY_STEAM_APP_ID_URL.format(steam_app_id=steam_app_id),
                 headers={"Authorization": f"Bearer {api_key}"},
+                params={"dimensions": "600x900,342x482"},
             )
     except httpx.HTTPError as error:
         logger.error("SteamGridDB grids error", error=str(error))

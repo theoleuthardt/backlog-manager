@@ -1,10 +1,12 @@
 "use client";
 import { useState } from "react";
-import { Loader2, Trophy } from "lucide-react";
+import { Loader2, Trophy, XIcon } from "lucide-react";
 import { GameImage } from "components/GameImage";
 import { useSteamAchievements } from "~/hooks/useBacklog";
+import { Button } from "shadcn_components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogTitle,
   DialogTrigger,
@@ -57,7 +59,19 @@ export function AchievementProgress({ steamAppId }: AchievementProgressProps) {
             Show all achievements
           </button>
         </DialogTrigger>
-        <DialogContent className="flex h-[calc(100vh-6rem)] w-[calc(100vw-6rem)] max-w-2xl flex-col border-2 border-white bg-black p-6">
+        <DialogContent
+          showCloseButton={false}
+          className="flex h-[calc(100vh-6rem)] w-[calc(100vw-6rem)] !max-w-2xl flex-col border-2 border-white bg-black p-6"
+        >
+          <DialogClose asChild>
+            <Button
+              variant="destructive"
+              size="icon"
+              className="absolute top-4 right-4 z-50 h-8 w-8 focus:ring-0 focus:ring-offset-0 focus:outline-none focus-visible:ring-0"
+            >
+              <XIcon className="h-4 w-4 text-black" />
+            </Button>
+          </DialogClose>
           <DialogTitle className="flex items-center gap-1.5 text-white">
             <Trophy className="h-4 w-4" />
             Achievements ({data.unlocked}/{data.total})
@@ -80,10 +94,17 @@ export function AchievementProgress({ steamAppId }: AchievementProgressProps) {
                   <p className="truncate text-sm font-medium text-white">
                     {achievement.displayName}
                   </p>
-                  {achievement.description && (
+                  {achievement.description ? (
                     <p className="truncate text-xs text-gray-400">
                       {achievement.description}
                     </p>
+                  ) : (
+                    achievement.hidden &&
+                    !achievement.achieved && (
+                      <p className="truncate text-xs text-gray-500 italic">
+                        Hidden achievement
+                      </p>
+                    )
                   )}
                 </div>
               </div>

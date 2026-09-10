@@ -43,6 +43,7 @@ async def test_get_grids_by_steam_app_id_returns_parsed_results(
     def handler(request: httpx.Request) -> httpx.Response:
         assert request.url.path == "/api/v2/grids/steam/220"
         assert request.headers["Authorization"] == "Bearer api-key"
+        assert request.url.params["dimensions"] == "600x900,342x482"
         return httpx.Response(200, json=_SAMPLE_RESPONSE)
 
     _mock_client(handler, monkeypatch)

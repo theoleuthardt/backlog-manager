@@ -355,6 +355,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/user/steam/sync/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** SyncSteamPlaytimesStream */
+        post: operations["ApiUserSteamSyncStreamSyncSteamPlaytimesStream"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/user/steam/import/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** ImportSteamLibraryStream */
+        post: operations["ApiUserSteamImportStreamImportSteamLibraryStream"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/user/steam/achievements": {
         parameters: {
             query?: never;
@@ -605,6 +639,7 @@ export interface components {
             icon: string | null;
             achieved: boolean;
             unlock_time: number;
+            hidden: boolean;
         };
         /** AchievementProgress */
         AchievementProgress: {
@@ -871,6 +906,7 @@ export interface components {
             has_steamgriddb_api_key?: boolean;
             /** @default false */
             steam_auto_import_enabled?: boolean;
+            steam_family_ids?: string | null;
         };
         /** PublicUsername */
         PublicUsername: {
@@ -946,6 +982,7 @@ export interface components {
             igdb_client_secret?: string | null;
             steamgriddb_api_key?: string | null;
             steam_auto_import_enabled?: boolean;
+            steam_family_ids?: string | null;
         };
         /** UpdateUserAdminRequest */
         UpdateUserAdminRequest: {
@@ -958,6 +995,7 @@ export interface components {
             igdb_client_secret?: string | null;
             steamgriddb_api_key?: string | null;
             steam_auto_import_enabled?: boolean;
+            steam_family_ids?: string | null;
             is_admin?: boolean;
         };
     };
@@ -2003,6 +2041,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BacklogEntryResponse"][];
+                };
+            };
+        };
+    };
+    ApiUserSteamSyncStreamSyncSteamPlaytimesStream: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    "cache-control"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": unknown;
+                };
+            };
+        };
+    };
+    ApiUserSteamImportStreamImportSteamLibraryStream: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    "cache-control"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": unknown;
                 };
             };
         };

@@ -1,18 +1,33 @@
 import { apiClient, apiErrorMessage } from "./client";
 import { toEntryData, type BacklogEntryData } from "./backlog";
+import { streamSse } from "./sseStream";
+import type { components } from "./schema";
 
-export async function syncSteamPlaytimes(): Promise<BacklogEntryData[]> {
-  const { data, error } = await apiClient.POST("/api/user/steam/sync");
-  if (error)
-    throw new Error(apiErrorMessage(error, "Failed to sync Steam playtimes"));
-  return data.map(toEntryData);
+export interface SteamSyncProgress {
+  processed: number;
+  total: number;
 }
 
-export async function importSteamLibrary(): Promise<BacklogEntryData[]> {
-  const { data, error } = await apiClient.POST("/api/user/steam/import");
-  if (error)
-    throw new Error(apiErrorMessage(error, "Failed to import Steam library"));
-  return data.map(toEntryData);
+type BacklogEntryResponse = components["schemas"]["BacklogEntryResponse"];
+
+export async function syncSteamPlaytimesStream(
+  onProgress: (progress: SteamSyncProgress) => void,
+): Promise<BacklogEntryData[]> {
+  const entries = await streamSse<SteamSyncProgress, BacklogEntryResponse[]>(
+    "/api/user/steam/sync/stream",
+    { onProgress },
+  );
+  return entries.map(toEntryData);
+}
+
+export async function importSteamLibraryStream(
+  onProgress: (progress: SteamSyncProgress) => void,
+): Promise<BacklogEntryData[]> {
+  const entries = await streamSse<SteamSyncProgress, BacklogEntryResponse[]>(
+    "/api/user/steam/import/stream",
+    { onProgress },
+  );
+  return entries.map(toEntryData);
 }
 
 export interface AchievementInfo {
@@ -22,6 +37,7 @@ export interface AchievementInfo {
   icon: string | null;
   achieved: boolean;
   unlockTime: number;
+  hidden: boolean;
 }
 
 export interface AchievementProgress {
@@ -48,6 +64,7 @@ export async function getSteamAchievements(
       icon: achievement.icon,
       achieved: achievement.achieved,
       unlockTime: achievement.unlock_time,
+      hidden: achievement.hidden,
     })),
   };
 }

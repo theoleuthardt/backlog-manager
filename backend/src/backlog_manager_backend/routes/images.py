@@ -11,15 +11,18 @@ logger = structlog.get_logger()
 # Only these hosts are ever proxied - this is a public, unauthenticated
 # passthrough, so an open allowlist would let this endpoint be abused as a
 # generic anonymizing image fetcher for arbitrary URLs.
-_ALLOWED_HOSTS = {"howlongtobeat.com", "images.igdb.com"}
+_ALLOWED_HOSTS = {
+    "howlongtobeat.com",
+    "images.igdb.com",
+    "media.steampowered.com",
+    "steamcdn-a.akamaihd.net",
+}
 
-# Steam achievement icons (from ISteamUserStats/GetSchemaForGame) are served
-# from steamstatic.com, but Valve fronts that content with several
-# interchangeable CDN edge subdomains (cdn.akamai.steamstatic.com,
-# cdn.cloudflare.steamstatic.com, shared.fastly.steamstatic.com, ...), so the
-# whole apex domain and its subdomains are allowed rather than one fixed host.
-_ALLOWED_HOST_SUFFIXES = (".steamstatic.com",)
-_ALLOWED_APEX_HOSTS = {"steamstatic.com"}
+# steamstatic.com (Steam achievement icons) and steamgriddb.com (cover art)
+# each use several interchangeable CDN subdomains, so the apex + subdomains
+# are allowed rather than one fixed host per provider.
+_ALLOWED_HOST_SUFFIXES = (".steamstatic.com", ".steamgriddb.com")
+_ALLOWED_APEX_HOSTS = {"steamstatic.com", "steamgriddb.com"}
 
 
 def _is_allowed_host(hostname: str | None) -> bool:
@@ -73,6 +76,38 @@ def _headers_for(host: str) -> dict[str, str]:
     return headers
 
 
+# media.steampowered.com redirects to the actual asset rather than serving
+# it directly; each hop below is re-validated against the same allowlist.
+_MAX_REDIRECTS = 5
+
+
+async def _fetch_following_allowed_redirects(
+    client: httpx.AsyncClient, url: str
+) -> httpx.Response | None:
+    current_url = url
+    for _ in range(_MAX_REDIRECTS + 1):
+        request = client.build_request(
+            "GET", current_url, headers=_headers_for(urlparse(current_url).hostname)
+        )
+        response = await client.send(request, stream=True, follow_redirects=False)
+        if not response.is_redirect:
+            return response
+
+        await response.aclose()
+        location = response.headers.get("location")
+        if not location:
+            return None
+        next_url = str(httpx.URL(current_url).join(location))
+        next_parsed = urlparse(next_url)
+        if next_parsed.scheme != "https" or not _is_allowed_host(next_parsed.hostname):
+            logger.error("Rejected redirect to a non-allowlisted host", url=next_url)
+            return None
+        current_url = next_url
+
+    logger.error("Too many redirects proxying image", url=url)
+    return None
+
+
 @get("/api/images/proxy")
 async def proxy_image(url: FromQuery[str]) -> Response:
     parsed = urlparse(url)
@@ -80,29 +115,38 @@ async def proxy_image(url: FromQuery[str]) -> Response:
         return _INVALID_URL
 
     try:
-        async with httpx.AsyncClient(timeout=_TIMEOUT) as client, client.stream(
-            "GET", url, headers=_headers_for(parsed.hostname)
-        ) as upstream:
-            if upstream.status_code >= 400:
-                logger.error("Upstream image error", url=url, status_code=upstream.status_code)
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
+            upstream = await _fetch_following_allowed_redirects(client, url)
+            if upstream is None:
                 return _NOT_FOUND
 
-            content_type = upstream.headers.get("content-type", "").split(";")[0].strip().lower()
-            if content_type not in _ALLOWED_CONTENT_TYPES:
-                logger.error(
-                    "Rejected unsupported image content type", url=url, content_type=content_type
-                )
-                return _UNSUPPORTED_TYPE
+            try:
+                if upstream.status_code >= 400:
+                    logger.error(
+                        "Upstream image error", url=url, status_code=upstream.status_code
+                    )
+                    return _NOT_FOUND
 
-            content_length = upstream.headers.get("content-length")
-            if content_length is not None and int(content_length) > _MAX_IMAGE_BYTES:
-                return _TOO_LARGE
+                content_type = upstream.headers.get("content-type", "").split(";")[0].strip().lower()
+                if content_type not in _ALLOWED_CONTENT_TYPES:
+                    logger.error(
+                        "Rejected unsupported image content type",
+                        url=url,
+                        content_type=content_type,
+                    )
+                    return _UNSUPPORTED_TYPE
 
-            body = bytearray()
-            async for chunk in upstream.aiter_bytes():
-                body.extend(chunk)
-                if len(body) > _MAX_IMAGE_BYTES:
+                content_length = upstream.headers.get("content-length")
+                if content_length is not None and int(content_length) > _MAX_IMAGE_BYTES:
                     return _TOO_LARGE
+
+                body = bytearray()
+                async for chunk in upstream.aiter_bytes():
+                    body.extend(chunk)
+                    if len(body) > _MAX_IMAGE_BYTES:
+                        return _TOO_LARGE
+            finally:
+                await upstream.aclose()
     except httpx.HTTPError as error:
         logger.error("Error proxying image", url=url, error=str(error))
         return _NOT_FOUND

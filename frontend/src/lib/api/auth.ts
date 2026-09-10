@@ -14,13 +14,17 @@ export interface CurrentUser {
   hasIgdbCredentials: boolean;
   hasSteamgriddbApiKey: boolean;
   steamAutoImportEnabled: boolean;
+  steamFamilyIds?: string;
 }
 
 export type LoginOutcome =
   | { status: "success" }
   | { status: "requires_2fa"; challengeToken: string };
 
-export async function login(email: string, password: string): Promise<LoginOutcome> {
+export async function login(
+  email: string,
+  password: string,
+): Promise<LoginOutcome> {
   const { data, error } = await apiClient.POST("/api/auth/login", {
     body: { email, password },
   });
@@ -59,5 +63,6 @@ export async function getCurrentUser(): Promise<CurrentUser> {
     hasIgdbCredentials: data.has_igdb_credentials ?? false,
     hasSteamgriddbApiKey: data.has_steamgriddb_api_key ?? false,
     steamAutoImportEnabled: data.steam_auto_import_enabled ?? false,
+    steamFamilyIds: data.steam_family_ids ?? undefined,
   };
 }
