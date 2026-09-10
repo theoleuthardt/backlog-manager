@@ -1,0 +1,23 @@
+meta {
+  name: Get Cover
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{backendUrl}}/api/games/covers/171645
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Cover image metadata (image_id, dimensions) by IGDB cover id.
+  171645 = Forza Horizon 5's cover. Run auth/Login first.
+
+  503 if neither the caller nor the server has IGDB credentials
+  configured, or if IGDB is unreachable.
+}

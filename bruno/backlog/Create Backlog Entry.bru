@@ -1,0 +1,55 @@
+meta {
+  name: Create Backlog Entry
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{backendUrl}}/api/backlog/entries
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "title": "Elden Ring",
+    "genre": ["RPG", "Action"],
+    "platform": ["PC"],
+    "status": "In Progress",
+    "owned": true,
+    "interest": 9,
+    "release_date": "2022-02-25",
+    "image_link": "https://images.igdb.com/igdb/image/upload/t_cover_big/co4jni.jpg",
+    "main_time": 55,
+    "main_plus_extra_time": 90,
+    "completion_time": 130,
+    "playtime": 12.5,
+    "steam_app_id": 1245620,
+    "review_stars": null,
+    "review": null,
+    "note": "Focus on Limgrave first."
+  }
+}
+
+script:post-response {
+  if (res.body.id) {
+    bru.setEnvVar("entryId", res.body.id);
+  }
+}
+
+docs {
+  Creates a backlog entry for the logged-in user and stores its id in
+  the entryId environment variable, used by every other request in this
+  folder. Run auth/Login first, then this.
+
+  genre/platform arrive as lists here and are joined into one
+  ", "-separated column server-side (a value containing a literal comma
+  is rejected with 400) - every response still returns them as lists.
+  status is free-form on this endpoint (not validated against an enum)
+  but the frontend only ever sends one of: "Not Started", "In Progress",
+  "On Hold", "Completed", "Dropped".
+}

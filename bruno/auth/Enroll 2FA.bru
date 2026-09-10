@@ -1,0 +1,24 @@
+meta {
+  name: Enroll 2FA
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{backendUrl}}/api/auth/2fa/enroll
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Starts 2FA enrollment for the logged-in user: generates a TOTP secret
+  and returns it alongside an otpauth_url (render as a QR code for an
+  authenticator app). Enrollment isn't active yet - scan the code, then
+  call "Verify 2FA Enrollment" with a generated TOTP code to finish.
+
+  409 if the user already has 2FA enrolled.
+}

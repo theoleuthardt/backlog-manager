@@ -1,0 +1,28 @@
+meta {
+  name: Import Steam Library
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{backendUrl}}/api/user/steam/import
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Imports the entire linked Steam library (plus any Steam Family
+  members set via user/Set Steam Family IDs) as new backlog entries,
+  regardless of user/Set Steam Auto Import - unlike "Sync Steam
+  Playtimes", which only auto-imports if that flag is enabled. Games
+  already tracked (matched by steam_app_id) are left alone rather than
+  duplicated. Returns the newly created entries.
+
+  Run auth/Login and user/Set Steam ID first. 400 if no Steam ID is
+  linked, 503 if neither the caller nor the server has a Steam Web API
+  key configured.
+}

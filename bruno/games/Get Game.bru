@@ -1,0 +1,23 @@
+meta {
+  name: Get Game
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{backendUrl}}/api/games/141503
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Full game details by IGDB game id. 141503 = Forza Horizon 5. Run
+  auth/Login first.
+
+  503 if neither the caller nor the server has IGDB credentials
+  configured, or if IGDB is unreachable.
+}

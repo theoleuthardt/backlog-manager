@@ -23,7 +23,8 @@ body:json {
 docs {
   Stores the caller's own Steam Web API key, encrypted at rest, taking
   priority over the server-wide STEAM_WEB_API_KEY fallback for this
-  user's syncs. Get a key at https://steamcommunity.com/dev/apikey.
+  user's syncs. Get a key at https://steamcommunity.com/dev/apikey. Run
+  auth/Login first.
 
   Returns 503 if the backend doesn't have STEAM_API_KEY_ENCRYPTION_KEY
   configured.

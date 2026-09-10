@@ -1,3 +1,18 @@
+"""Own-profile and admin user-management HTTP handlers.
+
+_NO_STORE is applied to every response below since each one includes email
+and/or is_admin - a private cache (browser) must not reuse one of these for
+a different user after e.g. an account switch on a shared machine.
+
+admin_user_router has the same router-level-dependency gotcha as
+routes/auth.py's two_factor_router: every handler routed here takes an
+unused `current_user: NamedDependency[User]` parameter deliberately, since
+Litestar only resolves (and therefore only runs) a router-level dependency
+for handlers that actually declare it as a parameter - without it,
+require_admin below would be registered but never called, leaving the
+route silently unprotected. Do not remove that parameter from a handler
+even though nothing in its body reads it."""
+
 import msgspec
 from litestar import Router, delete, get, post, put
 from litestar.datastructures import CacheControlHeader
@@ -29,19 +44,9 @@ from backlog_manager_backend.schemas.user import (
 )
 from backlog_manager_backend.services.auth_service import create_user, validate_password_strength
 
-# Every response below includes email and/or is_admin - a private cache
-# (browser) must not reuse one of these for a different user after e.g. an
-# account switch on a shared machine.
 _NO_STORE = CacheControlHeader(no_store=True)
 
 _USER_NOT_FOUND = "User not found"
-
-# Every handler below /api/admin/* takes an unused `current_user:
-# NamedDependency[User]` parameter deliberately - Litestar only resolves
-# (and therefore only runs) a router-level dependency for handlers that
-# actually declare it as a parameter. Without it, require_admin below is
-# registered but never called, and the route is silently unprotected.
-# Do not remove it even though nothing in the body reads it.
 
 
 def _hash_if_present(password: str | object) -> str | object:

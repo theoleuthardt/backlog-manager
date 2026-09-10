@@ -25,5 +25,10 @@ script:post-response {
 
 docs {
   Logs in and stores the access token in the authToken environment
-  variable, used by every other request in this folder. Run this first.
+  variable, shared by every folder in this collection. Run this first.
+
+  Rate-limited to 10 requests/minute. If the account has 2FA enabled,
+  access_token is omitted and requires_2fa/challenge_token are set
+  instead - exchange the challenge_token at "2FA Login Verify" for a
+  real access_token. 401 for bad credentials.
 }

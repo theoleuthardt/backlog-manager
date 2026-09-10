@@ -1,0 +1,32 @@
+meta {
+  name: Update Category
+  type: http
+  seq: 7
+}
+
+put {
+  url: {{backendUrl}}/api/backlog/categories/{{categoryId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "category_name": "Currently Playing",
+    "color": "#22c55e",
+    "description": "Actively playing this month."
+  }
+}
+
+docs {
+  Partially updates a category - only the fields present in the body
+  are changed. description is the only nullable field (explicit null
+  clears it). Run auth/Login and "Create Category" first so categoryId
+  is set.
+
+  404 if the category doesn't exist or isn't owned by the caller.
+}

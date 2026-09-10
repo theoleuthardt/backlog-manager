@@ -1,0 +1,30 @@
+meta {
+  name: Verify 2FA Enrollment
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{backendUrl}}/api/auth/2fa/verify
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "code": "123456"
+  }
+}
+
+docs {
+  Confirms possession of the TOTP secret from "Enroll 2FA" and finalizes
+  enrollment. Returns a set of one-time backup codes - show these to the
+  user once, they're the only way back in if the authenticator device is
+  lost.
+
+  409 if not currently mid-enrollment, 400 for an invalid code.
+}

@@ -1,0 +1,23 @@
+meta {
+  name: Get Platform
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{backendUrl}}/api/games/platforms/169
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Platform details by IGDB platform id. 169 = Xbox Series X|S. Run
+  auth/Login first.
+
+  503 if neither the caller nor the server has IGDB credentials
+  configured, or if IGDB is unreachable.
+}

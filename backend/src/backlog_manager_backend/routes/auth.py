@@ -1,3 +1,20 @@
+"""Login, 2FA challenge/enroll/verify/disable HTTP handlers.
+
+_login_rate_limit and _two_factor_login_rate_limit are separate
+RateLimitConfig instances (same values) rather than one shared instance:
+login is the highest-value brute-force target in the whole API (the one
+endpoint that turns a guessed password into a valid session), capped
+independent of whether the credentials guessed happen to be correct;
+sharing one limiter between the two endpoints would let a user's earlier
+failed *password* attempts eat into their budget for entering a *TOTP
+code* moments later.
+
+two_factor_router has the same router-level-dependency gotcha as
+routes/user.py's user_router: every handler routed here must declare
+`current_user: NamedDependency[User]` itself, or Litestar never resolves
+(and therefore never runs) get_current_user, leaving the route silently
+unprotected."""
+
 from litestar import Router, post
 from litestar.di import NamedDependency, Provide
 from litestar.exceptions import ClientException, NotAuthorizedException
@@ -25,14 +42,7 @@ from backlog_manager_backend.schemas.auth import (
 from backlog_manager_backend.schemas.user import User
 from backlog_manager_backend.services import auth_service
 
-# Login is the highest-value brute-force target in the whole API (it's the
-# one endpoint that turns a guessed password into a valid session) - capped
-# tighter than any other endpoint, independent of whether the credentials
-# guessed happen to be correct.
 _login_rate_limit = RateLimitConfig(rate_limit=("minute", 10))
-# A separate instance (same values) rather than reusing _login_rate_limit -
-# sharing one would let a user's earlier failed *password* attempts eat
-# into their budget for entering a *TOTP code* moments later.
 _two_factor_login_rate_limit = RateLimitConfig(rate_limit=("minute", 10))
 
 
@@ -104,10 +114,6 @@ async def disable_two_factor(
         raise ClientException(str(error)) from error
 
 
-# Same router-level-dependency gotcha as routes/user.py's user_router:
-# every handler here must declare `current_user: NamedDependency[User]`
-# itself, or Litestar never resolves (and therefore never runs)
-# get_current_user, leaving the route silently unprotected.
 two_factor_router = Router(
     path="",
     route_handlers=[enroll_two_factor, verify_two_factor, disable_two_factor],

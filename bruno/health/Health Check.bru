@@ -1,0 +1,18 @@
+meta {
+  name: Health Check
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{backendUrl}}/health
+  body: none
+  auth: none
+}
+
+docs {
+  Liveness/readiness probe. Public, unauthenticated, no /api prefix.
+  Returns {"status": "ok", "database": "connected"} normally; 503 with
+  {"status": "error", "database": "unreachable"} if a "SELECT 1" against
+  Postgres doesn't complete within 5 seconds.
+}

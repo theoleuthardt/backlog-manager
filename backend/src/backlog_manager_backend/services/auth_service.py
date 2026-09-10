@@ -29,11 +29,6 @@ from backlog_manager_backend.schemas.user import (
     User,
 )
 
-# Verified against whenever there's no real password hash to check (unknown
-# email, or an OAuth-only account), so that path still pays the same Argon2
-# verification cost as a real wrong-password attempt - otherwise the
-# skipped hash makes those cases measurably faster and an attacker can use
-# response timing to enumerate which emails are registered.
 _DUMMY_PASSWORD_HASH = hash_password("not-a-real-password-used-only-for-timing")
 
 MIN_PASSWORD_LENGTH = 8
@@ -67,9 +62,13 @@ async def login(session: AsyncSession, params: LoginParams) -> LoginResult:
     """Raises ValidationError for any invalid-credentials case (unknown
     email, wrong password, or an OAuth-only account with no password
     set) without distinguishing which, in the error message or in
-    timing. Once the password check passes, an account with 2FA enabled
-    gets a short-lived challenge token instead of a real access token -
-    see verify_two_factor_login."""
+    timing - an unknown email still runs a dummy Argon2 verification
+    against _DUMMY_PASSWORD_HASH so that path pays the same cost as a
+    real wrong-password attempt, rather than responding measurably
+    faster and letting an attacker enumerate which emails are
+    registered. Once the password check passes, an account with 2FA
+    enabled gets a short-lived challenge token instead of a real access
+    token - see verify_two_factor_login."""
     user = await user_repo.get_user_by_email(session, params.email)
     password_hash = user.password_hash if user and user.password_hash else _DUMMY_PASSWORD_HASH
     password_matches = verify_password(password_hash, params.password)

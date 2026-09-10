@@ -1,0 +1,21 @@
+meta {
+  name: Get Steam App Id
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{backendUrl}}/api/games/steam-app-id?title=Elden%20Ring
+  body: none
+  auth: none
+}
+
+params:query {
+  title: Elden%20Ring
+}
+
+docs {
+  Looks up a Steam app id by (fuzzy) title match against Steam's full app
+  list. Public, unauthenticated - used to auto-fill steam_app_id when
+  adding a backlog entry. Returns null if no match is found.
+}

@@ -1,11 +1,9 @@
-// Backlog and game-related types
 export type {
   BacklogEntryProps,
   BacklogEntryData,
   GameSearchResult,
 } from "./backlog";
 
-// Component props
 export type {
   UniSliderProps,
   DropdownMenuProps,
@@ -19,5 +17,4 @@ export type {
   NavbarProps,
 } from "./components";
 
-// Navigation types
 export type { NavbarLink } from "./navigation";

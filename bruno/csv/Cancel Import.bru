@@ -1,0 +1,25 @@
+meta {
+  name: Cancel Import
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{backendUrl}}/api/csv/import/{{csvSessionId}}/cancel
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Signals an in-flight "Import CSV" call identified by session_id to
+  stop after its current row rather than processing the rest of the
+  file. Run auth/Login and start an "Import CSV" with a session_id set
+  first.
+
+  204 on success, whether or not the session was actually still
+  running. 404 if session_id is registered to a different user.
+}

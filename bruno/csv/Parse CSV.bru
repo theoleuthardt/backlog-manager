@@ -1,0 +1,29 @@
+meta {
+  name: Parse CSV
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{backendUrl}}/api/csv/parse
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "content": "Title,Genre,Platform,Status\nElden Ring,RPG,PC,In Progress\nHades,Roguelike,PC,Completed\n"
+  }
+}
+
+docs {
+  Parses raw CSV text into a list of row maps without touching the
+  database. This lets a client preview the columns (the first row,
+  header or not, comes back as an ordinary row map like any other)
+  before choosing title_column/genre_column/etc. for "Import CSV". Run
+  auth/Login first.
+}

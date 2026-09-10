@@ -28,14 +28,17 @@ export interface BacklogEntryData {
   steamAppId?: number;
 }
 
+/**
+ * `status` is a plain string, not `BacklogStatus`, because the backend
+ * doesn't enforce an enum here - CSV imports in particular can carry an
+ * arbitrary status value from the source file. `BacklogStatus` stays
+ * around for call sites backed by an actual status dropdown
+ * (CreationToolForm, BacklogEntry).
+ */
 export interface CreateBacklogEntryInput {
   title: string;
   genre: string[];
   platform: string[];
-  // The backend doesn't enforce an enum here (plain `str`) - CSV imports in
-  // particular can carry an arbitrary status value from the source file.
-  // BacklogStatus stays around for call sites backed by an actual status
-  // dropdown (CreationToolForm, BacklogEntry).
   status: string;
   owned: boolean;
   interest: number;

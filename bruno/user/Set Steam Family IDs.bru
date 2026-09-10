@@ -1,0 +1,30 @@
+meta {
+  name: Set Steam Family IDs
+  type: http
+  seq: 9
+}
+
+put {
+  url: {{backendUrl}}/api/user/me
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "steam_family_ids": "76561197960287930,76561198000000001"
+  }
+}
+
+docs {
+  Sets the SteamID64s of other Steam Family Sharing members whose
+  libraries should also be considered by Steam's "Sync Steam
+  Playtimes"/"Import Steam Library" (comma-separated, no table of its
+  own - mirrors how genre/platform are stored on a backlog entry).
+  Duplicates are deduplicated server-side. Sending an empty string
+  clears the list. Run auth/Login first.
+}

@@ -30,6 +30,25 @@ games according to categories such as "Games I still want to play", "Games I'm c
 - **Backend:** Python/Litestar, in `backend/` as standalone REST API, SQLAlchemy 2.0 async + asyncpg against PostgreSQL.
 - **Deployment:** only the backend is hosted as a public, always-on service, at `blm.theocloud.dev` (Podman/Containerfile-based). The frontend is not centrally hosted the same way, it ships as a Tauri desktop app built from the Next.js codebase (static export) for the various platforms.
 
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full picture — why
+REST/JWT replaced tRPC/NextAuth, how the backend is layered, the image proxy's
+security posture, and how each external integration (IGDB, HowLongToBeat,
+Steam, SteamGridDB) falls back when unconfigured.
+
+## Testing
+
+- **Backend:** `task test` (`uv run pytest`) — a real suite that spins up
+  PostgreSQL via testcontainers rather than mocking the database.
+- **Frontend:** no automated test suite yet; changes are verified manually in
+  a browser.
+
+## API Testing
+
+A [Bruno](https://www.usebruno.com/) collection covering every backend route
+lives in [`bruno/`](bruno/). Open the folder as a collection in Bruno, select
+the `Local` environment, and run `auth/Login` first to populate the shared
+`authToken` variable used by the rest of the requests.
+
 ## Local Development
 
 Requires [go-task](https://taskfile.dev) and [Podman](https://podman.io/) with a
@@ -43,5 +62,13 @@ task dev       # Next.js dev server
 ```
 
 See `Taskfile.yml` (`task --list`) for the full command surface,
-`CLAUDE.md` for more detail on the project's structure and workflows,
-and [`docs/TAURI.md`](docs/TAURI.md) for the desktop app build.
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the system design, and
+[`docs/TAURI.md`](docs/TAURI.md) for the desktop app build.
+
+## Contributing
+
+[`CLAUDE.md`](CLAUDE.md) is the source of truth for this repo's conventions —
+directory layout, coding standards, the comment policy, and the exact
+issue → branch → PR workflow every change (including this project's own use
+of Claude Code) follows. Read its "Working with Claude Code" section before
+opening a PR.

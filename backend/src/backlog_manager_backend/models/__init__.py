@@ -1,11 +1,14 @@
+"""SQLAlchemy declarative models and the shared server-side timestamp default.
+
+TIMESTAMP_DEFAULT matches the DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP)
+on every "CreatedAt"/"UpdatedAt" column in postgres/backlogmanagerdb-init.sql.
+Declared as a server_default (not a Python-side default) so SQLAlchemy omits
+the column from INSERT when unset, letting Postgres apply it, instead of
+sending an explicit NULL."""
+
 from sqlalchemy import text
 from sqlalchemy.orm import DeclarativeBase
 
-# Matches the DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP) on every
-# "CreatedAt"/"UpdatedAt" column in postgres/backlogmanagerdb-init.sql.
-# Declared as a server_default (not a Python-side default) so SQLAlchemy
-# omits the column from INSERT when unset, letting Postgres apply it,
-# instead of sending an explicit NULL.
 TIMESTAMP_DEFAULT = text("DATE_TRUNC('minute', CURRENT_TIMESTAMP)")
 
 

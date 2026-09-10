@@ -1,0 +1,22 @@
+meta {
+  name: Delete Backlog Entry
+  type: http
+  seq: 13
+}
+
+delete {
+  url: {{backendUrl}}/api/backlog/entries/{{entryId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Permanently deletes a backlog entry (and its category associations).
+  Run auth/Login and "Create Backlog Entry" first so entryId is set.
+
+  404 if the entry doesn't exist or isn't owned by the caller.
+}

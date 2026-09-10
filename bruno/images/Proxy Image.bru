@@ -1,0 +1,28 @@
+meta {
+  name: Proxy Image
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{backendUrl}}/api/images/proxy?url=https%3A%2F%2Fimages.igdb.com%2Figdb%2Fimage%2Fupload%2Ft_cover_big%2Fco3ofx.jpg
+  body: none
+  auth: none
+}
+
+params:query {
+  url: https%3A%2F%2Fimages.igdb.com%2Figdb%2Fimage%2Fupload%2Ft_cover_big%2Fco3ofx.jpg
+}
+
+docs {
+  Proxies a game cover/screenshot image server-side, since some origins
+  block direct hotlinking. Public, unauthenticated. Only
+  images.igdb.com, howlongtobeat.com, media.steampowered.com,
+  steamcdn-a.akamaihd.net, and *.steamstatic.com/*.steamgriddb.com are
+  allowed (https only); anything else returns 400.
+
+  400 if the content-type isn't a supported raster image format or the
+  body exceeds 10MB, 404 if the upstream request fails or returns an
+  error status. Response is cached for 24h (Cache-Control: public,
+  max-age=86400, immutable).
+}

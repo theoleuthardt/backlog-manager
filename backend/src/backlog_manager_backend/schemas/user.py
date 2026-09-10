@@ -32,7 +32,13 @@ class CreateUserParams(msgspec.Struct):
 class UpdateUserParams(msgspec.Struct):
     """UNSET (default) means "field omitted, leave unchanged"; an
     explicit None (only possible for nullable columns, i.e. steam_id)
-    means "clear this field" - the two aren't interchangeable."""
+    means "clear this field" - the two aren't interchangeable.
+
+    totp_secret_encrypted and totp_enabled are set only by the 2FA
+    enroll/verify/disable service functions - never exposed on
+    UpdateOwnUserRequest/UpdateUserAdminRequest, or a client could flip
+    totp_enabled on over the generic profile-update endpoint without
+    ever proving possession of the secret."""
 
     user_id: int
     username: str | msgspec.UnsetType = msgspec.UNSET
@@ -45,10 +51,6 @@ class UpdateUserParams(msgspec.Struct):
     steam_auto_import_enabled: bool | msgspec.UnsetType = msgspec.UNSET
     steam_family_ids: str | None | msgspec.UnsetType = msgspec.UNSET
     is_admin: bool | msgspec.UnsetType = msgspec.UNSET
-    # Set only by the 2FA enroll/verify/disable service functions - never
-    # exposed on UpdateOwnUserRequest/UpdateUserAdminRequest, or a client
-    # could flip totp_enabled on over the generic profile-update endpoint
-    # without ever proving possession of the secret.
     totp_secret_encrypted: str | None | msgspec.UnsetType = msgspec.UNSET
     totp_enabled: bool | msgspec.UnsetType = msgspec.UNSET
 

@@ -36,13 +36,14 @@ _CATEGORY_NOT_FOUND = "Category not found"
 
 
 async def _get_owned_entry(session: AsyncSession, entry_id: int, user: User) -> BacklogEntry:
+    """Raises the same response as a real 404 when the entry belongs to
+    another user - existence of another user's resource isn't revealed
+    by a distinct 403."""
     try:
         entry = await backlog_entry_repo.get_backlog_entry_by_id(session, entry_id)
     except NotFoundError as error:
         raise NotFoundException(_ENTRY_NOT_FOUND) from error
     if entry.user_id != user.id:
-        # Same response as a real 404 - existence of another user's
-        # resource isn't revealed by a distinct 403.
         raise NotFoundException(_ENTRY_NOT_FOUND)
     return entry
 

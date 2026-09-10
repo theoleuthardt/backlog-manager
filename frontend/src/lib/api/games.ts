@@ -13,6 +13,12 @@ export interface GameSearchResult {
   completionist: number;
 }
 
+/**
+ * `steamAppId` on each result is always null here - IGDB has no Steam
+ * App ID mapping, so it's looked up separately (by title, against
+ * Steam's app catalogue) via getSteamAppId once a result is selected,
+ * see useSteamAppId.
+ */
 export async function enrichedSearch(
   searchTerm: string,
 ): Promise<GameSearchResult[]> {
@@ -25,9 +31,6 @@ export async function enrichedSearch(
     hltbId: result.hltb_id,
     title: result.title,
     imageUrl: result.image_url,
-    // IGDB has no Steam App ID mapping - looked up separately (by
-    // title, against Steam's app catalogue) via getSteamAppId once a
-    // result is selected, see useSteamAppId.
     steamAppId: null,
     genres: result.genres,
     platforms: result.platforms,

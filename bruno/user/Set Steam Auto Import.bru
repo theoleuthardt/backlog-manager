@@ -1,0 +1,27 @@
+meta {
+  name: Set Steam Auto Import
+  type: http
+  seq: 8
+}
+
+put {
+  url: {{backendUrl}}/api/user/me
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "steam_auto_import_enabled": true
+  }
+}
+
+docs {
+  Toggles whether Steam's "Sync Steam Playtimes" also imports newly
+  detected owned games as backlog entries (rather than only updating
+  playtime on games already tracked). Run auth/Login first.
+}

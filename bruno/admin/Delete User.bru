@@ -1,0 +1,25 @@
+meta {
+  name: Delete User
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{backendUrl}}/api/admin/users/{{adminUserId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Admin-only. DESTRUCTIVE AND IRREVERSIBLE - permanently deletes any
+  user by id and, via cascading foreign keys, all of their backlog
+  entries and categories. Run auth/Login with an is_admin=true account,
+  then "Create User", first so adminUserId points at a disposable test
+  account rather than a real one.
+
+  204 on success, 404 if no user has that id.
+}
