@@ -763,3 +763,114 @@ async def test_sync_steam_playtimes_stream_requires_authentication(postgres_url:
         response = client.post("/api/user/steam/sync/stream")
 
     assert response.status_code == 401
+
+async def test_preview_steam_wishlist_returns_items_without_writing(
+    postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.services import steam_service
+
+    _configure_steam_api_key(monkeypatch)
+
+    async def fake_preview_wishlist(db_session: object, user: object) -> list[object]:
+        from backlog_manager_backend.services.steam_service import SteamPreviewItem
+
+        return [
+            SteamPreviewItem(
+                steam_app_id=620,
+                title="Portal 2",
+                image_link="https://cdn.cloudflare.steamstatic.com/steam/apps/620/capsule_sm_120.jpg",
+            )
+        ]
+
+    monkeypatch.setattr(steam_service, "preview_wishlist", fake_preview_wishlist)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "wlpreview@example.com")
+        client.put("/api/user/me", headers=headers, json={"steam_id": "76561197960287930"})
+
+        response = client.get("/api/user/steam/wishlist/preview", headers=headers)
+        entries = client.get("/api/backlog/entries", headers=headers).json()
+
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body) == 1
+    assert body[0]["steam_app_id"] == 620
+    assert body[0]["title"] == "Portal 2"
+    assert entries == []
+
+async def test_preview_steam_wishlist_requires_linked_account(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "wlpreview404@example.com")
+        response = client.get("/api/user/steam/wishlist/preview", headers=headers)
+
+    assert response.status_code == 400
+
+async def test_preview_steam_wishlist_requires_authentication(postgres_url: str) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        response = client.get("/api/user/steam/wishlist/preview")
+
+    assert response.status_code == 401
+
+async def test_import_steam_wishlist_stream_creates_not_owned_entries(
+    postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    _configure_steam_api_key(monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "wlimport@example.com")
+        client.put("/api/user/me", headers=headers, json={"steam_id": "76561197960287930"})
+
+        response = client.post(
+            "/api/user/steam/wishlist/import/stream",
+            headers=headers,
+            json=[{"appid": 620, "priority": 0, "date_added": 1600000000}],
+        )
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/event-stream")
+    messages = _parse_sse(response.text)
+
+    assert [json.loads(data) for event, data in messages if event == "progress"] == [
+        {"processed": 1, "total": 1}
+    ]
+
+    done_events = [json.loads(data) for event, data in messages if event == "done"]
+    assert len(done_events) == 1
+    assert done_events[0][0]["title"].startswith("Steam App 620")
+    assert done_events[0][0]["status"] == "Not Owned"
+
+async def test_import_steam_wishlist_stream_requires_authentication(postgres_url: str) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        response = client.post(
+            "/api/user/steam/wishlist/import/stream", json=[{"appid": 620}]
+        )
+
+    assert response.status_code == 401
+
+async def test_import_steam_wishlist_stream_sends_error_when_not_linked(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "wlimport400@example.com")
+        response = client.post(
+            "/api/user/steam/wishlist/import/stream",
+            headers=headers,
+            json=[{"appid": 620}],
+        )
+
+    assert response.status_code == 200
+    messages = _parse_sse(response.text)
+    assert messages == [("error", "Steam account is not linked")]

@@ -17,7 +17,7 @@ from backlog_manager_backend.auth.encryption import decrypt
 from backlog_manager_backend.config import settings
 from backlog_manager_backend.db import async_session
 from backlog_manager_backend.errors import ValidationError
-from backlog_manager_backend.integrations.types import AchievementProgress
+from backlog_manager_backend.integrations.types import AchievementProgress, SteamWishlistItem
 from backlog_manager_backend.schemas.backlog_entry import BacklogEntry, BacklogEntryResponse
 from backlog_manager_backend.schemas.user import User
 from backlog_manager_backend.services import steam_service
@@ -241,6 +241,48 @@ async def get_steam_achievements(
         raise ServiceUnavailableException(_STEAM_UNAVAILABLE) from error
 
 
+@get("/api/user/steam/wishlist/preview")
+async def preview_steam_wishlist(
+    db_session: NamedDependency[AsyncSession],
+    current_user: NamedDependency[User],
+) -> list[steam_service.SteamPreviewItem]:
+    try:
+        return await steam_service.preview_wishlist(db_session, current_user)
+    except ValidationError as error:
+        raise ClientException(str(error)) from error
+    except httpx.HTTPError as error:
+        raise ServiceUnavailableException(_STEAM_UNAVAILABLE) from error
+
+
+@post(
+    "/api/user/steam/wishlist/import/stream",
+    status_code=200,
+    media_type="text/event-stream",
+)
+async def import_steam_wishlist_stream(
+    data: list[SteamWishlistItem],
+    current_user: NamedDependency[User],
+) -> ServerSentEvent:
+    """SSE variant of a wishlist import - see sync_steam_playtimes_stream's
+    docstring. Unlike the library import, the item list is POSTed by the
+    client from the preview the user confirmed rather than re-fetched from
+    Steam, so the import always matches what was previewed."""
+    items = data
+    steamgriddb_api_key = _resolve_steamgriddb_api_key(current_user)
+
+    async def run(on_progress: steam_service.ProgressCallback) -> list[BacklogEntry]:
+        async with async_session() as db_session:
+            return await steam_service.import_wishlist(
+                db_session,
+                current_user,
+                items,
+                steamgriddb_api_key=steamgriddb_api_key,
+                on_progress=on_progress,
+            )
+
+    return ServerSentEvent(_stream_steam_operation(run))
+
+
 steam_router = Router(
     path="",
     route_handlers=[
@@ -249,6 +291,8 @@ steam_router = Router(
         sync_steam_playtimes_stream,
         import_steam_library_stream,
         get_steam_achievements,
+        preview_steam_wishlist,
+        import_steam_wishlist_stream,
     ],
     dependencies={"current_user": Provide(get_current_user)},
     security=BEARER_SECURITY_REQUIREMENT,

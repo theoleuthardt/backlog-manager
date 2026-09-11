@@ -2527,6 +2527,124 @@
         ]
       }
     },
+    "/api/user/steam/wishlist/preview": {
+      "get": {
+        "summary": "PreviewSteamWishlist",
+        "operationId": "ApiUserSteamWishlistPreviewPreviewSteamWishlist",
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {
+              "cache-control": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SteamPreviewItem"
+                  },
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/user/steam/wishlist/import/stream": {
+      "post": {
+        "summary": "ImportSteamWishlistStream",
+        "operationId": "ApiUserSteamWishlistImportStreamImportSteamWishlistStream",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "$ref": "#/components/schemas/SteamWishlistItem"
+                },
+                "type": "array"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {
+              "cache-control": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            },
+            "content": {
+              "text/event-stream": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request syntax or unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Validation Exception",
+                  "examples": [
+                    {
+                      "status_code": 400,
+                      "detail": "Bad Request",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/csv/parse": {
       "post": {
         "summary": "ParseCsv",
@@ -5769,6 +5887,52 @@
           "title"
         ],
         "title": "RecordError"
+      },
+      "SteamPreviewItem": {
+        "properties": {
+          "steam_app_id": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "image_link": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "steam_app_id",
+          "title"
+        ],
+        "title": "SteamPreviewItem"
+      },
+      "SteamWishlistItem": {
+        "properties": {
+          "appid": {
+            "type": "integer"
+          },
+          "priority": {
+            "type": "integer",
+            "default": 0
+          },
+          "date_added": {
+            "type": "integer",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "appid"
+        ],
+        "title": "SteamWishlistItem"
       },
       "TokenResponse": {
         "properties": {

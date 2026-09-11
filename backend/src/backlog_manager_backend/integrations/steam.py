@@ -9,8 +9,10 @@ from backlog_manager_backend.integrations.types import (
     SteamGetOwnedGamesEnvelope,
     SteamGetPlayerAchievementsEnvelope,
     SteamGetSchemaForGameEnvelope,
+    SteamGetWishlistEnvelope,
     SteamOwnedGame,
     SteamPlayerStats,
+    SteamWishlistItem,
 )
 
 logger = structlog.get_logger()
@@ -19,6 +21,7 @@ _BASE_URL = "https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/"
 _APP_LIST_URL = "https://api.steampowered.com/ISteamApps/GetAppList/v2/"
 _PLAYER_ACHIEVEMENTS_URL = "https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/"
 _SCHEMA_FOR_GAME_URL = "https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/"
+_WISHLIST_URL = "https://api.steampowered.com/IWishlistService/GetWishlist/v1/"
 
 
 async def get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
@@ -159,3 +162,33 @@ async def get_achievement_schema(app_id: int, api_key: str) -> list[SteamAchieve
 
     available_game_stats = envelope.game.available_game_stats
     return available_game_stats.achievements if available_game_stats else []
+
+
+async def get_wishlist(steam_id: str) -> list[SteamWishlistItem]:
+    """Fetches a Steam profile's wishlist via the undocumented
+    IWishlistService/GetWishlist endpoint - it needs no API key but
+    only ever returns data for profiles whose wishlist is public;
+    private profiles yield an empty response (items omitted), like
+    GetOwnedGames. Raises on transport/HTTP/decode failure like
+    get_owned_games."""
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
+            response = await client.get(_WISHLIST_URL, params={"steamid": steam_id})
+    except httpx.HTTPError as error:
+        logger.error("GetWishlist error", error=str(error))
+        raise
+
+    if response.status_code >= 400:
+        raise httpx.HTTPStatusError(
+            f"Steam Web API error: {response.status_code}",
+            request=response.request,
+            response=response,
+        )
+
+    try:
+        envelope = msgspec.json.decode(response.content, type=SteamGetWishlistEnvelope)
+    except msgspec.DecodeError as error:
+        logger.error("GetWishlist decode error", error=str(error))
+        raise httpx.DecodingError("Steam Web API returned an invalid response") from error
+
+    return envelope.response.items

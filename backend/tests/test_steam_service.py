@@ -12,6 +12,7 @@ from backlog_manager_backend.integrations.types import (
     SteamAchievementSchema,
     SteamOwnedGame,
     SteamPlayerStats,
+    SteamWishlistItem,
 )
 from backlog_manager_backend.repositories import backlog_entry_repo, user_repo
 from backlog_manager_backend.schemas.backlog_entry import CreateBacklogEntryParams
@@ -704,3 +705,74 @@ async def test_get_achievement_progress_caches_schema_across_calls(
     await steam_service.get_achievement_progress(user, "api-key", 504230)
 
     assert call_count == 1
+
+async def test_preview_wishlist_lists_unlinked_games_with_titles_and_covers(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    await _make_entry(session, user.id, steam_app_id=504230)
+
+    async def fake_get_wishlist(steam_id: str) -> list[SteamWishlistItem]:
+        assert steam_id == user.steam_id
+        return [
+            SteamWishlistItem(appid=620, priority=0, date_added=1600000000),
+            SteamWishlistItem(appid=504230, priority=1, date_added=1600000100),
+        ]
+
+    async def fake_get_steam_app_name(app_id: int) -> str | None:
+        return {620: "Portal 2", 504230: "Celeste"}.get(app_id)
+
+    monkeypatch.setattr(steam_service, "get_wishlist", fake_get_wishlist)
+    monkeypatch.setattr(steam_service, "_get_steam_app_name", fake_get_steam_app_name)
+
+    preview = await steam_service.preview_wishlist(session, user)
+
+    assert len(preview) == 1
+    assert preview[0].steam_app_id == 620
+    assert preview[0].title == "Portal 2"
+    assert preview[0].image_link == "https://cdn.cloudflare.steamstatic.com/steam/apps/620/capsule_sm_120.jpg"
+
+async def test_preview_wishlist_raises_when_steam_not_linked(session: AsyncSession) -> None:
+    user = await _make_user(session, steam_id=None)
+
+    with pytest.raises(ValidationError):
+        await steam_service.preview_wishlist(session, user)
+
+async def test_import_wishlist_creates_entries_as_not_owned(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    await _make_entry(session, user.id, steam_app_id=504230)
+
+    async def fake_get_wishlist(steam_id: str) -> list[SteamWishlistItem]:
+        assert steam_id == user.steam_id
+        return [
+            SteamWishlistItem(appid=620, priority=0, date_added=1600000000),
+            SteamWishlistItem(appid=504230, priority=1, date_added=1600000100),
+        ]
+
+    async def fake_get_steam_app_name(app_id: int) -> str | None:
+        return {620: "Portal 2"}.get(app_id)
+
+    async def fake_get_wishlist_cover(app_id: int, key: str | None) -> str | None:
+        return None
+
+    monkeypatch.setattr(steam_service, "get_wishlist", fake_get_wishlist)
+    monkeypatch.setattr(steam_service, "_get_steam_app_name", fake_get_steam_app_name)
+    monkeypatch.setattr(steam_service, "_try_get_cover", fake_get_wishlist_cover)
+
+    created = await steam_service.import_wishlist(
+        session, user, [SteamWishlistItem(appid=620, priority=0, date_added=1600000000)]
+    )
+
+    assert len(created) == 1
+    assert created[0].title == "Portal 2"
+    assert created[0].status == "Not Owned"
+    assert created[0].owned is False
+    assert created[0].steam_app_id == 620
+
+async def test_import_wishlist_requires_linked_account(session: AsyncSession) -> None:
+    user = await _make_user(session, steam_id=None)
+
+    with pytest.raises(ValidationError):
+        await steam_service.import_wishlist(session, user, [])

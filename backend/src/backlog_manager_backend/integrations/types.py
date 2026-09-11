@@ -261,6 +261,23 @@ class SteamGetSchemaForGameEnvelope(msgspec.Struct):
     game: SteamGameSchema
 
 
+class SteamWishlistItem(msgspec.Struct):
+    appid: int
+    priority: int = 0
+    date_added: int = 0
+
+
+class SteamWishlistResult(msgspec.Struct):
+    """items is omitted entirely when the profile or wishlist is
+    private, hence the default empty list like SteamOwnedGamesResult."""
+
+    items: list[SteamWishlistItem] = []
+
+
+class SteamGetWishlistEnvelope(msgspec.Struct):
+    response: SteamWishlistResult
+
+
 class AchievementInfo(msgspec.Struct):
     apiname: str
     display_name: str
@@ -326,6 +343,7 @@ class CheapSharkStore(msgspec.Struct):
     storeID: str
     storeName: str
     images: CheapSharkStoreImages
+
     isActive: int = 0
 
 
@@ -344,3 +362,4 @@ class KeyShopOffer(msgspec.Struct):
     url: str
     fetched_at: datetime
     discount_pct: int | None = None
+
