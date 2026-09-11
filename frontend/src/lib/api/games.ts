@@ -52,13 +52,54 @@ export async function getSteamAppId(title: string): Promise<number | null> {
 export async function getSteamGridDbCovers(
   steamAppId: number,
 ): Promise<string[]> {
-  const { data, error } = await apiClient.GET(
-    "/api/games/steamgriddb-covers",
-    {
-      params: { query: { steam_app_id: steamAppId } },
-    },
-  );
+  const { data, error } = await apiClient.GET("/api/games/steamgriddb-covers", {
+    params: { query: { steam_app_id: steamAppId } },
+  });
   if (error)
     throw new Error(apiErrorMessage(error, "Failed to load cover options"));
   return data;
+}
+
+export interface GamePriceDeal {
+  store: string;
+  iconUrl: string;
+  price: number;
+  retailPrice: number;
+  url: string;
+}
+
+export interface GamePriceInfo {
+  steamAppId: number;
+  deals: GamePriceDeal[];
+  onSale: boolean;
+  checkedAt: string;
+  cheapestPriceEver: number | null;
+  cheapestPriceEverDate: string | null;
+}
+
+export async function getGamePrice(steamAppId: number): Promise<GamePriceInfo> {
+  const { data, error } = await apiClient.GET(
+    "/api/games/{steam_app_id}/price",
+    {
+      params: { path: { steam_app_id: steamAppId } },
+    },
+  );
+  if (error)
+    throw new Error(apiErrorMessage(error, "Failed to load price info"));
+  return {
+    steamAppId: data.steam_app_id,
+    deals: data.deals.map((deal) => ({
+      store: String(deal.store),
+      iconUrl: String(deal.icon),
+      price: Number(deal.price),
+      retailPrice: Number(deal.retail_price),
+      url: String(deal.url),
+    })),
+    onSale: data.on_sale,
+    checkedAt: data.checked_at,
+    cheapestPriceEver: data.cheapest_price_ever
+      ? Number(data.cheapest_price_ever)
+      : null,
+    cheapestPriceEverDate: data.cheapest_price_ever_date ?? null,
+  };
 }

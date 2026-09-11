@@ -16,6 +16,7 @@ from backlog_manager_backend.routes.games import (
 )
 from backlog_manager_backend.routes.health import health
 from backlog_manager_backend.routes.images import proxy_image
+from backlog_manager_backend.routes.prices import price_check_router
 from backlog_manager_backend.routes.steam import steam_router
 from backlog_manager_backend.routes.user import admin_user_router, user_router
 
@@ -48,6 +49,7 @@ def create_app() -> Litestar:
             csv_router,
             authenticated_games_router,
             get_steam_app_id,
+            price_check_router,
         ],
         dependencies={"db_session": Provide(provide_db_session)},
         on_startup=[bootstrap_initial_admin],
@@ -62,7 +64,10 @@ def create_app() -> Litestar:
             version="1.0.0",
             components=Components(
                 security_schemes={
-                    "BearerAuth": SecurityScheme(type="http", scheme="bearer", bearer_format="JWT")
+                    "BearerAuth": SecurityScheme(type="http", scheme="bearer", bearer_format="JWT"),
+                    "CronSecret": SecurityScheme(
+                        type="apiKey", name="X-Cron-Secret", security_scheme_in="header"
+                    ),
                 }
             ),
         ),

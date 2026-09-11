@@ -1,0 +1,29 @@
+meta {
+  name: Check Prices
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{backendUrl}}/api/prices/check
+  body: none
+  auth: none
+}
+
+headers {
+  X-Cron-Secret: your-price-check-cron-secret
+}
+
+docs {
+  Triggers the price-check sweep: refreshes every tracked (not-yet-owned)
+  Steam App ID's price from CheapShark and posts a Discord alert (per
+  user, to their own webhook or the server-wide DISCORD_WEBHOOK_URL
+  fallback) for anything newly on sale. Not gated by the shared
+  authToken - unlike every other request in this collection, it's meant
+  to be called on a schedule rather than by a logged-in user (see
+  compose.yml's price-check-cron service, which does exactly this every
+  6 hours), so it needs the X-Cron-Secret header above (matching the
+  backend's PRICE_CHECK_CRON_SECRET) filled in manually instead. Returns
+  {"alerts_sent": <count>}; 401 if the header is missing/wrong or the
+  backend has no PRICE_CHECK_CRON_SECRET configured.
+}

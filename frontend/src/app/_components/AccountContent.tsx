@@ -69,6 +69,10 @@ export function AccountContent() {
   const [isSavingSteamgriddbApiKey, setIsSavingSteamgriddbApiKey] =
     useState(false);
 
+  const [discordWebhookUrl, setDiscordWebhookUrl] = useState("");
+  const [isSavingDiscordWebhookUrl, setIsSavingDiscordWebhookUrl] =
+    useState(false);
+
   const enrollMutation = useEnrollTwoFactor();
   const verifyMutation = useVerifyTwoFactorEnrollment();
   const disableMutation = useDisableTwoFactor();
@@ -223,6 +227,41 @@ export function AccountContent() {
       );
     } finally {
       setIsSavingSteamgriddbApiKey(false);
+    }
+  };
+
+  const handleSaveDiscordWebhookUrl = async () => {
+    setIsSavingDiscordWebhookUrl(true);
+    try {
+      await updateCurrentUser({ discordWebhookUrl });
+      await refreshUser();
+      setDiscordWebhookUrl("");
+      toast.success("Discord webhook URL saved");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to save Discord webhook URL",
+      );
+    } finally {
+      setIsSavingDiscordWebhookUrl(false);
+    }
+  };
+
+  const handleRemoveDiscordWebhookUrl = async () => {
+    setIsSavingDiscordWebhookUrl(true);
+    try {
+      await updateCurrentUser({ discordWebhookUrl: "" });
+      await refreshUser();
+      toast.success("Discord webhook URL removed");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to remove Discord webhook URL",
+      );
+    } finally {
+      setIsSavingDiscordWebhookUrl(false);
     }
   };
 
@@ -597,6 +636,51 @@ export function AccountContent() {
               className={OUTLINE_BUTTON}
               onClick={() => void handleRemoveSteamgriddbApiKey()}
               disabled={isSavingSteamgriddbApiKey}
+            >
+              Remove
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-lg border-2 border-white bg-black p-6">
+        <h2 className="mb-2 text-xl font-semibold">Discord Price Alerts</h2>
+        <p className="mb-4 text-sm text-gray-300">
+          Sends a Discord message to this webhook when a game in your backlog
+          you don&apos;t own yet goes on sale.
+        </p>
+        <p className="mb-2 text-sm text-gray-300">
+          {user.hasDiscordWebhookUrl
+            ? "Your own Discord webhook is set and used for price alerts."
+            : "Optionally set your own Discord webhook. Falls back to the server's webhook otherwise."}
+        </p>
+        <div className="flex max-w-sm gap-2">
+          <Input
+            type="password"
+            value={discordWebhookUrl}
+            onChange={(e) => setDiscordWebhookUrl(e.target.value)}
+            placeholder={
+              user.hasDiscordWebhookUrl
+                ? "Enter a new webhook URL to replace it"
+                : "Discord webhook URL"
+            }
+            className="border-white/40 bg-black text-white placeholder:text-gray-500"
+          />
+          <Button
+            className={FILLED_BUTTON}
+            onClick={() => void handleSaveDiscordWebhookUrl()}
+            disabled={
+              isSavingDiscordWebhookUrl || discordWebhookUrl.trim().length === 0
+            }
+          >
+            {isSavingDiscordWebhookUrl ? "Saving..." : "Save"}
+          </Button>
+          {user.hasDiscordWebhookUrl && (
+            <Button
+              variant="outline"
+              className={OUTLINE_BUTTON}
+              onClick={() => void handleRemoveDiscordWebhookUrl()}
+              disabled={isSavingDiscordWebhookUrl}
             >
               Remove
             </Button>

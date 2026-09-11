@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   enrichedSearch,
+  getGamePrice,
   getSteamAppId,
   getSteamGridDbCovers,
 } from "~/lib/api/games";
@@ -29,10 +30,25 @@ export function useSteamAppId(title: string) {
   });
 }
 
-export function useSteamGridDbCovers(steamAppId: number | undefined, enabled: boolean) {
+export function useSteamGridDbCovers(
+  steamAppId: number | undefined,
+  enabled: boolean,
+) {
   return useQuery({
     queryKey: ["steamgriddb-covers", steamAppId],
     queryFn: () => getSteamGridDbCovers(steamAppId!),
+    enabled: enabled && steamAppId !== undefined,
+    refetchOnWindowFocus: false,
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60,
+    retry: 1,
+  });
+}
+
+export function useGamePrice(steamAppId: number | undefined, enabled = true) {
+  return useQuery({
+    queryKey: ["game-price", steamAppId],
+    queryFn: () => getGamePrice(steamAppId!),
     enabled: enabled && steamAppId !== undefined,
     refetchOnWindowFocus: false,
     staleTime: 1000 * 60 * 60,

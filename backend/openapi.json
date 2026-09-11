@@ -3020,6 +3020,80 @@
         ]
       }
     },
+    "/api/games/{steam_app_id}/price": {
+      "get": {
+        "summary": "GetGamePrice",
+        "operationId": "ApiGamesSteamAppIdPriceGetGamePrice",
+        "parameters": [
+          {
+            "name": "steam_app_id",
+            "in": "path",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true,
+            "deprecated": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GamePrice"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request syntax or unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Validation Exception",
+                  "examples": [
+                    {
+                      "status_code": 400,
+                      "detail": "Bad Request",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/games/steam-app-id": {
       "get": {
         "summary": "GetSteamAppId",
@@ -3096,6 +3170,128 @@
           }
         },
         "deprecated": false
+      }
+    },
+    "/api/prices/check": {
+      "post": {
+        "summary": "CheckPrices",
+        "operationId": "ApiPricesCheckCheckPrices",
+        "parameters": [
+          {
+            "name": "X-Cron-Secret",
+            "in": "header",
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required": false,
+            "deprecated": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "integer"
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No permission -- see authorization schemes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Authorized Exception",
+                  "examples": [
+                    {
+                      "status_code": 401,
+                      "detail": "Unauthorized",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request syntax or unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Validation Exception",
+                  "examples": [
+                    {
+                      "status_code": 400,
+                      "detail": "Bad Request",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "CronSecret": []
+          }
+        ]
       }
     }
   },
@@ -3642,6 +3838,93 @@
           "title"
         ],
         "title": "EnrichedResult"
+      },
+      "GamePrice": {
+        "properties": {
+          "steam_app_id": {
+            "type": "integer"
+          },
+          "deals": {
+            "items": {
+              "$ref": "#/components/schemas/GamePriceDeal"
+            },
+            "type": "array"
+          },
+          "on_sale": {
+            "type": "boolean"
+          },
+          "checked_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "cheapshark_game_id": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cheapest_price_ever": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cheapest_price_ever_date": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "checked_at",
+          "deals",
+          "on_sale",
+          "steam_app_id"
+        ],
+        "title": "GamePrice"
+      },
+      "GamePriceDeal": {
+        "properties": {
+          "store": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "retail_price": {
+            "type": "number"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "required": [
+          "icon",
+          "price",
+          "retail_price",
+          "store",
+          "url"
+        ],
+        "title": "GamePriceDeal"
       },
       "IGDBCover": {
         "properties": {
@@ -4873,6 +5156,10 @@
             "type": "boolean",
             "default": false
           },
+          "has_discord_webhook_url": {
+            "type": "boolean",
+            "default": false
+          },
           "steam_auto_import_enabled": {
             "type": "boolean",
             "default": false
@@ -5279,6 +5566,16 @@
               }
             ]
           },
+          "discord_webhook_url": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "steam_auto_import_enabled": {
             "oneOf": [
               {
@@ -5374,6 +5671,16 @@
               }
             ]
           },
+          "discord_webhook_url": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "steam_auto_import_enabled": {
             "oneOf": [
               {
@@ -5409,6 +5716,11 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT"
+      },
+      "CronSecret": {
+        "type": "apiKey",
+        "name": "X-Cron-Secret",
+        "in": "header"
       }
     }
   }

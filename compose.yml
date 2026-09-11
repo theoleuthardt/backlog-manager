@@ -54,6 +54,21 @@ services:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     restart: unless-stopped
 
+  price-check-cron:
+    image: curlimages/curl:latest
+    env_file: .env
+    entrypoint:
+      - sh
+      - -c
+      - |
+        while true; do
+        curl --fail --connect-timeout 10 --max-time 300 --retry 5 --retry-delay 5 --retry-connrefused -X POST http://backend:8000/api/prices/check -H "X-Cron-Secret: ${PRICE_CHECK_CRON_SECRET}" || true
+        sleep 21600
+        done
+    restart: unless-stopped
+    depends_on:
+      - backend
+
   db-monitoring:
     image: dpage/pgadmin4
     environment:

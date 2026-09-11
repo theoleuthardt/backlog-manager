@@ -17,6 +17,7 @@ class User(msgspec.Struct):
     steam_api_key_encrypted: str | None = None
     igdb_credentials_encrypted: str | None = None
     steamgriddb_api_key_encrypted: str | None = None
+    discord_webhook_url_encrypted: str | None = None
     steam_auto_import_enabled: bool = False
     steam_family_ids: str | None = None
 
@@ -48,6 +49,7 @@ class UpdateUserParams(msgspec.Struct):
     steam_api_key_encrypted: str | None | msgspec.UnsetType = msgspec.UNSET
     igdb_credentials_encrypted: str | None | msgspec.UnsetType = msgspec.UNSET
     steamgriddb_api_key_encrypted: str | None | msgspec.UnsetType = msgspec.UNSET
+    discord_webhook_url_encrypted: str | None | msgspec.UnsetType = msgspec.UNSET
     steam_auto_import_enabled: bool | msgspec.UnsetType = msgspec.UNSET
     steam_family_ids: str | None | msgspec.UnsetType = msgspec.UNSET
     is_admin: bool | msgspec.UnsetType = msgspec.UNSET
@@ -69,6 +71,7 @@ class PublicUser(msgspec.Struct):
     has_steam_api_key: bool = False
     has_igdb_credentials: bool = False
     has_steamgriddb_api_key: bool = False
+    has_discord_webhook_url: bool = False
     steam_auto_import_enabled: bool = False
     steam_family_ids: str | None = None
 
@@ -86,6 +89,7 @@ class PublicUser(msgspec.Struct):
             has_steam_api_key=bool(user.steam_api_key_encrypted),
             has_igdb_credentials=bool(user.igdb_credentials_encrypted),
             has_steamgriddb_api_key=bool(user.steamgriddb_api_key_encrypted),
+            has_discord_webhook_url=bool(user.discord_webhook_url_encrypted),
             steam_auto_import_enabled=user.steam_auto_import_enabled,
             steam_family_ids=user.steam_family_ids,
         )
@@ -121,6 +125,7 @@ class UpdateOwnUserRequest(msgspec.Struct):
     igdb_client_id: str | None | msgspec.UnsetType = msgspec.UNSET
     igdb_client_secret: str | None | msgspec.UnsetType = msgspec.UNSET
     steamgriddb_api_key: str | None | msgspec.UnsetType = msgspec.UNSET
+    discord_webhook_url: str | None | msgspec.UnsetType = msgspec.UNSET
     steam_auto_import_enabled: bool | msgspec.UnsetType = msgspec.UNSET
     steam_family_ids: str | None | msgspec.UnsetType = msgspec.UNSET
 
@@ -137,6 +142,7 @@ class UpdateUserAdminRequest(msgspec.Struct):
     igdb_client_id: str | None | msgspec.UnsetType = msgspec.UNSET
     igdb_client_secret: str | None | msgspec.UnsetType = msgspec.UNSET
     steamgriddb_api_key: str | None | msgspec.UnsetType = msgspec.UNSET
+    discord_webhook_url: str | None | msgspec.UnsetType = msgspec.UNSET
     steam_auto_import_enabled: bool | msgspec.UnsetType = msgspec.UNSET
     steam_family_ids: str | None | msgspec.UnsetType = msgspec.UNSET
     is_admin: bool | msgspec.UnsetType = msgspec.UNSET

@@ -273,3 +273,55 @@ class AchievementProgress(msgspec.Struct):
     unlocked: int
     total: int
     achievements: list[AchievementInfo]
+
+
+class CheapSharkGameLookup(msgspec.Struct):
+    """One entry from GET /games?steamAppID= - gameID is CheapShark's own
+    numeric ID, sent as a string like every price/id field in this API."""
+
+    gameID: str
+    steamAppID: str
+
+
+class CheapSharkDeal(msgspec.Struct):
+    """dealID (already URL-encoded by CheapShark) identifies this exact
+    deal at https://www.cheapshark.com/redirect?dealID= - CheapShark's
+    own click-through link to the store, used to let a user buy
+    directly from the price dialog."""
+
+    storeID: str
+    dealID: str
+    price: str
+    retailPrice: str
+    savings: str
+
+
+class CheapSharkPriceEver(msgspec.Struct):
+    price: str
+    date: int = 0
+
+
+class CheapSharkGameInfo(msgspec.Struct):
+    title: str
+    steamAppID: str | None = None
+
+
+class CheapSharkGameDetail(msgspec.Struct):
+    info: CheapSharkGameInfo
+    cheapestPriceEver: CheapSharkPriceEver
+    deals: list[CheapSharkDeal] = []
+
+
+class CheapSharkStoreImages(msgspec.Struct):
+    """Paths (not full URLs) relative to https://www.cheapshark.com."""
+
+    icon: str
+    logo: str
+    banner: str
+
+
+class CheapSharkStore(msgspec.Struct):
+    storeID: str
+    storeName: str
+    images: CheapSharkStoreImages
+    isActive: int = 0

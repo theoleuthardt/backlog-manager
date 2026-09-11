@@ -114,6 +114,26 @@ async def test_proxy_image_streams_steam_achievement_icon_from_akamaihd(
     assert response.content == b"achievement-icon"
 
 
+async def test_proxy_image_streams_cheapshark_store_icon(
+    monkeypatch: pytest.MonkeyPatch, postgres_url: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    icon_url = "https://www.cheapshark.com/img/stores/icons/0.png"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert str(request.url) == icon_url
+        return httpx.Response(200, content=b"store-icon", headers={"content-type": "image/png"})
+
+    _mock_client(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get("/api/images/proxy", params={"url": icon_url})
+
+    assert response.status_code == 200
+    assert response.content == b"store-icon"
+
+
 async def test_proxy_image_rejects_other_akamaihd_hosts(
     monkeypatch: pytest.MonkeyPatch, postgres_url: str
 ) -> None:

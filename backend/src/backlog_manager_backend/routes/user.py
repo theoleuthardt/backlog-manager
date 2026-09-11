@@ -31,6 +31,7 @@ from backlog_manager_backend.auth.encryption import encrypt
 from backlog_manager_backend.auth.passwords import hash_password
 from backlog_manager_backend.config import settings
 from backlog_manager_backend.errors import ConflictError, NotFoundError, ValidationError
+from backlog_manager_backend.integrations.discord import is_valid_discord_webhook_url
 from backlog_manager_backend.integrations.types import IGDBCredentials
 from backlog_manager_backend.repositories import user_repo
 from backlog_manager_backend.schemas.user import (
@@ -76,6 +77,33 @@ def _encrypt_api_key_if_present(
 
 _STEAM_API_KEY_NOT_CONFIGURED = "Steam API key storage is not configured"
 _STEAMGRIDDB_API_KEY_NOT_CONFIGURED = "SteamGridDB API key storage is not configured"
+_DISCORD_WEBHOOK_URL_NOT_CONFIGURED = "Discord webhook URL storage is not configured"
+_DISCORD_WEBHOOK_URL_INVALID = (
+    "Discord webhook URL must be a valid https://discord.com/api/webhooks/... URL"
+)
+
+
+def _encrypt_discord_webhook_url_if_present(
+    webhook_url: str | None | object,
+) -> str | None | object:
+    """Same encrypt-on-write shape as _encrypt_api_key_if_present, but
+    rejects anything that isn't a real Discord webhook URL before it's
+    ever encrypted - an unvalidated value here would let the
+    price-check sweep be pointed at an arbitrary internal or
+    attacker-controlled address once resolved and sent to."""
+    if not isinstance(webhook_url, str):
+        return webhook_url
+    trimmed = webhook_url.strip()
+    if not trimmed:
+        return None
+    if not is_valid_discord_webhook_url(trimmed):
+        raise ClientException(_DISCORD_WEBHOOK_URL_INVALID)
+    if not settings.steam_api_key_encryption_key:
+        raise ServiceUnavailableException(_DISCORD_WEBHOOK_URL_NOT_CONFIGURED)
+    try:
+        return encrypt(trimmed, settings.steam_api_key_encryption_key)
+    except ValueError as error:
+        raise ServiceUnavailableException(_DISCORD_WEBHOOK_URL_NOT_CONFIGURED) from error
 
 
 _IGDB_CREDENTIALS_NOT_CONFIGURED = "IGDB credential storage is not configured"
@@ -148,6 +176,9 @@ async def update_own_user(
                 steamgriddb_api_key_encrypted=_encrypt_api_key_if_present(
                     data.steamgriddb_api_key,
                     not_configured_message=_STEAMGRIDDB_API_KEY_NOT_CONFIGURED,
+                ),
+                discord_webhook_url_encrypted=_encrypt_discord_webhook_url_if_present(
+                    data.discord_webhook_url
                 ),
                 steam_auto_import_enabled=data.steam_auto_import_enabled,
                 steam_family_ids=data.steam_family_ids,
@@ -246,6 +277,9 @@ async def update_user_admin(
                 steamgriddb_api_key_encrypted=_encrypt_api_key_if_present(
                     data.steamgriddb_api_key,
                     not_configured_message=_STEAMGRIDDB_API_KEY_NOT_CONFIGURED,
+                ),
+                discord_webhook_url_encrypted=_encrypt_discord_webhook_url_if_present(
+                    data.discord_webhook_url
                 ),
                 steam_auto_import_enabled=data.steam_auto_import_enabled,
                 steam_family_ids=data.steam_family_ids,

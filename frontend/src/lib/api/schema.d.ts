@@ -610,6 +610,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/games/{steam_app_id}/price": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GetGamePrice */
+        get: operations["ApiGamesSteamAppIdPriceGetGamePrice"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/games/steam-app-id": {
         parameters: {
             query?: never;
@@ -621,6 +638,23 @@ export interface paths {
         get: operations["ApiGamesSteamAppIdGetSteamAppId"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/prices/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** CheckPrices */
+        post: operations["ApiPricesCheckCheckPrices"];
         delete?: never;
         options?: never;
         head?: never;
@@ -729,6 +763,25 @@ export interface components {
             main_story_with_extras: number;
             completionist: number;
             steam_app_id?: null;
+        };
+        /** GamePrice */
+        GamePrice: {
+            steam_app_id: number;
+            deals: components["schemas"]["GamePriceDeal"][];
+            on_sale: boolean;
+            /** Format: date-time */
+            checked_at: string;
+            cheapshark_game_id?: number | null;
+            cheapest_price_ever?: string | null;
+            cheapest_price_ever_date?: string | null;
+        };
+        /** GamePriceDeal */
+        GamePriceDeal: {
+            store: string;
+            icon: string;
+            price: number;
+            retail_price: number;
+            url: string;
         };
         /** IGDBCover */
         IGDBCover: {
@@ -905,6 +958,8 @@ export interface components {
             /** @default false */
             has_steamgriddb_api_key?: boolean;
             /** @default false */
+            has_discord_webhook_url?: boolean;
+            /** @default false */
             steam_auto_import_enabled?: boolean;
             steam_family_ids?: string | null;
         };
@@ -981,6 +1036,7 @@ export interface components {
             igdb_client_id?: string | null;
             igdb_client_secret?: string | null;
             steamgriddb_api_key?: string | null;
+            discord_webhook_url?: string | null;
             steam_auto_import_enabled?: boolean;
             steam_family_ids?: string | null;
         };
@@ -994,6 +1050,7 @@ export interface components {
             igdb_client_id?: string | null;
             igdb_client_secret?: string | null;
             steamgriddb_api_key?: string | null;
+            discord_webhook_url?: string | null;
             steam_auto_import_enabled?: boolean;
             steam_family_ids?: string | null;
             is_admin?: boolean;
@@ -2573,6 +2630,43 @@ export interface operations {
             };
         };
     };
+    ApiGamesSteamAppIdPriceGetGamePrice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                steam_app_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GamePrice"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
     ApiGamesSteamAppIdGetSteamAppId: {
         parameters: {
             query: {
@@ -2595,6 +2689,60 @@ export interface operations {
             };
             /** @description Bad request syntax or unsupported method */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiPricesCheckCheckPrices: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Cron-Secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: number;
+                    };
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description No permission -- see authorization schemes */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

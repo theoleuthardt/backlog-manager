@@ -13,6 +13,7 @@ export interface CurrentUser {
   hasSteamApiKey: boolean;
   hasIgdbCredentials: boolean;
   hasSteamgriddbApiKey: boolean;
+  hasDiscordWebhookUrl: boolean;
   steamAutoImportEnabled: boolean;
   steamFamilyIds?: string;
 }
@@ -62,6 +63,7 @@ export async function getCurrentUser(): Promise<CurrentUser> {
     hasSteamApiKey: data.has_steam_api_key ?? false,
     hasIgdbCredentials: data.has_igdb_credentials ?? false,
     hasSteamgriddbApiKey: data.has_steamgriddb_api_key ?? false,
+    hasDiscordWebhookUrl: data.has_discord_webhook_url ?? false,
     steamAutoImportEnabled: data.steam_auto_import_enabled ?? false,
     steamFamilyIds: data.steam_family_ids ?? undefined,
   };
