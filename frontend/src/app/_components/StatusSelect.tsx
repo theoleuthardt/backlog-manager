@@ -127,14 +127,11 @@ export function StatusSelect({
               </div>
             </SelectItem>
           ))}
-          <div
-            className="border-t border-white/20 pt-1"
-            onSelect={(e) => e.preventDefault()}
-          >
+          <div className="border-t pt-1" onSelect={(e) => e.preventDefault()}>
             <button
               type="button"
               onClick={() => setAddDialogOpen(true)}
-              className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-white hover:bg-white hover:text-black"
+              className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-black/10"
             >
               <PlusCircle className="h-4 w-4" />
               Add Status
