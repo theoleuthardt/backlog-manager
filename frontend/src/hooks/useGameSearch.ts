@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   enrichedSearch,
   getGamePrice,
+  getKeyShopPrices,
   getSteamAppId,
   getSteamGridDbCovers,
 } from "~/lib/api/games";
@@ -50,6 +51,18 @@ export function useGamePrice(steamAppId: number | undefined, enabled = true) {
     queryKey: ["game-price", steamAppId],
     queryFn: () => getGamePrice(steamAppId!),
     enabled: enabled && steamAppId !== undefined,
+    refetchOnWindowFocus: false,
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60,
+    retry: 1,
+  });
+}
+
+export function useKeyShopPrices(title: string, enabled = true) {
+  return useQuery({
+    queryKey: ["key-shop-prices", title],
+    queryFn: () => getKeyShopPrices(title),
+    enabled: enabled && title.length > 0,
     refetchOnWindowFocus: false,
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60,

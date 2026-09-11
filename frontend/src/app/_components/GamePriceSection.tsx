@@ -10,7 +10,7 @@ import {
   TrendingDown,
   XIcon,
 } from "lucide-react";
-import { useGamePrice } from "~/hooks/useGameSearch";
+import { useGamePrice, useKeyShopPrices } from "~/hooks/useGameSearch";
 import { env } from "~/env";
 import { Button } from "shadcn_components/ui/button";
 import {
@@ -47,8 +47,12 @@ function StoreIcon({ iconUrl, alt }: { iconUrl: string; alt: string }) {
 export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
   const [open, setOpen] = useState(false);
   const { data, isLoading, isError } = useGamePrice(steamAppId, open);
+  const { data: keyShopOffers } = useKeyShopPrices(title, open);
 
   if (steamAppId === undefined) return null;
+
+  const hasCheapSharkDeals = !isError && !!data && data.deals.length > 0;
+  const hasKeyShopOffers = !!keyShopOffers && keyShopOffers.length > 0;
 
   let content: React.ReactNode;
   if (isLoading) {
@@ -58,18 +62,21 @@ export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
         Loading price...
       </div>
     );
-  } else if (isError || !data || data.deals.length === 0) {
+  } else if (!hasCheapSharkDeals && !hasKeyShopOffers) {
     content = <p className="text-sm text-gray-400">No price data available.</p>;
   } else {
-    const cheapest = data.deals.reduce((lowest, deal) =>
-      deal.price < lowest.price ? deal : lowest,
-    );
-    const discountPercent = Math.round(
-      (1 - cheapest.price / cheapest.retailPrice) * 100,
-    );
+    const cheapest =
+      hasCheapSharkDeals && data
+        ? data.deals.reduce((lowest, deal) =>
+            deal.price < lowest.price ? deal : lowest,
+          )
+        : null;
+    const discountPercent = cheapest
+      ? Math.round((1 - cheapest.price / cheapest.retailPrice) * 100)
+      : 0;
     content = (
       <div className="space-y-3 overflow-y-auto pr-1">
-        {data.onSale && (
+        {data?.onSale && cheapest && (
           <div className="flex items-center gap-3 rounded-lg border border-emerald-400/40 bg-emerald-400/10 px-3 py-2.5">
             <Flame className="h-5 w-5 shrink-0 text-emerald-400" />
             <div>
@@ -85,7 +92,7 @@ export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
             </div>
           </div>
         )}
-        {data.cheapestPriceEver !== null && (
+        {data?.cheapestPriceEver != null && (
           <div className="flex items-center gap-3 rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-2.5">
             <TrendingDown className="h-5 w-5 shrink-0 text-amber-400" />
             <div>
@@ -114,7 +121,7 @@ export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
               <ExternalLink className="h-3.5 w-3.5 shrink-0 text-gray-500 opacity-0 transition-opacity group-hover:opacity-100" />
             </span>
           </a>
-          {data.deals.map((deal) => (
+          {data?.deals.map((deal) => (
             <a
               key={deal.store}
               href={deal.url}
@@ -134,6 +141,34 @@ export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
                   {deal.retailPrice > deal.price && (
                     <span className="ml-1.5 text-xs font-normal text-gray-500 line-through">
                       €{deal.retailPrice.toFixed(2)}
+                    </span>
+                  )}
+                </span>
+                <ExternalLink className="h-3.5 w-3.5 shrink-0 text-gray-500 opacity-0 transition-opacity group-hover:opacity-100" />
+              </span>
+            </a>
+          ))}
+          {keyShopOffers?.map((offer) => (
+            <a
+              key={offer.shop}
+              href={offer.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center justify-between gap-3 rounded-lg border border-white/20 bg-black px-3 py-2.5 transition-colors hover:border-white/50 hover:bg-white/5"
+            >
+              <span className="flex min-w-0 items-center gap-2">
+                <div className="h-5 w-5 shrink-0 rounded bg-white/10" />
+                <span className="truncate text-sm text-white">
+                  {offer.shop}
+                </span>
+              </span>
+              <span className="flex shrink-0 items-center gap-2">
+                <span className="text-sm font-semibold text-white">
+                  {offer.currency === "EUR" ? "€" : offer.currency}
+                  {offer.price.toFixed(2)}
+                  {offer.discountPct !== null && offer.discountPct > 0 && (
+                    <span className="ml-1.5 text-xs font-normal text-emerald-400">
+                      -{offer.discountPct}%
                     </span>
                   )}
                 </span>

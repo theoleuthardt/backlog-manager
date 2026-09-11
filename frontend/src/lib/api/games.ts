@@ -103,3 +103,33 @@ export async function getGamePrice(steamAppId: number): Promise<GamePriceInfo> {
     cheapestPriceEverDate: data.cheapest_price_ever_date ?? null,
   };
 }
+
+export interface KeyShopOffer {
+  shop: string;
+  title: string;
+  price: number;
+  currency: string;
+  url: string;
+  discountPct: number | null;
+}
+
+/**
+ * Offers from key marketplaces/resellers not covered by CheapShark (see
+ * docs/KEY_SHOP_SCRAPING.md) - searched by title rather than Steam App ID
+ * since these shops have no such mapping.
+ */
+export async function getKeyShopPrices(title: string): Promise<KeyShopOffer[]> {
+  const { data, error } = await apiClient.GET("/api/games/key-shop-prices", {
+    params: { query: { title } },
+  });
+  if (error)
+    throw new Error(apiErrorMessage(error, "Failed to load key shop prices"));
+  return data.map((offer) => ({
+    shop: offer.shop,
+    title: offer.title,
+    price: Number(offer.price),
+    currency: offer.currency,
+    url: offer.url,
+    discountPct: offer.discount_pct ?? null,
+  }));
+}

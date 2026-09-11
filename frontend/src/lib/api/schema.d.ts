@@ -663,6 +663,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/games/key-shop-prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GetKeyShopPrices */
+        get: operations["ApiGamesKeyShopPricesGetKeyShopPrices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/games/steam-app-id": {
         parameters: {
             query?: never;
@@ -960,6 +977,17 @@ export interface components {
             failed?: number;
             errors?: components["schemas"]["RecordError"][];
             missing_games?: components["schemas"]["MissingGame"][];
+        };
+        /** KeyShopOffer */
+        KeyShopOffer: {
+            shop: string;
+            title: string;
+            price: number;
+            currency: string;
+            url: string;
+            /** Format: date-time */
+            fetched_at: string;
+            discount_pct?: number | null;
         };
         /** LoginParams */
         LoginParams: {
@@ -2892,6 +2920,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GamePrice"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiGamesKeyShopPricesGetKeyShopPrices: {
+        parameters: {
+            query: {
+                title: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KeyShopOffer"][];
                 };
             };
             /** @description Bad request syntax or unsupported method */
