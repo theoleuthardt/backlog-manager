@@ -29,12 +29,21 @@ function parseSseMessage(raw: string): { event: string | null; data: string } {
  */
 export async function streamSse<TProgress, TResult>(
   path: string,
-  handlers: { onProgress: (progress: TProgress) => void },
+  handlers: {
+    onProgress: (progress: TProgress) => void;
+    body?: unknown;
+  },
 ): Promise<TResult> {
   const token = getToken();
   const response = await fetch(`${env.NEXT_PUBLIC_API_URL}${path}`, {
     method: "POST",
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : undefined),
+      ...(handlers.body !== undefined
+        ? { "Content-Type": "application/json" }
+        : undefined),
+    },
+    body: handlers.body !== undefined ? JSON.stringify(handlers.body) : undefined,
   });
 
   if (!response.ok || !response.body) {

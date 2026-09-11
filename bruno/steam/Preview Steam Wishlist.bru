@@ -1,0 +1,27 @@
+meta {
+  name: Preview Steam Wishlist
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{backendUrl}}/api/user/steam/wishlist/preview
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Lists wishlist games not yet linked to a backlog entry as
+  {steam_app_id, title, image_link} - read-only, writes nothing to the
+  DB; the actual import runs through "Import Steam Wishlist (Stream)"
+  once the user has confirmed the preview. Titles resolve via the
+  Steam app list (best-effort, falls back to "Steam App <appid>") and
+  covers via the Steam CDN capsule URL.
+
+  400 if the caller has no Steam profile ID set. Wishlist data comes
+  from the undocumented IWishlistService/GetWishlist endpoint, which
+  needs no API key but returns an empty list for private profiles.
+}

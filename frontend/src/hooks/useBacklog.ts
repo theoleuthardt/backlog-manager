@@ -4,8 +4,12 @@ import * as backlogApi from "~/lib/api/backlog";
 import {
   getSteamAchievements,
   importSteamLibraryStream,
+  importSteamWishlistStream,
+  previewSteamLibraryStream,
   syncSteamPlaytimesStream,
+  type SteamPreviewItem,
   type SteamSyncProgress,
+  type SteamWishlistImportItem,
 } from "~/lib/api/steam";
 
 const ENTRIES_KEY = ["backlog-entries"] as const;
@@ -112,12 +116,64 @@ function useSteamStream(
   return { run, isRunning, progress };
 }
 
+export function useImportSteamWishlistStream(): {
+  run: (
+    items: SteamWishlistImportItem[],
+  ) => Promise<backlogApi.BacklogEntryData[]>;
+  isRunning: boolean;
+  progress: SteamSyncProgress | null;
+} {
+  const queryClient = useQueryClient();
+  const [isRunning, setIsRunning] = useState(false);
+  const [progress, setProgress] = useState<SteamSyncProgress | null>(null);
+
+  const run = useCallback(
+    async (items: SteamWishlistImportItem[]) => {
+      setIsRunning(true);
+      setProgress(null);
+      try {
+        const entries = await importSteamWishlistStream(items, setProgress);
+        await queryClient.invalidateQueries({ queryKey: ENTRIES_KEY });
+        return entries;
+      } finally {
+        setIsRunning(false);
+        setProgress(null);
+      }
+    },
+    [queryClient],
+  );
+
+  return { run, isRunning, progress };
+}
+
 export function useSyncSteamPlaytimesStream(): SteamStreamState {
   return useSteamStream(syncSteamPlaytimesStream);
 }
 
 export function useImportSteamLibraryStream(): SteamStreamState {
   return useSteamStream(importSteamLibraryStream);
+}
+
+export function useSteamLibraryPreviewStream(): {
+  run: () => Promise<SteamPreviewItem[]>;
+  isRunning: boolean;
+  progress: SteamSyncProgress | null;
+} {
+  const [isRunning, setIsRunning] = useState(false);
+  const [progress, setProgress] = useState<SteamSyncProgress | null>(null);
+
+  const run = useCallback(async () => {
+    setIsRunning(true);
+    setProgress(null);
+    try {
+      return await previewSteamLibraryStream(setProgress);
+    } finally {
+      setIsRunning(false);
+      setProgress(null);
+    }
+  }, []);
+
+  return { run, isRunning, progress };
 }
 
 export function useSteamAchievements(

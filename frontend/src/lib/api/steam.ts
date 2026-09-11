@@ -30,6 +30,60 @@ export async function importSteamLibraryStream(
   return entries.map(toEntryData);
 }
 
+type SteamPreviewItemResponse = components["schemas"]["SteamPreviewItem"];
+
+export interface SteamPreviewItem {
+  steamAppId: number;
+  title: string;
+  imageLink: string | null;
+}
+
+export async function previewSteamLibraryStream(
+  onProgress: (progress: SteamSyncProgress) => void,
+): Promise<SteamPreviewItem[]> {
+  const items = await streamSse<
+    SteamSyncProgress,
+    SteamPreviewItemResponse[]
+  >("/api/user/steam/library/preview/stream", { onProgress });
+  return items.map((item) => ({
+    steamAppId: item.steam_app_id,
+    title: item.title,
+    imageLink: item.image_link ?? null,
+  }));
+}
+
+export async function getSteamWishlistPreview(): Promise<
+  SteamPreviewItem[]
+> {
+  const { data, error } = await apiClient.GET(
+    "/api/user/steam/wishlist/preview",
+  );
+  if (error)
+    throw new Error(
+      apiErrorMessage(error, "Failed to load Steam wishlist preview"),
+    );
+  return data.map((item) => ({
+    steamAppId: item.steam_app_id,
+    title: item.title,
+    imageLink: item.image_link ?? null,
+  }));
+}
+
+export interface SteamWishlistImportItem {
+  appid: number;
+}
+
+export async function importSteamWishlistStream(
+  items: SteamWishlistImportItem[],
+  onProgress: (progress: SteamSyncProgress) => void,
+): Promise<BacklogEntryData[]> {
+  const entries = await streamSse<SteamSyncProgress, BacklogEntryResponse[]>(
+    "/api/user/steam/wishlist/import/stream",
+    { onProgress, body: items },
+  );
+  return entries.map(toEntryData);
+}
+
 export interface AchievementInfo {
   apiname: string;
   displayName: string;

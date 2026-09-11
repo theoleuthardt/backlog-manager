@@ -1,0 +1,32 @@
+meta {
+  name: Preview Steam Library (Stream)
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{backendUrl}}/api/user/steam/library/preview/stream
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  SSE variant of a library preview - same event shape and caveat as
+  "Import Steam Library (Stream)": a plain HTTP request just returns
+  the raw event-stream body once the connection closes, not live
+  progress. Emits a `progress` event per owned game considered, then
+  a `done` event carrying the unlinked games as
+  {steam_app_id, title, image_link} - read-only, writes nothing to the
+  DB; the actual import runs through "Import Steam Library (Stream)"
+  once the user has confirmed the preview. Family libraries (steam
+  family IDs on the account) are merged in.
+
+  503 if neither the caller nor the server has a Steam Web API key
+  configured - a real top-level HTTP response, raised before the SSE
+  stream opens. A missing Steam ID, by contrast, surfaces as an
+  `error` event inside an HTTP 200 stream.
+}
