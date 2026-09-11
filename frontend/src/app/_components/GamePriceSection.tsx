@@ -10,7 +10,7 @@ import {
   TrendingDown,
   XIcon,
 } from "lucide-react";
-import { useGamePrice } from "~/hooks/useGameSearch";
+import { useGamePrice, useKeyShopPrices } from "~/hooks/useGameSearch";
 import { env } from "~/env";
 import { Button } from "shadcn_components/ui/button";
 import {
@@ -26,14 +26,41 @@ interface GamePriceSectionProps {
   title: string;
 }
 
-function StoreIcon({ iconUrl, alt }: { iconUrl: string; alt: string }) {
+const KEY_SHOP_ICONS: Record<string, string> = {
+  RoyalCDKeys: "/royalcdkeys-icon.png",
+  PremiumCDKeys: "/premiumcdkeys-icon.png",
+};
+
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  USD: "$",
+  EUR: "€",
+};
+
+const EUR_PER_UNIT: Record<string, number> = {
+  USD: 0.9,
+  EUR: 1,
+};
+
+function StoreIcon({
+  iconUrl,
+  alt,
+  local = false,
+}: {
+  iconUrl: string | null;
+  alt: string;
+  local?: boolean;
+}) {
   const [hasError, setHasError] = useState(false);
   if (!iconUrl || hasError) {
     return <div className="h-5 w-5 shrink-0 rounded bg-white/10" />;
   }
   return (
     <Image
-      src={`${env.NEXT_PUBLIC_API_URL}/api/images/proxy?url=${encodeURIComponent(iconUrl)}`}
+      src={
+        local
+          ? iconUrl
+          : `${env.NEXT_PUBLIC_API_URL}/api/images/proxy?url=${encodeURIComponent(iconUrl)}`
+      }
       alt={alt}
       width={20}
       height={20}
@@ -47,29 +74,78 @@ function StoreIcon({ iconUrl, alt }: { iconUrl: string; alt: string }) {
 export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
   const [open, setOpen] = useState(false);
   const { data, isLoading, isError } = useGamePrice(steamAppId, open);
+  const { data: keyShopOffers, isLoading: keyShopLoading } = useKeyShopPrices(
+    title,
+    open,
+  );
 
-  if (steamAppId === undefined) return null;
+  const hasCheapSharkDeals = !isError && !!data && data.deals.length > 0;
+  const hasKeyShopOffers = !!keyShopOffers && keyShopOffers.length > 0;
+
+  interface PriceListing {
+    key: string;
+    store: string;
+    iconUrl: string | null;
+    iconIsLocal: boolean;
+    price: number;
+    currency: string;
+    retailPrice: number | null;
+    discountPct: number | null;
+    url: string;
+  }
+
+  const listings: PriceListing[] = [
+    ...(data?.deals.map((deal) => ({
+      key: `cheapshark-${deal.store}`,
+      store: deal.store,
+      iconUrl: deal.iconUrl,
+      iconIsLocal: false,
+      price: deal.price,
+      currency: "USD",
+      retailPrice: deal.retailPrice,
+      discountPct: null,
+      url: deal.url,
+    })) ?? []),
+    ...(keyShopOffers?.map((offer) => ({
+      key: `keyshop-${offer.shop}`,
+      store: offer.shop,
+      iconUrl: KEY_SHOP_ICONS[offer.shop] ?? null,
+      iconIsLocal: true,
+      price: offer.price,
+      currency: offer.currency,
+      retailPrice: null,
+      discountPct: offer.discountPct,
+      url: offer.url,
+    })) ?? []),
+  ].sort(
+    (a, b) =>
+      a.price * (EUR_PER_UNIT[a.currency] ?? 1) -
+      b.price * (EUR_PER_UNIT[b.currency] ?? 1),
+  );
 
   let content: React.ReactNode;
-  if (isLoading) {
+  if (isLoading || keyShopLoading) {
     content = (
       <div className="flex items-center gap-2 text-sm text-gray-400">
         <Loader2 className="h-4 w-4 animate-spin" />
         Loading price...
       </div>
     );
-  } else if (isError || !data || data.deals.length === 0) {
+  } else if (!hasCheapSharkDeals && !hasKeyShopOffers) {
     content = <p className="text-sm text-gray-400">No price data available.</p>;
   } else {
-    const cheapest = data.deals.reduce((lowest, deal) =>
-      deal.price < lowest.price ? deal : lowest,
-    );
-    const discountPercent = Math.round(
-      (1 - cheapest.price / cheapest.retailPrice) * 100,
-    );
+    const cheapest =
+      hasCheapSharkDeals && data
+        ? data.deals.reduce((lowest, deal) =>
+            deal.price < lowest.price ? deal : lowest,
+          )
+        : null;
+    const discountPercent = cheapest
+      ? Math.round((1 - cheapest.price / cheapest.retailPrice) * 100)
+      : 0;
     content = (
       <div className="space-y-3 overflow-y-auto pr-1">
-        {data.onSale && (
+        {data?.onSale && cheapest && (
           <div className="flex items-center gap-3 rounded-lg border border-emerald-400/40 bg-emerald-400/10 px-3 py-2.5">
             <Flame className="h-5 w-5 shrink-0 text-emerald-400" />
             <div>
@@ -77,7 +153,7 @@ export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
                 On Sale Now{discountPercent > 0 && ` -${discountPercent}%`}
               </p>
               <p className="text-lg font-bold text-emerald-300">
-                €{cheapest.price.toFixed(2)}{" "}
+                ${cheapest.price.toFixed(2)}{" "}
                 <span className="text-sm font-normal text-emerald-200/70">
                   at {cheapest.store}
                 </span>
@@ -85,7 +161,7 @@ export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
             </div>
           </div>
         )}
-        {data.cheapestPriceEver !== null && (
+        {data?.cheapestPriceEver != null && (
           <div className="flex items-center gap-3 rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-2.5">
             <TrendingDown className="h-5 w-5 shrink-0 text-amber-400" />
             <div>
@@ -93,7 +169,7 @@ export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
                 All-Time Low
               </p>
               <p className="text-lg font-bold text-amber-300">
-                €{data.cheapestPriceEver.toFixed(2)}
+                ${data.cheapestPriceEver.toFixed(2)}
               </p>
             </div>
           </div>
@@ -114,26 +190,38 @@ export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
               <ExternalLink className="h-3.5 w-3.5 shrink-0 text-gray-500 opacity-0 transition-opacity group-hover:opacity-100" />
             </span>
           </a>
-          {data.deals.map((deal) => (
+          {listings.map((listing) => (
             <a
-              key={deal.store}
-              href={deal.url}
+              key={listing.key}
+              href={listing.url}
               target="_blank"
               rel="noopener noreferrer"
               className="group flex items-center justify-between gap-3 rounded-lg border border-white/20 bg-black px-3 py-2.5 transition-colors hover:border-white/50 hover:bg-white/5"
             >
               <span className="flex min-w-0 items-center gap-2">
-                <StoreIcon iconUrl={deal.iconUrl} alt={deal.store} />
+                <StoreIcon
+                  iconUrl={listing.iconUrl}
+                  alt={listing.store}
+                  local={listing.iconIsLocal}
+                />
                 <span className="truncate text-sm text-white">
-                  {deal.store}
+                  {listing.store}
                 </span>
               </span>
               <span className="flex shrink-0 items-center gap-2">
                 <span className="text-sm font-semibold text-white">
-                  €{deal.price.toFixed(2)}
-                  {deal.retailPrice > deal.price && (
-                    <span className="ml-1.5 text-xs font-normal text-gray-500 line-through">
-                      €{deal.retailPrice.toFixed(2)}
+                  {(CURRENCY_SYMBOLS[listing.currency] ?? listing.currency) +
+                    listing.price.toFixed(2)}
+                  {listing.retailPrice !== null &&
+                    listing.retailPrice > listing.price && (
+                      <span className="ml-1.5 text-xs font-normal text-gray-500 line-through">
+                        {(CURRENCY_SYMBOLS[listing.currency] ??
+                          listing.currency) + listing.retailPrice.toFixed(2)}
+                      </span>
+                    )}
+                  {listing.discountPct !== null && listing.discountPct > 0 && (
+                    <span className="ml-1.5 text-xs font-normal text-emerald-400">
+                      -{listing.discountPct}%
                     </span>
                   )}
                 </span>
