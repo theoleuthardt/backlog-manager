@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import msgspec
 
 
@@ -325,3 +327,20 @@ class CheapSharkStore(msgspec.Struct):
     storeName: str
     images: CheapSharkStoreImages
     isActive: int = 0
+
+
+class KeyShopOffer(msgspec.Struct):
+    """One matched product from a key-shop adapter (see
+    integrations/key_shops/) - shop names not covered by CheapShark's
+    official-distributor list, see docs/KEY_SHOP_SCRAPING.md. discount_pct
+    is None rather than 0 when the shop reports no compare-at (original)
+    price at all, distinguishing "not on sale" from "no sale info
+    available"."""
+
+    shop: str
+    title: str
+    price: float
+    currency: str
+    url: str
+    fetched_at: datetime
+    discount_pct: int | None = None

@@ -29,10 +29,11 @@ from backlog_manager_backend.integrations.types import (
     IGDBGenre,
     IGDBPlatform,
     IGDBSearchResult,
+    KeyShopOffer,
 )
 from backlog_manager_backend.schemas.game_price import GamePrice
 from backlog_manager_backend.schemas.user import User
-from backlog_manager_backend.services import game_service, price_service
+from backlog_manager_backend.services import game_service, key_shop_price_service, price_service
 
 _IGDB_NOT_CONFIGURED = "IGDB integration is not configured"
 _IGDB_UNAVAILABLE = "IGDB is currently unreachable"
@@ -202,6 +203,16 @@ async def get_game_price(
         raise ServiceUnavailableException(_CHEAPSHARK_UNAVAILABLE) from error
 
 
+@get("/api/games/key-shop-prices")
+async def get_key_shop_prices(
+    title: FromQuery[str], current_user: NamedDependency[User]
+) -> list[KeyShopOffer]:
+    """current_user is unused (see get_game_price's identical comment
+    above - price data isn't user-specific, but the parameter must stay
+    declared for the router's auth dependency to run)."""
+    return await key_shop_price_service.search_key_shops(title)
+
+
 authenticated_games_router = Router(
     path="",
     route_handlers=[
@@ -214,6 +225,7 @@ authenticated_games_router = Router(
         get_genre,
         get_steamgriddb_covers,
         get_game_price,
+        get_key_shop_prices,
     ],
     dependencies={"current_user": Provide(get_current_user)},
     security=BEARER_SECURITY_REQUIREMENT,

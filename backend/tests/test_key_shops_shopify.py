@@ -1,0 +1,96 @@
+from collections.abc import Callable
+
+import httpx
+import pytest
+
+from backlog_manager_backend.integrations.key_shops.shopify import search_shopify_store
+
+
+def _mock_client(
+    handler: Callable[[httpx.Request], httpx.Response], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    transport = httpx.MockTransport(handler)
+
+    class _MockAsyncClient(httpx.AsyncClient):
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            kwargs["transport"] = transport
+            super().__init__(*args, **kwargs)
+
+    monkeypatch.setattr(httpx, "AsyncClient", _MockAsyncClient)
+
+
+def _suggest_response(products: list[dict[str, object]]) -> httpx.Response:
+    return httpx.Response(200, json={"resources": {"results": {"products": products}}})
+
+
+async def test_search_shopify_store_returns_offers(monkeypatch: pytest.MonkeyPatch) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/search/suggest.json"
+        assert request.url.params["q"] == "hades"
+        assert request.url.params["resources[type]"] == "product"
+        return _suggest_response(
+            [
+                {
+                    "title": "Hades II PC Steam Account",
+                    "price": "10.15",
+                    "handle": "hades-ii-pc-steam-account",
+                    "compare_at_price_max": "0.00",
+                }
+            ]
+        )
+
+    _mock_client(handler, monkeypatch)
+
+    offers = await search_shopify_store("RoyalCDKeys", "https://royalcdkeys.com", "hades")
+
+    assert len(offers) == 1
+    offer = offers[0]
+    assert offer.shop == "RoyalCDKeys"
+    assert offer.title == "Hades II PC Steam Account"
+    assert offer.price == 10.15
+    assert offer.currency == "EUR"
+    assert offer.url == "https://royalcdkeys.com/products/hades-ii-pc-steam-account"
+    assert offer.discount_pct is None
+
+
+async def test_search_shopify_store_computes_discount_pct(monkeypatch: pytest.MonkeyPatch) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return _suggest_response(
+            [
+                {
+                    "title": "Cyberpunk 2077 GOG CD Key",
+                    "price": "20.00",
+                    "handle": "cyberpunk-2077-gog-cd-key",
+                    "compare_at_price_max": "40.00",
+                }
+            ]
+        )
+
+    _mock_client(handler, monkeypatch)
+
+    offers = await search_shopify_store("RoyalCDKeys", "https://royalcdkeys.com", "cyberpunk")
+
+    assert offers[0].discount_pct == 50
+
+
+async def test_search_shopify_store_returns_empty_list_on_no_match(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return _suggest_response([])
+
+    _mock_client(handler, monkeypatch)
+
+    offers = await search_shopify_store("RoyalCDKeys", "https://royalcdkeys.com", "nonexistent")
+
+    assert offers == []
+
+
+async def test_search_shopify_store_raises_on_http_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(500)
+
+    _mock_client(handler, monkeypatch)
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await search_shopify_store("RoyalCDKeys", "https://royalcdkeys.com", "hades")
