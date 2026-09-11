@@ -26,8 +26,40 @@ def _suggest_response(products: list[dict[str, object]]) -> httpx.Response:
 async def test_search_shopify_store_returns_offers(monkeypatch: pytest.MonkeyPatch) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         assert request.url.path == "/search/suggest.json"
-        assert request.url.params["q"] == "hades"
+        assert request.url.params["q"] == "hades ii"
         assert request.url.params["resources[type]"] == "product"
+        return _suggest_response(
+            [
+                {
+                    "title": "Hades II PC Steam Account",
+                    "price": "10.15",
+                    "handle": "hades-ii-pc-steam-account",
+                    "compare_at_price_max": "0.00",
+                }
+            ]
+        )
+
+    _mock_client(handler, monkeypatch)
+
+    offers = await search_shopify_store("RoyalCDKeys", "https://royalcdkeys.com", "hades ii")
+
+    assert len(offers) == 1
+    offer = offers[0]
+    assert offer.shop == "RoyalCDKeys"
+    assert offer.title == "Hades II PC Steam Account"
+    assert offer.price == 10.15
+    assert offer.currency == "EUR"
+    assert offer.url == "https://royalcdkeys.com/products/hades-ii-pc-steam-account"
+    assert offer.discount_pct is None
+
+
+async def test_search_shopify_store_rejects_sequel_for_base_game_search(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A "hades" search must not match "Hades II ..." - that's a different
+    game. See _matches_search_title."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
         return _suggest_response(
             [
                 {
@@ -43,14 +75,68 @@ async def test_search_shopify_store_returns_offers(monkeypatch: pytest.MonkeyPat
 
     offers = await search_shopify_store("RoyalCDKeys", "https://royalcdkeys.com", "hades")
 
+    assert offers == []
+
+
+async def test_search_shopify_store_matches_core_title_number(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Numbers with 3+ digits are part of the core title, not sequel
+    markers - "cyberpunk" matches "Cyberpunk 2077 GOG CD Key"."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return _suggest_response(
+            [
+                {
+                    "title": "Cyberpunk 2077 GOG CD Key",
+                    "price": "20.00",
+                    "handle": "cyberpunk-2077-gog-cd-key",
+                }
+            ]
+        )
+
+    _mock_client(handler, monkeypatch)
+
+    offers = await search_shopify_store("RoyalCDKeys", "https://royalcdkeys.com", "cyberpunk")
+
     assert len(offers) == 1
-    offer = offers[0]
-    assert offer.shop == "RoyalCDKeys"
-    assert offer.title == "Hades II PC Steam Account"
-    assert offer.price == 10.15
-    assert offer.currency == "EUR"
-    assert offer.url == "https://royalcdkeys.com/products/hades-ii-pc-steam-account"
-    assert offer.discount_pct is None
+    assert offers[0].price == 20.00
+
+
+async def test_search_shopify_store_skips_product_with_invalid_price(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """One malformed/non-finite price must only discard that product, not
+    the shop's valid ones - external Shopify responses are validated at
+    this boundary."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return _suggest_response(
+            [
+                {
+                    "title": "Hades Steam CD Key",
+                    "price": "not-a-number",
+                    "handle": "hades-broken",
+                },
+                {
+                    "title": "Hades EU Steam CD Key",
+                    "price": "NaN",
+                    "handle": "hades-nan",
+                },
+                {
+                    "title": "Hades PC Steam CD Key",
+                    "price": "25.96",
+                    "handle": "hades-cd-key",
+                },
+            ]
+        )
+
+    _mock_client(handler, monkeypatch)
+
+    offers = await search_shopify_store("RoyalCDKeys", "https://royalcdkeys.com", "hades")
+
+    assert len(offers) == 1
+    assert offers[0].price == 25.96
 
 
 async def test_search_shopify_store_computes_discount_pct(monkeypatch: pytest.MonkeyPatch) -> None:

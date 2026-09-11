@@ -26,15 +26,19 @@ interface GamePriceSectionProps {
   title: string;
 }
 
-/**
- * Key shop offers (see docs/KEY_SHOP_SCRAPING.md) have no per-store icon
- * from the API - just two shops, so their favicons are checked into
- * public/ once rather than routing through the image proxy for a handful
- * of static, never-changing assets.
- */
 const KEY_SHOP_ICONS: Record<string, string> = {
   RoyalCDKeys: "/royalcdkeys-icon.png",
   PremiumCDKeys: "/premiumcdkeys-icon.png",
+};
+
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  USD: "$",
+  EUR: "€",
+};
+
+const EUR_PER_UNIT: Record<string, number> = {
+  USD: 0.9,
+  EUR: 1,
 };
 
 function StoreIcon({
@@ -70,9 +74,10 @@ function StoreIcon({
 export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
   const [open, setOpen] = useState(false);
   const { data, isLoading, isError } = useGamePrice(steamAppId, open);
-  const { data: keyShopOffers } = useKeyShopPrices(title, open);
-
-  if (steamAppId === undefined) return null;
+  const { data: keyShopOffers, isLoading: keyShopLoading } = useKeyShopPrices(
+    title,
+    open,
+  );
 
   const hasCheapSharkDeals = !isError && !!data && data.deals.length > 0;
   const hasKeyShopOffers = !!keyShopOffers && keyShopOffers.length > 0;
@@ -83,6 +88,7 @@ export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
     iconUrl: string | null;
     iconIsLocal: boolean;
     price: number;
+    currency: string;
     retailPrice: number | null;
     discountPct: number | null;
     url: string;
@@ -95,6 +101,7 @@ export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
       iconUrl: deal.iconUrl,
       iconIsLocal: false,
       price: deal.price,
+      currency: "USD",
       retailPrice: deal.retailPrice,
       discountPct: null,
       url: deal.url,
@@ -105,14 +112,19 @@ export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
       iconUrl: KEY_SHOP_ICONS[offer.shop] ?? null,
       iconIsLocal: true,
       price: offer.price,
+      currency: offer.currency,
       retailPrice: null,
       discountPct: offer.discountPct,
       url: offer.url,
     })) ?? []),
-  ].sort((a, b) => a.price - b.price);
+  ].sort(
+    (a, b) =>
+      a.price * (EUR_PER_UNIT[a.currency] ?? 1) -
+      b.price * (EUR_PER_UNIT[b.currency] ?? 1),
+  );
 
   let content: React.ReactNode;
-  if (isLoading) {
+  if (isLoading || keyShopLoading) {
     content = (
       <div className="flex items-center gap-2 text-sm text-gray-400">
         <Loader2 className="h-4 w-4 animate-spin" />
@@ -141,7 +153,7 @@ export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
                 On Sale Now{discountPercent > 0 && ` -${discountPercent}%`}
               </p>
               <p className="text-lg font-bold text-emerald-300">
-                €{cheapest.price.toFixed(2)}{" "}
+                ${cheapest.price.toFixed(2)}{" "}
                 <span className="text-sm font-normal text-emerald-200/70">
                   at {cheapest.store}
                 </span>
@@ -157,7 +169,7 @@ export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
                 All-Time Low
               </p>
               <p className="text-lg font-bold text-amber-300">
-                €{data.cheapestPriceEver.toFixed(2)}
+                ${data.cheapestPriceEver.toFixed(2)}
               </p>
             </div>
           </div>
@@ -198,11 +210,13 @@ export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
               </span>
               <span className="flex shrink-0 items-center gap-2">
                 <span className="text-sm font-semibold text-white">
-                  €{listing.price.toFixed(2)}
+                  {(CURRENCY_SYMBOLS[listing.currency] ?? listing.currency) +
+                    listing.price.toFixed(2)}
                   {listing.retailPrice !== null &&
                     listing.retailPrice > listing.price && (
                       <span className="ml-1.5 text-xs font-normal text-gray-500 line-through">
-                        €{listing.retailPrice.toFixed(2)}
+                        {(CURRENCY_SYMBOLS[listing.currency] ??
+                          listing.currency) + listing.retailPrice.toFixed(2)}
                       </span>
                     )}
                   {listing.discountPct !== null && listing.discountPct > 0 && (

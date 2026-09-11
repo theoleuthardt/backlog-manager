@@ -113,11 +113,6 @@ export interface KeyShopOffer {
   discountPct: number | null;
 }
 
-/**
- * Offers from key marketplaces/resellers not covered by CheapShark (see
- * docs/KEY_SHOP_SCRAPING.md) - searched by title rather than Steam App ID
- * since these shops have no such mapping.
- */
 export async function getKeyShopPrices(title: string): Promise<KeyShopOffer[]> {
   const { data, error } = await apiClient.GET("/api/games/key-shop-prices", {
     params: { query: { title } },

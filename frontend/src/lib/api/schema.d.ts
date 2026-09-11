@@ -4,3067 +4,3211 @@
  */
 
 export interface paths {
-    "/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Health */
-        get: operations["HealthHealth"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+  "/health": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/images/proxy": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** ProxyImage */
-        get: operations["ApiImagesProxyProxyImage"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Health */
+    get: operations["HealthHealth"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/images/proxy": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/auth/login": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Login */
-        post: operations["ApiAuthLoginLogin"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** ProxyImage */
+    get: operations["ApiImagesProxyProxyImage"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/auth/login": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/auth/2fa/login-verify": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** LoginVerify */
-        post: operations["ApiAuth2FaLoginVerifyLoginVerify"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Login */
+    post: operations["ApiAuthLoginLogin"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/auth/2fa/login-verify": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/auth/2fa/enroll": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** EnrollTwoFactor */
-        post: operations["ApiAuth2FaEnrollEnrollTwoFactor"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** LoginVerify */
+    post: operations["ApiAuth2FaLoginVerifyLoginVerify"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/auth/2fa/enroll": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/auth/2fa/verify": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** VerifyTwoFactor */
-        post: operations["ApiAuth2FaVerifyVerifyTwoFactor"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** EnrollTwoFactor */
+    post: operations["ApiAuth2FaEnrollEnrollTwoFactor"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/auth/2fa/verify": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/auth/2fa/disable": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** DisableTwoFactor */
-        post: operations["ApiAuth2FaDisableDisableTwoFactor"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** VerifyTwoFactor */
+    post: operations["ApiAuth2FaVerifyVerifyTwoFactor"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/auth/2fa/disable": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/backlog/entries": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** ListEntries */
-        get: operations["ApiBacklogEntriesListEntries"];
-        put?: never;
-        /** CreateEntry */
-        post: operations["ApiBacklogEntriesCreateEntry"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** DisableTwoFactor */
+    post: operations["ApiAuth2FaDisableDisableTwoFactor"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/backlog/entries": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/backlog/entries/{entry_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** GetEntry */
-        get: operations["ApiBacklogEntriesEntryIdGetEntry"];
-        /** UpdateEntry */
-        put: operations["ApiBacklogEntriesEntryIdUpdateEntry"];
-        post?: never;
-        /** DeleteEntry */
-        delete: operations["ApiBacklogEntriesEntryIdDeleteEntry"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** ListEntries */
+    get: operations["ApiBacklogEntriesListEntries"];
+    put?: never;
+    /** CreateEntry */
+    post: operations["ApiBacklogEntriesCreateEntry"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/backlog/entries/{entry_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/backlog/entries/{entry_id}/categories": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** GetCategoriesForEntry */
-        get: operations["ApiBacklogEntriesEntryIdCategoriesGetCategoriesForEntry"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** GetEntry */
+    get: operations["ApiBacklogEntriesEntryIdGetEntry"];
+    /** UpdateEntry */
+    put: operations["ApiBacklogEntriesEntryIdUpdateEntry"];
+    post?: never;
+    /** DeleteEntry */
+    delete: operations["ApiBacklogEntriesEntryIdDeleteEntry"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/backlog/entries/{entry_id}/categories": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/backlog/entries/{entry_id}/categories/{category_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** AddCategoryToEntry */
-        post: operations["ApiBacklogEntriesEntryIdCategoriesCategoryIdAddCategoryToEntry"];
-        /** RemoveCategoryFromEntry */
-        delete: operations["ApiBacklogEntriesEntryIdCategoriesCategoryIdRemoveCategoryFromEntry"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** GetCategoriesForEntry */
+    get: operations["ApiBacklogEntriesEntryIdCategoriesGetCategoriesForEntry"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/backlog/entries/{entry_id}/categories/{category_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/backlog/categories": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** ListCategories */
-        get: operations["ApiBacklogCategoriesListCategories"];
-        put?: never;
-        /** CreateCategory */
-        post: operations["ApiBacklogCategoriesCreateCategory"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** AddCategoryToEntry */
+    post: operations["ApiBacklogEntriesEntryIdCategoriesCategoryIdAddCategoryToEntry"];
+    /** RemoveCategoryFromEntry */
+    delete: operations["ApiBacklogEntriesEntryIdCategoriesCategoryIdRemoveCategoryFromEntry"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/backlog/categories": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/backlog/categories/{category_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** UpdateCategory */
-        put: operations["ApiBacklogCategoriesCategoryIdUpdateCategory"];
-        post?: never;
-        /** DeleteCategory */
-        delete: operations["ApiBacklogCategoriesCategoryIdDeleteCategory"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** ListCategories */
+    get: operations["ApiBacklogCategoriesListCategories"];
+    put?: never;
+    /** CreateCategory */
+    post: operations["ApiBacklogCategoriesCreateCategory"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/backlog/categories/{category_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/backlog/categories/{category_id}/entries": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** GetEntriesForCategory */
-        get: operations["ApiBacklogCategoriesCategoryIdEntriesGetEntriesForCategory"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    /** UpdateCategory */
+    put: operations["ApiBacklogCategoriesCategoryIdUpdateCategory"];
+    post?: never;
+    /** DeleteCategory */
+    delete: operations["ApiBacklogCategoriesCategoryIdDeleteCategory"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/backlog/categories/{category_id}/entries": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/backlog/statuses": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** ListCustomStatuses */
-        get: operations["ApiBacklogStatusesListCustomStatuses"];
-        put?: never;
-        /** CreateCustomStatus */
-        post: operations["ApiBacklogStatusesCreateCustomStatus"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** GetEntriesForCategory */
+    get: operations["ApiBacklogCategoriesCategoryIdEntriesGetEntriesForCategory"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/backlog/statuses": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/backlog/statuses/{status_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** UpdateCustomStatus */
-        put: operations["ApiBacklogStatusesStatusIdUpdateCustomStatus"];
-        post?: never;
-        /** DeleteCustomStatus */
-        delete: operations["ApiBacklogStatusesStatusIdDeleteCustomStatus"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** ListCustomStatuses */
+    get: operations["ApiBacklogStatusesListCustomStatuses"];
+    put?: never;
+    /** CreateCustomStatus */
+    post: operations["ApiBacklogStatusesCreateCustomStatus"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/backlog/statuses/{status_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/user/me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** GetOwnUser */
-        get: operations["ApiUserMeGetOwnUser"];
-        /** UpdateOwnUser */
-        put: operations["ApiUserMeUpdateOwnUser"];
-        post?: never;
-        /** DeleteOwnUser */
-        delete: operations["ApiUserMeDeleteOwnUser"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    /** UpdateCustomStatus */
+    put: operations["ApiBacklogStatusesStatusIdUpdateCustomStatus"];
+    post?: never;
+    /** DeleteCustomStatus */
+    delete: operations["ApiBacklogStatusesStatusIdDeleteCustomStatus"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/user/me": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/user/by-username/{username}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** GetUserByUsername */
-        get: operations["ApiUserByUsernameGetUserByUsername"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** GetOwnUser */
+    get: operations["ApiUserMeGetOwnUser"];
+    /** UpdateOwnUser */
+    put: operations["ApiUserMeUpdateOwnUser"];
+    post?: never;
+    /** DeleteOwnUser */
+    delete: operations["ApiUserMeDeleteOwnUser"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/user/by-username/{username}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/admin/users": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** ListAllUsers */
-        get: operations["ApiAdminUsersListAllUsers"];
-        put?: never;
-        /** CreateUserAdmin */
-        post: operations["ApiAdminUsersCreateUserAdmin"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** GetUserByUsername */
+    get: operations["ApiUserByUsernameGetUserByUsername"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/admin/users": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/admin/users/{user_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** GetUserByIdAdmin */
-        get: operations["ApiAdminUsersUserIdGetUserByIdAdmin"];
-        /** UpdateUserAdmin */
-        put: operations["ApiAdminUsersUserIdUpdateUserAdmin"];
-        post?: never;
-        /** DeleteUserAdmin */
-        delete: operations["ApiAdminUsersUserIdDeleteUserAdmin"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** ListAllUsers */
+    get: operations["ApiAdminUsersListAllUsers"];
+    put?: never;
+    /** CreateUserAdmin */
+    post: operations["ApiAdminUsersCreateUserAdmin"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/admin/users/{user_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/user/steam/sync": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** SyncSteamPlaytimes */
-        post: operations["ApiUserSteamSyncSyncSteamPlaytimes"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** GetUserByIdAdmin */
+    get: operations["ApiAdminUsersUserIdGetUserByIdAdmin"];
+    /** UpdateUserAdmin */
+    put: operations["ApiAdminUsersUserIdUpdateUserAdmin"];
+    post?: never;
+    /** DeleteUserAdmin */
+    delete: operations["ApiAdminUsersUserIdDeleteUserAdmin"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/user/steam/sync": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/user/steam/import": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** ImportSteamLibrary */
-        post: operations["ApiUserSteamImportImportSteamLibrary"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** SyncSteamPlaytimes */
+    post: operations["ApiUserSteamSyncSyncSteamPlaytimes"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/user/steam/import": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/user/steam/sync/stream": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** SyncSteamPlaytimesStream */
-        post: operations["ApiUserSteamSyncStreamSyncSteamPlaytimesStream"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** ImportSteamLibrary */
+    post: operations["ApiUserSteamImportImportSteamLibrary"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/user/steam/sync/stream": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/user/steam/import/stream": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** ImportSteamLibraryStream */
-        post: operations["ApiUserSteamImportStreamImportSteamLibraryStream"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** SyncSteamPlaytimesStream */
+    post: operations["ApiUserSteamSyncStreamSyncSteamPlaytimesStream"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/user/steam/import/stream": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/user/steam/achievements": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** GetSteamAchievements */
-        get: operations["ApiUserSteamAchievementsGetSteamAchievements"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** ImportSteamLibraryStream */
+    post: operations["ApiUserSteamImportStreamImportSteamLibraryStream"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/user/steam/achievements": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/csv/parse": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** ParseCsv */
-        post: operations["ApiCsvParseParseCsv"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** GetSteamAchievements */
+    get: operations["ApiUserSteamAchievementsGetSteamAchievements"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/csv/parse": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/csv/import": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** ImportCsv */
-        post: operations["ApiCsvImportImportCsv"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** ParseCsv */
+    post: operations["ApiCsvParseParseCsv"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/csv/import": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/csv/import/{session_id}/progress": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** GetCsvImportProgress */
-        get: operations["ApiCsvImportSessionIdProgressGetCsvImportProgress"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** ImportCsv */
+    post: operations["ApiCsvImportImportCsv"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/csv/import/{session_id}/progress": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/csv/import/{session_id}/cancel": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** CancelCsvImport */
-        post: operations["ApiCsvImportSessionIdCancelCancelCsvImport"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** GetCsvImportProgress */
+    get: operations["ApiCsvImportSessionIdProgressGetCsvImportProgress"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/csv/import/{session_id}/cancel": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/games/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** SearchGame */
-        get: operations["ApiGamesSearchSearchGame"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** CancelCsvImport */
+    post: operations["ApiCsvImportSessionIdCancelCancelCsvImport"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/games/search": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/games/enriched-search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** EnrichedSearch */
-        get: operations["ApiGamesEnrichedSearchEnrichedSearch"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** SearchGame */
+    get: operations["ApiGamesSearchSearchGame"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/games/enriched-search": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/games/{game_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** GetGame */
-        get: operations["ApiGamesGameIdGetGame"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** EnrichedSearch */
+    get: operations["ApiGamesEnrichedSearchEnrichedSearch"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/games/{game_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/games/{game_id}/time-to-beat": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** GetGameTimeToBeat */
-        get: operations["ApiGamesGameIdTimeToBeatGetGameTimeToBeat"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** GetGame */
+    get: operations["ApiGamesGameIdGetGame"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/games/{game_id}/time-to-beat": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/games/platforms/{platform_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** GetPlatform */
-        get: operations["ApiGamesPlatformsPlatformIdGetPlatform"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** GetGameTimeToBeat */
+    get: operations["ApiGamesGameIdTimeToBeatGetGameTimeToBeat"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/games/platforms/{platform_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/games/covers/{cover_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** GetCover */
-        get: operations["ApiGamesCoversCoverIdGetCover"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** GetPlatform */
+    get: operations["ApiGamesPlatformsPlatformIdGetPlatform"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/games/covers/{cover_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/games/genres/{genre_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** GetGenre */
-        get: operations["ApiGamesGenresGenreIdGetGenre"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** GetCover */
+    get: operations["ApiGamesCoversCoverIdGetCover"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/games/genres/{genre_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/games/steamgriddb-covers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** GetSteamgriddbCovers */
-        get: operations["ApiGamesSteamgriddbCoversGetSteamgriddbCovers"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** GetGenre */
+    get: operations["ApiGamesGenresGenreIdGetGenre"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/games/steamgriddb-covers": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/games/{steam_app_id}/price": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** GetGamePrice */
-        get: operations["ApiGamesSteamAppIdPriceGetGamePrice"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** GetSteamgriddbCovers */
+    get: operations["ApiGamesSteamgriddbCoversGetSteamgriddbCovers"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/games/{steam_app_id}/price": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/games/key-shop-prices": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** GetKeyShopPrices */
-        get: operations["ApiGamesKeyShopPricesGetKeyShopPrices"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** GetGamePrice */
+    get: operations["ApiGamesSteamAppIdPriceGetGamePrice"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/games/key-shop-prices": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/games/steam-app-id": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** GetSteamAppId */
-        get: operations["ApiGamesSteamAppIdGetSteamAppId"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** GetKeyShopPrices */
+    get: operations["ApiGamesKeyShopPricesGetKeyShopPrices"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/games/steam-app-id": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/prices/check": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** CheckPrices */
-        post: operations["ApiPricesCheckCheckPrices"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** GetSteamAppId */
+    get: operations["ApiGamesSteamAppIdGetSteamAppId"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/prices/check": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    get?: never;
+    put?: never;
+    /** CheckPrices */
+    post: operations["ApiPricesCheckCheckPrices"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: {
-        /** AchievementInfo */
-        AchievementInfo: {
-            apiname: string;
-            display_name: string;
-            description: string | null;
-            icon: string | null;
-            achieved: boolean;
-            unlock_time: number;
-            hidden: boolean;
-        };
-        /** AchievementProgress */
-        AchievementProgress: {
-            unlocked: number;
-            total: number;
-            achievements: components["schemas"]["AchievementInfo"][];
-        };
-        /** BacklogEntryResponse */
-        BacklogEntryResponse: {
-            id: number;
-            title: string;
-            genre: string[];
-            platform: string[];
-            status: string;
-            owned: boolean;
-            interest: number;
-            /** Format: date-time */
-            created_at: string;
-            /** Format: date-time */
-            updated_at: string;
-            release_date?: string | null;
-            image_link?: string | null;
-            main_time?: string | null;
-            main_plus_extra_time?: string | null;
-            completion_time?: string | null;
-            playtime?: string | null;
-            steam_app_id?: number | null;
-            review_stars?: number | null;
-            review?: string | null;
-            note?: string | null;
-            completed_at?: string | null;
-        };
-        /** CategoryResponse */
-        CategoryResponse: {
-            id: number;
-            name: string;
-            color: string;
-            description?: string | null;
-            created_at?: string | null;
-            updated_at?: string | null;
-        };
-        /** CreateBacklogEntryRequest */
-        CreateBacklogEntryRequest: {
-            title: string;
-            genre: string[];
-            platform: string[];
-            status: string;
-            owned: boolean;
-            interest: number;
-            release_date?: string | null;
-            image_link?: string | null;
-            main_time?: string | null;
-            main_plus_extra_time?: string | null;
-            completion_time?: string | null;
-            playtime?: string | null;
-            steam_app_id?: number | null;
-            review_stars?: number | null;
-            review?: string | null;
-            note?: string | null;
-        };
-        /** CreateCategoryRequest */
-        CreateCategoryRequest: {
-            category_name: string;
-            /** @default #000000 */
-            color?: string;
-            /** @default No description */
-            description?: string;
-        };
-        /** CreateCustomStatusRequest */
-        CreateCustomStatusRequest: {
-            name: string;
-        };
-        /** CreateUserRequest */
-        CreateUserRequest: {
-            username: string;
-            email: string;
-            password: string;
-            steam_id?: string | null;
-            /** @default false */
-            is_admin?: boolean;
-        };
-        /** CustomStatusResponse */
-        CustomStatusResponse: {
-            id: number;
-            name: string;
-        };
-        /** EnrichedResult */
-        EnrichedResult: {
-            id: number;
-            hltb_id: number;
-            title: string;
-            image_url: string | null;
-            genres: string[];
-            platforms: string[];
-            main_story: number;
-            main_story_with_extras: number;
-            completionist: number;
-            steam_app_id?: null;
-        };
-        /** GamePrice */
-        GamePrice: {
-            steam_app_id: number;
-            deals: components["schemas"]["GamePriceDeal"][];
-            on_sale: boolean;
-            /** Format: date-time */
-            checked_at: string;
-            cheapshark_game_id?: number | null;
-            cheapest_price_ever?: string | null;
-            cheapest_price_ever_date?: string | null;
-        };
-        /** GamePriceDeal */
-        GamePriceDeal: {
-            store: string;
-            icon: string;
-            price: number;
-            retail_price: number;
-            url: string;
-        };
-        /** IGDBCover */
-        IGDBCover: {
-            id: number;
-            alpha_channel?: boolean | null;
-            animated?: boolean | null;
-            checksum?: string | null;
-            game?: number | null;
-            game_localization?: number | null;
-            height?: number | null;
-            image_id?: string | null;
-            url?: string | null;
-            width?: number | null;
-        };
-        /** IGDBGameData */
-        IGDBGameData: {
-            id: number;
-            age_ratings?: number[] | null;
-            aggregated_rating?: number | null;
-            aggregated_rating_count?: number | null;
-            alternative_names?: number[] | null;
-            artworks?: number[] | null;
-            bundles?: number[] | null;
-            cover?: number | null;
-            created_at?: number | null;
-            dlcs?: number[] | null;
-            expansions?: number[] | null;
-            external_games?: number[] | null;
-            first_release_date?: number | null;
-            franchises?: number[] | null;
-            game_engines?: number[] | null;
-            game_modes?: number[] | null;
-            genres?: number[] | null;
-            hypes?: number | null;
-            involved_companies?: number[] | null;
-            keywords?: number[] | null;
-            name?: string | null;
-            platforms?: number[] | null;
-            player_perspectives?: number[] | null;
-            rating?: number | null;
-            rating_count?: number | null;
-            release_dates?: number[] | null;
-            screenshots?: number[] | null;
-            similar_games?: number[] | null;
-            slug?: string | null;
-            storyline?: string | null;
-            summary?: string | null;
-            tags?: number[] | null;
-            themes?: number[] | null;
-            total_rating?: number | null;
-            total_rating_count?: number | null;
-            updated_at?: number | null;
-            url?: string | null;
-            videos?: number[] | null;
-            websites?: number[] | null;
-            checksum?: string | null;
-            language_supports?: number[] | null;
-            game_localizations?: number[] | null;
-            collections?: number[] | null;
-            game_type?: number | null;
-            parent_game?: number | null;
-        };
-        /** IGDBGameTimeToBeat */
-        IGDBGameTimeToBeat: {
-            id: number;
-            checksum?: string | null;
-            completely?: number | null;
-            count?: number | null;
-            created_at?: number | null;
-            game_id?: number | null;
-            hastily?: number | null;
-            normally?: number | null;
-            updated_at?: number | null;
-        };
-        /** IGDBGenre */
-        IGDBGenre: {
-            id: number;
-            checksum?: string | null;
-            created_at?: number | null;
-            name?: string | null;
-            slug?: string | null;
-            updated_at?: number | null;
-            url?: string | null;
-        };
-        /** IGDBPlatform */
-        IGDBPlatform: {
-            id: number;
-            abbreviation?: string | null;
-            alternative_name?: string | null;
-            category?: number | null;
-            checksum?: string | null;
-            created_at?: number | null;
-            generation?: number | null;
-            name?: string | null;
-            platform_family?: number | null;
-            platform_logo?: number | null;
-            platform_type?: number | null;
-            slug?: string | null;
-            summary?: string | null;
-            updated_at?: number | null;
-            url?: string | null;
-            versions?: number[] | null;
-            websites?: number[] | null;
-        };
-        /** IGDBSearchResult */
-        IGDBSearchResult: {
-            id: number;
-            alternative_name?: string | null;
-            game?: number | null;
-            name?: string | null;
-            published_at?: number | null;
-        };
-        /** ImportCsvRequest */
-        ImportCsvRequest: {
-            content: string;
-            title_column: string;
-            genre_column: string;
-            platform_column: string;
-            status_column: string;
-            session_id?: string | null;
-        };
-        /** ImportProgressResponse */
-        ImportProgressResponse: {
-            processed: number;
-        };
-        /** ImportResult */
-        ImportResult: {
-            /** @default 0 */
-            success?: number;
-            /** @default 0 */
-            failed?: number;
-            errors?: components["schemas"]["RecordError"][];
-            missing_games?: components["schemas"]["MissingGame"][];
-        };
-        /** KeyShopOffer */
-        KeyShopOffer: {
-            shop: string;
-            title: string;
-            price: number;
-            currency: string;
-            url: string;
-            /** Format: date-time */
-            fetched_at: string;
-            discount_pct?: number | null;
-        };
-        /** LoginParams */
-        LoginParams: {
-            email: string;
-            password: string;
-        };
-        /** LoginResult */
-        LoginResult: {
-            access_token?: string | null;
-            /** @default false */
-            requires_2fa?: boolean;
-            challenge_token?: string | null;
-        };
-        /** MissingGame */
-        MissingGame: {
-            title: string;
-            genre: string;
-            platform: string;
-            status: string;
-        };
-        /** ParseCsvRequest */
-        ParseCsvRequest: {
-            content: string;
-        };
-        /** PublicUser */
-        PublicUser: {
-            id: number;
-            name: string;
-            email: string;
-            is_admin: boolean;
-            is_two_factor_enabled: boolean;
-            /** Format: date-time */
-            created_at: string;
-            /** Format: date-time */
-            updated_at: string;
-            steam_id?: string | null;
-            /** @default false */
-            has_steam_api_key?: boolean;
-            /** @default false */
-            has_igdb_credentials?: boolean;
-            /** @default false */
-            has_steamgriddb_api_key?: boolean;
-            /** @default false */
-            has_discord_webhook_url?: boolean;
-            /** @default false */
-            steam_auto_import_enabled?: boolean;
-            steam_family_ids?: string | null;
-        };
-        /** PublicUsername */
-        PublicUsername: {
-            id: number;
-            name: string;
-        };
-        /** RecordError */
-        RecordError: {
-            title: string;
-            error: string;
-        };
-        /** TokenResponse */
-        TokenResponse: {
-            access_token: string;
-            /** @default bearer */
-            token_type?: string;
-        };
-        /** TwoFactorDisableParams */
-        TwoFactorDisableParams: {
-            password: string;
-        };
-        /** TwoFactorEnrollResponse */
-        TwoFactorEnrollResponse: {
-            secret: string;
-            otpauth_url: string;
-        };
-        /** TwoFactorLoginVerifyParams */
-        TwoFactorLoginVerifyParams: {
-            challenge_token: string;
-            code: string;
-        };
-        /** TwoFactorVerifyEnrollmentParams */
-        TwoFactorVerifyEnrollmentParams: {
-            code: string;
-        };
-        /** TwoFactorVerifyEnrollmentResponse */
-        TwoFactorVerifyEnrollmentResponse: {
-            backup_codes: string[];
-        };
-        /** UpdateBacklogEntryRequest */
-        UpdateBacklogEntryRequest: {
-            title?: string;
-            genre?: string[];
-            platform?: string[];
-            status?: string;
-            owned?: boolean;
-            interest?: number;
-            release_date?: string | null;
-            image_link?: string | null;
-            main_time?: string | null;
-            main_plus_extra_time?: string | null;
-            completion_time?: string | null;
-            playtime?: string | null;
-            steam_app_id?: number | null;
-            review_stars?: number | null;
-            review?: string | null;
-            note?: string | null;
-        };
-        /** UpdateCategoryRequest */
-        UpdateCategoryRequest: {
-            category_name?: string;
-            color?: string;
-            description?: string | null;
-        };
-        /** UpdateCustomStatusRequest */
-        UpdateCustomStatusRequest: {
-            name: string;
-        };
-        /** UpdateOwnUserRequest */
-        UpdateOwnUserRequest: {
-            username?: string;
-            email?: string;
-            password?: string;
-            steam_id?: string | null;
-            steam_api_key?: string | null;
-            igdb_client_id?: string | null;
-            igdb_client_secret?: string | null;
-            steamgriddb_api_key?: string | null;
-            discord_webhook_url?: string | null;
-            steam_auto_import_enabled?: boolean;
-            steam_family_ids?: string | null;
-        };
-        /** UpdateUserAdminRequest */
-        UpdateUserAdminRequest: {
-            username?: string;
-            email?: string;
-            password?: string;
-            steam_id?: string | null;
-            steam_api_key?: string | null;
-            igdb_client_id?: string | null;
-            igdb_client_secret?: string | null;
-            steamgriddb_api_key?: string | null;
-            discord_webhook_url?: string | null;
-            steam_auto_import_enabled?: boolean;
-            steam_family_ids?: string | null;
-            is_admin?: boolean;
-        };
+  schemas: {
+    /** AchievementInfo */
+    AchievementInfo: {
+      apiname: string;
+      display_name: string;
+      description: string | null;
+      icon: string | null;
+      achieved: boolean;
+      unlock_time: number;
+      hidden: boolean;
     };
-    responses: never;
-    parameters: never;
-    requestBodies: never;
-    headers: never;
-    pathItems: never;
+    /** AchievementProgress */
+    AchievementProgress: {
+      unlocked: number;
+      total: number;
+      achievements: components["schemas"]["AchievementInfo"][];
+    };
+    /** BacklogEntryResponse */
+    BacklogEntryResponse: {
+      id: number;
+      title: string;
+      genre: string[];
+      platform: string[];
+      status: string;
+      owned: boolean;
+      interest: number;
+      /** Format: date-time */
+      created_at: string;
+      /** Format: date-time */
+      updated_at: string;
+      release_date?: string | null;
+      image_link?: string | null;
+      main_time?: string | null;
+      main_plus_extra_time?: string | null;
+      completion_time?: string | null;
+      playtime?: string | null;
+      steam_app_id?: number | null;
+      review_stars?: number | null;
+      review?: string | null;
+      note?: string | null;
+      completed_at?: string | null;
+    };
+    /** CategoryResponse */
+    CategoryResponse: {
+      id: number;
+      name: string;
+      color: string;
+      description?: string | null;
+      created_at?: string | null;
+      updated_at?: string | null;
+    };
+    /** CreateBacklogEntryRequest */
+    CreateBacklogEntryRequest: {
+      title: string;
+      genre: string[];
+      platform: string[];
+      status: string;
+      owned: boolean;
+      interest: number;
+      release_date?: string | null;
+      image_link?: string | null;
+      main_time?: string | null;
+      main_plus_extra_time?: string | null;
+      completion_time?: string | null;
+      playtime?: string | null;
+      steam_app_id?: number | null;
+      review_stars?: number | null;
+      review?: string | null;
+      note?: string | null;
+    };
+    /** CreateCategoryRequest */
+    CreateCategoryRequest: {
+      category_name: string;
+      /** @default #000000 */
+      color?: string;
+      /** @default No description */
+      description?: string;
+    };
+    /** CreateCustomStatusRequest */
+    CreateCustomStatusRequest: {
+      name: string;
+    };
+    /** CreateUserRequest */
+    CreateUserRequest: {
+      username: string;
+      email: string;
+      password: string;
+      steam_id?: string | null;
+      /** @default false */
+      is_admin?: boolean;
+    };
+    /** CustomStatusResponse */
+    CustomStatusResponse: {
+      id: number;
+      name: string;
+    };
+    /** EnrichedResult */
+    EnrichedResult: {
+      id: number;
+      hltb_id: number;
+      title: string;
+      image_url: string | null;
+      genres: string[];
+      platforms: string[];
+      main_story: number;
+      main_story_with_extras: number;
+      completionist: number;
+      steam_app_id?: null;
+    };
+    /** GamePrice */
+    GamePrice: {
+      steam_app_id: number;
+      deals: components["schemas"]["GamePriceDeal"][];
+      on_sale: boolean;
+      /** Format: date-time */
+      checked_at: string;
+      cheapshark_game_id?: number | null;
+      cheapest_price_ever?: string | null;
+      cheapest_price_ever_date?: string | null;
+    };
+    /** GamePriceDeal */
+    GamePriceDeal: {
+      store: string;
+      icon: string;
+      price: number;
+      retail_price: number;
+      url: string;
+    };
+    /** IGDBCover */
+    IGDBCover: {
+      id: number;
+      alpha_channel?: boolean | null;
+      animated?: boolean | null;
+      checksum?: string | null;
+      game?: number | null;
+      game_localization?: number | null;
+      height?: number | null;
+      image_id?: string | null;
+      url?: string | null;
+      width?: number | null;
+    };
+    /** IGDBGameData */
+    IGDBGameData: {
+      id: number;
+      age_ratings?: number[] | null;
+      aggregated_rating?: number | null;
+      aggregated_rating_count?: number | null;
+      alternative_names?: number[] | null;
+      artworks?: number[] | null;
+      bundles?: number[] | null;
+      cover?: number | null;
+      created_at?: number | null;
+      dlcs?: number[] | null;
+      expansions?: number[] | null;
+      external_games?: number[] | null;
+      first_release_date?: number | null;
+      franchises?: number[] | null;
+      game_engines?: number[] | null;
+      game_modes?: number[] | null;
+      genres?: number[] | null;
+      hypes?: number | null;
+      involved_companies?: number[] | null;
+      keywords?: number[] | null;
+      name?: string | null;
+      platforms?: number[] | null;
+      player_perspectives?: number[] | null;
+      rating?: number | null;
+      rating_count?: number | null;
+      release_dates?: number[] | null;
+      screenshots?: number[] | null;
+      similar_games?: number[] | null;
+      slug?: string | null;
+      storyline?: string | null;
+      summary?: string | null;
+      tags?: number[] | null;
+      themes?: number[] | null;
+      total_rating?: number | null;
+      total_rating_count?: number | null;
+      updated_at?: number | null;
+      url?: string | null;
+      videos?: number[] | null;
+      websites?: number[] | null;
+      checksum?: string | null;
+      language_supports?: number[] | null;
+      game_localizations?: number[] | null;
+      collections?: number[] | null;
+      game_type?: number | null;
+      parent_game?: number | null;
+    };
+    /** IGDBGameTimeToBeat */
+    IGDBGameTimeToBeat: {
+      id: number;
+      checksum?: string | null;
+      completely?: number | null;
+      count?: number | null;
+      created_at?: number | null;
+      game_id?: number | null;
+      hastily?: number | null;
+      normally?: number | null;
+      updated_at?: number | null;
+    };
+    /** IGDBGenre */
+    IGDBGenre: {
+      id: number;
+      checksum?: string | null;
+      created_at?: number | null;
+      name?: string | null;
+      slug?: string | null;
+      updated_at?: number | null;
+      url?: string | null;
+    };
+    /** IGDBPlatform */
+    IGDBPlatform: {
+      id: number;
+      abbreviation?: string | null;
+      alternative_name?: string | null;
+      category?: number | null;
+      checksum?: string | null;
+      created_at?: number | null;
+      generation?: number | null;
+      name?: string | null;
+      platform_family?: number | null;
+      platform_logo?: number | null;
+      platform_type?: number | null;
+      slug?: string | null;
+      summary?: string | null;
+      updated_at?: number | null;
+      url?: string | null;
+      versions?: number[] | null;
+      websites?: number[] | null;
+    };
+    /** IGDBSearchResult */
+    IGDBSearchResult: {
+      id: number;
+      alternative_name?: string | null;
+      game?: number | null;
+      name?: string | null;
+      published_at?: number | null;
+    };
+    /** ImportCsvRequest */
+    ImportCsvRequest: {
+      content: string;
+      title_column: string;
+      genre_column: string;
+      platform_column: string;
+      status_column: string;
+      session_id?: string | null;
+    };
+    /** ImportProgressResponse */
+    ImportProgressResponse: {
+      processed: number;
+    };
+    /** ImportResult */
+    ImportResult: {
+      /** @default 0 */
+      success?: number;
+      /** @default 0 */
+      failed?: number;
+      errors?: components["schemas"]["RecordError"][];
+      missing_games?: components["schemas"]["MissingGame"][];
+    };
+    /** KeyShopOffer */
+    KeyShopOffer: {
+      shop: string;
+      title: string;
+      price: number;
+      currency: string;
+      url: string;
+      /** Format: date-time */
+      fetched_at: string;
+      discount_pct?: number | null;
+    };
+    /** LoginParams */
+    LoginParams: {
+      email: string;
+      password: string;
+    };
+    /** LoginResult */
+    LoginResult: {
+      access_token?: string | null;
+      /** @default false */
+      requires_2fa?: boolean;
+      challenge_token?: string | null;
+    };
+    /** MissingGame */
+    MissingGame: {
+      title: string;
+      genre: string;
+      platform: string;
+      status: string;
+    };
+    /** ParseCsvRequest */
+    ParseCsvRequest: {
+      content: string;
+    };
+    /** PublicUser */
+    PublicUser: {
+      id: number;
+      name: string;
+      email: string;
+      is_admin: boolean;
+      is_two_factor_enabled: boolean;
+      /** Format: date-time */
+      created_at: string;
+      /** Format: date-time */
+      updated_at: string;
+      steam_id?: string | null;
+      /** @default false */
+      has_steam_api_key?: boolean;
+      /** @default false */
+      has_igdb_credentials?: boolean;
+      /** @default false */
+      has_steamgriddb_api_key?: boolean;
+      /** @default false */
+      has_discord_webhook_url?: boolean;
+      /** @default false */
+      steam_auto_import_enabled?: boolean;
+      steam_family_ids?: string | null;
+    };
+    /** PublicUsername */
+    PublicUsername: {
+      id: number;
+      name: string;
+    };
+    /** RecordError */
+    RecordError: {
+      title: string;
+      error: string;
+    };
+    /** TokenResponse */
+    TokenResponse: {
+      access_token: string;
+      /** @default bearer */
+      token_type?: string;
+    };
+    /** TwoFactorDisableParams */
+    TwoFactorDisableParams: {
+      password: string;
+    };
+    /** TwoFactorEnrollResponse */
+    TwoFactorEnrollResponse: {
+      secret: string;
+      otpauth_url: string;
+    };
+    /** TwoFactorLoginVerifyParams */
+    TwoFactorLoginVerifyParams: {
+      challenge_token: string;
+      code: string;
+    };
+    /** TwoFactorVerifyEnrollmentParams */
+    TwoFactorVerifyEnrollmentParams: {
+      code: string;
+    };
+    /** TwoFactorVerifyEnrollmentResponse */
+    TwoFactorVerifyEnrollmentResponse: {
+      backup_codes: string[];
+    };
+    /** UpdateBacklogEntryRequest */
+    UpdateBacklogEntryRequest: {
+      title?: string;
+      genre?: string[];
+      platform?: string[];
+      status?: string;
+      owned?: boolean;
+      interest?: number;
+      release_date?: string | null;
+      image_link?: string | null;
+      main_time?: string | null;
+      main_plus_extra_time?: string | null;
+      completion_time?: string | null;
+      playtime?: string | null;
+      steam_app_id?: number | null;
+      review_stars?: number | null;
+      review?: string | null;
+      note?: string | null;
+    };
+    /** UpdateCategoryRequest */
+    UpdateCategoryRequest: {
+      category_name?: string;
+      color?: string;
+      description?: string | null;
+    };
+    /** UpdateCustomStatusRequest */
+    UpdateCustomStatusRequest: {
+      name: string;
+    };
+    /** UpdateOwnUserRequest */
+    UpdateOwnUserRequest: {
+      username?: string;
+      email?: string;
+      password?: string;
+      steam_id?: string | null;
+      steam_api_key?: string | null;
+      igdb_client_id?: string | null;
+      igdb_client_secret?: string | null;
+      steamgriddb_api_key?: string | null;
+      discord_webhook_url?: string | null;
+      steam_auto_import_enabled?: boolean;
+      steam_family_ids?: string | null;
+    };
+    /** UpdateUserAdminRequest */
+    UpdateUserAdminRequest: {
+      username?: string;
+      email?: string;
+      password?: string;
+      steam_id?: string | null;
+      steam_api_key?: string | null;
+      igdb_client_id?: string | null;
+      igdb_client_secret?: string | null;
+      steamgriddb_api_key?: string | null;
+      discord_webhook_url?: string | null;
+      steam_auto_import_enabled?: boolean;
+      steam_family_ids?: string | null;
+      is_admin?: boolean;
+    };
+  };
+  responses: never;
+  parameters: never;
+  requestBodies: never;
+  headers: never;
+  pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    HealthHealth: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
+  HealthHealth: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    ApiImagesProxyProxyImage: {
-        parameters: {
-            query: {
-                url: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
+        content: {
+          "application/json": unknown;
         };
+      };
     };
-    ApiAuthLoginLogin: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LoginParams"];
-            };
-        };
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LoginResult"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
+  };
+  ApiImagesProxyProxyImage: {
+    parameters: {
+      query: {
+        url: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    ApiAuth2FaLoginVerifyLoginVerify: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TwoFactorLoginVerifyParams"];
-            };
+        content: {
+          "application/json": unknown;
         };
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TokenResponse"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
     };
-    ApiAuth2FaEnrollEnrollTwoFactor: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Document created, URL follows */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TwoFactorEnrollResponse"];
-                };
-            };
-        };
+  };
+  ApiAuthLoginLogin: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    ApiAuth2FaVerifyVerifyTwoFactor: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TwoFactorVerifyEnrollmentParams"];
-            };
-        };
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TwoFactorVerifyEnrollmentResponse"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["LoginParams"];
+      };
     };
-    ApiAuth2FaDisableDisableTwoFactor: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TwoFactorDisableParams"];
-            };
+        content: {
+          "application/json": components["schemas"]["LoginResult"];
         };
-        responses: {
-            /** @description Request fulfilled, nothing follows */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
     };
-    ApiBacklogEntriesListEntries: {
-        parameters: {
-            query?: {
-                status?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BacklogEntryResponse"][];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
+  };
+  ApiAuth2FaLoginVerifyLoginVerify: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    ApiBacklogEntriesCreateEntry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateBacklogEntryRequest"];
-            };
-        };
-        responses: {
-            /** @description Document created, URL follows */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BacklogEntryResponse"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["TwoFactorLoginVerifyParams"];
+      };
     };
-    ApiBacklogEntriesEntryIdGetEntry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                entry_id: number;
-            };
-            cookie?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BacklogEntryResponse"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["TokenResponse"];
         };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
     };
-    ApiBacklogEntriesEntryIdUpdateEntry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                entry_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateBacklogEntryRequest"];
-            };
-        };
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BacklogEntryResponse"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
+  };
+  ApiAuth2FaEnrollEnrollTwoFactor: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    ApiBacklogEntriesEntryIdDeleteEntry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                entry_id: number;
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Document created, URL follows */
+      201: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, nothing follows */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["TwoFactorEnrollResponse"];
         };
+      };
     };
-    ApiBacklogEntriesEntryIdCategoriesGetCategoriesForEntry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                entry_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CategoryResponse"][];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
+  };
+  ApiAuth2FaVerifyVerifyTwoFactor: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    ApiBacklogEntriesEntryIdCategoriesCategoryIdAddCategoryToEntry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                entry_id: number;
-                category_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Document created, URL follows */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["TwoFactorVerifyEnrollmentParams"];
+      };
     };
-    ApiBacklogEntriesEntryIdCategoriesCategoryIdRemoveCategoryFromEntry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                entry_id: number;
-                category_id: number;
-            };
-            cookie?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, nothing follows */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["TwoFactorVerifyEnrollmentResponse"];
         };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
     };
-    ApiBacklogCategoriesListCategories: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CategoryResponse"][];
-                };
-            };
-        };
+  };
+  ApiAuth2FaDisableDisableTwoFactor: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    ApiBacklogCategoriesCreateCategory: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateCategoryRequest"];
-            };
-        };
-        responses: {
-            /** @description Document created, URL follows */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CategoryResponse"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["TwoFactorDisableParams"];
+      };
     };
-    ApiBacklogCategoriesCategoryIdUpdateCategory: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                category_id: number;
-            };
-            cookie?: never;
+    responses: {
+      /** @description Request fulfilled, nothing follows */
+      204: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateCategoryRequest"];
-            };
+        content?: never;
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
         };
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CategoryResponse"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
         };
+      };
     };
-    ApiBacklogCategoriesCategoryIdDeleteCategory: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                category_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, nothing follows */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
+  };
+  ApiBacklogEntriesListEntries: {
+    parameters: {
+      query?: {
+        status?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    ApiBacklogCategoriesCategoryIdEntriesGetEntriesForCategory: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                category_id: number;
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BacklogEntryResponse"][];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["BacklogEntryResponse"][];
         };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
     };
-    ApiBacklogStatusesListCustomStatuses: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CustomStatusResponse"][];
-                };
-            };
-        };
+  };
+  ApiBacklogEntriesCreateEntry: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    ApiBacklogStatusesCreateCustomStatus: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateCustomStatusRequest"];
-            };
-        };
-        responses: {
-            /** @description Document created, URL follows */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CustomStatusResponse"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-            /** @description Request conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateBacklogEntryRequest"];
+      };
     };
-    ApiBacklogStatusesStatusIdUpdateCustomStatus: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                status_id: number;
-            };
-            cookie?: never;
+    responses: {
+      /** @description Document created, URL follows */
+      201: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateCustomStatusRequest"];
-            };
+        content: {
+          "application/json": components["schemas"]["BacklogEntryResponse"];
         };
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CustomStatusResponse"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-            /** @description Nothing matches the given URI */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-            /** @description Request conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
     };
-    ApiBacklogStatusesStatusIdDeleteCustomStatus: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                status_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, nothing follows */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-            /** @description Nothing matches the given URI */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
+  };
+  ApiBacklogEntriesEntryIdGetEntry: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        entry_id: number;
+      };
+      cookie?: never;
     };
-    ApiUserMeGetOwnUser: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    "cache-control"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PublicUser"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["BacklogEntryResponse"];
         };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
     };
-    ApiUserMeUpdateOwnUser: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateOwnUserRequest"];
-            };
-        };
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    "cache-control"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PublicUser"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
+  };
+  ApiBacklogEntriesEntryIdUpdateEntry: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        entry_id: number;
+      };
+      cookie?: never;
     };
-    ApiUserMeDeleteOwnUser: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, nothing follows */
-            204: {
-                headers: {
-                    "cache-control"?: string;
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateBacklogEntryRequest"];
+      };
     };
-    ApiUserByUsernameGetUserByUsername: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                username: string;
-            };
-            cookie?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    "cache-control"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PublicUsername"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["BacklogEntryResponse"];
         };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
     };
-    ApiAdminUsersListAllUsers: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    "cache-control"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PublicUser"][];
-                };
-            };
-        };
+  };
+  ApiBacklogEntriesEntryIdDeleteEntry: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        entry_id: number;
+      };
+      cookie?: never;
     };
-    ApiAdminUsersCreateUserAdmin: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, nothing follows */
+      204: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateUserRequest"];
-            };
+        content?: never;
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
         };
-        responses: {
-            /** @description Document created, URL follows */
-            201: {
-                headers: {
-                    "cache-control"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PublicUser"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
         };
+      };
     };
-    ApiAdminUsersUserIdGetUserByIdAdmin: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    "cache-control"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PublicUser"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
+  };
+  ApiBacklogEntriesEntryIdCategoriesGetCategoriesForEntry: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        entry_id: number;
+      };
+      cookie?: never;
     };
-    ApiAdminUsersUserIdUpdateUserAdmin: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: number;
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateUserAdminRequest"];
-            };
+        content: {
+          "application/json": components["schemas"]["CategoryResponse"][];
         };
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    "cache-control"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PublicUser"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
     };
-    ApiAdminUsersUserIdDeleteUserAdmin: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, nothing follows */
-            204: {
-                headers: {
-                    "cache-control"?: string;
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
+  };
+  ApiBacklogEntriesEntryIdCategoriesCategoryIdAddCategoryToEntry: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        entry_id: number;
+        category_id: number;
+      };
+      cookie?: never;
     };
-    ApiUserSteamSyncSyncSteamPlaytimes: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Document created, URL follows */
+      201: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    "cache-control"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BacklogEntryResponse"][];
-                };
-            };
+        content?: never;
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
     };
-    ApiUserSteamImportImportSteamLibrary: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    "cache-control"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BacklogEntryResponse"][];
-                };
-            };
-        };
+  };
+  ApiBacklogEntriesEntryIdCategoriesCategoryIdRemoveCategoryFromEntry: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        entry_id: number;
+        category_id: number;
+      };
+      cookie?: never;
     };
-    ApiUserSteamSyncStreamSyncSteamPlaytimesStream: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, nothing follows */
+      204: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    "cache-control"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/event-stream": unknown;
-                };
-            };
+        content?: never;
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
     };
-    ApiUserSteamImportStreamImportSteamLibraryStream: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    "cache-control"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/event-stream": unknown;
-                };
-            };
-        };
+  };
+  ApiBacklogCategoriesListCategories: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    ApiUserSteamAchievementsGetSteamAchievements: {
-        parameters: {
-            query: {
-                steam_app_id: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    "cache-control"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AchievementProgress"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["CategoryResponse"][];
         };
+      };
     };
-    ApiCsvParseParseCsv: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ParseCsvRequest"];
-            };
-        };
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    }[];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
+  };
+  ApiBacklogCategoriesCreateCategory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    ApiCsvImportImportCsv: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ImportCsvRequest"];
-            };
-        };
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ImportResult"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateCategoryRequest"];
+      };
     };
-    ApiCsvImportSessionIdProgressGetCsvImportProgress: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                session_id: string;
-            };
-            cookie?: never;
+    responses: {
+      /** @description Document created, URL follows */
+      201: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ImportProgressResponse"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["CategoryResponse"];
         };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
     };
-    ApiCsvImportSessionIdCancelCancelCsvImport: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                session_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, nothing follows */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
+  };
+  ApiBacklogCategoriesCategoryIdUpdateCategory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        category_id: number;
+      };
+      cookie?: never;
     };
-    ApiGamesSearchSearchGame: {
-        parameters: {
-            query: {
-                search_term: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IGDBSearchResult"][];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateCategoryRequest"];
+      };
     };
-    ApiGamesEnrichedSearchEnrichedSearch: {
-        parameters: {
-            query: {
-                search_term: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EnrichedResult"][];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["CategoryResponse"];
         };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
     };
-    ApiGamesGameIdGetGame: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                game_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IGDBGameData"][];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
+  };
+  ApiBacklogCategoriesCategoryIdDeleteCategory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        category_id: number;
+      };
+      cookie?: never;
     };
-    ApiGamesGameIdTimeToBeatGetGameTimeToBeat: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                game_id: number;
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, nothing follows */
+      204: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IGDBGameTimeToBeat"][];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
+        content?: never;
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
     };
-    ApiGamesPlatformsPlatformIdGetPlatform: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                platform_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IGDBPlatform"][];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
+  };
+  ApiBacklogCategoriesCategoryIdEntriesGetEntriesForCategory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        category_id: number;
+      };
+      cookie?: never;
     };
-    ApiGamesCoversCoverIdGetCover: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                cover_id: number;
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IGDBCover"][];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["BacklogEntryResponse"][];
         };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
     };
-    ApiGamesGenresGenreIdGetGenre: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                genre_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IGDBGenre"][];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
+  };
+  ApiBacklogStatusesListCustomStatuses: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    ApiGamesSteamgriddbCoversGetSteamgriddbCovers: {
-        parameters: {
-            query: {
-                steam_app_id: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string[];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["CustomStatusResponse"][];
         };
+      };
     };
-    ApiGamesSteamAppIdPriceGetGamePrice: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                steam_app_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GamePrice"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
+  };
+  ApiBacklogStatusesCreateCustomStatus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    ApiGamesKeyShopPricesGetKeyShopPrices: {
-        parameters: {
-            query: {
-                title: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["KeyShopOffer"][];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateCustomStatusRequest"];
+      };
     };
-    ApiGamesSteamAppIdGetSteamAppId: {
-        parameters: {
-            query: {
-                title: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description Document created, URL follows */
+      201: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": number | null;
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["CustomStatusResponse"];
         };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+      /** @description Request conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
     };
-    ApiPricesCheckCheckPrices: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Cron-Secret"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: number;
-                    };
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-            /** @description No permission -- see authorization schemes */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
+  };
+  ApiBacklogStatusesStatusIdUpdateCustomStatus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        status_id: number;
+      };
+      cookie?: never;
     };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateCustomStatusRequest"];
+      };
+    };
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CustomStatusResponse"];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+      /** @description Nothing matches the given URI */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+      /** @description Request conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+    };
+  };
+  ApiBacklogStatusesStatusIdDeleteCustomStatus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        status_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, nothing follows */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+      /** @description Nothing matches the given URI */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+    };
+  };
+  ApiUserMeGetOwnUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          "cache-control"?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PublicUser"];
+        };
+      };
+    };
+  };
+  ApiUserMeUpdateOwnUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateOwnUserRequest"];
+      };
+    };
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          "cache-control"?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PublicUser"];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+    };
+  };
+  ApiUserMeDeleteOwnUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, nothing follows */
+      204: {
+        headers: {
+          "cache-control"?: string;
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  ApiUserByUsernameGetUserByUsername: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        username: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          "cache-control"?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PublicUsername"];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+    };
+  };
+  ApiAdminUsersListAllUsers: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          "cache-control"?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PublicUser"][];
+        };
+      };
+    };
+  };
+  ApiAdminUsersCreateUserAdmin: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateUserRequest"];
+      };
+    };
+    responses: {
+      /** @description Document created, URL follows */
+      201: {
+        headers: {
+          "cache-control"?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PublicUser"];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+    };
+  };
+  ApiAdminUsersUserIdGetUserByIdAdmin: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        user_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          "cache-control"?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PublicUser"];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+    };
+  };
+  ApiAdminUsersUserIdUpdateUserAdmin: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        user_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateUserAdminRequest"];
+      };
+    };
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          "cache-control"?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PublicUser"];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+    };
+  };
+  ApiAdminUsersUserIdDeleteUserAdmin: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        user_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, nothing follows */
+      204: {
+        headers: {
+          "cache-control"?: string;
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+    };
+  };
+  ApiUserSteamSyncSyncSteamPlaytimes: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          "cache-control"?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BacklogEntryResponse"][];
+        };
+      };
+    };
+  };
+  ApiUserSteamImportImportSteamLibrary: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          "cache-control"?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BacklogEntryResponse"][];
+        };
+      };
+    };
+  };
+  ApiUserSteamSyncStreamSyncSteamPlaytimesStream: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          "cache-control"?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "text/event-stream": unknown;
+        };
+      };
+    };
+  };
+  ApiUserSteamImportStreamImportSteamLibraryStream: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          "cache-control"?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "text/event-stream": unknown;
+        };
+      };
+    };
+  };
+  ApiUserSteamAchievementsGetSteamAchievements: {
+    parameters: {
+      query: {
+        steam_app_id: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          "cache-control"?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AchievementProgress"];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+    };
+  };
+  ApiCsvParseParseCsv: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ParseCsvRequest"];
+      };
+    };
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            [key: string]: unknown;
+          }[];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+    };
+  };
+  ApiCsvImportImportCsv: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ImportCsvRequest"];
+      };
+    };
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ImportResult"];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+    };
+  };
+  ApiCsvImportSessionIdProgressGetCsvImportProgress: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        session_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ImportProgressResponse"];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+    };
+  };
+  ApiCsvImportSessionIdCancelCancelCsvImport: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        session_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, nothing follows */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+    };
+  };
+  ApiGamesSearchSearchGame: {
+    parameters: {
+      query: {
+        search_term: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IGDBSearchResult"][];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+    };
+  };
+  ApiGamesEnrichedSearchEnrichedSearch: {
+    parameters: {
+      query: {
+        search_term: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EnrichedResult"][];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+    };
+  };
+  ApiGamesGameIdGetGame: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        game_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IGDBGameData"][];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+    };
+  };
+  ApiGamesGameIdTimeToBeatGetGameTimeToBeat: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        game_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IGDBGameTimeToBeat"][];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+    };
+  };
+  ApiGamesPlatformsPlatformIdGetPlatform: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        platform_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IGDBPlatform"][];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+    };
+  };
+  ApiGamesCoversCoverIdGetCover: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        cover_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IGDBCover"][];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+    };
+  };
+  ApiGamesGenresGenreIdGetGenre: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        genre_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IGDBGenre"][];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+    };
+  };
+  ApiGamesSteamgriddbCoversGetSteamgriddbCovers: {
+    parameters: {
+      query: {
+        steam_app_id: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": string[];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+    };
+  };
+  ApiGamesSteamAppIdPriceGetGamePrice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        steam_app_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GamePrice"];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+    };
+  };
+  ApiGamesKeyShopPricesGetKeyShopPrices: {
+    parameters: {
+      query: {
+        title: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["KeyShopOffer"][];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+    };
+  };
+  ApiGamesSteamAppIdGetSteamAppId: {
+    parameters: {
+      query: {
+        title: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": number | null;
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+    };
+  };
+  ApiPricesCheckCheckPrices: {
+    parameters: {
+      query?: never;
+      header?: {
+        "X-Cron-Secret"?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            [key: string]: number;
+          };
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+      /** @description No permission -- see authorization schemes */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            status_code: number;
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+          };
+        };
+      };
+    };
+  };
 }

@@ -125,18 +125,17 @@ Given the above, this implementation:
 
 **New integration module** -
 `backend/src/backlog_manager_backend/integrations/key_shops/`:
-- `base.py` - `KeyShopAdapter` protocol: `shop_name: str` and
-  `async def search(title: str) -> list[KeyShopOffer]`.
-- `shopify.py` - one shared `_search_shopify_store(base_url, title)` helper
-  (both current adapters are Shopify storefronts hitting the same
-  `/search/suggest.json` shape) used by:
-  - `royalcdkeys.py` - `RoyalCdKeysAdapter`
-  - `premiumcdkeys.py` - `PremiumCdKeysAdapter`
-- `types.py` (or `integrations/types.py`, following the existing
-  cross-integration convention) - `KeyShopOffer` msgspec struct: `shop`,
-  `title`, `price`, `currency`, `discount_pct`, `url`, `fetched_at` (region
-  omitted - both current adapters are EUR-only storefronts with no
-  region parameter).
+- `shopify.py` - one shared `search_shopify_store(shop_name, base_url,
+  title)` helper (both current adapters are Shopify storefronts hitting
+  the same `/search/suggest.json` shape), plus the `_matches_search_title`
+  title filter that keeps a base game from matching its sequel.
+- `royalcdkeys.py` / `premiumcdkeys.py` - one adapter module per shop,
+  each exposing the same contract the service fans out to:
+  `SHOP_NAME: str` and `async def search(title: str) -> list[KeyShopOffer]`.
+- `integrations/types.py` (following the existing cross-integration
+  convention) - `KeyShopOffer` msgspec struct: `shop`, `title`, `price`,
+  `currency`, `discount_pct`, `url`, `fetched_at` (region omitted - both
+  current adapters are EUR-only storefronts with no region parameter).
 
 **New service** - `services/key_shop_price_service.py`:
 - `async def search_key_shops(title: str) -> list[KeyShopOffer]` - runs all
@@ -172,5 +171,3 @@ following the pattern already established in `services/price_service.py`.
   the response shape while this was written (see the table above); no
   further manual verification needed since both are stateless GET calls
   with a fixed handful of response fields.
-</content>
-</invoke>

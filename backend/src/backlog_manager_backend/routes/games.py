@@ -1,4 +1,5 @@
 from collections.abc import Awaitable
+from typing import Annotated
 
 import httpx
 import msgspec
@@ -6,7 +7,7 @@ from cryptography.fernet import InvalidToken
 from litestar import Router, get
 from litestar.di import NamedDependency, Provide
 from litestar.exceptions import ServiceUnavailableException
-from litestar.params import FromPath, FromQuery
+from litestar.params import FromPath, FromQuery, QueryParameter
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.auth.dependencies import BEARER_SECURITY_REQUIREMENT, get_current_user
@@ -205,7 +206,7 @@ async def get_game_price(
 
 @get("/api/games/key-shop-prices")
 async def get_key_shop_prices(
-    title: FromQuery[str], current_user: NamedDependency[User]
+    title: Annotated[str, QueryParameter(min_length=1)], current_user: NamedDependency[User]
 ) -> list[KeyShopOffer]:
     """current_user is unused (see get_game_price's identical comment
     above - price data isn't user-specific, but the parameter must stay
