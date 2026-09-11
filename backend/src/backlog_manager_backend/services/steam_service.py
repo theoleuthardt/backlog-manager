@@ -392,6 +392,48 @@ async def _get_steam_app_name(app_id: int) -> str | None:
     return None
 
 
+async def preview_library(
+    session: AsyncSession,
+    user: User,
+    api_key: str,
+    steamgriddb_api_key: str | None = None,
+    on_progress: ProgressCallback | None = None,
+    family_steam_ids: list[str] | None = None,
+) -> list[SteamPreviewItem]:
+    """Lists what a library import *would* create - every owned game
+    (incl. Steam Family members' games) not already linked to a backlog
+    entry by steam_app_id - without writing anything. Covers come from
+    SteamGridDB best-effort like import_library, so the preview shows
+    the same images the import would end up with."""
+    if not user.steam_id:
+        raise ValidationError(_STEAM_NOT_LINKED)
+
+    owned_games = await get_owned_games(user.steam_id, api_key)
+    if family_steam_ids:
+        owned_games = await _merge_family_games(owned_games, family_steam_ids, api_key)
+
+    existing_app_ids = {
+        entry.steam_app_id
+        for entry in await backlog_entry_repo.get_backlog_entries_by_user(session, user.id)
+        if entry.steam_app_id is not None
+    }
+
+    preview: list[SteamPreviewItem] = []
+    total = len(owned_games)
+    for processed, game in enumerate(owned_games, start=1):
+        if game.appid not in existing_app_ids:
+            preview.append(
+                SteamPreviewItem(
+                    steam_app_id=game.appid,
+                    title=game.name,
+                    image_link=await _try_get_cover(game.appid, steamgriddb_api_key),
+                )
+            )
+        if on_progress:
+            await on_progress(processed, total)
+    return preview
+
+
 async def preview_wishlist(
     session: AsyncSession, user: User
 ) -> list[SteamPreviewItem]:

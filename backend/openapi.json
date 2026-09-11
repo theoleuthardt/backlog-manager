@@ -2645,6 +2645,37 @@
         ]
       }
     },
+    "/api/user/steam/library/preview/stream": {
+      "post": {
+        "summary": "PreviewSteamLibraryStream",
+        "operationId": "ApiUserSteamLibraryPreviewStreamPreviewSteamLibraryStream",
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {
+              "cache-control": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            },
+            "content": {
+              "text/event-stream": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/csv/parse": {
       "post": {
         "summary": "ParseCsv",

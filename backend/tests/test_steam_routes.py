@@ -874,3 +874,82 @@ async def test_import_steam_wishlist_stream_sends_error_when_not_linked(
     assert response.status_code == 200
     messages = _parse_sse(response.text)
     assert messages == [("error", "Steam account is not linked")]
+
+async def test_preview_steam_library_stream_lists_unlinked_games(
+    postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.services import steam_service
+
+    _configure_steam_api_key(monkeypatch)
+
+    async def fake_preview_library(
+        db_session: object,
+        user: object,
+        api_key: str,
+        steamgriddb_api_key: str | None = None,
+        on_progress: object | None = None,
+        family_steam_ids: list[str] | None = None,
+    ) -> list[object]:
+        from backlog_manager_backend.services.steam_service import SteamPreviewItem
+
+        if on_progress:
+            await on_progress(1, 1)
+        return [
+            SteamPreviewItem(
+                steam_app_id=620,
+                title="Portal 2",
+                image_link="https://cdn2.steamgriddb.com/grid/1.png",
+            )
+        ]
+
+    monkeypatch.setattr(steam_service, "preview_library", fake_preview_library)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "libpreview@example.com")
+        client.put("/api/user/me", headers=headers, json={"steam_id": "76561197960287930"})
+
+        response = client.post("/api/user/steam/library/preview/stream", headers=headers)
+        entries = client.get("/api/backlog/entries", headers=headers).json()
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/event-stream")
+    messages = _parse_sse(response.text)
+
+    assert [json.loads(data) for event, data in messages if event == "progress"] == [
+        {"processed": 1, "total": 1}
+    ]
+    done_events = [json.loads(data) for event, data in messages if event == "done"]
+    assert done_events == [
+        [
+            {
+                "steam_app_id": 620,
+                "title": "Portal 2",
+                "image_link": "https://cdn2.steamgriddb.com/grid/1.png",
+            }
+        ]
+    ]
+    assert entries == []
+
+async def test_preview_steam_library_stream_sends_error_when_not_linked(
+    postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    _configure_steam_api_key(monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "libpreview400@example.com")
+        response = client.post("/api/user/steam/library/preview/stream", headers=headers)
+
+    assert response.status_code == 200
+    messages = _parse_sse(response.text)
+    assert messages == [("error", "Steam account is not linked")]
+
+async def test_preview_steam_library_stream_requires_authentication(postgres_url: str) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        response = client.post("/api/user/steam/library/preview/stream")
+
+    assert response.status_code == 401

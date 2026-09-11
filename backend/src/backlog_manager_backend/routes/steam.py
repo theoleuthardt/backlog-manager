@@ -93,6 +93,22 @@ async def _stream_steam_operation(
     dependencies as soon as the handler *returns the response object*,
     which happens before this generator (and therefore `run`) ever
     executes, not after the stream finishes."""
+    def encode_result(entries: list[BacklogEntry]) -> str:
+        return msgspec.json.encode(
+            [BacklogEntryResponse.from_entry(entry) for entry in entries]
+        ).decode()
+
+    async for message in _stream_steam_messages(run, encode_result):
+        yield message
+
+
+async def _stream_steam_messages(
+    run: Callable[[steam_service.ProgressCallback], Awaitable[list[object]]],
+    encode_result: Callable[[list[object]], str],
+) -> AsyncIterator[ServerSentEventMessage]:
+    """_stream_steam_operation without the BacklogEntryResponse mapping,
+    for calls that return msgspec-encodable payloads directly (e.g. the
+    preview endpoints' SteamPreviewItem lists)."""
     queue: asyncio.Queue[ServerSentEventMessage | None] = asyncio.Queue()
 
     async def on_progress(processed: int, total: int) -> None:
@@ -105,11 +121,10 @@ async def _stream_steam_operation(
 
     async def run_operation() -> None:
         try:
-            entries = await run(on_progress)
-            data = msgspec.json.encode(
-                [BacklogEntryResponse.from_entry(entry) for entry in entries]
-            ).decode()
-            await queue.put(ServerSentEventMessage(event=_SSE_DONE, data=data))
+            result = await run(on_progress)
+            await queue.put(
+                ServerSentEventMessage(event=_SSE_DONE, data=encode_result(result))
+            )
         except ValidationError as error:
             await queue.put(ServerSentEventMessage(event=_SSE_ERROR, data=str(error)))
         except httpx.HTTPError:
@@ -283,6 +298,40 @@ async def import_steam_wishlist_stream(
     return ServerSentEvent(_stream_steam_operation(run))
 
 
+@post(
+    "/api/user/steam/library/preview/stream",
+    status_code=200,
+    media_type="text/event-stream",
+)
+async def preview_steam_library_stream(
+    current_user: NamedDependency[User],
+) -> ServerSentEvent:
+    """SSE variant of a library preview: emits a `progress` event per
+    owned game considered, then a `done` event carrying the
+    SteamPreviewItem list, or an `error` event - see
+    sync_steam_playtimes_stream's docstring. Nothing is written to the
+    DB; the actual import runs through import_steam_library_stream once
+    the user has confirmed the preview."""
+    api_key = _resolve_api_key(current_user)
+    steamgriddb_api_key = _resolve_steamgriddb_api_key(current_user)
+    family_steam_ids = _resolve_family_steam_ids(current_user)
+
+    async def run(
+        on_progress: steam_service.ProgressCallback,
+    ) -> list[steam_service.SteamPreviewItem]:
+        async with async_session() as db_session:
+            return await steam_service.preview_library(
+                db_session,
+                current_user,
+                api_key,
+                steamgriddb_api_key=steamgriddb_api_key,
+                on_progress=on_progress,
+                family_steam_ids=family_steam_ids,
+            )
+
+    return ServerSentEvent(_stream_steam_messages(run, lambda items: msgspec.json.encode(items).decode()))
+
+
 steam_router = Router(
     path="",
     route_handlers=[
@@ -293,6 +342,7 @@ steam_router = Router(
         get_steam_achievements,
         preview_steam_wishlist,
         import_steam_wishlist_stream,
+        preview_steam_library_stream,
     ],
     dependencies={"current_user": Provide(get_current_user)},
     security=BEARER_SECURITY_REQUIREMENT,

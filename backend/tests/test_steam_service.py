@@ -776,3 +776,27 @@ async def test_import_wishlist_requires_linked_account(session: AsyncSession) ->
 
     with pytest.raises(ValidationError):
         await steam_service.import_wishlist(session, user, [])
+
+async def test_preview_library_lists_unlinked_owned_games(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    await _make_entry(session, user.id, steam_app_id=504230)
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        assert steam_id == user.steam_id
+        return [
+            SteamOwnedGame(appid=504230, name="Celeste", playtime_forever=510),
+            SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=120),
+        ]
+
+    async def fake_get_wishlist_cover(app_id: int, key: str | None) -> str | None:
+        return None
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+    monkeypatch.setattr(steam_service, "_try_get_cover", fake_get_wishlist_cover)
+
+    preview = await steam_service.preview_library(session, user, "api-key")
+
+    assert [item.steam_app_id for item in preview] == [620]
+    assert preview[0].title == "Portal 2"
