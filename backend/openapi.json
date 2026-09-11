@@ -5563,16 +5563,6 @@
                 "type": "null"
               }
             ]
-          },
-          "image_url": {
-            "oneOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
           }
         },
         "type": "object",

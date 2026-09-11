@@ -26,14 +26,37 @@ interface GamePriceSectionProps {
   title: string;
 }
 
-function StoreIcon({ iconUrl, alt }: { iconUrl: string; alt: string }) {
+/**
+ * Key shop offers (see docs/KEY_SHOP_SCRAPING.md) have no per-store icon
+ * from the API - just two shops, so their favicons are checked into
+ * public/ once rather than routing through the image proxy for a handful
+ * of static, never-changing assets.
+ */
+const KEY_SHOP_ICONS: Record<string, string> = {
+  RoyalCDKeys: "/royalcdkeys-icon.png",
+  PremiumCDKeys: "/premiumcdkeys-icon.png",
+};
+
+function StoreIcon({
+  iconUrl,
+  alt,
+  local = false,
+}: {
+  iconUrl: string | null;
+  alt: string;
+  local?: boolean;
+}) {
   const [hasError, setHasError] = useState(false);
   if (!iconUrl || hasError) {
     return <div className="h-5 w-5 shrink-0 rounded bg-white/10" />;
   }
   return (
     <Image
-      src={`${env.NEXT_PUBLIC_API_URL}/api/images/proxy?url=${encodeURIComponent(iconUrl)}`}
+      src={
+        local
+          ? iconUrl
+          : `${env.NEXT_PUBLIC_API_URL}/api/images/proxy?url=${encodeURIComponent(iconUrl)}`
+      }
       alt={alt}
       width={20}
       height={20}
@@ -58,6 +81,7 @@ export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
     key: string;
     store: string;
     iconUrl: string | null;
+    iconIsLocal: boolean;
     price: number;
     retailPrice: number | null;
     discountPct: number | null;
@@ -69,6 +93,7 @@ export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
       key: `cheapshark-${deal.store}`,
       store: deal.store,
       iconUrl: deal.iconUrl,
+      iconIsLocal: false,
       price: deal.price,
       retailPrice: deal.retailPrice,
       discountPct: null,
@@ -77,7 +102,8 @@ export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
     ...(keyShopOffers?.map((offer) => ({
       key: `keyshop-${offer.shop}`,
       store: offer.shop,
-      iconUrl: offer.imageUrl,
+      iconUrl: KEY_SHOP_ICONS[offer.shop] ?? null,
+      iconIsLocal: true,
       price: offer.price,
       retailPrice: null,
       discountPct: offer.discountPct,
@@ -161,11 +187,11 @@ export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
               className="group flex items-center justify-between gap-3 rounded-lg border border-white/20 bg-black px-3 py-2.5 transition-colors hover:border-white/50 hover:bg-white/5"
             >
               <span className="flex min-w-0 items-center gap-2">
-                {listing.iconUrl !== null ? (
-                  <StoreIcon iconUrl={listing.iconUrl} alt={listing.store} />
-                ) : (
-                  <div className="h-5 w-5 shrink-0 rounded bg-white/10" />
-                )}
+                <StoreIcon
+                  iconUrl={listing.iconUrl}
+                  alt={listing.store}
+                  local={listing.iconIsLocal}
+                />
                 <span className="truncate text-sm text-white">
                   {listing.store}
                 </span>

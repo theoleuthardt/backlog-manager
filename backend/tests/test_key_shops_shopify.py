@@ -35,7 +35,6 @@ async def test_search_shopify_store_returns_offers(monkeypatch: pytest.MonkeyPat
                     "price": "10.15",
                     "handle": "hades-ii-pc-steam-account",
                     "compare_at_price_max": "0.00",
-                    "image": "https://cdn.shopify.com/s/files/1/0375/3020/6345/files/HadesII_800.jpg",
                 }
             ]
         )
@@ -52,24 +51,6 @@ async def test_search_shopify_store_returns_offers(monkeypatch: pytest.MonkeyPat
     assert offer.currency == "EUR"
     assert offer.url == "https://royalcdkeys.com/products/hades-ii-pc-steam-account"
     assert offer.discount_pct is None
-    assert (
-        offer.image_url == "https://cdn.shopify.com/s/files/1/0375/3020/6345/files/HadesII_800.jpg"
-    )
-
-
-async def test_search_shopify_store_defaults_image_url_to_none(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    def handler(request: httpx.Request) -> httpx.Response:
-        return _suggest_response(
-            [{"title": "Hades II PC Steam Account", "price": "10.15", "handle": "hades-ii"}]
-        )
-
-    _mock_client(handler, monkeypatch)
-
-    offers = await search_shopify_store("RoyalCDKeys", "https://royalcdkeys.com", "hades")
-
-    assert offers[0].image_url is None
 
 
 async def test_search_shopify_store_computes_discount_pct(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -17,7 +17,6 @@ _ALLOWED_HOSTS = {
     "media.steampowered.com",
     "steamcdn-a.akamaihd.net",
     "www.cheapshark.com",
-    "cdn.shopify.com",
 }
 
 # steamstatic.com (Steam achievement icons) and steamgriddb.com (cover art)
