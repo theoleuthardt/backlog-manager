@@ -344,3 +344,4 @@ class KeyShopOffer(msgspec.Struct):
     url: str
     fetched_at: datetime
     discount_pct: int | None = None
+    image_url: str | None = None

@@ -111,6 +111,7 @@ export interface KeyShopOffer {
   currency: string;
   url: string;
   discountPct: number | null;
+  imageUrl: string | null;
 }
 
 /**
@@ -131,5 +132,6 @@ export async function getKeyShopPrices(title: string): Promise<KeyShopOffer[]> {
     currency: offer.currency,
     url: offer.url,
     discountPct: offer.discount_pct ?? null,
+    imageUrl: offer.image_url ?? null,
   }));
 }

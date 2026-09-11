@@ -17,6 +17,7 @@ _ALLOWED_HOSTS = {
     "media.steampowered.com",
     "steamcdn-a.akamaihd.net",
     "www.cheapshark.com",
+    "cdn.shopify.com",
 }
 
 # steamstatic.com (Steam achievement icons) and steamgriddb.com (cover art)
@@ -123,12 +124,12 @@ async def proxy_image(url: FromQuery[str]) -> Response:
 
             try:
                 if upstream.status_code >= 400:
-                    logger.error(
-                        "Upstream image error", url=url, status_code=upstream.status_code
-                    )
+                    logger.error("Upstream image error", url=url, status_code=upstream.status_code)
                     return _NOT_FOUND
 
-                content_type = upstream.headers.get("content-type", "").split(";")[0].strip().lower()
+                content_type = (
+                    upstream.headers.get("content-type", "").split(";")[0].strip().lower()
+                )
                 if content_type not in _ALLOWED_CONTENT_TYPES:
                     logger.error(
                         "Rejected unsupported image content type",

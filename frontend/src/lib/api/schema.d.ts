@@ -988,6 +988,7 @@ export interface components {
             /** Format: date-time */
             fetched_at: string;
             discount_pct?: number | null;
+            image_url?: string | null;
         };
         /** LoginParams */
         LoginParams: {

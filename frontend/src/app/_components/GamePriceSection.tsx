@@ -54,6 +54,37 @@ export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
   const hasCheapSharkDeals = !isError && !!data && data.deals.length > 0;
   const hasKeyShopOffers = !!keyShopOffers && keyShopOffers.length > 0;
 
+  interface PriceListing {
+    key: string;
+    store: string;
+    iconUrl: string | null;
+    price: number;
+    retailPrice: number | null;
+    discountPct: number | null;
+    url: string;
+  }
+
+  const listings: PriceListing[] = [
+    ...(data?.deals.map((deal) => ({
+      key: `cheapshark-${deal.store}`,
+      store: deal.store,
+      iconUrl: deal.iconUrl,
+      price: deal.price,
+      retailPrice: deal.retailPrice,
+      discountPct: null,
+      url: deal.url,
+    })) ?? []),
+    ...(keyShopOffers?.map((offer) => ({
+      key: `keyshop-${offer.shop}`,
+      store: offer.shop,
+      iconUrl: offer.imageUrl,
+      price: offer.price,
+      retailPrice: null,
+      discountPct: offer.discountPct,
+      url: offer.url,
+    })) ?? []),
+  ].sort((a, b) => a.price - b.price);
+
   let content: React.ReactNode;
   if (isLoading) {
     content = (
@@ -121,54 +152,36 @@ export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
               <ExternalLink className="h-3.5 w-3.5 shrink-0 text-gray-500 opacity-0 transition-opacity group-hover:opacity-100" />
             </span>
           </a>
-          {data?.deals.map((deal) => (
+          {listings.map((listing) => (
             <a
-              key={deal.store}
-              href={deal.url}
+              key={listing.key}
+              href={listing.url}
               target="_blank"
               rel="noopener noreferrer"
               className="group flex items-center justify-between gap-3 rounded-lg border border-white/20 bg-black px-3 py-2.5 transition-colors hover:border-white/50 hover:bg-white/5"
             >
               <span className="flex min-w-0 items-center gap-2">
-                <StoreIcon iconUrl={deal.iconUrl} alt={deal.store} />
+                {listing.iconUrl !== null ? (
+                  <StoreIcon iconUrl={listing.iconUrl} alt={listing.store} />
+                ) : (
+                  <div className="h-5 w-5 shrink-0 rounded bg-white/10" />
+                )}
                 <span className="truncate text-sm text-white">
-                  {deal.store}
+                  {listing.store}
                 </span>
               </span>
               <span className="flex shrink-0 items-center gap-2">
                 <span className="text-sm font-semibold text-white">
-                  €{deal.price.toFixed(2)}
-                  {deal.retailPrice > deal.price && (
-                    <span className="ml-1.5 text-xs font-normal text-gray-500 line-through">
-                      €{deal.retailPrice.toFixed(2)}
-                    </span>
-                  )}
-                </span>
-                <ExternalLink className="h-3.5 w-3.5 shrink-0 text-gray-500 opacity-0 transition-opacity group-hover:opacity-100" />
-              </span>
-            </a>
-          ))}
-          {keyShopOffers?.map((offer) => (
-            <a
-              key={offer.shop}
-              href={offer.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex items-center justify-between gap-3 rounded-lg border border-white/20 bg-black px-3 py-2.5 transition-colors hover:border-white/50 hover:bg-white/5"
-            >
-              <span className="flex min-w-0 items-center gap-2">
-                <div className="h-5 w-5 shrink-0 rounded bg-white/10" />
-                <span className="truncate text-sm text-white">
-                  {offer.shop}
-                </span>
-              </span>
-              <span className="flex shrink-0 items-center gap-2">
-                <span className="text-sm font-semibold text-white">
-                  {offer.currency === "EUR" ? "€" : offer.currency}
-                  {offer.price.toFixed(2)}
-                  {offer.discountPct !== null && offer.discountPct > 0 && (
+                  €{listing.price.toFixed(2)}
+                  {listing.retailPrice !== null &&
+                    listing.retailPrice > listing.price && (
+                      <span className="ml-1.5 text-xs font-normal text-gray-500 line-through">
+                        €{listing.retailPrice.toFixed(2)}
+                      </span>
+                    )}
+                  {listing.discountPct !== null && listing.discountPct > 0 && (
                     <span className="ml-1.5 text-xs font-normal text-emerald-400">
-                      -{offer.discountPct}%
+                      -{listing.discountPct}%
                     </span>
                   )}
                 </span>

@@ -16,6 +16,7 @@ class _ShopifySuggestProduct(msgspec.Struct):
     price: str
     handle: str
     compare_at_price_max: str = "0.00"
+    image: str | None = None
 
 
 class _ShopifySuggestResults(msgspec.Struct):
@@ -82,6 +83,7 @@ async def search_shopify_store(shop_name: str, base_url: str, title: str) -> lis
             url=f"{base_url}/products/{product.handle}",
             fetched_at=now,
             discount_pct=_discount_pct(float(product.price), float(product.compare_at_price_max)),
+            image_url=product.image,
         )
         for product in decoded.resources.results.products
         if title.lower() in product.title.lower()
