@@ -153,6 +153,7 @@ export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
           type="button"
           variant="outline"
           size="icon"
+          aria-label="Show game prices"
           className="shrink-0 border-white/40 bg-black text-white hover:bg-white/10 hover:text-white"
         >
           <Tag className="h-4 w-4" />
@@ -166,6 +167,7 @@ export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
           <Button
             variant="destructive"
             size="icon"
+            aria-label="Close price dialog"
             className="absolute top-4 right-4 z-50 h-8 w-8 focus:ring-0 focus:ring-offset-0 focus:outline-none focus-visible:ring-0"
           >
             <XIcon className="h-4 w-4 text-black" />

@@ -1,13 +1,20 @@
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any
 
 import msgspec
 
 
+class GamePriceDeal(msgspec.Struct):
+    store: str
+    icon: str
+    price: float
+    retail_price: float
+    url: str
+
+
 class GamePrice(msgspec.Struct):
     steam_app_id: int
-    deals: list[dict[str, Any]]
+    deals: list[GamePriceDeal]
     on_sale: bool
     checked_at: datetime
     cheapshark_game_id: int | None = None
@@ -17,7 +24,7 @@ class GamePrice(msgspec.Struct):
 
 class UpsertGamePriceParams(msgspec.Struct):
     steam_app_id: int
-    deals: list[dict[str, Any]]
+    deals: list[GamePriceDeal]
     on_sale: bool
     checked_at: datetime
     cheapshark_game_id: int | None = None

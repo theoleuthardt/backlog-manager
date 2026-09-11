@@ -64,7 +64,10 @@ def create_app() -> Litestar:
             version="1.0.0",
             components=Components(
                 security_schemes={
-                    "BearerAuth": SecurityScheme(type="http", scheme="bearer", bearer_format="JWT")
+                    "BearerAuth": SecurityScheme(type="http", scheme="bearer", bearer_format="JWT"),
+                    "CronSecret": SecurityScheme(
+                        type="apiKey", name="X-Cron-Secret", security_scheme_in="header"
+                    ),
                 }
             ),
         ),

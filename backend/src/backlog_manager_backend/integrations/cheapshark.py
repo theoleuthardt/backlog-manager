@@ -12,10 +12,10 @@ logger = structlog.get_logger()
 
 _BASE_URL = "https://www.cheapshark.com/api/1.0"
 _INVALID_RESPONSE = "CheapShark API returned an invalid response"
-# CheapShark rejects requests with a missing or generic (e.g. httpx's
-# default "python-httpx/x.y.z") User-Agent with a 400 - see
-# https://apidocs.cheapshark.com/.
 _USER_AGENT = "BacklogManager/1.0 (https://github.com/theoleuthardt/backlog-manager)"
+"""CheapShark rejects requests with a missing or generic (e.g. httpx's
+default "python-httpx/x.y.z") User-Agent with a 400 - see
+https://apidocs.cheapshark.com/."""
 
 
 async def _get(path: str, params: dict[str, str]) -> httpx.Response:

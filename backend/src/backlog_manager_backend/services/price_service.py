@@ -13,23 +13,27 @@ from backlog_manager_backend.integrations.cheapshark import (
     get_cheapshark_game_detail,
     get_stores,
 )
-from backlog_manager_backend.integrations.discord import send_discord_webhook_message
+from backlog_manager_backend.integrations.discord import (
+    is_valid_discord_webhook_url,
+    send_discord_webhook_message,
+)
 from backlog_manager_backend.repositories import (
     game_price_repo,
     user_game_price_alert_repo,
     user_repo,
 )
-from backlog_manager_backend.schemas.game_price import GamePrice, UpsertGamePriceParams
+from backlog_manager_backend.schemas.game_price import (
+    GamePrice,
+    GamePriceDeal,
+    UpsertGamePriceParams,
+)
 from backlog_manager_backend.schemas.user import User
 
 logger = structlog.get_logger()
 
 _STALE_AFTER_SECONDS = 60 * 60
 
-# storeID -> storeName, unbounded and never expired like game_service's
-# _genre_cache/_platform_cache - CheapShark's store list changes rarely.
 _store_names: dict[str, str] = {}
-# storeID -> full icon URL, populated alongside _store_names below.
 _store_icons: dict[str, str] = {}
 
 _DEAL_REDIRECT_URL = "https://www.cheapshark.com/redirect?dealID="
@@ -45,6 +49,10 @@ def _is_stale(checked_at: datetime) -> bool:
 
 
 async def _ensure_stores_cached() -> None:
+    """Populates _store_names/_store_icons at most once per process -
+    unbounded and never expired, like game_service's
+    _genre_cache/_platform_cache, since CheapShark's store list changes
+    rarely."""
     if _store_names:
         return
     try:
@@ -74,13 +82,13 @@ async def _fetch_and_store_price(session: AsyncSession, steam_app_id: int) -> Ga
 
     detail = await get_cheapshark_game_detail(cheapshark_game_id)
     deals = [
-        {
-            "store": _store_names.get(deal.storeID, deal.storeID),
-            "icon": _store_icons.get(deal.storeID, ""),
-            "price": float(deal.price),
-            "retail_price": float(deal.retailPrice),
-            "url": f"{_DEAL_REDIRECT_URL}{deal.dealID}",
-        }
+        GamePriceDeal(
+            store=_store_names.get(deal.storeID, deal.storeID),
+            icon=_store_icons.get(deal.storeID, ""),
+            price=float(deal.price),
+            retail_price=float(deal.retailPrice),
+            url=f"{_DEAL_REDIRECT_URL}{deal.dealID}",
+        )
         for deal in detail.deals
     ]
     on_sale = any(float(deal.savings) > 0 for deal in detail.deals)
@@ -122,15 +130,28 @@ def _format_alert_message(title: str, price: float, store: str, retail_price: fl
 
 def _resolve_discord_webhook_url(user: User) -> str | None:
     """Per-user-webhook-with-global-fallback, mirroring
-    routes/games.py::_resolve_steamgriddb_api_key - a missing/undecryptable
-    per-user webhook resolves to the global settings.discord_webhook_url
-    fallback (itself possibly None, meaning no alerts for this user)
-    rather than raising, since a webhook is an optional feature."""
+    routes/games.py::_resolve_steamgriddb_api_key - except a per-user
+    webhook that fails to decrypt, or either webhook failing Discord's
+    URL format, returns None outright rather than falling back to the
+    server-wide webhook: falling back there would send this user's sale
+    details to a recipient they never configured."""
     if user.discord_webhook_url_encrypted and settings.steam_api_key_encryption_key:
         try:
-            return decrypt(user.discord_webhook_url_encrypted, settings.steam_api_key_encryption_key)
+            webhook_url = decrypt(
+                user.discord_webhook_url_encrypted, settings.steam_api_key_encryption_key
+            )
         except (InvalidToken, ValueError):
-            return settings.discord_webhook_url
+            logger.error("Failed to decrypt user's Discord webhook URL", user_id=user.id)
+            return None
+        if not is_valid_discord_webhook_url(webhook_url):
+            logger.error("User's Discord webhook URL failed validation", user_id=user.id)
+            return None
+        return webhook_url
+    if settings.discord_webhook_url and not is_valid_discord_webhook_url(
+        settings.discord_webhook_url
+    ):
+        logger.error("Configured DISCORD_WEBHOOK_URL failed validation")
+        return None
     return settings.discord_webhook_url
 
 
@@ -141,7 +162,12 @@ async def check_prices_and_alert(session: AsyncSession) -> int:
     user - see docs/PRICE_TRACKING.md. Dedup (UserGamePriceAlert) and the
     webhook to notify are both per user, since two users tracking the
     same game may have different webhooks (their own, or the global
-    fallback) and must each be notified independently."""
+    fallback) and must each be notified independently.
+
+    Alert-dedup is claimed atomically (try_claim_alert) before sending,
+    so two overlapping sweeps can't both deliver the same alert; a
+    failed send reverts the claim so a later sweep retries instead of
+    the price going permanently unalerted."""
     alerts_sent = 0
     pairs = await game_price_repo.get_tracked_user_steam_app_id_pairs(session, owned=False)
 
@@ -162,26 +188,30 @@ async def check_prices_and_alert(session: AsyncSession) -> int:
         if webhook_url is None:
             continue
 
-        cheapest_deal = min(price.deals, key=lambda deal: deal["price"])
-        current_price = cheapest_deal["price"]
-        last_alerted = await user_game_price_alert_repo.get_last_alerted_price(
-            session, user_id, steam_app_id
+        cheapest_deal = min(price.deals, key=lambda deal: deal.price)
+        current_price = Decimal(str(cheapest_deal.price))
+        claimed = await user_game_price_alert_repo.try_claim_alert(
+            session, user_id, steam_app_id, current_price
         )
-        if last_alerted is not None and float(last_alerted) == current_price:
+        if not claimed:
             continue
 
-        title = await game_price_repo.get_title_for_steam_app_id(session, steam_app_id)
-        await send_discord_webhook_message(
+        title = await game_price_repo.get_title_for_user_steam_app_id(
+            session, user_id, steam_app_id
+        )
+        delivered = await send_discord_webhook_message(
             webhook_url,
             _format_alert_message(
                 title or f"Steam App {steam_app_id}",
-                current_price,
-                cheapest_deal["store"],
-                cheapest_deal["retail_price"],
+                cheapest_deal.price,
+                cheapest_deal.store,
+                cheapest_deal.retail_price,
             ),
         )
-        await user_game_price_alert_repo.set_last_alerted_price(
-            session, user_id, steam_app_id, Decimal(str(current_price))
-        )
+        if not delivered:
+            await user_game_price_alert_repo.clear_last_alerted_price(
+                session, user_id, steam_app_id
+            )
+            continue
         alerts_sent += 1
     return alerts_sent

@@ -62,7 +62,7 @@ services:
       - -c
       - |
         while true; do
-        curl --fail --retry 5 --retry-delay 5 --retry-connrefused -X POST http://backend:8000/api/prices/check -H "X-Cron-Secret: ${PRICE_CHECK_CRON_SECRET}" || true
+        curl --fail --connect-timeout 10 --max-time 300 --retry 5 --retry-delay 5 --retry-connrefused -X POST http://backend:8000/api/prices/check -H "X-Cron-Secret: ${PRICE_CHECK_CRON_SECRET}" || true
         sleep 21600
         done
     restart: unless-stopped

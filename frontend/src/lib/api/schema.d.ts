@@ -767,15 +767,21 @@ export interface components {
         /** GamePrice */
         GamePrice: {
             steam_app_id: number;
-            deals: {
-                [key: string]: unknown;
-            }[];
+            deals: components["schemas"]["GamePriceDeal"][];
             on_sale: boolean;
             /** Format: date-time */
             checked_at: string;
             cheapshark_game_id?: number | null;
             cheapest_price_ever?: string | null;
             cheapest_price_ever_date?: string | null;
+        };
+        /** GamePriceDeal */
+        GamePriceDeal: {
+            store: string;
+            icon: string;
+            price: number;
+            retail_price: number;
+            url: string;
         };
         /** IGDBCover */
         IGDBCover: {
@@ -2701,7 +2707,9 @@ export interface operations {
     ApiPricesCheckCheckPrices: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Cron-Secret"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2715,6 +2723,36 @@ export interface operations {
                 content: {
                     "application/json": {
                         [key: string]: number;
+                    };
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description No permission -- see authorization schemes */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
                     };
                 };
             };

@@ -38,6 +38,7 @@ _IGDB_NOT_CONFIGURED = "IGDB integration is not configured"
 _IGDB_UNAVAILABLE = "IGDB is currently unreachable"
 _STEAMGRIDDB_NOT_CONFIGURED = "SteamGridDB integration is not configured"
 _STEAMGRIDDB_UNAVAILABLE = "SteamGridDB is currently unreachable"
+_CHEAPSHARK_UNAVAILABLE = "CheapShark is currently unreachable"
 
 
 def _resolve_igdb_credentials(user: User) -> tuple[str, str]:
@@ -195,7 +196,10 @@ async def get_game_price(
     router-level dependency only runs for handlers that declare it as a
     parameter, so dropping this would silently leave the route
     unauthenticated."""
-    return await price_service.get_price_info(db_session, steam_app_id)
+    try:
+        return await price_service.get_price_info(db_session, steam_app_id)
+    except httpx.HTTPError as error:
+        raise ServiceUnavailableException(_CHEAPSHARK_UNAVAILABLE) from error
 
 
 authenticated_games_router = Router(
