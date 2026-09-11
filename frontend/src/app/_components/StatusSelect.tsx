@@ -123,14 +123,14 @@ export function StatusSelect({
           )}
           {customStatuses.map((status) => (
             <div key={status.id} className="relative flex items-center">
-              <SelectItem value={status.name} className="flex-1 pr-10">
+              <SelectItem value={status.name} className="flex-1 pr-14">
                 {status.name}
               </SelectItem>
               <button
                 type="button"
                 onClick={(e) => void handleDelete(e, status.id, status.name)}
                 aria-label={`Delete status ${status.name}`}
-                className="absolute right-2 text-gray-400 opacity-70 transition-opacity hover:text-red-400 hover:opacity-100"
+                className="absolute right-8 text-gray-400 opacity-70 transition-opacity hover:text-red-400 hover:opacity-100"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
