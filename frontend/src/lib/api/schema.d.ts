@@ -248,6 +248,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/backlog/statuses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** ListCustomStatuses */
+        get: operations["ApiBacklogStatusesListCustomStatuses"];
+        put?: never;
+        /** CreateCustomStatus */
+        post: operations["ApiBacklogStatusesCreateCustomStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/backlog/statuses/{status_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** UpdateCustomStatus */
+        put: operations["ApiBacklogStatusesStatusIdUpdateCustomStatus"];
+        post?: never;
+        /** DeleteCustomStatus */
+        delete: operations["ApiBacklogStatusesStatusIdDeleteCustomStatus"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/user/me": {
         parameters: {
             query?: never;
@@ -742,6 +778,10 @@ export interface components {
             /** @default No description */
             description?: string;
         };
+        /** CreateCustomStatusRequest */
+        CreateCustomStatusRequest: {
+            name: string;
+        };
         /** CreateUserRequest */
         CreateUserRequest: {
             username: string;
@@ -750,6 +790,11 @@ export interface components {
             steam_id?: string | null;
             /** @default false */
             is_admin?: boolean;
+        };
+        /** CustomStatusResponse */
+        CustomStatusResponse: {
+            id: number;
+            name: string;
         };
         /** EnrichedResult */
         EnrichedResult: {
@@ -1025,6 +1070,10 @@ export interface components {
             category_name?: string;
             color?: string;
             description?: string | null;
+        };
+        /** UpdateCustomStatusRequest */
+        UpdateCustomStatusRequest: {
+            name: string;
         };
         /** UpdateOwnUserRequest */
         UpdateOwnUserRequest: {
@@ -1747,6 +1796,141 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["BacklogEntryResponse"][];
                 };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBacklogStatusesListCustomStatuses: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomStatusResponse"][];
+                };
+            };
+        };
+    };
+    ApiBacklogStatusesCreateCustomStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCustomStatusRequest"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomStatusResponse"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBacklogStatusesStatusIdUpdateCustomStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                status_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCustomStatusRequest"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomStatusResponse"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBacklogStatusesStatusIdDeleteCustomStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                status_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Bad request syntax or unsupported method */
             400: {

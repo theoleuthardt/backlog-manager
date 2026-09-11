@@ -6,6 +6,7 @@ import { BacklogEntry } from "./BacklogEntry";
 import { CustomDropdownMenu } from "./CustomDropdownMenu";
 import { GameImage } from "./GameImage";
 import { SearchBar } from "./SearchBar";
+import { StatusSelect } from "./StatusSelect";
 import { UniSlider } from "./UniSlider";
 import { UniverseBackground } from "./UniverseBackground";
 import { ImportCSVButton } from "./ImportCSVButton";
@@ -29,6 +30,7 @@ export {
   CustomDropdownMenu,
   GameImage,
   SearchBar,
+  StatusSelect,
   UniSlider,
   UniverseBackground,
   ImportCSVButton,

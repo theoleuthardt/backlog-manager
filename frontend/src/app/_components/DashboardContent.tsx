@@ -17,8 +17,10 @@ import { Label } from "shadcn_components/ui/label";
 import Image from "next/image";
 import {
   useBacklogEntries,
+  useCustomStatuses,
   useSyncSteamPlaytimesStream,
 } from "~/hooks/useBacklog";
+import { DEFAULT_STATUSES } from "~/lib/api/backlog";
 import { Loader2, RefreshCw } from "lucide-react";
 import { Button } from "shadcn_components/ui/button";
 import { toast } from "sonner";
@@ -27,6 +29,7 @@ import { useAuth } from "~/app/context/AuthContext";
 export const DashboardContent = () => {
   const { user } = useAuth();
   const { data: backlogData, isLoading, error } = useBacklogEntries();
+  const { data: customStatuses = [] } = useCustomStatuses();
   const {
     run: syncSteamPlaytimes,
     isRunning: isSyncingSteam,
@@ -99,11 +102,8 @@ export const DashboardContent = () => {
   }, [backlogData]);
 
   const statusOptions = [
-    "Not Started",
-    "In Progress",
-    "Completed",
-    "On Hold",
-    "Dropped",
+    ...DEFAULT_STATUSES,
+    ...customStatuses.map((status) => status.name),
   ];
 
   const filteredData = useMemo(() => {

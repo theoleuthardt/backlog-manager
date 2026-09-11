@@ -1,15 +1,17 @@
 from litestar import Router, delete, get, post, put
 from litestar.di import NamedDependency, Provide
-from litestar.exceptions import NotFoundException, ValidationException
+from litestar.exceptions import ClientException, NotFoundException, ValidationException
 from litestar.params import FromPath, FromQuery
+from litestar.status_codes import HTTP_409_CONFLICT
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.auth.dependencies import BEARER_SECURITY_REQUIREMENT, get_current_user
-from backlog_manager_backend.errors import NotFoundError
+from backlog_manager_backend.errors import ConflictError, NotFoundError
 from backlog_manager_backend.repositories import (
     backlog_entry_repo,
     category_backlog_entry_repo,
     category_repo,
+    custom_status_repo,
 )
 from backlog_manager_backend.schemas.backlog_entry import (
     BacklogEntry,
@@ -29,10 +31,21 @@ from backlog_manager_backend.schemas.category import (
     UpdateCategoryParams,
     UpdateCategoryRequest,
 )
+from backlog_manager_backend.schemas.custom_status import (
+    CreateCustomStatusParams,
+    CreateCustomStatusRequest,
+    CustomStatus,
+    CustomStatusResponse,
+    UpdateCustomStatusParams,
+    UpdateCustomStatusRequest,
+)
 from backlog_manager_backend.schemas.user import User
 
 _ENTRY_NOT_FOUND = "Backlog entry not found"
 _CATEGORY_NOT_FOUND = "Category not found"
+_STATUS_NOT_FOUND = "Custom status not found"
+DEFAULT_STATUSES = ("Not Started", "In Progress", "Completed", "On Hold", "Dropped")
+_STATUS_NAME_MAX_LENGTH = 20
 
 
 async def _get_owned_entry(session: AsyncSession, entry_id: int, user: User) -> BacklogEntry:
@@ -284,6 +297,88 @@ async def get_entries_for_category(
     return [BacklogEntryResponse.from_entry(entry) for entry in entries]
 
 
+def _validated_status_name(raw_name: str) -> str:
+    name = raw_name.strip()
+    if not name:
+        raise ValidationException("Status name must not be empty")
+    if len(name) > _STATUS_NAME_MAX_LENGTH:
+        raise ValidationException(
+            f"Status name must be at most {_STATUS_NAME_MAX_LENGTH} characters"
+        )
+    return name
+
+
+async def _get_owned_status(
+    session: AsyncSession, status_id: int, user: User
+) -> CustomStatus:
+    try:
+        status = await custom_status_repo.get_custom_status_by_id(session, status_id)
+    except NotFoundError as error:
+        raise NotFoundException(_STATUS_NOT_FOUND) from error
+    if status.user_id != user.id:
+        raise NotFoundException(_STATUS_NOT_FOUND)
+    return status
+
+
+@post("/api/backlog/statuses", status_code=201)
+async def create_custom_status(
+    data: CreateCustomStatusRequest,
+    db_session: NamedDependency[AsyncSession],
+    current_user: NamedDependency[User],
+) -> CustomStatusResponse:
+    name = _validated_status_name(data.name)
+    if name in DEFAULT_STATUSES:
+        raise ValidationException(f"{name!r} is already a default status")
+    try:
+        status = await custom_status_repo.create_custom_status(
+            db_session, CreateCustomStatusParams(user_id=current_user.id, name=name)
+        )
+    except ConflictError as error:
+        raise ClientException(f"A status named {name!r} already exists", status_code=HTTP_409_CONFLICT) from error
+    return CustomStatusResponse.from_status(status)
+
+
+@get("/api/backlog/statuses")
+async def list_custom_statuses(
+    db_session: NamedDependency[AsyncSession],
+    current_user: NamedDependency[User],
+) -> list[CustomStatusResponse]:
+    statuses = await custom_status_repo.get_custom_statuses_by_user(
+        db_session, current_user.id
+    )
+    return [CustomStatusResponse.from_status(status) for status in statuses]
+
+
+@put("/api/backlog/statuses/{status_id:int}")
+async def update_custom_status(
+    status_id: FromPath[int],
+    data: UpdateCustomStatusRequest,
+    db_session: NamedDependency[AsyncSession],
+    current_user: NamedDependency[User],
+) -> CustomStatusResponse:
+    await _get_owned_status(db_session, status_id, current_user)
+    name = _validated_status_name(data.name)
+    if name in DEFAULT_STATUSES:
+        raise ValidationException(f"{name!r} is already a default status")
+    try:
+        status = await custom_status_repo.update_custom_status(
+            db_session, UpdateCustomStatusParams(status_id=status_id, name=name)
+        )
+    except ConflictError as error:
+        raise ClientException(f"A status named {name!r} already exists", status_code=HTTP_409_CONFLICT) from error
+    return CustomStatusResponse.from_status(status)
+
+
+@delete("/api/backlog/statuses/{status_id:int}")
+async def delete_custom_status(
+    status_id: FromPath[int],
+    db_session: NamedDependency[AsyncSession],
+    current_user: NamedDependency[User],
+) -> None:
+    await _get_owned_status(db_session, status_id, current_user)
+    await custom_status_repo.delete_custom_status(db_session, status_id)
+
+
 backlog_router = Router(
     path="",
     route_handlers=[
@@ -300,6 +395,10 @@ backlog_router = Router(
         update_category,
         delete_category,
         get_entries_for_category,
+        create_custom_status,
+        list_custom_statuses,
+        update_custom_status,
+        delete_custom_status,
     ],
     dependencies={"current_user": Provide(get_current_user)},
     security=BEARER_SECURITY_REQUIREMENT,

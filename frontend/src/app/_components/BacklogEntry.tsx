@@ -23,13 +23,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "shadcn_components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "shadcn_components/ui/select";
+import { StatusSelect } from "components/StatusSelect";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -531,22 +525,11 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                       Status
                     </Label>
                     <div className="flex items-center gap-2">
-                      <Select value={status} onValueChange={setStatus}>
-                        <SelectTrigger className="bg-black text-white">
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Not Started">
-                            Not Started
-                          </SelectItem>
-                          <SelectItem value="In Progress">
-                            In Progress
-                          </SelectItem>
-                          <SelectItem value="Completed">Completed</SelectItem>
-                          <SelectItem value="On Hold">On Hold</SelectItem>
-                          <SelectItem value="Dropped">Dropped</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <StatusSelect
+                        value={status}
+                        onValueChange={setStatus}
+                        className="bg-black text-white"
+                      />
                       <GamePriceSection
                         steamAppId={props.steamAppId}
                         title={props.title}

@@ -1,0 +1,37 @@
+meta {
+  name: Create Custom Status
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{backendUrl}}/api/backlog/statuses
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "name": "Playing in Co-Op"
+  }
+}
+
+script:post-response {
+  if (res.body.id) {
+    bru.setEnvVar("statusId", res.body.id);
+  }
+}
+
+docs {
+  Creates a custom status for the logged-in user and stores its id in
+  the statusId environment variable, used by the status routes in this
+  folder. The name is trimmed and must be non-empty, at most 20
+  characters, and not collide with a default status ("Not Started",
+  "In Progress", "Completed", "On Hold", "Dropped") or one of the
+  caller's existing custom statuses (400 / 409 otherwise). Run
+  auth/Login first, then this.
+}

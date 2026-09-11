@@ -1,0 +1,30 @@
+meta {
+  name: Update Custom Status
+  type: http
+  seq: 16
+}
+
+put {
+  url: {{backendUrl}}/api/backlog/statuses/{{statusId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "name": "Co-Op with friends"
+  }
+}
+
+docs {
+  Renames one of the caller's custom statuses. The same name rules as
+  creation apply (400 / 409). Backlog entries keep whatever status
+  string they already have - entries are not rewritten on rename. Run
+  auth/Login and "Create Custom Status" first so statusId is set.
+
+  404 if the status doesn't exist or isn't owned by the caller.
+}

@@ -1,0 +1,21 @@
+meta {
+  name: Get Custom Statuses
+  type: http
+  seq: 15
+}
+
+get {
+  url: {{backendUrl}}/api/backlog/statuses
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Lists every custom status owned by the logged-in user. Default
+  statuses are not included - they exist implicitly. Run auth/Login
+  and "Create Custom Status" first.
+}

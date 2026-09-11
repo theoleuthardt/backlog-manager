@@ -8,6 +8,19 @@ export type BacklogStatus =
   | "On Hold"
   | "Dropped";
 
+export const DEFAULT_STATUSES: BacklogStatus[] = [
+  "Not Started",
+  "In Progress",
+  "Completed",
+  "On Hold",
+  "Dropped",
+];
+
+export interface CustomStatusData {
+  id: number;
+  name: string;
+}
+
 export interface BacklogEntryData {
   id: number;
   title: string;
@@ -214,6 +227,35 @@ export async function deleteEntry(entryId: number): Promise<void> {
   });
   if (error)
     throw new Error(apiErrorMessage(error, "Failed to delete backlog entry"));
+}
+
+export async function getCustomStatuses(): Promise<CustomStatusData[]> {
+  const { data, error } = await apiClient.GET("/api/backlog/statuses");
+  if (error)
+    throw new Error(apiErrorMessage(error, "Failed to load custom statuses"));
+  return data.map((status) => ({ id: status.id, name: status.name }));
+}
+
+export async function createCustomStatus(
+  name: string,
+): Promise<CustomStatusData> {
+  const { data, error } = await apiClient.POST("/api/backlog/statuses", {
+    body: { name },
+  });
+  if (error)
+    throw new Error(apiErrorMessage(error, "Failed to create custom status"));
+  return { id: data.id, name: data.name };
+}
+
+export async function deleteCustomStatus(statusId: number): Promise<void> {
+  const { error } = await apiClient.DELETE(
+    "/api/backlog/statuses/{status_id}",
+    {
+      params: { path: { status_id: statusId } },
+    },
+  );
+  if (error)
+    throw new Error(apiErrorMessage(error, "Failed to delete custom status"));
 }
 
 export async function getCategories(): Promise<CategoryData[]> {
