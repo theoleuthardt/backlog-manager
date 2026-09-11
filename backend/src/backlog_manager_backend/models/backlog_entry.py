@@ -16,10 +16,6 @@ class BacklogEntry(Base):
     __tablename__ = "BacklogEntries"
     __table_args__ = (
         CheckConstraint(
-            "\"Status\" IN ('Not Started', 'In Progress', 'Completed', 'On Hold', 'Dropped')",
-            name="BacklogEntries_Status_check",
-        ),
-        CheckConstraint(
             '"Interest" >= 1 AND "Interest" <= 10',
             name="BacklogEntries_Interest_check",
         ),

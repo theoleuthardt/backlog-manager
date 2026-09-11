@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS "blm-system"."BacklogEntries" (
     "CompletionTime" NUMERIC(10,2),
     "Playtime"       NUMERIC(10,2),
     "SteamAppId"     BIGINT,
-    "Status"         VARCHAR(20) NOT NULL CHECK ("Status" IN ('Not Started', 'In Progress', 'Completed', 'On Hold', 'Dropped')),
+    "Status"         VARCHAR(20) NOT NULL,
     "Owned"          BOOLEAN NOT NULL            DEFAULT FALSE,
     "Interest"       INTEGER NOT NULL CHECK ("Interest" >= 1 AND "Interest" <= 10),
     "ReviewStars"    INTEGER,
@@ -100,6 +100,17 @@ CREATE TABLE IF NOT EXISTS "blm-system"."UserGamePriceAlerts" (
     "LastAlertedPrice" NUMERIC(10,2) NOT NULL,
     "UpdatedAt"        TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP),
     PRIMARY KEY ("UserID", "SteamAppId"),
+    FOREIGN KEY ("UserID") REFERENCES "blm-system"."Users"("UserID")
+        ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS "blm-system"."CustomStatuses" (
+    "StatusID"  BIGSERIAL PRIMARY KEY,
+    "UserID"    BIGINT NOT NULL,
+    "Name"      VARCHAR(20) NOT NULL,
+    "CreatedAt" TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP),
+    "UpdatedAt" TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP),
+    UNIQUE ("UserID", "Name"),
     FOREIGN KEY ("UserID") REFERENCES "blm-system"."Users"("UserID")
         ON DELETE CASCADE ON UPDATE CASCADE
 );

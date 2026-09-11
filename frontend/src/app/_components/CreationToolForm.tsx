@@ -8,13 +8,7 @@ import { Textarea } from "~/components/ui/textarea";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Loader2, Check, X } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { StatusSelect } from "components/StatusSelect";
 import { useCreateBacklogEntry } from "~/hooks/useBacklog";
 import { useSteamAppId } from "~/hooks/useGameSearch";
 import { toast } from "sonner";
@@ -49,7 +43,8 @@ export function CreationToolForm() {
   const [playtime, setPlaytime] = useState(0);
   const [steamAppId, setSteamAppId] = useState(steamAppIdFromUrl);
   const [steamAppIdTouched, setSteamAppIdTouched] = useState(false);
-  const shouldLookUpSteamAppId = title.length > 0 && steamAppIdFromUrl.trim() === "";
+  const shouldLookUpSteamAppId =
+    title.length > 0 && steamAppIdFromUrl.trim() === "";
   const steamAppIdQuery = useSteamAppId(shouldLookUpSteamAppId ? title : "");
   const [isLoading, setIsLoading] = useState(false);
   const [createStatus, setCreateStatus] = useState<
@@ -104,12 +99,7 @@ export function CreationToolForm() {
         title,
         genre: genreList,
         platform: platformList,
-        status: status as
-          | "Not Started"
-          | "In Progress"
-          | "Completed"
-          | "On Hold"
-          | "Dropped",
+        status,
         owned,
         interest,
         playtime,
@@ -296,18 +286,11 @@ export function CreationToolForm() {
                 <Label htmlFor="status" className="text-sm">
                   Status
                 </Label>
-                <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger className="w-full bg-black text-white">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Not Started">Not Started</SelectItem>
-                    <SelectItem value="In Progress">In Progress</SelectItem>
-                    <SelectItem value="On Hold">On Hold</SelectItem>
-                    <SelectItem value="Completed">Completed</SelectItem>
-                    <SelectItem value="Dropped">Dropped</SelectItem>
-                  </SelectContent>
-                </Select>
+                <StatusSelect
+                  value={status}
+                  onValueChange={setStatus}
+                  className="w-full bg-black text-white"
+                />
               </div>
 
               <div className="space-y-1">

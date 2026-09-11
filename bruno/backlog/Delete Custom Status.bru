@@ -1,0 +1,24 @@
+meta {
+  name: Delete Custom Status
+  type: http
+  seq: 17
+}
+
+delete {
+  url: {{backendUrl}}/api/backlog/statuses/{{statusId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Permanently deletes one of the caller's custom statuses. Backlog
+  entries keep whatever status string they already have - entries are
+  not rewritten on delete. Run auth/Login and "Create Custom Status"
+  first so statusId is set.
+
+  404 if the status doesn't exist or isn't owned by the caller.
+}

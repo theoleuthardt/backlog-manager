@@ -9,11 +9,39 @@ import {
 } from "~/lib/api/steam";
 
 const ENTRIES_KEY = ["backlog-entries"] as const;
+const CUSTOM_STATUSES_KEY = ["custom-statuses"] as const;
 
 export function useBacklogEntries() {
   return useQuery({
     queryKey: ENTRIES_KEY,
     queryFn: backlogApi.getEntries,
+  });
+}
+
+export function useCustomStatuses() {
+  return useQuery({
+    queryKey: CUSTOM_STATUSES_KEY,
+    queryFn: backlogApi.getCustomStatuses,
+  });
+}
+
+export function useCreateCustomStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: backlogApi.createCustomStatus,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: CUSTOM_STATUSES_KEY });
+    },
+  });
+}
+
+export function useDeleteCustomStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: backlogApi.deleteCustomStatus,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: CUSTOM_STATUSES_KEY });
+    },
   });
 }
 
