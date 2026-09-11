@@ -86,6 +86,77 @@ async def test_search_shopify_store_returns_empty_list_on_no_match(
     assert offers == []
 
 
+async def test_search_shopify_store_filters_out_unrelated_titles(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Shopify's suggest endpoint is a fuzzy full-text search - it also
+    matches unrelated products via tags/body text, e.g. "Assassin's Creed"
+    listings for a "Hitman" search - see search_shopify_store's
+    docstring."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return _suggest_response(
+            [
+                {
+                    "title": "HITMAN World of Assassination Steam Account",
+                    "price": "11.39",
+                    "handle": "hitman-woa-steam-account",
+                },
+                {
+                    "title": "Assassin's Creed Valhalla PC Steam CD Key",
+                    "price": "8.73",
+                    "handle": "ac-valhalla-cd-key",
+                },
+            ]
+        )
+
+    _mock_client(handler, monkeypatch)
+
+    offers = await search_shopify_store("RoyalCDKeys", "https://royalcdkeys.com", "hitman")
+
+    assert len(offers) == 1
+    assert offers[0].title == "HITMAN World of Assassination Steam Account"
+
+
+async def test_search_shopify_store_collapses_to_cheapest_matching_offer(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A single game has multiple real listings at one shop (CD Key, EU CD
+    Key, Steam Account, ...) - the caller wants the best price at this
+    shop, not every SKU."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return _suggest_response(
+            [
+                {
+                    "title": "HITMAN World of Assassination PC Steam CD Key",
+                    "price": "25.96",
+                    "handle": "hitman-woa-cd-key",
+                },
+                {
+                    "title": "HITMAN World of Assassination Steam Account",
+                    "price": "11.39",
+                    "handle": "hitman-woa-steam-account",
+                },
+                {
+                    "title": "HITMAN World of Assassination EU PC Steam CD Key",
+                    "price": "25.61",
+                    "handle": "hitman-woa-eu-cd-key",
+                },
+            ]
+        )
+
+    _mock_client(handler, monkeypatch)
+
+    offers = await search_shopify_store(
+        "RoyalCDKeys", "https://royalcdkeys.com", "hitman world of assassination"
+    )
+
+    assert len(offers) == 1
+    assert offers[0].price == 11.39
+    assert offers[0].title == "HITMAN World of Assassination Steam Account"
+
+
 async def test_search_shopify_store_raises_on_http_error(monkeypatch: pytest.MonkeyPatch) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(500)

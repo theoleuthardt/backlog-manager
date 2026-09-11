@@ -86,6 +86,17 @@ robots.txt disallow. It returns exactly the fields needed: `title`, `price`,
 `compare_at_price_max` (for discount detection), `handle` (product URL),
 `available`.
 
+**This endpoint is a fuzzy full-text search, not an exact title match** -
+noticed after the first version of this feature shipped, when searching
+"Hitman World of Assassination" returned unrelated Assassin's Creed listings
+alongside three genuinely different real listings for the requested game
+(Steam CD Key, EU CD Key, Steam Account - different products/prices, not
+duplicates). `search_shopify_store` now filters results to titles that
+actually contain the searched title (removing the unrelated-game noise) and
+collapses the remainder to the single cheapest match (since a caller wants
+"the best price at this shop", not every SKU for the same game) - see its
+docstring in `integrations/key_shops/shopify.py`.
+
 ## Scope decision
 
 Given the above, this implementation:

@@ -44,7 +44,17 @@ async def search_shopify_store(shop_name: str, base_url: str, title: str) -> lis
     see docs/KEY_SHOP_SCRAPING.md for why this (rather than scraping
     product pages) is the legal, robots.txt-compliant way to search these
     two shops. Shared by every Shopify-based adapter since the response
-    shape is identical across stores; only base_url/shop_name differ."""
+    shape is identical across stores; only base_url/shop_name differ.
+
+    Shopify's suggest endpoint is a fuzzy full-text search, not an exact
+    title match - searching "Hitman World of Assassination" also returns
+    unrelated Assassin's Creed listings (Shopify matches against tags/body
+    text too, not just the title) alongside every real edition of the
+    requested game (Steam CD Key, EU CD Key, Steam Account - genuinely
+    different listings, not duplicates). Filtering to titles that actually
+    contain the searched title removes the former; collapsing to the
+    single cheapest match removes the latter, since a caller wants "the
+    best price at this shop", not every SKU."""
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
             response = await client.get(
@@ -63,7 +73,7 @@ async def search_shopify_store(shop_name: str, base_url: str, title: str) -> lis
         raise httpx.DecodingError(f"{shop_name} returned an invalid response") from error
 
     now = datetime.now(UTC).replace(tzinfo=None)
-    return [
+    offers = [
         KeyShopOffer(
             shop=shop_name,
             title=product.title,
@@ -74,4 +84,8 @@ async def search_shopify_store(shop_name: str, base_url: str, title: str) -> lis
             discount_pct=_discount_pct(float(product.price), float(product.compare_at_price_max)),
         )
         for product in decoded.resources.results.products
+        if title.lower() in product.title.lower()
     ]
+    if not offers:
+        return []
+    return [min(offers, key=lambda offer: offer.price)]
