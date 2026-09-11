@@ -101,10 +101,14 @@ export const DashboardContent = () => {
     return Array.from(genres).sort();
   }, [backlogData]);
 
-  const statusOptions = [
-    ...DEFAULT_STATUSES,
-    ...customStatuses.map((status) => status.name),
-  ];
+  const statusOptions = useMemo(() => {
+    const options = new Set<string>([
+      ...DEFAULT_STATUSES,
+      ...customStatuses.map((status) => status.name),
+    ]);
+    backlogData?.forEach((entry) => options.add(entry.status));
+    return Array.from(options);
+  }, [backlogData, customStatuses]);
 
   const filteredData = useMemo(() => {
     if (!backlogData) return [];

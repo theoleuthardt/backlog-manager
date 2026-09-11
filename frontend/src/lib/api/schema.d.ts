@@ -1871,6 +1871,21 @@ export interface operations {
                     };
                 };
             };
+            /** @description Request conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
         };
     };
     ApiBacklogStatusesStatusIdUpdateCustomStatus: {
@@ -1912,6 +1927,36 @@ export interface operations {
                     };
                 };
             };
+            /** @description Nothing matches the given URI */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Request conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
         };
     };
     ApiBacklogStatusesStatusIdDeleteCustomStatus: {
@@ -1934,6 +1979,21 @@ export interface operations {
             };
             /** @description Bad request syntax or unsupported method */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

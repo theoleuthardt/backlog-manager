@@ -48,6 +48,14 @@ DEFAULT_STATUSES = ("Not Started", "In Progress", "Completed", "On Hold", "Dropp
 _STATUS_NAME_MAX_LENGTH = 20
 
 
+class _StatusConflictException(ClientException):
+    """Documents the 409 a duplicate custom-status name raises, distinct
+    from ClientException's default 400 so it shows up in the OpenAPI
+    response union via the handlers' `raises=` declarations."""
+
+    status_code = HTTP_409_CONFLICT
+
+
 async def _get_owned_entry(session: AsyncSession, entry_id: int, user: User) -> BacklogEntry:
     """Raises the same response as a real 404 when the entry belongs to
     another user - existence of another user's resource isn't revealed
@@ -320,7 +328,11 @@ async def _get_owned_status(
     return status
 
 
-@post("/api/backlog/statuses", status_code=201)
+@post(
+    "/api/backlog/statuses",
+    status_code=201,
+    raises=[ValidationException, _StatusConflictException],
+)
 async def create_custom_status(
     data: CreateCustomStatusRequest,
     db_session: NamedDependency[AsyncSession],
@@ -334,7 +346,7 @@ async def create_custom_status(
             db_session, CreateCustomStatusParams(user_id=current_user.id, name=name)
         )
     except ConflictError as error:
-        raise ClientException(f"A status named {name!r} already exists", status_code=HTTP_409_CONFLICT) from error
+        raise _StatusConflictException(f"A status named {name!r} already exists") from error
     return CustomStatusResponse.from_status(status)
 
 
@@ -349,7 +361,10 @@ async def list_custom_statuses(
     return [CustomStatusResponse.from_status(status) for status in statuses]
 
 
-@put("/api/backlog/statuses/{status_id:int}")
+@put(
+    "/api/backlog/statuses/{status_id:int}",
+    raises=[NotFoundException, ValidationException, _StatusConflictException],
+)
 async def update_custom_status(
     status_id: FromPath[int],
     data: UpdateCustomStatusRequest,
@@ -365,11 +380,11 @@ async def update_custom_status(
             db_session, UpdateCustomStatusParams(status_id=status_id, name=name)
         )
     except ConflictError as error:
-        raise ClientException(f"A status named {name!r} already exists", status_code=HTTP_409_CONFLICT) from error
+        raise _StatusConflictException(f"A status named {name!r} already exists") from error
     return CustomStatusResponse.from_status(status)
 
 
-@delete("/api/backlog/statuses/{status_id:int}")
+@delete("/api/backlog/statuses/{status_id:int}", raises=[NotFoundException])
 async def delete_custom_status(
     status_id: FromPath[int],
     db_session: NamedDependency[AsyncSession],

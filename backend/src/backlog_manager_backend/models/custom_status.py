@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import BigInteger, ForeignKey, UniqueConstraint
+from sqlalchemy import BigInteger, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backlog_manager_backend.models import TIMESTAMP_DEFAULT, Base
@@ -19,7 +19,7 @@ class CustomStatus(Base):
         BigInteger,
         ForeignKey("blm-system.Users.UserID", ondelete="CASCADE", onupdate="CASCADE"),
     )
-    name: Mapped[str] = mapped_column("Name")
+    name: Mapped[str] = mapped_column("Name", String(20))
     created_at: Mapped[datetime] = mapped_column(
         "CreatedAt", server_default=TIMESTAMP_DEFAULT
     )

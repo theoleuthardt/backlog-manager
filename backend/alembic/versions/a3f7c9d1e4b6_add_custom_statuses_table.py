@@ -48,6 +48,19 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Downgrade schema."""
+    bind = op.get_bind()
+    non_default_count = bind.execute(
+        sa.text(
+            'SELECT COUNT(*) FROM "blm-system"."BacklogEntries" '
+            "WHERE \"Status\" NOT IN ('Not Started', 'In Progress', 'Completed', 'On Hold', 'Dropped')"
+        )
+    ).scalar_one()
+    if non_default_count:
+        raise RuntimeError(
+            f"Cannot downgrade: {non_default_count} BacklogEntries row(s) use a custom "
+            "status not in the fixed set. Reassign or delete them to a default status "
+            "before downgrading."
+        )
     op.create_check_constraint(
         'BacklogEntries_Status_check',
         'BacklogEntries',

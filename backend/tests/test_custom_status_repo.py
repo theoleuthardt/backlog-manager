@@ -2,7 +2,12 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.errors import NotFoundError
-from backlog_manager_backend.repositories import custom_status_repo, user_repo
+from backlog_manager_backend.repositories import (
+    backlog_entry_repo,
+    custom_status_repo,
+    user_repo,
+)
+from backlog_manager_backend.schemas.backlog_entry import CreateBacklogEntryParams
 from backlog_manager_backend.schemas.custom_status import (
     CreateCustomStatusParams,
     UpdateCustomStatusParams,
@@ -71,6 +76,34 @@ async def test_update_custom_status(session: AsyncSession) -> None:
     )
 
     assert updated.name == "Playing in Co-Op"
+
+
+async def test_update_custom_status_migrates_entries_with_old_name(
+    session: AsyncSession,
+) -> None:
+    user = await _make_user(session)
+    status = await custom_status_repo.create_custom_status(
+        session, CreateCustomStatusParams(user_id=user.id, name="Co-Op")
+    )
+    entry = await backlog_entry_repo.create_backlog_entry(
+        session,
+        CreateBacklogEntryParams(
+            user_id=user.id,
+            title="Elden Ring",
+            genre="RPG",
+            platform="PC",
+            status="Co-Op",
+            owned=True,
+            interest=8,
+        ),
+    )
+
+    await custom_status_repo.update_custom_status(
+        session, UpdateCustomStatusParams(status_id=status.status_id, name="Playing in Co-Op")
+    )
+
+    refreshed = await backlog_entry_repo.get_backlog_entry_by_id(session, entry.backlog_entry_id)
+    assert refreshed.status == "Playing in Co-Op"
 
 
 async def test_update_custom_status_not_found(session: AsyncSession) -> None:

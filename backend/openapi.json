@@ -1425,6 +1425,44 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "Request conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "_ Status Conflict Exception",
+                  "examples": [
+                    {
+                      "status_code": 409,
+                      "detail": "Conflict",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
           }
         },
         "deprecated": false,
@@ -1472,6 +1510,44 @@
               }
             }
           },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request syntax or unsupported method",
             "content": {
@@ -1509,6 +1585,44 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "Request conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "_ Status Conflict Exception",
+                  "examples": [
+                    {
+                      "status_code": 409,
+                      "detail": "Conflict",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
           }
         },
         "deprecated": false,
@@ -1536,6 +1650,44 @@
           "204": {
             "description": "Request fulfilled, nothing follows",
             "headers": {}
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
           },
           "400": {
             "description": "Bad request syntax or unsupported method",

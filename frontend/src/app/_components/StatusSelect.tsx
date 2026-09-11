@@ -47,6 +47,10 @@ export function StatusSelect({
   const createStatusMutation = useCreateCustomStatus();
   const deleteStatusMutation = useDeleteCustomStatus();
 
+  const isKnownStatus =
+    (DEFAULT_STATUSES as readonly string[]).includes(value) ||
+    customStatuses.some((status) => status.name === value);
+
   const trimmedName = newStatusName.trim();
   const nameError =
     trimmedName.length === 0
@@ -62,7 +66,7 @@ export function StatusSelect({
             : "";
 
   const handleCreate = async () => {
-    if (nameError) return;
+    if (trimmedName.length === 0 || nameError) return;
     setIsCreating(true);
     try {
       const created = await createStatusMutation.mutateAsync(trimmedName);
@@ -112,20 +116,25 @@ export function StatusSelect({
               {status}
             </SelectItem>
           ))}
-          {customStatuses.map((status) => (
-            <SelectItem key={status.id} value={status.name}>
-              <div className="flex items-center justify-between gap-2">
-                <span>{status.name}</span>
-                <button
-                  type="button"
-                  onClick={(e) => void handleDelete(e, status.id, status.name)}
-                  aria-label={`Delete status ${status.name}`}
-                  className="text-gray-400 opacity-70 transition-opacity hover:text-red-400 hover:opacity-100"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
+          {value && !isKnownStatus && (
+            <SelectItem key={value} value={value}>
+              {value}
             </SelectItem>
+          )}
+          {customStatuses.map((status) => (
+            <div key={status.id} className="relative flex items-center">
+              <SelectItem value={status.name} className="flex-1 pr-10">
+                {status.name}
+              </SelectItem>
+              <button
+                type="button"
+                onClick={(e) => void handleDelete(e, status.id, status.name)}
+                aria-label={`Delete status ${status.name}`}
+                className="absolute right-2 text-gray-400 opacity-70 transition-opacity hover:text-red-400 hover:opacity-100"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
           ))}
           <div className="border-t pt-1" onSelect={(e) => e.preventDefault()}>
             <button

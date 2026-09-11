@@ -1,8 +1,9 @@
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.errors import NotFoundError, handle_database_error
+from backlog_manager_backend.models.backlog_entry import BacklogEntry as BacklogEntryModel
 from backlog_manager_backend.models.custom_status import CustomStatus as CustomStatusModel
 from backlog_manager_backend.schemas.custom_status import (
     CreateCustomStatusParams,
@@ -61,8 +62,18 @@ async def update_custom_status(
     if model is None:
         raise NotFoundError("CustomStatus", params.status_id)
 
+    old_name = model.name
     model.name = params.name
     model.updated_at = now_truncated_to_minute()
+    if old_name != params.name:
+        await session.execute(
+            update(BacklogEntryModel)
+            .where(
+                BacklogEntryModel.user_id == model.user_id,
+                BacklogEntryModel.status == old_name,
+            )
+            .values(status=params.name)
+        )
     try:
         await session.commit()
     except IntegrityError as error:
