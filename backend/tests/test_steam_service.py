@@ -155,8 +155,15 @@ async def test_import_library_sets_cover_when_steamgriddb_key_is_given(
         assert api_key == "griddb-key"
         return ["https://cdn2.steamgriddb.com/grid/1.png"]
 
+    async def fake_get_library_cover(app_id: int) -> str | None:
+        return None
+
     monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
     monkeypatch.setattr(steam_service.game_service, "get_game_covers", fake_get_game_covers)
+    monkeypatch.setattr(
+        "backlog_manager_backend.integrations.steam.get_steam_library_cover_if_exists",
+        fake_get_library_cover,
+    )
 
     created = await steam_service.import_library(
         session, user, "api-key", steamgriddb_api_key="griddb-key"

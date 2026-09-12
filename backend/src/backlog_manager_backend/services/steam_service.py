@@ -111,10 +111,16 @@ async def sync_playtimes(
 
 
 async def _try_get_cover(steam_app_id: int, steamgriddb_api_key: str | None) -> str | None:
-    """Best-effort SteamGridDB cover lookup for one freshly-imported
-    game. If a key is missing, the API errors, or no grid is found,
-    it falls back to Steam's official 600x900 library cover (if it exists).
+    """Cover lookup for one freshly-imported game: Steam's official
+    600x900 library cover first (deterministic, correct by appid), then
+    SteamGridDB's top community grid when the Steam cover is missing.
     A total miss returns None so the caller can apply their own fallback."""
+    from backlog_manager_backend.integrations.steam import get_steam_library_cover_if_exists
+
+    steam_cover = await get_steam_library_cover_if_exists(steam_app_id)
+    if steam_cover is not None:
+        return steam_cover
+
     if steamgriddb_api_key:
         try:
             covers = await game_service.get_game_covers(steam_app_id, steamgriddb_api_key)
@@ -122,9 +128,7 @@ async def _try_get_cover(steam_app_id: int, steamgriddb_api_key: str | None) -> 
                 return covers[0]
         except (RuntimeError, httpx.HTTPError):
             pass
-
-    from backlog_manager_backend.integrations.steam import get_steam_library_cover_if_exists
-    return await get_steam_library_cover_if_exists(steam_app_id)
+    return None
 
 
 async def _try_get_hltb_times(title: str) -> tuple[Decimal | None, Decimal | None, Decimal | None]:
