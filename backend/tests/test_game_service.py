@@ -1,4 +1,3 @@
-import asyncio
 from types import ModuleType
 
 import httpx
@@ -14,8 +13,8 @@ from backlog_manager_backend.integrations.types import (
     IGDBPlatform,
     IGDBSearchResult,
     IGDBTokenResponse,
-    SteamApp,
     SteamGridDBGrid,
+    SteamStoreSearchItem,
 )
 
 
@@ -34,8 +33,6 @@ def game_service(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
     monkeypatch.setattr(module, "_cover_cache", {})
     monkeypatch.setattr(module, "_time_to_beat_cache", {})
     monkeypatch.setattr(module, "_steam_app_id_by_title", {})
-    monkeypatch.setattr(module, "_steam_app_list_cached_at", None)
-    monkeypatch.setattr(module, "_steam_app_list_last_attempt_at", None)
     monkeypatch.setattr(module, "_steamgriddb_cover_cache", {})
     return module
 
@@ -763,121 +760,108 @@ async def test_search_raises_without_credentials(
         await game_service.search("Celeste", "", "", None)
 
 
-async def test_find_steam_app_id_matches_by_exact_title(
+async def test_find_steam_app_id_returns_first_app_hit(
     game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    async def fake_get_steam_app_list() -> list[SteamApp]:
+    async def fake_search_store(title: str) -> list[SteamStoreSearchItem]:
+        assert title == "Celeste"
         return [
-            SteamApp(appid=504230, name="Celeste"),
-            SteamApp(appid=367520, name="Hollow Knight"),
+            SteamStoreSearchItem(type="app", name="Celeste", id=504230),
+            SteamStoreSearchItem(type="dlc", name="Celeste Soundtrack", id=1092840),
         ]
 
-    monkeypatch.setattr(game_service, "get_steam_app_list", fake_get_steam_app_list)
+    monkeypatch.setattr(game_service, "search_steam_store_by_title", fake_search_store)
 
     assert await game_service.find_steam_app_id("Celeste") == 504230
 
 
-async def test_find_steam_app_id_is_case_and_trademark_symbol_insensitive(
+async def test_find_steam_app_id_skips_non_app_hits(
     game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    async def fake_get_steam_app_list() -> list[SteamApp]:
-        return [SteamApp(appid=8930, name="Sid Meier's Civilization® VI")]
+    async def fake_search_store(title: str) -> list[SteamStoreSearchItem]:
+        return [SteamStoreSearchItem(type="bundle", name="Celeste Bundle", id=999)]
 
-    monkeypatch.setattr(game_service, "get_steam_app_list", fake_get_steam_app_list)
+    monkeypatch.setattr(game_service, "search_steam_store_by_title", fake_search_store)
 
-    assert (
-        await game_service.find_steam_app_id("sid meier's civilization vi") == 8930
-    )
+    assert await game_service.find_steam_app_id("Celeste") is None
 
 
 async def test_find_steam_app_id_returns_none_when_no_match(
     game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    async def fake_get_steam_app_list() -> list[SteamApp]:
-        return [SteamApp(appid=504230, name="Celeste")]
+    async def fake_search_store(title: str) -> list[SteamStoreSearchItem]:
+        return []
 
-    monkeypatch.setattr(game_service, "get_steam_app_list", fake_get_steam_app_list)
+    monkeypatch.setattr(game_service, "search_steam_store_by_title", fake_search_store)
 
     assert await game_service.find_steam_app_id("Some Unreleased Game") is None
 
 
-async def test_find_steam_app_id_caches_the_app_list_across_lookups(
+async def test_find_steam_app_id_caches_repeat_lookups(
     game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     call_count = 0
 
-    async def fake_get_steam_app_list() -> list[SteamApp]:
+    async def fake_search_store(title: str) -> list[SteamStoreSearchItem]:
         nonlocal call_count
         call_count += 1
-        return [SteamApp(appid=504230, name="Celeste")]
+        return [SteamStoreSearchItem(type="app", name="Celeste", id=504230)]
 
-    monkeypatch.setattr(game_service, "get_steam_app_list", fake_get_steam_app_list)
+    monkeypatch.setattr(game_service, "search_steam_store_by_title", fake_search_store)
 
-    await game_service.find_steam_app_id("Celeste")
-    await game_service.find_steam_app_id("Hollow Knight")
+    assert await game_service.find_steam_app_id("Celeste") == 504230
+    assert await game_service.find_steam_app_id("Celeste") == 504230
 
     assert call_count == 1
 
 
-async def test_find_steam_app_id_returns_none_when_fetch_fails(
+async def test_find_steam_app_id_caches_misses(
     game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    async def fake_get_steam_app_list() -> list[SteamApp]:
+    call_count = 0
+
+    async def fake_search_store(title: str) -> list[SteamStoreSearchItem]:
+        nonlocal call_count
+        call_count += 1
+        return []
+
+    monkeypatch.setattr(game_service, "search_steam_store_by_title", fake_search_store)
+
+    assert await game_service.find_steam_app_id("Some Unreleased Game") is None
+    assert await game_service.find_steam_app_id("Some Unreleased Game") is None
+
+    assert call_count == 1
+
+
+async def test_find_steam_app_id_returns_none_when_search_fails(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def fake_search_store(title: str) -> list[SteamStoreSearchItem]:
         raise httpx.ConnectError("connection refused")
 
-    monkeypatch.setattr(game_service, "get_steam_app_list", fake_get_steam_app_list)
+    monkeypatch.setattr(game_service, "search_steam_store_by_title", fake_search_store)
 
     assert await game_service.find_steam_app_id("Celeste") is None
 
 
-async def test_find_steam_app_id_backs_off_after_a_failed_fetch(
+async def test_find_steam_app_id_does_not_cache_failures(
     game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     call_count = 0
 
-    async def failing_get_steam_app_list() -> list[SteamApp]:
+    async def fake_search_store(title: str) -> list[SteamStoreSearchItem]:
         nonlocal call_count
         call_count += 1
-        raise httpx.ConnectError("connection refused")
+        if call_count == 1:
+            raise httpx.ConnectError("connection refused")
+        return [SteamStoreSearchItem(type="app", name="Celeste", id=504230)]
 
-    monkeypatch.setattr(game_service, "get_steam_app_list", failing_get_steam_app_list)
+    monkeypatch.setattr(game_service, "search_steam_store_by_title", fake_search_store)
 
     assert await game_service.find_steam_app_id("Celeste") is None
-    assert await game_service.find_steam_app_id("Celeste") is None
+    assert await game_service.find_steam_app_id("Celeste") == 504230
 
-    assert call_count == 1
-
-
-async def test_find_steam_app_id_coalesces_concurrent_refreshes(
-    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    call_count = 0
-    started = asyncio.Event()
-    proceed = asyncio.Event()
-
-    async def slow_get_steam_app_list() -> list[SteamApp]:
-        nonlocal call_count
-        call_count += 1
-        started.set()
-        await proceed.wait()
-        return [SteamApp(appid=504230, name="Celeste")]
-
-    monkeypatch.setattr(game_service, "get_steam_app_list", slow_get_steam_app_list)
-
-    async def lookup_after_fetch_started() -> int | None:
-        await started.wait()
-        return await game_service.find_steam_app_id("Celeste")
-
-    first_task = asyncio.create_task(game_service.find_steam_app_id("Celeste"))
-    second_task = asyncio.create_task(lookup_after_fetch_started())
-    await started.wait()
-    proceed.set()
-
-    first_result, second_result = await asyncio.gather(first_task, second_task)
-
-    assert call_count == 1
-    assert first_result == 504230
-    assert second_result == 504230
+    assert call_count == 2
 
 
 async def test_get_game_covers_raises_without_api_key(game_service: ModuleType) -> None:
@@ -1006,8 +990,8 @@ async def test_search_prefers_steamgriddb_cover_over_igdb(
     ) -> list[IGDBGameTimeToBeat]:
         return [IGDBGameTimeToBeat(id=1, game_id=1, normally=3600)]
 
-    async def fake_get_steam_app_list() -> list[SteamApp]:
-        return [SteamApp(appid=504230, name="Celeste")]
+    async def fake_search_store(title: str) -> list[SteamStoreSearchItem]:
+        return [SteamStoreSearchItem(type="app", name="Celeste", id=504230)]
 
     async def fake_get_grids_by_steam_app_id(
         steam_app_id: int, api_key: str
@@ -1025,7 +1009,7 @@ async def test_search_prefers_steamgriddb_cover_over_igdb(
     monkeypatch.setattr(
         game_service, "get_games_time_to_beat_on_igdb", fake_get_games_time_to_beat_on_igdb
     )
-    monkeypatch.setattr(game_service, "get_steam_app_list", fake_get_steam_app_list)
+    monkeypatch.setattr(game_service, "search_steam_store_by_title", fake_search_store)
     monkeypatch.setattr(
         game_service, "get_grids_by_steam_app_id", fake_get_grids_by_steam_app_id
     )
@@ -1069,8 +1053,8 @@ async def test_search_falls_back_to_igdb_cover_when_steamgriddb_has_none(
     ) -> list[IGDBGameTimeToBeat]:
         return [IGDBGameTimeToBeat(id=1, game_id=1, normally=3600)]
 
-    async def fake_get_steam_app_list() -> list[SteamApp]:
-        return [SteamApp(appid=504230, name="Celeste")]
+    async def fake_search_store(title: str) -> list[SteamStoreSearchItem]:
+        return [SteamStoreSearchItem(type="app", name="Celeste", id=504230)]
 
     async def fake_get_grids_by_steam_app_id(
         steam_app_id: int, api_key: str
@@ -1088,7 +1072,7 @@ async def test_search_falls_back_to_igdb_cover_when_steamgriddb_has_none(
     monkeypatch.setattr(
         game_service, "get_games_time_to_beat_on_igdb", fake_get_games_time_to_beat_on_igdb
     )
-    monkeypatch.setattr(game_service, "get_steam_app_list", fake_get_steam_app_list)
+    monkeypatch.setattr(game_service, "search_steam_store_by_title", fake_search_store)
     monkeypatch.setattr(
         game_service, "get_grids_by_steam_app_id", fake_get_grids_by_steam_app_id
     )

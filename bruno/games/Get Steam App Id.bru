@@ -15,7 +15,8 @@ params:query {
 }
 
 docs {
-  Looks up a Steam app id by (fuzzy) title match against Steam's full app
-  list. Public, unauthenticated - used to auto-fill steam_app_id when
-  adding a backlog entry. Returns null if no match is found.
+  Looks up a Steam app id by title via the Steam storefront search
+  (store.steampowered.com/api/storesearch). Public, unauthenticated -
+  used to auto-fill steam_app_id when adding a backlog entry. Returns
+  null if no match is found.
 }

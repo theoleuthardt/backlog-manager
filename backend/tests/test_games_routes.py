@@ -380,7 +380,6 @@ def _reset_steam_app_cache(monkeypatch: pytest.MonkeyPatch) -> None:
     from backlog_manager_backend.services import game_service as module
 
     monkeypatch.setattr(module, "_steam_app_id_by_title", {})
-    monkeypatch.setattr(module, "_steam_app_list_cached_at", None)
 
 
 async def test_get_steam_app_id_matches_by_title(
@@ -390,7 +389,11 @@ async def test_get_steam_app_id_matches_by_title(
 
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(
-            200, json={"applist": {"apps": [{"appid": 504230, "name": "Celeste"}]}}
+            200,
+            json={
+                "total": 1,
+                "items": [{"type": "app", "name": "Celeste", "id": 504230}],
+            },
         )
 
     _mock_igdb(handler, monkeypatch)
@@ -408,7 +411,7 @@ async def test_get_steam_app_id_returns_null_when_no_match(
     from backlog_manager_backend.app import create_app
 
     def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(200, json={"applist": {"apps": []}})
+        return httpx.Response(200, json={"total": 0, "items": []})
 
     _mock_igdb(handler, monkeypatch)
 

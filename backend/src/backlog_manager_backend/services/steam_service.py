@@ -1,4 +1,6 @@
-from collections.abc import Awaitable, Callable
+import asyncio
+import time
+from collections.abc import Awaitable, Callable, Sequence
 from decimal import ROUND_HALF_UP, Decimal
 
 import httpx
@@ -44,6 +46,34 @@ _IMPORTED_INTEREST = 5
 _STEAM_NOT_LINKED = "Steam account is not linked"
 _WISHLIST_IMPORTED_STATUS = "Not Owned"
 _WISHLIST_COVER_URL = "https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/capsule_sm_120.jpg"
+_LOOKUP_CONCURRENCY = 4
+_OPERATION_DEADLINE_SECONDS = 600.0
+IMPORT_MAX_ITEMS = 2000
+
+
+class _OperationBudget:
+    """Per-operation lookups budget for import/preview loops - a
+    semaphore bounding concurrent external lookups plus a wall-clock
+    deadline after which no new lookup is started. Once exhausted, the
+    affected lookups degrade to their fallbacks (None cover, no
+    beat-times, generic "Steam App <id>" title) instead of raising, so an
+    oversized or very slow import still completes with DB writes
+    serialized rather than failing partway."""
+
+    def __init__(self) -> None:
+        self.semaphore = asyncio.Semaphore(_LOOKUP_CONCURRENCY)
+        self.deadline = time.monotonic() + _OPERATION_DEADLINE_SECONDS
+
+    async def lookup[T](self, coro_factory: Callable[[], Awaitable[T]], fallback: T) -> T:
+        if time.monotonic() >= self.deadline:
+            return fallback
+        async with self.semaphore:
+            if time.monotonic() >= self.deadline:
+                return fallback
+            try:
+                return await asyncio.wait_for(coro_factory(), self.deadline - time.monotonic())
+            except (httpx.HTTPError, TimeoutError):
+                return fallback
 
 
 class SteamPreviewItem(msgspec.Struct):
@@ -57,6 +87,60 @@ class SteamPreviewItem(msgspec.Struct):
 
 def _wishlist_cover_url(app_id: int) -> str:
     return _WISHLIST_COVER_URL.format(appid=app_id)
+
+
+def _validate_candidate_count(games: Sequence[SteamOwnedGame]) -> None:
+    """The routes already bound the POSTed bodies to IMPORT_MAX_ITEMS, but
+    the no-body paths (full library import/preview, sync + auto-import)
+    get their candidate list straight from Steam's GetOwnedGames, which
+    has no such limit - a Steam account can technically own more than
+    any sane bound. Enforcing here as well keeps the service safe no
+    matter which entry point is used - see issue #184."""
+    if len(games) > IMPORT_MAX_ITEMS:
+        raise ValidationError(f"Steam import is limited to {IMPORT_MAX_ITEMS} items")
+
+
+def _dedupe_app_ids(items: list[SteamWishlistItem]) -> list[int]:
+    seen: set[int] = set()
+    unique_app_ids: list[int] = []
+    for item in items:
+        if item.appid not in seen:
+            seen.add(item.appid)
+            unique_app_ids.append(item.appid)
+    return unique_app_ids
+
+
+async def _get_steam_app_details(
+    app_ids: list[int], budget: _OperationBudget | None = None
+) -> dict[int, SteamAppDetails]:
+    """Name and header image for each appid via the store appdetails
+    API (one request per app), since GetWishlist returns bare appids
+    with no names and the old reverse lookup against the full app
+    catalogue died with ISteamApps/GetAppList. Best-effort per item: an
+    appid that fails to resolve (or is skipped once the operation's
+    lookup budget is spent) is simply absent from the result rather
+    than raising, so one unlistable item can't fail the whole wishlist
+    preview. Concurrent (bounded by the budget's semaphore) rather than
+    serial so a large wishlist doesn't pay one request latency per
+    item - see issue #184."""
+    if not app_ids:
+        return {}
+
+    async def fetch_one(app_id: int) -> tuple[int, SteamAppDetails] | None:
+        detail = await get_app_details(app_id)
+        return (app_id, detail) if detail is not None else None
+
+    if budget is None:
+        budget = _OperationBudget()
+    results = await asyncio.gather(
+        *(budget.lookup(lambda app_id=app_id: fetch_one(app_id), None) for app_id in app_ids)
+    )
+    return {
+        app_id: detail
+        for result in results
+        if result is not None
+        for app_id, detail in [result]
+    }
 
 
 _ACHIEVEMENT_SCHEMA_CACHE_MAX_SIZE = 500
@@ -226,7 +310,15 @@ async def import_library(
     imported the same way. `on_progress`, when given, is awaited after
     every game considered (whether it was actually imported, already
     existed, or failed), so callers can report "N of total processed"
-    even on a re-sync where most games are skipped as already-imported."""
+    even on a re-sync where most games are skipped as already-imported.
+
+    Cover and HLTB lookups for the games to create run up front through
+    one shared _OperationBudget (bounded concurrency + total deadline,
+    see issue #184) and only then are the entries written serially - a
+    Steam outage now delays the import by at most the per-request
+    timeout times the concurrency bound rather than once per game, and
+    once the budget's deadline passes the remaining lookups degrade to
+    their fallbacks instead of stalling the import."""
     if not user.steam_id:
         raise ValidationError(_STEAM_NOT_LINKED)
     if owned_games is None:
@@ -238,12 +330,32 @@ async def import_library(
     if confirmed_app_ids is not None:
         confirmed = set(confirmed_app_ids)
         games_to_import = [game for game in games_to_import if game.appid in confirmed]
+    _validate_candidate_count(games_to_import)
 
     existing_app_ids = {
         entry.steam_app_id
         for entry in await backlog_entry_repo.get_backlog_entries_by_user(session, user.id)
         if entry.steam_app_id is not None
     }
+    games_to_create = [game for game in games_to_import if game.appid not in existing_app_ids]
+
+    budget = _OperationBudget()
+    covers_and_times = await asyncio.gather(
+        *(
+            asyncio.gather(
+                budget.lookup(
+                    lambda game=game: _try_get_cover(game.appid, steamgriddb_api_key), None
+                ),
+                budget.lookup(
+                    lambda game=game: _try_get_hltb_times(game.name),
+                    (None, None, None),
+                ),
+            )
+            for game in games_to_create
+        )
+    )
+    covers = {game.appid: cover for game, (cover, _) in zip(games_to_create, covers_and_times, strict=True)}
+    times = {game.appid: ttt for game, (_, ttt) in zip(games_to_create, covers_and_times, strict=True)}
 
     created: list[BacklogEntry] = []
     total = len(games_to_import)
@@ -253,8 +365,10 @@ async def import_library(
                 await on_progress(processed, total)
             continue
         try:
-            image_link = await _try_get_cover(game.appid, steamgriddb_api_key)
-            main_time, main_plus_extra_time, completion_time = await _try_get_hltb_times(game.name)
+            image_link = covers.get(game.appid)
+            main_time, main_plus_extra_time, completion_time = times.get(
+                game.appid, (None, None, None)
+            )
             created.append(
                 await backlog_entry_repo.create_backlog_entry(
                     session,
@@ -314,6 +428,8 @@ async def sync_playtimes_and_import(
     if not user.steam_id:
         raise ValidationError(_STEAM_NOT_LINKED)
     owned_games = await get_owned_games(user.steam_id, api_key)
+    if auto_import:
+        _validate_candidate_count(owned_games)
 
     updated = await sync_playtimes(session, user, api_key, owned_games)
     if auto_import:
@@ -397,27 +513,6 @@ async def get_achievement_progress(
     )
 
 
-async def _get_steam_app_details(
-    app_ids: list[int],
-) -> dict[int, SteamAppDetails]:
-    """Name and header image for each appid via the store appdetails
-    API (one request per app), since GetWishlist returns bare appids
-    with no names and the old reverse lookup against the full app
-    catalogue died with ISteamApps/GetAppList. Best-effort per item: an
-    appid that fails to resolve ... is simply absent from the result
-    rather than raising, so one unlistable item can't fail the whole
-    wishlist preview."""
-    details: dict[int, SteamAppDetails] = {}
-    for app_id in app_ids:
-        try:
-            detail = await get_app_details(app_id)
-        except httpx.HTTPError:
-            continue
-        if detail is not None:
-            details[app_id] = detail
-    return details
-
-
 async def preview_library(
     session: AsyncSession,
     user: User,
@@ -430,19 +525,34 @@ async def preview_library(
     (incl. Steam Family members' games) not already linked to a backlog
     entry by steam_app_id - without writing anything. Covers come from
     SteamGridDB best-effort like import_library, so the preview shows
-    the same images the import would end up with."""
+    the same images the import would end up with. Cover lookups run
+    through a shared _OperationBudget - see issue #184."""
     if not user.steam_id:
         raise ValidationError(_STEAM_NOT_LINKED)
 
     owned_games = await get_owned_games(user.steam_id, api_key)
     if family_steam_ids:
         owned_games = await _merge_family_games(owned_games, family_steam_ids, api_key)
+    _validate_candidate_count(owned_games)
 
     existing_app_ids = {
         entry.steam_app_id
         for entry in await backlog_entry_repo.get_backlog_entries_by_user(session, user.id)
         if entry.steam_app_id is not None
     }
+
+    unlinked_games = [game for game in owned_games if game.appid not in existing_app_ids]
+
+    budget = _OperationBudget()
+    cover_links = await asyncio.gather(
+        *(
+            budget.lookup(
+                lambda game=game: _try_get_cover(game.appid, steamgriddb_api_key), None
+            )
+            for game in unlinked_games
+        )
+    )
+    covers = dict(zip((game.appid for game in unlinked_games), cover_links, strict=True))
 
     preview: list[SteamPreviewItem] = []
     total = len(owned_games)
@@ -452,7 +562,7 @@ async def preview_library(
                 SteamPreviewItem(
                     steam_app_id=game.appid,
                     title=game.name,
-                    image_link=await _try_get_cover(game.appid, steamgriddb_api_key),
+                    image_link=covers.get(game.appid),
                 )
             )
         if on_progress:
@@ -469,7 +579,8 @@ async def preview_wishlist(
     item not already linked to a backlog entry by steam_app_id - without
     writing anything. Titles come from the store appdetails API
     (best-effort, a nameless item still previews); covers resolve via
-    the SteamGridDB -> Steam header/CDN fallback chain, like import_wishlist."""
+    the SteamGridDB -> Steam header/CDN fallback chain, like import_wishlist.
+    Detail and cover lookups share one _OperationBudget - see issue #184."""
 
     if not user.steam_id:
         raise ValidationError(_STEAM_NOT_LINKED)
@@ -483,12 +594,22 @@ async def preview_wishlist(
     items = [
         item for item in await get_wishlist(user.steam_id) if item.appid not in existing_app_ids
     ]
-    details = await _get_steam_app_details([item.appid for item in items])
+
+    budget = _OperationBudget()
+    details = await _get_steam_app_details([item.appid for item in items], budget)
+    cover_links = await asyncio.gather(
+        *(
+            budget.lookup(
+                lambda item=item: _try_get_cover(item.appid, steamgriddb_api_key), None
+            )
+            for item in items
+        )
+    )
 
     preview: list[SteamPreviewItem] = []
-    for item in items:
+    for item, cover_link in zip(items, cover_links, strict=True):
         detail = details.get(item.appid)
-        image_link = await _try_get_cover(item.appid, steamgriddb_api_key)
+        image_link = cover_link
         if image_link is None:
             image_link = (detail.header_image if detail else None) or _wishlist_cover_url(
                 item.appid
@@ -517,18 +638,30 @@ async def import_wishlist(
     whole point of a wishlist) and owned is False; a SteamGridDB cover
     replaces the preview's CDN capsule when one is available. Per-entry
     failures are caught, rolled back, and logged like import_library -
-    see that docstring for why."""
+    see that docstring for why. Detail and cover lookups share one
+    _OperationBudget (bounded concurrency + total deadline) - see issue
+    #184."""
     if not user.steam_id:
         raise ValidationError(_STEAM_NOT_LINKED)
 
-    seen: set[int] = set()
-    unique_app_ids: list[int] = []
-    for item in items:
-        if item.appid not in seen:
-            seen.add(item.appid)
-            unique_app_ids.append(item.appid)
-
-    details = await _get_steam_app_details(unique_app_ids)
+    budget = _OperationBudget()
+    unique_app_ids = _dedupe_app_ids(items)
+    details = await _get_steam_app_details(unique_app_ids, budget)
+    cover_links = dict(
+        zip(
+            unique_app_ids,
+            await asyncio.gather(
+                *(
+                    budget.lookup(
+                        lambda app_id=app_id: _try_get_cover(app_id, steamgriddb_api_key),
+                        None,
+                    )
+                    for app_id in unique_app_ids
+                )
+            ),
+            strict=True,
+        )
+    )
 
     created: list[BacklogEntry] = []
     imported_app_ids: set[int] = set()
@@ -541,7 +674,7 @@ async def import_wishlist(
         try:
             detail = details.get(item.appid)
             image_link = (
-                await _try_get_cover(item.appid, steamgriddb_api_key)
+                cover_links.get(item.appid)
                 or (detail.header_image if detail else None)
                 or _wishlist_cover_url(item.appid)
             )
