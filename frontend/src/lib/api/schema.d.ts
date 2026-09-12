@@ -135,7 +135,8 @@ export interface paths {
         put?: never;
         /** CreateEntry */
         post: operations["ApiBacklogEntriesCreateEntry"];
-        delete?: never;
+        /** DeleteAllEntries */
+        delete: operations["ApiBacklogEntriesDeleteAllEntries"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1509,6 +1510,26 @@ export interface operations {
                             [key: string]: unknown;
                         } | unknown[];
                     };
+                };
+            };
+        };
+    };
+    ApiBacklogEntriesDeleteAllEntries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": number;
                 };
             };
         };

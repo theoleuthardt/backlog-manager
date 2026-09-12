@@ -20,10 +20,14 @@ from backlog_manager_backend.schemas.category import CreateCategoryParams
 from backlog_manager_backend.schemas.user import CreateUserParams
 
 
-async def _make_user(session: AsyncSession) -> object:
+async def _make_user(session: AsyncSession, username: str = "entryowner") -> object:
     return await user_repo.create_user(
         session,
-        CreateUserParams(username="entryowner", email="entryowner@example.com", password_hash="h"),
+        CreateUserParams(
+            username=username,
+            email=f"{username}@example.com",
+            password_hash="h",
+        ),
     )
 
 
@@ -220,6 +224,36 @@ async def test_delete_backlog_entry(session: AsyncSession) -> None:
 async def test_delete_backlog_entry_not_found(session: AsyncSession) -> None:
     with pytest.raises(NotFoundError):
         await backlog_entry_repo.delete_backlog_entry(session, 999_999_999)
+
+
+async def test_delete_backlog_entries_by_user(session: AsyncSession) -> None:
+    user = await _make_user(session)
+    other = await _make_user(session, username="entryother")
+    entry = await _make_entry(session, user.id, title="Mine")
+    other_entry = await _make_entry(session, other.id, title="Theirs")
+    category = await category_repo.create_category(
+        session, CreateCategoryParams(user_id=user.id, category_name="C")
+    )
+    await category_backlog_entry_repo.add_category_to_backlog_entry(
+        session,
+        CategoryBacklogAssociationParams(
+            category_id=category.category_id, backlog_entry_id=entry.backlog_entry_id
+        ),
+    )
+
+    deleted = await backlog_entry_repo.delete_backlog_entries_by_user(session, user.id)
+
+    assert deleted == 1
+    assert await backlog_entry_repo.get_backlog_entries_by_user(session, user.id) == []
+    assert [
+        e.backlog_entry_id for e in await backlog_entry_repo.get_backlog_entries_by_user(
+            session, other.id
+        )
+    ] == [other_entry.backlog_entry_id]
+    # the category association cascaded away with its entry
+    assert await category_repo.get_categories_for_backlog_entry(
+        session, entry.backlog_entry_id
+    ) == []
 
 
 async def test_get_backlog_entries_for_category(session: AsyncSession) -> None:

@@ -196,6 +196,17 @@ async def delete_entry(
     await backlog_entry_repo.delete_backlog_entry(db_session, entry_id)
 
 
+@delete("/api/backlog/entries", status_code=200)
+async def delete_all_entries(
+    db_session: NamedDependency[AsyncSession],
+    current_user: NamedDependency[User],
+) -> int:
+    """Bulk variant of delete_entry - permanently deletes every backlog
+    entry of the caller (category associations cascade). Returns the
+    number of entries removed."""
+    return await backlog_entry_repo.delete_backlog_entries_by_user(db_session, current_user.id)
+
+
 @get("/api/backlog/entries/{entry_id:int}/categories")
 async def get_categories_for_entry(
     entry_id: FromPath[int],
@@ -402,6 +413,7 @@ backlog_router = Router(
         get_entry,
         update_entry,
         delete_entry,
+        delete_all_entries,
         get_categories_for_entry,
         add_category_to_entry,
         remove_category_from_entry,

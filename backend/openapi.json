@@ -561,6 +561,29 @@
             "BearerAuth": []
           }
         ]
+      },
+      "delete": {
+        "summary": "DeleteAllEntries",
+        "operationId": "ApiBacklogEntriesDeleteAllEntries",
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/api/backlog/entries/{entry_id}": {
