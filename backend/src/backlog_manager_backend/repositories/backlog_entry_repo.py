@@ -1,5 +1,5 @@
 import msgspec
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -178,3 +178,18 @@ async def delete_backlog_entry(
     await session.delete(model)
     await session.commit()
     return schema
+
+
+async def delete_backlog_entries_by_user(
+    session: AsyncSession, user_id: int
+) -> int:
+    """Deletes every backlog entry of a user in one bulk delete and
+    returns the number of rows removed. The category associations go
+    with them via the ON DELETE CASCADE on CategoryBacklogEntry -
+    SQLAlchemy's bulk delete never loads the models, so its cascade
+    configuration never runs; only the DB-level cascade does."""
+    result = await session.execute(
+        delete(BacklogEntryModel).where(BacklogEntryModel.user_id == user_id)
+    )
+    await session.commit()
+    return result.rowcount or 0

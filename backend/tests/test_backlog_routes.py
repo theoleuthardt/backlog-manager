@@ -190,6 +190,41 @@ async def test_delete_entry_rejects_other_users_entry(postgres_url: str, create_
     assert still_there.status_code == 200
 
 
+async def test_delete_all_entries_removes_only_own_entries(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    app = create_app()
+
+    with TestClient(app=app) as client:
+        headers_a = await create_and_login(client, "deletealla@example.com")
+        headers_b = await create_and_login(client, "deleteallb@example.com")
+
+        for user_headers in (headers_a, headers_a, headers_b):
+            client.post(
+                "/api/backlog/entries",
+                headers=user_headers,
+                json={
+                    "title": "Bulk delete test game",
+                    "genre": ["RPG"],
+                    "platform": ["PC"],
+                    "status": "Not Started",
+                    "owned": True,
+                    "interest": 5,
+                },
+            )
+
+        delete_response = client.delete("/api/backlog/entries", headers=headers_a)
+        remaining_a = client.get("/api/backlog/entries", headers=headers_a)
+        remaining_b = client.get("/api/backlog/entries", headers=headers_b)
+
+    assert delete_response.status_code == 200
+    assert delete_response.json() == 2
+    assert remaining_a.json() == []
+    assert len(remaining_b.json()) == 1
+
+
 async def test_update_entry_partial_update_leaves_other_fields_unchanged(
     postgres_url: str, create_and_login
 ) -> None:

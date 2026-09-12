@@ -17,7 +17,7 @@ from backlog_manager_backend.auth.encryption import decrypt
 from backlog_manager_backend.config import settings
 from backlog_manager_backend.db import async_session
 from backlog_manager_backend.errors import ValidationError
-from backlog_manager_backend.integrations.types import AchievementProgress
+from backlog_manager_backend.integrations.types import AchievementProgress, SteamWishlistItem
 from backlog_manager_backend.schemas.backlog_entry import BacklogEntry, BacklogEntryResponse
 from backlog_manager_backend.schemas.user import User
 from backlog_manager_backend.services import steam_service
@@ -28,6 +28,7 @@ _NO_STORE = CacheControlHeader(no_store=True)
 _SSE_DONE = "done"
 _SSE_ERROR = "error"
 _SSE_PROGRESS = "progress"
+_WISHLIST_IMPORT_MAX_ITEMS = 10_000
 
 
 def _resolve_api_key(user: User) -> str:
@@ -75,6 +76,32 @@ def _resolve_family_steam_ids(user: User) -> list[str]:
     return family_ids
 
 
+_user_operation_locks: dict[int, asyncio.Lock] = {}
+
+
+def _get_user_operation_lock(user_id: int) -> asyncio.Lock:
+    lock = _user_operation_locks.get(user_id)
+    if lock is None:
+        lock = asyncio.Lock()
+        _user_operation_locks[user_id] = lock
+    return lock
+
+
+def _validate_wishlist_items(items: list[SteamWishlistItem]) -> None:
+    """Route-boundary validation of the POSTed wishlist: appids below 1
+    can never match a real Steam app, and an unbounded list would turn
+    into an unbounded per-item lookup-and-write loop. Runs before the
+    SSE stream opens so rejections surface as a plain 400, not an
+    in-stream error event."""
+    if len(items) > _WISHLIST_IMPORT_MAX_ITEMS:
+        raise ClientException(
+            f"Wishlist import is limited to {_WISHLIST_IMPORT_MAX_ITEMS} items"
+        )
+    for item in items:
+        if item.appid < 1:
+            raise ClientException("steam app ids must be 1 or greater")
+
+
 async def _stream_steam_operation(
     run: Callable[[steam_service.ProgressCallback], Awaitable[list[BacklogEntry]]],
 ) -> AsyncIterator[ServerSentEventMessage]:
@@ -93,6 +120,23 @@ async def _stream_steam_operation(
     dependencies as soon as the handler *returns the response object*,
     which happens before this generator (and therefore `run`) ever
     executes, not after the stream finishes."""
+    def encode_result(entries: list[BacklogEntry]) -> str:
+        return msgspec.json.encode(
+            [BacklogEntryResponse.from_entry(entry) for entry in entries]
+        ).decode()
+
+    async for message in _stream_steam_messages(run, encode_result):
+        yield message
+
+
+async def _stream_steam_messages[T](
+    run: Callable[[steam_service.ProgressCallback], Awaitable[list[T]]],
+    encode_result: Callable[[list[T]], str],
+) -> AsyncIterator[ServerSentEventMessage]:
+    """_stream_steam_operation without the BacklogEntryResponse mapping,
+    for calls that return msgspec-encodable payloads directly (e.g. the
+    preview endpoints' SteamPreviewItem lists). Generic over the result
+    item type so typed callers don't need a cast."""
     queue: asyncio.Queue[ServerSentEventMessage | None] = asyncio.Queue()
 
     async def on_progress(processed: int, total: int) -> None:
@@ -105,11 +149,10 @@ async def _stream_steam_operation(
 
     async def run_operation() -> None:
         try:
-            entries = await run(on_progress)
-            data = msgspec.json.encode(
-                [BacklogEntryResponse.from_entry(entry) for entry in entries]
-            ).decode()
-            await queue.put(ServerSentEventMessage(event=_SSE_DONE, data=data))
+            result = await run(on_progress)
+            await queue.put(
+                ServerSentEventMessage(event=_SSE_DONE, data=encode_result(result))
+            )
         except ValidationError as error:
             await queue.put(ServerSentEventMessage(event=_SSE_ERROR, data=str(error)))
         except httpx.HTTPError:
@@ -186,9 +229,10 @@ async def sync_steam_playtimes_stream(
     api_key = _resolve_api_key(current_user)
     steamgriddb_api_key = _resolve_steamgriddb_api_key(current_user)
     family_steam_ids = _resolve_family_steam_ids(current_user)
+    operation_lock = _get_user_operation_lock(current_user.id)
 
     async def run(on_progress: steam_service.ProgressCallback) -> list[BacklogEntry]:
-        async with async_session() as db_session:
+        async with operation_lock, async_session() as db_session:
             return await steam_service.sync_playtimes_and_import(
                 db_session,
                 current_user,
@@ -204,16 +248,27 @@ async def sync_steam_playtimes_stream(
 
 @post("/api/user/steam/import/stream", status_code=200, media_type="text/event-stream")
 async def import_steam_library_stream(
-    current_user: NamedDependency[User],
+    data: list[SteamWishlistItem] | None = None,
+    current_user: NamedDependency[User] = None,  # type: ignore[assignment]
 ) -> ServerSentEvent:
     """SSE variant of import_steam_library - see
-    sync_steam_playtimes_stream's docstring."""
+    sync_steam_playtimes_stream's docstring. Accepts the steam app ids
+    the user confirmed in the preview as an optional JSON body
+    (`[{"appid": 620}]`); when given, the import is restricted to those
+    games so it always matches what was previewed - anything that left
+    the Steam library or entered the backlog since the preview is
+    ignored rather than silently imported."""
     api_key = _resolve_api_key(current_user)
     steamgriddb_api_key = _resolve_steamgriddb_api_key(current_user)
     family_steam_ids = _resolve_family_steam_ids(current_user)
+    confirmed_app_ids = [item.appid for item in data] if data else None
+    if confirmed_app_ids is not None:
+        _validate_wishlist_items(data)
+
+    operation_lock = _get_user_operation_lock(current_user.id)
 
     async def run(on_progress: steam_service.ProgressCallback) -> list[BacklogEntry]:
-        async with async_session() as db_session:
+        async with operation_lock, async_session() as db_session:
             return await steam_service.import_library(
                 db_session,
                 current_user,
@@ -221,6 +276,7 @@ async def import_steam_library_stream(
                 steamgriddb_api_key=steamgriddb_api_key,
                 on_progress=on_progress,
                 family_steam_ids=family_steam_ids,
+                confirmed_app_ids=confirmed_app_ids,
             )
 
     return ServerSentEvent(_stream_steam_operation(run))
@@ -241,6 +297,89 @@ async def get_steam_achievements(
         raise ServiceUnavailableException(_STEAM_UNAVAILABLE) from error
 
 
+@get("/api/user/steam/wishlist/preview")
+async def preview_steam_wishlist(
+    current_user: NamedDependency[User],
+) -> list[steam_service.SteamPreviewItem]:
+    operation_lock = _get_user_operation_lock(current_user.id)
+    steamgriddb_api_key = _resolve_steamgriddb_api_key(current_user)
+    try:
+        async with operation_lock, async_session() as db_session:
+            return await steam_service.preview_wishlist(
+                db_session, current_user, steamgriddb_api_key
+            )
+    except ValidationError as error:
+        raise ClientException(str(error)) from error
+    except httpx.HTTPError as error:
+        raise ServiceUnavailableException(_STEAM_UNAVAILABLE) from error
+
+
+@post(
+    "/api/user/steam/wishlist/import/stream",
+    status_code=200,
+    media_type="text/event-stream",
+)
+async def import_steam_wishlist_stream(
+    data: list[SteamWishlistItem],
+    current_user: NamedDependency[User],
+) -> ServerSentEvent:
+    """SSE variant of a wishlist import - see sync_steam_playtimes_stream's
+    docstring. Unlike the library import, the item list is POSTed by the
+    client from the preview the user confirmed rather than re-fetched from
+    Steam, so the import always matches what was previewed."""
+    _validate_wishlist_items(data)
+    items = data
+    steamgriddb_api_key = _resolve_steamgriddb_api_key(current_user)
+    operation_lock = _get_user_operation_lock(current_user.id)
+
+    async def run(on_progress: steam_service.ProgressCallback) -> list[BacklogEntry]:
+        async with operation_lock, async_session() as db_session:
+            return await steam_service.import_wishlist(
+                db_session,
+                current_user,
+                items,
+                steamgriddb_api_key=steamgriddb_api_key,
+                on_progress=on_progress,
+            )
+
+    return ServerSentEvent(_stream_steam_operation(run))
+
+
+@post(
+    "/api/user/steam/library/preview/stream",
+    status_code=200,
+    media_type="text/event-stream",
+)
+async def preview_steam_library_stream(
+    current_user: NamedDependency[User],
+) -> ServerSentEvent:
+    """SSE variant of a library preview: emits a `progress` event per
+    owned game considered, then a `done` event carrying the
+    SteamPreviewItem list, or an `error` event - see
+    sync_steam_playtimes_stream's docstring. Nothing is written to the
+    DB; the actual import runs through import_steam_library_stream once
+    the user has confirmed the preview."""
+    api_key = _resolve_api_key(current_user)
+    steamgriddb_api_key = _resolve_steamgriddb_api_key(current_user)
+    family_steam_ids = _resolve_family_steam_ids(current_user)
+    operation_lock = _get_user_operation_lock(current_user.id)
+
+    async def run(
+        on_progress: steam_service.ProgressCallback,
+    ) -> list[steam_service.SteamPreviewItem]:
+        async with operation_lock, async_session() as db_session:
+            return await steam_service.preview_library(
+                db_session,
+                current_user,
+                api_key,
+                steamgriddb_api_key=steamgriddb_api_key,
+                on_progress=on_progress,
+                family_steam_ids=family_steam_ids,
+            )
+
+    return ServerSentEvent(_stream_steam_messages(run, lambda items: msgspec.json.encode(items).decode()))
+
+
 steam_router = Router(
     path="",
     route_handlers=[
@@ -249,6 +388,9 @@ steam_router = Router(
         sync_steam_playtimes_stream,
         import_steam_library_stream,
         get_steam_achievements,
+        preview_steam_wishlist,
+        import_steam_wishlist_stream,
+        preview_steam_library_stream,
     ],
     dependencies={"current_user": Provide(get_current_user)},
     security=BEARER_SECURITY_REQUIREMENT,

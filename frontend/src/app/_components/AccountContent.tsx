@@ -10,11 +10,9 @@ import {
   useVerifyTwoFactorEnrollment,
   useDisableTwoFactor,
 } from "~/hooks/useTwoFactor";
-import { useImportSteamLibraryStream } from "~/hooks/useBacklog";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { Checkbox } from "~/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -76,12 +74,6 @@ export function AccountContent() {
   const enrollMutation = useEnrollTwoFactor();
   const verifyMutation = useVerifyTwoFactorEnrollment();
   const disableMutation = useDisableTwoFactor();
-  const {
-    run: importSteamLibrary,
-    isRunning: isImportingSteamLibrary,
-    progress: steamImportProgress,
-  } = useImportSteamLibraryStream();
-  const [isSavingAutoImport, setIsSavingAutoImport] = useState(false);
 
   if (user && steamIdLoadedFor !== user.id) {
     setSteamIdLoadedFor(user.id);
@@ -265,44 +257,6 @@ export function AccountContent() {
     }
   };
 
-  const handleImportSteamLibrary = async () => {
-    try {
-      const created = await importSteamLibrary();
-      toast.success(
-        created.length > 0
-          ? `Imported ${created.length} game${created.length === 1 ? "" : "s"} from your Steam library`
-          : "No new games to import, your backlog already has everything",
-      );
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to import Steam library",
-      );
-    }
-  };
-
-  const handleToggleAutoImport = async (checked: boolean) => {
-    setIsSavingAutoImport(true);
-    try {
-      await updateCurrentUser({ steamAutoImportEnabled: checked });
-      await refreshUser();
-      toast.success(
-        checked
-          ? "New Steam games will now be imported automatically on sync"
-          : "Automatic Steam library import turned off",
-      );
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to update automatic import setting",
-      );
-    } finally {
-      setIsSavingAutoImport(false);
-    }
-  };
-
   const openEnroll = () => {
     setCode("");
     setEnrollStep("qr");
@@ -396,7 +350,15 @@ export function AccountContent() {
         <h2 className="mb-2 text-xl font-semibold">Steam</h2>
         <p className="mb-4 text-sm text-gray-300">
           Link your Steam ID to sync playtimes for backlog entries you&apos;ve
-          tagged with a Steam App ID.
+          tagged with a Steam App ID. Syncing and importing your library and
+          wishlist lives on the{" "}
+          <a
+            href="/steam"
+            className="text-blue-400 underline hover:text-blue-300"
+          >
+            Steam page
+          </a>
+          .
         </p>
         <div className="flex max-w-sm gap-2">
           <Input
@@ -462,39 +424,6 @@ export function AccountContent() {
               Remove
             </Button>
           )}
-        </div>
-
-        <p className="mt-6 mb-2 text-sm text-gray-300">
-          Import owned Steam games that aren&apos;t in your backlog yet as new
-          entries.
-        </p>
-        <Button
-          className={FILLED_BUTTON}
-          onClick={handleImportSteamLibrary}
-          disabled={!user.steamId || isImportingSteamLibrary}
-        >
-          {isImportingSteamLibrary
-            ? steamImportProgress
-              ? `Importing ${steamImportProgress.processed}/${steamImportProgress.total}...`
-              : "Importing..."
-            : "Import my Steam library"}
-        </Button>
-
-        <div className="mt-4 flex items-start gap-2">
-          <Checkbox
-            id="steam-auto-import"
-            checked={user.steamAutoImportEnabled}
-            disabled={!user.steamId || isSavingAutoImport}
-            onCheckedChange={(checked) =>
-              void handleToggleAutoImport(checked === true)
-            }
-          />
-          <Label
-            htmlFor="steam-auto-import"
-            className="text-sm font-normal text-gray-300"
-          >
-            Automatically import new Steam games every time playtimes are synced
-          </Label>
         </div>
 
         <p className="mt-6 mb-2 text-sm text-gray-300">

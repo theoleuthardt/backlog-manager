@@ -20,6 +20,7 @@ import { RequireAuth } from "./RequireAuth";
 import { AccountContent } from "./AccountContent";
 import { HeroCta } from "./HeroCta";
 import { AchievementProgress } from "./AchievementProgress";
+import { SteamContent } from "./SteamContent";
 
 export {
   Navbar,
@@ -44,4 +45,5 @@ export {
   AccountContent,
   HeroCta,
   AchievementProgress,
+  SteamContent,
 };

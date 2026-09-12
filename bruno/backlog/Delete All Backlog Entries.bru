@@ -1,0 +1,23 @@
+meta {
+  name: Delete All Backlog Entries
+  type: http
+  seq: 22
+}
+
+delete {
+  url: {{backendUrl}}/api/backlog/entries
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Permanently deletes every backlog entry of the caller (category
+  associations cascade with them) and returns the number of entries
+  removed. Destructive - there is no undo. Only affects the caller's
+  own entries; other users' backlogs are untouched. Run auth/Login
+  first.
+}

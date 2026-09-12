@@ -90,13 +90,28 @@ export const dashboardNavLinks: NavbarLink[] = [
   },
   {
     id: 4,
+    href: "/steam",
+    content: (
+      <Image
+        src="/steam-icon.png"
+        alt="Steam"
+        width={32}
+        height={32}
+        className="brightness-0 invert"
+      />
+    ),
+    action: "navigate",
+    type: "link",
+  },
+  {
+    id: 5,
     href: "/account",
     content: <Image src="/account.png" alt="account" width={32} height={32} />,
     action: "navigate",
     type: "link",
   },
   {
-    id: 5,
+    id: 6,
     href: "/logout",
     content: (
       <Image
@@ -154,6 +169,38 @@ export const accountNavLinks: NavbarLink[] = [
   },
   {
     id: 2,
+    href: "/logout",
+    content: (
+      <Image
+        className="scale-125"
+        src="/logout.png"
+        alt="logout"
+        width={32}
+        height={32}
+      />
+    ),
+    action: "logout",
+    type: "link",
+  },
+];
+
+export const steamNavLinks: NavbarLink[] = [
+  {
+    id: 1,
+    href: "/dashboard",
+    content: <Image src="/go-back.png" alt="go-back" width={32} height={32} />,
+    action: "navigate",
+    type: "link",
+  },
+  {
+    id: 2,
+    href: "/account",
+    content: <Image src="/account.png" alt="account" width={32} height={32} />,
+    action: "navigate",
+    type: "link",
+  },
+  {
+    id: 3,
     href: "/logout",
     content: (
       <Image

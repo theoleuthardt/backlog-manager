@@ -10,8 +10,10 @@ from backlog_manager_backend.integrations.types import (
     HltbResultData,
     SteamAchievement,
     SteamAchievementSchema,
+    SteamAppDetails,
     SteamOwnedGame,
     SteamPlayerStats,
+    SteamWishlistItem,
 )
 from backlog_manager_backend.repositories import backlog_entry_repo, user_repo
 from backlog_manager_backend.schemas.backlog_entry import CreateBacklogEntryParams
@@ -36,7 +38,10 @@ async def _make_user(session: AsyncSession, steam_id: str | None = "765611979602
     return await user_repo.create_user(
         session,
         CreateUserParams(
-            username="steamuser", email="steamuser@example.com", password_hash="h", steam_id=steam_id
+            username="steamuser",
+            email="steamuser@example.com",
+            password_hash="h",
+            steam_id=steam_id,
         ),
     )
 
@@ -124,7 +129,16 @@ async def test_import_library_creates_entries_for_new_owned_games(
             SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=120),
         ]
 
+    async def fake_get_library_cover(app_id: int) -> str | None:
+        assert app_id == 620
+        return "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/620/library_600x900.jpg"
+
     monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+    monkeypatch.setattr(
+        steam_service.steam_integration,
+        "get_steam_library_cover_if_exists",
+        fake_get_library_cover,
+    )
 
     created = await steam_service.import_library(session, user, "api-key")
 
@@ -134,7 +148,7 @@ async def test_import_library_creates_entries_for_new_owned_games(
     assert created[0].playtime == Decimal("2.00")
     assert created[0].status == "Not Started"
     assert created[0].owned is True
-    assert created[0].image_link is None
+    assert created[0].image_link == "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/620/library_600x900.jpg"
 
 
 async def test_import_library_sets_cover_when_steamgriddb_key_is_given(
@@ -150,8 +164,15 @@ async def test_import_library_sets_cover_when_steamgriddb_key_is_given(
         assert api_key == "griddb-key"
         return ["https://cdn2.steamgriddb.com/grid/1.png"]
 
+    async def fake_get_library_cover(app_id: int) -> str | None:
+        return None
+
     monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
     monkeypatch.setattr(steam_service.game_service, "get_game_covers", fake_get_game_covers)
+    monkeypatch.setattr(
+        "backlog_manager_backend.integrations.steam.get_steam_library_cover_if_exists",
+        fake_get_library_cover,
+    )
 
     created = await steam_service.import_library(
         session, user, "api-key", steamgriddb_api_key="griddb-key"
@@ -177,8 +198,16 @@ async def test_import_library_continues_without_a_cover_when_steamgriddb_fails(
             "boom", request=request, response=httpx.Response(503, request=request)
         )
 
+    async def fake_get_library_cover(app_id: int) -> str | None:
+        return None
+
     monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
     monkeypatch.setattr(steam_service.game_service, "get_game_covers", fake_get_game_covers)
+    monkeypatch.setattr(
+        steam_service.steam_integration,
+        "get_steam_library_cover_if_exists",
+        fake_get_library_cover,
+    )
 
     created = await steam_service.import_library(
         session, user, "api-key", steamgriddb_api_key="griddb-key"
@@ -293,7 +322,9 @@ async def test_import_library_skips_a_game_that_becomes_a_duplicate_mid_import(
 
     original_create_backlog_entry = backlog_entry_repo.create_backlog_entry
 
-    async def flaky_create_backlog_entry(session: AsyncSession, params: CreateBacklogEntryParams) -> object:
+    async def flaky_create_backlog_entry(
+        session: AsyncSession, params: CreateBacklogEntryParams
+    ) -> object:
         if params.steam_app_id == 504230:
             raise ConflictError("A resource with this identifier already exists")
         return await original_create_backlog_entry(session, params)
@@ -375,7 +406,9 @@ async def test_import_library_skips_a_family_member_whose_fetch_fails(
         if steam_id == user.steam_id:
             return []
         if steam_id == "broken-member":
-            raise httpx.ConnectError("connection refused", request=httpx.Request("GET", "https://example.com"))
+            raise httpx.ConnectError(
+                "connection refused", request=httpx.Request("GET", "https://example.com")
+            )
         return [SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=120)]
 
     monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
@@ -421,7 +454,9 @@ async def test_import_library_skips_a_game_that_fails_for_a_non_conflict_reason(
 
     original_create_backlog_entry = backlog_entry_repo.create_backlog_entry
 
-    async def flaky_create_backlog_entry(session: AsyncSession, params: CreateBacklogEntryParams) -> object:
+    async def flaky_create_backlog_entry(
+        session: AsyncSession, params: CreateBacklogEntryParams
+    ) -> object:
         if params.steam_app_id == 1465360:
             await session.execute(text("SELECT 1/0"))
         return await original_create_backlog_entry(session, params)
@@ -627,9 +662,7 @@ async def test_get_achievement_progress_marks_hidden_achievements(
         app_id: int, api_key: str
     ) -> list[SteamAchievementSchema]:
         return [
-            SteamAchievementSchema(
-                name="secret", display_name="???", description=None, hidden=1
-            )
+            SteamAchievementSchema(name="secret", display_name="???", description=None, hidden=1)
         ]
 
     monkeypatch.setattr(steam_service, "get_player_achievements", fake_get_player_achievements)
@@ -704,3 +737,142 @@ async def test_get_achievement_progress_caches_schema_across_calls(
     await steam_service.get_achievement_progress(user, "api-key", 504230)
 
     assert call_count == 1
+
+
+async def test_preview_wishlist_lists_unlinked_games_with_titles_and_covers(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    await _make_entry(session, user.id, steam_app_id=504230)
+
+    async def fake_get_wishlist(steam_id: str) -> list[SteamWishlistItem]:
+        assert steam_id == user.steam_id
+        return [
+            SteamWishlistItem(appid=620, priority=0, date_added=1600000000),
+            SteamWishlistItem(appid=504230, priority=1, date_added=1600000100),
+        ]
+
+    async def fake_get_steam_app_details(app_ids: list[int]) -> dict[int, SteamAppDetails]:
+        return {
+            620: SteamAppDetails(name="Portal 2", header_image="https://example.com/portal2.jpg"),
+            504230: SteamAppDetails(name="Celeste", header_image=None),
+        }
+
+    async def fake_try_get_cover(steam_app_id: int, key: str | None) -> str | None:
+        return {
+            620: "https://example.com/portal2.jpg",
+        }.get(steam_app_id)
+
+    monkeypatch.setattr(steam_service, "get_wishlist", fake_get_wishlist)
+    monkeypatch.setattr(steam_service, "_get_steam_app_details", fake_get_steam_app_details)
+    monkeypatch.setattr(steam_service, "_try_get_cover", fake_try_get_cover)
+
+    preview = await steam_service.preview_wishlist(session, user)
+
+    assert len(preview) == 1
+    assert preview[0].steam_app_id == 620
+    assert preview[0].title == "Portal 2"
+    assert preview[0].image_link == "https://example.com/portal2.jpg"
+
+
+async def test_preview_wishlist_raises_when_steam_not_linked(session: AsyncSession) -> None:
+    user = await _make_user(session, steam_id=None)
+
+    with pytest.raises(ValidationError):
+        await steam_service.preview_wishlist(session, user)
+
+
+async def test_import_wishlist_creates_entries_as_not_owned(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    await _make_entry(session, user.id, steam_app_id=504230)
+
+    async def fake_get_wishlist(steam_id: str) -> list[SteamWishlistItem]:
+        assert steam_id == user.steam_id
+        return [
+            SteamWishlistItem(appid=620, priority=0, date_added=1600000000),
+            SteamWishlistItem(appid=504230, priority=1, date_added=1600000100),
+        ]
+
+    async def fake_get_steam_app_details(app_ids: list[int]) -> dict[int, SteamAppDetails]:
+        return {
+            620: SteamAppDetails(name="Portal 2", header_image="https://example.com/portal2.jpg")
+        }
+
+    async def fake_get_wishlist_cover(app_id: int, key: str | None) -> str | None:
+        return None
+
+    monkeypatch.setattr(steam_service, "get_wishlist", fake_get_wishlist)
+    monkeypatch.setattr(steam_service, "_get_steam_app_details", fake_get_steam_app_details)
+    monkeypatch.setattr(steam_service, "_try_get_cover", fake_get_wishlist_cover)
+
+    created = await steam_service.import_wishlist(
+        session, user, [SteamWishlistItem(appid=620, priority=0, date_added=1600000000)]
+    )
+
+    assert len(created) == 1
+    assert created[0].title == "Portal 2"
+    assert created[0].status == "Not Owned"
+    assert created[0].owned is False
+    assert created[0].steam_app_id == 620
+
+
+async def test_import_wishlist_deduplicates_repeated_app_ids(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_get_steam_app_details(app_ids: list[int]) -> dict[int, SteamAppDetails]:
+        assert app_ids == [620]
+        return {620: SteamAppDetails(name="Portal 2", header_image=None)}
+
+    async def fake_try_get_cover(app_id: int, key: str | None) -> str | None:
+        return f"https://example.com/cover-{app_id}.jpg"
+
+    monkeypatch.setattr(steam_service, "_get_steam_app_details", fake_get_steam_app_details)
+    monkeypatch.setattr(steam_service, "_try_get_cover", fake_try_get_cover)
+
+    created = await steam_service.import_wishlist(
+        session,
+        user,
+        [
+            SteamWishlistItem(appid=620, priority=0, date_added=1600000000),
+            SteamWishlistItem(appid=620, priority=1, date_added=1600000100),
+        ],
+    )
+
+    assert len(created) == 1
+    assert created[0].steam_app_id == 620
+
+
+async def test_import_wishlist_requires_linked_account(session: AsyncSession) -> None:
+    user = await _make_user(session, steam_id=None)
+
+    with pytest.raises(ValidationError):
+        await steam_service.import_wishlist(session, user, [])
+
+
+async def test_preview_library_lists_unlinked_owned_games(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    await _make_entry(session, user.id, steam_app_id=504230)
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        assert steam_id == user.steam_id
+        return [
+            SteamOwnedGame(appid=504230, name="Celeste", playtime_forever=510),
+            SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=120),
+        ]
+
+    async def fake_get_wishlist_cover(app_id: int, key: str | None) -> str | None:
+        return None
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+    monkeypatch.setattr(steam_service, "_try_get_cover", fake_get_wishlist_cover)
+
+    preview = await steam_service.preview_library(session, user, "api-key")
+
+    assert [item.steam_app_id for item in preview] == [620]
+    assert preview[0].title == "Portal 2"

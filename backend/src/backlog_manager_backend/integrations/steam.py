@@ -5,20 +5,28 @@ import structlog
 from backlog_manager_backend.integrations.types import (
     SteamAchievementSchema,
     SteamApp,
+    SteamAppDetails,
+    SteamAppDetailsEntry,
     SteamGetAppListEnvelope,
     SteamGetOwnedGamesEnvelope,
     SteamGetPlayerAchievementsEnvelope,
     SteamGetSchemaForGameEnvelope,
+    SteamGetWishlistEnvelope,
     SteamOwnedGame,
     SteamPlayerStats,
+    SteamWishlistItem,
 )
 
 logger = structlog.get_logger()
 
 _BASE_URL = "https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/"
 _APP_LIST_URL = "https://api.steampowered.com/ISteamApps/GetAppList/v2/"
-_PLAYER_ACHIEVEMENTS_URL = "https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/"
+_PLAYER_ACHIEVEMENTS_URL = (
+    "https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/"
+)
 _SCHEMA_FOR_GAME_URL = "https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/"
+_WISHLIST_URL = "https://api.steampowered.com/IWishlistService/GetWishlist/v1/"
+_APP_DETAILS_URL = "https://store.steampowered.com/api/appdetails"
 
 
 async def get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
@@ -91,6 +99,47 @@ async def get_app_list() -> list[SteamApp]:
     return envelope.applist.apps
 
 
+async def get_steam_library_cover_if_exists(app_id: int) -> str | None:
+    """Checks if Steam's official 600x900 vertical library cover exists for the app.
+    Returns the URL if it does (HEAD returns 200), otherwise None."""
+    url = f"https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/{app_id}/library_600x900.jpg"
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(5.0)) as client:
+            response = await client.head(url, follow_redirects=True)
+            if response.status_code == 200:
+                return url
+    except httpx.HTTPError as error:
+        logger.error("get_steam_library_cover error", app_id=app_id, error=str(error))
+    return None
+
+
+async def get_app_details(app_id: int) -> SteamAppDetails | None:
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
+            response = await client.get(_APP_DETAILS_URL, params={"appids": app_id})
+    except httpx.HTTPError as error:
+        logger.error("appdetails error", app_id=app_id, error=str(error))
+        raise
+
+    if response.status_code >= 400:
+        raise httpx.HTTPStatusError(
+            f"Steam store API error: {response.status_code}",
+            request=response.request,
+            response=response,
+        )
+
+    try:
+        envelope = msgspec.json.decode(response.content, type=dict[str, SteamAppDetailsEntry])
+    except msgspec.DecodeError as error:
+        logger.error("appdetails decode error", app_id=app_id, error=str(error))
+        raise httpx.DecodingError("Steam store API returned an invalid response") from error
+
+    entry = envelope.get(str(app_id))
+    if entry is None or not entry.success or entry.data is None:
+        return None
+    return entry.data
+
+
 async def get_player_achievements(steam_id: str, app_id: int, api_key: str) -> SteamPlayerStats:
     """Raises on transport/HTTP/decode failure like get_owned_games.
     playerstats.success is false (not an exception) when the app has
@@ -159,3 +208,33 @@ async def get_achievement_schema(app_id: int, api_key: str) -> list[SteamAchieve
 
     available_game_stats = envelope.game.available_game_stats
     return available_game_stats.achievements if available_game_stats else []
+
+
+async def get_wishlist(steam_id: str) -> list[SteamWishlistItem]:
+    """Fetches a Steam profile's wishlist via the undocumented
+    IWishlistService/GetWishlist endpoint - it needs no API key but
+    only ever returns data for profiles whose wishlist is public;
+    private profiles yield an empty response (items omitted), like
+    GetOwnedGames. Raises on transport/HTTP/decode failure like
+    get_owned_games."""
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
+            response = await client.get(_WISHLIST_URL, params={"steamid": steam_id})
+    except httpx.HTTPError as error:
+        logger.error("GetWishlist error", error=str(error))
+        raise
+
+    if response.status_code >= 400:
+        raise httpx.HTTPStatusError(
+            f"Steam Web API error: {response.status_code}",
+            request=response.request,
+            response=response,
+        )
+
+    try:
+        envelope = msgspec.json.decode(response.content, type=SteamGetWishlistEnvelope)
+    except msgspec.DecodeError as error:
+        logger.error("GetWishlist decode error", error=str(error))
+        raise httpx.DecodingError("Steam Web API returned an invalid response") from error
+
+    return envelope.response.items

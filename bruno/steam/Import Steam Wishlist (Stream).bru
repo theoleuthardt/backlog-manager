@@ -1,0 +1,38 @@
+meta {
+  name: Import Steam Wishlist (Stream)
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{backendUrl}}/api/user/steam/wishlist/import/stream
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  [
+    {
+      "appid": 620
+    }
+  ]
+}
+
+docs {
+  SSE variant of a wishlist import - same event shape and caveat as
+  "Import Steam Library (Stream)": a plain HTTP request just returns
+  the raw event-stream body once the connection closes, not live
+  progress. Sends the wishlist items (appid only is required;
+  priority/date_added are ignored) as the JSON body, so the import
+  always matches what "Preview Steam Wishlist" showed. Each created
+  entry gets status "Not Owned" and owned=false.
+
+  Run auth/Login and user/Set Steam ID first. A missing Steam ID
+  surfaces as an `error` event inside an HTTP 200 stream, not as a
+  400. An appid below 1 or a list over 10000 items is a plain 400
+  before the stream opens.
+}

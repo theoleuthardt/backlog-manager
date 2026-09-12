@@ -1,6 +1,3 @@
-import { env } from "~/env";
-import { getToken } from "./token";
-
 function parseSseMessage(raw: string): { event: string | null; data: string } {
   let event: string | null = null;
   const dataLines: string[] = [];
@@ -15,11 +12,12 @@ function parseSseMessage(raw: string): { event: string | null; data: string } {
 }
 
 /**
- * Reads a backend SSE endpoint via fetch (not EventSource, which can't
- * send the Authorization header apiClient relies on everywhere else)
- * and dispatches each `event: .../data: ...` message it decodes.
- * Resolves with the payload of the terminal `done` message, or rejects
- * with the payload of a terminal `error` message.
+ * Reads a backend SSE response and dispatches each `event: .../data: ...`
+ * message it decodes. Resolves with the payload of the terminal `done`
+ * message, or rejects with the payload of a terminal `error` message.
+ * Callers pass the response from a fully typed `apiClient.POST(path,
+ * { parseAs: "stream" })` call, so the bearer-token middleware and 401
+ * token-clearing stay in effect for streams too.
  *
  * Each raw chunk read from the stream is accumulated un-normalized into
  * `buffer` - a chunk boundary can land mid-separator (e.g. "...\r\n\r"
@@ -28,17 +26,13 @@ function parseSseMessage(raw: string): { event: string | null; data: string } {
  * reassembled separator.
  */
 export async function streamSse<TProgress, TResult>(
-  path: string,
-  handlers: { onProgress: (progress: TProgress) => void },
+  response: Response,
+  handlers: {
+    onProgress: (progress: TProgress) => void;
+  },
 ): Promise<TResult> {
-  const token = getToken();
-  const response = await fetch(`${env.NEXT_PUBLIC_API_URL}${path}`, {
-    method: "POST",
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-  });
-
   if (!response.ok || !response.body) {
-    throw new Error(`Request to ${path} failed with status ${response.status}`);
+    throw new Error(`SSE request failed with status ${response.status}`);
   }
 
   const reader = response.body.getReader();
@@ -74,7 +68,7 @@ export async function streamSse<TProgress, TResult>(
 
   if (streamError) throw new Error(streamError);
   if (result === undefined) {
-    throw new Error(`Stream from ${path} ended without a result`);
+    throw new Error("SSE stream ended without a result");
   }
   return result;
 }

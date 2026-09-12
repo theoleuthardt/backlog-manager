@@ -2,21 +2,27 @@ from collections.abc import Awaitable, Callable
 from decimal import ROUND_HALF_UP, Decimal
 
 import httpx
+import msgspec
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.errors import ConflictError, ValidationError
+from backlog_manager_backend.integrations import steam as steam_integration
 from backlog_manager_backend.integrations.howlongtobeat import search_game_on_hltb
 from backlog_manager_backend.integrations.steam import (
     get_achievement_schema,
+    get_app_details,
     get_owned_games,
     get_player_achievements,
+    get_wishlist,
 )
 from backlog_manager_backend.integrations.types import (
     AchievementInfo,
     AchievementProgress,
     SteamAchievementSchema,
+    SteamAppDetails,
     SteamOwnedGame,
+    SteamWishlistItem,
 )
 from backlog_manager_backend.repositories import backlog_entry_repo
 from backlog_manager_backend.schemas.backlog_entry import (
@@ -36,6 +42,22 @@ _IMPORTED_PLATFORM = "PC"
 _IMPORTED_STATUS = "Not Started"
 _IMPORTED_INTEREST = 5
 _STEAM_NOT_LINKED = "Steam account is not linked"
+_WISHLIST_IMPORTED_STATUS = "Not Owned"
+_WISHLIST_COVER_URL = "https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/capsule_sm_120.jpg"
+
+
+class SteamPreviewItem(msgspec.Struct):
+    """One candidate row for the Steam page's preview table - what a
+    library or wishlist sync *would* import, before any DB write."""
+
+    steam_app_id: int
+    title: str
+    image_link: str | None = None
+
+
+def _wishlist_cover_url(app_id: int) -> str:
+    return _WISHLIST_COVER_URL.format(appid=app_id)
+
 
 _ACHIEVEMENT_SCHEMA_CACHE_MAX_SIZE = 500
 _achievement_schema_cache: dict[int, list[SteamAchievementSchema]] = {}
@@ -81,24 +103,31 @@ async def sync_playtimes(
         updated.append(
             await backlog_entry_repo.update_backlog_entry(
                 session,
-                UpdateBacklogEntryParams(backlog_entry_id=entry.backlog_entry_id, playtime=playtime),
+                UpdateBacklogEntryParams(
+                    backlog_entry_id=entry.backlog_entry_id, playtime=playtime
+                ),
             )
         )
     return updated
 
 
 async def _try_get_cover(steam_app_id: int, steamgriddb_api_key: str | None) -> str | None:
-    """Best-effort SteamGridDB cover lookup for one freshly-imported
-    game - a missing key, outage, or no-covers-available result must
-    not fail the import, it should just leave that entry without a
-    cover, the same as a manually-created entry."""
-    if not steamgriddb_api_key:
-        return None
-    try:
-        covers = await game_service.get_game_covers(steam_app_id, steamgriddb_api_key)
-    except (RuntimeError, httpx.HTTPError):
-        return None
-    return covers[0] if covers else None
+    """Cover lookup for one freshly-imported game: Steam's official
+    600x900 library cover first (deterministic, correct by appid), then
+    SteamGridDB's top community grid when the Steam cover is missing.
+    A total miss returns None so the caller can apply their own fallback."""
+    steam_cover = await steam_integration.get_steam_library_cover_if_exists(steam_app_id)
+    if steam_cover is not None:
+        return steam_cover
+
+    if steamgriddb_api_key:
+        try:
+            covers = await game_service.get_game_covers(steam_app_id, steamgriddb_api_key)
+            if covers:
+                return covers[0]
+        except (RuntimeError, httpx.HTTPError):
+            pass
+    return None
 
 
 async def _try_get_hltb_times(title: str) -> tuple[Decimal | None, Decimal | None, Decimal | None]:
@@ -155,6 +184,7 @@ async def import_library(
     steamgriddb_api_key: str | None = None,
     on_progress: ProgressCallback | None = None,
     family_steam_ids: list[str] | None = None,
+    confirmed_app_ids: list[int] | None = None,
 ) -> list[BacklogEntry]:
     """Creates a backlog entry for every Steam-owned game not already
     linked to one by steam_app_id. Metadata beyond title/steam_app_id/
@@ -165,6 +195,12 @@ async def import_library(
     HowLongToBeat time-to-beat lookup by title also runs for every
     game unconditionally (no key needed) - best-effort, see
     _try_get_hltb_times.
+
+    `confirmed_app_ids`, when given, restricts the import to those app
+    ids - the preview-before-import flow passes the app ids the user
+    saw in the preview so the import always matches it; anything that
+    joined or left the library in between is ignored rather than
+    silently imported.
 
     The existing-entries check above only prevents most duplicates - a
     concurrent import for the same user can still race past it, so the
@@ -199,6 +235,9 @@ async def import_library(
     games_to_import = owned_games
     if family_steam_ids:
         games_to_import = await _merge_family_games(owned_games, family_steam_ids, api_key)
+    if confirmed_app_ids is not None:
+        confirmed = set(confirmed_app_ids)
+        games_to_import = [game for game in games_to_import if game.appid in confirmed]
 
     existing_app_ids = {
         entry.steam_app_id
@@ -215,9 +254,7 @@ async def import_library(
             continue
         try:
             image_link = await _try_get_cover(game.appid, steamgriddb_api_key)
-            main_time, main_plus_extra_time, completion_time = await _try_get_hltb_times(
-                game.name
-            )
+            main_time, main_plus_extra_time, completion_time = await _try_get_hltb_times(game.name)
             created.append(
                 await backlog_entry_repo.create_backlog_entry(
                     session,
@@ -336,14 +373,15 @@ async def get_achievement_progress(
         return AchievementProgress(unlocked=0, total=0, achievements=[])
 
     schema_by_apiname = {
-        entry.name: entry
-        for entry in await _get_achievement_schema_cached(steam_app_id, api_key)
+        entry.name: entry for entry in await _get_achievement_schema_cached(steam_app_id, api_key)
     }
 
     achievements = [
         AchievementInfo(
             apiname=achievement.apiname,
-            display_name=schema.display_name if schema else (achievement.name or achievement.apiname),
+            display_name=schema.display_name
+            if schema
+            else (achievement.name or achievement.apiname),
             description=schema.description if schema else achievement.description,
             icon=schema.icon if schema else None,
             achieved=bool(achievement.achieved),
@@ -354,4 +392,187 @@ async def get_achievement_progress(
         for schema in (schema_by_apiname.get(achievement.apiname),)
     ]
     unlocked = sum(1 for achievement in achievements if achievement.achieved)
-    return AchievementProgress(unlocked=unlocked, total=len(achievements), achievements=achievements)
+    return AchievementProgress(
+        unlocked=unlocked, total=len(achievements), achievements=achievements
+    )
+
+
+async def _get_steam_app_details(
+    app_ids: list[int],
+) -> dict[int, SteamAppDetails]:
+    """Name and header image for each appid via the store appdetails
+    API (one request per app), since GetWishlist returns bare appids
+    with no names and the old reverse lookup against the full app
+    catalogue died with ISteamApps/GetAppList. Best-effort per item: an
+    appid that fails to resolve ... is simply absent from the result
+    rather than raising, so one unlistable item can't fail the whole
+    wishlist preview."""
+    details: dict[int, SteamAppDetails] = {}
+    for app_id in app_ids:
+        try:
+            detail = await get_app_details(app_id)
+        except httpx.HTTPError:
+            continue
+        if detail is not None:
+            details[app_id] = detail
+    return details
+
+
+async def preview_library(
+    session: AsyncSession,
+    user: User,
+    api_key: str,
+    steamgriddb_api_key: str | None = None,
+    on_progress: ProgressCallback | None = None,
+    family_steam_ids: list[str] | None = None,
+) -> list[SteamPreviewItem]:
+    """Lists what a library import *would* create - every owned game
+    (incl. Steam Family members' games) not already linked to a backlog
+    entry by steam_app_id - without writing anything. Covers come from
+    SteamGridDB best-effort like import_library, so the preview shows
+    the same images the import would end up with."""
+    if not user.steam_id:
+        raise ValidationError(_STEAM_NOT_LINKED)
+
+    owned_games = await get_owned_games(user.steam_id, api_key)
+    if family_steam_ids:
+        owned_games = await _merge_family_games(owned_games, family_steam_ids, api_key)
+
+    existing_app_ids = {
+        entry.steam_app_id
+        for entry in await backlog_entry_repo.get_backlog_entries_by_user(session, user.id)
+        if entry.steam_app_id is not None
+    }
+
+    preview: list[SteamPreviewItem] = []
+    total = len(owned_games)
+    for processed, game in enumerate(owned_games, start=1):
+        if game.appid not in existing_app_ids:
+            preview.append(
+                SteamPreviewItem(
+                    steam_app_id=game.appid,
+                    title=game.name,
+                    image_link=await _try_get_cover(game.appid, steamgriddb_api_key),
+                )
+            )
+        if on_progress:
+            await on_progress(processed, total)
+    return preview
+
+
+async def preview_wishlist(
+    session: AsyncSession,
+    user: User,
+    steamgriddb_api_key: str | None = None,
+) -> list[SteamPreviewItem]:
+    """Lists what a wishlist import *would* create - every wishlist
+    item not already linked to a backlog entry by steam_app_id - without
+    writing anything. Titles come from the store appdetails API
+    (best-effort, a nameless item still previews); covers resolve via
+    the SteamGridDB -> Steam header/CDN fallback chain, like import_wishlist."""
+
+    if not user.steam_id:
+        raise ValidationError(_STEAM_NOT_LINKED)
+
+    existing_app_ids = {
+        entry.steam_app_id
+        for entry in await backlog_entry_repo.get_backlog_entries_by_user(session, user.id)
+        if entry.steam_app_id is not None
+    }
+
+    items = [
+        item for item in await get_wishlist(user.steam_id) if item.appid not in existing_app_ids
+    ]
+    details = await _get_steam_app_details([item.appid for item in items])
+
+    preview: list[SteamPreviewItem] = []
+    for item in items:
+        detail = details.get(item.appid)
+        image_link = await _try_get_cover(item.appid, steamgriddb_api_key)
+        if image_link is None:
+            image_link = (detail.header_image if detail else None) or _wishlist_cover_url(
+                item.appid
+            )
+        preview.append(
+            SteamPreviewItem(
+                steam_app_id=item.appid,
+                title=detail.name if detail and detail.name else f"Steam App {item.appid}",
+                image_link=image_link,
+            )
+        )
+    return preview
+
+
+async def import_wishlist(
+    session: AsyncSession,
+    user: User,
+    items: list[SteamWishlistItem],
+    steamgriddb_api_key: str | None = None,
+    on_progress: ProgressCallback | None = None,
+) -> list[BacklogEntry]:
+    """Creates a backlog entry for each wishlist item the user confirmed
+    in the preview - unlike import_library this receives the items
+    rather than fetching them, since the preview already happened and a
+    re-fetch could have drifted in between. Status is "Not Owned" (the
+    whole point of a wishlist) and owned is False; a SteamGridDB cover
+    replaces the preview's CDN capsule when one is available. Per-entry
+    failures are caught, rolled back, and logged like import_library -
+    see that docstring for why."""
+    if not user.steam_id:
+        raise ValidationError(_STEAM_NOT_LINKED)
+
+    seen: set[int] = set()
+    unique_app_ids: list[int] = []
+    for item in items:
+        if item.appid not in seen:
+            seen.add(item.appid)
+            unique_app_ids.append(item.appid)
+
+    details = await _get_steam_app_details(unique_app_ids)
+
+    created: list[BacklogEntry] = []
+    imported_app_ids: set[int] = set()
+    total = len(items)
+    for processed, item in enumerate(items, start=1):
+        if item.appid in imported_app_ids:
+            if on_progress:
+                await on_progress(processed, total)
+            continue
+        try:
+            detail = details.get(item.appid)
+            image_link = (
+                await _try_get_cover(item.appid, steamgriddb_api_key)
+                or (detail.header_image if detail else None)
+                or _wishlist_cover_url(item.appid)
+            )
+            created.append(
+                await backlog_entry_repo.create_backlog_entry(
+                    session,
+                    CreateBacklogEntryParams(
+                        user_id=user.id,
+                        title=detail.name if detail and detail.name else f"Steam App {item.appid}",
+                        genre="",
+                        platform=_IMPORTED_PLATFORM,
+                        status=_WISHLIST_IMPORTED_STATUS,
+                        owned=False,
+                        interest=_IMPORTED_INTEREST,
+                        steam_app_id=item.appid,
+                        image_link=image_link,
+                    ),
+                )
+            )
+            imported_app_ids.add(item.appid)
+        except ConflictError:
+            imported_app_ids.add(item.appid)
+            continue
+        except Exception:
+            await session.rollback()
+            logger.exception(
+                "Failed to import Steam wishlist item into backlog",
+                steam_app_id=item.appid,
+            )
+            continue
+        finally:
+            if on_progress:
+                await on_progress(processed, total)
+    return created

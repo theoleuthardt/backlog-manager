@@ -7,6 +7,7 @@ from backlog_manager_backend.integrations.steam import (
     get_achievement_schema,
     get_owned_games,
     get_player_achievements,
+    get_wishlist,
 )
 
 _SAMPLE_RESPONSE = {
@@ -243,3 +244,133 @@ async def test_get_achievement_schema_raises_on_timeout(monkeypatch: pytest.Monk
 
     with pytest.raises(httpx.HTTPError):
         await get_achievement_schema(504230, "api-key")
+
+
+_SAMPLE_WISHLIST_RESPONSE = {
+    "response": {
+        "items": [
+            {"appid": 620, "priority": 0, "date_added": 1600000000},
+            {"appid": 504230, "priority": 2, "date_added": 1600000100},
+        ]
+    }
+}
+
+
+async def test_get_wishlist_returns_parsed_results(monkeypatch: pytest.MonkeyPatch) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.params["steamid"] == "1234"
+        return httpx.Response(200, json=_SAMPLE_WISHLIST_RESPONSE)
+
+    _mock_client(handler, monkeypatch)
+
+    items = await get_wishlist("1234")
+
+    assert len(items) == 2
+    assert items[0].appid == 620
+    assert items[0].priority == 0
+    assert items[0].date_added == 1600000000
+
+
+async def test_get_wishlist_returns_empty_list_for_private_profile(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"response": {}})
+
+    _mock_client(handler, monkeypatch)
+
+    assert await get_wishlist("1234") == []
+
+
+async def test_get_wishlist_raises_on_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(403)
+
+    _mock_client(handler, monkeypatch)
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await get_wishlist("1234")
+
+
+async def test_get_wishlist_raises_on_malformed_json(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"not json")
+
+    _mock_client(handler, monkeypatch)
+
+    with pytest.raises(httpx.HTTPError):
+        await get_wishlist("1234")
+
+
+async def test_get_wishlist_raises_on_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectTimeout("timed out")
+
+    _mock_client(handler, monkeypatch)
+
+    with pytest.raises(httpx.HTTPError):
+        await get_wishlist("1234")
+
+
+async def test_get_app_details_returns_data(monkeypatch: pytest.MonkeyPatch) -> None:
+    from backlog_manager_backend.integrations.steam import get_app_details
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.params["appids"] == "620"
+        return httpx.Response(
+            200,
+            json={
+                "620": {
+                    "success": True,
+                    "data": {
+                        "name": "Portal 2",
+                        "header_image": "https://example.com/portal2.jpg",
+                    },
+                }
+            },
+        )
+
+    _mock_client(handler, monkeypatch)
+    detail = await get_app_details(620)
+    assert detail is not None
+    assert detail.name == "Portal 2"
+    assert detail.header_image == "https://example.com/portal2.jpg"
+
+
+async def test_get_app_details_returns_none_when_unknown(monkeypatch: pytest.MonkeyPatch) -> None:
+    from backlog_manager_backend.integrations.steam import get_app_details
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.params["appids"] == "999999"
+        return httpx.Response(200, json={"999999": {"success": False}})
+
+    _mock_client(handler, monkeypatch)
+    assert await get_app_details(999999) is None
+
+async def test_get_steam_library_cover_if_exists_returns_url_when_200(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from backlog_manager_backend.integrations.steam import get_steam_library_cover_if_exists
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.method == "HEAD"
+        return httpx.Response(200)
+
+    _mock_client(handler, monkeypatch)
+    url = await get_steam_library_cover_if_exists(620)
+    assert url == "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/620/library_600x900.jpg"
+
+
+async def test_get_steam_library_cover_if_exists_returns_none_when_404(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from backlog_manager_backend.integrations.steam import get_steam_library_cover_if_exists
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.method == "HEAD"
+        return httpx.Response(404)
+
+    _mock_client(handler, monkeypatch)
+    assert await get_steam_library_cover_if_exists(999999) is None
