@@ -40,6 +40,7 @@ async def _make_entry(session: AsyncSession, user_id: int, **overrides: object) 
         status=overrides.get("status", "Not Started"),
         owned=overrides.get("owned", True),
         interest=overrides.get("interest", 8),
+        steam_app_id=overrides.get("steam_app_id"),
     )
     return await backlog_entry_repo.create_backlog_entry(session, params)
 
@@ -275,3 +276,54 @@ async def test_get_backlog_entries_for_category(session: AsyncSession) -> None:
     )
 
     assert [e.backlog_entry_id for e in entries] == [entry.backlog_entry_id]
+
+async def test_get_backlog_entry_duplicates_matches_title_case_insensitive(
+    session: AsyncSession,
+) -> None:
+    user = await _make_user(session)
+    await _make_entry(session, user.id, title="Elden Ring")
+
+    duplicates = await backlog_entry_repo.get_backlog_entry_duplicates(
+        session, user.id, title="ELDEN RING", steam_app_id=None
+    )
+
+    assert [d.backlog_entry_id for d in duplicates] != []
+
+async def test_get_backlog_entry_duplicates_matches_steam_app_id(
+    session: AsyncSession,
+) -> None:
+    user = await _make_user(session)
+    entry = await _make_entry(
+        session, user.id, title="Totally Different Name", steam_app_id=1245620
+    )
+
+    duplicates = await backlog_entry_repo.get_backlog_entry_duplicates(
+        session, user.id, title="Elden Ring", steam_app_id=1245620
+    )
+
+    assert [d.backlog_entry_id for d in duplicates] == [entry.backlog_entry_id]
+
+async def test_get_backlog_entry_duplicates_ignores_other_users(
+    session: AsyncSession,
+) -> None:
+    user = await _make_user(session, "dupeowner")
+    other = await _make_user(session, "otheruser")
+    await _make_entry(session, other.id, title="Elden Ring")
+
+    duplicates = await backlog_entry_repo.get_backlog_entry_duplicates(
+        session, user.id, title="Elden Ring", steam_app_id=None
+    )
+
+    assert duplicates == []
+
+async def test_get_backlog_entry_duplicates_no_match_returns_empty(
+    session: AsyncSession,
+) -> None:
+    user = await _make_user(session)
+    await _make_entry(session, user.id, title="Elden Ring")
+
+    duplicates = await backlog_entry_repo.get_backlog_entry_duplicates(
+        session, user.id, title="Hollow Knight", steam_app_id=None
+    )
+
+    assert duplicates == []

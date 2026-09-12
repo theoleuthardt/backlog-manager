@@ -7,9 +7,21 @@ import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
 import { Loader2, Check, X } from "lucide-react";
 import { StatusSelect } from "components/StatusSelect";
 import { useCreateBacklogEntry } from "~/hooks/useBacklog";
+import { getEntryDuplicates } from "~/lib/api/backlog";
+import type { BacklogEntryData } from "~/lib/api/backlog";
 import { useSteamAppId } from "~/hooks/useGameSearch";
 import { toast } from "sonner";
 
@@ -52,6 +64,7 @@ export function CreationToolForm() {
   >("idle");
 
   const createEntryMutation = useCreateBacklogEntry();
+  const [duplicates, setDuplicates] = useState<BacklogEntryData[] | null>(null);
 
   const displayedSteamAppId =
     steamAppIdTouched || steamAppIdQuery.data == null
@@ -65,73 +78,108 @@ export function CreationToolForm() {
       ? displayedSteamAppIdNumber
       : undefined;
 
+  const createEntry = async () => {
+    const genreList = genre
+      .split(",")
+      .map((g) => g.trim())
+      .filter(Boolean);
+    const platformList = platform
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
+
+    await createEntryMutation.mutateAsync({
+      title,
+      genre: genreList,
+      platform: platformList,
+      status,
+      owned,
+      interest,
+      playtime,
+      steamAppId: resolvedSteamAppId,
+      imageLink: imageUrl,
+      mainTime:
+        Number.isFinite(mainStory) && mainStory > 0 ? mainStory : undefined,
+      mainPlusExtraTime:
+        Number.isFinite(mainStoryWithExtras) && mainStoryWithExtras > 0
+          ? mainStoryWithExtras
+          : undefined,
+      completionTime:
+        Number.isFinite(completionist) && completionist > 0
+          ? completionist
+          : undefined,
+      // 0 means "not rated yet" here (the input is disabled until status
+      // is "Completed"), not an explicit 0-star rating - sending 0 would
+      // make the entry disappear from the dashboard's default review
+      // filter range ([1, 5]), since the new backend (correctly) stores
+      // whatever numeric value it's given instead of the old tRPC
+      // backend's truthy check silently discarding a literal 0.
+      reviewStars: reviewStars > 0 ? reviewStars : undefined,
+      review: review ?? undefined,
+      note: note ?? undefined,
+    });
+
+    setCreateStatus("success");
+    toast.success("Entry created successfully!");
+
+    setTimeout(() => setCreateStatus("idle"), 2000);
+  };
+
+  const handleAddAnyway = async () => {
+    setDuplicates(null);
+    setIsLoading(true);
+    try {
+      await createEntry();
+    } catch (error) {
+      console.error("Error creating backlog entry:", error);
+      setCreateStatus("error");
+      toast.error(
+        error instanceof Error
+          ? `Failed to create: ${error.message}`
+          : "Failed to create entry. Please try again.",
+      );
+
+      setTimeout(() => setCreateStatus("idle"), 3000);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setCreateStatus("idle");
 
+    const genreList = genre
+      .split(",")
+      .map((g) => g.trim())
+      .filter(Boolean);
+    const platformList = platform
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
+    if (genreList.length === 0) {
+      toast.error("Please enter at least one genre");
+      return;
+    }
+    if (platformList.length === 0) {
+      toast.error("Please enter at least one platform");
+      return;
+    }
+    if (!status) {
+      toast.error("Please select a status");
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      const genreList = genre
-        .split(",")
-        .map((g) => g.trim())
-        .filter(Boolean);
-      const platformList = platform
-        .split(",")
-        .map((p) => p.trim())
-        .filter(Boolean);
-      if (genreList.length === 0) {
-        toast.error("Please enter at least one genre");
-        setIsLoading(false);
+      const found = await getEntryDuplicates(title, resolvedSteamAppId);
+      if (found.length > 0) {
+        setDuplicates(found);
         return;
       }
-      if (platformList.length === 0) {
-        toast.error("Please enter at least one platform");
-        setIsLoading(false);
-        return;
-      }
-      if (!status) {
-        toast.error("Please select a status");
-        setIsLoading(false);
-        return;
-      }
-
-      await createEntryMutation.mutateAsync({
-        title,
-        genre: genreList,
-        platform: platformList,
-        status,
-        owned,
-        interest,
-        playtime,
-        steamAppId: resolvedSteamAppId,
-        imageLink: imageUrl,
-        mainTime:
-          Number.isFinite(mainStory) && mainStory > 0 ? mainStory : undefined,
-        mainPlusExtraTime:
-          Number.isFinite(mainStoryWithExtras) && mainStoryWithExtras > 0
-            ? mainStoryWithExtras
-            : undefined,
-        completionTime:
-          Number.isFinite(completionist) && completionist > 0
-            ? completionist
-            : undefined,
-        // 0 means "not rated yet" here (the input is disabled until status
-        // is "Completed"), not an explicit 0-star rating - sending 0 would
-        // make the entry disappear from the dashboard's default review
-        // filter range ([1, 5]), since the new backend (correctly) stores
-        // whatever numeric value it's given instead of the old tRPC
-        // backend's truthy check silently discarding a literal 0.
-        reviewStars: reviewStars > 0 ? reviewStars : undefined,
-        review: review ?? undefined,
-        note: note ?? undefined,
-      });
-
-      setCreateStatus("success");
-      toast.success("Entry created successfully!");
-
-      setTimeout(() => setCreateStatus("idle"), 2000);
+      await createEntry();
     } catch (error) {
-      console.error("❌ Error creating backlog entry:", error);
+      console.error("Error creating backlog entry:", error);
       setCreateStatus("error");
       toast.error(
         error instanceof Error
@@ -429,6 +477,42 @@ export function CreationToolForm() {
           </div>
         </div>
       </form>
+
+      <AlertDialog
+        open={duplicates !== null}
+        onOpenChange={(open) => {
+          if (!open) setDuplicates(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Duplicate entries found</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div>
+                You already have {duplicates?.length}{" "}
+                {duplicates?.length === 1 ? "entry" : "entries"} for this game
+                in your backlog:
+                <ul className="mt-2 list-disc pl-5">
+                  {duplicates?.map((duplicate) => (
+                    <li key={duplicate.id}>
+                      <span className="font-semibold">{duplicate.title}</span>
+                      {duplicate.platform.length > 0 &&
+                        ` (${duplicate.platform.join(", ")}, ${duplicate.status})`}
+                    </li>
+                  ))}
+                </ul>
+                Do you want to add this game anyway?
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Do not Add</AlertDialogCancel>
+            <AlertDialogAction onClick={handleAddAnyway}>
+              Add Anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
