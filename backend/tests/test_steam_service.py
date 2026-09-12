@@ -752,7 +752,9 @@ async def test_preview_wishlist_lists_unlinked_games_with_titles_and_covers(
             SteamWishlistItem(appid=504230, priority=1, date_added=1600000100),
         ]
 
-    async def fake_get_steam_app_details(app_ids: list[int]) -> dict[int, SteamAppDetails]:
+    async def fake_get_steam_app_details(
+        app_ids: list[int], budget: object = None
+    ) -> dict[int, SteamAppDetails]:
         return {
             620: SteamAppDetails(name="Portal 2", header_image="https://example.com/portal2.jpg"),
             504230: SteamAppDetails(name="Celeste", header_image=None),
@@ -795,7 +797,9 @@ async def test_import_wishlist_creates_entries_as_not_owned(
             SteamWishlistItem(appid=504230, priority=1, date_added=1600000100),
         ]
 
-    async def fake_get_steam_app_details(app_ids: list[int]) -> dict[int, SteamAppDetails]:
+    async def fake_get_steam_app_details(
+        app_ids: list[int], budget: object = None
+    ) -> dict[int, SteamAppDetails]:
         return {
             620: SteamAppDetails(name="Portal 2", header_image="https://example.com/portal2.jpg")
         }
@@ -823,7 +827,9 @@ async def test_import_wishlist_deduplicates_repeated_app_ids(
 ) -> None:
     user = await _make_user(session)
 
-    async def fake_get_steam_app_details(app_ids: list[int]) -> dict[int, SteamAppDetails]:
+    async def fake_get_steam_app_details(
+        app_ids: list[int], budget: object = None
+    ) -> dict[int, SteamAppDetails]:
         assert app_ids == [620]
         return {620: SteamAppDetails(name="Portal 2", header_image=None)}
 
@@ -876,3 +882,137 @@ async def test_preview_library_lists_unlinked_owned_games(
 
     assert [item.steam_app_id for item in preview] == [620]
     assert preview[0].title == "Portal 2"
+
+
+async def test_operation_budget_bounds_concurrent_lookups(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Issue #184: the per-operation lookup budget must cap how many
+    external lookups are in flight at once, not just how many total."""
+    user = await _make_user(session)
+    app_ids = [620 + i for i in range(12)]
+
+    in_flight = 0
+    peak_in_flight = 0
+
+    async def fake_get_steam_app_details(
+        app_ids: list[int], budget: object = None
+    ) -> dict[int, SteamAppDetails]:
+        return {}
+
+    async def tracking_cover(app_id: int, key: str | None) -> str | None:
+        nonlocal in_flight, peak_in_flight
+        in_flight += 1
+        peak_in_flight = max(peak_in_flight, in_flight)
+        await asyncio.sleep(0.01)
+        in_flight -= 1
+        return None
+
+    async def fake_get_wishlist(steam_id: str) -> list[SteamWishlistItem]:
+        return [SteamWishlistItem(appid=app_id) for app_id in app_ids]
+
+    monkeypatch.setattr(steam_service, "get_wishlist", fake_get_wishlist)
+    monkeypatch.setattr(steam_service, "_get_steam_app_details", fake_get_steam_app_details)
+    monkeypatch.setattr(steam_service, "_try_get_cover", tracking_cover)
+
+    preview = await steam_service.preview_wishlist(session, user)
+
+    assert len(preview) == len(app_ids)
+    assert peak_in_flight <= steam_service._LOOKUP_CONCURRENCY
+
+
+async def test_operation_budget_returns_fallback_once_deadline_passed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Issue #184: once the operation's deadline has passed, no new
+    lookup may start - the affected fields degrade to their fallbacks
+    and the import still completes."""
+    cover_calls = 0
+
+    async def counting_cover(app_id: int, key: str | None) -> str | None:
+        nonlocal cover_calls
+        cover_calls += 1
+        return f"https://example.com/cover-{app_id}.jpg"
+
+    monkeypatch.setattr(steam_service, "_try_get_cover", counting_cover)
+
+    budget = steam_service._OperationBudget()
+    budget.deadline = 0.0
+
+    assert await budget.lookup(lambda: counting_cover(620, None), None) is None
+    assert await budget.lookup(lambda: counting_cover(620, None), "fallback") == "fallback"
+    assert cover_calls == 0
+
+
+async def test_import_wishlist_uses_capsule_cover_when_budget_skips_lookup(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A skipped cover lookup (budget spent) must still import the item,
+    with the deterministic CDN capsule as the cover rather than None."""
+    user = await _make_user(session)
+
+    async def fake_get_steam_app_details(
+        app_ids: list[int], budget: object = None
+    ) -> dict[int, SteamAppDetails]:
+        return {}
+
+    async def unreachable_cover(app_id: int, key: str | None) -> str | None:
+        raise AssertionError("cover lookup must not run once the budget is spent")
+
+    monkeypatch.setattr(steam_service, "_get_steam_app_details", fake_get_steam_app_details)
+    monkeypatch.setattr(steam_service, "_try_get_cover", unreachable_cover)
+
+    original_budget = steam_service._OperationBudget
+
+    class SpentBudget(original_budget):
+        def __init__(self) -> None:
+            super().__init__()
+            self.deadline = 0.0
+
+    monkeypatch.setattr(steam_service, "_OperationBudget", SpentBudget)
+
+    created = await steam_service.import_wishlist(
+        session, user, [SteamWishlistItem(appid=620)]
+    )
+
+    assert len(created) == 1
+    assert created[0].image_link == (
+        "https://cdn.cloudflare.steamstatic.com/steam/apps/620/capsule_sm_120.jpg"
+    )
+
+
+async def test_import_library_uses_fallbacks_when_budget_deadline_passed(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Issue #184: an exhausted lookup budget must not block the import -
+    entries are still created, with no cover and no HLTB times."""
+    user = await _make_user(session)
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=120)]
+
+    async def unreachable_cover(app_id: int, key: str | None) -> str | None:
+        raise AssertionError("cover lookup must not run once the budget is spent")
+
+    async def unreachable_hltb(title: str) -> tuple[None, None, None]:
+        raise AssertionError("HLTB lookup must not run once the budget is spent")
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+    monkeypatch.setattr(steam_service, "_try_get_cover", unreachable_cover)
+    monkeypatch.setattr(steam_service, "_try_get_hltb_times", unreachable_hltb)
+
+    original_budget = steam_service._OperationBudget
+
+    class SpentBudget(original_budget):
+        def __init__(self) -> None:
+            super().__init__()
+            self.deadline = 0.0
+
+    monkeypatch.setattr(steam_service, "_OperationBudget", SpentBudget)
+
+    created = await steam_service.import_library(session, user, "api-key")
+
+    assert len(created) == 1
+    assert created[0].steam_app_id == 620
+    assert created[0].image_link is None
+    assert created[0].main_time is None

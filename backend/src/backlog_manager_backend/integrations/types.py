@@ -196,20 +196,21 @@ class SteamGridDBGridsEnvelope(msgspec.Struct):
     data: list[SteamGridDBGrid] = []
 
 
-class SteamApp(msgspec.Struct):
-    appid: int
-    name: str
+class SteamStoreSearchItem(msgspec.Struct):
+    """One hit from the storefront search endpoint: `type` is "app" for
+    games and e.g. "dlc"/"bundle"/"mod" for everything else - only "app"
+    hits carry a usable store app id."""
+
+    type: str = ""
+    name: str = ""
+    id: int = 0
 
 
-class SteamAppListResult(msgspec.Struct):
-    """apps is always present in practice (Steam's full catalogue), but
-    defaults to [] defensively like SteamOwnedGamesResult.games."""
+class SteamStoreSearchEnvelope(msgspec.Struct):
+    """`items` is empty (not omitted) when nothing matches."""
 
-    apps: list[SteamApp] = []
-
-
-class SteamGetAppListEnvelope(msgspec.Struct):
-    applist: SteamAppListResult
+    total: int = 0
+    items: list[SteamStoreSearchItem] = []
 
 
 class SteamAchievement(msgspec.Struct):

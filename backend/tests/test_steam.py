@@ -374,3 +374,63 @@ async def test_get_steam_library_cover_if_exists_returns_none_when_404(
 
     _mock_client(handler, monkeypatch)
     assert await get_steam_library_cover_if_exists(999999) is None
+
+
+async def test_search_store_by_title_returns_parsed_results(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from backlog_manager_backend.integrations.steam import search_store_by_title
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.params["term"] == "Celeste"
+        return httpx.Response(
+            200,
+            json={
+                "total": 2,
+                "items": [
+                    {"type": "app", "name": "Celeste", "id": 504230},
+                    {"type": "dlc", "name": "Celeste Soundtrack", "id": 1092840},
+                ],
+            },
+        )
+
+    _mock_client(handler, monkeypatch)
+    items = await search_store_by_title("Celeste")
+
+    assert [(item.type, item.id) for item in items] == [("app", 504230), ("dlc", 1092840)]
+
+
+async def test_search_store_by_title_returns_empty_list_when_no_match(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from backlog_manager_backend.integrations.steam import search_store_by_title
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"total": 0, "items": []})
+
+    _mock_client(handler, monkeypatch)
+    assert await search_store_by_title("Some Unreleased Game") == []
+
+
+async def test_search_store_by_title_raises_on_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    from backlog_manager_backend.integrations.steam import search_store_by_title
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(403)
+
+    _mock_client(handler, monkeypatch)
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await search_store_by_title("Celeste")
+
+
+async def test_search_store_by_title_raises_on_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    from backlog_manager_backend.integrations.steam import search_store_by_title
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectTimeout("timed out")
+
+    _mock_client(handler, monkeypatch)
+
+    with pytest.raises(httpx.HTTPError):
+        await search_store_by_title("Celeste")

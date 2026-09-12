@@ -825,7 +825,9 @@ async def test_import_steam_wishlist_stream_creates_not_owned_entries(
 
     _configure_steam_api_key(monkeypatch)
 
-    async def fake_get_steam_app_details(app_ids: list[int]) -> dict[int, SteamAppDetails]:
+    async def fake_get_steam_app_details(
+        app_ids: list[int], budget: object = None
+    ) -> dict[int, SteamAppDetails]:
         return {}
 
     monkeypatch.setattr(steam_service, "_get_steam_app_details", fake_get_steam_app_details)
@@ -884,14 +886,34 @@ async def test_import_steam_wishlist_stream_rejects_oversized_list(
     postgres_url: str, create_and_login
 ) -> None:
     from backlog_manager_backend.app import create_app
-    from backlog_manager_backend.routes.steam import _WISHLIST_IMPORT_MAX_ITEMS
+    from backlog_manager_backend.routes.steam import _IMPORT_MAX_ITEMS
 
     with TestClient(app=create_app()) as client:
         headers = await create_and_login(client, "wlmax@example.com")
         response = client.post(
             "/api/user/steam/wishlist/import/stream",
             headers=headers,
-            json=[{"appid": 620}] * (_WISHLIST_IMPORT_MAX_ITEMS + 1),
+            json=[{"appid": 620}] * (_IMPORT_MAX_ITEMS + 1),
+        )
+
+    assert response.status_code == 400
+    assert "limited to" in response.json()["detail"]
+
+
+async def test_import_steam_library_stream_rejects_oversized_confirmed_list(
+    postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.routes.steam import _IMPORT_MAX_ITEMS
+
+    _configure_steam_api_key(monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "libmax@example.com")
+        response = client.post(
+            "/api/user/steam/import/stream",
+            headers=headers,
+            json=[{"appid": 620}] * (_IMPORT_MAX_ITEMS + 1),
         )
 
     assert response.status_code == 400

@@ -28,7 +28,11 @@ _NO_STORE = CacheControlHeader(no_store=True)
 _SSE_DONE = "done"
 _SSE_ERROR = "error"
 _SSE_PROGRESS = "progress"
-_WISHLIST_IMPORT_MAX_ITEMS = 10_000
+# One shared item bound for both the wishlist and library import bodies -
+# see issue #184: each POSTed appid turns into external lookups (detail,
+# cover, HLTB) plus a DB write, so the accepted workload has to be bounded
+# at the route boundary, not just internally by the lookup budget.
+_IMPORT_MAX_ITEMS = steam_service.IMPORT_MAX_ITEMS
 
 
 def _resolve_api_key(user: User) -> str:
@@ -88,15 +92,14 @@ def _get_user_operation_lock(user_id: int) -> asyncio.Lock:
 
 
 def _validate_wishlist_items(items: list[SteamWishlistItem]) -> None:
-    """Route-boundary validation of the POSTed wishlist: appids below 1
-    can never match a real Steam app, and an unbounded list would turn
-    into an unbounded per-item lookup-and-write loop. Runs before the
-    SSE stream opens so rejections surface as a plain 400, not an
-    in-stream error event."""
-    if len(items) > _WISHLIST_IMPORT_MAX_ITEMS:
-        raise ClientException(
-            f"Wishlist import is limited to {_WISHLIST_IMPORT_MAX_ITEMS} items"
-        )
+    """Route-boundary validation of the POSTed import items (wishlist
+    import's body, and the library import's optional confirmed-appids
+    body): appids below 1 can never match a real Steam app, and an
+    unbounded list would turn into an unbounded per-item lookup-and-write
+    loop. Runs before the SSE stream opens so rejections surface as a
+    plain 400, not an in-stream error event."""
+    if len(items) > _IMPORT_MAX_ITEMS:
+        raise ClientException(f"Steam import is limited to {_IMPORT_MAX_ITEMS} items")
     for item in items:
         if item.appid < 1:
             raise ClientException("steam app ids must be 1 or greater")

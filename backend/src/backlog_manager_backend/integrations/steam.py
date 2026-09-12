@@ -4,29 +4,29 @@ import structlog
 
 from backlog_manager_backend.integrations.types import (
     SteamAchievementSchema,
-    SteamApp,
     SteamAppDetails,
     SteamAppDetailsEntry,
-    SteamGetAppListEnvelope,
     SteamGetOwnedGamesEnvelope,
     SteamGetPlayerAchievementsEnvelope,
     SteamGetSchemaForGameEnvelope,
     SteamGetWishlistEnvelope,
     SteamOwnedGame,
     SteamPlayerStats,
+    SteamStoreSearchEnvelope,
+    SteamStoreSearchItem,
     SteamWishlistItem,
 )
 
 logger = structlog.get_logger()
 
 _BASE_URL = "https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/"
-_APP_LIST_URL = "https://api.steampowered.com/ISteamApps/GetAppList/v2/"
 _PLAYER_ACHIEVEMENTS_URL = (
     "https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/"
 )
 _SCHEMA_FOR_GAME_URL = "https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/"
 _WISHLIST_URL = "https://api.steampowered.com/IWishlistService/GetWishlist/v1/"
 _APP_DETAILS_URL = "https://store.steampowered.com/api/appdetails"
+_STORE_SEARCH_URL = "https://store.steampowered.com/api/storesearch/"
 
 
 async def get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
@@ -70,33 +70,36 @@ async def get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
     return envelope.response.games
 
 
-async def get_app_list() -> list[SteamApp]:
-    """Steam's public catalogue of every app (games, DLC, tools, demos,
-    ...) - unlike GetOwnedGames, this needs no API key. Used to look up
-    a Steam App ID by title. Raises on failure like get_owned_games;
-    the caller (game_service.find_steam_app_id) treats that as
-    non-fatal, since this is a best-effort lookup."""
+async def search_store_by_title(title: str) -> list[SteamStoreSearchItem]:
+    """Steam storefront search for a title (no API key needed), backing
+    game_service.find_steam_app_id after ISteamApps/GetAppList was
+    retired. Steam returns its own relevance ranking, so callers take the
+    first type=="app" hit rather than re-sorting. Raises on failure like
+    get_owned_games; the caller treats that as non-fatal, since this is a
+    best-effort lookup."""
     try:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(20.0)) as client:
-            response = await client.get(_APP_LIST_URL)
+        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
+            response = await client.get(
+                _STORE_SEARCH_URL, params={"term": title, "cc": "US", "l": "en"}
+            )
     except httpx.HTTPError as error:
-        logger.error("GetAppList error", error=str(error))
+        logger.error("StoreSearch error", error=str(error))
         raise
 
     if response.status_code >= 400:
         raise httpx.HTTPStatusError(
-            f"Steam Web API error: {response.status_code}",
+            f"Steam store API error: {response.status_code}",
             request=response.request,
             response=response,
         )
 
     try:
-        envelope = msgspec.json.decode(response.content, type=SteamGetAppListEnvelope)
+        envelope = msgspec.json.decode(response.content, type=SteamStoreSearchEnvelope)
     except msgspec.DecodeError as error:
-        logger.error("GetAppList decode error", error=str(error))
-        raise httpx.DecodingError("Steam Web API returned an invalid response") from error
+        logger.error("StoreSearch decode error", error=str(error))
+        raise httpx.DecodingError("Steam store API returned an invalid response") from error
 
-    return envelope.applist.apps
+    return envelope.items
 
 
 async def get_steam_library_cover_if_exists(app_id: int) -> str | None:
