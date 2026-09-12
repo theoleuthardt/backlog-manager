@@ -30,5 +30,6 @@ docs {
   503 if neither the caller nor the server has a Steam Web API key
   configured - this is a real top-level HTTP response, raised before
   the SSE stream opens. A missing Steam ID, by contrast, surfaces as an
-  `error` event inside an HTTP 200 stream, not as a 400.
+  `error` event inside an HTTP 200 stream, not as a 400. An appid below
+  1 or a list over 10000 items is a plain 400 before the stream opens.
 }

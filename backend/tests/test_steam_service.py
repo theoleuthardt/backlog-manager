@@ -129,7 +129,16 @@ async def test_import_library_creates_entries_for_new_owned_games(
             SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=120),
         ]
 
+    async def fake_get_library_cover(app_id: int) -> str | None:
+        assert app_id == 620
+        return "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/620/library_600x900.jpg"
+
     monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+    monkeypatch.setattr(
+        steam_service.steam_integration,
+        "get_steam_library_cover_if_exists",
+        fake_get_library_cover,
+    )
 
     created = await steam_service.import_library(session, user, "api-key")
 
@@ -189,15 +198,23 @@ async def test_import_library_continues_without_a_cover_when_steamgriddb_fails(
             "boom", request=request, response=httpx.Response(503, request=request)
         )
 
+    async def fake_get_library_cover(app_id: int) -> str | None:
+        return None
+
     monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
     monkeypatch.setattr(steam_service.game_service, "get_game_covers", fake_get_game_covers)
+    monkeypatch.setattr(
+        steam_service.steam_integration,
+        "get_steam_library_cover_if_exists",
+        fake_get_library_cover,
+    )
 
     created = await steam_service.import_library(
         session, user, "api-key", steamgriddb_api_key="griddb-key"
     )
 
     assert len(created) == 1
-    assert created[0].image_link == "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/620/library_600x900.jpg"
+    assert created[0].image_link is None
 
 
 async def test_import_library_sets_hltb_times_when_a_match_is_found(
@@ -798,6 +815,34 @@ async def test_import_wishlist_creates_entries_as_not_owned(
     assert created[0].title == "Portal 2"
     assert created[0].status == "Not Owned"
     assert created[0].owned is False
+    assert created[0].steam_app_id == 620
+
+
+async def test_import_wishlist_deduplicates_repeated_app_ids(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_get_steam_app_details(app_ids: list[int]) -> dict[int, SteamAppDetails]:
+        assert app_ids == [620]
+        return {620: SteamAppDetails(name="Portal 2", header_image=None)}
+
+    async def fake_try_get_cover(app_id: int, key: str | None) -> str | None:
+        return f"https://example.com/cover-{app_id}.jpg"
+
+    monkeypatch.setattr(steam_service, "_get_steam_app_details", fake_get_steam_app_details)
+    monkeypatch.setattr(steam_service, "_try_get_cover", fake_try_get_cover)
+
+    created = await steam_service.import_wishlist(
+        session,
+        user,
+        [
+            SteamWishlistItem(appid=620, priority=0, date_added=1600000000),
+            SteamWishlistItem(appid=620, priority=1, date_added=1600000100),
+        ],
+    )
+
+    assert len(created) == 1
     assert created[0].steam_app_id == 620
 
 

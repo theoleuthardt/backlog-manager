@@ -7,6 +7,7 @@ import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.errors import ConflictError, ValidationError
+from backlog_manager_backend.integrations import steam as steam_integration
 from backlog_manager_backend.integrations.howlongtobeat import search_game_on_hltb
 from backlog_manager_backend.integrations.steam import (
     get_achievement_schema,
@@ -115,9 +116,7 @@ async def _try_get_cover(steam_app_id: int, steamgriddb_api_key: str | None) -> 
     600x900 library cover first (deterministic, correct by appid), then
     SteamGridDB's top community grid when the Steam cover is missing.
     A total miss returns None so the caller can apply their own fallback."""
-    from backlog_manager_backend.integrations.steam import get_steam_library_cover_if_exists
-
-    steam_cover = await get_steam_library_cover_if_exists(steam_app_id)
+    steam_cover = await steam_integration.get_steam_library_cover_if_exists(steam_app_id)
     if steam_cover is not None:
         return steam_cover
 
@@ -522,11 +521,23 @@ async def import_wishlist(
     if not user.steam_id:
         raise ValidationError(_STEAM_NOT_LINKED)
 
-    details = await _get_steam_app_details([item.appid for item in items])
+    seen: set[int] = set()
+    unique_app_ids: list[int] = []
+    for item in items:
+        if item.appid not in seen:
+            seen.add(item.appid)
+            unique_app_ids.append(item.appid)
+
+    details = await _get_steam_app_details(unique_app_ids)
 
     created: list[BacklogEntry] = []
+    imported_app_ids: set[int] = set()
     total = len(items)
     for processed, item in enumerate(items, start=1):
+        if item.appid in imported_app_ids:
+            if on_progress:
+                await on_progress(processed, total)
+            continue
         try:
             detail = details.get(item.appid)
             image_link = (
@@ -550,7 +561,9 @@ async def import_wishlist(
                     ),
                 )
             )
+            imported_app_ids.add(item.appid)
         except ConflictError:
+            imported_app_ids.add(item.appid)
             continue
         except Exception:
             await session.rollback()

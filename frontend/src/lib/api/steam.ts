@@ -39,9 +39,6 @@ export async function importSteamLibraryStream(
 ): Promise<BacklogEntryData[]> {
   const { response, error } = await apiClient.POST(
     "/api/user/steam/import/stream",
-    // null body = import everything not yet linked (the pre-preview
-    // behavior); the app-id list variant below is what the Steam page
-    // uses after a confirmed preview.
     { parseAs: "stream", body: null },
   );
   if (error)

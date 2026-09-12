@@ -28,9 +28,6 @@ _NO_STORE = CacheControlHeader(no_store=True)
 _SSE_DONE = "done"
 _SSE_ERROR = "error"
 _SSE_PROGRESS = "progress"
-# Steam wishlists realistically hold a few thousand entries at most;
-# a bound here stops an oversized POST from turning into an unbounded
-# per-item external-lookup-and-write loop.
 _WISHLIST_IMPORT_MAX_ITEMS = 10_000
 
 
@@ -79,12 +76,6 @@ def _resolve_family_steam_ids(user: User) -> list[str]:
     return family_ids
 
 
-# One Steam operation per user at a time - an in-process per-user lock,
-# matching the frontend's "only one sync runs at a time" rule on the
-# server side too. ponytail: in-memory, so multiple app instances
-# (several uvicorn workers, ...) would each allow one operation; if
-# that deployment ever happens, move to a shared store (Redis SETNX or
-# a DB lease).
 _user_operation_locks: dict[int, asyncio.Lock] = {}
 
 
@@ -308,13 +299,15 @@ async def get_steam_achievements(
 
 @get("/api/user/steam/wishlist/preview")
 async def preview_steam_wishlist(
-    db_session: NamedDependency[AsyncSession],
     current_user: NamedDependency[User],
 ) -> list[steam_service.SteamPreviewItem]:
+    operation_lock = _get_user_operation_lock(current_user.id)
+    steamgriddb_api_key = _resolve_steamgriddb_api_key(current_user)
     try:
-        return await steam_service.preview_wishlist(
-            db_session, current_user, _resolve_steamgriddb_api_key(current_user)
-        )
+        async with operation_lock, async_session() as db_session:
+            return await steam_service.preview_wishlist(
+                db_session, current_user, steamgriddb_api_key
+            )
     except ValidationError as error:
         raise ClientException(str(error)) from error
     except httpx.HTTPError as error:

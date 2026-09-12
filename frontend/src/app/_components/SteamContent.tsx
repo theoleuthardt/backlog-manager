@@ -104,10 +104,11 @@ function SteamPreviewTable({
                 <td className="w-10 p-2">
                   <button
                     type="button"
+                    disabled={isImporting}
                     aria-label={`Remove ${item.title} from the preview`}
                     title={`Remove ${item.title} from the preview`}
                     onClick={() => onRemove(item.steamAppId)}
-                    className="text-gray-400 transition-colors hover:text-red-500"
+                    className="text-gray-400 transition-colors hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
