@@ -10,6 +10,7 @@ from backlog_manager_backend.integrations.types import (
     HltbResultData,
     SteamAchievement,
     SteamAchievementSchema,
+    SteamAppDetails,
     SteamOwnedGame,
     SteamPlayerStats,
     SteamWishlistItem,
@@ -719,18 +720,21 @@ async def test_preview_wishlist_lists_unlinked_games_with_titles_and_covers(
             SteamWishlistItem(appid=504230, priority=1, date_added=1600000100),
         ]
 
-    async def fake_get_steam_app_names(app_ids: list[int]) -> dict[int, str]:
-        return {620: "Portal 2", 504230: "Celeste"}
+    async def fake_get_steam_app_details(app_ids: list[int]) -> dict[int, SteamAppDetails]:
+        return {
+            620: SteamAppDetails(name="Portal 2", header_image="https://example.com/portal2.jpg"),
+            504230: SteamAppDetails(name="Celeste", header_image=None),
+        }
 
     monkeypatch.setattr(steam_service, "get_wishlist", fake_get_wishlist)
-    monkeypatch.setattr(steam_service, "_get_steam_app_names", fake_get_steam_app_names)
+    monkeypatch.setattr(steam_service, "_get_steam_app_details", fake_get_steam_app_details)
 
     preview = await steam_service.preview_wishlist(session, user)
 
     assert len(preview) == 1
     assert preview[0].steam_app_id == 620
     assert preview[0].title == "Portal 2"
-    assert preview[0].image_link == "https://cdn.cloudflare.steamstatic.com/steam/apps/620/capsule_sm_120.jpg"
+    assert preview[0].image_link == "https://example.com/portal2.jpg"
 
 async def test_preview_wishlist_raises_when_steam_not_linked(session: AsyncSession) -> None:
     user = await _make_user(session, steam_id=None)
@@ -751,14 +755,14 @@ async def test_import_wishlist_creates_entries_as_not_owned(
             SteamWishlistItem(appid=504230, priority=1, date_added=1600000100),
         ]
 
-    async def fake_get_steam_app_names(app_ids: list[int]) -> dict[int, str]:
-        return {620: "Portal 2"}
+    async def fake_get_steam_app_details(app_ids: list[int]) -> dict[int, SteamAppDetails]:
+        return {620: SteamAppDetails(name="Portal 2", header_image="https://example.com/portal2.jpg")}
 
     async def fake_get_wishlist_cover(app_id: int, key: str | None) -> str | None:
         return None
 
     monkeypatch.setattr(steam_service, "get_wishlist", fake_get_wishlist)
-    monkeypatch.setattr(steam_service, "_get_steam_app_names", fake_get_steam_app_names)
+    monkeypatch.setattr(steam_service, "_get_steam_app_details", fake_get_steam_app_details)
     monkeypatch.setattr(steam_service, "_try_get_cover", fake_get_wishlist_cover)
 
     created = await steam_service.import_wishlist(

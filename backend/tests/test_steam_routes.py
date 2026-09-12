@@ -5,6 +5,8 @@ import httpx
 import pytest
 from litestar.testing import TestClient
 
+from backlog_manager_backend.integrations.types import SteamAppDetails
+
 
 def _parse_sse(body: str) -> list[tuple[str | None, str]]:
     """Splits a raw SSE response body into (event, data) pairs, mirroring
@@ -826,11 +828,11 @@ async def test_import_steam_wishlist_stream_creates_not_owned_entries(
 
     _configure_steam_api_key(monkeypatch)
 
-    async def fake_get_steam_app_names(app_ids: list[int]) -> dict[int, str]:
+    async def fake_get_steam_app_details(app_ids: list[int]) -> dict[int, SteamAppDetails]:
         return {}
 
     monkeypatch.setattr(
-        steam_service, "_get_steam_app_names", fake_get_steam_app_names
+        steam_service, "_get_steam_app_details", fake_get_steam_app_details
     )
 
     with TestClient(app=create_app()) as client:

@@ -306,3 +306,39 @@ async def test_get_wishlist_raises_on_timeout(monkeypatch: pytest.MonkeyPatch) -
 
     with pytest.raises(httpx.HTTPError):
         await get_wishlist("1234")
+
+
+async def test_get_app_details_returns_data(monkeypatch: pytest.MonkeyPatch) -> None:
+    from backlog_manager_backend.integrations.steam import get_app_details
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.params["appids"] == "620"
+        return httpx.Response(
+            200,
+            json={
+                "620": {
+                    "success": True,
+                    "data": {
+                        "name": "Portal 2",
+                        "header_image": "https://example.com/portal2.jpg",
+                    },
+                }
+            },
+        )
+
+    _mock_client(handler, monkeypatch)
+    detail = await get_app_details(620)
+    assert detail is not None
+    assert detail.name == "Portal 2"
+    assert detail.header_image == "https://example.com/portal2.jpg"
+
+
+async def test_get_app_details_returns_none_when_unknown(monkeypatch: pytest.MonkeyPatch) -> None:
+    from backlog_manager_backend.integrations.steam import get_app_details
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.params["appids"] == "999999"
+        return httpx.Response(200, json={"999999": {"success": False}})
+
+    _mock_client(handler, monkeypatch)
+    assert await get_app_details(999999) is None

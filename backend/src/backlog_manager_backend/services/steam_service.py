@@ -10,7 +10,7 @@ from backlog_manager_backend.errors import ConflictError, ValidationError
 from backlog_manager_backend.integrations.howlongtobeat import search_game_on_hltb
 from backlog_manager_backend.integrations.steam import (
     get_achievement_schema,
-    get_app_list,
+    get_app_details,
     get_owned_games,
     get_player_achievements,
     get_wishlist,
@@ -19,6 +19,7 @@ from backlog_manager_backend.integrations.types import (
     AchievementInfo,
     AchievementProgress,
     SteamAchievementSchema,
+    SteamAppDetails,
     SteamOwnedGame,
     SteamWishlistItem,
 )
@@ -386,20 +387,25 @@ async def get_achievement_progress(
     return AchievementProgress(unlocked=unlocked, total=len(achievements), achievements=achievements)
 
 
-async def _get_steam_app_names(app_ids: list[int]) -> dict[int, str]:
-    """Reverse lookup of wishlist appids against Steam's public app
-    catalogue (same cache game_service.find_steam_app_id uses, fetched
-    once per TTL), since GetWishlist returns bare appids with no names.
-    One catalogue fetch is indexed into a dict so a large wishlist
-    doesn't rescan the (200k+) app list per item. Best-effort: an
-    unresolvable appid is simply absent from the result rather than
-    raising, so one unlistable item can't fail the whole wishlist
-    preview."""
-    try:
-        apps = await get_app_list()
-    except httpx.HTTPError:
-        return {}
-    return {app.appid: app.name for app in apps if app.appid in set(app_ids)}
+async def _get_steam_app_details(
+    app_ids: list[int],
+) -> dict[int, SteamAppDetails]:
+    """Name and header image for each appid via the store appdetails
+    API (one request per app), since GetWishlist returns bare appids
+    with no names and the old reverse lookup against the full app
+    catalogue died with ISteamApps/GetAppList. Best-effort per item: an
+    appid that fails to resolve ... is simply absent from the result
+    rather than raising, so one unlistable item can't fail the whole
+    wishlist preview."""
+    details: dict[int, SteamAppDetails] = {}
+    for app_id in app_ids:
+        try:
+            detail = await get_app_details(app_id)
+        except httpx.HTTPError:
+            continue
+        if detail is not None:
+            details[app_id] = detail
+    return details
 
 
 async def preview_library(
@@ -462,15 +468,16 @@ async def preview_wishlist(
     }
 
     items = [item for item in await get_wishlist(user.steam_id) if item.appid not in existing_app_ids]
-    names = await _get_steam_app_names([item.appid for item in items])
+    details = await _get_steam_app_details([item.appid for item in items])
 
     preview: list[SteamPreviewItem] = []
     for item in items:
+        detail = details.get(item.appid)
         preview.append(
             SteamPreviewItem(
                 steam_app_id=item.appid,
-                title=names.get(item.appid) or f"Steam App {item.appid}",
-                image_link=_wishlist_cover_url(item.appid),
+                title=detail.name if detail and detail.name else f"Steam App {item.appid}",
+                image_link=(detail.header_image if detail else None) or _wishlist_cover_url(item.appid),
             )
         )
     return preview
@@ -494,19 +501,24 @@ async def import_wishlist(
     if not user.steam_id:
         raise ValidationError(_STEAM_NOT_LINKED)
 
-    names = await _get_steam_app_names([item.appid for item in items])
+    details = await _get_steam_app_details([item.appid for item in items])
 
     created: list[BacklogEntry] = []
     total = len(items)
     for processed, item in enumerate(items, start=1):
         try:
-            image_link = await _try_get_cover(item.appid, steamgriddb_api_key)
+            detail = details.get(item.appid)
+            image_link = (
+                await _try_get_cover(item.appid, steamgriddb_api_key)
+                or (detail.header_image if detail else None)
+                or _wishlist_cover_url(item.appid)
+            )
             created.append(
                 await backlog_entry_repo.create_backlog_entry(
                     session,
                     CreateBacklogEntryParams(
                         user_id=user.id,
-                        title=names.get(item.appid) or f"Steam App {item.appid}",
+                        title=detail.name if detail and detail.name else f"Steam App {item.appid}",
                         genre="",
                         platform=_IMPORTED_PLATFORM,
                         status=_WISHLIST_IMPORTED_STATUS,

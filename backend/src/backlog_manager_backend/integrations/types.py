@@ -267,6 +267,16 @@ class SteamWishlistItem(msgspec.Struct):
     date_added: int = 0
 
 
+class SteamAppDetails(msgspec.Struct):
+    name: str = ""
+    header_image: str | None = None
+
+
+class SteamAppDetailsEntry(msgspec.Struct):
+    success: bool = False
+    data: SteamAppDetails | None = None
+
+
 class SteamWishlistResult(msgspec.Struct):
     """items is omitted entirely when the profile or wishlist is
     private, hence the default empty list like SteamOwnedGamesResult."""

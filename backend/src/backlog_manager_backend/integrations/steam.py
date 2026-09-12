@@ -5,6 +5,8 @@ import structlog
 from backlog_manager_backend.integrations.types import (
     SteamAchievementSchema,
     SteamApp,
+    SteamAppDetails,
+    SteamAppDetailsEntry,
     SteamGetAppListEnvelope,
     SteamGetOwnedGamesEnvelope,
     SteamGetPlayerAchievementsEnvelope,
@@ -22,6 +24,7 @@ _APP_LIST_URL = "https://api.steampowered.com/ISteamApps/GetAppList/v2/"
 _PLAYER_ACHIEVEMENTS_URL = "https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/"
 _SCHEMA_FOR_GAME_URL = "https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/"
 _WISHLIST_URL = "https://api.steampowered.com/IWishlistService/GetWishlist/v1/"
+_APP_DETAILS_URL = "https://store.steampowered.com/api/appdetails"
 
 
 async def get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
@@ -92,6 +95,33 @@ async def get_app_list() -> list[SteamApp]:
         raise httpx.DecodingError("Steam Web API returned an invalid response") from error
 
     return envelope.applist.apps
+
+
+async def get_app_details(app_id: int) -> SteamAppDetails | None:
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
+            response = await client.get(_APP_DETAILS_URL, params={"appids": app_id})
+    except httpx.HTTPError as error:
+        logger.error("appdetails error", app_id=app_id, error=str(error))
+        raise
+
+    if response.status_code >= 400:
+        raise httpx.HTTPStatusError(
+            f"Steam store API error: {response.status_code}",
+            request=response.request,
+            response=response,
+        )
+
+    try:
+        envelope = msgspec.json.decode(response.content, type=dict[str, SteamAppDetailsEntry])
+    except msgspec.DecodeError as error:
+        logger.error("appdetails decode error", app_id=app_id, error=str(error))
+        raise httpx.DecodingError("Steam store API returned an invalid response") from error
+
+    entry = envelope.get(str(app_id))
+    if entry is None or not entry.success or entry.data is None:
+        return None
+    return entry.data
 
 
 async def get_player_achievements(steam_id: str, app_id: int, api_key: str) -> SteamPlayerStats:
