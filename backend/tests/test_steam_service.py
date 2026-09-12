@@ -734,8 +734,14 @@ async def test_preview_wishlist_lists_unlinked_games_with_titles_and_covers(
             504230: SteamAppDetails(name="Celeste", header_image=None),
         }
 
+    async def fake_try_get_cover(steam_app_id: int, key: str | None) -> str | None:
+        return {
+            620: "https://example.com/portal2.jpg",
+        }.get(steam_app_id)
+
     monkeypatch.setattr(steam_service, "get_wishlist", fake_get_wishlist)
     monkeypatch.setattr(steam_service, "_get_steam_app_details", fake_get_steam_app_details)
+    monkeypatch.setattr(steam_service, "_try_get_cover", fake_try_get_cover)
 
     preview = await steam_service.preview_wishlist(session, user)
 

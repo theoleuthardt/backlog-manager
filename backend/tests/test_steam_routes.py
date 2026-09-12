@@ -766,7 +766,9 @@ async def test_preview_steam_wishlist_returns_items_without_writing(
 
     _configure_steam_api_key(monkeypatch)
 
-    async def fake_preview_wishlist(db_session: object, user: object) -> list[object]:
+    async def fake_preview_wishlist(
+        db_session: object, user: object, key: object = None
+    ) -> list[object]:
         from backlog_manager_backend.services.steam_service import SteamPreviewItem
 
         return [

@@ -312,7 +312,9 @@ async def preview_steam_wishlist(
     current_user: NamedDependency[User],
 ) -> list[steam_service.SteamPreviewItem]:
     try:
-        return await steam_service.preview_wishlist(db_session, current_user)
+        return await steam_service.preview_wishlist(
+            db_session, current_user, _resolve_steamgriddb_api_key(current_user)
+        )
     except ValidationError as error:
         raise ClientException(str(error)) from error
     except httpx.HTTPError as error:

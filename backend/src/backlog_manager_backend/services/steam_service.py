@@ -457,12 +457,17 @@ async def preview_library(
     return preview
 
 
-async def preview_wishlist(session: AsyncSession, user: User) -> list[SteamPreviewItem]:
+async def preview_wishlist(
+    session: AsyncSession,
+    user: User,
+    steamgriddb_api_key: str | None = None,
+) -> list[SteamPreviewItem]:
     """Lists what a wishlist import *would* create - every wishlist
     item not already linked to a backlog entry by steam_app_id - without
-    writing anything. Titles come from _get_steam_app_name (best-effort,
-    a nameless item still previews), covers from Steam's CDN capsule
-    URL (deterministic, no extra API call)."""
+    writing anything. Titles come from the store appdetails API
+    (best-effort, a nameless item still previews); covers resolve via
+    the SteamGridDB -> Steam header/CDN fallback chain, like import_wishlist."""
+
     if not user.steam_id:
         raise ValidationError(_STEAM_NOT_LINKED)
 
@@ -480,12 +485,16 @@ async def preview_wishlist(session: AsyncSession, user: User) -> list[SteamPrevi
     preview: list[SteamPreviewItem] = []
     for item in items:
         detail = details.get(item.appid)
+        image_link = await _try_get_cover(item.appid, steamgriddb_api_key)
+        if image_link is None:
+            image_link = (detail.header_image if detail else None) or _wishlist_cover_url(
+                item.appid
+            )
         preview.append(
             SteamPreviewItem(
                 steam_app_id=item.appid,
                 title=detail.name if detail and detail.name else f"Steam App {item.appid}",
-                image_link=(detail.header_image if detail else None)
-                or _wishlist_cover_url(item.appid),
+                image_link=image_link,
             )
         )
     return preview
