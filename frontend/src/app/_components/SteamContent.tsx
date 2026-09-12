@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, RefreshCw, Search } from "lucide-react";
+import { Loader2, RefreshCw, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { GameImage } from "components/GameImage";
 import { Button } from "~/components/ui/button";
@@ -53,12 +53,14 @@ function SteamPreviewTable({
   isImporting,
   progress,
   onImport,
+  onRemove,
   importLabel,
 }: {
   items: SteamPreviewItem[];
   isImporting: boolean;
   progress: { processed: number; total: number } | null;
   onImport: () => void;
+  onRemove: (steamAppId: number) => void;
   importLabel: string;
 }) {
   return (
@@ -98,6 +100,17 @@ function SteamPreviewTable({
                 <td className="p-2 text-sm text-white">{item.title}</td>
                 <td className="p-2 text-right text-xs text-gray-400">
                   {item.steamAppId}
+                </td>
+                <td className="w-10 p-2">
+                  <button
+                    type="button"
+                    aria-label={`Remove ${item.title} from the preview`}
+                    title={`Remove ${item.title} from the preview`}
+                    onClick={() => onRemove(item.steamAppId)}
+                    className="text-gray-400 transition-colors hover:text-red-500"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </td>
               </tr>
             ))}
@@ -202,6 +215,12 @@ export function SteamContent() {
     }
   };
 
+  const handleRemoveFromPreview = (steamAppId: number) => {
+    setPreview((current) =>
+      current ? current.filter((item) => item.steamAppId !== steamAppId) : current,
+    );
+  };
+
   const steamLinked = Boolean(user.steamId);
 
   const renderPreview = () => {
@@ -235,6 +254,7 @@ export function SteamContent() {
           isImporting={libraryImport.isRunning}
           progress={libraryImport.progress}
           onImport={handleLibraryImport}
+          onRemove={handleRemoveFromPreview}
           importLabel="Import library"
         />
       );
@@ -245,6 +265,7 @@ export function SteamContent() {
         isImporting={wishlistImport.isRunning}
         progress={wishlistImport.progress}
         onImport={handleWishlistImport}
+        onRemove={handleRemoveFromPreview}
         importLabel="Import wishlist"
       />
     );
