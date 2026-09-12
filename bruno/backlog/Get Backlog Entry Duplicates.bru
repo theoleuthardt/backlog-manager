@@ -1,0 +1,27 @@
+meta {
+  name: Get Backlog Entry Duplicates
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{backendUrl}}/api/backlog/entries/duplicates
+  body: none
+  auth: bearer
+}
+
+params:query {
+  title: Elden Ring
+  ~steam_app_id: 1245620
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Pre-create duplicate check for the creation tool: returns the
+  logged-in user's entries whose title matches the given title
+  (case-insensitive) or whose steam_app_id matches, so the UI can ask
+  whether to add the game anyway. Run auth/Login first.
+}

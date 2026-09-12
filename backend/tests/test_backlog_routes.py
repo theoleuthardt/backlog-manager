@@ -504,3 +504,90 @@ async def test_update_entry_rejects_platform_containing_a_comma(
         )
 
     assert response.status_code == 400
+
+
+async def test_get_duplicates_returns_matching_entries(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    app = create_app()
+
+    with TestClient(app=app) as client:
+        headers = await create_and_login(client, "dupeowner@example.com")
+
+        client.post(
+            "/api/backlog/entries",
+            headers=headers,
+            json={
+                "title": "Elden Ring",
+                "genre": ["RPG"],
+                "platform": ["PC"],
+                "status": "Not Started",
+                "owned": True,
+                "interest": 5,
+            },
+        )
+
+        duplicates_response = client.get(
+            "/api/backlog/entries/duplicates",
+            headers=headers,
+            params={"title": "elden ring", "steam_app_id": 42},
+        )
+
+    assert duplicates_response.status_code == 200
+    duplicates = duplicates_response.json()
+    assert len(duplicates) == 1
+    assert duplicates[0]["title"] == "Elden Ring"
+
+
+async def test_get_duplicates_scoped_to_current_user(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    app = create_app()
+
+    with TestClient(app=app) as client:
+        headers_a = await create_and_login(client, "dupesa@example.com")
+        headers_b = await create_and_login(client, "dupesb@example.com")
+
+        client.post(
+            "/api/backlog/entries",
+            headers=headers_a,
+            json={
+                "title": "Elden Ring",
+                "genre": ["RPG"],
+                "platform": ["PC"],
+                "status": "Not Started",
+                "owned": True,
+                "interest": 5,
+            },
+        )
+
+        duplicates_response = client.get(
+            "/api/backlog/entries/duplicates",
+            headers=headers_b,
+            params={"title": "Elden Ring"},
+        )
+
+    assert duplicates_response.status_code == 200
+    assert duplicates_response.json() == []
+
+
+async def test_get_duplicates_requires_title(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    app = create_app()
+
+    with TestClient(app=app) as client:
+        headers = await create_and_login(client, "dupereq@example.com")
+
+        duplicates_response = client.get(
+            "/api/backlog/entries/duplicates",
+            headers=headers,
+        )
+
+    assert duplicates_response.status_code == 400
