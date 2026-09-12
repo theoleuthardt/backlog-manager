@@ -134,6 +134,25 @@ async def list_entries(
     return [BacklogEntryResponse.from_entry(entry) for entry in entries]
 
 
+@get("/api/backlog/entries/duplicates", raises=[ValidationException])
+async def get_entry_duplicates(
+    db_session: NamedDependency[AsyncSession],
+    current_user: NamedDependency[User],
+    title: FromQuery[str],
+    steam_app_id: FromQuery[int | None] = None,
+) -> list[BacklogEntryResponse]:
+    """Pre-create duplicate check for the creation tool: returns the
+    caller's entries that already track this game, matched by title
+    (case-insensitive) or steam app id, so the UI can ask whether to
+    add it anyway."""
+    title = title.strip()
+    if not title:
+        raise ValidationException("title must not be empty")
+    entries = await backlog_entry_repo.get_backlog_entry_duplicates(
+        db_session, current_user.id, title, steam_app_id
+    )
+    return [BacklogEntryResponse.from_entry(entry) for entry in entries]
+
 @get("/api/backlog/entries/{entry_id:int}")
 async def get_entry(
     entry_id: FromPath[int],
@@ -410,6 +429,7 @@ backlog_router = Router(
     route_handlers=[
         create_entry,
         list_entries,
+        get_entry_duplicates,
         get_entry,
         update_entry,
         delete_entry,

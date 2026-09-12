@@ -139,6 +139,18 @@ export async function getEntries(): Promise<BacklogEntryData[]> {
   return data.map(toEntryData);
 }
 
+export async function getEntryDuplicates(
+  title: string,
+  steamAppId?: number,
+): Promise<BacklogEntryData[]> {
+  const { data, error } = await apiClient.GET("/api/backlog/entries/duplicates", {
+    params: { query: { title, steam_app_id: steamAppId } },
+  });
+  if (error)
+    throw new Error(apiErrorMessage(error, "Failed to check for duplicates"));
+  return data.map(toEntryData);
+}
+
 export async function getEntryById(entryId: number): Promise<BacklogEntryData> {
   const { data, error } = await apiClient.GET(
     "/api/backlog/entries/{entry_id}",

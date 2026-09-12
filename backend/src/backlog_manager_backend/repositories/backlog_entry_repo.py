@@ -1,5 +1,5 @@
 import msgspec
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -89,6 +89,26 @@ async def get_backlog_entry_by_id(
     if model is None:
         raise NotFoundError("BacklogEntry", backlog_entry_id)
     return _to_schema(model)
+
+
+async def get_backlog_entry_duplicates(
+    session: AsyncSession, user_id: int, title: str, steam_app_id: int | None
+) -> list[BacklogEntry]:
+    """Pre-create duplicate check for the creation tool: returns the
+    user's own entries matching the title (case-insensitive) or the
+    steam app id, either of which signals the game is already tracked."""
+    conditions = [
+        func.lower(BacklogEntryModel.title) == title.strip().lower(),
+    ]
+    if steam_app_id is not None:
+        conditions.append(BacklogEntryModel.steam_app_id == steam_app_id)
+    result = await session.execute(
+        select(BacklogEntryModel)
+        .where(BacklogEntryModel.user_id == user_id)
+        .where(or_(*conditions))
+        .order_by(BacklogEntryModel.title)
+    )
+    return [_to_schema(row) for row in result.scalars().all()]
 
 
 async def get_backlog_entries_by_status(
