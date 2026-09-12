@@ -822,8 +822,16 @@ async def test_import_steam_wishlist_stream_creates_not_owned_entries(
     postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.services import steam_service
 
     _configure_steam_api_key(monkeypatch)
+
+    async def fake_get_steam_app_names(app_ids: list[int]) -> dict[int, str]:
+        return {}
+
+    monkeypatch.setattr(
+        steam_service, "_get_steam_app_names", fake_get_steam_app_names
+    )
 
     with TestClient(app=create_app()) as client:
         headers = await create_and_login(client, "wlimport@example.com")
@@ -857,6 +865,102 @@ async def test_import_steam_wishlist_stream_requires_authentication(postgres_url
         )
 
     assert response.status_code == 401
+
+async def test_import_steam_wishlist_stream_rejects_non_positive_appid(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "wlappid@example.com")
+        response = client.post(
+            "/api/user/steam/wishlist/import/stream",
+            headers=headers,
+            json=[{"appid": 0}],
+        )
+
+    assert response.status_code == 400
+    assert "steam app ids must be 1 or greater" in response.json()["detail"]
+
+async def test_import_steam_wishlist_stream_rejects_oversized_list(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.routes.steam import _WISHLIST_IMPORT_MAX_ITEMS
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "wlmax@example.com")
+        response = client.post(
+            "/api/user/steam/wishlist/import/stream",
+            headers=headers,
+            json=[{"appid": 620}] * (_WISHLIST_IMPORT_MAX_ITEMS + 1),
+        )
+
+    assert response.status_code == 400
+    assert "limited to" in response.json()["detail"]
+
+async def test_import_steam_library_stream_rejects_non_positive_appid(
+    postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    _configure_steam_api_key(monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "libappid@example.com")
+        response = client.post(
+            "/api/user/steam/import/stream",
+            headers=headers,
+            json=[{"appid": -1}],
+        )
+
+    assert response.status_code == 400
+    assert "steam app ids must be 1 or greater" in response.json()["detail"]
+
+async def test_import_steam_library_stream_restricts_to_confirmed_app_ids(
+    postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The confirmed appids from the preview bind the import: a game that
+    joined the Steam library after the preview must not be imported."""
+    from backlog_manager_backend.app import create_app
+
+    _configure_steam_api_key(monkeypatch)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "hltbapi1.azurewebsites.net":
+            return httpx.Response(200, json=[])
+        return httpx.Response(
+            200,
+            json={
+                "response": {
+                    "games": [
+                        {"appid": 620, "name": "Portal 2", "playtime_forever": 120},
+                        {"appid": 504230, "name": "Celeste", "playtime_forever": 510},
+                    ]
+                }
+            },
+        )
+
+    _mock_steam(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "libconfirmed@example.com")
+        client.put("/api/user/me", headers=headers, json={"steam_id": "76561197960287930"})
+
+        response = client.post(
+            "/api/user/steam/import/stream",
+            headers=headers,
+            json=[{"appid": 504230}],
+        )
+        titles = [
+            entry["title"] for entry in client.get("/api/backlog/entries", headers=headers).json()
+        ]
+
+    assert response.status_code == 200
+    messages = _parse_sse(response.text)
+    done_events = [json.loads(data) for event, data in messages if event == "done"]
+    assert [entry["title"] for entry in done_events[0]] == ["Celeste"]
+    assert titles == ["Celeste"]
 
 async def test_import_steam_wishlist_stream_sends_error_when_not_linked(
     postgres_url: str, create_and_login

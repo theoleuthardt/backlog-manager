@@ -21,6 +21,12 @@ docs {
   event-stream body once the connection closes, not live progress. Run
   auth/Login and user/Set Steam ID first.
 
+  The body is optional: without one (or with null) every unlinked owned
+  game is imported; with a JSON array like [{"appid": 620}] the import
+  is restricted to those app ids - the preview-before-import flow on the
+  Steam page sends exactly the app ids the user confirmed in the
+  preview, so the import always matches it.
+
   503 if neither the caller nor the server has a Steam Web API key
   configured - this is a real top-level HTTP response, raised before
   the SSE stream opens. A missing Steam ID, by contrast, surfaces as an

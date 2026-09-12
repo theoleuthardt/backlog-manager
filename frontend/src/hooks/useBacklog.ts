@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as backlogApi from "~/lib/api/backlog";
 import {
   getSteamAchievements,
-  importSteamLibraryStream,
+  importSteamLibraryAppIdsStream,
   importSteamWishlistStream,
   previewSteamLibraryStream,
   syncSteamPlaytimesStream,
@@ -146,12 +146,38 @@ export function useImportSteamWishlistStream(): {
   return { run, isRunning, progress };
 }
 
-export function useSyncSteamPlaytimesStream(): SteamStreamState {
-  return useSteamStream(syncSteamPlaytimesStream);
+export function useImportSteamLibraryAppIdsStream(): {
+  run: (
+    appIds: number[],
+  ) => Promise<backlogApi.BacklogEntryData[]>;
+  isRunning: boolean;
+  progress: SteamSyncProgress | null;
+} {
+  const queryClient = useQueryClient();
+  const [isRunning, setIsRunning] = useState(false);
+  const [progress, setProgress] = useState<SteamSyncProgress | null>(null);
+
+  const run = useCallback(
+    async (appIds: number[]) => {
+      setIsRunning(true);
+      setProgress(null);
+      try {
+        const entries = await importSteamLibraryAppIdsStream(appIds, setProgress);
+        await queryClient.invalidateQueries({ queryKey: ENTRIES_KEY });
+        return entries;
+      } finally {
+        setIsRunning(false);
+        setProgress(null);
+      }
+    },
+    [queryClient],
+  );
+
+  return { run, isRunning, progress };
 }
 
-export function useImportSteamLibraryStream(): SteamStreamState {
-  return useSteamStream(importSteamLibraryStream);
+export function useSyncSteamPlaytimesStream(): SteamStreamState {
+  return useSteamStream(syncSteamPlaytimesStream);
 }
 
 export function useSteamLibraryPreviewStream(): {

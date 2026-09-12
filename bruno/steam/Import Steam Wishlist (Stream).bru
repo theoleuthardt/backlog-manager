@@ -33,5 +33,6 @@ docs {
 
   Run auth/Login and user/Set Steam ID first. A missing Steam ID
   surfaces as an `error` event inside an HTTP 200 stream, not as a
-  400.
+  400. An appid below 1 or a list over 10000 items is a plain 400
+  before the stream opens.
 }

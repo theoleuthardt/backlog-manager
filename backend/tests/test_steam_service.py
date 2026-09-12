@@ -719,11 +719,11 @@ async def test_preview_wishlist_lists_unlinked_games_with_titles_and_covers(
             SteamWishlistItem(appid=504230, priority=1, date_added=1600000100),
         ]
 
-    async def fake_get_steam_app_name(app_id: int) -> str | None:
-        return {620: "Portal 2", 504230: "Celeste"}.get(app_id)
+    async def fake_get_steam_app_names(app_ids: list[int]) -> dict[int, str]:
+        return {620: "Portal 2", 504230: "Celeste"}
 
     monkeypatch.setattr(steam_service, "get_wishlist", fake_get_wishlist)
-    monkeypatch.setattr(steam_service, "_get_steam_app_name", fake_get_steam_app_name)
+    monkeypatch.setattr(steam_service, "_get_steam_app_names", fake_get_steam_app_names)
 
     preview = await steam_service.preview_wishlist(session, user)
 
@@ -751,14 +751,14 @@ async def test_import_wishlist_creates_entries_as_not_owned(
             SteamWishlistItem(appid=504230, priority=1, date_added=1600000100),
         ]
 
-    async def fake_get_steam_app_name(app_id: int) -> str | None:
-        return {620: "Portal 2"}.get(app_id)
+    async def fake_get_steam_app_names(app_ids: list[int]) -> dict[int, str]:
+        return {620: "Portal 2"}
 
     async def fake_get_wishlist_cover(app_id: int, key: str | None) -> str | None:
         return None
 
     monkeypatch.setattr(steam_service, "get_wishlist", fake_get_wishlist)
-    monkeypatch.setattr(steam_service, "_get_steam_app_name", fake_get_steam_app_name)
+    monkeypatch.setattr(steam_service, "_get_steam_app_names", fake_get_steam_app_names)
     monkeypatch.setattr(steam_service, "_try_get_cover", fake_get_wishlist_cover)
 
     created = await steam_service.import_wishlist(

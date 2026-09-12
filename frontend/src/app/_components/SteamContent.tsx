@@ -12,7 +12,7 @@ import {
   type SteamPreviewItem,
 } from "~/lib/api/steam";
 import {
-  useImportSteamLibraryStream,
+  useImportSteamLibraryAppIdsStream,
   useImportSteamWishlistStream,
   useSteamLibraryPreviewStream,
 } from "~/hooks/useBacklog";
@@ -115,7 +115,7 @@ export function SteamContent() {
   const [isFetchingPreview, setIsFetchingPreview] = useState(false);
 
   const libraryPreview = useSteamLibraryPreviewStream();
-  const libraryImport = useImportSteamLibraryStream();
+  const libraryImport = useImportSteamLibraryAppIdsStream();
   const wishlistImport = useImportSteamWishlistStream();
 
   const isAnySyncRunning =
@@ -161,8 +161,11 @@ export function SteamContent() {
   };
 
   const handleLibraryImport = async () => {
+    if (!preview) return;
     try {
-      const created = await libraryImport.run();
+      const created = await libraryImport.run(
+        preview.map((item) => item.steamAppId),
+      );
       setPreview(null);
       toast.success(
         created.length > 0

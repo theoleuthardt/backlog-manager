@@ -174,6 +174,7 @@ async def import_library(
     steamgriddb_api_key: str | None = None,
     on_progress: ProgressCallback | None = None,
     family_steam_ids: list[str] | None = None,
+    confirmed_app_ids: list[int] | None = None,
 ) -> list[BacklogEntry]:
     """Creates a backlog entry for every Steam-owned game not already
     linked to one by steam_app_id. Metadata beyond title/steam_app_id/
@@ -184,6 +185,12 @@ async def import_library(
     HowLongToBeat time-to-beat lookup by title also runs for every
     game unconditionally (no key needed) - best-effort, see
     _try_get_hltb_times.
+
+    `confirmed_app_ids`, when given, restricts the import to those app
+    ids - the preview-before-import flow passes the app ids the user
+    saw in the preview so the import always matches it; anything that
+    joined or left the library in between is ignored rather than
+    silently imported.
 
     The existing-entries check above only prevents most duplicates - a
     concurrent import for the same user can still race past it, so the
@@ -218,6 +225,9 @@ async def import_library(
     games_to_import = owned_games
     if family_steam_ids:
         games_to_import = await _merge_family_games(owned_games, family_steam_ids, api_key)
+    if confirmed_app_ids is not None:
+        confirmed = set(confirmed_app_ids)
+        games_to_import = [game for game in games_to_import if game.appid in confirmed]
 
     existing_app_ids = {
         entry.steam_app_id
@@ -376,20 +386,20 @@ async def get_achievement_progress(
     return AchievementProgress(unlocked=unlocked, total=len(achievements), achievements=achievements)
 
 
-async def _get_steam_app_name(app_id: int) -> str | None:
-    """Reverse lookup of a wishlist appid against Steam's public app
+async def _get_steam_app_names(app_ids: list[int]) -> dict[int, str]:
+    """Reverse lookup of wishlist appids against Steam's public app
     catalogue (same cache game_service.find_steam_app_id uses, fetched
     once per TTL), since GetWishlist returns bare appids with no names.
-    Best-effort: an unresolvable appid yields None rather than raising,
-    so one unlistable item can't fail the whole wishlist preview."""
+    One catalogue fetch is indexed into a dict so a large wishlist
+    doesn't rescan the (200k+) app list per item. Best-effort: an
+    unresolvable appid is simply absent from the result rather than
+    raising, so one unlistable item can't fail the whole wishlist
+    preview."""
     try:
         apps = await get_app_list()
     except httpx.HTTPError:
-        return None
-    for app in apps:
-        if app.appid == app_id:
-            return app.name
-    return None
+        return {}
+    return {app.appid: app.name for app in apps if app.appid in set(app_ids)}
 
 
 async def preview_library(
@@ -451,15 +461,15 @@ async def preview_wishlist(
         if entry.steam_app_id is not None
     }
 
+    items = [item for item in await get_wishlist(user.steam_id) if item.appid not in existing_app_ids]
+    names = await _get_steam_app_names([item.appid for item in items])
+
     preview: list[SteamPreviewItem] = []
-    for item in await get_wishlist(user.steam_id):
-        if item.appid in existing_app_ids:
-            continue
-        name = await _get_steam_app_name(item.appid)
+    for item in items:
         preview.append(
             SteamPreviewItem(
                 steam_app_id=item.appid,
-                title=name or f"Steam App {item.appid}",
+                title=names.get(item.appid) or f"Steam App {item.appid}",
                 image_link=_wishlist_cover_url(item.appid),
             )
         )
@@ -484,18 +494,19 @@ async def import_wishlist(
     if not user.steam_id:
         raise ValidationError(_STEAM_NOT_LINKED)
 
+    names = await _get_steam_app_names([item.appid for item in items])
+
     created: list[BacklogEntry] = []
     total = len(items)
     for processed, item in enumerate(items, start=1):
         try:
-            name = await _get_steam_app_name(item.appid)
             image_link = await _try_get_cover(item.appid, steamgriddb_api_key)
             created.append(
                 await backlog_entry_repo.create_backlog_entry(
                     session,
                     CreateBacklogEntryParams(
                         user_id=user.id,
-                        title=name or f"Steam App {item.appid}",
+                        title=names.get(item.appid) or f"Steam App {item.appid}",
                         genre="",
                         platform=_IMPORTED_PLATFORM,
                         status=_WISHLIST_IMPORTED_STATUS,
