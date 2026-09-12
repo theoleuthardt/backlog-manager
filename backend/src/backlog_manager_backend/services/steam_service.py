@@ -57,6 +57,7 @@ class SteamPreviewItem(msgspec.Struct):
 def _wishlist_cover_url(app_id: int) -> str:
     return _WISHLIST_COVER_URL.format(appid=app_id)
 
+
 _ACHIEVEMENT_SCHEMA_CACHE_MAX_SIZE = 500
 _achievement_schema_cache: dict[int, list[SteamAchievementSchema]] = {}
 
@@ -101,7 +102,9 @@ async def sync_playtimes(
         updated.append(
             await backlog_entry_repo.update_backlog_entry(
                 session,
-                UpdateBacklogEntryParams(backlog_entry_id=entry.backlog_entry_id, playtime=playtime),
+                UpdateBacklogEntryParams(
+                    backlog_entry_id=entry.backlog_entry_id, playtime=playtime
+                ),
             )
         )
     return updated
@@ -109,16 +112,19 @@ async def sync_playtimes(
 
 async def _try_get_cover(steam_app_id: int, steamgriddb_api_key: str | None) -> str | None:
     """Best-effort SteamGridDB cover lookup for one freshly-imported
-    game - a missing key, outage, or no-covers-available result must
-    not fail the import, it should just leave that entry without a
-    cover, the same as a manually-created entry."""
-    if not steamgriddb_api_key:
-        return None
-    try:
-        covers = await game_service.get_game_covers(steam_app_id, steamgriddb_api_key)
-    except (RuntimeError, httpx.HTTPError):
-        return None
-    return covers[0] if covers else None
+    game. If a key is missing, the API errors, or no grid is found,
+    it falls back to Steam's official 600x900 library cover (if it exists).
+    A total miss returns None so the caller can apply their own fallback."""
+    if steamgriddb_api_key:
+        try:
+            covers = await game_service.get_game_covers(steam_app_id, steamgriddb_api_key)
+            if covers:
+                return covers[0]
+        except (RuntimeError, httpx.HTTPError):
+            pass
+
+    from backlog_manager_backend.integrations.steam import get_steam_library_cover_if_exists
+    return await get_steam_library_cover_if_exists(steam_app_id)
 
 
 async def _try_get_hltb_times(title: str) -> tuple[Decimal | None, Decimal | None, Decimal | None]:
@@ -245,9 +251,7 @@ async def import_library(
             continue
         try:
             image_link = await _try_get_cover(game.appid, steamgriddb_api_key)
-            main_time, main_plus_extra_time, completion_time = await _try_get_hltb_times(
-                game.name
-            )
+            main_time, main_plus_extra_time, completion_time = await _try_get_hltb_times(game.name)
             created.append(
                 await backlog_entry_repo.create_backlog_entry(
                     session,
@@ -366,14 +370,15 @@ async def get_achievement_progress(
         return AchievementProgress(unlocked=0, total=0, achievements=[])
 
     schema_by_apiname = {
-        entry.name: entry
-        for entry in await _get_achievement_schema_cached(steam_app_id, api_key)
+        entry.name: entry for entry in await _get_achievement_schema_cached(steam_app_id, api_key)
     }
 
     achievements = [
         AchievementInfo(
             apiname=achievement.apiname,
-            display_name=schema.display_name if schema else (achievement.name or achievement.apiname),
+            display_name=schema.display_name
+            if schema
+            else (achievement.name or achievement.apiname),
             description=schema.description if schema else achievement.description,
             icon=schema.icon if schema else None,
             achieved=bool(achievement.achieved),
@@ -384,7 +389,9 @@ async def get_achievement_progress(
         for schema in (schema_by_apiname.get(achievement.apiname),)
     ]
     unlocked = sum(1 for achievement in achievements if achievement.achieved)
-    return AchievementProgress(unlocked=unlocked, total=len(achievements), achievements=achievements)
+    return AchievementProgress(
+        unlocked=unlocked, total=len(achievements), achievements=achievements
+    )
 
 
 async def _get_steam_app_details(
@@ -450,9 +457,7 @@ async def preview_library(
     return preview
 
 
-async def preview_wishlist(
-    session: AsyncSession, user: User
-) -> list[SteamPreviewItem]:
+async def preview_wishlist(session: AsyncSession, user: User) -> list[SteamPreviewItem]:
     """Lists what a wishlist import *would* create - every wishlist
     item not already linked to a backlog entry by steam_app_id - without
     writing anything. Titles come from _get_steam_app_name (best-effort,
@@ -467,7 +472,9 @@ async def preview_wishlist(
         if entry.steam_app_id is not None
     }
 
-    items = [item for item in await get_wishlist(user.steam_id) if item.appid not in existing_app_ids]
+    items = [
+        item for item in await get_wishlist(user.steam_id) if item.appid not in existing_app_ids
+    ]
     details = await _get_steam_app_details([item.appid for item in items])
 
     preview: list[SteamPreviewItem] = []
@@ -477,7 +484,8 @@ async def preview_wishlist(
             SteamPreviewItem(
                 steam_app_id=item.appid,
                 title=detail.name if detail and detail.name else f"Steam App {item.appid}",
-                image_link=(detail.header_image if detail else None) or _wishlist_cover_url(item.appid),
+                image_link=(detail.header_image if detail else None)
+                or _wishlist_cover_url(item.appid),
             )
         )
     return preview

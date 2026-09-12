@@ -21,7 +21,9 @@ logger = structlog.get_logger()
 
 _BASE_URL = "https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/"
 _APP_LIST_URL = "https://api.steampowered.com/ISteamApps/GetAppList/v2/"
-_PLAYER_ACHIEVEMENTS_URL = "https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/"
+_PLAYER_ACHIEVEMENTS_URL = (
+    "https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/"
+)
 _SCHEMA_FOR_GAME_URL = "https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/"
 _WISHLIST_URL = "https://api.steampowered.com/IWishlistService/GetWishlist/v1/"
 _APP_DETAILS_URL = "https://store.steampowered.com/api/appdetails"
@@ -95,6 +97,20 @@ async def get_app_list() -> list[SteamApp]:
         raise httpx.DecodingError("Steam Web API returned an invalid response") from error
 
     return envelope.applist.apps
+
+
+async def get_steam_library_cover_if_exists(app_id: int) -> str | None:
+    """Checks if Steam's official 600x900 vertical library cover exists for the app.
+    Returns the URL if it does (HEAD returns 200), otherwise None."""
+    url = f"https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/{app_id}/library_600x900.jpg"
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(5.0)) as client:
+            response = await client.head(url, follow_redirects=True)
+            if response.status_code == 200:
+                return url
+    except httpx.HTTPError as error:
+        logger.error("get_steam_library_cover error", app_id=app_id, error=str(error))
+    return None
 
 
 async def get_app_details(app_id: int) -> SteamAppDetails | None:

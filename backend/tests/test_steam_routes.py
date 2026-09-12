@@ -31,7 +31,12 @@ def _parse_sse(body: str) -> list[tuple[str | None, str]]:
 def _mock_steam(
     handler: Callable[[httpx.Request], httpx.Response], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    transport = httpx.MockTransport(handler)
+    def wrapped_handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "shared.akamai.steamstatic.com" and request.method == "HEAD":
+            return httpx.Response(404, request=request)
+        return handler(request)
+
+    transport = httpx.MockTransport(wrapped_handler)
 
     class _MockAsyncClient(httpx.AsyncClient):
         def __init__(self, *args: object, **kwargs: object) -> None:
@@ -58,16 +63,18 @@ async def test_sync_steam_playtimes_updates_linked_entry(
         assert request.url.params["steamid"] == "76561197960287930"
         return httpx.Response(
             200,
-            json={"response": {"games": [{"appid": 504230, "name": "Celeste", "playtime_forever": 510}]}},
+            json={
+                "response": {
+                    "games": [{"appid": 504230, "name": "Celeste", "playtime_forever": 510}]
+                }
+            },
         )
 
     _mock_steam(handler, monkeypatch)
 
     with TestClient(app=create_app()) as client:
         headers = await create_and_login(client, "steamsync@example.com")
-        client.put(
-            "/api/user/me", headers=headers, json={"steam_id": "76561197960287930"}
-        )
+        client.put("/api/user/me", headers=headers, json={"steam_id": "76561197960287930"})
         client.post(
             "/api/backlog/entries",
             headers=headers,
@@ -223,9 +230,7 @@ async def test_import_steam_library_creates_entries_for_new_owned_games(
         return httpx.Response(
             200,
             json={
-                "response": {
-                    "games": [{"appid": 620, "name": "Portal 2", "playtime_forever": 120}]
-                }
+                "response": {"games": [{"appid": 620, "name": "Portal 2", "playtime_forever": 120}]}
             },
         )
 
@@ -233,9 +238,7 @@ async def test_import_steam_library_creates_entries_for_new_owned_games(
 
     with TestClient(app=create_app()) as client:
         headers = await create_and_login(client, "steamimport@example.com")
-        client.put(
-            "/api/user/me", headers=headers, json={"steam_id": "76561197960287930"}
-        )
+        client.put("/api/user/me", headers=headers, json={"steam_id": "76561197960287930"})
 
         response = client.post("/api/user/steam/import", headers=headers)
 
@@ -269,9 +272,7 @@ async def test_import_steam_library_skips_already_linked_games(
 
     with TestClient(app=create_app()) as client:
         headers = await create_and_login(client, "steamimportskip@example.com")
-        client.put(
-            "/api/user/me", headers=headers, json={"steam_id": "76561197960287930"}
-        )
+        client.put("/api/user/me", headers=headers, json={"steam_id": "76561197960287930"})
         client.post(
             "/api/backlog/entries",
             headers=headers,
@@ -320,9 +321,7 @@ async def test_import_steam_library_sets_cover_from_steamgriddb(
         return httpx.Response(
             200,
             json={
-                "response": {
-                    "games": [{"appid": 620, "name": "Portal 2", "playtime_forever": 120}]
-                }
+                "response": {"games": [{"appid": 620, "name": "Portal 2", "playtime_forever": 120}]}
             },
         )
 
@@ -330,9 +329,7 @@ async def test_import_steam_library_sets_cover_from_steamgriddb(
 
     with TestClient(app=create_app()) as client:
         headers = await create_and_login(client, "steamimportcover@example.com")
-        client.put(
-            "/api/user/me", headers=headers, json={"steam_id": "76561197960287930"}
-        )
+        client.put("/api/user/me", headers=headers, json={"steam_id": "76561197960287930"})
 
         response = client.post("/api/user/steam/import", headers=headers)
 
@@ -631,9 +628,7 @@ async def test_sync_steam_playtimes_does_not_import_when_auto_import_disabled(
         return httpx.Response(
             200,
             json={
-                "response": {
-                    "games": [{"appid": 620, "name": "Portal 2", "playtime_forever": 120}]
-                }
+                "response": {"games": [{"appid": 620, "name": "Portal 2", "playtime_forever": 120}]}
             },
         )
 
@@ -641,9 +636,7 @@ async def test_sync_steam_playtimes_does_not_import_when_auto_import_disabled(
 
     with TestClient(app=create_app()) as client:
         headers = await create_and_login(client, "noautoimport@example.com")
-        client.put(
-            "/api/user/me", headers=headers, json={"steam_id": "76561197960287930"}
-        )
+        client.put("/api/user/me", headers=headers, json={"steam_id": "76561197960287930"})
 
         response = client.post("/api/user/steam/sync", headers=headers)
 
@@ -710,9 +703,7 @@ async def test_sync_steam_playtimes_stream_reports_progress_only_for_auto_import
         return httpx.Response(
             200,
             json={
-                "response": {
-                    "games": [{"appid": 620, "name": "Portal 2", "playtime_forever": 120}]
-                }
+                "response": {"games": [{"appid": 620, "name": "Portal 2", "playtime_forever": 120}]}
             },
         )
 
@@ -766,6 +757,7 @@ async def test_sync_steam_playtimes_stream_requires_authentication(postgres_url:
 
     assert response.status_code == 401
 
+
 async def test_preview_steam_wishlist_returns_items_without_writing(
     postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -801,6 +793,7 @@ async def test_preview_steam_wishlist_returns_items_without_writing(
     assert body[0]["title"] == "Portal 2"
     assert entries == []
 
+
 async def test_preview_steam_wishlist_requires_linked_account(
     postgres_url: str, create_and_login
 ) -> None:
@@ -812,6 +805,7 @@ async def test_preview_steam_wishlist_requires_linked_account(
 
     assert response.status_code == 400
 
+
 async def test_preview_steam_wishlist_requires_authentication(postgres_url: str) -> None:
     from backlog_manager_backend.app import create_app
 
@@ -819,6 +813,7 @@ async def test_preview_steam_wishlist_requires_authentication(postgres_url: str)
         response = client.get("/api/user/steam/wishlist/preview")
 
     assert response.status_code == 401
+
 
 async def test_import_steam_wishlist_stream_creates_not_owned_entries(
     postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
@@ -831,9 +826,7 @@ async def test_import_steam_wishlist_stream_creates_not_owned_entries(
     async def fake_get_steam_app_details(app_ids: list[int]) -> dict[int, SteamAppDetails]:
         return {}
 
-    monkeypatch.setattr(
-        steam_service, "_get_steam_app_details", fake_get_steam_app_details
-    )
+    monkeypatch.setattr(steam_service, "_get_steam_app_details", fake_get_steam_app_details)
 
     with TestClient(app=create_app()) as client:
         headers = await create_and_login(client, "wlimport@example.com")
@@ -858,15 +851,15 @@ async def test_import_steam_wishlist_stream_creates_not_owned_entries(
     assert done_events[0][0]["title"].startswith("Steam App 620")
     assert done_events[0][0]["status"] == "Not Owned"
 
+
 async def test_import_steam_wishlist_stream_requires_authentication(postgres_url: str) -> None:
     from backlog_manager_backend.app import create_app
 
     with TestClient(app=create_app()) as client:
-        response = client.post(
-            "/api/user/steam/wishlist/import/stream", json=[{"appid": 620}]
-        )
+        response = client.post("/api/user/steam/wishlist/import/stream", json=[{"appid": 620}])
 
     assert response.status_code == 401
+
 
 async def test_import_steam_wishlist_stream_rejects_non_positive_appid(
     postgres_url: str, create_and_login
@@ -883,6 +876,7 @@ async def test_import_steam_wishlist_stream_rejects_non_positive_appid(
 
     assert response.status_code == 400
     assert "steam app ids must be 1 or greater" in response.json()["detail"]
+
 
 async def test_import_steam_wishlist_stream_rejects_oversized_list(
     postgres_url: str, create_and_login
@@ -901,6 +895,7 @@ async def test_import_steam_wishlist_stream_rejects_oversized_list(
     assert response.status_code == 400
     assert "limited to" in response.json()["detail"]
 
+
 async def test_import_steam_library_stream_rejects_non_positive_appid(
     postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -918,6 +913,7 @@ async def test_import_steam_library_stream_rejects_non_positive_appid(
 
     assert response.status_code == 400
     assert "steam app ids must be 1 or greater" in response.json()["detail"]
+
 
 async def test_import_steam_library_stream_restricts_to_confirmed_app_ids(
     postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
@@ -964,6 +960,7 @@ async def test_import_steam_library_stream_restricts_to_confirmed_app_ids(
     assert [entry["title"] for entry in done_events[0]] == ["Celeste"]
     assert titles == ["Celeste"]
 
+
 async def test_import_steam_wishlist_stream_sends_error_when_not_linked(
     postgres_url: str, create_and_login
 ) -> None:
@@ -980,6 +977,7 @@ async def test_import_steam_wishlist_stream_sends_error_when_not_linked(
     assert response.status_code == 200
     messages = _parse_sse(response.text)
     assert messages == [("error", "Steam account is not linked")]
+
 
 async def test_preview_steam_library_stream_lists_unlinked_games(
     postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
@@ -1037,6 +1035,7 @@ async def test_preview_steam_library_stream_lists_unlinked_games(
     ]
     assert entries == []
 
+
 async def test_preview_steam_library_stream_sends_error_when_not_linked(
     postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -1051,6 +1050,7 @@ async def test_preview_steam_library_stream_sends_error_when_not_linked(
     assert response.status_code == 200
     messages = _parse_sse(response.text)
     assert messages == [("error", "Steam account is not linked")]
+
 
 async def test_preview_steam_library_stream_requires_authentication(postgres_url: str) -> None:
     from backlog_manager_backend.app import create_app
