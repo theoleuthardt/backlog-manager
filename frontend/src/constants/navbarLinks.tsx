@@ -93,7 +93,7 @@ export const dashboardNavLinks: NavbarLink[] = [
     href: "/steam",
     content: (
       <Image
-        src="/steam-icon.svg"
+        src="/steam-icon.png"
         alt="Steam"
         width={32}
         height={32}
