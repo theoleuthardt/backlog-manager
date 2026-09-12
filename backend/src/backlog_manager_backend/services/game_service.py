@@ -187,21 +187,28 @@ async def _try_get_steamgriddb_covers(steam_app_id: int, api_key: str | None) ->
 async def _resolve_steamgriddb_covers_by_game_id(
     games: list[IGDBGameData], api_key: str | None
 ) -> dict[int, list[str]]:
-    """Resolves Steam App IDs for a page of search results (cheap - an
-    in-memory dict lookup once the catalogue is warm) then fetches
-    SteamGridDB covers for all of them concurrently instead of one
-    game at a time - a SteamGridDB outage would otherwise delay the
-    whole search by one request timeout per game, up to
-    _SEARCH_RESULT_LIMIT of them."""
+    """Resolves Steam App IDs for a page of search results (an in-memory
+    dict lookup once the cache is warm, a bounded-concurrency Steam
+    storefront search per title when cold) then fetches SteamGridDB
+    covers for all of them concurrently instead of one game at a time -
+    an outage on either service would otherwise delay the whole search
+    by one request timeout per game, up to _SEARCH_RESULT_LIMIT of
+    them."""
     if not api_key:
         return {}
 
-    steam_app_ids_by_game_id: dict[int, int] = {}
-    for game in games:
-        if game.name:
-            steam_app_id = await find_steam_app_id(game.name)
-            if steam_app_id is not None:
-                steam_app_ids_by_game_id[game.id] = steam_app_id
+    semaphore = asyncio.Semaphore(4)
+
+    async def resolve_one(game: IGDBGameData) -> tuple[int, int | None]:
+        if not game.name:
+            return game.id, None
+        async with semaphore:
+            return game.id, await find_steam_app_id(game.name)
+
+    resolved = await asyncio.gather(*(resolve_one(game) for game in games))
+    steam_app_ids_by_game_id: dict[int, int] = {
+        game_id: app_id for game_id, app_id in resolved if app_id is not None
+    }
 
     if not steam_app_ids_by_game_id:
         return {}

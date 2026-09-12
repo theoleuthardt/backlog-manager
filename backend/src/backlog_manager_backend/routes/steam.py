@@ -28,10 +28,6 @@ _NO_STORE = CacheControlHeader(no_store=True)
 _SSE_DONE = "done"
 _SSE_ERROR = "error"
 _SSE_PROGRESS = "progress"
-# One shared item bound for both the wishlist and library import bodies -
-# see issue #184: each POSTed appid turns into external lookups (detail,
-# cover, HLTB) plus a DB write, so the accepted workload has to be bounded
-# at the route boundary, not just internally by the lookup budget.
 _IMPORT_MAX_ITEMS = steam_service.IMPORT_MAX_ITEMS
 
 

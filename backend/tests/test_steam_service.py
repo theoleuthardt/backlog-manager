@@ -1,4 +1,5 @@
 import asyncio
+import time
 from decimal import Decimal
 
 import httpx
@@ -942,6 +943,26 @@ async def test_operation_budget_returns_fallback_once_deadline_passed(
     assert await budget.lookup(lambda: counting_cover(620, None), None) is None
     assert await budget.lookup(lambda: counting_cover(620, None), "fallback") == "fallback"
     assert cover_calls == 0
+
+
+async def test_operation_budget_returns_fallback_when_active_lookup_exceeds_deadline(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A lookup that *starts* before the deadline must not be allowed to
+    run past it - otherwise a hung request keeps the per-user operation
+    lock held forever despite the budget."""
+    started = False
+
+    async def hanging_lookup() -> str:
+        nonlocal started
+        started = True
+        await asyncio.sleep(30)
+
+    budget = steam_service._OperationBudget()
+    budget.deadline = time.monotonic() + 0.05
+
+    assert await budget.lookup(hanging_lookup, "fallback") == "fallback"
+    assert started
 
 
 async def test_import_wishlist_uses_capsule_cover_when_budget_skips_lookup(

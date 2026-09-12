@@ -201,16 +201,16 @@ class SteamStoreSearchItem(msgspec.Struct):
     games and e.g. "dlc"/"bundle"/"mod" for everything else - only "app"
     hits carry a usable store app id."""
 
-    type: str = ""
+    type: str
+    id: int
     name: str = ""
-    id: int = 0
 
 
 class SteamStoreSearchEnvelope(msgspec.Struct):
     """`items` is empty (not omitted) when nothing matches."""
 
+    items: list[SteamStoreSearchItem]
     total: int = 0
-    items: list[SteamStoreSearchItem] = []
 
 
 class SteamAchievement(msgspec.Struct):

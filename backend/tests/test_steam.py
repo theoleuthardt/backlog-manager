@@ -434,3 +434,31 @@ async def test_search_store_by_title_raises_on_timeout(monkeypatch: pytest.Monke
 
     with pytest.raises(httpx.HTTPError):
         await search_store_by_title("Celeste")
+
+
+async def test_search_store_by_title_raises_on_missing_item_id(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from backlog_manager_backend.integrations.steam import search_store_by_title
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"total": 1, "items": [{"type": "app", "name": "X"}]})
+
+    _mock_client(handler, monkeypatch)
+
+    with pytest.raises(httpx.HTTPError):
+        await search_store_by_title("Celeste")
+
+
+async def test_search_store_by_title_raises_on_missing_items(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from backlog_manager_backend.integrations.steam import search_store_by_title
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"total": 1})
+
+    _mock_client(handler, monkeypatch)
+
+    with pytest.raises(httpx.HTTPError):
+        await search_store_by_title("Celeste")

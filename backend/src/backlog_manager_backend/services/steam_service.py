@@ -1,6 +1,6 @@
 import asyncio
 import time
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from decimal import ROUND_HALF_UP, Decimal
 
 import httpx
@@ -46,14 +46,6 @@ _IMPORTED_INTEREST = 5
 _STEAM_NOT_LINKED = "Steam account is not linked"
 _WISHLIST_IMPORTED_STATUS = "Not Owned"
 _WISHLIST_COVER_URL = "https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/capsule_sm_120.jpg"
-
-# Bounds on the external-request work a single import/preview may do, so
-# one operation can't hold the per-user lock for hours or fire tens of
-# thousands of external requests - see issue #184. Concurrency caps how
-# many cover/detail/HLTB lookups are in flight at once; the deadline
-# stops the ones still queued when the budget is spent; the semaphore is
-# shared per operation, not globally, so two users never contend on each
-# other's lookups. IMPORT_MAX_ITEMS is the route-boundary item cap.
 _LOOKUP_CONCURRENCY = 4
 _OPERATION_DEADLINE_SECONDS = 600.0
 IMPORT_MAX_ITEMS = 2000
@@ -79,8 +71,8 @@ class _OperationBudget:
             if time.monotonic() >= self.deadline:
                 return fallback
             try:
-                return await coro_factory()
-            except httpx.HTTPError:
+                return await asyncio.wait_for(coro_factory(), self.deadline - time.monotonic())
+            except (httpx.HTTPError, TimeoutError):
                 return fallback
 
 
@@ -95,6 +87,17 @@ class SteamPreviewItem(msgspec.Struct):
 
 def _wishlist_cover_url(app_id: int) -> str:
     return _WISHLIST_COVER_URL.format(appid=app_id)
+
+
+def _validate_candidate_count(games: Sequence[SteamOwnedGame]) -> None:
+    """The routes already bound the POSTed bodies to IMPORT_MAX_ITEMS, but
+    the no-body paths (full library import/preview, sync + auto-import)
+    get their candidate list straight from Steam's GetOwnedGames, which
+    has no such limit - a Steam account can technically own more than
+    any sane bound. Enforcing here as well keeps the service safe no
+    matter which entry point is used - see issue #184."""
+    if len(games) > IMPORT_MAX_ITEMS:
+        raise ValidationError(f"Steam import is limited to {IMPORT_MAX_ITEMS} items")
 
 
 def _dedupe_app_ids(items: list[SteamWishlistItem]) -> list[int]:
@@ -327,6 +330,7 @@ async def import_library(
     if confirmed_app_ids is not None:
         confirmed = set(confirmed_app_ids)
         games_to_import = [game for game in games_to_import if game.appid in confirmed]
+    _validate_candidate_count(games_to_import)
 
     existing_app_ids = {
         entry.steam_app_id
@@ -424,6 +428,8 @@ async def sync_playtimes_and_import(
     if not user.steam_id:
         raise ValidationError(_STEAM_NOT_LINKED)
     owned_games = await get_owned_games(user.steam_id, api_key)
+    if auto_import:
+        _validate_candidate_count(owned_games)
 
     updated = await sync_playtimes(session, user, api_key, owned_games)
     if auto_import:
@@ -527,6 +533,7 @@ async def preview_library(
     owned_games = await get_owned_games(user.steam_id, api_key)
     if family_steam_ids:
         owned_games = await _merge_family_games(owned_games, family_steam_ids, api_key)
+    _validate_candidate_count(owned_games)
 
     existing_app_ids = {
         entry.steam_app_id
