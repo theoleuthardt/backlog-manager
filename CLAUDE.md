@@ -211,12 +211,14 @@ these commands: check with `gh auth status`, and if it's missing run
 add it and set its status to "Backlog":
 
 ```bash
-gh project item-add 1 --owner theoleuthardt --url https://github.com/theoleuthardt/backlog-manager/issues/<issue-number>
-gh project item-edit --project-id PVT_kwHOA5wDoM4A42Fx --id <item-id> \
+item_id=$(gh project item-add 1 --owner theoleuthardt \
+  --url https://github.com/theoleuthardt/backlog-manager/issues/<issue-number> \
+  --format json | jq -r '.id')
+gh project item-edit --project-id PVT_kwHOA5wDoM4A42Fx --id "$item_id" \
   --field-id PVTSSF_lAHOA5wDoM4A42FxzgtvlFY --single-select-option-id f75ad846
 ```
 
-`item-add` prints the new item's `<item-id>`. The Status field options:
+The Status field options:
 "Backlog" `f75ad846`, "In Progress" `47fc9ee4`, "Review" `f5a30336`,
 "Done" `98236657`. The item's status moves with the workflow — see step 3.
 
@@ -229,12 +231,14 @@ gh issue develop <issue-number> --checkout
 git checkout -b <issue-number>-<short-description>
 
 # Then set the issue's Kanban status to "In Progress" (option id 47fc9ee4):
-gh project item-edit --project-id PVT_kwHOA5wDoM4A42Fx --id <item-id> \
+gh project item-edit --project-id PVT_kwHOA5wDoM4A42Fx --id "$item_id" \
   --field-id PVTSSF_lAHOA5wDoM4A42FxzgtvlFY --single-select-option-id 47fc9ee4
 ```
 
-Find an issue's `<item-id>` with `gh project item-list 1 --owner theoleuthardt
---format json` (match on the issue number in the `content.number` field).
+For an issue that was not just added, look up its `<item-id>` with
+`gh project item-list 1 --owner theoleuthardt --limit 500 --format json`
+(match on the issue number in the `content.number` field — the default limit
+is 30, too low once the board fills up).
 
 ### 4. Update Issue Status in Project
 
@@ -246,7 +250,7 @@ command shape as step 2, only the option id changes):
 - PR merged → **Done** (`98236657`)
 
 ```bash
-gh project item-edit --project-id PVT_kwHOA5wDoM4A42Fx --id <item-id> \
+gh project item-edit --project-id PVT_kwHOA5wDoM4A42Fx --id "$item_id" \
   --field-id PVTSSF_lAHOA5wDoM4A42FxzgtvlFY --single-select-option-id <option-id>
 ```
 
@@ -266,7 +270,7 @@ gh pr create --title "Fix: description" --body "Closes #<issue-number>"
 coderabbit review --agent --base main
 
 # Move the Kanban item to "Review" (option id f5a30336)
-gh project item-edit --project-id PVT_kwHOA5wDoM4A42Fx --id <item-id> \
+gh project item-edit --project-id PVT_kwHOA5wDoM4A42Fx --id "$item_id" \
   --field-id PVTSSF_lAHOA5wDoM4A42FxzgtvlFY --single-select-option-id f5a30336
 ```
 
