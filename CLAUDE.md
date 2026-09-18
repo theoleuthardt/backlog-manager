@@ -235,10 +235,15 @@ gh project item-edit --project-id PVT_kwHOA5wDoM4A42Fx --id "$item_id" \
   --field-id PVTSSF_lAHOA5wDoM4A42FxzgtvlFY --single-select-option-id 47fc9ee4
 ```
 
-For an issue that was not just added, look up its `<item-id>` with
-`gh project item-list 1 --owner theoleuthardt --limit 500 --format json`
-(match on the issue number in the `content.number` field — the default limit
-is 30, too low once the board fills up).
+For an issue that was not just added, look up its item id and assign it to
+`item_id` before any status transitions:
+
+```bash
+item_id=$(gh project item-list 1 --owner theoleuthardt --limit 500 --format json \
+  | jq -r '.items[] | select(.content.number == <issue-number>) | .id')
+```
+
+(The default limit is 30, too low once the board fills up.)
 
 ### 4. Update Issue Status in Project
 
