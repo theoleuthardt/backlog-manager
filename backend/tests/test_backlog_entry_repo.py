@@ -289,6 +289,18 @@ async def test_get_backlog_entry_duplicates_matches_title_case_insensitive(
 
     assert [d.backlog_entry_id for d in duplicates] != []
 
+async def test_get_backlog_entry_duplicates_matches_title_with_surrounding_whitespace(
+    session: AsyncSession,
+) -> None:
+    user = await _make_user(session)
+    entry = await _make_entry(session, user.id, title="  Elden Ring  ")
+
+    duplicates = await backlog_entry_repo.get_backlog_entry_duplicates(
+        session, user.id, title="Elden Ring", steam_app_id=None
+    )
+
+    assert [d.backlog_entry_id for d in duplicates] == [entry.backlog_entry_id]
+
 async def test_get_backlog_entry_duplicates_matches_steam_app_id(
     session: AsyncSession,
 ) -> None:

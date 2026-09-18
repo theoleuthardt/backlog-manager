@@ -23,5 +23,6 @@ docs {
   Pre-create duplicate check for the creation tool: returns the
   logged-in user's entries whose title matches the given title
   (case-insensitive) or whose steam_app_id matches, so the UI can ask
-  whether to add the game anyway. Run auth/Login first.
+  whether to add the game anyway. Returns 400 if title is missing or
+  blank. Run auth/Login first.
 }

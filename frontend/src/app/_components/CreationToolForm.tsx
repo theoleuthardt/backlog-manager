@@ -108,12 +108,6 @@ export function CreationToolForm() {
         Number.isFinite(completionist) && completionist > 0
           ? completionist
           : undefined,
-      // 0 means "not rated yet" here (the input is disabled until status
-      // is "Completed"), not an explicit 0-star rating - sending 0 would
-      // make the entry disappear from the dashboard's default review
-      // filter range ([1, 5]), since the new backend (correctly) stores
-      // whatever numeric value it's given instead of the old tRPC
-      // backend's truthy check silently discarding a literal 0.
       reviewStars: reviewStars > 0 ? reviewStars : undefined,
       review: review ?? undefined,
       note: note ?? undefined,

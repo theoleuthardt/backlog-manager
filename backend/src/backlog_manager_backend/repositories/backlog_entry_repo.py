@@ -98,7 +98,7 @@ async def get_backlog_entry_duplicates(
     user's own entries matching the title (case-insensitive) or the
     steam app id, either of which signals the game is already tracked."""
     conditions = [
-        func.lower(BacklogEntryModel.title) == title.strip().lower(),
+        func.lower(func.trim(BacklogEntryModel.title)) == title.strip().lower(),
     ]
     if steam_app_id is not None:
         conditions.append(BacklogEntryModel.steam_app_id == steam_app_id)
