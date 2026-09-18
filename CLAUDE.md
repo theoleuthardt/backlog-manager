@@ -201,29 +201,54 @@ gh issue view <issue-number>
 gh issue view <issue-number> --json title,body,state,labels,milestone
 ```
 
-### 2. Create Branch for Issue
+### 2. Add Issue to Kanban Project
+
+Every new issue goes onto the repo's **Kanban** GitHub Project (private, and
+it stays private — `gh project` works with your authenticated user's access,
+no public visibility needed). Right after creating an issue, add it and set
+its status to "Backlog":
+
+```bash
+gh project item-add 1 --owner theoleuthardt --url https://github.com/theoleuthardt/backlog-manager/issues/<issue-number>
+gh project item-edit --project-id PVT_kwHOA5wDoM4A42Fx --id <item-id> \
+  --field-id PVTSSF_lAHOA5wDoM4A42FxzgtvlFY --single-select-option-id f75ad846
+```
+
+`item-add` prints the new item's `<item-id>`. The Status field options:
+"Backlog" `f75ad846`, "In Progress" `47fc9ee4`, "Review" `f5a30336`,
+"Done" `98236657`. The item's status moves with the workflow — see step 3.
+
+### 3. Create Branch for Issue
 ```bash
 # Create and checkout branch named after issue
 gh issue develop <issue-number> --checkout
 
 # Or manually create branch following convention: <issue-number>-<short-description>
 git checkout -b <issue-number>-<short-description>
+
+# Then set the issue's Kanban status to "In Progress" (option id 47fc9ee4):
+gh project item-edit --project-id PVT_kwHOA5wDoM4A42Fx --id <item-id> \
+  --field-id PVTSSF_lAHOA5wDoM4A42FxzgtvlFY --single-select-option-id 47fc9ee4
 ```
 
-### 3. Update Issue Status in Project
+Find an issue's `<item-id>` with `gh project item-list 1 --owner theoleuthardt
+--format json` (match on the issue number in the `content.number` field).
+
+### 4. Update Issue Status in Project
+
+Move the issue's Kanban status along with the workflow (same `item-edit`
+command shape as step 2, only the option id changes):
+
+- branch created → **In Progress** (`47fc9ee4`)
+- PR opened → **Review** (`f5a30336`)
+- PR merged → **Done** (`98236657`)
+
 ```bash
-# List project items to find item ID
-gh project item-list <project-number> --owner <owner> --format json
-
-# Update issue status in project board
-gh project item-edit --project-id <project-id> --id <item-id> --field-id <status-field-id> --single-select-option-id <option-id>
-
-# Simpler: Add labels to track status
-gh issue edit <issue-number> --add-label "in progress"
-gh issue edit <issue-number> --remove-label "in progress" --add-label "done"
+gh project item-edit --project-id PVT_kwHOA5wDoM4A42Fx --id <item-id> \
+  --field-id PVTSSF_lAHOA5wDoM4A42FxzgtvlFY --single-select-option-id <option-id>
 ```
 
-### 4. After Completing Work
+### 5. After Completing Work
 ```bash
 # Stage and commit changes
 git add .
@@ -237,15 +262,20 @@ gh pr create --title "Fix: description" --body "Closes #<issue-number>"
 
 # Review the PR's feature branch locally with CodeRabbit (replaces the GitHub App)
 coderabbit review --agent --base main
+
+# Move the Kanban item to "Review" (option id f5a30336)
+gh project item-edit --project-id PVT_kwHOA5wDoM4A42Fx --id <item-id> \
+  --field-id PVTSSF_lAHOA5wDoM4A42FxzgtvlFY --single-select-option-id f5a30336
 ```
 
 The CodeRabbit review runs locally after the PR is opened, via the
 `code-review` Claude Code skill on the feature branch (against `main`), as a
 drop-in replacement for CodeRabbit's GitHub App integration — which is not
 used for this repo. The CLI applies the same `.coderabbit.yaml` rules. Fix
-critical/major findings, commit, and push; the PR updates automatically.
+critical/major findings, commit, and push; the PR updates automatically. Once
+the PR merges, move the Kanban item to "Done" (`98236657`).
 
-### 5. Update Issue Metadata
+### 6. Update Issue Metadata
 ```bash
 # Edit title/body
 gh issue edit <issue-number> --title "New title"
@@ -264,6 +294,8 @@ gh issue edit <issue-number> --add-assignee @me
 # Full workflow example for issue #42
 gh issue view 42
 gh issue develop 42 --checkout
+# Kanban: item-add on creation (Backlog), item-edit to In Progress after branching,
+# Review after the PR, Done after merge — IDs in steps 2-5
 # ... make changes ...
 git add . && git commit -m "feat: implement feature (#42)"
 git push -u origin 42-feature-description
