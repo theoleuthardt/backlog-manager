@@ -90,8 +90,9 @@ findings before merging the PR; commit and push, then re-run the review to
 confirm it comes back clean.
 
 Inside Claude Code, the `code-review` skill wraps this whole loop — running
-the review, parsing the NDJSON, and applying fixes. `coderabbit` is an alias:
-`cr review --agent --base main` works the same.
+the review, parsing the NDJSON, and applying fixes. The canonical executable
+is `coderabbit`; `cr` is its short alias, so `cr review --agent --base main`
+works the same.
 
 ## GitHub App
 
