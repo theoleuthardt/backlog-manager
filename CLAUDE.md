@@ -189,7 +189,7 @@ rather than improvising a different one:
    sessions and CodeRabbit reviews are expected to already know.
 9. **Commit messages and PR descriptions** follow Conventional Commits
    (`feat:`, `fix:`, `docs:`, ...) and close their issue explicitly
-   (`Closes #<n>`) — see step 4 of the workflow below.
+   (`Closes #<n>`) — see step 5 of the workflow below.
 
 ## Issue Management Workflow
 
@@ -205,8 +205,10 @@ gh issue view <issue-number> --json title,body,state,labels,milestone
 
 Every new issue goes onto the repo's **Kanban** GitHub Project (private, and
 it stays private — `gh project` works with your authenticated user's access,
-no public visibility needed). Right after creating an issue, add it and set
-its status to "Backlog":
+no public visibility needed). The gh CLI needs the `project` OAuth scope for
+these commands: check with `gh auth status`, and if it's missing run
+`gh auth refresh -s project` once per machine. Right after creating an issue,
+add it and set its status to "Backlog":
 
 ```bash
 gh project item-add 1 --owner theoleuthardt --url https://github.com/theoleuthardt/backlog-manager/issues/<issue-number>
