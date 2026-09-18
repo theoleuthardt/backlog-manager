@@ -172,8 +172,11 @@ rather than improvising a different one:
    the PR, run the `code-review` Claude Code skill on the feature branch
    (`coderabbit review --agent --base main`). This replaces CodeRabbit's
    GitHub App integration, which is deliberately not used for this repo;
-   the CLI applies the same `.coderabbit.yaml` rules. Fix critical/major
-   findings, commit, and push — don't merge while they're open.
+   the CLI applies the same `.coderabbit.yaml` rules. CLI installation and
+   one-time setup are documented in
+   [`docs/CODERABBIT_CLI.md`](docs/CODERABBIT_CLI.md) — required reading
+   before the first review on a new machine. Fix critical/major findings,
+   commit, and push — don't merge while they're open.
 6. **Every change lands via a PR.** Never close an issue directly — push the
    branch and open a PR that closes the issue (`Closes #<n>`), no matter how
    small the change.
