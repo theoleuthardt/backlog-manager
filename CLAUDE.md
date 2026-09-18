@@ -165,16 +165,25 @@ rather than improvising a different one:
    consistent across the frontend/backend split and the local Postgres
    stack, and it's what CLAUDE.md tells every agent session to prefer.
 4. **Lint and typecheck before calling anything done**: `task lint` (or
-   `npm run check` / `uv run ruff check .` directly). CodeRabbit will flag
-   what these catch anyway — catching it locally first is faster.
-5. **For UI changes, actually run the app** (`task dev`) and click through
+   `npm run check` / `uv run ruff check .` directly). The CodeRabbit review
+   will flag what these catch anyway — catching it locally first is faster.
+5. **Review every PR locally with the CodeRabbit CLI.** Right after opening
+   the PR, run the `code-review` Claude Code skill on the feature branch
+   (`coderabbit review --agent --base main`). This replaces CodeRabbit's
+   GitHub App integration, which is deliberately not used for this repo;
+   the CLI applies the same `.coderabbit.yaml` rules. Fix critical/major
+   findings, commit, and push — don't merge while they're open.
+6. **Every change lands via a PR.** Never close an issue directly — push the
+   branch and open a PR that closes the issue (`Closes #<n>`), no matter how
+   small the change.
+7. **For UI changes, actually run the app** (`task dev`) and click through
    the feature before saying it's done. Passing type checks is not the same
    as a working feature.
-6. **Keep CLAUDE.md itself current.** If you (or an agent) learn something
+8. **Keep CLAUDE.md itself current.** If you (or an agent) learn something
    about the codebase's structure or conventions that isn't written down
    here, add it — this file is the single source of truth both Claude Code
    sessions and CodeRabbit reviews are expected to already know.
-7. **Commit messages and PR descriptions** follow Conventional Commits
+9. **Commit messages and PR descriptions** follow Conventional Commits
    (`feat:`, `fix:`, `docs:`, ...) and close their issue explicitly
    (`Closes #<n>`) — see step 4 of the workflow below.
 
@@ -219,12 +228,18 @@ git commit -m "fix: description of changes (#<issue-number>)"
 # Push to remote
 git push -u origin <branch-name>
 
-# Create PR that auto-closes issue
+# Create PR that auto-closes issue — always, regardless of change size
 gh pr create --title "Fix: description" --body "Closes #<issue-number>"
 
-# Or close issue directly if no PR needed
-gh issue close <issue-number> --comment "Completed in commit <sha>"
+# Review the PR's feature branch locally with CodeRabbit (replaces the GitHub App)
+coderabbit review --agent --base main
 ```
+
+The CodeRabbit review runs locally after the PR is opened, via the
+`code-review` Claude Code skill on the feature branch (against `main`), as a
+drop-in replacement for CodeRabbit's GitHub App integration — which is not
+used for this repo. The CLI applies the same `.coderabbit.yaml` rules. Fix
+critical/major findings, commit, and push; the PR updates automatically.
 
 ### 5. Update Issue Metadata
 ```bash
@@ -249,6 +264,7 @@ gh issue develop 42 --checkout
 git add . && git commit -m "feat: implement feature (#42)"
 git push -u origin 42-feature-description
 gh pr create --title "feat: implement feature" --body "Closes #42"
+coderabbit review --agent --base main
 ```
 
 Next.js's own agent-rules notice now lives in `frontend/AGENTS.md` (with `frontend/CLAUDE.md` pointing to it) since that's where `next dev` resolves it from after the move to `frontend/`.
