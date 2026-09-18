@@ -98,9 +98,12 @@ export function CreationToolForm() {
   const shouldLookUpSteamAppId = !isCustomGame && titleFromUrl.length > 0;
   const steamAppIdQuery = useSteamAppId(shouldLookUpSteamAppId ? title : "");
   const autoSteamAppId = steamAppIdQuery.data;
+  const customSteamAppIdNumber = Number(customSteamAppId.trim());
   const resolvedSteamAppId = isCustomGame
-    ? Number(customSteamAppId) >= 0 && Number.isSafeInteger(Number(customSteamAppId))
-      ? Number(customSteamAppId)
+    ? customSteamAppId.trim() !== "" &&
+        Number.isSafeInteger(customSteamAppIdNumber) &&
+        customSteamAppIdNumber > 0
+      ? customSteamAppIdNumber
       : undefined
     : autoSteamAppId ?? undefined;
 

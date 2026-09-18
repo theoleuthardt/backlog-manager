@@ -177,10 +177,17 @@ async def sync_playtimes(
         owned_games = await get_owned_games(user.steam_id, api_key)
 
     owned_by_app_id = {game.appid: game for game in owned_games}
+    unlinked_title_counts: dict[str, int] = {}
+    for game in owned_games:
+        if game.name.strip().casefold():
+            unlinked_title_counts[game.name.strip().casefold()] = (
+                unlinked_title_counts.get(game.name.strip().casefold(), 0) + 1
+            )
     unlinked_by_title = {
         game.name.strip().casefold(): game
         for game in owned_games
         if game.name.strip().casefold()
+        and unlinked_title_counts[game.name.strip().casefold()] == 1
     }
 
     updated: list[BacklogEntry] = []

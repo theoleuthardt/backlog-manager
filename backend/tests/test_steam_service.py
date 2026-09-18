@@ -150,6 +150,27 @@ async def test_sync_playtimes_requires_exact_title_match_for_unlinked_entries(
     assert updated == []
 
 
+async def test_sync_playtimes_skips_unlinked_entry_with_ambiguous_title(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    await _make_entry(
+        session, user.id, title="Tetris", steam_app_id=None, playtime=Decimal("1.00")
+    )
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [
+            SteamOwnedGame(appid=1001, name="Tetris", playtime_forever=60),
+            SteamOwnedGame(appid=1002, name="TETRIS", playtime_forever=9999),
+        ]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+
+    updated = await steam_service.sync_playtimes(session, user, "api-key")
+
+    assert updated == []
+
+
 async def test_import_library_raises_when_steam_not_linked(session: AsyncSession) -> None:
     user = await _make_user(session, steam_id=None)
 
