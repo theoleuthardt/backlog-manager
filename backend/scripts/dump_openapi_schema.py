@@ -16,6 +16,7 @@ from pathlib import Path
 # signs anything, so any well-formed placeholder is fine here.
 os.environ.setdefault("POSTGRES_URL", "postgresql+asyncpg://user:password@localhost/db")
 os.environ.setdefault("AUTH_SECRET", "schema-generation-only-not-a-real-secret")
+os.environ.setdefault("TOTP_ENCRYPTION_KEY", "schema-generation-only-not-a-real-secret")
 
 from backlog_manager_backend.app import create_app
 

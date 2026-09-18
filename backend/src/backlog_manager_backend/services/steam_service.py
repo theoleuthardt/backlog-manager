@@ -157,11 +157,15 @@ async def sync_playtimes(
     api_key: str,
     owned_games: list[SteamOwnedGame] | None = None,
 ) -> list[BacklogEntry]:
-    """Matches the user's backlog entries to their Steam library by
-    steam_app_id and overwrites playtime with Steam's authoritative
-    value, converted from minutes to hours. Entries with no linked
-    steam_app_id, or whose app isn't in the Steam response, are left
-    untouched rather than cleared.
+    """Matches the user's backlog entries to their Steam library and
+    overwrites playtime with Steam's authoritative value, converted
+    from minutes to hours. Entries link to their Steam library game by
+    steam_app_id; entries with no linked app id fall back to an exact
+    (case-insensitive) title match so entries created before the app-id
+    lookup resolved still get their playtime synced (Steam writes
+    "ELDEN RING", the backlog may hold "Elden Ring" - see issue #176).
+    Entries matched by neither, or whose app isn't in the Steam
+    response, are left untouched rather than cleared.
 
     Accepts an already-fetched owned_games snapshot so callers that
     also run import_library (see sync_playtimes_and_import) hit Steam's
@@ -173,12 +177,26 @@ async def sync_playtimes(
         owned_games = await get_owned_games(user.steam_id, api_key)
 
     owned_by_app_id = {game.appid: game for game in owned_games}
+    unlinked_title_counts: dict[str, int] = {}
+    for game in owned_games:
+        if game.name.strip().casefold():
+            unlinked_title_counts[game.name.strip().casefold()] = (
+                unlinked_title_counts.get(game.name.strip().casefold(), 0) + 1
+            )
+    unlinked_by_title = {
+        game.name.strip().casefold(): game
+        for game in owned_games
+        if game.name.strip().casefold()
+        and unlinked_title_counts[game.name.strip().casefold()] == 1
+    }
 
     updated: list[BacklogEntry] = []
     for entry in await backlog_entry_repo.get_backlog_entries_by_user(session, user.id):
-        if entry.steam_app_id is None:
-            continue
-        owned_game = owned_by_app_id.get(entry.steam_app_id)
+        owned_game = (
+            owned_by_app_id.get(entry.steam_app_id)
+            if entry.steam_app_id is not None
+            else unlinked_by_title.get((entry.title or "").strip().casefold())
+        )
         if owned_game is None:
             continue
         playtime = _minutes_to_hours(owned_game.playtime_forever)

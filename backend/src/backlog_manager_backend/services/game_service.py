@@ -8,10 +8,12 @@ import structlog
 from backlog_manager_backend.integrations.howlongtobeat import search_game_on_hltb
 from backlog_manager_backend.integrations.igdb import (
     generate_igdb_token,
+    get_companies_on_igdb,
     get_covers_on_igdb,
     get_games_on_igdb,
     get_games_time_to_beat_on_igdb,
     get_genres_on_igdb,
+    get_involved_companies_on_igdb,
     get_platforms_on_igdb,
     search_game_on_igdb,
 )
@@ -23,6 +25,7 @@ from backlog_manager_backend.integrations.types import (
     EnrichedResult,
     IGDBCover,
     IGDBGameData,
+    IGDBInvolvedCompany,
     IGDBSearchResult,
 )
 
@@ -55,6 +58,8 @@ _EXCLUDED_GAME_TYPES = {1, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14}
 _token_cache: dict[tuple[str, str], dict[str, object]] = {}
 _genre_cache: dict[int, str] = {}
 _platform_cache: dict[int, str] = {}
+_involved_company_cache: dict[int, IGDBInvolvedCompany] = {}
+_company_cache: dict[int, str] = {}
 # Unbounded, no-TTL, same style as the genre/platform caches above -
 # directly serves issue #105's "cache requests for game information" ask.
 _game_cache: dict[int, IGDBGameData] = {}
@@ -325,6 +330,46 @@ async def _enrich_search_results(
         except httpx.HTTPError:
             logger.error("Failed to fetch platforms batch")
 
+    involved_company_ids = {
+        involved_company_id
+        for game in games
+        for involved_company_id in (game.involved_companies or [])
+    }
+    uncached_involved_company_ids = [
+        involved_company_id
+        for involved_company_id in involved_company_ids
+        if involved_company_id not in _involved_company_cache
+    ]
+    if uncached_involved_company_ids:
+        try:
+            for involved_company in await get_involved_companies_on_igdb(
+                uncached_involved_company_ids, client_id, access_token
+            ):
+                _involved_company_cache[involved_company.id] = involved_company
+        except httpx.HTTPError:
+            logger.error("Failed to fetch involved companies batch")
+
+    publisher_company_ids = {
+        involved.company
+        for game in games
+        for involved_company_id in (game.involved_companies or [])
+        if (involved := _involved_company_cache.get(involved_company_id)) is not None
+        and involved.publisher
+        and involved.company is not None
+    }
+    uncached_publisher_company_ids = [
+        company_id for company_id in publisher_company_ids if company_id not in _company_cache
+    ]
+    if uncached_publisher_company_ids:
+        try:
+            for company in await get_companies_on_igdb(
+                uncached_publisher_company_ids, client_id, access_token
+            ):
+                if company.name:
+                    _company_cache[company.id] = company.name
+        except httpx.HTTPError:
+            logger.error("Failed to fetch companies batch")
+
     time_to_beat_by_game_id: dict[int, tuple[int, float, float, float]] = {}
     uncached_time_to_beat_ids = [
         game.id for game in games if game.id not in _time_to_beat_cache
@@ -388,6 +433,15 @@ async def _enrich_search_results(
                 time_to_beat_by_game_id.get(game.id, (game.id, 0.0, 0.0, 0.0))
             )
 
+            publisher_name: str | None = None
+            for involved_company_id in game.involved_companies or []:
+                involved = _involved_company_cache.get(involved_company_id)
+                if involved is not None and involved.publisher:
+                    name = _company_cache.get(involved.company) if involved.company else None
+                    if name:
+                        publisher_name = name
+                        break
+
             results.append(
                 EnrichedResult(
                     id=game.id,
@@ -399,6 +453,8 @@ async def _enrich_search_results(
                     main_story=main_story,
                     main_story_with_extras=main_story_with_extras,
                     completionist=completionist,
+                    description=game.summary,
+                    publisher=publisher_name,
                 )
             )
         except httpx.HTTPError:
@@ -448,14 +504,18 @@ def _remember_steam_app_id(title: str, app_id: int | None) -> None:
 
 
 async def find_steam_app_id(title: str) -> int | None:
-    """Resolves a Steam App ID via the storefront search (Steam ranks by
-    relevance, so the first type=="app" hit wins) - used to prefill the
-    Steam App ID field when creating a backlog entry from an IGDB search
-    result, since IGDB has no Steam App ID mapping of its own. Replaces
-    the retired ISteamApps/GetAppList catalogue lookup (see issue #183):
-    no more full-catalogue fetch, each title resolves with one search
-    request instead. A lookup failure resolves to None rather than
-    raising, since this is a best-effort prefill."""
+    """Resolves a Steam App ID via the storefront search - used to
+    prefill the Steam App ID field when creating a backlog entry from an
+    IGDB search result, since IGDB has no Steam App ID mapping of its
+    own. Replaces the retired ISteamApps/GetAppList catalogue lookup
+    (see issue #183): no more full-catalogue fetch, each title resolves
+    with one search request instead. Steam's relevance ranking can put
+    an unrelated app ahead of the searched title, so hits whose name
+    matches the title case-insensitively (after stripping trademark
+    symbols - Steam writes "ELDEN RING", IGDB "Elden Ring", see issue
+    #176) win over the storefront's own ranking, falling back to the
+    first type=="app" hit when none matches. A lookup failure resolves
+    to None rather than raising, since this is a best-effort prefill."""
     normalized = _normalize_game_title(title)
     async with _steam_app_id_lock:
         cached = _steam_app_id_by_title.get(normalized)
@@ -469,11 +529,11 @@ async def find_steam_app_id(title: str) -> int | None:
     except httpx.HTTPError:
         logger.error("Failed to search Steam store", title=title)
         return None
-    app_id: int | None = None
-    for item in items:
-        if item.type == "app" and item.id:
-            app_id = item.id
-            break
+    app_hits = [item for item in items if item.type == "app" and item.id]
+    matching_hits = [
+        item for item in app_hits if _normalize_game_title(item.name) == normalized
+    ]
+    app_id = matching_hits[0].id if matching_hits else (app_hits[0].id if app_hits else None)
     async with _steam_app_id_lock:
         _remember_steam_app_id(normalized, app_id)
     return app_id
