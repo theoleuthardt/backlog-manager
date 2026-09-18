@@ -39,13 +39,17 @@ review, or start it explicitly:
 
 ```bash
 coderabbit auth login
+
+# EU SaaS region (saved and reused for reviews once chosen)
+coderabbit auth login --region eu
 ```
 
 Check the current status with `coderabbit auth status`.
 
 ## Running a review
 
-From the feature branch (after the PR is opened):
+From the feature branch (before or after opening the PR — the CLI reviews
+the diff against `main`, not the PR object):
 
 ```bash
 coderabbit review --agent --base main
@@ -53,18 +57,18 @@ coderabbit review --agent --base main
 
 - `--base main` diffs the feature branch against `main`, so only the change
   under review is analyzed.
-- `--agent` emits NDJSON with structured findings (severity, file,
-  codegenInstructions) instead of the human walkthrough.
+- `--agent` emits NDJSON with structured findings (severity, `fileName`,
+  `codegenInstructions`) instead of the human walkthrough.
 - The same [`.coderabbit.yaml`](../.coderabbit.yaml) rules that the GitHub App
   used apply to CLI reviews — no separate configuration is needed.
 
 Output is NDJSON: one JSON object per line, ending in a
 `{"type":"complete", ...}` event. A heartbeat line only means the review is
-still running. Before trusting the result: reject the run if any
-`{"type":"error", ...}` event appears or the output is interrupted, and
-treat `complete` with `status: "review_skipped"` (zero findings) as
-unsuccessful — that means no review ran. Only after a `complete` without
-either does the `findings` count say anything.
+still running. Before trusting the result: the process must exit with code 0,
+and the run is unsuccessful if any `{"type":"error", ...}` event appears, the
+output is interrupted, or `complete` carries `status: "review_skipped"` —
+that means no review ran. Only after all of that passes does the `findings`
+count say anything.
 
 Useful scope variants:
 
@@ -87,8 +91,11 @@ the review, parsing the NDJSON, and applying fixes. `coderabbit` is an alias:
 
 ## Disabling the GitHub App
 
-Reviews come from either the CLI or the App, not both. If the `coderabbitai`
-App is still installed on the repository (it shows up as a reviewer/commenter
-on PRs), remove it so reviews don't run twice: GitHub → Settings →
-Applications → Installed GitHub Apps → CodeRabbit → Configure, remove the
-repository. Its PR comments stop immediately; the CLI is unaffected.
+This repo's policy is to review with the CLI instead of the App; leaving the
+`coderabbitai` App installed alongside can duplicate reviews. If it still
+shows up as a reviewer/commenter on PRs, remove it: personal account →
+GitHub → Settings → Applications → Installed GitHub Apps → CodeRabbit →
+Configure, remove the repository. For an organization installation, use the
+organization's Settings → Third-party Access → GitHub Apps (or the
+repository's Settings → Integrations → GitHub Apps) instead. Its PR comments
+stop immediately; the CLI is unaffected.
