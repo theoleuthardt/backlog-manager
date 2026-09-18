@@ -21,7 +21,7 @@ import { Loader2, Check, X } from "lucide-react";
 import { StatusSelect } from "components/StatusSelect";
 import { useCreateBacklogEntry } from "~/hooks/useBacklog";
 import { getEntryDuplicates } from "~/lib/api/backlog";
-import type { BacklogEntryData } from "~/lib/api/backlog";
+import type { BacklogEntryData, CreateBacklogEntryInput } from "~/lib/api/backlog";
 import { useSteamAppId } from "~/hooks/useGameSearch";
 import { toast } from "sonner";
 
@@ -78,40 +78,33 @@ export function CreationToolForm() {
       ? displayedSteamAppIdNumber
       : undefined;
 
-  const createEntry = async () => {
-    const genreList = genre
-      .split(",")
-      .map((g) => g.trim())
-      .filter(Boolean);
-    const platformList = platform
-      .split(",")
-      .map((p) => p.trim())
-      .filter(Boolean);
+  const buildPayload = (): CreateBacklogEntryInput => ({
+    title,
+    genre: genre.split(",").map((g) => g.trim()).filter(Boolean),
+    platform: platform.split(",").map((p) => p.trim()).filter(Boolean),
+    status,
+    owned,
+    interest,
+    playtime,
+    steamAppId: resolvedSteamAppId,
+    imageLink: imageUrl,
+    mainTime:
+      Number.isFinite(mainStory) && mainStory > 0 ? mainStory : undefined,
+    mainPlusExtraTime:
+      Number.isFinite(mainStoryWithExtras) && mainStoryWithExtras > 0
+        ? mainStoryWithExtras
+        : undefined,
+    completionTime:
+      Number.isFinite(completionist) && completionist > 0
+        ? completionist
+        : undefined,
+    reviewStars: reviewStars > 0 ? reviewStars : undefined,
+    review: review ?? undefined,
+    note: note ?? undefined,
+  });
 
-    await createEntryMutation.mutateAsync({
-      title,
-      genre: genreList,
-      platform: platformList,
-      status,
-      owned,
-      interest,
-      playtime,
-      steamAppId: resolvedSteamAppId,
-      imageLink: imageUrl,
-      mainTime:
-        Number.isFinite(mainStory) && mainStory > 0 ? mainStory : undefined,
-      mainPlusExtraTime:
-        Number.isFinite(mainStoryWithExtras) && mainStoryWithExtras > 0
-          ? mainStoryWithExtras
-          : undefined,
-      completionTime:
-        Number.isFinite(completionist) && completionist > 0
-          ? completionist
-          : undefined,
-      reviewStars: reviewStars > 0 ? reviewStars : undefined,
-      review: review ?? undefined,
-      note: note ?? undefined,
-    });
+  const createEntry = async (payload: CreateBacklogEntryInput) => {
+    await createEntryMutation.mutateAsync(payload);
 
     setCreateStatus("success");
     toast.success("Entry created successfully!");
@@ -123,7 +116,7 @@ export function CreationToolForm() {
     setDuplicates(null);
     setIsLoading(true);
     try {
-      await createEntry();
+      await createEntry(buildPayload());
     } catch (error) {
       console.error("Error creating backlog entry:", error);
       setCreateStatus("error");
@@ -143,35 +136,31 @@ export function CreationToolForm() {
     e.preventDefault();
     setCreateStatus("idle");
 
-    const genreList = genre
-      .split(",")
-      .map((g) => g.trim())
-      .filter(Boolean);
-    const platformList = platform
-      .split(",")
-      .map((p) => p.trim())
-      .filter(Boolean);
-    if (genreList.length === 0) {
+    const payload = buildPayload();
+    if (payload.genre.length === 0) {
       toast.error("Please enter at least one genre");
       return;
     }
-    if (platformList.length === 0) {
+    if (payload.platform.length === 0) {
       toast.error("Please enter at least one platform");
       return;
     }
-    if (!status) {
+    if (!payload.status) {
       toast.error("Please select a status");
       return;
     }
 
     setIsLoading(true);
     try {
-      const found = await getEntryDuplicates(title, resolvedSteamAppId);
+      const found = await getEntryDuplicates(
+        payload.title,
+        payload.steamAppId,
+      );
       if (found.length > 0) {
         setDuplicates(found);
         return;
       }
-      await createEntry();
+      await createEntry(payload);
     } catch (error) {
       console.error("Error creating backlog entry:", error);
       setCreateStatus("error");
