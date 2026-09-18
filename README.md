@@ -51,9 +51,19 @@ the `Local` environment, and run `auth/Login` first to populate the shared
 
 ## Local Development
 
-Requires [go-task](https://taskfile.dev) and [Podman](https://podman.io/) with a
-Compose provider installed (`podman-compose`, e.g. `brew install podman-compose`
-on macOS) — `podman compose` delegates to whichever provider is on your `PATH`.
+Everything runs through [`go-task`](https://taskfile.dev) (`task`), which
+wraps the Node and uv toolchains plus the local Podman compose stack. Install
+these once before your first `task install`:
+
+| Tool | Why |
+| ---- | --- |
+| [Node.js 20+](https://nodejs.org) (or [nvm](https://github.com/nvm-sh/nvm)) | runs the Next.js frontend |
+| [uv](https://docs.astral.sh/uv/) | Python backend dependency and tool management |
+| [go-task](https://taskfile.dev) | unified command surface for every repo command |
+| [Podman](https://podman.io/) + a Compose provider | local Postgres stack (`podman-compose`, e.g. `brew install podman-compose` on macOS — `podman compose` delegates to whichever provider is on your `PATH`) |
+| [GitHub CLI](https://cli.github.com/) (`gh`) | the issue → branch → PR workflow: `gh issue`, `gh pr`, authentication included |
+| [Bruno](https://www.usebruno.com/) | GUI for the API request collection in [`bruno/`](bruno/) |
+| [CodeRabbit CLI](https://docs.coderabbit.ai/cli) (`coderabbit`) | local code reviews of every PR — see [`docs/CODERABBIT_CLI.md`](docs/CODERABBIT_CLI.md) for installation and one-time setup |
 
 ```bash
 task install   # npm install (frontend) + uv sync (backend)
