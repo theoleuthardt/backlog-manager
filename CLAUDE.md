@@ -164,9 +164,10 @@ rather than improvising a different one:
    [Commands](#commands). This is what keeps Claude Code's tool calls
    consistent across the frontend/backend split and the local Postgres
    stack, and it's what CLAUDE.md tells every agent session to prefer.
-4. **Lint and typecheck before calling anything done**: `task lint` (or
-   `npm run check` / `uv run ruff check .` directly). The CodeRabbit review
-   will flag what these catch anyway — catching it locally first is faster.
+4. **Lint and typecheck before calling anything done**: `task check` (frontend
+   lint + typecheck, backend lint — `task lint` covers lint only). The
+   CodeRabbit review will flag what these catch anyway — catching it
+   locally first is faster.
 5. **Review every PR locally with the CodeRabbit CLI.** Right after opening
    the PR, run the `code-review` Claude Code skill on the feature branch
    (`coderabbit review --agent --base main`). This replaces CodeRabbit's
