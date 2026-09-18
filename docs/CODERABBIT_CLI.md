@@ -1,11 +1,12 @@
 # CodeRabbit CLI Setup
 
 This repo invokes CodeRabbit reviews locally through the CLI on the feature
-branch, as a replacement for CodeRabbit's GitHub App integration — the App is
-deliberately not used (see the "Working with Claude Code" section in the root
-[`CLAUDE.md`](../CLAUDE.md) for where the review sits in the workflow). The
-CLI runs on your machine, but it sends the reviewed diffs to the CodeRabbit
-API for analysis — nothing about "local" means the code stays on your disk.
+branch; the GitHub App integration that used to post PR comments has been
+removed from this repository (see the "Working with Claude Code" section in
+the root [`CLAUDE.md`](../CLAUDE.md) for where the review sits in the
+workflow). The CLI runs on your machine, but it sends the reviewed diffs to
+the CodeRabbit API for analysis — nothing about "local" means the code stays
+on your disk.
 
 ## Installation
 
@@ -18,9 +19,12 @@ brew install coderabbit
 # Install script (macOS/Linux) — fallback; downloads and executes a remote
 # script, so prefer Homebrew where it's available
 curl -fsSL https://cli.coderabbit.ai/install.sh | sh
+```
 
-# Windows (PowerShell); the installer verifies the downloaded binary's
-# Authenticode signature
+```powershell
+# Windows; the install.ps1 bootstrap downloads and executes immediately —
+# the Authenticode check covers the coderabbit.exe binary it fetches, not
+# the script itself
 irm https://cli.coderabbit.ai/install.ps1 | iex
 ```
 
@@ -89,13 +93,21 @@ Inside Claude Code, the `code-review` skill wraps this whole loop — running
 the review, parsing the NDJSON, and applying fixes. `coderabbit` is an alias:
 `cr review --agent --base main` works the same.
 
-## Disabling the GitHub App
+## GitHub App
 
-This repo's policy is to review with the CLI instead of the App; leaving the
-`coderabbitai` App installed alongside can duplicate reviews. If it still
-shows up as a reviewer/commenter on PRs, remove it: personal account →
-GitHub → Settings → Applications → Installed GitHub Apps → CodeRabbit →
-Configure, remove the repository. For an organization installation, use the
-organization's Settings → Third-party Access → GitHub Apps (or the
-repository's Settings → Integrations → GitHub Apps) instead. Its PR comments
-stop immediately; the CLI is unaffected.
+The `coderabbitai` GitHub App integration has been removed from this
+repository; the local CLI is the only review path, and the App should not be
+re-installed alongside it — running both would duplicate every review. If it
+ever needs removing again: personal account → GitHub → Settings →
+Applications → Installed GitHub Apps → CodeRabbit → Configure; for an
+organization installation, the organization's Settings → Third-party Access →
+GitHub Apps (or the repository's Settings → Integrations → GitHub Apps).
+
+## Two-developer workflow
+
+The repo is developed by a single person right now, so no PR approval is
+required. As soon as two developers work on the project again (each with
+their own Claude Code and CodeRabbit CLI setup), the branch protection
+rules must require an approval from the other person on every PR before
+merge — the local CLI review replaces the App's automated review, not human
+review.
