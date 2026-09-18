@@ -1,6 +1,6 @@
 "use client";
 import { AchievementProgress, GameImage } from "components/index";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -17,7 +17,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
-import { Loader2, Check, X } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "shadcn_components/ui/select";
+import { Loader2, Check, X, ArrowLeft } from "lucide-react";
 import { StatusSelect } from "components/StatusSelect";
 import { useCreateBacklogEntry } from "~/hooks/useBacklog";
 import { getEntryDuplicates } from "~/lib/api/backlog";
@@ -25,91 +32,110 @@ import type { BacklogEntryData, CreateBacklogEntryInput } from "~/lib/api/backlo
 import { useSteamAppId } from "~/hooks/useGameSearch";
 import { toast } from "sonner";
 
+const NO_SPINNER_CLASS =
+  "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
+
 export function CreationToolForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const title = searchParams.get("title") ?? "";
-  const imageUrl = searchParams.get("imageUrl") ?? "";
+  const isCustomGame = searchParams.get("custom") === "1";
+  const titleFromUrl = searchParams.get("title") ?? "";
+  const imageUrlFromUrl = searchParams.get("imageUrl") ?? "";
+  const descriptionFromUrl = searchParams.get("description") ?? "";
+  const publisherFromUrl = searchParams.get("publisher") ?? "";
   const genresFromUrl = searchParams.get("genres") ?? "";
   const platformsFromUrl = searchParams.get("platforms") ?? "";
-  const mainStory = Number.parseFloat(searchParams.get("mainStory") ?? "0");
-  const mainStoryWithExtras = Number.parseFloat(
+  const mainStoryFromUrl = Number.parseFloat(
+    searchParams.get("mainStory") ?? "0",
+  );
+  const mainStoryWithExtrasFromUrl = Number.parseFloat(
     searchParams.get("mainStoryWithExtras") ?? "0",
   );
-  const completionist = Number.parseFloat(
+  const completionistFromUrl = Number.parseFloat(
     searchParams.get("completionist") ?? "0",
   );
-  const steamAppIdFromUrl = searchParams.get("steamAppId") ?? "";
 
   const hasHltbData =
-    mainStory > 0 || mainStoryWithExtras > 0 || completionist > 0;
-  const hasMissingData = !imageUrl || !hasHltbData;
+    mainStoryFromUrl > 0 ||
+    mainStoryWithExtrasFromUrl > 0 ||
+    completionistFromUrl > 0;
+  const hasMissingData = !imageUrlFromUrl || !hasHltbData;
 
+  const [title, setTitle] = useState(titleFromUrl);
+  const [imageUrl, setImageUrl] = useState(imageUrlFromUrl);
   const [genre, setGenre] = useState(genresFromUrl);
-  const [platform, setPlatform] = useState(platformsFromUrl);
   const [status, setStatus] = useState("");
   const [owned, setOwned] = useState(false);
   const [interest, setInterest] = useState(5);
   const [reviewStars, setReviewStars] = useState(0);
   const [review, setReview] = useState("");
   const [note, setNote] = useState("");
-  const [playtime, setPlaytime] = useState(0);
-  const [steamAppId, setSteamAppId] = useState(steamAppIdFromUrl);
-  const [steamAppIdTouched, setSteamAppIdTouched] = useState(false);
-  const shouldLookUpSteamAppId =
-    title.length > 0 && steamAppIdFromUrl.trim() === "";
-  const steamAppIdQuery = useSteamAppId(shouldLookUpSteamAppId ? title : "");
+  const [playtime, setPlaytime] = useState("0");
+  const [customSteamAppId, setCustomSteamAppId] = useState("");
+  const platformOptions = platformsFromUrl
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const [platform, setPlatform] = useState(
+    platformOptions[0] ?? "",
+  );
+  const [mainStory, setMainStory] = useState(
+    Number.isFinite(mainStoryFromUrl) ? String(mainStoryFromUrl) : "0",
+  );
+  const [mainStoryWithExtras, setMainStoryWithExtras] = useState(
+    Number.isFinite(mainStoryWithExtrasFromUrl)
+      ? String(mainStoryWithExtrasFromUrl)
+      : "0",
+  );
+  const [completionist, setCompletionist] = useState(
+    Number.isFinite(completionistFromUrl) ? String(completionistFromUrl) : "0",
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [createStatus, setCreateStatus] = useState<
     "idle" | "success" | "error"
   >("idle");
 
+  const shouldLookUpSteamAppId = !isCustomGame && titleFromUrl.length > 0;
+  const steamAppIdQuery = useSteamAppId(shouldLookUpSteamAppId ? title : "");
+  const autoSteamAppId = steamAppIdQuery.data;
+  const resolvedSteamAppId = isCustomGame
+    ? Number(customSteamAppId) >= 0 && Number.isSafeInteger(Number(customSteamAppId))
+      ? Number(customSteamAppId)
+      : undefined
+    : autoSteamAppId ?? undefined;
+
   const createEntryMutation = useCreateBacklogEntry();
   const [duplicates, setDuplicates] = useState<BacklogEntryData[] | null>(null);
 
-  const displayedSteamAppId =
-    steamAppIdTouched || steamAppIdQuery.data == null
-      ? steamAppId
-      : steamAppIdQuery.data.toString();
-  const displayedSteamAppIdNumber = Number(displayedSteamAppId);
-  const resolvedSteamAppId =
-    displayedSteamAppId.trim() &&
-    Number.isSafeInteger(displayedSteamAppIdNumber) &&
-    displayedSteamAppIdNumber >= 0
-      ? displayedSteamAppIdNumber
-      : undefined;
-
   const buildPayload = (): CreateBacklogEntryInput => ({
-    title,
+    title: title.trim(),
     genre: genre.split(",").map((g) => g.trim()).filter(Boolean),
-    platform: platform.split(",").map((p) => p.trim()).filter(Boolean),
+    platform: [platform.trim()].filter(Boolean),
     status,
     owned,
     interest,
-    playtime,
+    playtime: Number.parseFloat(playtime) || 0,
     steamAppId: resolvedSteamAppId,
-    imageLink: imageUrl,
-    mainTime:
-      Number.isFinite(mainStory) && mainStory > 0 ? mainStory : undefined,
+    imageLink: imageUrl.trim() || undefined,
+    mainTime: Number.parseFloat(mainStory) > 0 ? Number.parseFloat(mainStory) : undefined,
     mainPlusExtraTime:
-      Number.isFinite(mainStoryWithExtras) && mainStoryWithExtras > 0
-        ? mainStoryWithExtras
+      Number.parseFloat(mainStoryWithExtras) > 0
+        ? Number.parseFloat(mainStoryWithExtras)
         : undefined,
     completionTime:
-      Number.isFinite(completionist) && completionist > 0
-        ? completionist
+      Number.parseFloat(completionist) > 0
+        ? Number.parseFloat(completionist)
         : undefined,
     reviewStars: reviewStars > 0 ? reviewStars : undefined,
-    review: review ?? undefined,
-    note: note ?? undefined,
+    review: review || undefined,
+    note: note || undefined,
   });
 
   const createEntry = async (payload: CreateBacklogEntryInput) => {
     await createEntryMutation.mutateAsync(payload);
 
-    setCreateStatus("success");
     toast.success("Entry created successfully!");
-
-    setTimeout(() => setCreateStatus("idle"), 2000);
+    setTimeout(() => router.push("/dashboard"), 800);
   };
 
   const handleAddAnyway = async () => {
@@ -137,12 +163,16 @@ export function CreationToolForm() {
     setCreateStatus("idle");
 
     const payload = buildPayload();
+    if (!payload.title) {
+      toast.error("Please enter a title");
+      return;
+    }
     if (payload.genre.length === 0) {
       toast.error("Please enter at least one genre");
       return;
     }
     if (payload.platform.length === 0) {
-      toast.error("Please enter at least one platform");
+      toast.error("Please select a platform");
       return;
     }
     if (!payload.status) {
@@ -216,11 +246,11 @@ export function CreationToolForm() {
         Creation Tool for <span className="text-blue-500">{title}</span>
       </h1>
 
-      {hasMissingData && (
+      {!isCustomGame && hasMissingData && (
         <div className="mb-4 rounded-lg border-2 border-yellow-600 bg-yellow-900/20 p-4 text-center text-yellow-200">
           <p className="font-semibold">⚠️ Warning: Missing game data</p>
           <p className="text-sm">
-            {!imageUrl && "No image found. "}
+            {!imageUrlFromUrl && "No image found. "}
             {!hasHltbData && "No game beat times found. "}
             Consider searching for the game again in the searchbar to get
             complete data.
@@ -230,7 +260,7 @@ export function CreationToolForm() {
 
       <form onSubmit={handleSubmit}>
         <div className="flex flex-col gap-4 lg:flex-row lg:gap-8">
-          <div className="flex justify-center lg:w-64 lg:shrink-0">
+          <div className="flex flex-col items-center gap-4 lg:w-64 lg:shrink-0">
             <GameImage
               src={imageUrl}
               alt={title}
@@ -238,6 +268,33 @@ export function CreationToolForm() {
               height={270}
               className="rounded-lg"
             />
+            {isCustomGame && (
+              <div className="w-full space-y-1">
+                <Label htmlFor="imageUrl" className="text-sm">
+                  Image URL
+                </Label>
+                <Input
+                  id="imageUrl"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="https://example.com/cover.jpg"
+                  className="bg-black text-white"
+                />
+              </div>
+            )}
+            {publisherFromUrl && (
+              <p className="w-full text-center text-sm text-gray-400">
+                Published by{" "}
+                <span className="font-semibold text-white">
+                  {publisherFromUrl}
+                </span>
+              </p>
+            )}
+            {descriptionFromUrl && (
+              <p className="max-h-48 w-full overflow-y-auto text-justify text-sm text-gray-300">
+                {descriptionFromUrl}
+              </p>
+            )}
           </div>
 
           <div className="flex-1">
@@ -252,9 +309,12 @@ export function CreationToolForm() {
                     <Input
                       id="mainStory"
                       type="number"
+                      step="0.1"
+                      min="0"
                       value={mainStory}
-                      disabled
-                      className="[appearance:textfield] bg-black text-sm text-white [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                      onChange={(e) => setMainStory(e.target.value)}
+                      disabled={!isCustomGame}
+                      className={`${NO_SPINNER_CLASS} bg-black text-sm text-white disabled:opacity-70`}
                     />
                   </div>
                   <div>
@@ -267,9 +327,12 @@ export function CreationToolForm() {
                     <Input
                       id="mainStoryWithExtras"
                       type="number"
+                      step="0.1"
+                      min="0"
                       value={mainStoryWithExtras}
-                      disabled
-                      className="[appearance:textfield] bg-black text-sm text-white [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                      onChange={(e) => setMainStoryWithExtras(e.target.value)}
+                      disabled={!isCustomGame}
+                      className={`${NO_SPINNER_CLASS} bg-black text-sm text-white disabled:opacity-70`}
                     />
                   </div>
                   <div>
@@ -279,13 +342,30 @@ export function CreationToolForm() {
                     <Input
                       id="completionist"
                       type="number"
+                      step="0.1"
+                      min="0"
                       value={completionist}
-                      disabled
-                      className="[appearance:textfield] bg-black text-sm text-white [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                      onChange={(e) => setCompletionist(e.target.value)}
+                      disabled={!isCustomGame}
+                      className={`${NO_SPINNER_CLASS} bg-black text-sm text-white disabled:opacity-70`}
                     />
                   </div>
                 </div>
               </div>
+
+              {isCustomGame && (
+                <div className="space-y-1">
+                  <Label htmlFor="title" className="text-sm">
+                    Title
+                  </Label>
+                  <Input
+                    id="title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="bg-black text-white"
+                  />
+                </div>
+              )}
 
               <div className="space-y-1">
                 <Label htmlFor="genre" className="text-sm">
@@ -304,13 +384,31 @@ export function CreationToolForm() {
                 <Label htmlFor="platform" className="text-sm">
                   Platform
                 </Label>
-                <Input
-                  id="platform"
-                  value={platform}
-                  onChange={(e) => setPlatform(e.target.value)}
-                  placeholder="PC, PlayStation, Xbox"
-                  className="bg-black text-white"
-                />
+                {platformOptions.length > 0 ? (
+                  <Select value={platform} onValueChange={setPlatform}>
+                    <SelectTrigger
+                      id="platform"
+                      className="w-full bg-black text-white"
+                    >
+                      <SelectValue placeholder="Select a platform" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {platformOptions.map((platformOption) => (
+                        <SelectItem key={platformOption} value={platformOption}>
+                          {platformOption}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    id="platform"
+                    value={platform}
+                    onChange={(e) => setPlatform(e.target.value)}
+                    placeholder="PC, PlayStation, Xbox"
+                    className="bg-black text-white"
+                  />
+                )}
               </div>
 
               <div className="space-y-1">
@@ -334,10 +432,8 @@ export function CreationToolForm() {
                   min="0"
                   step="0.1"
                   value={playtime}
-                  onChange={(e) =>
-                    setPlaytime(Number.parseFloat(e.target.value) || 0)
-                  }
-                  className="bg-black text-white"
+                  onChange={(e) => setPlaytime(e.target.value)}
+                  className={`${NO_SPINNER_CLASS} bg-black text-white`}
                 />
               </div>
 
@@ -351,18 +447,30 @@ export function CreationToolForm() {
                     <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
                   )}
                 </Label>
-                <Input
-                  id="steamAppId"
-                  type="number"
-                  min="0"
-                  value={displayedSteamAppId}
-                  onChange={(e) => {
-                    setSteamAppIdTouched(true);
-                    setSteamAppId(e.target.value);
-                  }}
-                  placeholder="e.g. 504230"
-                  className="bg-black text-white"
-                />
+                {isCustomGame ? (
+                  <Input
+                    id="steamAppId"
+                    type="number"
+                    min="0"
+                    value={customSteamAppId}
+                    onChange={(e) => setCustomSteamAppId(e.target.value)}
+                    placeholder="e.g. 504230 - enables cover picker and price tracking"
+                    className={`${NO_SPINNER_CLASS} bg-black text-white`}
+                  />
+                ) : autoSteamAppId != null ? (
+                  <Input
+                    id="steamAppId"
+                    value={autoSteamAppId}
+                    disabled
+                    className={`${NO_SPINNER_CLASS} bg-black text-white disabled:opacity-70`}
+                  />
+                ) : (
+                  <p className="text-sm text-gray-400">
+                    {steamAppIdQuery.isPending
+                      ? "Looking up on Steam..."
+                      : "No Steam App ID found for this game."}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1 lg:col-span-2">
@@ -382,7 +490,7 @@ export function CreationToolForm() {
                   onChange={(e) =>
                     setInterest(Number.parseInt(e.target.value) || 1)
                   }
-                  className="bg-black text-white"
+                  className={`${NO_SPINNER_CLASS} bg-black text-white`}
                 />
               </div>
 
@@ -401,7 +509,7 @@ export function CreationToolForm() {
                     setReviewStars(Number.parseFloat(e.target.value) || 0)
                   }
                   disabled={status !== "Completed"}
-                  className="bg-black text-white disabled:opacity-50"
+                  className={`${NO_SPINNER_CLASS} bg-black text-white disabled:opacity-50`}
                 />
               </div>
 
@@ -444,7 +552,16 @@ export function CreationToolForm() {
               </div>
             </div>
 
-            <div className="mt-4 flex justify-center lg:justify-end">
+            <div className="mt-4 flex flex-col items-center justify-center gap-2 lg:flex-row lg:justify-end">
+              <Button
+                type="button"
+                onClick={() => router.push("/dashboard")}
+                disabled={isLoading}
+                className="w-full gap-2 border-2 border-white bg-black px-6 py-5 text-base font-bold text-white hover:bg-white hover:text-black lg:w-auto"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Search again
+              </Button>
               <Button
                 type="submit"
                 disabled={

@@ -894,6 +894,8 @@ export interface components {
             main_story_with_extras: number;
             completionist: number;
             steam_app_id?: null;
+            description?: string | null;
+            publisher?: string | null;
         };
         /** GamePrice */
         GamePrice: {
