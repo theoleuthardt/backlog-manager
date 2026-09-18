@@ -23,7 +23,7 @@ task backend:migration -- "add foo column"   # new Alembic revision
 task backend:migrate                          # alembic upgrade head
 ```
 
-The commands below still work directly if you'd rather not use Task. Root `package.json` only has convenience scripts delegating to `frontend/` (`--prefix frontend`) - run `npm install --prefix frontend` once first, or `cd frontend` and use these directly:
+The commands below document the underlying toolchain the tasks wrap — they are not an opt-out from the `task` rule. Where no task exists (`dev:webpack`, `preview`, `start`, `lint:fix`, `typecheck`, `format:check`, `format:write`), running them directly is the allowed exception. Root `package.json` only has convenience scripts delegating to `frontend/` (`--prefix frontend`) - run `npm install --prefix frontend` once first, or `cd frontend` and use these directly:
 
 ```bash
 # Development
@@ -48,7 +48,7 @@ npm run format:write # Apply Prettier formatting
 
 The frontend has no test suite; only the backend is tested (pytest).
 
-Backend (`backend/`, uv-managed):
+Backend (`backend/`, uv-managed) — every command here has a task equivalent (`task install`, `task backend:dev`, `task test`, `task lint`); listed only as the underlying toolchain:
 ```bash
 cd backend
 uv sync              # Install dependencies
