@@ -23,7 +23,7 @@ task backend:migration -- "add foo column"   # new Alembic revision
 task backend:migrate                          # alembic upgrade head
 ```
 
-The commands below document the underlying toolchain the tasks wrap — they are not an opt-out from the `task` rule. Where no task exists (`dev:webpack`, `preview`, `start`, `lint:fix`, `typecheck`, `format:check`, `format:write`), running them directly is the allowed exception. Root `package.json` only has convenience scripts delegating to `frontend/` (`--prefix frontend`) - run `npm install --prefix frontend` once first, or `cd frontend` and use these directly:
+The commands below document the underlying toolchain the tasks wrap — they are not an opt-out from the `task` rule. Where no task exists (`dev:webpack`, `preview`, `start`, `lint:fix`, `format:check`, `format:write`), running them directly is the allowed exception. `npm run typecheck` is likewise task-less, but it is only a focused re-check while iterating — it never replaces the mandatory `task check` (step 4 below). Root `package.json` only has convenience scripts delegating to `frontend/` (`--prefix frontend`) - run `npm install --prefix frontend` once first, or `cd frontend` and use these directly:
 
 ```bash
 # Development
