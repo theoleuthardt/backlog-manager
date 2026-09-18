@@ -1,24 +1,32 @@
 # CodeRabbit CLI Setup
 
-This repo runs its CodeRabbit reviews locally through the CLI on the feature
+This repo invokes CodeRabbit reviews locally through the CLI on the feature
 branch, as a replacement for CodeRabbit's GitHub App integration — the App is
 deliberately not used (see the "Working with Claude Code" section in the root
-[`CLAUDE.md`](../CLAUDE.md) for where the review sits in the workflow).
+[`CLAUDE.md`](../CLAUDE.md) for where the review sits in the workflow). The
+CLI runs on your machine, but it sends the reviewed diffs to the CodeRabbit
+API for analysis — nothing about "local" means the code stays on your disk.
 
 ## Installation
 
+Prefer a package manager; the install scripts are the fallback.
+
 ```bash
-# Homebrew (macOS/Linux)
+# Homebrew (macOS/Linux) — preferred
 brew install coderabbit
 
-# Install script (macOS/Linux)
+# Install script (macOS/Linux) — fallback; downloads and executes a remote
+# script, so prefer Homebrew where it's available
 curl -fsSL https://cli.coderabbit.ai/install.sh | sh
 
-# Windows (PowerShell)
+# Windows (PowerShell); the installer verifies the downloaded binary's
+# Authenticode signature
 irm https://cli.coderabbit.ai/install.ps1 | iex
 ```
 
-Verify:
+Verify (the installers update `PATH` for *new* shells, so if the command is
+not found, open a new shell — or run the reload command the installer
+printed — and try again):
 
 ```bash
 coderabbit --version
@@ -52,8 +60,11 @@ coderabbit review --agent --base main
 
 Output is NDJSON: one JSON object per line, ending in a
 `{"type":"complete", ...}` event. A heartbeat line only means the review is
-still running; wait for `complete` and read its `findings` count.
-`review_skipped` with zero findings means no review ran.
+still running. Before trusting the result: reject the run if any
+`{"type":"error", ...}` event appears or the output is interrupted, and
+treat `complete` with `status: "review_skipped"` (zero findings) as
+unsuccessful — that means no review ran. Only after a `complete` without
+either does the `findings` count say anything.
 
 Useful scope variants:
 
