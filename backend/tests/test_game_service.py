@@ -6,10 +6,12 @@ import pytest
 from backlog_manager_backend.integrations.types import (
     EnrichedResult,
     HltbResultData,
+    IGDBCompany,
     IGDBCover,
     IGDBGameData,
     IGDBGameTimeToBeat,
     IGDBGenre,
+    IGDBInvolvedCompany,
     IGDBPlatform,
     IGDBSearchResult,
     IGDBTokenResponse,
@@ -29,6 +31,8 @@ def game_service(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
     monkeypatch.setattr(module, "_token_cache", {})
     monkeypatch.setattr(module, "_genre_cache", {})
     monkeypatch.setattr(module, "_platform_cache", {})
+    monkeypatch.setattr(module, "_involved_company_cache", {})
+    monkeypatch.setattr(module, "_company_cache", {})
     monkeypatch.setattr(module, "_game_cache", {})
     monkeypatch.setattr(module, "_cover_cache", {})
     monkeypatch.setattr(module, "_time_to_beat_cache", {})
@@ -277,6 +281,70 @@ async def test_search_falls_back_to_hltb_when_igdb_has_no_beat_time(
             completionist=37.0,
         )
     ]
+
+
+async def test_search_enriches_description_and_publisher(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def fake_search_game_on_igdb(
+        search_term: str, client_id: str, access_token: str
+    ) -> list[IGDBSearchResult]:
+        return [IGDBSearchResult(id=1, game=1, name="Celeste")]
+
+    async def fake_get_games_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameData]:
+        return [
+            IGDBGameData(
+                id=1,
+                name="Celeste",
+                cover=None,
+                genres=[],
+                platforms=[],
+                summary="Help Madeline survive her inner journey.",
+                involved_companies=[9001, 9002],
+            )
+        ]
+
+    async def fake_get_involved_companies_on_igdb(
+        involved_company_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBInvolvedCompany]:
+        return [
+            IGDBInvolvedCompany(id=9001, company=801, developer=True, publisher=False),
+            IGDBInvolvedCompany(id=9002, company=802, developer=False, publisher=True),
+        ]
+
+    async def fake_get_companies_on_igdb(
+        company_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBCompany]:
+        return [
+            IGDBCompany(id=801, name="Extremely OK Games"),
+            IGDBCompany(id=802, name="Matt Makes Games"),
+        ]
+
+    async def fake_get_games_time_to_beat_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameTimeToBeat]:
+        return [IGDBGameTimeToBeat(id=1, game_id=1, normally=3600)]
+
+    async def fake_get_valid_token(client_id: str, client_secret: str) -> str:
+        return "tok"
+
+    monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
+    monkeypatch.setattr(game_service, "get_games_on_igdb", fake_get_games_on_igdb)
+    monkeypatch.setattr(
+        game_service, "get_involved_companies_on_igdb", fake_get_involved_companies_on_igdb
+    )
+    monkeypatch.setattr(game_service, "get_companies_on_igdb", fake_get_companies_on_igdb)
+    monkeypatch.setattr(
+        game_service, "get_games_time_to_beat_on_igdb", fake_get_games_time_to_beat_on_igdb
+    )
+    monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
+
+    results = await game_service.search("Celeste", "cid", "secret", None)
+
+    assert results[0].description == "Help Madeline survive her inner journey."
+    assert results[0].publisher == "Matt Makes Games"
 
 
 async def test_search_batches_multiple_results_into_one_call_each(
@@ -795,6 +863,31 @@ async def test_find_steam_app_id_returns_none_when_no_match(
     monkeypatch.setattr(game_service, "search_steam_store_by_title", fake_search_store)
 
     assert await game_service.find_steam_app_id("Some Unreleased Game") is None
+
+
+async def test_find_steam_app_id_prefers_case_insensitive_title_match(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def fake_search_store(title: str) -> list[SteamStoreSearchItem]:
+        return [
+            SteamStoreSearchItem(type="app", name="Elden Ring: Official Soundtrack", id=111111),
+            SteamStoreSearchItem(type="app", name="ELDEN RING", id=1245620),
+        ]
+
+    monkeypatch.setattr(game_service, "search_steam_store_by_title", fake_search_store)
+
+    assert await game_service.find_steam_app_id("Elden Ring") == 1245620
+
+
+async def test_find_steam_app_id_returns_none_when_no_hit_matches_the_title(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def fake_search_store(title: str) -> list[SteamStoreSearchItem]:
+        return [SteamStoreSearchItem(type="app", name="Totally Different Game", id=42)]
+
+    monkeypatch.setattr(game_service, "search_steam_store_by_title", fake_search_store)
+
+    assert await game_service.find_steam_app_id("Elden Ring") is None
 
 
 async def test_find_steam_app_id_caches_repeat_lookups(

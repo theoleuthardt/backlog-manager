@@ -1,5 +1,6 @@
 import asyncio
 from collections.abc import AsyncIterator, Awaitable, Callable
+from decimal import Decimal
 
 import httpx
 import msgspec
@@ -165,6 +166,26 @@ async def _stream_steam_messages[T](
             yield message
     finally:
         await task
+
+
+@get("/api/user/steam/playtime")
+async def get_steam_playtime(
+    steam_app_id: FromQuery[int], current_user: NamedDependency[User]
+) -> Decimal | None:
+    """Playtime the current user has on one owned Steam app, in hours -
+    prefill for the creation tool, so None (not in library) is a normal
+    result rather than an error."""
+    if steam_app_id < 1:
+        raise ClientException("steam app ids must be 1 or greater")
+    if not current_user.steam_id:
+        return None
+    api_key = _resolve_api_key(current_user)
+    try:
+        return await steam_service.get_library_playtime(
+            current_user.steam_id, api_key, steam_app_id
+        )
+    except httpx.HTTPError as error:
+        raise ServiceUnavailableException(_STEAM_UNAVAILABLE) from error
 
 
 @post("/api/user/steam/sync", status_code=200)
@@ -390,6 +411,7 @@ steam_router = Router(
         preview_steam_wishlist,
         import_steam_wishlist_stream,
         preview_steam_library_stream,
+        get_steam_playtime,
     ],
     dependencies={"current_user": Provide(get_current_user)},
     security=BEARER_SECURITY_REQUIREMENT,

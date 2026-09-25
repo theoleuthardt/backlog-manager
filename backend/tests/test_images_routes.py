@@ -220,6 +220,48 @@ async def test_proxy_image_rejects_steamgriddb_lookalike_host(
     assert response.status_code == 400
 
 
+@pytest.mark.parametrize(
+    "cover_url",
+    [
+        "https://cdn.thegamesdb.net/images/original/boxart/front/105606-1.jpg",
+        "https://thegamesdb.net/some/path/cover.jpg",
+    ],
+)
+async def test_proxy_image_allows_thegamesdb_hosts(
+    cover_url: str, monkeypatch: pytest.MonkeyPatch, postgres_url: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"cover", headers={"content-type": "image/jpeg"})
+
+    _mock_client(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get("/api/images/proxy", params={"url": cover_url})
+
+    assert response.status_code == 200
+
+
+async def test_proxy_image_rejects_thegamesdb_lookalike_host(
+    monkeypatch: pytest.MonkeyPatch, postgres_url: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise AssertionError("should never call out for a lookalike host")
+
+    _mock_client(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get(
+            "/api/images/proxy",
+            params={"url": "https://evilthegamesdb.net/steal-my-data.png"},
+        )
+
+    assert response.status_code == 400
+
+
 async def test_proxy_image_follows_redirect_from_media_steampowered_to_steamstatic(
     monkeypatch: pytest.MonkeyPatch, postgres_url: str
 ) -> None:

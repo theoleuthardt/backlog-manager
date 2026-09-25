@@ -11,6 +11,8 @@ export interface GameSearchResult {
   mainStory: number;
   mainStoryWithExtras: number;
   completionist: number;
+  description: string | null;
+  publisher: string | null;
 }
 
 /**
@@ -37,6 +39,8 @@ export async function enrichedSearch(
     mainStory: result.main_story,
     mainStoryWithExtras: result.main_story_with_extras,
     completionist: result.completionist,
+    description: result.description ?? null,
+    publisher: result.publisher ?? null,
   }));
 }
 

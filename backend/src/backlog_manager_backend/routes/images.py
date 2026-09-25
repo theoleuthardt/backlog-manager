@@ -19,11 +19,15 @@ _ALLOWED_HOSTS = {
     "www.cheapshark.com",
 }
 
-# steamstatic.com (Steam achievement icons) and steamgriddb.com (cover art)
-# each use several interchangeable CDN subdomains, so the apex + subdomains
-# are allowed rather than one fixed host per provider.
-_ALLOWED_HOST_SUFFIXES = (".steamstatic.com", ".steamgriddb.com")
-_ALLOWED_APEX_HOSTS = {"steamstatic.com", "steamgriddb.com"}
+# steamstatic.com (Steam achievement icons), steamgriddb.com (cover art) and
+# thegamesdb.net (cover art) each use several interchangeable CDN subdomains,
+# so the apex + subdomains are allowed rather than one fixed host per provider.
+_ALLOWED_HOST_SUFFIXES = (
+    ".steamstatic.com",
+    ".steamgriddb.com",
+    ".thegamesdb.net",
+)
+_ALLOWED_APEX_HOSTS = {"steamstatic.com", "steamgriddb.com", "thegamesdb.net"}
 
 
 def _is_allowed_host(hostname: str | None) -> bool:

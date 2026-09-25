@@ -147,6 +147,36 @@ class IGDBGenre(msgspec.Struct):
     url: str | None = None
 
 
+class IGDBInvolvedCompany(msgspec.Struct):
+    """One involved_companies record: company is a /companies id, and
+    developer/publisher flag which role that company had (a company can
+    hold both, and a game can have several of each)."""
+
+    id: int
+    checksum: str | None = None
+    company: int | None = None
+    created_at: int | None = None
+    developer: bool | None = None
+    porting: bool | None = None
+    publisher: bool | None = None
+    supporting: bool | None = None
+    updated_at: int | None = None
+
+
+class IGDBCompany(msgspec.Struct):
+    id: int
+    changed_at: int | None = None
+    checksum: str | None = None
+    country: int | None = None
+    created_at: int | None = None
+    description: str | None = None
+    name: str | None = None
+    slug: str | None = None
+    start_date: int | None = None
+    updated_at: int | None = None
+    url: str | None = None
+
+
 class EnrichedResult(msgspec.Struct):
     id: int
     hltb_id: int
@@ -158,6 +188,8 @@ class EnrichedResult(msgspec.Struct):
     main_story_with_extras: float
     completionist: float
     steam_app_id: None = None
+    description: str | None = None
+    publisher: str | None = None
 
 
 class SteamOwnedGame(msgspec.Struct):

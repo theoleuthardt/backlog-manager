@@ -151,17 +151,33 @@ def _minutes_to_hours(minutes: int) -> Decimal:
     return (Decimal(minutes) / _MINUTES_PER_HOUR).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
+async def get_library_playtime(steam_id: str, api_key: str, steam_app_id: int) -> Decimal | None:
+    """Playtime in hours the current Steam user has on one owned app, or
+    None when the app isn't in their library - used by the creation tool
+    to prefill playtime for a game that's already being played."""
+    owned_games = await get_owned_games(steam_id, api_key)
+    for game in owned_games:
+        if game.appid == steam_app_id:
+            return _minutes_to_hours(game.playtime_forever)
+    return None
+
+
 async def sync_playtimes(
     session: AsyncSession,
     user: User,
     api_key: str,
     owned_games: list[SteamOwnedGame] | None = None,
 ) -> list[BacklogEntry]:
-    """Matches the user's backlog entries to their Steam library by
-    steam_app_id and overwrites playtime with Steam's authoritative
-    value, converted from minutes to hours. Entries with no linked
-    steam_app_id, or whose app isn't in the Steam response, are left
-    untouched rather than cleared.
+    """Matches the user's backlog entries to their Steam library and
+    overwrites playtime with Steam's authoritative value, converted
+    from minutes to hours. Entries link to their Steam library game by
+    steam_app_id; entries with no linked app id fall back to an exact
+    title match (same normalization as find_steam_app_id, so ™/®/©
+    and case differences don't block it) so entries created before the
+    app-id lookup resolved still get their playtime synced (Steam
+    writes "ELDEN RING™", the backlog may hold "Elden Ring" - see
+    issue #176). Entries matched by neither, or whose app isn't in the
+    Steam response, are left untouched rather than cleared.
 
     Accepts an already-fetched owned_games snapshot so callers that
     also run import_library (see sync_playtimes_and_import) hit Steam's
@@ -173,12 +189,47 @@ async def sync_playtimes(
         owned_games = await get_owned_games(user.steam_id, api_key)
 
     owned_by_app_id = {game.appid: game for game in owned_games}
+    normalized_owned_titles = [
+        game_service.normalize_game_title(game.name) for game in owned_games
+    ]
+    unlinked_title_counts: dict[str, int] = {}
+    for normalized in normalized_owned_titles:
+        if normalized:
+            unlinked_title_counts[normalized] = unlinked_title_counts.get(normalized, 0) + 1
+    unlinked_by_title = {
+        normalized: game
+        for game, normalized in zip(owned_games, normalized_owned_titles, strict=True)
+        if normalized and unlinked_title_counts[normalized] == 1
+    }
+
+    entries = await backlog_entry_repo.get_backlog_entries_by_user(session, user.id)
+    claimed_app_ids = {
+        entry.steam_app_id for entry in entries if entry.steam_app_id is not None
+    }
+    unlinked_entry_title_counts: dict[str, int] = {}
+    for entry in entries:
+        if entry.steam_app_id is None:
+            normalized = game_service.normalize_game_title(entry.title or "")
+            if normalized:
+                unlinked_entry_title_counts[normalized] = (
+                    unlinked_entry_title_counts.get(normalized, 0) + 1
+                )
 
     updated: list[BacklogEntry] = []
-    for entry in await backlog_entry_repo.get_backlog_entries_by_user(session, user.id):
-        if entry.steam_app_id is None:
-            continue
-        owned_game = owned_by_app_id.get(entry.steam_app_id)
+    for entry in entries:
+        if entry.steam_app_id is not None:
+            owned_game = owned_by_app_id.get(entry.steam_app_id)
+        else:
+            normalized = game_service.normalize_game_title(entry.title or "")
+            owned_game = unlinked_by_title.get(normalized)
+            if (
+                owned_game is not None
+                and (
+                    owned_game.appid in claimed_app_ids
+                    or unlinked_entry_title_counts.get(normalized) != 1
+                )
+            ):
+                owned_game = None
         if owned_game is None:
             continue
         playtime = _minutes_to_hours(owned_game.playtime_forever)

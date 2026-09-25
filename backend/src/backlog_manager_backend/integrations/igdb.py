@@ -3,10 +3,12 @@ import msgspec
 import structlog
 
 from backlog_manager_backend.integrations.types import (
+    IGDBCompany,
     IGDBCover,
     IGDBGameData,
     IGDBGameTimeToBeat,
     IGDBGenre,
+    IGDBInvolvedCompany,
     IGDBPlatform,
     IGDBSearchResult,
     IGDBTokenResponse,
@@ -235,6 +237,44 @@ async def get_genres_on_igdb(
     )
     try:
         return await _query_igdb("genres", body, client_id, access_token, list[IGDBGenre])
+    except httpx.HTTPStatusError:
+        return []
+
+
+async def get_involved_companies_on_igdb(
+    involved_company_ids: list[int], client_id: str, access_token: str
+) -> list[IGDBInvolvedCompany]:
+    if not involved_company_ids:
+        return []
+    body = (
+        "fields checksum,company,created_at,developer,porting,publisher,supporting,"
+        f"updated_at; where id = {_id_list(involved_company_ids)}; limit 500;"
+    )
+    try:
+        return await _query_igdb(
+            "involved_companies",
+            body,
+            client_id,
+            access_token,
+            list[IGDBInvolvedCompany],
+        )
+    except httpx.HTTPStatusError:
+        return []
+
+
+async def get_companies_on_igdb(
+    company_ids: list[int], client_id: str, access_token: str
+) -> list[IGDBCompany]:
+    if not company_ids:
+        return []
+    body = (
+        "fields changed_at,checksum,country,created_at,description,name,slug,"
+        f"start_date,updated_at,url; where id = {_id_list(company_ids)}; limit 500;"
+    )
+    try:
+        return await _query_igdb(
+            "companies", body, client_id, access_token, list[IGDBCompany]
+        )
     except httpx.HTTPStatusError:
         return []
 

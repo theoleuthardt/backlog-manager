@@ -129,11 +129,8 @@ export const EntryCreationDialog = ({
                         query: {
                           title: searchResults[selectedIndex].title,
                           imageUrl: searchResults[selectedIndex].imageUrl ?? "",
-                          steamAppId:
-                            searchResults[selectedIndex].steamAppId ?? "",
-                          genres:
-                            searchResults[selectedIndex].genres?.join(", ") ??
-                            "",
+                          steamAppId: searchResults[selectedIndex].steamAppId ?? "",
+                          genres: searchResults[selectedIndex].genres?.join(", ") ?? "",
                           platforms:
                             searchResults[selectedIndex].platforms?.join(
                               ", ",
@@ -141,8 +138,13 @@ export const EntryCreationDialog = ({
                           mainStory: searchResults[selectedIndex].mainStory,
                           mainStoryWithExtras:
                             searchResults[selectedIndex].mainStoryWithExtras,
-                          completionist:
-                            searchResults[selectedIndex].completionist,
+                          completionist: searchResults[selectedIndex].completionist,
+                          description:
+                            searchResults[selectedIndex].description?.slice(
+                              0,
+                              500,
+                            ) ?? "",
+                          publisher: searchResults[selectedIndex].publisher ?? "",
                         },
                       }}
                       className="flex justify-center"
@@ -156,7 +158,22 @@ export const EntryCreationDialog = ({
                   )}
                 </>
               ) : debouncedSearchQuery.length > 0 ? (
-                <div className="text-white">No results found</div>
+                <div className="flex flex-col items-center gap-3">
+                  <div className="text-white">No results found</div>
+                  <Link
+                    href={{
+                      pathname: "/creation-tool",
+                      query: {
+                        title: searchQuery,
+                        custom: "1",
+                      },
+                    }}
+                  >
+                    <Button className="h-[3rem] gap-2 bg-blue-700 px-6 font-bold text-white hover:bg-blue-800">
+                      Create &quot;{searchQuery}&quot; as custom game
+                    </Button>
+                  </Link>
+                </div>
               ) : null}
             </div>
           )}
