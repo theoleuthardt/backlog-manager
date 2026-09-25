@@ -14,7 +14,6 @@ import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import {
   ChevronsLeft,
   Loader2,
-  RefreshCw,
   SlidersHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -28,6 +27,7 @@ import {
 import { DraggableEntry } from "components/DraggableEntry";
 import { DragPreview } from "components/DragPreview";
 import { GroupSection } from "components/GroupSection";
+import { SteamSyncButton } from "components/SteamSyncButton";
 import { StatusGroupSection } from "components/StatusGroupSection";
 import { useAuth } from "~/app/context/AuthContext";
 import { useDashboard } from "~/app/context/DashboardContext";
@@ -37,7 +37,6 @@ import {
   useCustomStatuses,
   useEntryCategoryNames,
   useMoveEntryToStatus,
-  useSyncSteamPlaytimesStream,
 } from "~/hooks/useBacklog";
 import { useMediaQuery } from "~/hooks/useMediaQuery";
 import { DEFAULT_STATUSES, type BacklogEntryData } from "~/lib/api/backlog";
@@ -77,11 +76,6 @@ export const DashboardContent = () => {
   const { data: backlogData, isLoading, error } = useBacklogEntries();
   const { data: customStatuses = [] } = useCustomStatuses();
   const moveEntry = useMoveEntryToStatus();
-  const {
-    run: syncSteamPlaytimes,
-    isRunning: isSyncingSteam,
-    progress: steamSyncProgress,
-  } = useSyncSteamPlaytimesStream();
 
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const [sidebarToggle, setSidebarToggle] = useState<boolean | null>(null);
@@ -185,23 +179,6 @@ export const DashboardContent = () => {
       activationConstraint: { delay: 250, tolerance: 8 },
     }),
   );
-
-  const handleSyncSteamPlaytimes = async () => {
-    try {
-      const updated = await syncSteamPlaytimes();
-      toast.success(
-        updated.length > 0
-          ? `Synced ${updated.length} game${updated.length === 1 ? "" : "s"} from Steam`
-          : "Steam is already up to date",
-      );
-    } catch (syncError) {
-      toast.error(
-        syncError instanceof Error
-          ? syncError.message
-          : "Failed to sync Steam playtimes",
-      );
-    }
-  };
 
   const changeStatus = (entry: BacklogEntryData, status: string) => {
     const previousStatus = entry.status;
@@ -383,24 +360,7 @@ export const DashboardContent = () => {
               {visibleEntries.length} of {entries.length} game
               {entries.length === 1 ? "" : "s"}
             </p>
-            {user?.steamId && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSyncSteamPlaytimes}
-                disabled={isSyncingSteam}
-                className="ml-auto gap-2"
-              >
-                {isSyncingSteam ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-4 w-4" />
-                )}
-                {isSyncingSteam && steamSyncProgress
-                  ? `Syncing ${steamSyncProgress.processed}/${steamSyncProgress.total}...`
-                  : "Sync Steam Playtimes"}
-              </Button>
-            )}
+            {user?.steamId && <SteamSyncButton className="ml-auto" />}
           </div>
 
           {entries.length === 0 ? (
