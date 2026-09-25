@@ -14,6 +14,8 @@ import {
 
 const ENTRIES_KEY = ["backlog-entries"] as const;
 const CUSTOM_STATUSES_KEY = ["custom-statuses"] as const;
+const CATEGORIES_KEY = ["categories"] as const;
+const ENTRY_CATEGORIES_KEY = ["entry-categories"] as const;
 
 export function useBacklogEntries() {
   return useQuery({
@@ -72,6 +74,138 @@ export function useUpdateBacklogEntry() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ENTRIES_KEY });
     },
+  });
+}
+
+/**
+ * Moves an entry to another status (dashboard drag and drop). The
+ * cached list is updated immediately so the card jumps groups without
+ * waiting for the round trip, and rolled back if the request fails.
+ */
+export function useMoveEntryToStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ entryId, status }: { entryId: number; status: string }) =>
+      backlogApi.updateEntry(entryId, { status }),
+    onMutate: async ({ entryId, status }) => {
+      await queryClient.cancelQueries({ queryKey: ENTRIES_KEY });
+      const previous =
+        queryClient.getQueryData<backlogApi.BacklogEntryData[]>(ENTRIES_KEY);
+      queryClient.setQueryData<backlogApi.BacklogEntryData[]>(
+        ENTRIES_KEY,
+        (entries) =>
+          entries?.map((entry) =>
+            entry.id === entryId ? { ...entry, status } : entry,
+          ),
+      );
+      return { previous };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(ENTRIES_KEY, context.previous);
+      }
+    },
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey: ENTRIES_KEY });
+    },
+  });
+}
+
+/**
+ * Every category of the user, for pickers and filters.
+ */
+export function useCategories() {
+  return useQuery({
+    queryKey: CATEGORIES_KEY,
+    queryFn: backlogApi.getCategories,
+  });
+}
+
+/**
+ * Maps entry id -> the categories it belongs to (alphabetical by name).
+ * Entries carry no category data themselves, so this walks the category
+ * endpoints - one request per category - and is the single source the
+ * dashboard uses for sorting, grouping, filtering and the entry dialog.
+ */
+export function useEntryCategories() {
+  return useQuery({
+    queryKey: ENTRY_CATEGORIES_KEY,
+    queryFn: async () => {
+      const categories = (await backlogApi.getCategories()).sort((a, b) =>
+        a.name.localeCompare(b.name),
+      );
+      const entriesPerCategory = await Promise.all(
+        categories.map((category) =>
+          backlogApi.getEntriesForCategory(category.id),
+        ),
+      );
+      const byEntry = new Map<number, backlogApi.CategoryData[]>();
+      categories.forEach((category, index) => {
+        for (const entry of entriesPerCategory[index] ?? []) {
+          byEntry.set(entry.id, [...(byEntry.get(entry.id) ?? []), category]);
+        }
+      });
+      return byEntry;
+    },
+  });
+}
+
+function useInvalidateCategories() {
+  const queryClient = useQueryClient();
+  return async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: CATEGORIES_KEY }),
+      queryClient.invalidateQueries({ queryKey: ENTRY_CATEGORIES_KEY }),
+    ]);
+  };
+}
+
+export function useCreateCategory() {
+  const invalidate = useInvalidateCategories();
+  return useMutation({
+    mutationFn: backlogApi.createCategory,
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpdateCategory() {
+  const invalidate = useInvalidateCategories();
+  return useMutation({
+    mutationFn: ({
+      categoryId,
+      changes,
+    }: {
+      categoryId: number;
+      changes: { categoryName?: string; color?: string };
+    }) => backlogApi.updateCategory(categoryId, changes),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeleteCategory() {
+  const invalidate = useInvalidateCategories();
+  return useMutation({
+    mutationFn: backlogApi.deleteCategory,
+    onSuccess: invalidate,
+  });
+}
+
+export function useSetEntryCategory() {
+  const invalidate = useInvalidateCategories();
+  return useMutation({
+    mutationFn: ({
+      entryId,
+      categoryId,
+      assigned,
+    }: {
+      entryId: number;
+      categoryId: number;
+      assigned: boolean;
+    }) =>
+      assigned
+        ? backlogApi.addCategoryToEntry(entryId, categoryId)
+        : backlogApi.removeCategoryFromEntry(entryId, categoryId),
+    onSuccess: invalidate,
   });
 }
 

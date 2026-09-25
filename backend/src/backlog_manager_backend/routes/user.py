@@ -182,6 +182,9 @@ async def update_own_user(
                 ),
                 steam_auto_import_enabled=data.steam_auto_import_enabled,
                 steam_family_ids=data.steam_family_ids,
+                default_sort=data.default_sort,
+                theme=data.theme,
+                custom_themes=data.custom_themes,
             ),
         )
     except ConflictError as error:
@@ -283,6 +286,9 @@ async def update_user_admin(
                 ),
                 steam_auto_import_enabled=data.steam_auto_import_enabled,
                 steam_family_ids=data.steam_family_ids,
+                default_sort=data.default_sort,
+                theme=data.theme,
+                custom_themes=data.custom_themes,
                 is_admin=data.is_admin,
             ),
         )

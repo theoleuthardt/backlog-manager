@@ -1,219 +1,284 @@
 "use client";
-import React, { useState, useMemo } from "react";
-import { BacklogEntry, SearchBar } from "components";
+import React, { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from "shadcn_components/ui/toggle-group";
+  DndContext,
+  DragOverlay,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
+import { ChevronsLeft, Loader2, SlidersHorizontal } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "shadcn_components/ui/button";
+import { BacklogEntry } from "components/BacklogEntry";
+import { BottomSheet } from "components/BottomSheet";
 import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "shadcn_components/ui/dropdown-menu";
-import { Checkbox } from "shadcn_components/ui/checkbox";
-import { Slider } from "shadcn_components/ui/slider";
-import { Label } from "shadcn_components/ui/label";
-import Image from "next/image";
+  DashboardSidebar,
+  type FilterBounds,
+} from "components/DashboardSidebar";
+import { DraggableEntry } from "components/DraggableEntry";
+import { DragPreview } from "components/DragPreview";
+import { GroupSection } from "components/GroupSection";
+import { SteamSyncButton } from "components/SteamSyncButton";
+import { StatusGroupSection } from "components/StatusGroupSection";
+import { useAuth } from "~/app/context/AuthContext";
+import { useDashboard } from "~/app/context/DashboardContext";
+import { useTheme } from "~/app/context/ThemeContext";
 import {
   useBacklogEntries,
+  useCategories,
   useCustomStatuses,
-  useSyncSteamPlaytimesStream,
+  useEntryCategories,
+  useMoveEntryToStatus,
 } from "~/hooks/useBacklog";
-import { DEFAULT_STATUSES } from "~/lib/api/backlog";
-import { Loader2, RefreshCw } from "lucide-react";
-import { Button } from "shadcn_components/ui/button";
-import { toast } from "sonner";
-import { useAuth } from "~/app/context/AuthContext";
+import { useMediaQuery } from "~/hooks/useMediaQuery";
+import { DEFAULT_STATUSES, type BacklogEntryData } from "~/lib/api/backlog";
+import {
+  countActiveFilters,
+  EMPTY_FILTERS,
+  filterEntries,
+  type EntryFilters,
+} from "~/lib/filterEntries";
+import { MAX_REVIEW_STARS } from "~/lib/reviewStars";
+import { groupEntriesByStatus, groupSortedEntries } from "~/lib/groupEntries";
+import {
+  DEFAULT_SORT,
+  defaultDirectionFor,
+  isSortOption,
+  sortEntries,
+  type SortDirection,
+  type SortOption,
+} from "~/lib/sortEntries";
+
+function ceilMax(
+  entries: readonly BacklogEntryData[],
+  pick: (entry: BacklogEntryData) => number | undefined,
+  minimum: number,
+): number {
+  const max = Math.max(0, ...entries.map((entry) => pick(entry) ?? 0));
+  return Math.max(minimum, Math.ceil(max));
+}
+
+function uniqueSorted(values: Iterable<string>): string[] {
+  return Array.from(new Set(values)).sort((a, b) => a.localeCompare(b));
+}
 
 export const DashboardContent = () => {
   const { user } = useAuth();
+  const { searchQuery } = useDashboard();
+  const { theme } = useTheme();
   const { data: backlogData, isLoading, error } = useBacklogEntries();
   const { data: customStatuses = [] } = useCustomStatuses();
-  const {
-    run: syncSteamPlaytimes,
-    isRunning: isSyncingSteam,
-    progress: steamSyncProgress,
-  } = useSyncSteamPlaytimesStream();
+  const moveEntry = useMoveEntryToStatus();
 
-  const handleSyncSteamPlaytimes = async () => {
-    try {
-      const updated = await syncSteamPlaytimes();
-      toast.success(
-        updated.length > 0
-          ? `Synced ${updated.length} game${updated.length === 1 ? "" : "s"} from Steam`
-          : "Steam is already up to date",
-      );
-    } catch (syncError) {
-      toast.error(
-        syncError instanceof Error
-          ? syncError.message
-          : "Failed to sync Steam playtimes",
-      );
-    }
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
+  const [sidebarToggle, setSidebarToggle] = useState<boolean | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const isSidebarOpen = sidebarToggle ?? isDesktop;
+
+  const [selectedFilters, setFilters] = useState<EntryFilters>(EMPTY_FILTERS);
+  const [sortOverride, setSortOverride] = useState<SortOption | null>(null);
+  const [directionOverride, setDirectionOverride] =
+    useState<SortDirection | null>(null);
+  const [collapsedGroups, setCollapsedGroups] = useState<string[]>([]);
+  const [draggedEntry, setDraggedEntry] = useState<BacklogEntryData | null>(
+    null,
+  );
+
+  const userDefaultSort =
+    user && isSortOption(user.defaultSort) ? user.defaultSort : DEFAULT_SORT;
+  const sortBy = sortOverride ?? userDefaultSort;
+  const direction = directionOverride ?? defaultDirectionFor(sortBy);
+
+  const entries = useMemo(() => backlogData ?? [], [backlogData]);
+
+  const statusOptions = useMemo(
+    () =>
+      Array.from(
+        new Set<string>([
+          ...DEFAULT_STATUSES,
+          ...customStatuses.map((status) => status.name),
+          ...entries.map((entry) => entry.status),
+        ]),
+      ),
+    [customStatuses, entries],
+  );
+  const platformOptions = useMemo(
+    () => uniqueSorted(entries.flatMap((entry) => entry.platform)),
+    [entries],
+  );
+  const genreOptions = useMemo(
+    () => uniqueSorted(entries.flatMap((entry) => entry.genre)),
+    [entries],
+  );
+  const bounds: FilterBounds = useMemo(
+    () => ({
+      interest: 10,
+      reviewStars: MAX_REVIEW_STARS,
+      playtime: ceilMax(entries, (entry) => entry.playtime, 10),
+      mainTime: ceilMax(entries, (entry) => entry.mainTime, 10),
+      mainPlusExtraTime: ceilMax(
+        entries,
+        (entry) => entry.mainPlusExtraTime,
+        10,
+      ),
+      completionTime: ceilMax(entries, (entry) => entry.completionTime, 10),
+    }),
+    [entries],
+  );
+
+  const { data: entryCategories } = useEntryCategories();
+  const { data: allCategories = [] } = useCategories();
+  const categoryOptions = useMemo(
+    () =>
+      allCategories
+        .map((category) => category.name)
+        .sort((a, b) => a.localeCompare(b)),
+    [allCategories],
+  );
+  const filters = useMemo(
+    () => ({
+      ...selectedFilters,
+      categories: selectedFilters.categories.filter((name) =>
+        categoryOptions.includes(name),
+      ),
+    }),
+    [selectedFilters, categoryOptions],
+  );
+  const categoryColors = useMemo(
+    () =>
+      new Map(allCategories.map((category) => [category.name, category.color])),
+    [allCategories],
+  );
+  const categoryNamesByEntry = useMemo(
+    () =>
+      new Map(
+        Array.from(entryCategories ?? [], ([entryId, list]) => [
+          entryId,
+          list.map((category) => category.name),
+        ]),
+      ),
+    [entryCategories],
+  );
+  const firstCategoryByEntry = useMemo(
+    () =>
+      new Map(
+        Array.from(categoryNamesByEntry, ([entryId, names]) => [
+          entryId,
+          names[0] ?? "",
+        ]),
+      ),
+    [categoryNamesByEntry],
+  );
+
+  const visibleEntries = useMemo(
+    () =>
+      sortEntries(
+        filterEntries(
+          entries,
+          { ...filters, search: searchQuery },
+          categoryNamesByEntry,
+        ),
+        {
+          sortBy,
+          direction,
+          statusOrder: statusOptions,
+          categoryByEntryId: firstCategoryByEntry,
+        },
+      ),
+    [
+      entries,
+      filters,
+      searchQuery,
+      sortBy,
+      direction,
+      statusOptions,
+      categoryNamesByEntry,
+      firstCategoryByEntry,
+    ],
+  );
+
+  const groups = useMemo(() => {
+    if (sortBy !== "status") return [];
+    const order =
+      direction === "asc" ? statusOptions : [...statusOptions].reverse();
+    return groupEntriesByStatus(visibleEntries, order).filter(
+      (group) =>
+        filters.statuses.length === 0 ||
+        filters.statuses.includes(group.status),
+    );
+  }, [sortBy, direction, statusOptions, visibleEntries, filters.statuses]);
+
+  const labelGroups = useMemo(
+    () =>
+      sortBy === "status"
+        ? []
+        : groupSortedEntries(visibleEntries, sortBy, firstCategoryByEntry),
+    [sortBy, visibleEntries, firstCategoryByEntry],
+  );
+
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 250, tolerance: 8 },
+    }),
+  );
+
+  const changeStatus = (entry: BacklogEntryData, status: string) => {
+    const previousStatus = entry.status;
+    moveEntry.mutate(
+      { entryId: entry.id, status },
+      {
+        onSuccess: () =>
+          toast.success(`Moved "${entry.title}" to ${status}`, {
+            action: {
+              label: "Undo",
+              onClick: () =>
+                moveEntry.mutate({ entryId: entry.id, status: previousStatus }),
+            },
+          }),
+        onError: (moveError) =>
+          toast.error(
+            moveError instanceof Error
+              ? moveError.message
+              : "Failed to change status",
+          ),
+      },
+    );
   };
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
-  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
-  const [ownedOnly, setOwnedOnly] = useState(false);
-  const [interestRange, setInterestRange] = useState<[number, number]>([1, 10]);
-  const [reviewStarsRange, setReviewStarsRange] = useState<[number, number]>([
-    1, 5,
-  ]);
-  const [mainTimeRange, setMainTimeRange] = useState<[number, number]>([
-    0, 500,
-  ]);
-  const [mainExtraTimeRange, setMainExtraTimeRange] = useState<
-    [number, number]
-  >([0, 500]);
-  const [completionistTimeRange, setCompletionistTimeRange] = useState<
-    [number, number]
-  >([0, 500]);
-  const [isLeftBarOpen, setIsLeftBarOpen] = useState(false);
 
-  const maxPlaytime = useMemo(() => {
-    if (!backlogData) return 100;
-    const max = Math.max(...backlogData.map((entry) => entry.playtime ?? 0), 0);
-    return max % 2 === 0 ? max : max + 1;
-  }, [backlogData]);
+  const handleDragStart = (event: DragStartEvent) => {
+    setDraggedEntry(
+      entries.find((entry) => entry.id === event.active.id) ?? null,
+    );
+  };
 
-  const [playtimeRange, setPlaytimeRange] = useState<[number, number]>([
-    0,
-    maxPlaytime,
-  ]);
+  const handleDragEnd = (event: DragEndEvent) => {
+    setDraggedEntry(null);
+    const entry = entries.find((candidate) => candidate.id === event.active.id);
+    const targetStatus = event.over?.id;
+    if (!entry || typeof targetStatus !== "string") return;
+    if (targetStatus !== entry.status) changeStatus(entry, targetStatus);
+  };
 
-  const allPlatforms = useMemo(() => {
-    if (!backlogData) return [];
-    const platforms = new Set<string>();
-    backlogData.forEach((entry) => {
-      entry.platform?.forEach((p) => platforms.add(p));
-    });
-    return Array.from(platforms).sort();
-  }, [backlogData]);
-
-  const allGenres = useMemo(() => {
-    if (!backlogData) return [];
-    const genres = new Set<string>();
-    backlogData.forEach((entry) => {
-      entry.genre?.forEach((g) => genres.add(g));
-    });
-    return Array.from(genres).sort();
-  }, [backlogData]);
-
-  const statusOptions = useMemo(() => {
-    const options = new Set<string>([
-      ...DEFAULT_STATUSES,
-      ...customStatuses.map((status) => status.name),
-    ]);
-    backlogData?.forEach((entry) => options.add(entry.status));
-    return Array.from(options);
-  }, [backlogData, customStatuses]);
-
-  const filteredData = useMemo(() => {
-    if (!backlogData) return [];
-    return backlogData.filter((entry) => {
-      if (
-        searchQuery.trim() &&
-        !entry.title.toLowerCase().includes(searchQuery.toLowerCase())
-      ) {
-        return false;
-      }
-
-      if (selectedPlatforms.length > 0) {
-        const hasMatchingPlatform = entry.platform?.some((p: string) =>
-          selectedPlatforms.includes(p),
-        );
-        if (!hasMatchingPlatform) return false;
-      }
-
-      if (selectedGenres.length > 0) {
-        const hasMatchingGenre = entry.genre?.some((g: string) =>
-          selectedGenres.includes(g),
-        );
-        if (!hasMatchingGenre) return false;
-      }
-
-      if (selectedStatuses.length > 0 && entry.status) {
-        if (!selectedStatuses.includes(entry.status)) return false;
-      }
-
-      if (ownedOnly && !entry.owned) {
-        return false;
-      }
-
-      if (entry.interest !== undefined) {
-        if (
-          entry.interest < interestRange[0] ||
-          entry.interest > interestRange[1]
-        ) {
-          return false;
-        }
-      }
-
-      if (entry.reviewStars !== undefined) {
-        if (
-          entry.reviewStars < reviewStarsRange[0] ||
-          entry.reviewStars > reviewStarsRange[1]
-        ) {
-          return false;
-        }
-      }
-
-      if (entry.playtime !== undefined) {
-        if (
-          entry.playtime < playtimeRange[0] ||
-          entry.playtime > playtimeRange[1]
-        ) {
-          return false;
-        }
-      }
-
-      if (
-        entry.mainTime !== undefined &&
-        (entry.mainTime < mainTimeRange[0] || entry.mainTime > mainTimeRange[1])
-      ) {
-        return false;
-      }
-
-      if (
-        entry.mainPlusExtraTime !== undefined &&
-        (entry.mainPlusExtraTime < mainExtraTimeRange[0] ||
-          entry.mainPlusExtraTime > mainExtraTimeRange[1])
-      ) {
-        return false;
-      }
-
-      if (
-        entry.completionTime !== undefined &&
-        (entry.completionTime < completionistTimeRange[0] ||
-          entry.completionTime > completionistTimeRange[1])
-      ) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [
-    backlogData,
-    searchQuery,
-    selectedPlatforms,
-    selectedGenres,
-    selectedStatuses,
-    ownedOnly,
-    interestRange,
-    reviewStarsRange,
-    playtimeRange,
-    mainTimeRange,
-    mainExtraTimeRange,
-    completionistTimeRange,
-  ]);
+  const groupKey = (label: string) => `${sortBy}:${label}`;
+  const toggleGroup = (label: string) =>
+    setCollapsedGroups((collapsed) =>
+      collapsed.includes(groupKey(label))
+        ? collapsed.filter((value) => value !== groupKey(label))
+        : [...collapsed, groupKey(label)],
+    );
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex min-h-[60vh] items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-12 w-12 animate-spin text-white" />
+          <Loader2 className="text-primary h-12 w-12 animate-spin" />
           <p className="text-lg text-white">Loading your backlog...</p>
         </div>
       </div>
@@ -222,7 +287,7 @@ export const DashboardContent = () => {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex min-h-[60vh] items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <p className="text-lg text-red-500">Error loading backlog entries</p>
           <p className="text-sm text-white">{error.message}</p>
@@ -231,299 +296,234 @@ export const DashboardContent = () => {
     );
   }
 
+  const activeFilterCount = countActiveFilters(filters);
+  const renderEntry = (entry: BacklogEntryData) => (
+    <BacklogEntry key={entry.id} {...entry} />
+  );
+
   return (
-    <div id="upperSection" className="flex min-h-30 gap-8 p-4">
-      <div className="ml-4 flex flex-col">
-        <button
-          onClick={() => setIsLeftBarOpen(!isLeftBarOpen)}
-          className={`group flex h-10 items-center justify-center self-center rounded-md border-2 border-white bg-black text-2xl font-bold text-white transition-all duration-300 ease-in-out hover:bg-white ${
-            isLeftBarOpen ? "w-44" : "w-10"
-          }`}
-          aria-label={isLeftBarOpen ? "Close sidebar" : "Open sidebar"}
-        >
-          <Image
-            src={isLeftBarOpen ? "/chevron-left.png" : "/chevron-right.png"}
-            alt={isLeftBarOpen ? "Collapse" : "Expand"}
-            className="h-6 w-6 transition-all duration-300 group-hover:invert"
-            width={60}
-            height={60}
-          />
-        </button>
-        <div
-          id="leftBar"
-          className={`h-[40rem] flex-shrink-0 overflow-hidden p-4 transition-all duration-300 ease-in-out ${
-            isLeftBarOpen ? "w-60 opacity-100" : "w-0 p-0 opacity-0"
-          }`}
-        >
-          <div
-            id="filterOptions"
-            className="mb-4 h-full space-y-4 overflow-y-auto p-4"
-          >
-            <div className="space-y-2">
-              <SearchBar
-                useIcon={true}
-                onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  setSearchQuery(e.target.value);
-                }}
-              />
-              <Label className="text-sm font-medium text-white">Platform</Label>
-              <ToggleGroup
-                type="multiple"
-                value={selectedPlatforms}
-                onValueChange={setSelectedPlatforms}
-                className="flex flex-wrap justify-start gap-1"
-              >
-                {allPlatforms.map((platform) => (
-                  <ToggleGroupItem
-                    key={platform}
-                    value={platform}
-                    className="h-8 px-2 text-xs data-[state=on]:bg-blue-700 data-[state=on]:text-white"
-                  >
-                    {platform}
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-white">Genre</Label>
-              <DropdownMenu>
-                <DropdownMenuTrigger className="w-full rounded-md border border-white bg-black px-3 py-2 text-sm text-white hover:bg-white hover:text-black">
-                  {selectedGenres.length > 0
-                    ? `${selectedGenres.length} selected`
-                    : "Select genres"}
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="max-h-60 w-56 overflow-y-auto border-white bg-black">
-                  {allGenres.map((genre) => (
-                    <DropdownMenuCheckboxItem
-                      key={genre}
-                      checked={selectedGenres.includes(genre)}
-                      onCheckedChange={(checked) => {
-                        setSelectedGenres(
-                          checked
-                            ? [...selectedGenres, genre]
-                            : selectedGenres.filter((g) => g !== genre),
-                        );
-                      }}
-                      className="text-white hover:bg-white hover:text-black"
-                    >
-                      {genre}
-                    </DropdownMenuCheckboxItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-white">Status</Label>
-              <DropdownMenu>
-                <DropdownMenuTrigger className="w-full rounded-md border border-white bg-black px-3 py-2 text-sm text-white hover:bg-white hover:text-black">
-                  {selectedStatuses.length > 0
-                    ? `${selectedStatuses.length} selected`
-                    : "Select status"}
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56 border-white bg-black">
-                  {statusOptions.map((status) => (
-                    <DropdownMenuCheckboxItem
-                      key={status}
-                      checked={selectedStatuses.includes(status)}
-                      onCheckedChange={(checked) => {
-                        setSelectedStatuses(
-                          checked
-                            ? [...selectedStatuses, status]
-                            : selectedStatuses.filter((s) => s !== status),
-                        );
-                      }}
-                      className="text-white hover:bg-white hover:text-black"
-                    >
-                      {status}
-                    </DropdownMenuCheckboxItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="owned"
-                checked={ownedOnly}
-                onCheckedChange={(checked) => setOwnedOnly(checked as boolean)}
-                className="border-white data-[state=checked]:bg-blue-700"
-              />
-              <Label
-                htmlFor="owned"
-                className="cursor-pointer text-sm font-medium text-white"
-              >
-                Owned only
-              </Label>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-white">
-                Interest: {interestRange[0]} - {interestRange[1]}
-              </Label>
-              <Slider
-                min={1}
-                max={10}
-                step={1}
-                value={interestRange}
-                onValueChange={(value) =>
-                  setInterestRange(value as [number, number])
-                }
-                className="invert"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-white">
-                Review Stars: {reviewStarsRange[0]} - {reviewStarsRange[1]}
-              </Label>
-              <Slider
-                min={1}
-                max={5}
-                step={1}
-                value={reviewStarsRange}
-                onValueChange={(value) =>
-                  setReviewStarsRange(value as [number, number])
-                }
-                className="invert"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-white">
-                Playtime: {playtimeRange[0]}h - {playtimeRange[1]}h
-              </Label>
-              <Slider
-                min={0}
-                max={maxPlaytime}
-                step={1}
-                value={playtimeRange}
-                onValueChange={(value) =>
-                  setPlaytimeRange(value as [number, number])
-                }
-                className="invert"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-white">
-                Main Story: {mainTimeRange[0]}h - {mainTimeRange[1]}h
-              </Label>
-              <Slider
-                min={0}
-                max={500}
-                step={1}
-                value={mainTimeRange}
-                onValueChange={(value) =>
-                  setMainTimeRange(value as [number, number])
-                }
-                className="invert"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-white">
-                Main + Extra: {mainExtraTimeRange[0]}h - {mainExtraTimeRange[1]}
-                h
-              </Label>
-              <Slider
-                min={0}
-                max={500}
-                step={1}
-                value={mainExtraTimeRange}
-                onValueChange={(value) =>
-                  setMainExtraTimeRange(value as [number, number])
-                }
-                className="invert"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-white">
-                Completionist: {completionistTimeRange[0]}h -{" "}
-                {completionistTimeRange[1]}h
-              </Label>
-              <Slider
-                min={0}
-                max={500}
-                step={1}
-                value={completionistTimeRange}
-                onValueChange={(value) =>
-                  setCompletionistTimeRange(value as [number, number])
-                }
-                className="invert"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+    <MotionConfig reducedMotion="user">
       <div
-        id="entryList"
-        className="mr-4 flex flex-1 flex-col overflow-hidden p-4"
+        id="upperSection"
+        className="flex flex-col gap-4 py-2 lg:flex-row lg:gap-0"
       >
-        {user?.steamId && (
-          <div className="mb-4 flex justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSyncSteamPlaytimes}
-              disabled={isSyncingSteam}
-              className="gap-2 border-white bg-black text-white hover:bg-white hover:text-black"
+        {isDesktop && (
+          <motion.aside
+            id="leftBar"
+            aria-label="Sort and filter"
+            inert={!isSidebarOpen}
+            initial={false}
+            animate={{
+              width: isSidebarOpen ? 304 : 0,
+              marginRight: isSidebarOpen ? 24 : 0,
+              opacity: isSidebarOpen ? 1 : 0,
+            }}
+            transition={{ type: "spring", stiffness: 260, damping: 30 }}
+            className="sticky top-4 -m-2 shrink-0 self-start overflow-hidden"
+          >
+            <motion.div
+              initial={false}
+              animate={{ x: isSidebarOpen ? 0 : -32 }}
+              transition={{ type: "spring", stiffness: 260, damping: 26 }}
+              className="w-76 p-2"
             >
-              {isSyncingSteam ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-              {isSyncingSteam && steamSyncProgress
-                ? `Syncing ${steamSyncProgress.processed}/${steamSyncProgress.total}...`
-                : "Sync Steam Playtimes"}
-            </Button>
-          </div>
+              <div className="surface-glow bg-surface max-h-[calc(100vh-9rem)] overflow-y-auto rounded-2xl border-2 border-white p-4">
+                <DashboardSidebar
+                  sortBy={sortBy}
+                  direction={direction}
+                  onSortByChange={(next) => {
+                    setSortOverride(next);
+                    setDirectionOverride(null);
+                  }}
+                  onDirectionChange={setDirectionOverride}
+                  filters={filters}
+                  onFiltersChange={setFilters}
+                  platformOptions={platformOptions}
+                  genreOptions={genreOptions}
+                  statusOptions={statusOptions}
+                  categoryOptions={categoryOptions}
+                  bounds={bounds}
+                />
+              </div>
+            </motion.div>
+          </motion.aside>
         )}
-        {filteredData.length === 0 ? (
-          <div className="flex flex-1 items-center justify-center">
-            <div className="text-center">
-              <h2 className="mb-2 text-2xl font-bold text-white">
-                {backlogData && backlogData.length > 0
-                  ? "No entries match your filters"
-                  : "Your backlog is empty"}
-              </h2>
-              <p className="text-gray-400">
-                {backlogData && backlogData.length > 0
-                  ? "Try adjusting your filter settings"
-                  : "Start by adding your first game!"}
-              </p>
+
+        <div id="entryList" className="flex min-w-0 flex-1 flex-col gap-4">
+          <div className="bg-background/85 sticky top-0 z-30 -mx-3 flex flex-wrap items-center gap-3 px-3 py-2 backdrop-blur-md md:-mx-4 md:px-4 lg:static lg:mx-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.9 }}
+              className="block"
+            >
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  isDesktop
+                    ? setSidebarToggle(!isSidebarOpen)
+                    : setIsSheetOpen(true)
+                }
+                aria-expanded={isDesktop ? isSidebarOpen : isSheetOpen}
+                aria-controls={isDesktop ? "leftBar" : undefined}
+                aria-haspopup={isDesktop ? undefined : "dialog"}
+                className={`gap-2 transition-shadow ${isSidebarOpen ? "surface-glow" : ""}`}
+              >
+                <motion.span
+                  animate={{ rotate: isSidebarOpen ? 0 : 180 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                  className="flex"
+                >
+                  <SlidersHorizontal className="h-4 w-4" />
+                </motion.span>
+                Sort &amp; filter
+                <AnimatePresence>
+                  {activeFilterCount > 0 && (
+                    <motion.span
+                      key="active-filter-count"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 18,
+                      }}
+                      className="bg-primary text-primary-foreground rounded-full px-1.5 text-xs"
+                    >
+                      {activeFilterCount}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+                <motion.span
+                  aria-hidden="true"
+                  animate={{ rotate: isSidebarOpen ? 0 : 180 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 18 }}
+                  className="hidden lg:flex"
+                >
+                  <ChevronsLeft className="h-4 w-4" />
+                </motion.span>
+              </Button>
+            </motion.div>
+            <p className="text-sm text-white/70" aria-live="polite">
+              {visibleEntries.length} of {entries.length} game
+              {entries.length === 1 ? "" : "s"}
+            </p>
+            {user?.steamId && <SteamSyncButton className="ml-auto" />}
+          </div>
+
+          {entries.length === 0 ? (
+            <EmptyState
+              title="Your backlog is empty"
+              hint="Start by adding your first game!"
+            />
+          ) : visibleEntries.length === 0 ? (
+            <EmptyState
+              title="No entries match your filters"
+              hint="Try adjusting your filter settings"
+            />
+          ) : sortBy === "status" ? (
+            <DndContext
+              sensors={sensors}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+              onDragCancel={() => setDraggedEntry(null)}
+            >
+              <div className="flex flex-col gap-4">
+                {groups.map((group) => (
+                  <StatusGroupSection
+                    key={group.status}
+                    status={group.status}
+                    count={group.entries.length}
+                    isCollapsed={collapsedGroups.includes(
+                      groupKey(group.status),
+                    )}
+                    onToggle={() => toggleGroup(group.status)}
+                  >
+                    {group.entries.map((entry) => (
+                      <DraggableEntry key={entry.id} entryId={entry.id}>
+                        {renderEntry(entry)}
+                      </DraggableEntry>
+                    ))}
+                  </StatusGroupSection>
+                ))}
+              </div>
+              {createPortal(
+                <DragOverlay>
+                  {draggedEntry && <DragPreview entry={draggedEntry} />}
+                </DragOverlay>,
+                document.body,
+              )}
+            </DndContext>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {labelGroups.map((group) => (
+                <GroupSection
+                  key={group.label}
+                  label={group.label}
+                  count={group.entries.length}
+                  color={
+                    (sortBy === "category"
+                      ? categoryColors.get(group.label)
+                      : undefined) ?? theme.colors.accent
+                  }
+                  isCollapsed={collapsedGroups.includes(groupKey(group.label))}
+                  onToggle={() => toggleGroup(group.label)}
+                >
+                  {group.entries.map(renderEntry)}
+                </GroupSection>
+              ))}
             </div>
-          </div>
-        ) : (
-          <div className="grid min-h-0 flex-1 grid-cols-[repeat(auto-fill,minmax(150px,max-content))] content-start gap-x-2 gap-y-2 overflow-y-auto">
-            {filteredData.map((entry) => (
-              <BacklogEntry
-                key={entry.id}
-                id={entry.id}
-                title={entry.title}
-                playtime={entry.playtime}
-                imageLink={entry.imageLink}
-                imageAlt={entry.imageAlt}
-                genre={entry.genre}
-                platform={entry.platform}
-                status={entry.status}
-                owned={entry.owned}
-                interest={entry.interest}
-                review={entry.review}
-                reviewStars={entry.reviewStars}
-                note={entry.note}
-                mainTime={entry.mainTime}
-                mainPlusExtraTime={entry.mainPlusExtraTime}
-                completionTime={entry.completionTime}
-                steamAppId={entry.steamAppId}
+          )}
+        </div>
+
+        {!isDesktop && (
+          <>
+            <BottomSheet
+              open={isSheetOpen}
+              onOpenChange={setIsSheetOpen}
+              title="Sort & filter"
+              footer={
+                <Button
+                  type="button"
+                  className="h-11 w-full text-base"
+                  onClick={() => setIsSheetOpen(false)}
+                >
+                  Show {visibleEntries.length} game
+                  {visibleEntries.length === 1 ? "" : "s"}
+                </Button>
+              }
+            >
+              <DashboardSidebar
+                sortBy={sortBy}
+                direction={direction}
+                onSortByChange={(next) => {
+                  setSortOverride(next);
+                  setDirectionOverride(null);
+                }}
+                onDirectionChange={setDirectionOverride}
+                filters={filters}
+                onFiltersChange={setFilters}
+                platformOptions={platformOptions}
+                genreOptions={genreOptions}
+                statusOptions={statusOptions}
+                categoryOptions={categoryOptions}
+                bounds={bounds}
               />
-            ))}
-          </div>
+            </BottomSheet>
+          </>
         )}
       </div>
-    </div>
+    </MotionConfig>
   );
 };
+
+const EmptyState = ({ title, hint }: { title: string; hint: string }) => (
+  <div className="flex flex-1 items-center justify-center py-16">
+    <div className="text-center">
+      <h2 className="mb-2 text-2xl font-bold">{title}</h2>
+      <p className="text-white/60">{hint}</p>
+    </div>
+  </div>
+);

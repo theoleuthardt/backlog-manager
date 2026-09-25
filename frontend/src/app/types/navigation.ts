@@ -8,6 +8,8 @@ export interface NavbarLink {
   href?: string;
   content?: JSX.Element;
   component?: ReactNode;
+  mobileComponent?: ReactNode;
+  label: string;
   action?: string;
   target?: string;
   type: "link" | "component";

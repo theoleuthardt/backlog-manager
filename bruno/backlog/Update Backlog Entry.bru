@@ -24,6 +24,7 @@ body:json {
 }
 
 docs {
+  review_stars is 0-10 (values outside that range are a 400).
   Partially updates a backlog entry - only the fields present in the
   body are changed, everything else is left as-is. Sending a field as
   explicit null clears it (where nullable); omitting it entirely leaves

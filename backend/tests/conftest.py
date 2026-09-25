@@ -1,5 +1,5 @@
 import os
-from collections.abc import AsyncGenerator, Generator
+from collections.abc import AsyncGenerator, Awaitable, Callable, Generator
 from pathlib import Path
 
 import asyncpg
@@ -63,13 +63,21 @@ async def session(_seed_schema: None) -> AsyncGenerator[AsyncSession, None]:
 
 
 @pytest.fixture
-def create_and_login(_seed_schema: None):
+async def create_and_login(_seed_schema: None) -> AsyncGenerator[Callable[..., Awaitable[dict[str, str]]], None]:
     """There is no public self-registration endpoint, so route-level
     tests (via a real TestClient hitting the app's own, separately
     committed session) need another way to seed a user: this creates
     one directly through the same service-layer function an admin's
     "create user" request would go through, then logs in for real over
-    HTTP to get a token in the exact shape a client would receive."""
+    HTTP to get a token in the exact shape a client would receive.
+
+    Those users are really committed to the session-shared database, so
+    they are deleted again after the test (their entries, categories and
+    other rows go with them via ON DELETE CASCADE). Otherwise a later
+    test creating the same username fails with a unique violation
+    whenever the test files run in a different order than alphabetical."""
+
+    created_emails: list[str] = []
 
     async def _create_and_login(
         client, email: str, password: str = "hunter22", is_admin: bool = False
@@ -88,9 +96,22 @@ def create_and_login(_seed_schema: None):
                     is_admin=is_admin,
                 ),
             )
+        created_emails.append(email)
 
         login_response = client.post("/api/auth/login", json={"email": email, "password": password})
         token = login_response.json()["access_token"]
         return {"Authorization": f"Bearer {token}"}
 
-    return _create_and_login
+    yield _create_and_login
+
+    if created_emails:
+        from sqlalchemy import delete
+
+        from backlog_manager_backend.db import async_session
+        from backlog_manager_backend.models.user import User as UserModel
+
+        async with async_session() as cleanup_session:
+            await cleanup_session.execute(
+                delete(UserModel).where(UserModel.email.in_(created_emails))
+            )
+            await cleanup_session.commit()

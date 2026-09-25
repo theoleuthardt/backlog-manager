@@ -26,7 +26,7 @@ function StarRating({
   return (
     <div
       data-slot="star-rating"
-      className={cn("flex items-center gap-0.5", className)}
+      className={cn("flex flex-wrap items-center gap-0.5", className)}
       onMouseLeave={() => setHovered(null)}
     >
       {Array.from({ length: max }, (_, index) => index + 1).map((star) => (
@@ -44,7 +44,7 @@ function StarRating({
           )}
         >
           <Star
-            className="h-6 w-6"
+            className="h-5 w-5 sm:h-6 sm:w-6"
             fill={filled >= star ? "currentColor" : "none"}
             strokeWidth={1.5}
           />

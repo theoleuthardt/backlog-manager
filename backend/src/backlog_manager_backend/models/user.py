@@ -1,7 +1,8 @@
 from datetime import datetime
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from sqlalchemy import BigInteger, text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backlog_manager_backend.models import TIMESTAMP_DEFAULT, Base
@@ -29,6 +30,11 @@ class User(Base):
     is_admin: Mapped[bool] = mapped_column("IsAdmin", server_default=text("false"))
     totp_secret_encrypted: Mapped[str | None] = mapped_column("TotpSecretEncrypted")
     totp_enabled: Mapped[bool] = mapped_column("TotpEnabled", server_default=text("false"))
+    default_sort: Mapped[str] = mapped_column("DefaultSort", server_default=text("'status'"))
+    theme: Mapped[str] = mapped_column("Theme", server_default=text("'dark'"))
+    custom_themes: Mapped[list[dict[str, Any]]] = mapped_column(
+        "CustomThemes", JSONB, server_default=text("'[]'::jsonb")
+    )
     created_at: Mapped[datetime] = mapped_column(
         "CreatedAt", server_default=TIMESTAMP_DEFAULT
     )

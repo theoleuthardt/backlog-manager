@@ -5,7 +5,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.errors import NotFoundError, ValidationError, handle_database_error
 from backlog_manager_backend.models.user import User as UserModel
-from backlog_manager_backend.schemas.user import CreateUserParams, UpdateUserParams, User
+from backlog_manager_backend.schemas.user import (
+    CreateUserParams,
+    CustomTheme,
+    UpdateUserParams,
+    User,
+)
 from backlog_manager_backend.utils import now_truncated_to_minute
 
 _LAST_ADMIN_ERROR = "Cannot remove the last remaining admin"
@@ -48,6 +53,9 @@ def _to_schema(model: UserModel) -> User:
         discord_webhook_url_encrypted=model.discord_webhook_url_encrypted,
         steam_auto_import_enabled=model.steam_auto_import_enabled,
         steam_family_ids=model.steam_family_ids,
+        default_sort=model.default_sort,
+        theme=model.theme,
+        custom_themes=msgspec.convert(model.custom_themes, list[CustomTheme]),
     )
 
 
@@ -121,6 +129,12 @@ async def update_user(session: AsyncSession, params: UpdateUserParams) -> User:
         model.steam_auto_import_enabled = params.steam_auto_import_enabled
     if params.steam_family_ids is not msgspec.UNSET:
         model.steam_family_ids = params.steam_family_ids
+    if params.default_sort is not msgspec.UNSET:
+        model.default_sort = params.default_sort
+    if params.theme is not msgspec.UNSET:
+        model.theme = params.theme
+    if params.custom_themes is not msgspec.UNSET:
+        model.custom_themes = msgspec.to_builtins(params.custom_themes)
     if params.is_admin is not msgspec.UNSET:
         model.is_admin = params.is_admin
     if params.totp_secret_encrypted is not msgspec.UNSET:

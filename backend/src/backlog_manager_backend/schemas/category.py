@@ -1,6 +1,11 @@
 from datetime import datetime
+from typing import Annotated
 
 import msgspec
+
+from backlog_manager_backend.schemas.types import HexColor
+
+CategoryName = Annotated[str, msgspec.Meta(min_length=1, max_length=100)]
 
 
 class Category(msgspec.Struct):
@@ -52,12 +57,12 @@ class CategoryResponse(msgspec.Struct):
 
 
 class CreateCategoryRequest(msgspec.Struct):
-    category_name: str
-    color: str = "#000000"
+    category_name: CategoryName
+    color: HexColor = "#000000"
     description: str = "No description"
 
 
 class UpdateCategoryRequest(msgspec.Struct):
-    category_name: str | msgspec.UnsetType = msgspec.UNSET
-    color: str | msgspec.UnsetType = msgspec.UNSET
+    category_name: CategoryName | msgspec.UnsetType = msgspec.UNSET
+    color: HexColor | msgspec.UnsetType = msgspec.UNSET
     description: str | None | msgspec.UnsetType = msgspec.UNSET

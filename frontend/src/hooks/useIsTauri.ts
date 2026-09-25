@@ -35,3 +35,16 @@ function getMacOSSnapshot(): boolean {
 export function useIsTauriMacOS(): boolean {
   return useSyncExternalStore(noopSubscribe, getMacOSSnapshot, getServerSnapshot);
 }
+
+function getAppleSnapshot(): boolean {
+  return /Mac|iPhone|iPad/.test(navigator.userAgent);
+}
+
+/**
+ * True on Apple platforms (macOS in a browser or Tauri, iPadOS), where
+ * keyboard shortcuts use Cmd instead of Ctrl. Reads as false during
+ * SSR/prerendering and switches once mounted.
+ */
+export function useIsApplePlatform(): boolean {
+  return useSyncExternalStore(noopSubscribe, getAppleSnapshot, getServerSnapshot);
+}

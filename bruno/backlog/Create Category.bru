@@ -29,6 +29,8 @@ script:post-response {
 }
 
 docs {
+  category_name must be 1-100 characters and color a #rrggbb hex value,
+  otherwise 400.
   Creates a category for the logged-in user and stores its id in the
   categoryId environment variable, used by the rest of this folder.
   color and description both default server-side ("#000000" / "No
