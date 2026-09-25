@@ -656,3 +656,62 @@ async def test_update_category_rejects_invalid_color_and_name(
     assert bad_name.status_code == 400
     assert good.status_code == 200
     assert good.json()["color"] == "#00FF88"
+
+
+_ENTRY_BASE = {
+    "title": "Hades",
+    "genre": ["Roguelike"],
+    "platform": ["PC"],
+    "status": "Completed",
+    "owned": True,
+    "interest": 9,
+}
+
+
+async def test_review_stars_accept_the_full_zero_to_ten_range(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "tenstars@example.com")
+        created = client.post(
+            "/api/backlog/entries", headers=headers, json={**_ENTRY_BASE, "review_stars": 10}
+        )
+        entry_id = created.json()["id"]
+        lowered = client.put(
+            f"/api/backlog/entries/{entry_id}", headers=headers, json={"review_stars": 7}
+        )
+        cleared = client.put(
+            f"/api/backlog/entries/{entry_id}", headers=headers, json={"review_stars": 0}
+        )
+
+    assert created.status_code == 201
+    assert created.json()["review_stars"] == 10
+    assert lowered.json()["review_stars"] == 7
+    assert cleared.json()["review_stars"] == 0
+
+
+async def test_review_stars_reject_values_outside_zero_to_ten(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "badstars@example.com")
+        too_high_create = client.post(
+            "/api/backlog/entries", headers=headers, json={**_ENTRY_BASE, "review_stars": 11}
+        )
+        negative_create = client.post(
+            "/api/backlog/entries", headers=headers, json={**_ENTRY_BASE, "review_stars": -1}
+        )
+        entry_id = client.post(
+            "/api/backlog/entries", headers=headers, json=_ENTRY_BASE
+        ).json()["id"]
+        too_high_update = client.put(
+            f"/api/backlog/entries/{entry_id}", headers=headers, json={"review_stars": 11}
+        )
+
+    assert too_high_create.status_code == 400
+    assert negative_create.status_code == 400
+    assert too_high_update.status_code == 400

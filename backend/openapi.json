@@ -4589,7 +4589,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "maximum": 10
           },
           "review": {
             "oneOf": [
@@ -6537,7 +6538,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "maximum": 10
           },
           "review": {
             "oneOf": [

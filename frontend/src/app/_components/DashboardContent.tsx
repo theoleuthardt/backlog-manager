@@ -44,6 +44,7 @@ import {
   filterEntries,
   type EntryFilters,
 } from "~/lib/filterEntries";
+import { MAX_REVIEW_STARS } from "~/lib/reviewStars";
 import { groupEntriesByStatus, groupSortedEntries } from "~/lib/groupEntries";
 import {
   DEFAULT_SORT,
@@ -118,7 +119,7 @@ export const DashboardContent = () => {
   const bounds: FilterBounds = useMemo(
     () => ({
       interest: 10,
-      reviewStars: 5,
+      reviewStars: MAX_REVIEW_STARS,
       playtime: ceilMax(entries, (entry) => entry.playtime, 10),
       mainTime: ceilMax(entries, (entry) => entry.mainTime, 10),
       mainPlusExtraTime: ceilMax(

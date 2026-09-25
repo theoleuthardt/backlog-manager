@@ -42,6 +42,7 @@ script:post-response {
 }
 
 docs {
+  review_stars is 0-10 (values outside that range are a 400).
   Creates a backlog entry for the logged-in user and stores its id in
   the entryId environment variable, used by every other request in this
   folder. Run auth/Login first, then this.

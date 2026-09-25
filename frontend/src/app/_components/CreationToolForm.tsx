@@ -44,6 +44,7 @@ import {
 import { StatusSelect } from "components/StatusSelect";
 import { useCreateBacklogEntry } from "~/hooks/useBacklog";
 import { getEntryDuplicates } from "~/lib/api/backlog";
+import { MAX_REVIEW_STARS } from "~/lib/reviewStars";
 import type { BacklogEntryData, CreateBacklogEntryInput } from "~/lib/api/backlog";
 import { useSteamAppId, useSteamPlaytime } from "~/hooks/useGameSearch";
 import { toast } from "sonner";
@@ -611,6 +612,7 @@ export function CreationToolForm() {
                     <StarRating
                       value={reviewStars}
                       onValueChange={setReviewStars}
+                      max={MAX_REVIEW_STARS}
                       disabled={status !== "Completed"}
                     />
                   </div>

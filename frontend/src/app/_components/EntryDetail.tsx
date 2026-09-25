@@ -57,6 +57,7 @@ import {
   useUpdateBacklogEntry,
 } from "~/hooks/useBacklog";
 import { useSteamGridDbCovers } from "~/hooks/useGameSearch";
+import { MAX_REVIEW_STARS } from "~/lib/reviewStars";
 import { statusColor } from "~/lib/statusStyle";
 
 const INTEREST_SEGMENTS = 10;
@@ -597,6 +598,7 @@ export const EntryDetail = (props: BacklogEntryProps) => {
                 <StarRating
                   value={reviewStars}
                   onValueChange={setReviewStars}
+                  max={MAX_REVIEW_STARS}
                   disabled={!canReview}
                 />
                 <Textarea
