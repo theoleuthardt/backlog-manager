@@ -1,5 +1,6 @@
 "use client";
 import React, { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   DndContext,
   DragOverlay,
@@ -11,11 +12,7 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
-import {
-  ChevronsLeft,
-  Loader2,
-  SlidersHorizontal,
-} from "lucide-react";
+import { ChevronsLeft, Loader2, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "shadcn_components/ui/button";
 import { BacklogEntry } from "components/BacklogEntry";
@@ -399,9 +396,12 @@ export const DashboardContent = () => {
                   </StatusGroupSection>
                 ))}
               </div>
-              <DragOverlay>
-                {draggedEntry && <DragPreview entry={draggedEntry} />}
-              </DragOverlay>
+              {createPortal(
+                <DragOverlay>
+                  {draggedEntry && <DragPreview entry={draggedEntry} />}
+                </DragOverlay>,
+                document.body,
+              )}
             </DndContext>
           ) : (
             <div className="flex flex-col gap-4">

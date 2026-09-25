@@ -14,7 +14,11 @@ const DEGREES_PER_PIXEL = 2.2;
 const IDLE_MS = 60;
 
 /**
- * The card that follows the pointer while dragging. It hangs from its
+ * The card that follows the pointer while dragging. It must be rendered
+ * through a portal into document.body (see DashboardContent): the
+ * overlay is position: fixed, and any transformed ancestor - the page
+ * transition and the drop-in animation both leave one - would become
+ * its containing block and offset it by the scroll position. It hangs from its
  * top edge like a pendulum: horizontal pointer movement kicks it to the
  * opposite side, and an underdamped spring swings it back and forth
  * until it settles once the pointer stops. Touch and mouse both feed it
