@@ -1,7 +1,7 @@
 "use client";
 import { AchievementProgress, GameImage } from "components/index";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
@@ -110,9 +110,18 @@ export function CreationToolForm() {
   const [createStatus, setCreateStatus] = useState<
     "idle" | "success" | "error"
   >("idle");
+  const isHydrated = useSyncExternalStore(
+    () => () => undefined,
+    () => true,
+    () => false,
+  );
 
   const shouldLookUpSteamAppId = !isCustomGame && titleFromUrl.length > 0;
   const steamAppIdQuery = useSteamAppId(shouldLookUpSteamAppId ? title : "");
+  const isLookingUpSteamAppId =
+    shouldLookUpSteamAppId &&
+    isHydrated &&
+    steamAppIdQuery.fetchStatus === "fetching";
   const autoSteamAppId = steamAppIdQuery.data;
   const displaySteamAppId =
     steamAppIdInput ?? (autoSteamAppId != null ? String(autoSteamAppId) : "");
@@ -569,7 +578,7 @@ export function CreationToolForm() {
                           className="flex items-center gap-1.5 text-sm"
                         >
                           App ID
-                          {steamAppIdQuery.isFetching && (
+                          {isLookingUpSteamAppId && (
                             <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
                           )}
                         </Label>
@@ -582,8 +591,7 @@ export function CreationToolForm() {
                           placeholder={
                             isCustomGame
                               ? "e.g. 504230 - enables cover picker and price tracking"
-                              : shouldLookUpSteamAppId &&
-                                steamAppIdQuery.fetchStatus === "fetching"
+                              : isLookingUpSteamAppId
                                 ? "Looking up on Steam..."
                                 : "No Steam App ID found - enter one manually"
                           }
@@ -654,8 +662,7 @@ export function CreationToolForm() {
                 disabled={
                   isLoading ||
                   createStatus === "success" ||
-                  (shouldLookUpSteamAppId &&
-                    steamAppIdQuery.fetchStatus === "fetching")
+                  isLookingUpSteamAppId
                 }
                 className={`w-full border-2 px-8 py-5 text-base font-bold transition-colors duration-300 lg:w-auto lg:min-w-[200px] ${submitButtonColorClasses}`}
               >
