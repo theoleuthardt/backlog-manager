@@ -19,6 +19,7 @@ docs {
   creation tool to prefill playtime. Returns null when the app isn't
   in the user's library or no Steam ID is linked.
 
-  Run auth/Login first. 503 if neither the caller nor the server has
-  a Steam Web API key configured.
+  Run auth/Login first. 503 when no Steam Web API key is configured
+  (neither the caller nor the server), the caller's stored key cannot
+  be decrypted, or the Steam Web API is unreachable.
 }

@@ -26,7 +26,21 @@ import {
 } from "shadcn_components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "shadcn_components/ui/tabs";
 import { StarRating } from "shadcn_components/ui/star-rating";
-import { Loader2, Check, X, ArrowLeft } from "lucide-react";
+import { Slider } from "shadcn_components/ui/slider";
+import {
+  Loader2,
+  Check,
+  X,
+  ArrowLeft,
+  Pencil,
+  Gamepad2,
+  UserRound,
+  Clock,
+  Sword,
+  Map,
+  Trophy,
+  Rocket,
+} from "lucide-react";
 import { StatusSelect } from "components/StatusSelect";
 import { useCreateBacklogEntry } from "~/hooks/useBacklog";
 import { getEntryDuplicates } from "~/lib/api/backlog";
@@ -120,7 +134,7 @@ export function CreationToolForm() {
   const buildPayload = (): CreateBacklogEntryInput => ({
     title: title.trim(),
     genre: genre.split(",").map((g) => g.trim()).filter(Boolean),
-    platform: [platform.trim()].filter(Boolean),
+    platform: platform.split(",").map((p) => p.trim()).filter(Boolean),
     status,
     owned,
     interest,
@@ -319,134 +333,165 @@ export function CreationToolForm() {
               </TabsList>
 
               <TabsContent value="details" className="mt-4">
-                <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                <div className="space-y-4">
                   {isCustomGame && (
-                    <div className="space-y-1 sm:col-span-2">
-                      <Label htmlFor="title" className="text-sm">
+                    <section className="rounded-lg border border-gray-700 bg-white/[0.03] p-4">
+                      <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-400">
+                        <Pencil className="h-4 w-4" />
                         Title
-                      </Label>
+                      </h2>
                       <Input
                         id="title"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         className="bg-black text-white"
                       />
-                    </div>
+                    </section>
                   )}
 
-                  <div className="space-y-1">
-                    <Label htmlFor="platform" className="text-sm">
-                      Platform
-                    </Label>
-                    {platformOptions.length > 0 ? (
-                      <Select value={platform} onValueChange={setPlatform}>
-                        <SelectTrigger
-                          id="platform"
+                  <section className="rounded-lg border border-gray-700 bg-white/[0.03] p-4">
+                    <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-400">
+                      <Gamepad2 className="h-4 w-4" />
+                      Game Info
+                    </h2>
+                    <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                      <div className="space-y-1">
+                        <Label htmlFor="platform" className="text-sm">
+                          Platform
+                        </Label>
+                        {platformOptions.length > 0 ? (
+                          <Select value={platform} onValueChange={setPlatform}>
+                            <SelectTrigger
+                              id="platform"
+                              className="w-full bg-black text-white"
+                            >
+                              <SelectValue placeholder="Select a platform" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {platformOptions.map((platformOption) => (
+                                <SelectItem key={platformOption} value={platformOption}>
+                                  {platformOption}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Input
+                            id="platform"
+                            value={platform}
+                            onChange={(e) => setPlatform(e.target.value)}
+                            placeholder="PC, PlayStation, Xbox"
+                            className="bg-black text-white"
+                          />
+                        )}
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label htmlFor="genre" className="text-sm">
+                          Genre
+                        </Label>
+                        <Input
+                          id="genre"
+                          value={genre}
+                          onChange={(e) => setGenre(e.target.value)}
+                          placeholder="Action, RPG, Adventure"
+                          className="bg-black text-white"
+                        />
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="rounded-lg border border-gray-700 bg-white/[0.03] p-4">
+                    <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-400">
+                      <UserRound className="h-4 w-4" />
+                      Your Take
+                    </h2>
+                    <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                      <div className="space-y-1">
+                        <Label htmlFor="status" className="text-sm">
+                          Status
+                        </Label>
+                        <StatusSelect
+                          value={status}
+                          onValueChange={setStatus}
                           className="w-full bg-black text-white"
-                        >
-                          <SelectValue placeholder="Select a platform" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {platformOptions.map((platformOption) => (
-                            <SelectItem key={platformOption} value={platformOption}>
-                              {platformOption}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Input
-                        id="platform"
-                        value={platform}
-                        onChange={(e) => setPlatform(e.target.value)}
-                        placeholder="PC, PlayStation, Xbox"
-                        className="bg-black text-white"
-                      />
-                    )}
-                  </div>
+                        />
+                      </div>
 
-                  <div className="space-y-1">
-                    <Label htmlFor="status" className="text-sm">
-                      Status
-                    </Label>
-                    <StatusSelect
-                      value={status}
-                      onValueChange={setStatus}
-                      className="w-full bg-black text-white"
-                    />
-                  </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="interest" className="text-sm">
+                            Interest Level
+                          </Label>
+                          <span className="text-lg font-bold text-blue-500">
+                            {interest}
+                            <span className="text-xs font-normal text-gray-400">
+                              {" "}
+                              / 10
+                            </span>
+                          </span>
+                        </div>
+                        <Slider
+                          id="interest"
+                          min={1}
+                          max={10}
+                          step={1}
+                          value={[interest]}
+                          onValueChange={(values) => setInterest(values[0] ?? 1)}
+                          className="[&_[data-slot=slider-track]]:bg-white/15 [&_[data-slot=slider-range]]:bg-blue-500 [&_[data-slot=slider-thumb]]:border-blue-500 [&_[data-slot=slider-thumb]]:bg-black [&_[data-slot=slider-thumb]]:hover:ring-blue-500/40"
+                        />
+                      </div>
 
-                  <div className="space-y-1">
-                    <Label htmlFor="genre" className="text-sm">
-                      Genre
-                    </Label>
-                    <Input
-                      id="genre"
-                      value={genre}
-                      onChange={(e) => setGenre(e.target.value)}
-                      placeholder="Action, RPG, Adventure"
-                      className="bg-black text-white"
-                    />
-                  </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="playtime" className="text-sm">
+                          Playtime (hours)
+                          {steamPlaytimeQuery.isFetching && (
+                            <Loader2 className="ml-1.5 inline h-3 w-3 animate-spin text-gray-400" />
+                          )}
+                        </Label>
+                        <Input
+                          id="playtime"
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          value={effectivePlaytime}
+                          onChange={(e) => {
+                            setPlaytimeTouched(true);
+                            setPlaytime(e.target.value);
+                          }}
+                          className={`${NO_SPINNER_CLASS} bg-black text-white`}
+                        />
+                      </div>
 
-                  <div className="flex items-center space-x-2 pt-6">
-                    <Checkbox
-                      id="owned"
-                      checked={owned}
-                      onCheckedChange={(checked) => setOwned(checked as boolean)}
-                    />
-                    <Label htmlFor="owned" className="cursor-pointer text-sm">
-                      I own this game
-                    </Label>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label htmlFor="playtime" className="text-sm">
-                      Playtime (hours)
-                      {steamPlaytimeQuery.isFetching && (
-                        <Loader2 className="ml-1.5 inline h-3 w-3 animate-spin text-gray-400" />
-                      )}
-                    </Label>
-                    <Input
-                      id="playtime"
-                      type="number"
-                      min="0"
-                      step="0.1"
-                      value={effectivePlaytime}
-                      onChange={(e) => {
-                        setPlaytimeTouched(true);
-                        setPlaytime(e.target.value);
-                      }}
-                      className={`${NO_SPINNER_CLASS} bg-black text-white`}
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label htmlFor="interest" className="text-sm">
-                      Interest Level (1-10)
-                    </Label>
-                    <Input
-                      id="interest"
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={interest}
-                      onChange={(e) =>
-                        setInterest(Number.parseInt(e.target.value) || 1)
-                      }
-                      className={`${NO_SPINNER_CLASS} bg-black text-white`}
-                    />
-                  </div>
+                      <div className="flex items-center space-x-2 pt-1">
+                        <Checkbox
+                          id="owned"
+                          checked={owned}
+                          onCheckedChange={(checked) => setOwned(checked as boolean)}
+                        />
+                        <Label htmlFor="owned" className="cursor-pointer text-sm">
+                          I own this game
+                        </Label>
+                      </div>
+                    </div>
+                  </section>
                 </div>
               </TabsContent>
 
               <TabsContent value="game-data" className="mt-4">
-                <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
-                  <div className="space-y-1 sm:col-span-2">
-                    <Label className="text-sm">HowLongToBeat Times</Label>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div>
-                        <Label htmlFor="mainStory" className="mb-1 text-xs">
+                <div className="space-y-4">
+                  <section className="rounded-lg border border-gray-700 bg-white/[0.03] p-4">
+                    <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-400">
+                      <Clock className="h-4 w-4" />
+                      HowLongToBeat Times
+                    </h2>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                      <div className="rounded-md border border-white/10 bg-black/50 p-3">
+                        <Label
+                          htmlFor="mainStory"
+                          className="flex items-center gap-1.5 text-xs text-gray-400"
+                        >
+                          <Sword className="h-3.5 w-3.5 text-blue-400" />
                           Main
                         </Label>
                         <Input
@@ -457,15 +502,18 @@ export function CreationToolForm() {
                           value={mainStory}
                           onChange={(e) => setMainStory(e.target.value)}
                           disabled={!isCustomGame}
-                          className={`${NO_SPINNER_CLASS} bg-black text-sm text-white disabled:opacity-70`}
+                          placeholder="0"
+                          className={`${NO_SPINNER_CLASS} mt-2 border-0 bg-transparent p-0 text-2xl font-bold text-white focus-visible:ring-0 disabled:opacity-70`}
                         />
+                        <span className="text-xs text-gray-500">hours</span>
                       </div>
-                      <div>
+                      <div className="rounded-md border border-white/10 bg-black/50 p-3">
                         <Label
                           htmlFor="mainStoryWithExtras"
-                          className="mb-1 text-xs"
+                          className="flex items-center gap-1.5 text-xs text-gray-400"
                         >
-                          Main+Extra
+                          <Map className="h-3.5 w-3.5 text-blue-400" />
+                          Main + Extra
                         </Label>
                         <Input
                           id="mainStoryWithExtras"
@@ -475,12 +523,18 @@ export function CreationToolForm() {
                           value={mainStoryWithExtras}
                           onChange={(e) => setMainStoryWithExtras(e.target.value)}
                           disabled={!isCustomGame}
-                          className={`${NO_SPINNER_CLASS} bg-black text-sm text-white disabled:opacity-70`}
+                          placeholder="0"
+                          className={`${NO_SPINNER_CLASS} mt-2 border-0 bg-transparent p-0 text-2xl font-bold text-white focus-visible:ring-0 disabled:opacity-70`}
                         />
+                        <span className="text-xs text-gray-500">hours</span>
                       </div>
-                      <div>
-                        <Label htmlFor="completionist" className="mb-1 text-xs">
-                          Complete
+                      <div className="rounded-md border border-white/10 bg-black/50 p-3">
+                        <Label
+                          htmlFor="completionist"
+                          className="flex items-center gap-1.5 text-xs text-gray-400"
+                        >
+                          <Trophy className="h-3.5 w-3.5 text-yellow-400" />
+                          Completionist
                         </Label>
                         <Input
                           id="completionist"
@@ -490,43 +544,55 @@ export function CreationToolForm() {
                           value={completionist}
                           onChange={(e) => setCompletionist(e.target.value)}
                           disabled={!isCustomGame}
-                          className={`${NO_SPINNER_CLASS} bg-black text-sm text-white disabled:opacity-70`}
+                          placeholder="0"
+                          className={`${NO_SPINNER_CLASS} mt-2 border-0 bg-transparent p-0 text-2xl font-bold text-white focus-visible:ring-0 disabled:opacity-70`}
                         />
+                        <span className="text-xs text-gray-500">hours</span>
                       </div>
                     </div>
-                  </div>
+                    {!isCustomGame && (
+                      <p className="mt-3 text-xs text-gray-500">
+                        Times from HowLongToBeat - editable for custom games only.
+                      </p>
+                    )}
+                  </section>
 
-                  <div className="space-y-1">
-                    <Label
-                      htmlFor="steamAppId"
-                      className="flex items-center gap-1.5 text-sm"
-                    >
-                      Steam App ID (optional)
-                      {steamAppIdQuery.isFetching && (
-                        <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
-                      )}
-                    </Label>
-                    <Input
-                      id="steamAppId"
-                      type="number"
-                      min="0"
-                      value={displaySteamAppId}
-                      onChange={(e) => setSteamAppIdInput(e.target.value)}
-                      placeholder={
-                        isCustomGame
-                          ? "e.g. 504230 - enables cover picker and price tracking"
-                          : shouldLookUpSteamAppId &&
-                            steamAppIdQuery.fetchStatus === "fetching"
-                            ? "Looking up on Steam..."
-                            : "No Steam App ID found - enter one manually"
-                      }
-                      className={`${NO_SPINNER_CLASS} bg-black text-white`}
-                    />
-                  </div>
-
-                  <div className="space-y-1 sm:col-span-2">
-                    <AchievementProgress steamAppId={resolvedSteamAppId} />
-                  </div>
+                  <section className="rounded-lg border border-gray-700 bg-white/[0.03] p-4">
+                    <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-400">
+                      <Rocket className="h-4 w-4" />
+                      Steam
+                    </h2>
+                    <div className="space-y-4">
+                      <div className="space-y-1">
+                        <Label
+                          htmlFor="steamAppId"
+                          className="flex items-center gap-1.5 text-sm"
+                        >
+                          App ID
+                          {steamAppIdQuery.isFetching && (
+                            <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
+                          )}
+                        </Label>
+                        <Input
+                          id="steamAppId"
+                          type="number"
+                          min="0"
+                          value={displaySteamAppId}
+                          onChange={(e) => setSteamAppIdInput(e.target.value)}
+                          placeholder={
+                            isCustomGame
+                              ? "e.g. 504230 - enables cover picker and price tracking"
+                              : shouldLookUpSteamAppId &&
+                                steamAppIdQuery.fetchStatus === "fetching"
+                                ? "Looking up on Steam..."
+                                : "No Steam App ID found - enter one manually"
+                          }
+                          className={`${NO_SPINNER_CLASS} bg-black text-white`}
+                        />
+                      </div>
+                      <AchievementProgress steamAppId={resolvedSteamAppId} />
+                    </div>
+                  </section>
                 </div>
               </TabsContent>
 
