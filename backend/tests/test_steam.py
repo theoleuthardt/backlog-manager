@@ -369,11 +369,130 @@ async def test_get_steam_library_cover_if_exists_returns_none_when_404(
     from backlog_manager_backend.integrations.steam import get_steam_library_cover_if_exists
 
     def handler(request: httpx.Request) -> httpx.Response:
-        assert request.method == "HEAD"
-        return httpx.Response(404)
+        if request.method == "HEAD":
+            return httpx.Response(404)
+        return httpx.Response(200, json={"response": {"store_items": [{"id": 999999, "success": 15}]}})
 
     _mock_client(handler, monkeypatch)
     assert await get_steam_library_cover_if_exists(999999) is None
+
+
+_HASHED_ASSETS_RESPONSE = {
+    "response": {
+        "store_items": [
+            {
+                "id": 4005900,
+                "success": 1,
+                "assets": {
+                    "asset_url_format": "steam/apps/4005900/${FILENAME}?t=1761423838",
+                    "library_capsule": "fb818ab4f28788436ee35b0b57fc1dbc9284fe45/library_capsule.jpg",
+                    "library_capsule_2x": "fb818ab4f28788436ee35b0b57fc1dbc9284fe45/library_capsule_2x.jpg",
+                },
+            }
+        ]
+    }
+}
+_HASHED_COVER_URL = (
+    "https://shared.steamstatic.com/store_item_assets/steam/apps/4005900/"
+    "fb818ab4f28788436ee35b0b57fc1dbc9284fe45/library_capsule_2x.jpg?t=1761423838"
+)
+
+
+async def test_get_steam_library_cover_if_exists_falls_back_to_hashed_asset_path(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from backlog_manager_backend.integrations.steam import get_steam_library_cover_if_exists
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "HEAD":
+            return httpx.Response(404)
+        assert "IStoreBrowseService/GetItems" in request.url.path
+        assert '"appid":4005900' in request.url.params["input_json"].replace(" ", "")
+        return httpx.Response(200, json=_HASHED_ASSETS_RESPONSE)
+
+    _mock_client(handler, monkeypatch)
+    assert await get_steam_library_cover_if_exists(4005900) == _HASHED_COVER_URL
+
+
+async def test_get_steam_library_cover_if_exists_prefers_direct_path_over_store_lookup(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from backlog_manager_backend.integrations.steam import get_steam_library_cover_if_exists
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.method == "HEAD"
+        return httpx.Response(200)
+
+    _mock_client(handler, monkeypatch)
+    assert await get_steam_library_cover_if_exists(620) is not None
+
+
+async def test_get_steam_library_cover_if_exists_uses_1x_capsule_when_2x_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from backlog_manager_backend.integrations.steam import get_steam_library_cover_if_exists
+
+    payload = {
+        "response": {
+            "store_items": [
+                {
+                    "id": 1,
+                    "success": 1,
+                    "assets": {
+                        "asset_url_format": "steam/apps/1/${FILENAME}?t=5",
+                        "library_capsule": "abc/library_capsule.jpg",
+                    },
+                }
+            ]
+        }
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "HEAD":
+            return httpx.Response(404)
+        return httpx.Response(200, json=payload)
+
+    _mock_client(handler, monkeypatch)
+    assert (
+        await get_steam_library_cover_if_exists(1)
+        == "https://shared.steamstatic.com/store_item_assets/steam/apps/1/abc/library_capsule.jpg?t=5"
+    )
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"response": {}},
+        {"response": {"store_items": [{"id": 9, "success": 15}]}},
+        {"response": {"store_items": [{"id": 9, "success": 1, "assets": {"asset_url_format": "x/${FILENAME}"}}]}},
+    ],
+)
+async def test_get_steam_library_cover_if_exists_returns_none_without_library_assets(
+    monkeypatch: pytest.MonkeyPatch, payload: dict[str, object]
+) -> None:
+    from backlog_manager_backend.integrations.steam import get_steam_library_cover_if_exists
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "HEAD":
+            return httpx.Response(404)
+        return httpx.Response(200, json=payload)
+
+    _mock_client(handler, monkeypatch)
+    assert await get_steam_library_cover_if_exists(9) is None
+
+
+async def test_get_steam_library_cover_if_exists_returns_none_when_store_lookup_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from backlog_manager_backend.integrations.steam import get_steam_library_cover_if_exists
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "HEAD":
+            return httpx.Response(404)
+        return httpx.Response(500)
+
+    _mock_client(handler, monkeypatch)
+    assert await get_steam_library_cover_if_exists(9) is None
 
 
 async def test_search_store_by_title_returns_parsed_results(

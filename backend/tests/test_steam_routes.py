@@ -34,6 +34,8 @@ def _mock_steam(
     def wrapped_handler(request: httpx.Request) -> httpx.Response:
         if request.url.host == "shared.akamai.steamstatic.com" and request.method == "HEAD":
             return httpx.Response(404, request=request)
+        if request.url.path.endswith("/IStoreBrowseService/GetItems/v1"):
+            return httpx.Response(200, json={"response": {}}, request=request)
         return handler(request)
 
     transport = httpx.MockTransport(wrapped_handler)

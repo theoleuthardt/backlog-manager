@@ -12,6 +12,7 @@ from backlog_manager_backend.integrations.types import (
     SteamGetWishlistEnvelope,
     SteamOwnedGame,
     SteamPlayerStats,
+    SteamStoreBrowseEnvelope,
     SteamStoreSearchEnvelope,
     SteamStoreSearchItem,
     SteamWishlistItem,
@@ -27,6 +28,8 @@ _SCHEMA_FOR_GAME_URL = "https://api.steampowered.com/ISteamUserStats/GetSchemaFo
 _WISHLIST_URL = "https://api.steampowered.com/IWishlistService/GetWishlist/v1/"
 _APP_DETAILS_URL = "https://store.steampowered.com/api/appdetails"
 _STORE_SEARCH_URL = "https://store.steampowered.com/api/storesearch/"
+_STORE_BROWSE_ITEMS_URL = "https://api.steampowered.com/IStoreBrowseService/GetItems/v1"
+_STORE_ASSETS_BASE_URL = "https://shared.steamstatic.com/store_item_assets/"
 
 
 async def get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
@@ -103,8 +106,11 @@ async def search_store_by_title(title: str) -> list[SteamStoreSearchItem]:
 
 
 async def get_steam_library_cover_if_exists(app_id: int) -> str | None:
-    """Checks if Steam's official 600x900 vertical library cover exists for the app.
-    Returns the URL if it does (HEAD returns 200), otherwise None."""
+    """Resolves Steam's official vertical library cover for the app. The
+    deterministic 600x900 path is tried first (HEAD returns 200); many apps
+    only serve their capsule from a hashed storefront asset path, so a miss
+    falls back to the store browse API's asset listing. Returns None when
+    neither yields a cover or a lookup fails."""
     url = f"https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/{app_id}/library_600x900.jpg"
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(5.0)) as client:
@@ -113,6 +119,36 @@ async def get_steam_library_cover_if_exists(app_id: int) -> str | None:
                 return url
     except httpx.HTTPError as error:
         logger.error("get_steam_library_cover error", app_id=app_id, error=str(error))
+    return await _get_hashed_library_cover(app_id)
+
+
+async def _get_hashed_library_cover(app_id: int) -> str | None:
+    """Library capsule URL from the store browse API's asset listing, the
+    2x variant preferred. Best-effort: any HTTP or decode failure, or an
+    app without library assets, yields None."""
+    input_json = msgspec.json.encode(
+        {
+            "ids": [{"appid": app_id}],
+            "context": {"language": "english", "country_code": "US"},
+            "data_request": {"include_assets": True},
+        }
+    ).decode()
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(5.0)) as client:
+            response = await client.get(_STORE_BROWSE_ITEMS_URL, params={"input_json": input_json})
+        response.raise_for_status()
+        envelope = msgspec.json.decode(response.content, type=SteamStoreBrowseEnvelope)
+    except (httpx.HTTPError, msgspec.DecodeError) as error:
+        logger.error("store browse assets error", app_id=app_id, error=str(error))
+        return None
+
+    for item in envelope.response.store_items:
+        if item.id != app_id or item.assets is None:
+            continue
+        filename = item.assets.library_capsule_2x or item.assets.library_capsule
+        if filename is not None:
+            path = item.assets.asset_url_format.replace("${FILENAME}", filename)
+            return f"{_STORE_ASSETS_BASE_URL}{path}"
     return None
 
 
