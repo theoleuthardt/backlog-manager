@@ -25,7 +25,7 @@ import {
   type FilterBounds,
 } from "components/DashboardSidebar";
 import { DraggableEntry } from "components/DraggableEntry";
-import { EntryTile } from "components/EntryTile";
+import { DragPreview } from "components/DragPreview";
 import { StatusGroupSection } from "components/StatusGroupSection";
 import { useAuth } from "~/app/context/AuthContext";
 import { useDashboard } from "~/app/context/DashboardContext";
@@ -421,17 +421,7 @@ export const DashboardContent = () => {
                 ))}
               </div>
               <DragOverlay>
-                {draggedEntry && (
-                  <div className="scale-105 rotate-3 opacity-90">
-                    <EntryTile
-                      title={draggedEntry.title}
-                      imageLink={draggedEntry.imageLink}
-                      status={draggedEntry.status}
-                      playtime={draggedEntry.playtime}
-                      mainTime={draggedEntry.mainTime}
-                    />
-                  </div>
-                )}
+                {draggedEntry && <DragPreview entry={draggedEntry} />}
               </DragOverlay>
             </DndContext>
           ) : (
