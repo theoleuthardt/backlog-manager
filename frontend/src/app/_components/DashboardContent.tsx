@@ -26,9 +26,11 @@ import {
 } from "components/DashboardSidebar";
 import { DraggableEntry } from "components/DraggableEntry";
 import { DragPreview } from "components/DragPreview";
+import { GroupSection } from "components/GroupSection";
 import { StatusGroupSection } from "components/StatusGroupSection";
 import { useAuth } from "~/app/context/AuthContext";
 import { useDashboard } from "~/app/context/DashboardContext";
+import { useTheme } from "~/app/context/ThemeContext";
 import {
   useBacklogEntries,
   useCustomStatuses,
@@ -44,7 +46,7 @@ import {
   filterEntries,
   type EntryFilters,
 } from "~/lib/filterEntries";
-import { groupEntriesByStatus } from "~/lib/groupEntries";
+import { groupEntriesByStatus, groupSortedEntries } from "~/lib/groupEntries";
 import {
   DEFAULT_SORT,
   defaultDirectionFor,
@@ -70,6 +72,7 @@ function uniqueSorted(values: Iterable<string>): string[] {
 export const DashboardContent = () => {
   const { user } = useAuth();
   const { searchQuery } = useDashboard();
+  const { theme } = useTheme();
   const { data: backlogData, isLoading, error } = useBacklogEntries();
   const { data: customStatuses = [] } = useCustomStatuses();
   const moveEntry = useMoveEntryToStatus();
@@ -87,7 +90,7 @@ export const DashboardContent = () => {
   const [sortOverride, setSortOverride] = useState<SortOption | null>(null);
   const [directionOverride, setDirectionOverride] =
     useState<SortDirection | null>(null);
-  const [collapsedStatuses, setCollapsedStatuses] = useState<string[]>([]);
+  const [collapsedGroups, setCollapsedGroups] = useState<string[]>([]);
   const [draggedEntry, setDraggedEntry] = useState<BacklogEntryData | null>(
     null,
   );
@@ -166,6 +169,14 @@ export const DashboardContent = () => {
     );
   }, [sortBy, direction, statusOptions, visibleEntries, filters.statuses]);
 
+  const labelGroups = useMemo(
+    () =>
+      sortBy === "status"
+        ? []
+        : groupSortedEntries(visibleEntries, sortBy, categoryNames),
+    [sortBy, visibleEntries, categoryNames],
+  );
+
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
     useSensor(TouchSensor, {
@@ -227,11 +238,12 @@ export const DashboardContent = () => {
     if (targetStatus !== entry.status) changeStatus(entry, targetStatus);
   };
 
-  const toggleGroup = (status: string) =>
-    setCollapsedStatuses((collapsed) =>
-      collapsed.includes(status)
-        ? collapsed.filter((value) => value !== status)
-        : [...collapsed, status],
+  const groupKey = (label: string) => `${sortBy}:${label}`;
+  const toggleGroup = (label: string) =>
+    setCollapsedGroups((collapsed) =>
+      collapsed.includes(groupKey(label))
+        ? collapsed.filter((value) => value !== groupKey(label))
+        : [...collapsed, groupKey(label)],
     );
 
   if (isLoading) {
@@ -409,7 +421,9 @@ export const DashboardContent = () => {
                     key={group.status}
                     status={group.status}
                     count={group.entries.length}
-                    isCollapsed={collapsedStatuses.includes(group.status)}
+                    isCollapsed={collapsedGroups.includes(
+                      groupKey(group.status),
+                    )}
                     onToggle={() => toggleGroup(group.status)}
                   >
                     {group.entries.map((entry) => (
@@ -425,8 +439,19 @@ export const DashboardContent = () => {
               </DragOverlay>
             </DndContext>
           ) : (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(9.375rem,1fr))] content-start justify-items-center gap-2">
-              {visibleEntries.map(renderEntry)}
+            <div className="flex flex-col gap-4">
+              {labelGroups.map((group) => (
+                <GroupSection
+                  key={group.label}
+                  label={group.label}
+                  count={group.entries.length}
+                  color={theme.colors.accent}
+                  isCollapsed={collapsedGroups.includes(groupKey(group.label))}
+                  onToggle={() => toggleGroup(group.label)}
+                >
+                  {group.entries.map(renderEntry)}
+                </GroupSection>
+              ))}
             </div>
           )}
         </div>

@@ -204,12 +204,11 @@ export const DashboardSidebar = ({
             )}
           </Button>
         </div>
-        {sortBy === "status" && (
-          <p className="text-xs text-white/60">
-            Grouped by status - drag a game onto another group to change its
-            status.
-          </p>
-        )}
+        <p className="text-xs text-white/60">
+          {sortBy === "status"
+            ? "Grouped by status - drag a game onto another group to change its status."
+            : `Grouped by ${SORT_OPTIONS.find((option) => option.value === sortBy)?.label.toLowerCase() ?? sortBy}.`}
+        </p>
       </section>
 
       <section aria-labelledby="filter-heading" className="space-y-4">

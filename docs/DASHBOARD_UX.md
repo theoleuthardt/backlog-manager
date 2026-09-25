@@ -39,9 +39,13 @@ and the entry grid are siblings in the page tree.
 
 ### Grouping by status with drag and drop (#178)
 
-The issue itself concluded that grouping only makes sense for statuses,
-with every other attribute handled by sorting - that is what was built.
-Sorting by status renders one group per status with a headline, a count, a
+The issue itself concluded that grouping only makes sense for statuses; in
+practice every sort option now shows headlines, and only the status
+groups are drag-and-drop targets. Other options group by the same key the
+sort uses: first genre, first platform (so an entry sits in one group
+only), category, interest level, review stars (0 and missing are
+"Unreviewed") and playtime buckets (not played, under 10h, 10-50h,
+50-100h, 100h or more). Sorting by status renders one group per status with a headline, a count, a
 collapse toggle and a coloured accent. Empty statuses stay visible as
 dashed drop targets. Dragging a card onto another group changes its status
 optimistically, with a toast that offers **Undo**. Mouse needs an 8px
