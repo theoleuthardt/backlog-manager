@@ -245,6 +245,32 @@ class SteamStoreSearchEnvelope(msgspec.Struct):
     total: int = 0
 
 
+class SteamStoreItemAssets(msgspec.Struct):
+    """Hashed storefront asset paths for one app. `asset_url_format` is a
+    path template with a `${FILENAME}` placeholder, filled with one of the
+    per-asset values (e.g. `library_capsule_2x`) and served from
+    shared.steamstatic.com/store_item_assets/."""
+
+    asset_url_format: str
+    library_capsule: str | None = None
+    library_capsule_2x: str | None = None
+
+
+class SteamStoreItem(msgspec.Struct):
+    """`assets` is absent for unknown or unreleased apps."""
+
+    id: int
+    assets: SteamStoreItemAssets | None = None
+
+
+class SteamStoreBrowseResponse(msgspec.Struct):
+    store_items: list[SteamStoreItem] = []
+
+
+class SteamStoreBrowseEnvelope(msgspec.Struct):
+    response: SteamStoreBrowseResponse
+
+
 class SteamAchievement(msgspec.Struct):
     """name/description are only present when the request passed a
     language (l=...) - see get_player_achievements."""
