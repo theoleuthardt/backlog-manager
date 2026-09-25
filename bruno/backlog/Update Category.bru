@@ -23,6 +23,8 @@ body:json {
 }
 
 docs {
+  category_name must be 1-100 characters and color a #rrggbb hex value,
+  otherwise 400.
   Partially updates a category - only the fields present in the body
   are changed. description is the only nullable field (explicit null
   clears it). Run auth/Login and "Create Category" first so categoryId

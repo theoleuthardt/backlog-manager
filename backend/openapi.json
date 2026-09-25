@@ -4626,10 +4626,13 @@
       "CreateCategoryRequest": {
         "properties": {
           "category_name": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1
           },
           "color": {
             "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$",
             "default": "#000000"
           },
           "description": {
@@ -6568,14 +6571,17 @@
               {
                 "type": "string"
               }
-            ]
+            ],
+            "maxLength": 100,
+            "minLength": 1
           },
           "color": {
             "oneOf": [
               {
                 "type": "string"
               }
-            ]
+            ],
+            "pattern": "^#[0-9a-fA-F]{6}$"
           },
           "description": {
             "oneOf": [

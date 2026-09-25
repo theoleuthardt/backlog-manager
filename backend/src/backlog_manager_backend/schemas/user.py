@@ -3,10 +3,11 @@ from typing import Annotated, Literal
 
 import msgspec
 
+from backlog_manager_backend.schemas.types import HexColor
+
 SortOption = Literal[
     "status", "category", "genre", "playtime", "platform", "interest", "review_stars"
 ]
-HexColor = Annotated[str, msgspec.Meta(pattern=r"^#[0-9a-fA-F]{6}$")]
 MAX_CUSTOM_THEMES = 10
 
 
