@@ -2,14 +2,17 @@
 import { useEffect, useRef } from "react";
 import { SearchBar } from "components/SearchBar";
 import { useDashboard } from "~/app/context/DashboardContext";
+import { useIsApplePlatform } from "~/hooks/useIsTauri";
 
 /**
  * Full-width search field for the middle of the navbar. Pressing "/"
- * or Ctrl/Cmd+K anywhere on the dashboard focuses it.
+ * or Ctrl+K (Cmd+K on macOS) anywhere on the dashboard focuses it; the
+ * placeholder shows the shortcut that applies to the current platform.
  */
 export const DashboardSearch = () => {
   const { searchQuery, setSearchQuery } = useDashboard();
   const inputRef = useRef<HTMLInputElement>(null);
+  const isApple = useIsApplePlatform();
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -34,7 +37,7 @@ export const DashboardSearch = () => {
       ref={inputRef as React.RefObject<HTMLInputElement>}
       useIcon
       value={searchQuery}
-      placeholder="Search your backlog  ( / )"
+      placeholder={`Search your backlog  ( / or ${isApple ? "⌘K" : "Ctrl+K"} )`}
       className="!mb-0 !max-w-none"
       onInput={(event) => setSearchQuery(event.currentTarget.value)}
       onClear={() => setSearchQuery("")}
