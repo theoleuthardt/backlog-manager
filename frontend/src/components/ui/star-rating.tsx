@@ -26,8 +26,6 @@ function StarRating({
   return (
     <div
       data-slot="star-rating"
-      role="radiogroup"
-      aria-label="Review stars"
       className={cn("flex items-center gap-0.5", className)}
       onMouseLeave={() => setHovered(null)}
     >
@@ -35,11 +33,10 @@ function StarRating({
         <button
           key={star}
           type="button"
-          role="radio"
-          aria-checked={value === star}
+          aria-pressed={value >= star}
           aria-label={`${star} of ${max} stars`}
           disabled={disabled}
-          onClick={() => onValueChange(star)}
+          onClick={() => onValueChange(value === star ? 0 : star)}
           onMouseEnter={() => setHovered(star)}
           className={cn(
             "cursor-pointer rounded-sm p-0.5 transition-colors disabled:cursor-not-allowed disabled:opacity-50",

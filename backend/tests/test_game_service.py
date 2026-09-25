@@ -879,7 +879,7 @@ async def test_find_steam_app_id_prefers_case_insensitive_title_match(
     assert await game_service.find_steam_app_id("Elden Ring") == 1245620
 
 
-async def test_find_steam_app_id_falls_back_to_first_app_hit_without_title_match(
+async def test_find_steam_app_id_returns_none_when_no_hit_matches_the_title(
     game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     async def fake_search_store(title: str) -> list[SteamStoreSearchItem]:
@@ -887,7 +887,7 @@ async def test_find_steam_app_id_falls_back_to_first_app_hit_without_title_match
 
     monkeypatch.setattr(game_service, "search_steam_store_by_title", fake_search_store)
 
-    assert await game_service.find_steam_app_id("Elden Ring") == 42
+    assert await game_service.find_steam_app_id("Elden Ring") is None
 
 
 async def test_find_steam_app_id_caches_repeat_lookups(

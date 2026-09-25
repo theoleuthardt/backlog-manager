@@ -662,7 +662,8 @@ export function CreationToolForm() {
                 disabled={
                   isLoading ||
                   createStatus === "success" ||
-                  isLookingUpSteamAppId
+                  isLookingUpSteamAppId ||
+                  (steamPlaytimeQuery.isFetching && !playtimeTouched)
                 }
                 className={`w-full border-2 px-8 py-5 text-base font-bold transition-colors duration-300 lg:w-auto lg:min-w-[200px] ${submitButtonColorClasses}`}
               >

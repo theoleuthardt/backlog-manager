@@ -510,12 +510,13 @@ async def find_steam_app_id(title: str) -> int | None:
     own. Replaces the retired ISteamApps/GetAppList catalogue lookup
     (see issue #183): no more full-catalogue fetch, each title resolves
     with one search request instead. Steam's relevance ranking can put
-    an unrelated app ahead of the searched title, so hits whose name
-    matches the title case-insensitively (after stripping trademark
-    symbols - Steam writes "ELDEN RING", IGDB "Elden Ring", see issue
-    #176) win over the storefront's own ranking, falling back to the
-    first type=="app" hit when none matches. A lookup failure resolves
-    to None rather than raising, since this is a best-effort prefill."""
+    an unrelated app ahead of the searched title, so only hits whose
+    name matches the title case-insensitively (after stripping
+    trademark symbols - Steam writes "ELDEN RING", IGDB "Elden Ring",
+    see issue #176) are used; a miss resolves to None rather than
+    falling back to the first app hit, which would silently link the
+    entry to the wrong game. A lookup failure also resolves to None
+    rather than raising, since this is a best-effort prefill."""
     normalized = normalize_game_title(title)
     async with _steam_app_id_lock:
         cached = _steam_app_id_by_title.get(normalized)
@@ -533,7 +534,7 @@ async def find_steam_app_id(title: str) -> int | None:
     matching_hits = [
         item for item in app_hits if normalize_game_title(item.name) == normalized
     ]
-    app_id = matching_hits[0].id if matching_hits else (app_hits[0].id if app_hits else None)
+    app_id = matching_hits[0].id if matching_hits else None
     async with _steam_app_id_lock:
         _remember_steam_app_id(normalized, app_id)
     return app_id

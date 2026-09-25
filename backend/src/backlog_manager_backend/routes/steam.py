@@ -175,10 +175,10 @@ async def get_steam_playtime(
     """Playtime the current user has on one owned Steam app, in hours -
     prefill for the creation tool, so None (not in library) is a normal
     result rather than an error."""
-    if not current_user.steam_id:
-        return None
     if steam_app_id < 1:
         raise ClientException("steam app ids must be 1 or greater")
+    if not current_user.steam_id:
+        return None
     api_key = _resolve_api_key(current_user)
     try:
         return await steam_service.get_library_playtime(
