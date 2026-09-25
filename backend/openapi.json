@@ -2854,6 +2854,97 @@
         ]
       }
     },
+    "/api/user/steam/playtime": {
+      "get": {
+        "summary": "GetSteamPlaytime",
+        "operationId": "ApiUserSteamPlaytimeGetSteamPlaytime",
+        "parameters": [
+          {
+            "name": "steam_app_id",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true,
+            "deprecated": false,
+            "allowEmptyValue": false,
+            "allowReserved": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {
+              "cache-control": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request syntax or unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Validation Exception",
+                  "examples": [
+                    {
+                      "status_code": 400,
+                      "detail": "Bad Request",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/csv/parse": {
       "post": {
         "summary": "ParseCsv",

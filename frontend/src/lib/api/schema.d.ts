@@ -511,6 +511,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/user/steam/playtime": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GetSteamPlaytime */
+        get: operations["ApiUserSteamPlaytimeGetSteamPlaytime"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/csv/parse": {
         parameters: {
             query?: never;
@@ -2694,6 +2711,44 @@ export interface operations {
                 };
                 content: {
                     "text/event-stream": unknown;
+                };
+            };
+        };
+    };
+    ApiUserSteamPlaytimeGetSteamPlaytime: {
+        parameters: {
+            query: {
+                steam_app_id: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    "cache-control"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string | null;
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
                 };
             };
         };

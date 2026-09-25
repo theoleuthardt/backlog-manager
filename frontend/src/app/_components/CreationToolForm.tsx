@@ -25,12 +25,13 @@ import {
   SelectValue,
 } from "shadcn_components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "shadcn_components/ui/tabs";
+import { StarRating } from "shadcn_components/ui/star-rating";
 import { Loader2, Check, X, ArrowLeft } from "lucide-react";
 import { StatusSelect } from "components/StatusSelect";
 import { useCreateBacklogEntry } from "~/hooks/useBacklog";
 import { getEntryDuplicates } from "~/lib/api/backlog";
 import type { BacklogEntryData, CreateBacklogEntryInput } from "~/lib/api/backlog";
-import { useSteamAppId } from "~/hooks/useGameSearch";
+import { useSteamAppId, useSteamPlaytime } from "~/hooks/useGameSearch";
 import { toast } from "sonner";
 
 const NO_SPINNER_CLASS =
@@ -106,6 +107,12 @@ export function CreationToolForm() {
     Number.isSafeInteger(parsedSteamAppId) && parsedSteamAppId > 0
       ? parsedSteamAppId
       : undefined;
+  const [playtimeTouched, setPlaytimeTouched] = useState(false);
+  const steamPlaytimeQuery = useSteamPlaytime(resolvedSteamAppId);
+  const steamPlaytime = steamPlaytimeQuery.data;
+  const steamPlaytimeHours = steamPlaytime != null ? String(steamPlaytime) : null;
+  const effectivePlaytime =
+    playtimeTouched || steamPlaytimeHours === null ? playtime : steamPlaytimeHours;
 
   const createEntryMutation = useCreateBacklogEntry();
   const [duplicates, setDuplicates] = useState<BacklogEntryData[] | null>(null);
@@ -117,7 +124,7 @@ export function CreationToolForm() {
     status,
     owned,
     interest,
-    playtime: Number.parseFloat(playtime) || 0,
+    playtime: Number.parseFloat(effectivePlaytime) || 0,
     steamAppId: resolvedSteamAppId,
     imageLink: imageUrl.trim() || undefined,
     mainTime: Number.parseFloat(mainStory) > 0 ? Number.parseFloat(mainStory) : undefined,
@@ -396,14 +403,20 @@ export function CreationToolForm() {
                   <div className="space-y-1">
                     <Label htmlFor="playtime" className="text-sm">
                       Playtime (hours)
+                      {steamPlaytimeQuery.isFetching && (
+                        <Loader2 className="ml-1.5 inline h-3 w-3 animate-spin text-gray-400" />
+                      )}
                     </Label>
                     <Input
                       id="playtime"
                       type="number"
                       min="0"
                       step="0.1"
-                      value={playtime}
-                      onChange={(e) => setPlaytime(e.target.value)}
+                      value={effectivePlaytime}
+                      onChange={(e) => {
+                        setPlaytimeTouched(true);
+                        setPlaytime(e.target.value);
+                      }}
                       className={`${NO_SPINNER_CLASS} bg-black text-white`}
                     />
                   </div>
@@ -519,21 +532,11 @@ export function CreationToolForm() {
               <TabsContent value="review" className="mt-4">
                 <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
                   <div className="space-y-1">
-                    <Label htmlFor="reviewStars" className="text-sm">
-                      Review Stars (0-5)
-                    </Label>
-                    <Input
-                      id="reviewStars"
-                      type="number"
-                      min="0"
-                      max="5"
-                      step="0.5"
+                    <Label className="text-sm">Review Stars</Label>
+                    <StarRating
                       value={reviewStars}
-                      onChange={(e) =>
-                        setReviewStars(Number.parseFloat(e.target.value) || 0)
-                      }
+                      onValueChange={setReviewStars}
                       disabled={status !== "Completed"}
-                      className={`${NO_SPINNER_CLASS} bg-black text-white disabled:opacity-50`}
                     />
                   </div>
 

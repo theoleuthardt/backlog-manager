@@ -129,6 +129,15 @@ export async function importSteamWishlistStream(
   return streamEntries(response, onProgress);
 }
 
+export async function getSteamPlaytime(steamAppId: number): Promise<number | null> {
+  const { data, error } = await apiClient.GET("/api/user/steam/playtime", {
+    params: { query: { steam_app_id: steamAppId } },
+  });
+  if (error)
+    throw new Error(apiErrorMessage(error, "Failed to look up Steam playtime"));
+  return data == null ? null : Number(data);
+}
+
 export interface AchievementInfo {
   apiname: string;
   displayName: string;

@@ -233,6 +233,37 @@ async def test_sync_playtimes_skips_unlinked_entry_with_ambiguous_title(
     assert updated == []
 
 
+async def test_get_library_playtime_returns_hours_for_owned_app(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        assert steam_id == "76561197960287930"
+        return [SteamOwnedGame(appid=1245620, name="ELDEN RING", playtime_forever=3300)]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+
+    playtime = await steam_service.get_library_playtime(
+        "76561197960287930", "api-key", 1245620
+    )
+
+    assert playtime == Decimal("55.00")
+
+
+async def test_get_library_playtime_returns_none_for_unowned_app(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [SteamOwnedGame(appid=504230, name="Celeste", playtime_forever=510)]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+
+    playtime = await steam_service.get_library_playtime(
+        "76561197960287930", "api-key", 1245620
+    )
+
+    assert playtime is None
+
+
 async def test_import_library_raises_when_steam_not_linked(session: AsyncSession) -> None:
     user = await _make_user(session, steam_id=None)
 

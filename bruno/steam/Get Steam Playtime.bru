@@ -1,0 +1,24 @@
+meta {
+  name: Get Steam Playtime
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{backendUrl}}/api/user/steam/playtime?steam_app_id=1245620
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Returns the playtime in hours the current user has on one owned
+  Steam app (GetOwnedGames, minutes converted to hours), used by the
+  creation tool to prefill playtime. Returns null when the app isn't
+  in the user's library or no Steam ID is linked.
+
+  Run auth/Login first. 503 if neither the caller nor the server has
+  a Steam Web API key configured.
+}

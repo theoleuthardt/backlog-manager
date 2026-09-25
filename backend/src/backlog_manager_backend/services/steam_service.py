@@ -151,6 +151,17 @@ def _minutes_to_hours(minutes: int) -> Decimal:
     return (Decimal(minutes) / _MINUTES_PER_HOUR).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
+async def get_library_playtime(steam_id: str, api_key: str, steam_app_id: int) -> Decimal | None:
+    """Playtime in hours the current Steam user has on one owned app, or
+    None when the app isn't in their library - used by the creation tool
+    to prefill playtime for a game that's already being played."""
+    owned_games = await get_owned_games(steam_id, api_key)
+    for game in owned_games:
+        if game.appid == steam_app_id:
+            return _minutes_to_hours(game.playtime_forever)
+    return None
+
+
 async def sync_playtimes(
     session: AsyncSession,
     user: User,

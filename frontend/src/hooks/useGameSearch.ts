@@ -6,6 +6,7 @@ import {
   getSteamAppId,
   getSteamGridDbCovers,
 } from "~/lib/api/games";
+import { getSteamPlaytime } from "~/lib/api/steam";
 
 export function useGameSearch(searchTerm: string) {
   return useQuery({
@@ -27,6 +28,18 @@ export function useSteamAppId(title: string) {
     refetchOnWindowFocus: false,
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60,
+    retry: 1,
+  });
+}
+
+export function useSteamPlaytime(steamAppId: number | undefined) {
+  return useQuery({
+    queryKey: ["steam-playtime", steamAppId],
+    queryFn: () => getSteamPlaytime(steamAppId!),
+    enabled: steamAppId !== undefined,
+    refetchOnWindowFocus: false,
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
     retry: 1,
   });
 }
