@@ -28,7 +28,7 @@ games according to categories such as "Games I still want to play", "Games I'm c
 
 - **Frontend:** NextJS, in `frontend/` — calls the backend directly over REST, see issue #104 for the migration history.
 - **Backend:** Python/Litestar, in `backend/` as standalone REST API, SQLAlchemy 2.0 async + asyncpg against PostgreSQL.
-- **Deployment:** only the backend is hosted as a public, always-on service, at `blm.theocloud.dev` (Podman/Containerfile-based). The frontend is not centrally hosted the same way, it ships as a Tauri desktop app built from the Next.js codebase (static export) for the various platforms.
+- **Deployment:** Container-Image on [Github Container Registry](ghcr.io) within this repo. Free to use and host yourself.
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full picture — why
 REST/JWT replaced tRPC/NextAuth, how the backend is layered, the image proxy's
@@ -37,7 +37,7 @@ Steam, SteamGridDB) falls back when unconfigured.
 
 ## Testing
 
-- **Backend:** `task test` (`uv run pytest`) — a real suite that spins up
+- **Backend:** `task test` (`uv run pytest`) as a real suite that spins up
   PostgreSQL via testcontainers rather than mocking the database.
 - **Frontend:** no automated test suite yet; changes are verified manually in
   a browser.
@@ -77,8 +77,7 @@ See `Taskfile.yml` (`task --list`) for the full command surface,
 
 ## Contributing
 
-[`CLAUDE.md`](CLAUDE.md) is the source of truth for this repo's conventions —
-directory layout, coding standards, the comment policy, and the exact
+[`CLAUDE.md`](CLAUDE.md) is the source of truth for this repo's conventions: directory layout, coding standards, the comment policy, and the exact
 issue → branch → PR workflow every change (including this project's own use
 of Claude Code) follows. Read its "Working with Claude Code" section before
 opening a PR.
