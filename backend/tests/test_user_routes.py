@@ -781,3 +781,153 @@ async def test_update_own_user_rejects_invalid_discord_webhook_url(
         )
 
     assert response.status_code == 400
+
+
+def _custom_theme(theme_id: str = "neon-1", name: str = "Neon Night") -> dict[str, str]:
+    return {
+        "id": theme_id,
+        "name": name,
+        "background": "#0a0014",
+        "surface": "#1a0033",
+        "foreground": "#f5e9ff",
+        "accent": "#ff2bd6",
+        "border": "#5b2a86",
+        "glow": "#00e5ff",
+    }
+
+
+async def test_new_user_has_default_dashboard_preferences(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "defaultprefs@example.com")
+        response = client.get("/api/user/me", headers=headers)
+
+    body = response.json()
+    assert body["default_sort"] == "status"
+    assert body["theme"] == "dark"
+    assert body["custom_themes"] == []
+
+
+async def test_update_own_user_sets_default_sort_and_theme(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "setprefs@example.com")
+
+        update_response = client.put(
+            "/api/user/me",
+            headers=headers,
+            json={"default_sort": "review_stars", "theme": "colorful"},
+        )
+        me_response = client.get("/api/user/me", headers=headers)
+
+    assert update_response.status_code == 200
+    assert me_response.json()["default_sort"] == "review_stars"
+    assert me_response.json()["theme"] == "colorful"
+
+
+async def test_update_own_user_preferences_leave_other_fields_untouched(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "prefsisolated@example.com")
+        client.put("/api/user/me", headers=headers, json={"theme": "light"})
+
+        response = client.put("/api/user/me", headers=headers, json={"default_sort": "genre"})
+
+    body = response.json()
+    assert body["default_sort"] == "genre"
+    assert body["theme"] == "light"
+
+
+async def test_update_own_user_rejects_unknown_default_sort(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "badsort@example.com")
+        response = client.put("/api/user/me", headers=headers, json={"default_sort": "random"})
+
+    assert response.status_code == 400
+
+
+async def test_update_own_user_rejects_overlong_theme_name(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "longtheme@example.com")
+        response = client.put("/api/user/me", headers=headers, json={"theme": "x" * 51})
+
+    assert response.status_code == 400
+
+
+async def test_update_own_user_round_trips_custom_themes(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    themes = [_custom_theme("neon-1", "Neon Night"), _custom_theme("neon-2", "Second")]
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "customthemes@example.com")
+
+        update_response = client.put(
+            "/api/user/me", headers=headers, json={"custom_themes": themes}
+        )
+        me_response = client.get("/api/user/me", headers=headers)
+
+    assert update_response.status_code == 200
+    assert me_response.json()["custom_themes"] == themes
+
+
+async def test_update_own_user_replaces_custom_themes_with_empty_list(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "clearthemes@example.com")
+        client.put("/api/user/me", headers=headers, json={"custom_themes": [_custom_theme()]})
+
+        response = client.put("/api/user/me", headers=headers, json={"custom_themes": []})
+
+    assert response.status_code == 200
+    assert response.json()["custom_themes"] == []
+
+
+async def test_update_own_user_rejects_custom_theme_with_invalid_color(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    bad_theme = {**_custom_theme(), "accent": "url(javascript:alert(1))"}
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "badcolor@example.com")
+        response = client.put("/api/user/me", headers=headers, json={"custom_themes": [bad_theme]})
+
+    assert response.status_code == 400
+
+
+async def test_update_own_user_rejects_more_than_ten_custom_themes(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    themes = [_custom_theme(f"t-{index}", f"Theme {index}") for index in range(11)]
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "toomanythemes@example.com")
+        response = client.put("/api/user/me", headers=headers, json={"custom_themes": themes})
+
+    assert response.status_code == 400

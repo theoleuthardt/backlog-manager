@@ -1,0 +1,30 @@
+meta {
+  name: Set Dashboard Preferences
+  type: http
+  seq: 13
+}
+
+put {
+  url: {{backendUrl}}/api/user/me
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "default_sort": "review_stars",
+    "theme": "colorful"
+  }
+}
+
+docs {
+  Sets the dashboard's default sort option (one of status, category,
+  genre, playtime, platform, interest, review_stars - anything else is
+  a 400) and the active theme name (1-50 characters; a built-in theme
+  such as dark/light/colorful/freaky, or the id of one of the user's
+  custom themes). Both persist per account. Run auth/Login first.
+}
