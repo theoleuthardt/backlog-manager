@@ -91,8 +91,9 @@ Below `md` the navbar icons collapse into a **burger menu** (animated
 three-line icon, a panel with labelled rows; the add/import/export entries
 use text variants) next to the theme picker, and the search field moves to
 its own row. Below `lg` the sort/filter sidebar is a **bottom sheet**: a
-floating "Sort & filter" pill (with the active-filter count) opens a panel
-that slides up, can be dragged down or tapped away, and pins a "Show N
+"Sort & filter" button (with the active-filter count) in a toolbar that
+stays pinned to the top of the screen while scrolling, so it is reachable
+from anywhere in a huge backlog, opens a panel that slides up, can be dragged down or tapped away, and pins a "Show N
 games" button in thumb reach while the list updates live behind it. The
 grid centres its fixed-width cards, and the entry dialog is full screen on
 phones. All pages were checked at 375px and 768px.

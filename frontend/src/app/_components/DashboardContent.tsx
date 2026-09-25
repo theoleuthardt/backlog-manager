@@ -322,23 +322,25 @@ export const DashboardContent = () => {
           </motion.aside>
         )}
 
-        <div
-          id="entryList"
-          className="flex min-w-0 flex-1 flex-col gap-4 pb-24 lg:pb-0"
-        >
-          <div className="flex flex-wrap items-center gap-3">
+        <div id="entryList" className="flex min-w-0 flex-1 flex-col gap-4">
+          <div className="bg-background/85 sticky top-0 z-30 -mx-3 flex flex-wrap items-center gap-3 px-3 py-2 backdrop-blur-md md:-mx-4 md:px-4 lg:static lg:mx-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
             <motion.div
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.9 }}
-              className="hidden lg:block"
+              className="block"
             >
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setSidebarToggle(!isSidebarOpen)}
-                aria-expanded={isSidebarOpen}
-                aria-controls="leftBar"
+                onClick={() =>
+                  isDesktop
+                    ? setSidebarToggle(!isSidebarOpen)
+                    : setIsSheetOpen(true)
+                }
+                aria-expanded={isDesktop ? isSidebarOpen : isSheetOpen}
+                aria-controls={isDesktop ? "leftBar" : undefined}
+                aria-haspopup={isDesktop ? undefined : "dialog"}
                 className={`gap-2 transition-shadow ${isSidebarOpen ? "surface-glow" : ""}`}
               >
                 <motion.span
@@ -371,7 +373,7 @@ export const DashboardContent = () => {
                   aria-hidden="true"
                   animate={{ rotate: isSidebarOpen ? 0 : 180 }}
                   transition={{ type: "spring", stiffness: 300, damping: 18 }}
-                  className="flex"
+                  className="hidden lg:flex"
                 >
                   <ChevronsLeft className="h-4 w-4" />
                 </motion.span>
@@ -461,30 +463,6 @@ export const DashboardContent = () => {
 
         {!isDesktop && (
           <>
-            <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center">
-              <AnimatePresence>
-                {!isSheetOpen && (
-                  <motion.button
-                    type="button"
-                    onClick={() => setIsSheetOpen(true)}
-                    initial={{ y: 80, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: 80, opacity: 0 }}
-                    whileTap={{ scale: 0.93 }}
-                    transition={{ type: "spring", stiffness: 380, damping: 26 }}
-                    className="surface-glow bg-surface pointer-events-auto flex h-12 cursor-pointer items-center gap-2 rounded-full border-2 border-white px-5 font-semibold"
-                  >
-                    <SlidersHorizontal className="h-4 w-4" />
-                    Sort &amp; filter
-                    {activeFilterCount > 0 && (
-                      <span className="bg-primary text-primary-foreground rounded-full px-1.5 text-xs">
-                        {activeFilterCount}
-                      </span>
-                    )}
-                  </motion.button>
-                )}
-              </AnimatePresence>
-            </div>
             <BottomSheet
               open={isSheetOpen}
               onOpenChange={setIsSheetOpen}
