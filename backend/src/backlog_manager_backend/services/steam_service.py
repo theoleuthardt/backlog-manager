@@ -161,11 +161,12 @@ async def sync_playtimes(
     overwrites playtime with Steam's authoritative value, converted
     from minutes to hours. Entries link to their Steam library game by
     steam_app_id; entries with no linked app id fall back to an exact
-    (case-insensitive) title match so entries created before the app-id
-    lookup resolved still get their playtime synced (Steam writes
-    "ELDEN RING", the backlog may hold "Elden Ring" - see issue #176).
-    Entries matched by neither, or whose app isn't in the Steam
-    response, are left untouched rather than cleared.
+    title match (same normalization as find_steam_app_id, so ™/®/©
+    and case differences don't block it) so entries created before the
+    app-id lookup resolved still get their playtime synced (Steam
+    writes "ELDEN RING™", the backlog may hold "Elden Ring" - see
+    issue #176). Entries matched by neither, or whose app isn't in the
+    Steam response, are left untouched rather than cleared.
 
     Accepts an already-fetched owned_games snapshot so callers that
     also run import_library (see sync_playtimes_and_import) hit Steam's
@@ -177,17 +178,17 @@ async def sync_playtimes(
         owned_games = await get_owned_games(user.steam_id, api_key)
 
     owned_by_app_id = {game.appid: game for game in owned_games}
+    normalized_owned_titles = [
+        game_service._normalize_game_title(game.name) for game in owned_games
+    ]
     unlinked_title_counts: dict[str, int] = {}
-    for game in owned_games:
-        if game.name.strip().casefold():
-            unlinked_title_counts[game.name.strip().casefold()] = (
-                unlinked_title_counts.get(game.name.strip().casefold(), 0) + 1
-            )
+    for normalized in normalized_owned_titles:
+        if normalized:
+            unlinked_title_counts[normalized] = unlinked_title_counts.get(normalized, 0) + 1
     unlinked_by_title = {
-        game.name.strip().casefold(): game
-        for game in owned_games
-        if game.name.strip().casefold()
-        and unlinked_title_counts[game.name.strip().casefold()] == 1
+        normalized: game
+        for game, normalized in zip(owned_games, normalized_owned_titles, strict=True)
+        if normalized and unlinked_title_counts[normalized] == 1
     }
 
     updated: list[BacklogEntry] = []
@@ -195,7 +196,7 @@ async def sync_playtimes(
         owned_game = (
             owned_by_app_id.get(entry.steam_app_id)
             if entry.steam_app_id is not None
-            else unlinked_by_title.get((entry.title or "").strip().casefold())
+            else unlinked_by_title.get(game_service._normalize_game_title(entry.title or ""))
         )
         if owned_game is None:
             continue

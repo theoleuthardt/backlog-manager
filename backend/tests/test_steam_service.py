@@ -150,6 +150,25 @@ async def test_sync_playtimes_requires_exact_title_match_for_unlinked_entries(
     assert updated == []
 
 
+async def test_sync_playtimes_normalizes_trademark_symbols_in_unlinked_title_match(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    await _make_entry(
+        session, user.id, title="Elden Ring", steam_app_id=None, playtime=Decimal("1.00")
+    )
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [SteamOwnedGame(appid=1245620, name="ELDEN RING™", playtime_forever=3300)]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+
+    updated = await steam_service.sync_playtimes(session, user, "api-key")
+
+    assert len(updated) == 1
+    assert updated[0].playtime == Decimal("55.00")
+
+
 async def test_sync_playtimes_skips_unlinked_entry_with_ambiguous_title(
     session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -123,60 +123,38 @@ export const EntryCreationDialog = ({
                     ))}
                   </ul>
                   {selectedIndex !== null && searchResults[selectedIndex] && (
-                    <div className="flex flex-col items-center gap-3">
-                      {searchResults[selectedIndex].description && (
-                        <p className="max-w-2xl text-center text-sm text-gray-300">
-                          {searchResults[selectedIndex].description}
-                        </p>
-                      )}
-                      {searchResults[selectedIndex].publisher && (
-                        <p className="text-sm text-gray-400">
-                          Published by{" "}
-                          <span className="font-semibold text-white">
-                            {searchResults[selectedIndex].publisher}
-                          </span>
-                        </p>
-                      )}
-                      <Link
-                        href={{
-                          pathname: "/creation-tool",
-                          query: {
-                            title: searchResults[selectedIndex].title,
-                            imageUrl:
-                              searchResults[selectedIndex].imageUrl ?? "",
-                            steamAppId:
-                              searchResults[selectedIndex].steamAppId ?? "",
-                            genres:
-                              searchResults[selectedIndex].genres?.join(", ") ??
-                              "",
-                            platforms:
-                              searchResults[selectedIndex].platforms?.join(
-                                ", ",
-                              ) ?? "",
-                            mainStory:
-                              searchResults[selectedIndex].mainStory,
-                            mainStoryWithExtras:
-                              searchResults[selectedIndex].mainStoryWithExtras,
-                            completionist:
-                              searchResults[selectedIndex].completionist,
-                            description:
-                              searchResults[selectedIndex].description?.slice(
-                                0,
-                                500,
-                              ) ?? "",
-                            publisher:
-                              searchResults[selectedIndex].publisher ?? "",
-                          },
-                        }}
-                        className="flex justify-center"
-                      >
-                        <Button className="h-[3rem] max-w-md min-w-[13rem] bg-blue-700 px-6 font-bold text-white hover:bg-blue-800">
-                          <span className="truncate">
-                            Continue in Creation Tool
-                          </span>
-                        </Button>
-                      </Link>
-                    </div>
+                    <Link
+                      href={{
+                        pathname: "/creation-tool",
+                        query: {
+                          title: searchResults[selectedIndex].title,
+                          imageUrl: searchResults[selectedIndex].imageUrl ?? "",
+                          steamAppId: searchResults[selectedIndex].steamAppId ?? "",
+                          genres: searchResults[selectedIndex].genres?.join(", ") ?? "",
+                          platforms:
+                            searchResults[selectedIndex].platforms?.join(
+                              ", ",
+                            ) ?? "",
+                          mainStory: searchResults[selectedIndex].mainStory,
+                          mainStoryWithExtras:
+                            searchResults[selectedIndex].mainStoryWithExtras,
+                          completionist: searchResults[selectedIndex].completionist,
+                          description:
+                            searchResults[selectedIndex].description?.slice(
+                              0,
+                              500,
+                            ) ?? "",
+                          publisher: searchResults[selectedIndex].publisher ?? "",
+                        },
+                      }}
+                      className="flex justify-center"
+                    >
+                      <Button className="h-[3rem] max-w-md min-w-[13rem] bg-blue-700 px-6 font-bold text-white hover:bg-blue-800">
+                        <span className="truncate">
+                          Continue in Creation Tool
+                        </span>
+                      </Button>
+                    </Link>
                   )}
                 </>
               ) : debouncedSearchQuery.length > 0 ? (
