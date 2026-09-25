@@ -39,9 +39,9 @@ interface ThemeSelection {
 interface ThemeContextType {
   theme: ResolvedTheme;
   customThemes: CustomTheme[];
-  setTheme: (themeId: string) => Promise<void>;
-  saveCustomTheme: (theme: CustomTheme) => Promise<void>;
-  deleteCustomTheme: (themeId: string) => Promise<void>;
+  setTheme: (themeId: string) => Promise<boolean>;
+  saveCustomTheme: (theme: CustomTheme) => Promise<boolean>;
+  deleteCustomTheme: (themeId: string) => Promise<boolean>;
   previewColors: (colors: ThemeColors | null) => void;
 }
 
@@ -162,21 +162,23 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [isHydrated, theme, preview]);
 
   const persist = useCallback(
-    async (next: ThemeSelection) => {
+    async (next: ThemeSelection): Promise<boolean> => {
       const previous = selection;
       writeCache(next);
-      if (!user) return;
+      if (!user) return true;
       try {
         await updateCurrentUser({
           theme: next.id,
           customThemes: next.customThemes,
         });
         await refreshUser();
+        return true;
       } catch (error) {
         writeCache(previous);
         toast.error(
           error instanceof Error ? error.message : "Failed to save theme",
         );
+        return false;
       }
     },
     [selection, user, refreshUser],

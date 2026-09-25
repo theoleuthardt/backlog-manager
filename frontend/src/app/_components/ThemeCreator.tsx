@@ -85,14 +85,16 @@ export const ThemeCreator = () => {
         ...BUILTIN_THEMES.map((builtin) => builtin.id),
         ...customThemes.map((custom) => custom.id),
       ]);
-    await saveCustomTheme({ id, name: trimmedName, ...colors });
-    setEditingId(id);
+    const saved = await saveCustomTheme({ id, name: trimmedName, ...colors });
     setIsSaving(false);
+    if (!saved) return;
+    setEditingId(id);
     toast.success(`Theme "${trimmedName}" saved`);
   };
 
   const handleDelete = async (id: string, themeName: string) => {
-    await deleteCustomTheme(id);
+    const deleted = await deleteCustomTheme(id);
+    if (!deleted) return;
     if (editingId === id) startNew(colors);
     toast.success(`Theme "${themeName}" deleted`);
   };

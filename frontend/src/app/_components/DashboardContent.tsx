@@ -10,7 +10,13 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { Loader2, RefreshCw, SlidersHorizontal } from "lucide-react";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
+import {
+  ChevronsLeft,
+  Loader2,
+  RefreshCw,
+  SlidersHorizontal,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "shadcn_components/ui/button";
 import { BacklogEntry } from "components/BacklogEntry";
@@ -256,132 +262,186 @@ export const DashboardContent = () => {
   );
 
   return (
-    <div
-      id="upperSection"
-      className="flex flex-col gap-4 py-2 lg:flex-row lg:gap-8"
-    >
-      <aside
-        id="leftBar"
-        aria-label="Sort and filter"
-        className={`shrink-0 lg:w-72 ${isSidebarOpen ? "block" : "hidden"}`}
+    <MotionConfig reducedMotion="user">
+      <div
+        id="upperSection"
+        className="flex flex-col gap-4 py-2 lg:flex-row lg:gap-0"
       >
-        <div className="surface-glow bg-surface max-h-[calc(100vh-9rem)] overflow-y-auto rounded-2xl border-2 border-white p-4 lg:sticky lg:top-4">
-          <DashboardSidebar
-            sortBy={sortBy}
-            direction={direction}
-            onSortByChange={(next) => {
-              setSortOverride(next);
-              setDirectionOverride(null);
-            }}
-            onDirectionChange={setDirectionOverride}
-            filters={filters}
-            onFiltersChange={setFilters}
-            platformOptions={platformOptions}
-            genreOptions={genreOptions}
-            statusOptions={statusOptions}
-            bounds={bounds}
-          />
-        </div>
-      </aside>
-
-      <div id="entryList" className="flex min-w-0 flex-1 flex-col gap-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setSidebarToggle(!isSidebarOpen)}
-            aria-expanded={isSidebarOpen}
-            aria-controls="leftBar"
-            className="gap-2"
+        <motion.aside
+          id="leftBar"
+          aria-label="Sort and filter"
+          inert={!isSidebarOpen}
+          initial={false}
+          animate={
+            isDesktop
+              ? {
+                  width: isSidebarOpen ? 304 : 0,
+                  marginRight: isSidebarOpen ? 24 : 0,
+                  opacity: isSidebarOpen ? 1 : 0,
+                }
+              : {
+                  height: isSidebarOpen ? "auto" : 0,
+                  marginBottom: isSidebarOpen ? 0 : -16,
+                  opacity: isSidebarOpen ? 1 : 0,
+                }
+          }
+          transition={{ type: "spring", stiffness: 260, damping: 30 }}
+          className="-m-2 shrink-0 overflow-hidden lg:sticky lg:top-4 lg:self-start"
+        >
+          <motion.div
+            initial={false}
+            animate={{ x: isSidebarOpen ? 0 : -32 }}
+            transition={{ type: "spring", stiffness: 260, damping: 26 }}
+            className="p-2 lg:w-76"
           >
-            <SlidersHorizontal className="h-4 w-4" />
-            Sort &amp; filter
-            {activeFilterCount > 0 && (
-              <span className="bg-primary text-primary-foreground rounded-full px-1.5 text-xs">
-                {activeFilterCount}
-              </span>
+            <div className="surface-glow bg-surface max-h-[calc(100vh-9rem)] overflow-y-auto rounded-2xl border-2 border-white p-4">
+              <DashboardSidebar
+                sortBy={sortBy}
+                direction={direction}
+                onSortByChange={(next) => {
+                  setSortOverride(next);
+                  setDirectionOverride(null);
+                }}
+                onDirectionChange={setDirectionOverride}
+                filters={filters}
+                onFiltersChange={setFilters}
+                platformOptions={platformOptions}
+                genreOptions={genreOptions}
+                statusOptions={statusOptions}
+                bounds={bounds}
+              />
+            </div>
+          </motion.div>
+        </motion.aside>
+
+        <div id="entryList" className="flex min-w-0 flex-1 flex-col gap-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.9 }}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setSidebarToggle(!isSidebarOpen)}
+                aria-expanded={isSidebarOpen}
+                aria-controls="leftBar"
+                className={`gap-2 transition-shadow ${isSidebarOpen ? "surface-glow" : ""}`}
+              >
+                <motion.span
+                  animate={{ rotate: isSidebarOpen ? 0 : 180 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                  className="flex"
+                >
+                  <SlidersHorizontal className="h-4 w-4" />
+                </motion.span>
+                Sort &amp; filter
+                <AnimatePresence>
+                  {activeFilterCount > 0 && (
+                    <motion.span
+                      key="active-filter-count"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 18,
+                      }}
+                      className="bg-primary text-primary-foreground rounded-full px-1.5 text-xs"
+                    >
+                      {activeFilterCount}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+                <motion.span
+                  aria-hidden="true"
+                  animate={{ rotate: isSidebarOpen ? 0 : 180 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 18 }}
+                  className="flex"
+                >
+                  <ChevronsLeft className="h-4 w-4" />
+                </motion.span>
+              </Button>
+            </motion.div>
+            <p className="text-sm text-white/70" aria-live="polite">
+              {visibleEntries.length} of {entries.length} game
+              {entries.length === 1 ? "" : "s"}
+            </p>
+            {user?.steamId && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSyncSteamPlaytimes}
+                disabled={isSyncingSteam}
+                className="ml-auto gap-2"
+              >
+                {isSyncingSteam ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+                {isSyncingSteam && steamSyncProgress
+                  ? `Syncing ${steamSyncProgress.processed}/${steamSyncProgress.total}...`
+                  : "Sync Steam Playtimes"}
+              </Button>
             )}
-          </Button>
-          <p className="text-sm text-white/70" aria-live="polite">
-            {visibleEntries.length} of {entries.length} game
-            {entries.length === 1 ? "" : "s"}
-          </p>
-          {user?.steamId && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSyncSteamPlaytimes}
-              disabled={isSyncingSteam}
-              className="ml-auto gap-2"
+          </div>
+
+          {entries.length === 0 ? (
+            <EmptyState
+              title="Your backlog is empty"
+              hint="Start by adding your first game!"
+            />
+          ) : visibleEntries.length === 0 ? (
+            <EmptyState
+              title="No entries match your filters"
+              hint="Try adjusting your filter settings"
+            />
+          ) : sortBy === "status" ? (
+            <DndContext
+              sensors={sensors}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+              onDragCancel={() => setDraggedEntry(null)}
             >
-              {isSyncingSteam ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-              {isSyncingSteam && steamSyncProgress
-                ? `Syncing ${steamSyncProgress.processed}/${steamSyncProgress.total}...`
-                : "Sync Steam Playtimes"}
-            </Button>
+              <div className="flex flex-col gap-4">
+                {groups.map((group) => (
+                  <StatusGroupSection
+                    key={group.status}
+                    status={group.status}
+                    count={group.entries.length}
+                    isCollapsed={collapsedStatuses.includes(group.status)}
+                    onToggle={() => toggleGroup(group.status)}
+                  >
+                    {group.entries.map((entry) => (
+                      <DraggableEntry key={entry.id} entryId={entry.id}>
+                        {renderEntry(entry)}
+                      </DraggableEntry>
+                    ))}
+                  </StatusGroupSection>
+                ))}
+              </div>
+              <DragOverlay>
+                {draggedEntry && (
+                  <div className="scale-105 rotate-3 opacity-90">
+                    <EntryTile
+                      title={draggedEntry.title}
+                      imageLink={draggedEntry.imageLink}
+                      status={draggedEntry.status}
+                      playtime={draggedEntry.playtime}
+                      mainTime={draggedEntry.mainTime}
+                    />
+                  </div>
+                )}
+              </DragOverlay>
+            </DndContext>
+          ) : (
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(9.375rem,1fr))] content-start justify-items-center gap-2">
+              {visibleEntries.map(renderEntry)}
+            </div>
           )}
         </div>
-
-        {entries.length === 0 ? (
-          <EmptyState
-            title="Your backlog is empty"
-            hint="Start by adding your first game!"
-          />
-        ) : visibleEntries.length === 0 ? (
-          <EmptyState
-            title="No entries match your filters"
-            hint="Try adjusting your filter settings"
-          />
-        ) : sortBy === "status" ? (
-          <DndContext
-            sensors={sensors}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-            onDragCancel={() => setDraggedEntry(null)}
-          >
-            <div className="flex flex-col gap-4">
-              {groups.map((group) => (
-                <StatusGroupSection
-                  key={group.status}
-                  status={group.status}
-                  count={group.entries.length}
-                  isCollapsed={collapsedStatuses.includes(group.status)}
-                  onToggle={() => toggleGroup(group.status)}
-                >
-                  {group.entries.map((entry) => (
-                    <DraggableEntry key={entry.id} entryId={entry.id}>
-                      {renderEntry(entry)}
-                    </DraggableEntry>
-                  ))}
-                </StatusGroupSection>
-              ))}
-            </div>
-            <DragOverlay>
-              {draggedEntry && (
-                <div className="scale-105 rotate-3 opacity-90">
-                  <EntryTile
-                    title={draggedEntry.title}
-                    imageLink={draggedEntry.imageLink}
-                    status={draggedEntry.status}
-                    playtime={draggedEntry.playtime}
-                    mainTime={draggedEntry.mainTime}
-                  />
-                </div>
-              )}
-            </DragOverlay>
-          </DndContext>
-        ) : (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(9.375rem,1fr))] content-start justify-items-center gap-2">
-            {visibleEntries.map(renderEntry)}
-          </div>
-        )}
       </div>
-    </div>
+    </MotionConfig>
   );
 };
 
