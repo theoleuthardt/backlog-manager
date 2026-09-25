@@ -5,7 +5,7 @@ import { dashboardNavLinks } from "~/constants";
 export default function Dashboard() {
   return (
     <DashboardProvider>
-      <div className="relative min-h-screen overflow-hidden">
+      <div className="relative min-h-screen overflow-x-clip">
         <div className="relative z-10 flex flex-col text-white">
           <div className="flex min-h-screen flex-col">
             <Navbar
