@@ -515,7 +515,8 @@ export function CreationToolForm() {
                       placeholder={
                         isCustomGame
                           ? "e.g. 504230 - enables cover picker and price tracking"
-                          : shouldLookUpSteamAppId && steamAppIdQuery.isPending
+                          : shouldLookUpSteamAppId &&
+                            steamAppIdQuery.fetchStatus === "fetching"
                             ? "Looking up on Steam..."
                             : "No Steam App ID found - enter one manually"
                       }
@@ -530,7 +531,7 @@ export function CreationToolForm() {
               </TabsContent>
 
               <TabsContent value="review" className="mt-4">
-                <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                <div className="flex flex-col gap-4">
                   <div className="space-y-1">
                     <Label className="text-sm">Review Stars</Label>
                     <StarRating
@@ -540,31 +541,33 @@ export function CreationToolForm() {
                     />
                   </div>
 
-                  <div className="space-y-1">
-                    <Label htmlFor="review" className="text-sm">
-                      Review
-                    </Label>
-                    <Textarea
-                      id="review"
-                      value={review}
-                      onChange={(e) => setReview(e.target.value)}
-                      placeholder="Write your review here..."
-                      disabled={status !== "Completed"}
-                      className="min-h-20 resize-none bg-black text-white disabled:opacity-50"
-                    />
-                  </div>
+                  <div className="grid flex-1 gap-6 lg:grid-cols-2">
+                    <div className="flex flex-col space-y-1">
+                      <Label htmlFor="review" className="text-sm">
+                        Review
+                      </Label>
+                      <Textarea
+                        id="review"
+                        value={review}
+                        onChange={(e) => setReview(e.target.value)}
+                        placeholder="Write your review here..."
+                        disabled={status !== "Completed"}
+                        className="min-h-64 flex-1 resize-none bg-black text-white disabled:opacity-50"
+                      />
+                    </div>
 
-                  <div className="space-y-1 sm:col-span-2">
-                    <Label htmlFor="note" className="text-sm">
-                      Notes
-                    </Label>
-                    <Textarea
-                      id="note"
-                      value={note}
-                      onChange={(e) => setNote(e.target.value)}
-                      placeholder="Add any notes about this game..."
-                      className="min-h-20 resize-none bg-black text-white"
-                    />
+                    <div className="flex flex-col space-y-1">
+                      <Label htmlFor="note" className="text-sm">
+                        Notes
+                      </Label>
+                      <Textarea
+                        id="note"
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        placeholder="Add any notes about this game..."
+                        className="min-h-64 flex-1 resize-none bg-black text-white"
+                      />
+                    </div>
                   </div>
                 </div>
               </TabsContent>
@@ -585,7 +588,8 @@ export function CreationToolForm() {
                 disabled={
                   isLoading ||
                   createStatus === "success" ||
-                  (shouldLookUpSteamAppId && steamAppIdQuery.isPending)
+                  (shouldLookUpSteamAppId &&
+                    steamAppIdQuery.fetchStatus === "fetching")
                 }
                 className={`w-full border-2 px-8 py-5 text-base font-bold transition-colors duration-300 lg:w-auto lg:min-w-[200px] ${submitButtonColorClasses}`}
               >

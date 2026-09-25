@@ -209,6 +209,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
             e.preventDefault();
           }}
           showCloseButton={false}
+          aria-describedby={undefined}
         >
           <DialogClose asChild>
             <Button
@@ -296,6 +297,7 @@ export const BacklogEntry = (props: BacklogEntryProps) => {
                   <DialogContent
                     showCloseButton={false}
                     className="flex h-[calc(100vh-6rem)] w-[calc(100vw-6rem)] !max-w-6xl flex-col border-2 border-white bg-black p-6"
+                    aria-describedby={undefined}
                   >
                     <DialogClose asChild>
                       <Button

@@ -153,7 +153,7 @@ export function StatusSelect({
       </Select>
 
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent className="border-2 border-white bg-black p-6">
+        <DialogContent className="border-2 border-white bg-black p-6" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle className="text-white">Add Custom Status</DialogTitle>
           </DialogHeader>
