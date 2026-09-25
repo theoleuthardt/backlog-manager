@@ -110,7 +110,7 @@ export const ThemeCreator = () => {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,26rem)_1fr]">
-        <section className="surface-glow bg-surface flex flex-col gap-4 rounded-xl border-2 border-white p-6">
+        <section className="surface-glow bg-surface flex min-w-0 flex-col gap-4 rounded-xl border-2 border-white p-4 sm:p-6">
           <div className="space-y-2">
             <Label htmlFor="theme-name">Theme name</Label>
             <Input
@@ -161,7 +161,7 @@ export const ThemeCreator = () => {
                     <Label htmlFor={`color-${field.key}`} className="text-sm">
                       {field.label}
                     </Label>
-                    <p className="truncate text-xs text-white/60">
+                    <p className="hidden truncate text-xs text-white/60 sm:block">
                       {field.hint}
                     </p>
                   </div>
@@ -176,7 +176,7 @@ export const ThemeCreator = () => {
                         [field.key]: event.target.value,
                       })
                     }
-                    className="w-28 font-mono"
+                    className="w-24 font-mono sm:w-28"
                   />
                 </div>
               );
@@ -210,7 +210,7 @@ export const ThemeCreator = () => {
           )}
         </section>
 
-        <section className="flex flex-col gap-4">
+        <section className="flex min-w-0 flex-col gap-4">
           <h2 className="text-xl font-semibold">Your themes</h2>
           {customThemes.length === 0 ? (
             <p className="text-sm text-white/70">
