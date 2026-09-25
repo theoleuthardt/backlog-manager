@@ -72,7 +72,7 @@ export function CreationToolForm() {
   const [review, setReview] = useState("");
   const [note, setNote] = useState("");
   const [playtime, setPlaytime] = useState("0");
-  const [steamAppIdInput, setSteamAppIdInput] = useState("");
+  const [steamAppIdInput, setSteamAppIdInput] = useState<string | null>(null);
   const platformOptions = platformsFromUrl
     .split(",")
     .map((p) => p.trim())
@@ -100,11 +100,7 @@ export function CreationToolForm() {
   const steamAppIdQuery = useSteamAppId(shouldLookUpSteamAppId ? title : "");
   const autoSteamAppId = steamAppIdQuery.data;
   const displaySteamAppId =
-    steamAppIdInput !== ""
-      ? steamAppIdInput
-      : autoSteamAppId != null
-        ? String(autoSteamAppId)
-        : "";
+    steamAppIdInput ?? (autoSteamAppId != null ? String(autoSteamAppId) : "");
   const parsedSteamAppId = Number(displaySteamAppId);
   const resolvedSteamAppId =
     Number.isSafeInteger(parsedSteamAppId) && parsedSteamAppId > 0

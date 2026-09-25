@@ -486,7 +486,7 @@ async def search(
     )
 
 
-def _normalize_game_title(title: str) -> str:
+def normalize_game_title(title: str) -> str:
     return re.sub(r"[™®©]", "", title).strip().lower()
 
 
@@ -516,7 +516,7 @@ async def find_steam_app_id(title: str) -> int | None:
     #176) win over the storefront's own ranking, falling back to the
     first type=="app" hit when none matches. A lookup failure resolves
     to None rather than raising, since this is a best-effort prefill."""
-    normalized = _normalize_game_title(title)
+    normalized = normalize_game_title(title)
     async with _steam_app_id_lock:
         cached = _steam_app_id_by_title.get(normalized)
         if (
@@ -531,7 +531,7 @@ async def find_steam_app_id(title: str) -> int | None:
         return None
     app_hits = [item for item in items if item.type == "app" and item.id]
     matching_hits = [
-        item for item in app_hits if _normalize_game_title(item.name) == normalized
+        item for item in app_hits if normalize_game_title(item.name) == normalized
     ]
     app_id = matching_hits[0].id if matching_hits else (app_hits[0].id if app_hits else None)
     async with _steam_app_id_lock:
