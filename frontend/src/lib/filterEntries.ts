@@ -12,6 +12,7 @@ export interface EntryFilters {
   platforms: readonly string[];
   genres: readonly string[];
   statuses: readonly string[];
+  categories: readonly string[];
   ownedOnly: boolean;
   interest: NumericRange;
   reviewStars: NumericRange;
@@ -26,6 +27,7 @@ export const EMPTY_FILTERS: EntryFilters = {
   platforms: [],
   genres: [],
   statuses: [],
+  categories: [],
   ownedOnly: false,
   interest: null,
   reviewStars: null,
@@ -56,6 +58,7 @@ function sharesAny(values: readonly string[], selected: readonly string[]) {
 export function filterEntries(
   entries: readonly BacklogEntryData[],
   filters: EntryFilters,
+  categoriesByEntryId: ReadonlyMap<number, readonly string[]> = new Map(),
 ): BacklogEntryData[] {
   const search = filters.search.trim().toLowerCase();
   return entries.filter((entry) => {
@@ -69,6 +72,11 @@ export function filterEntries(
       return false;
     if (filters.statuses.length > 0 && !filters.statuses.includes(entry.status))
       return false;
+    if (
+      filters.categories.length > 0 &&
+      !sharesAny(categoriesByEntryId.get(entry.id) ?? [], filters.categories)
+    )
+      return false;
     if (filters.ownedOnly && !entry.owned) return false;
     return RANGE_KEYS.every((key) => withinRange(entry[key], filters[key]));
   });
@@ -80,7 +88,12 @@ export function filterEntries(
  * visible input in the navbar.
  */
 export function countActiveFilters(filters: EntryFilters): number {
-  const listFilters = [filters.platforms, filters.genres, filters.statuses];
+  const listFilters = [
+    filters.platforms,
+    filters.genres,
+    filters.statuses,
+    filters.categories,
+  ];
   const active =
     listFilters.filter((list) => list.length > 0).length +
     RANGE_KEYS.filter((key) => filters[key] !== null).length;

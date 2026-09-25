@@ -12,6 +12,7 @@ import {
   XIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { CategoryPicker } from "components/CategoryPicker";
 import { GameImage } from "components/GameImage";
 import { AchievementProgress } from "components/AchievementProgress";
 import { GamePriceSection } from "components/GamePriceSection";
@@ -336,6 +337,9 @@ export const EntryDetail = (props: BacklogEntryProps) => {
                 steamAppId={props.steamAppId}
                 title={props.title}
               />
+              <div className="sm:ml-6">
+                <CategoryPicker entryId={props.id} />
+              </div>
             </div>
           </div>
         </div>

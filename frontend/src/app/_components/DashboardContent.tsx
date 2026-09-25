@@ -31,8 +31,9 @@ import { useDashboard } from "~/app/context/DashboardContext";
 import { useTheme } from "~/app/context/ThemeContext";
 import {
   useBacklogEntries,
+  useCategories,
   useCustomStatuses,
-  useEntryCategoryNames,
+  useEntryCategories,
   useMoveEntryToStatus,
 } from "~/hooks/useBacklog";
 import { useMediaQuery } from "~/hooks/useMediaQuery";
@@ -79,7 +80,7 @@ export const DashboardContent = () => {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const isSidebarOpen = sidebarToggle ?? isDesktop;
 
-  const [filters, setFilters] = useState<EntryFilters>(EMPTY_FILTERS);
+  const [selectedFilters, setFilters] = useState<EntryFilters>(EMPTY_FILTERS);
   const [sortOverride, setSortOverride] = useState<SortOption | null>(null);
   const [directionOverride, setDirectionOverride] =
     useState<SortDirection | null>(null);
@@ -130,16 +131,65 @@ export const DashboardContent = () => {
     [entries],
   );
 
-  const { data: categoryNames } = useEntryCategoryNames(sortBy === "category");
+  const { data: entryCategories } = useEntryCategories();
+  const { data: allCategories = [] } = useCategories();
+  const categoryOptions = useMemo(
+    () =>
+      allCategories
+        .map((category) => category.name)
+        .sort((a, b) => a.localeCompare(b)),
+    [allCategories],
+  );
+  const filters = useMemo(
+    () => ({
+      ...selectedFilters,
+      categories: selectedFilters.categories.filter((name) =>
+        categoryOptions.includes(name),
+      ),
+    }),
+    [selectedFilters, categoryOptions],
+  );
+  const categoryColors = useMemo(
+    () =>
+      new Map(allCategories.map((category) => [category.name, category.color])),
+    [allCategories],
+  );
+  const categoryNamesByEntry = useMemo(
+    () =>
+      new Map(
+        Array.from(entryCategories ?? [], ([entryId, list]) => [
+          entryId,
+          list.map((category) => category.name),
+        ]),
+      ),
+    [entryCategories],
+  );
+  const firstCategoryByEntry = useMemo(
+    () =>
+      new Map(
+        Array.from(categoryNamesByEntry, ([entryId, names]) => [
+          entryId,
+          names[0] ?? "",
+        ]),
+      ),
+    [categoryNamesByEntry],
+  );
 
   const visibleEntries = useMemo(
     () =>
-      sortEntries(filterEntries(entries, { ...filters, search: searchQuery }), {
-        sortBy,
-        direction,
-        statusOrder: statusOptions,
-        categoryByEntryId: categoryNames,
-      }),
+      sortEntries(
+        filterEntries(
+          entries,
+          { ...filters, search: searchQuery },
+          categoryNamesByEntry,
+        ),
+        {
+          sortBy,
+          direction,
+          statusOrder: statusOptions,
+          categoryByEntryId: firstCategoryByEntry,
+        },
+      ),
     [
       entries,
       filters,
@@ -147,7 +197,8 @@ export const DashboardContent = () => {
       sortBy,
       direction,
       statusOptions,
-      categoryNames,
+      categoryNamesByEntry,
+      firstCategoryByEntry,
     ],
   );
 
@@ -166,8 +217,8 @@ export const DashboardContent = () => {
     () =>
       sortBy === "status"
         ? []
-        : groupSortedEntries(visibleEntries, sortBy, categoryNames),
-    [sortBy, visibleEntries, categoryNames],
+        : groupSortedEntries(visibleEntries, sortBy, firstCategoryByEntry),
+    [sortBy, visibleEntries, firstCategoryByEntry],
   );
 
   const sensors = useSensors(
@@ -289,6 +340,7 @@ export const DashboardContent = () => {
                   platformOptions={platformOptions}
                   genreOptions={genreOptions}
                   statusOptions={statusOptions}
+                  categoryOptions={categoryOptions}
                   bounds={bounds}
                 />
               </div>
@@ -410,7 +462,11 @@ export const DashboardContent = () => {
                   key={group.label}
                   label={group.label}
                   count={group.entries.length}
-                  color={theme.colors.accent}
+                  color={
+                    (sortBy === "category"
+                      ? categoryColors.get(group.label)
+                      : undefined) ?? theme.colors.accent
+                  }
                   isCollapsed={collapsedGroups.includes(groupKey(group.label))}
                   onToggle={() => toggleGroup(group.label)}
                 >
@@ -451,6 +507,7 @@ export const DashboardContent = () => {
                 platformOptions={platformOptions}
                 genreOptions={genreOptions}
                 statusOptions={statusOptions}
+                categoryOptions={categoryOptions}
                 bounds={bounds}
               />
             </BottomSheet>

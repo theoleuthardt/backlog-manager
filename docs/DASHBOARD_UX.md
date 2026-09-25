@@ -30,6 +30,21 @@ it into this round, so the next round can start from it.
   disappeared. A range filter is now inactive (`null`) until the slider is
   actually moved.
 
+### Categories
+
+The backend always had categories (per-user, coloured, many-to-many with
+entries) but nothing in the UI used them, so the "category" sort option from
+#48 was empty. They are now usable end to end: the entry dialog hero shows
+an entry's categories as coloured chips next to the status, with a popover
+to toggle existing ones or create a new one (assigned immediately) and a
+manage dialog to rename, recolour and delete. The sidebar gets a Category
+filter once at least one exists, and sorting/grouping by category uses the
+entry's first category alphabetically (uncategorized last), tinted with the
+category colour. Names are unique per user case-insensitively in the UI
+because they double as the filter key, and a filter on a renamed or deleted
+category is dropped instead of silently hiding everything. The API now
+validates names (1-100 characters) and colours (`#rrggbb`) at the boundary.
+
 ### Search in the navbar (#177)
 
 The search field moved out of the filter bar into the middle of the
@@ -109,9 +124,8 @@ phones. All pages were checked at 375px and 768px.
   confetti burst when a game moves to Completed.
 - **Achievement shelf**: trophy cabinet page built from the Steam
   achievement data that is already fetched.
-- **Custom groups / collections** beyond status, reusing the existing
-  categories backend (assign categories from the entry dialog, group by
-  category with the same drag and drop).
+- **Drag and drop between category groups** (a card can belong to several
+  categories, so this needs a move-versus-add decision).
 - **Command palette** (`Cmd+K`) that combines search, sort, theme switching
   and navigation instead of only focusing the search field.
 - **Density toggle**: compact list rows versus large covers, remembered per

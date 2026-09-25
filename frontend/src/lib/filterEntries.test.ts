@@ -172,9 +172,50 @@ describe("filterEntries", () => {
   });
 });
 
+describe("filterEntries by category", () => {
+  const categories = new Map<number, readonly string[]>([
+    [1, ["Arcade", "Co-op"]],
+    [2, ["Story"]],
+  ]);
+
+  it("keeps entries that have at least one selected category", () => {
+    const entries = [entry({ id: 1 }), entry({ id: 2 }), entry({ id: 3 })];
+
+    const result = filterEntries(
+      entries,
+      withFilters({ categories: ["Co-op", "Story"] }),
+      categories,
+    );
+
+    expect(ids(result)).toEqual([1, 2]);
+  });
+
+  it("drops uncategorized entries once a category is selected", () => {
+    const entries = [entry({ id: 3 })];
+
+    expect(
+      filterEntries(
+        entries,
+        withFilters({ categories: ["Arcade"] }),
+        categories,
+      ),
+    ).toEqual([]);
+  });
+
+  it("ignores categories entirely when none is selected", () => {
+    const entries = [entry({ id: 3 })];
+
+    expect(ids(filterEntries(entries, EMPTY_FILTERS, categories))).toEqual([3]);
+  });
+});
+
 describe("countActiveFilters", () => {
   it("is zero for the empty filter set", () => {
     expect(countActiveFilters(EMPTY_FILTERS)).toBe(0);
+  });
+
+  it("counts an active category filter", () => {
+    expect(countActiveFilters(withFilters({ categories: ["Arcade"] }))).toBe(1);
   });
 
   it("counts each active filter once and ignores the search text", () => {

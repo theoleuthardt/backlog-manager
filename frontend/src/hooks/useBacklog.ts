@@ -14,7 +14,8 @@ import {
 
 const ENTRIES_KEY = ["backlog-entries"] as const;
 const CUSTOM_STATUSES_KEY = ["custom-statuses"] as const;
-const CATEGORY_NAMES_KEY = ["entry-category-names"] as const;
+const CATEGORIES_KEY = ["categories"] as const;
+const ENTRY_CATEGORIES_KEY = ["entry-categories"] as const;
 
 export function useBacklogEntries() {
   return useQuery({
@@ -111,15 +112,24 @@ export function useMoveEntryToStatus() {
 }
 
 /**
- * Maps entry id -> name of its first category (alphabetically) for the
- * "sort by category" option. Entries carry no category data
- * themselves, so this walks the category endpoints; it stays disabled
- * until that sort is actually selected.
+ * Every category of the user, for pickers and filters.
  */
-export function useEntryCategoryNames(enabled: boolean) {
+export function useCategories() {
   return useQuery({
-    queryKey: CATEGORY_NAMES_KEY,
-    enabled,
+    queryKey: CATEGORIES_KEY,
+    queryFn: backlogApi.getCategories,
+  });
+}
+
+/**
+ * Maps entry id -> the categories it belongs to (alphabetical by name).
+ * Entries carry no category data themselves, so this walks the category
+ * endpoints - one request per category - and is the single source the
+ * dashboard uses for sorting, grouping, filtering and the entry dialog.
+ */
+export function useEntryCategories() {
+  return useQuery({
+    queryKey: ENTRY_CATEGORIES_KEY,
     queryFn: async () => {
       const categories = (await backlogApi.getCategories()).sort((a, b) =>
         a.name.localeCompare(b.name),
@@ -129,14 +139,73 @@ export function useEntryCategoryNames(enabled: boolean) {
           backlogApi.getEntriesForCategory(category.id),
         ),
       );
-      const names = new Map<number, string>();
+      const byEntry = new Map<number, backlogApi.CategoryData[]>();
       categories.forEach((category, index) => {
         for (const entry of entriesPerCategory[index] ?? []) {
-          if (!names.has(entry.id)) names.set(entry.id, category.name);
+          byEntry.set(entry.id, [...(byEntry.get(entry.id) ?? []), category]);
         }
       });
-      return names;
+      return byEntry;
     },
+  });
+}
+
+function useInvalidateCategories() {
+  const queryClient = useQueryClient();
+  return async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: CATEGORIES_KEY }),
+      queryClient.invalidateQueries({ queryKey: ENTRY_CATEGORIES_KEY }),
+    ]);
+  };
+}
+
+export function useCreateCategory() {
+  const invalidate = useInvalidateCategories();
+  return useMutation({
+    mutationFn: backlogApi.createCategory,
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpdateCategory() {
+  const invalidate = useInvalidateCategories();
+  return useMutation({
+    mutationFn: ({
+      categoryId,
+      changes,
+    }: {
+      categoryId: number;
+      changes: { categoryName?: string; color?: string };
+    }) => backlogApi.updateCategory(categoryId, changes),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeleteCategory() {
+  const invalidate = useInvalidateCategories();
+  return useMutation({
+    mutationFn: backlogApi.deleteCategory,
+    onSuccess: invalidate,
+  });
+}
+
+export function useSetEntryCategory() {
+  const invalidate = useInvalidateCategories();
+  return useMutation({
+    mutationFn: ({
+      entryId,
+      categoryId,
+      assigned,
+    }: {
+      entryId: number;
+      categoryId: number;
+      assigned: boolean;
+    }) =>
+      assigned
+        ? backlogApi.addCategoryToEntry(entryId, categoryId)
+        : backlogApi.removeCategoryFromEntry(entryId, categoryId),
+    onSuccess: invalidate,
   });
 }
 

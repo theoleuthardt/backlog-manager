@@ -53,6 +53,7 @@ interface DashboardSidebarProps {
   platformOptions: string[];
   genreOptions: string[];
   statusOptions: string[];
+  categoryOptions: string[];
   bounds: FilterBounds;
 }
 
@@ -150,6 +151,7 @@ export const DashboardSidebar = ({
   platformOptions,
   genreOptions,
   statusOptions,
+  categoryOptions,
   bounds,
 }: DashboardSidebarProps) => {
   const update = (changes: Partial<EntryFilters>) =>
@@ -269,6 +271,16 @@ export const DashboardSidebar = ({
           selected={filters.statuses}
           onChange={(statuses) => update({ statuses })}
         />
+
+        {categoryOptions.length > 0 && (
+          <MultiSelectFilter
+            label="Category"
+            placeholder="Select categories"
+            options={categoryOptions}
+            selected={filters.categories}
+            onChange={(categories) => update({ categories })}
+          />
+        )}
 
         <div className="flex items-center space-x-2">
           <Checkbox
