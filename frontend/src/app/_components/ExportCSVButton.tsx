@@ -27,7 +27,13 @@ export const ExportCSVButton = ({
       onClick={handleButtonClick}
     >
       {iconOnly ? (
-        <Image src="/csv_export.png" alt="export CSV" width={32} height={32} />
+        <Image
+          src="/csv_export.png"
+          alt="export CSV"
+          width={32}
+          height={32}
+          className="themed-icon"
+        />
       ) : (
         children
       )}

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import type { NavbarLink, NavbarProps } from "~/app/types";
 import { useAuth } from "~/app/context/AuthContext";
 import { useIsTauriMacOS } from "~/hooks/useIsTauri";
+import { ThemeMenu } from "./ThemeMenu";
 
 export function Navbar(props: NavbarProps) {
   const router = useRouter();
@@ -42,7 +43,7 @@ export function Navbar(props: NavbarProps) {
   return (
     <nav
       {...(isTauriMacOS ? { "data-tauri-drag-region": true } : {})}
-      className={`mx-auto flex w-full items-center justify-between rounded-4xl bg-transparent px-8 py-4 text-white ${isTauriMacOS ? "pt-8" : ""}`}
+      className={`mx-auto flex w-full flex-wrap items-center justify-between gap-x-2 gap-y-3 rounded-4xl md:gap-x-4 bg-transparent px-3 py-3 text-white md:flex-nowrap md:px-8 md:py-4 ${isTauriMacOS ? "pt-8" : ""}`}
     >
       <div
         className={`flex items-center space-x-2 ${isTauriMacOS ? "ml-16" : ""}`}
@@ -57,6 +58,7 @@ export function Navbar(props: NavbarProps) {
               alt="Backlog-Manager"
               width={64}
               height={64}
+              className="themed-icon h-12 w-12 md:h-16 md:w-16"
             />
           </motion.div>
         </Link>
@@ -66,7 +68,19 @@ export function Navbar(props: NavbarProps) {
           </span>
         </Link>
       </div>
-      <div className="flex flex-row items-center space-x-8">
+      {props.center && (
+        <div className="order-last w-full md:order-none md:mx-4 md:w-auto md:max-w-2xl md:flex-1">
+          {props.center}
+        </div>
+      )}
+      <div className="flex flex-row items-center gap-2.5 md:gap-8">
+        <motion.div
+          whileHover={{ scale: 1.2, y: -3, rotate: -4 }}
+          whileTap={{ scale: 0.92 }}
+          transition={{ type: "spring", stiffness: 400, damping: 20 }}
+        >
+          <ThemeMenu />
+        </motion.div>
         {props.navbarLinks.map((link) => {
           if (link.type === "component") {
             return (

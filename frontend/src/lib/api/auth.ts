@@ -1,5 +1,6 @@
 import { apiClient, apiErrorMessage } from "./client";
 import { clearToken, setToken } from "./token";
+import type { CustomTheme } from "~/lib/themes";
 
 export interface CurrentUser {
   id: number;
@@ -16,6 +17,9 @@ export interface CurrentUser {
   hasDiscordWebhookUrl: boolean;
   steamAutoImportEnabled: boolean;
   steamFamilyIds?: string;
+  defaultSort: string;
+  theme: string;
+  customThemes: CustomTheme[];
 }
 
 export type LoginOutcome =
@@ -66,5 +70,8 @@ export async function getCurrentUser(): Promise<CurrentUser> {
     hasDiscordWebhookUrl: data.has_discord_webhook_url ?? false,
     steamAutoImportEnabled: data.steam_auto_import_enabled ?? false,
     steamFamilyIds: data.steam_family_ids ?? undefined,
+    defaultSort: data.default_sort ?? "status",
+    theme: data.theme ?? "dark",
+    customThemes: data.custom_themes ?? [],
   };
 }

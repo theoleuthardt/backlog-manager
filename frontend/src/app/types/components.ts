@@ -99,4 +99,5 @@ export interface ImportCSVButtonProps {
  */
 export interface NavbarProps {
   navbarLinks: NavbarLink[];
+  center?: ReactNode;
 }

@@ -14,7 +14,7 @@ export const landingPageNavLinks: NavbarLink[] = [
   {
     id: 1,
     href: "#features",
-    content: <Image src="/features.png" alt="account" width={32} height={32} />,
+    content: <Image src="/features.png" alt="account" width={32} height={32} className="themed-icon" />,
     action: "scroll",
     target: "features",
     type: "link",
@@ -22,7 +22,7 @@ export const landingPageNavLinks: NavbarLink[] = [
   {
     id: 2,
     href: "#future-updates",
-    content: <Image src="/updates.png" alt="account" width={32} height={32} />,
+    content: <Image src="/updates.png" alt="account" width={32} height={32} className="themed-icon" />,
     action: "scroll",
     target: "future-updates",
     type: "link",
@@ -30,7 +30,7 @@ export const landingPageNavLinks: NavbarLink[] = [
   {
     id: 3,
     href: "/login",
-    content: <Image src="/account.png" alt="account" width={32} height={32} />,
+    content: <Image src="/account.png" alt="account" width={32} height={32} className="themed-icon" />,
     action: "navigate",
     type: "link",
   },
@@ -97,7 +97,7 @@ export const dashboardNavLinks: NavbarLink[] = [
         alt="Steam"
         width={32}
         height={32}
-        className="brightness-0 invert"
+        className="themed-icon-mono"
       />
     ),
     action: "navigate",
@@ -106,7 +106,7 @@ export const dashboardNavLinks: NavbarLink[] = [
   {
     id: 5,
     href: "/account",
-    content: <Image src="/account.png" alt="account" width={32} height={32} />,
+    content: <Image src="/account.png" alt="account" width={32} height={32} className="themed-icon" />,
     action: "navigate",
     type: "link",
   },
@@ -115,7 +115,7 @@ export const dashboardNavLinks: NavbarLink[] = [
     href: "/logout",
     content: (
       <Image
-        className="scale-125"
+        className="themed-icon scale-125"
         src="/logout.png"
         alt="logout"
         width={32}
@@ -131,14 +131,14 @@ export const creationToolNavLinks: NavbarLink[] = [
   {
     id: 1,
     href: "/dashboard",
-    content: <Image src="/go-back.png" alt="go-back" width={32} height={32} />,
+    content: <Image src="/go-back.png" alt="go-back" width={32} height={32} className="themed-icon" />,
     action: "navigate",
     type: "link",
   },
   {
     id: 2,
     href: "/account",
-    content: <Image src="/account.png" alt="account" width={32} height={32} />,
+    content: <Image src="/account.png" alt="account" width={32} height={32} className="themed-icon" />,
     action: "navigate",
     type: "link",
   },
@@ -147,7 +147,7 @@ export const creationToolNavLinks: NavbarLink[] = [
     href: "/logout",
     content: (
       <Image
-        className="scale-125"
+        className="themed-icon scale-125"
         src="/logout.png"
         alt="logout"
         width={32}
@@ -163,7 +163,7 @@ export const accountNavLinks: NavbarLink[] = [
   {
     id: 1,
     href: "/dashboard",
-    content: <Image src="/go-back.png" alt="go-back" width={32} height={32} />,
+    content: <Image src="/go-back.png" alt="go-back" width={32} height={32} className="themed-icon" />,
     action: "navigate",
     type: "link",
   },
@@ -172,7 +172,7 @@ export const accountNavLinks: NavbarLink[] = [
     href: "/logout",
     content: (
       <Image
-        className="scale-125"
+        className="themed-icon scale-125"
         src="/logout.png"
         alt="logout"
         width={32}
@@ -188,14 +188,14 @@ export const steamNavLinks: NavbarLink[] = [
   {
     id: 1,
     href: "/dashboard",
-    content: <Image src="/go-back.png" alt="go-back" width={32} height={32} />,
+    content: <Image src="/go-back.png" alt="go-back" width={32} height={32} className="themed-icon" />,
     action: "navigate",
     type: "link",
   },
   {
     id: 2,
     href: "/account",
-    content: <Image src="/account.png" alt="account" width={32} height={32} />,
+    content: <Image src="/account.png" alt="account" width={32} height={32} className="themed-icon" />,
     action: "navigate",
     type: "link",
   },
@@ -204,7 +204,7 @@ export const steamNavLinks: NavbarLink[] = [
     href: "/logout",
     content: (
       <Image
-        className="scale-125"
+        className="themed-icon scale-125"
         src="/logout.png"
         alt="logout"
         width={32}
@@ -220,14 +220,14 @@ export const importCSVNavLinks: NavbarLink[] = [
   {
     id: 1,
     href: "/dashboard",
-    content: <Image src="/go-back.png" alt="go-back" width={32} height={32} />,
+    content: <Image src="/go-back.png" alt="go-back" width={32} height={32} className="themed-icon" />,
     action: "navigate",
     type: "link",
   },
   {
     id: 2,
     href: "/account",
-    content: <Image src="/account.png" alt="account" width={32} height={32} />,
+    content: <Image src="/account.png" alt="account" width={32} height={32} className="themed-icon" />,
     action: "navigate",
     type: "link",
   },
@@ -236,7 +236,7 @@ export const importCSVNavLinks: NavbarLink[] = [
     href: "/logout",
     content: (
       <Image
-        className="scale-125"
+        className="themed-icon scale-125"
         src="/logout.png"
         alt="logout"
         width={32}
@@ -252,14 +252,14 @@ export const exportCSVNavLinks: NavbarLink[] = [
   {
     id: 1,
     href: "/dashboard",
-    content: <Image src="/go-back.png" alt="go-back" width={32} height={32} />,
+    content: <Image src="/go-back.png" alt="go-back" width={32} height={32} className="themed-icon" />,
     action: "navigate",
     type: "link",
   },
   {
     id: 2,
     href: "/account",
-    content: <Image src="/account.png" alt="account" width={32} height={32} />,
+    content: <Image src="/account.png" alt="account" width={32} height={32} className="themed-icon" />,
     action: "navigate",
     type: "link",
   },
@@ -268,7 +268,7 @@ export const exportCSVNavLinks: NavbarLink[] = [
     href: "/logout",
     content: (
       <Image
-        className="scale-125"
+        className="themed-icon scale-125"
         src="/logout.png"
         alt="logout"
         width={32}

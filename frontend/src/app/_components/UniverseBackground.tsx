@@ -1,8 +1,11 @@
 "use client";
 import React, { useEffect, useRef } from "react";
+import { useTheme } from "~/app/context/ThemeContext";
 
 export const UniverseBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const { theme } = useTheme();
+  const starColor = theme.colors.foreground;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -21,10 +24,12 @@ export const UniverseBackground = () => {
       speed: Math.random() * 2 + 0.1,
     }));
 
+    let animationId = 0;
+
     function animate() {
       if (!ctx) return;
       ctx.clearRect(0, 0, w, h);
-      ctx.fillStyle = "white";
+      ctx.fillStyle = starColor;
       stars.forEach((star) => {
         star.y -= star.speed;
         if (star.y < 0) star.y = h;
@@ -33,7 +38,7 @@ export const UniverseBackground = () => {
         ctx.fill();
       });
 
-      requestAnimationFrame(animate);
+      animationId = requestAnimationFrame(animate);
     }
 
     animate();
@@ -44,8 +49,11 @@ export const UniverseBackground = () => {
     };
 
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    return () => {
+      cancelAnimationFrame(animationId);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [starColor]);
 
   return (
     <canvas

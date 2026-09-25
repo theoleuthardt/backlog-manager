@@ -42,7 +42,13 @@ export const EntryCreationDialog = ({
           variant="outline"
           disabled={false}
         >
-          <Image src={triggerIcon} alt={triggerAlt} width={32} height={32} />
+          <Image
+            src={triggerIcon}
+            alt={triggerAlt}
+            width={32}
+            height={32}
+            className="themed-icon"
+          />
           {showText && "Add Entry"}
         </Button>
       </DialogTrigger>
