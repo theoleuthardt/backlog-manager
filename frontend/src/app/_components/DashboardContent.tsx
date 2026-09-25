@@ -20,6 +20,7 @@ import {
 import { toast } from "sonner";
 import { Button } from "shadcn_components/ui/button";
 import { BacklogEntry } from "components/BacklogEntry";
+import { BottomSheet } from "components/BottomSheet";
 import {
   DashboardSidebar,
   type FilterBounds,
@@ -84,6 +85,7 @@ export const DashboardContent = () => {
 
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const [sidebarToggle, setSidebarToggle] = useState<boolean | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const isSidebarOpen = sidebarToggle ?? isDesktop;
 
   const [filters, setFilters] = useState<EntryFilters>(EMPTY_FILTERS);
@@ -279,56 +281,57 @@ export const DashboardContent = () => {
         id="upperSection"
         className="flex flex-col gap-4 py-2 lg:flex-row lg:gap-0"
       >
-        <motion.aside
-          id="leftBar"
-          aria-label="Sort and filter"
-          inert={!isSidebarOpen}
-          initial={false}
-          animate={
-            isDesktop
-              ? {
-                  width: isSidebarOpen ? 304 : 0,
-                  marginRight: isSidebarOpen ? 24 : 0,
-                  opacity: isSidebarOpen ? 1 : 0,
-                }
-              : {
-                  height: isSidebarOpen ? "auto" : 0,
-                  marginBottom: isSidebarOpen ? 0 : -16,
-                  opacity: isSidebarOpen ? 1 : 0,
-                }
-          }
-          transition={{ type: "spring", stiffness: 260, damping: 30 }}
-          className="-m-2 shrink-0 overflow-hidden lg:sticky lg:top-4 lg:self-start"
-        >
-          <motion.div
+        {isDesktop && (
+          <motion.aside
+            id="leftBar"
+            aria-label="Sort and filter"
+            inert={!isSidebarOpen}
             initial={false}
-            animate={{ x: isSidebarOpen ? 0 : -32 }}
-            transition={{ type: "spring", stiffness: 260, damping: 26 }}
-            className="p-2 lg:w-76"
+            animate={{
+              width: isSidebarOpen ? 304 : 0,
+              marginRight: isSidebarOpen ? 24 : 0,
+              opacity: isSidebarOpen ? 1 : 0,
+            }}
+            transition={{ type: "spring", stiffness: 260, damping: 30 }}
+            className="sticky top-4 -m-2 shrink-0 self-start overflow-hidden"
           >
-            <div className="surface-glow bg-surface max-h-[calc(100vh-9rem)] overflow-y-auto rounded-2xl border-2 border-white p-4">
-              <DashboardSidebar
-                sortBy={sortBy}
-                direction={direction}
-                onSortByChange={(next) => {
-                  setSortOverride(next);
-                  setDirectionOverride(null);
-                }}
-                onDirectionChange={setDirectionOverride}
-                filters={filters}
-                onFiltersChange={setFilters}
-                platformOptions={platformOptions}
-                genreOptions={genreOptions}
-                statusOptions={statusOptions}
-                bounds={bounds}
-              />
-            </div>
-          </motion.div>
-        </motion.aside>
+            <motion.div
+              initial={false}
+              animate={{ x: isSidebarOpen ? 0 : -32 }}
+              transition={{ type: "spring", stiffness: 260, damping: 26 }}
+              className="w-76 p-2"
+            >
+              <div className="surface-glow bg-surface max-h-[calc(100vh-9rem)] overflow-y-auto rounded-2xl border-2 border-white p-4">
+                <DashboardSidebar
+                  sortBy={sortBy}
+                  direction={direction}
+                  onSortByChange={(next) => {
+                    setSortOverride(next);
+                    setDirectionOverride(null);
+                  }}
+                  onDirectionChange={setDirectionOverride}
+                  filters={filters}
+                  onFiltersChange={setFilters}
+                  platformOptions={platformOptions}
+                  genreOptions={genreOptions}
+                  statusOptions={statusOptions}
+                  bounds={bounds}
+                />
+              </div>
+            </motion.div>
+          </motion.aside>
+        )}
 
-        <div id="entryList" className="flex min-w-0 flex-1 flex-col gap-4">
+        <div
+          id="entryList"
+          className="flex min-w-0 flex-1 flex-col gap-4 pb-24 lg:pb-0"
+        >
           <div className="flex flex-wrap items-center gap-3">
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.9 }}>
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.9 }}
+              className="hidden lg:block"
+            >
               <Button
                 type="button"
                 variant="outline"
@@ -455,6 +458,66 @@ export const DashboardContent = () => {
             </div>
           )}
         </div>
+
+        {!isDesktop && (
+          <>
+            <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center">
+              <AnimatePresence>
+                {!isSheetOpen && (
+                  <motion.button
+                    type="button"
+                    onClick={() => setIsSheetOpen(true)}
+                    initial={{ y: 80, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: 80, opacity: 0 }}
+                    whileTap={{ scale: 0.93 }}
+                    transition={{ type: "spring", stiffness: 380, damping: 26 }}
+                    className="surface-glow bg-surface pointer-events-auto flex h-12 cursor-pointer items-center gap-2 rounded-full border-2 border-white px-5 font-semibold"
+                  >
+                    <SlidersHorizontal className="h-4 w-4" />
+                    Sort &amp; filter
+                    {activeFilterCount > 0 && (
+                      <span className="bg-primary text-primary-foreground rounded-full px-1.5 text-xs">
+                        {activeFilterCount}
+                      </span>
+                    )}
+                  </motion.button>
+                )}
+              </AnimatePresence>
+            </div>
+            <BottomSheet
+              open={isSheetOpen}
+              onOpenChange={setIsSheetOpen}
+              title="Sort & filter"
+              footer={
+                <Button
+                  type="button"
+                  className="h-11 w-full text-base"
+                  onClick={() => setIsSheetOpen(false)}
+                >
+                  Show {visibleEntries.length} game
+                  {visibleEntries.length === 1 ? "" : "s"}
+                </Button>
+              }
+            >
+              <DashboardSidebar
+                sortBy={sortBy}
+                direction={direction}
+                onSortByChange={(next) => {
+                  setSortOverride(next);
+                  setDirectionOverride(null);
+                }}
+                onDirectionChange={setDirectionOverride}
+                filters={filters}
+                onFiltersChange={setFilters}
+                platformOptions={platformOptions}
+                genreOptions={genreOptions}
+                statusOptions={statusOptions}
+                bounds={bounds}
+              />
+            </BottomSheet>
+          </>
+        )}
       </div>
     </MotionConfig>
   );

@@ -14,24 +14,51 @@ export const landingPageNavLinks: NavbarLink[] = [
   {
     id: 1,
     href: "#features",
-    content: <Image src="/features.png" alt="account" width={32} height={32} className="themed-icon" />,
+    content: (
+      <Image
+        src="/features.png"
+        alt="account"
+        width={32}
+        height={32}
+        className="themed-icon"
+      />
+    ),
     action: "scroll",
     target: "features",
+    label: "Features",
     type: "link",
   },
   {
     id: 2,
     href: "#future-updates",
-    content: <Image src="/updates.png" alt="account" width={32} height={32} className="themed-icon" />,
+    content: (
+      <Image
+        src="/updates.png"
+        alt="account"
+        width={32}
+        height={32}
+        className="themed-icon"
+      />
+    ),
     action: "scroll",
     target: "future-updates",
+    label: "Updates",
     type: "link",
   },
   {
     id: 3,
     href: "/login",
-    content: <Image src="/account.png" alt="account" width={32} height={32} className="themed-icon" />,
+    content: (
+      <Image
+        src="/account.png"
+        alt="account"
+        width={32}
+        height={32}
+        className="themed-icon"
+      />
+    ),
     action: "navigate",
+    label: "Log in",
     type: "link",
   },
 ];
@@ -52,6 +79,13 @@ export const dashboardNavLinks: NavbarLink[] = [
         </TooltipContent>
       </Tooltip>
     ),
+    mobileComponent: (
+      <EntryCreationDialog
+        triggerClassName="!h-11 w-full !justify-start gap-3 !px-3 text-base font-semibold !bg-transparent hover:!bg-white/10"
+        showText
+      />
+    ),
+    label: "Add entry",
     type: "component",
   },
   {
@@ -69,6 +103,19 @@ export const dashboardNavLinks: NavbarLink[] = [
         </TooltipContent>
       </Tooltip>
     ),
+    mobileComponent: (
+      <ImportCSVButton className="!h-11 w-full !justify-start gap-3 !px-3 text-base font-semibold !bg-transparent hover:!bg-white/10">
+        <Image
+          src="/csv_import.png"
+          alt=""
+          width={32}
+          height={32}
+          className="themed-icon"
+        />
+        Import from CSV
+      </ImportCSVButton>
+    ),
+    label: "Import from CSV",
     type: "component",
   },
   {
@@ -86,6 +133,19 @@ export const dashboardNavLinks: NavbarLink[] = [
         </TooltipContent>
       </Tooltip>
     ),
+    mobileComponent: (
+      <ExportCSVButton className="!h-11 w-full !justify-start gap-3 !px-3 text-base font-semibold !bg-transparent hover:!bg-white/10">
+        <Image
+          src="/csv_export.png"
+          alt=""
+          width={32}
+          height={32}
+          className="themed-icon"
+        />
+        Export as CSV
+      </ExportCSVButton>
+    ),
+    label: "Export as CSV",
     type: "component",
   },
   {
@@ -101,13 +161,23 @@ export const dashboardNavLinks: NavbarLink[] = [
       />
     ),
     action: "navigate",
+    label: "Steam sync",
     type: "link",
   },
   {
     id: 5,
     href: "/account",
-    content: <Image src="/account.png" alt="account" width={32} height={32} className="themed-icon" />,
+    content: (
+      <Image
+        src="/account.png"
+        alt="account"
+        width={32}
+        height={32}
+        className="themed-icon"
+      />
+    ),
     action: "navigate",
+    label: "Account",
     type: "link",
   },
   {
@@ -123,6 +193,7 @@ export const dashboardNavLinks: NavbarLink[] = [
       />
     ),
     action: "logout",
+    label: "Log out",
     type: "link",
   },
 ];
@@ -131,15 +202,33 @@ export const creationToolNavLinks: NavbarLink[] = [
   {
     id: 1,
     href: "/dashboard",
-    content: <Image src="/go-back.png" alt="go-back" width={32} height={32} className="themed-icon" />,
+    content: (
+      <Image
+        src="/go-back.png"
+        alt="go-back"
+        width={32}
+        height={32}
+        className="themed-icon"
+      />
+    ),
     action: "navigate",
+    label: "Back to dashboard",
     type: "link",
   },
   {
     id: 2,
     href: "/account",
-    content: <Image src="/account.png" alt="account" width={32} height={32} className="themed-icon" />,
+    content: (
+      <Image
+        src="/account.png"
+        alt="account"
+        width={32}
+        height={32}
+        className="themed-icon"
+      />
+    ),
     action: "navigate",
+    label: "Account",
     type: "link",
   },
   {
@@ -155,6 +244,7 @@ export const creationToolNavLinks: NavbarLink[] = [
       />
     ),
     action: "logout",
+    label: "Log out",
     type: "link",
   },
 ];
@@ -163,8 +253,17 @@ export const accountNavLinks: NavbarLink[] = [
   {
     id: 1,
     href: "/dashboard",
-    content: <Image src="/go-back.png" alt="go-back" width={32} height={32} className="themed-icon" />,
+    content: (
+      <Image
+        src="/go-back.png"
+        alt="go-back"
+        width={32}
+        height={32}
+        className="themed-icon"
+      />
+    ),
     action: "navigate",
+    label: "Back to dashboard",
     type: "link",
   },
   {
@@ -180,6 +279,7 @@ export const accountNavLinks: NavbarLink[] = [
       />
     ),
     action: "logout",
+    label: "Log out",
     type: "link",
   },
 ];
@@ -188,15 +288,33 @@ export const steamNavLinks: NavbarLink[] = [
   {
     id: 1,
     href: "/dashboard",
-    content: <Image src="/go-back.png" alt="go-back" width={32} height={32} className="themed-icon" />,
+    content: (
+      <Image
+        src="/go-back.png"
+        alt="go-back"
+        width={32}
+        height={32}
+        className="themed-icon"
+      />
+    ),
     action: "navigate",
+    label: "Back to dashboard",
     type: "link",
   },
   {
     id: 2,
     href: "/account",
-    content: <Image src="/account.png" alt="account" width={32} height={32} className="themed-icon" />,
+    content: (
+      <Image
+        src="/account.png"
+        alt="account"
+        width={32}
+        height={32}
+        className="themed-icon"
+      />
+    ),
     action: "navigate",
+    label: "Account",
     type: "link",
   },
   {
@@ -212,6 +330,7 @@ export const steamNavLinks: NavbarLink[] = [
       />
     ),
     action: "logout",
+    label: "Log out",
     type: "link",
   },
 ];
@@ -220,15 +339,33 @@ export const importCSVNavLinks: NavbarLink[] = [
   {
     id: 1,
     href: "/dashboard",
-    content: <Image src="/go-back.png" alt="go-back" width={32} height={32} className="themed-icon" />,
+    content: (
+      <Image
+        src="/go-back.png"
+        alt="go-back"
+        width={32}
+        height={32}
+        className="themed-icon"
+      />
+    ),
     action: "navigate",
+    label: "Back to dashboard",
     type: "link",
   },
   {
     id: 2,
     href: "/account",
-    content: <Image src="/account.png" alt="account" width={32} height={32} className="themed-icon" />,
+    content: (
+      <Image
+        src="/account.png"
+        alt="account"
+        width={32}
+        height={32}
+        className="themed-icon"
+      />
+    ),
     action: "navigate",
+    label: "Account",
     type: "link",
   },
   {
@@ -244,6 +381,7 @@ export const importCSVNavLinks: NavbarLink[] = [
       />
     ),
     action: "logout",
+    label: "Log out",
     type: "link",
   },
 ];
@@ -252,15 +390,33 @@ export const exportCSVNavLinks: NavbarLink[] = [
   {
     id: 1,
     href: "/dashboard",
-    content: <Image src="/go-back.png" alt="go-back" width={32} height={32} className="themed-icon" />,
+    content: (
+      <Image
+        src="/go-back.png"
+        alt="go-back"
+        width={32}
+        height={32}
+        className="themed-icon"
+      />
+    ),
     action: "navigate",
+    label: "Back to dashboard",
     type: "link",
   },
   {
     id: 2,
     href: "/account",
-    content: <Image src="/account.png" alt="account" width={32} height={32} className="themed-icon" />,
+    content: (
+      <Image
+        src="/account.png"
+        alt="account"
+        width={32}
+        height={32}
+        className="themed-icon"
+      />
+    ),
     action: "navigate",
+    label: "Account",
     type: "link",
   },
   {
@@ -276,7 +432,7 @@ export const exportCSVNavLinks: NavbarLink[] = [
       />
     ),
     action: "logout",
+    label: "Log out",
     type: "link",
   },
 ];
-

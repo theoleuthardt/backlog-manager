@@ -1,8 +1,8 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import type { NavbarLink, NavbarProps } from "~/app/types";
 import { useAuth } from "~/app/context/AuthContext";
@@ -13,6 +13,7 @@ export function Navbar(props: NavbarProps) {
   const router = useRouter();
   const { logout } = useAuth();
   const isTauriMacOS = useIsTauriMacOS();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleClick = (e: React.MouseEvent, link: NavbarLink) => {
     e.preventDefault();
@@ -43,7 +44,7 @@ export function Navbar(props: NavbarProps) {
   return (
     <nav
       {...(isTauriMacOS ? { "data-tauri-drag-region": true } : {})}
-      className={`mx-auto flex w-full flex-wrap items-center justify-between gap-x-2 gap-y-3 rounded-4xl md:gap-x-4 bg-transparent px-3 py-3 text-white md:flex-nowrap md:px-8 md:py-4 ${isTauriMacOS ? "pt-8" : ""}`}
+      className={`mx-auto flex w-full flex-wrap items-center justify-between gap-x-2 gap-y-3 rounded-4xl bg-transparent px-3 py-3 text-white md:flex-nowrap md:gap-x-4 md:px-8 md:py-4 ${isTauriMacOS ? "pt-8" : ""}`}
     >
       <div
         className={`flex items-center space-x-2 ${isTauriMacOS ? "ml-16" : ""}`}
@@ -73,7 +74,74 @@ export function Navbar(props: NavbarProps) {
           {props.center}
         </div>
       )}
-      <div className="flex flex-row items-center gap-2.5 md:gap-8">
+      <div className="flex items-center gap-1 md:hidden">
+        <ThemeMenu />
+        <button
+          type="button"
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+          aria-expanded={isMenuOpen}
+          aria-controls="mobile-nav-menu"
+          className="flex h-10 w-10 cursor-pointer flex-col items-center justify-center gap-[5px] rounded-md"
+        >
+          <motion.span
+            animate={isMenuOpen ? { rotate: 45, y: 7 } : { rotate: 0, y: 0 }}
+            className="block h-0.5 w-6 rounded-full bg-white"
+          />
+          <motion.span
+            animate={
+              isMenuOpen ? { opacity: 0, scaleX: 0 } : { opacity: 1, scaleX: 1 }
+            }
+            className="block h-0.5 w-6 rounded-full bg-white"
+          />
+          <motion.span
+            animate={isMenuOpen ? { rotate: -45, y: -7 } : { rotate: 0, y: 0 }}
+            className="block h-0.5 w-6 rounded-full bg-white"
+          />
+        </button>
+      </div>
+      <AnimatePresence initial={false}>
+        {isMenuOpen && (
+          <motion.div
+            id="mobile-nav-menu"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 32 }}
+            className="order-1 w-full overflow-hidden md:hidden"
+          >
+            <ul className="surface-glow bg-surface flex flex-col gap-1 rounded-2xl border-2 border-white p-2">
+              {props.navbarLinks.map((link, index) => (
+                <motion.li
+                  key={link.id}
+                  initial={{ opacity: 0, x: -16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.04 * index }}
+                >
+                  {link.type === "component" ? (
+                    (link.mobileComponent ?? link.component)
+                  ) : (
+                    <Link
+                      href={link.href ?? "#"}
+                      onClick={(e) => {
+                        handleClick(e, link);
+                        setIsMenuOpen(false);
+                      }}
+                      className="flex h-11 items-center gap-3 rounded-md px-3 text-base font-semibold hover:bg-white/10"
+                    >
+                      <span className="flex h-8 w-8 items-center justify-center">
+                        {link.content}
+                      </span>
+                      {link.label}
+                    </Link>
+                  )}
+                </motion.li>
+              ))}
+            </ul>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <div className="hidden flex-row items-center gap-8 md:flex">
         <motion.div
           whileHover={{ scale: 1.2, y: -3, rotate: -4 }}
           whileTap={{ scale: 0.92 }}
