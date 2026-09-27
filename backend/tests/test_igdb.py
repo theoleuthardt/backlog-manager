@@ -89,6 +89,28 @@ async def test_search_game_on_igdb_escapes_quotes_in_search_term(
     assert b'\\"' in captured["body"]
 
 
+async def test_search_game_on_igdb_strips_colons_from_the_search_term(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """IGDB's `/search` endpoint returns zero hits for any query
+    containing a colon, even for titles that themselves have one (e.g.
+    "The Legend of Zelda: Breath of the Wild", "Persona 5: Royal") -
+    confirmed live against the real API. Stripping the colon before
+    querying is what makes those titles findable at all."""
+    captured: dict[str, bytes] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["body"] = request.content
+        return httpx.Response(200, json=[])
+
+    _mock_client(handler, monkeypatch)
+
+    await search_game_on_igdb("Persona 5: Royal", "cid", "tok")
+
+    assert b":" not in captured["body"]
+    assert b"Persona 5 Royal" in captured["body"]
+
+
 async def test_search_game_on_igdb_returns_empty_list_on_error(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

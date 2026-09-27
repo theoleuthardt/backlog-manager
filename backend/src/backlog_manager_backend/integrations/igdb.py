@@ -100,8 +100,15 @@ async def search_game_on_igdb(
     DLC'd franchise can have dozens of hits ahead of the base game
     (SnowRunner has 65 non-base-game hits alone), so a small raw limit
     can drop the base game before game_service.search ever gets a
-    chance to filter/rank by game type."""
-    escaped_term = search_term.replace('"', '\\"')
+    chance to filter/rank by game type.
+
+    A colon anywhere in the query makes this endpoint return zero hits,
+    confirmed live against the real API for many well-known titles that
+    themselves have one in their display name ("The Legend of Zelda:
+    Breath of the Wild", "Persona 5: Royal", "Phoenix Wright: Ace
+    Attorney - Justice for All", ...) - stripped here rather than left
+    to silently return nothing."""
+    escaped_term = search_term.replace(":", "").replace('"', '\\"')
     body = (
         "fields alternative_name,character,checksum,collection,company,description,"
         "game,name,platform,published_at,test_dummy,theme; "
