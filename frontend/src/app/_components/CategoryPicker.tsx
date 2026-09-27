@@ -78,9 +78,6 @@ export const CategoryPicker = ({ entryId }: { entryId: number }) => {
       );
       return;
     }
-    // The category exists from here on regardless of what follows, so the
-    // form resets and picks up the new category through `categories` -
-    // only the immediate assignment (a convenience) can still fail.
     setNewName("");
     setNewColor(null);
     nameInputRef.current?.focus();

@@ -77,20 +77,33 @@ export function useUpdateBacklogEntry() {
   });
 }
 
+const MOVE_ENTRY_MUTATION_KEY = ["move-entry-status"];
+
 /**
  * Moves an entry to another status (dashboard drag and drop). The
  * cached list is updated immediately so the card jumps groups without
- * waiting for the round trip, and rolled back if the request fails.
+ * waiting for the round trip. A failed request reverts only that one
+ * entry's status rather than restoring the whole list to its
+ * pre-mutation snapshot - dragging a second card while this one's
+ * request is still in flight applies its own optimistic update to the
+ * same cached list, and a wholesale restore would discard that
+ * unrelated change too. For the same reason, onSettled only
+ * invalidates once no sibling move is still pending: invalidating
+ * while one is would refetch the server's not-yet-updated state for
+ * that other move and briefly overwrite its optimistic update, right
+ * before its own settle corrects it again.
  */
 export function useMoveEntryToStatus() {
   const queryClient = useQueryClient();
   return useMutation({
+    mutationKey: MOVE_ENTRY_MUTATION_KEY,
     mutationFn: ({ entryId, status }: { entryId: number; status: string }) =>
       backlogApi.updateEntry(entryId, { status }),
     onMutate: async ({ entryId, status }) => {
       await queryClient.cancelQueries({ queryKey: ENTRIES_KEY });
-      const previous =
-        queryClient.getQueryData<backlogApi.BacklogEntryData[]>(ENTRIES_KEY);
+      const previousEntry = queryClient
+        .getQueryData<backlogApi.BacklogEntryData[]>(ENTRIES_KEY)
+        ?.find((entry) => entry.id === entryId);
       queryClient.setQueryData<backlogApi.BacklogEntryData[]>(
         ENTRIES_KEY,
         (entries) =>
@@ -98,15 +111,27 @@ export function useMoveEntryToStatus() {
             entry.id === entryId ? { ...entry, status } : entry,
           ),
       );
-      return { previous };
+      return { previousStatus: previousEntry?.status };
     },
-    onError: (_error, _variables, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(ENTRIES_KEY, context.previous);
-      }
+    onError: (_error, { entryId }, context) => {
+      if (context?.previousStatus === undefined) return;
+      queryClient.setQueryData<backlogApi.BacklogEntryData[]>(
+        ENTRIES_KEY,
+        (entries) =>
+          entries?.map((entry) =>
+            entry.id === entryId
+              ? { ...entry, status: context.previousStatus! }
+              : entry,
+          ),
+      );
     },
     onSettled: async () => {
-      await queryClient.invalidateQueries({ queryKey: ENTRIES_KEY });
+      const stillMoving = queryClient.isMutating({
+        mutationKey: MOVE_ENTRY_MUTATION_KEY,
+      });
+      if (stillMoving === 0) {
+        await queryClient.invalidateQueries({ queryKey: ENTRIES_KEY });
+      }
     },
   });
 }
@@ -281,9 +306,7 @@ export function useImportSteamWishlistStream(): {
 }
 
 export function useImportSteamLibraryAppIdsStream(): {
-  run: (
-    appIds: number[],
-  ) => Promise<backlogApi.BacklogEntryData[]>;
+  run: (appIds: number[]) => Promise<backlogApi.BacklogEntryData[]>;
   isRunning: boolean;
   progress: SteamSyncProgress | null;
 } {
@@ -296,7 +319,10 @@ export function useImportSteamLibraryAppIdsStream(): {
       setIsRunning(true);
       setProgress(null);
       try {
-        const entries = await importSteamLibraryAppIdsStream(appIds, setProgress);
+        const entries = await importSteamLibraryAppIdsStream(
+          appIds,
+          setProgress,
+        );
         await queryClient.invalidateQueries({ queryKey: ENTRIES_KEY });
         return entries;
       } finally {
