@@ -205,6 +205,60 @@ async def test_search_reuses_cached_genre_and_platform_names(
     assert platforms_call_count == 1
 
 
+async def test_search_skips_genres_platforms_and_publisher_when_not_requested(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def fail_if_called(*args: object, **kwargs: object) -> list[object]:
+        pytest.fail("should not be called when the corresponding include_* flag is False")
+
+    async def fake_search_game_on_igdb(
+        search_term: str, client_id: str, access_token: str
+    ) -> list[IGDBSearchResult]:
+        return [IGDBSearchResult(id=1, game=1, name="Celeste")]
+
+    async def fake_get_games_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameData]:
+        return [
+            IGDBGameData(
+                id=1, name="Celeste", cover=None, genres=[10], platforms=[6], involved_companies=[9001]
+            )
+        ]
+
+    async def fake_get_games_time_to_beat_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameTimeToBeat]:
+        return [IGDBGameTimeToBeat(id=1, game_id=1, normally=3600)]
+
+    async def fake_get_valid_token(client_id: str, client_secret: str) -> str:
+        return "tok"
+
+    monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
+    monkeypatch.setattr(game_service, "get_games_on_igdb", fake_get_games_on_igdb)
+    monkeypatch.setattr(game_service, "get_genres_on_igdb", fail_if_called)
+    monkeypatch.setattr(game_service, "get_platforms_on_igdb", fail_if_called)
+    monkeypatch.setattr(game_service, "get_involved_companies_on_igdb", fail_if_called)
+    monkeypatch.setattr(game_service, "get_companies_on_igdb", fail_if_called)
+    monkeypatch.setattr(
+        game_service, "get_games_time_to_beat_on_igdb", fake_get_games_time_to_beat_on_igdb
+    )
+    monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
+
+    results = await game_service.search(
+        "Celeste",
+        "cid",
+        "secret",
+        None,
+        include_genres=False,
+        include_platforms=False,
+        include_publisher=False,
+    )
+
+    assert results[0].genres == []
+    assert results[0].platforms == []
+    assert results[0].publisher is None
+
+
 async def test_search_falls_back_to_hltb_when_igdb_has_no_beat_time(
     game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:

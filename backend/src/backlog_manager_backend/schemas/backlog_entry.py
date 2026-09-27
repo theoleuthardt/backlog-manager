@@ -33,6 +33,14 @@ class BacklogEntry(msgspec.Struct):
 
 
 class CreateBacklogEntryParams(msgspec.Struct):
+    """`completed_at` is create-only, deliberately absent from
+    UpdateBacklogEntryParams below: the DB trigger
+    trigger_update_completed_at owns that column on every UPDATE (it
+    stamps CURRENT_TIMESTAMP when status moves to Completed, and clears
+    it whenever status isn't Completed) - only INSERT bypasses the
+    trigger, which is needed to backfill a historical completion date
+    the trigger itself could never produce."""
+
     user_id: int
     title: str
     genre: str
@@ -50,6 +58,7 @@ class CreateBacklogEntryParams(msgspec.Struct):
     review_stars: int | None = None
     review: str | None = None
     note: str | None = None
+    completed_at: datetime | None = None
 
 
 class UpdateBacklogEntryParams(msgspec.Struct):

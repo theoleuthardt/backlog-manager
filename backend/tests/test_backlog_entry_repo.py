@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from decimal import Decimal
 
 import pytest
@@ -53,6 +54,33 @@ async def test_create_backlog_entry(session: AsyncSession) -> None:
     assert entry.title == "Elden Ring"
     assert entry.status == "Not Started"
     assert entry.completed_at is None
+
+
+async def test_create_backlog_entry_accepts_a_historical_completed_at(
+    session: AsyncSession,
+) -> None:
+    """CSV import needs to backfill a historical completion date for
+    already-finished games (the trigger_update_completed_at DB trigger
+    only fires on UPDATE, not INSERT, and always stamps CURRENT_TIMESTAMP
+    rather than a caller-supplied date)."""
+    user = await _make_user(session)
+    completed_at = datetime(2026, 7, 1, tzinfo=UTC).replace(tzinfo=None)
+
+    entry = await backlog_entry_repo.create_backlog_entry(
+        session,
+        CreateBacklogEntryParams(
+            user_id=user.id,
+            title="Celeste",
+            genre="Platformer",
+            platform="PC",
+            status="Completed",
+            owned=True,
+            interest=8,
+            completed_at=completed_at,
+        ),
+    )
+
+    assert entry.completed_at == completed_at
 
 
 async def test_get_backlog_entries_by_user(session: AsyncSession) -> None:

@@ -1,63 +1,75 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import * as csvApi from "~/lib/api/csv";
-import { createEntry } from "~/lib/api/backlog";
+import type { BacklogEntryData } from "~/lib/api/backlog";
+import type {
+  ColumnConfig,
+  CsvImportProgress,
+  CsvPreviewItem,
+  SubmitCsvEntry,
+} from "~/lib/api/csv";
 
-export function useImportCsv() {
-  return useMutation({
-    mutationFn: csvApi.importCsv,
-  });
+export function useCsvHeaders() {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const run = useCallback(async (content: string, config: ColumnConfig) => {
+    setIsLoading(true);
+    try {
+      return await csvApi.getCsvHeaders(content, config);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { run, isLoading };
 }
 
-export function useImportProgress(sessionId: string | null, enabled: boolean) {
-  return useQuery({
-    queryKey: ["csv-import-progress", sessionId],
-    queryFn: () => csvApi.getImportProgress(sessionId ?? ""),
-    enabled: sessionId !== null && enabled,
-    retry: false,
-    refetchInterval: (query) => (query.state.error ? false : 200),
-  });
+export function useCsvPreviewStream(): {
+  run: (content: string, config: ColumnConfig) => Promise<CsvPreviewItem[]>;
+  isRunning: boolean;
+  progress: CsvImportProgress | null;
+} {
+  const [isRunning, setIsRunning] = useState(false);
+  const [progress, setProgress] = useState<CsvImportProgress | null>(null);
+
+  const run = useCallback(async (content: string, config: ColumnConfig) => {
+    setIsRunning(true);
+    setProgress(null);
+    try {
+      return await csvApi.previewCsvStream(content, config, setProgress);
+    } finally {
+      setIsRunning(false);
+      setProgress(null);
+    }
+  }, []);
+
+  return { run, isRunning, progress };
 }
 
-export function useCancelCsvImport() {
-  return useMutation({
-    mutationFn: csvApi.cancelImport,
-  });
-}
-
-export function useCreateMissingGameEntry() {
+export function useCsvSubmitStream(): {
+  run: (entries: SubmitCsvEntry[]) => Promise<BacklogEntryData[]>;
+  isRunning: boolean;
+  progress: CsvImportProgress | null;
+} {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (input: {
-      genre: string;
-      platform: string;
-      status: string;
-      imageLink: string | null;
-      mainTime: number;
-      mainPlusExtraTime: number;
-      completionTime: number;
-      title: string;
-    }) => {
-      return createEntry({
-        title: input.title,
-        genre: input.genre
-          .split(",")
-          .map((g) => g.trim())
-          .filter(Boolean),
-        platform: input.platform
-          .split(",")
-          .map((p) => p.trim())
-          .filter(Boolean),
-        status: input.status,
-        owned: true,
-        interest: 5,
-        imageLink: input.imageLink ?? undefined,
-        mainTime: input.mainTime,
-        mainPlusExtraTime: input.mainPlusExtraTime,
-        completionTime: input.completionTime,
-      });
+  const [isRunning, setIsRunning] = useState(false);
+  const [progress, setProgress] = useState<CsvImportProgress | null>(null);
+
+  const run = useCallback(
+    async (entries: SubmitCsvEntry[]) => {
+      setIsRunning(true);
+      setProgress(null);
+      try {
+        const created = await csvApi.submitCsvStream(entries, setProgress);
+        await queryClient.invalidateQueries({ queryKey: ["backlog-entries"] });
+        return created;
+      } finally {
+        setIsRunning(false);
+        setProgress(null);
+      }
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["backlog-entries"] });
-    },
-  });
+    [queryClient],
+  );
+
+  return { run, isRunning, progress };
 }

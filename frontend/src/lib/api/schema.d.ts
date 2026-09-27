@@ -528,7 +528,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/csv/parse": {
+    "/api/csv/headers": {
         parameters: {
             query?: never;
             header?: never;
@@ -537,15 +537,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** ParseCsv */
-        post: operations["ApiCsvParseParseCsv"];
+        /** GetCsvHeaders */
+        post: operations["ApiCsvHeadersGetCsvHeaders"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/csv/import": {
+    "/api/csv/preview/stream": {
         parameters: {
             query?: never;
             header?: never;
@@ -554,32 +554,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** ImportCsv */
-        post: operations["ApiCsvImportImportCsv"];
+        /** PreviewCsvStream */
+        post: operations["ApiCsvPreviewStreamPreviewCsvStream"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/csv/import/{session_id}/progress": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** GetCsvImportProgress */
-        get: operations["ApiCsvImportSessionIdProgressGetCsvImportProgress"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/csv/import/{session_id}/cancel": {
+    "/api/csv/submit/stream": {
         parameters: {
             query?: never;
             header?: never;
@@ -588,8 +571,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** CancelCsvImport */
-        post: operations["ApiCsvImportSessionIdCancelCancelCsvImport"];
+        /** SubmitCsvStream */
+        post: operations["ApiCsvSubmitStreamSubmitCsvStream"];
         delete?: never;
         options?: never;
         head?: never;
@@ -894,6 +877,12 @@ export interface components {
             /** @default false */
             is_admin?: boolean;
         };
+        /** CsvHeadersResponse */
+        CsvHeadersResponse: {
+            headers: {
+                [key: string]: string;
+            };
+        };
         /** CustomStatusResponse */
         CustomStatusResponse: {
             id: number;
@@ -1055,28 +1044,6 @@ export interface components {
             name?: string | null;
             published_at?: number | null;
         };
-        /** ImportCsvRequest */
-        ImportCsvRequest: {
-            content: string;
-            title_column: string;
-            genre_column: string;
-            platform_column: string;
-            status_column: string;
-            session_id?: string | null;
-        };
-        /** ImportProgressResponse */
-        ImportProgressResponse: {
-            processed: number;
-        };
-        /** ImportResult */
-        ImportResult: {
-            /** @default 0 */
-            success?: number;
-            /** @default 0 */
-            failed?: number;
-            errors?: components["schemas"]["RecordError"][];
-            missing_games?: components["schemas"]["MissingGame"][];
-        };
         /** KeyShopOffer */
         KeyShopOffer: {
             shop: string;
@@ -1100,16 +1067,18 @@ export interface components {
             requires_2fa?: boolean;
             challenge_token?: string | null;
         };
-        /** MissingGame */
-        MissingGame: {
-            title: string;
-            genre: string;
-            platform: string;
-            status: string;
-        };
-        /** ParseCsvRequest */
-        ParseCsvRequest: {
+        /** MatchCsvRequest */
+        MatchCsvRequest: {
             content: string;
+            title_column: string;
+            genre_column: string;
+            platform_column: string;
+            status_column: string;
+            playtime_column?: string | null;
+            rating_column?: string | null;
+            completed_at_column?: string | null;
+            note_columns?: string[];
+            review_columns?: string[];
         };
         /** PublicUser */
         PublicUser: {
@@ -1145,11 +1114,6 @@ export interface components {
             id: number;
             name: string;
         };
-        /** RecordError */
-        RecordError: {
-            title: string;
-            error: string;
-        };
         /** SteamPreviewItem */
         SteamPreviewItem: {
             steam_app_id: number;
@@ -1163,6 +1127,23 @@ export interface components {
             priority?: number;
             /** @default 0 */
             date_added?: number;
+        };
+        /** SubmitCsvEntry */
+        SubmitCsvEntry: {
+            title: string;
+            genre: string;
+            platform: string[];
+            status: string;
+            owned: boolean;
+            playtime?: string | null;
+            review_stars?: number | null;
+            note?: string | null;
+            review?: string | null;
+            completed_at?: string | null;
+            image_link?: string | null;
+            main_time?: string | null;
+            main_plus_extra_time?: string | null;
+            completion_time?: string | null;
         };
         /** TokenResponse */
         TokenResponse: {
@@ -2775,7 +2756,7 @@ export interface operations {
             };
         };
     };
-    ApiCsvParseParseCsv: {
+    ApiCsvHeadersGetCsvHeaders: {
         parameters: {
             query?: never;
             header?: never;
@@ -2784,19 +2765,18 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ParseCsvRequest"];
+                "application/json": components["schemas"]["MatchCsvRequest"];
             };
         };
         responses: {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "cache-control"?: string;
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    }[];
+                    "application/json": components["schemas"]["CsvHeadersResponse"];
                 };
             };
             /** @description Bad request syntax or unsupported method */
@@ -2816,7 +2796,7 @@ export interface operations {
             };
         };
     };
-    ApiCsvImportImportCsv: {
+    ApiCsvPreviewStreamPreviewCsvStream: {
         parameters: {
             query?: never;
             header?: never;
@@ -2825,17 +2805,18 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ImportCsvRequest"];
+                "application/json": components["schemas"]["MatchCsvRequest"];
             };
         };
         responses: {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "cache-control"?: string;
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportResult"];
+                    "text/event-stream": unknown;
                 };
             };
             /** @description Bad request syntax or unsupported method */
@@ -2855,60 +2836,28 @@ export interface operations {
             };
         };
     };
-    ApiCsvImportSessionIdProgressGetCsvImportProgress: {
+    ApiCsvSubmitStreamSubmitCsvStream: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                session_id: string;
-            };
+            path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitCsvEntry"][];
+            };
+        };
         responses: {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "cache-control"?: string;
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportProgressResponse"];
+                    "text/event-stream": unknown;
                 };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
-    };
-    ApiCsvImportSessionIdCancelCancelCsvImport: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                session_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, nothing follows */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
             /** @description Bad request syntax or unsupported method */
             400: {

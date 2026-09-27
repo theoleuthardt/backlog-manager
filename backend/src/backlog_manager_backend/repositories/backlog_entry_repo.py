@@ -62,6 +62,7 @@ async def create_backlog_entry(
         review_stars=params.review_stars,
         review=params.review,
         note=params.note,
+        completed_at=params.completed_at,
     )
     session.add(model)
     try:

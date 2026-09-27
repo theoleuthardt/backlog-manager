@@ -67,6 +67,9 @@ yarn-error.log*
 # claude
 .claude
 
+# personal reference data, not meant for git history
+/docs/MYY Master List - Full.csv
+
 # python (backend/ has its own .gitignore too; these are unanchored so they
 # also catch stray venvs/caches anywhere else in the repo)
 __pycache__/

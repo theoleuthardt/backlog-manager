@@ -233,6 +233,10 @@ async def _enrich_search_results(
     access_token: str,
     search_term: str,
     steamgriddb_api_key: str | None,
+    limit: int = _SEARCH_RESULT_LIMIT,
+    include_genres: bool = True,
+    include_platforms: bool = True,
+    include_publisher: bool = True,
 ) -> list[EnrichedResult]:
     """Batches every IGDB lookup needed to enrich a page of search
     results into (at most) one request per data type, instead of one
@@ -249,9 +253,16 @@ async def _enrich_search_results(
     case-insensitive title match breaking ties within a type - IGDB
     tags some editions, e.g. "SnowRunner: Premium Edition", as their
     own main_game rather than a DLC of the base game) before being
-    truncated to _SEARCH_RESULT_LIMIT - see issue #154. Everything past
-    that point (covers, genres, platforms,
+    truncated to `limit` (_SEARCH_RESULT_LIMIT by default) - see issue
+    #154. Everything past that point (covers, genres, platforms,
     beat-time, SteamGridDB) only runs for the final, truncated set.
+
+    `include_genres`/`include_platforms`/`include_publisher` skip the
+    genres, platforms, and involved_companies/companies batches (and
+    leave the corresponding result field empty) for callers that don't
+    need that particular piece of data. All three stay on by default
+    since the interactive game search (routes/games.py) surfaces all of
+    them to the user.
 
     An all-zero/empty IGDB time-to-beat record must not be cached as
     "resolved" - that would permanently block the HLTB fallback for a
@@ -292,7 +303,7 @@ async def _enrich_search_results(
             not is_exact_title_match,
         )
 
-    ranked_game_ids = sorted(candidate_game_ids, key=_sort_key)[:_SEARCH_RESULT_LIMIT]
+    ranked_game_ids = sorted(candidate_game_ids, key=_sort_key)[:limit]
 
     games_by_id = {game_id: _game_cache[game_id] for game_id in ranked_game_ids}
     games = list(games_by_id.values())
@@ -306,69 +317,72 @@ async def _enrich_search_results(
         except httpx.HTTPError:
             logger.error("Failed to fetch covers batch")
 
-    genre_ids = {genre_id for game in games for genre_id in (game.genres or [])}
-    uncached_genre_ids = [genre_id for genre_id in genre_ids if genre_id not in _genre_cache]
-    if uncached_genre_ids:
-        try:
-            for genre in await get_genres_on_igdb(uncached_genre_ids, client_id, access_token):
-                if genre.name:
-                    _genre_cache[genre.id] = genre.name
-        except httpx.HTTPError:
-            logger.error("Failed to fetch genres batch")
+    if include_genres:
+        genre_ids = {genre_id for game in games for genre_id in (game.genres or [])}
+        uncached_genre_ids = [genre_id for genre_id in genre_ids if genre_id not in _genre_cache]
+        if uncached_genre_ids:
+            try:
+                for genre in await get_genres_on_igdb(uncached_genre_ids, client_id, access_token):
+                    if genre.name:
+                        _genre_cache[genre.id] = genre.name
+            except httpx.HTTPError:
+                logger.error("Failed to fetch genres batch")
 
-    platform_ids = {platform_id for game in games for platform_id in (game.platforms or [])}
-    uncached_platform_ids = [
-        platform_id for platform_id in platform_ids if platform_id not in _platform_cache
-    ]
-    if uncached_platform_ids:
-        try:
-            for platform in await get_platforms_on_igdb(
-                uncached_platform_ids, client_id, access_token
-            ):
-                if platform.name:
-                    _platform_cache[platform.id] = platform.name
-        except httpx.HTTPError:
-            logger.error("Failed to fetch platforms batch")
+    if include_platforms:
+        platform_ids = {platform_id for game in games for platform_id in (game.platforms or [])}
+        uncached_platform_ids = [
+            platform_id for platform_id in platform_ids if platform_id not in _platform_cache
+        ]
+        if uncached_platform_ids:
+            try:
+                for platform in await get_platforms_on_igdb(
+                    uncached_platform_ids, client_id, access_token
+                ):
+                    if platform.name:
+                        _platform_cache[platform.id] = platform.name
+            except httpx.HTTPError:
+                logger.error("Failed to fetch platforms batch")
 
-    involved_company_ids = {
-        involved_company_id
-        for game in games
-        for involved_company_id in (game.involved_companies or [])
-    }
-    uncached_involved_company_ids = [
-        involved_company_id
-        for involved_company_id in involved_company_ids
-        if involved_company_id not in _involved_company_cache
-    ]
-    if uncached_involved_company_ids:
-        try:
-            for involved_company in await get_involved_companies_on_igdb(
-                uncached_involved_company_ids, client_id, access_token
-            ):
-                _involved_company_cache[involved_company.id] = involved_company
-        except httpx.HTTPError:
-            logger.error("Failed to fetch involved companies batch")
+    if include_publisher:
+        involved_company_ids = {
+            involved_company_id
+            for game in games
+            for involved_company_id in (game.involved_companies or [])
+        }
+        uncached_involved_company_ids = [
+            involved_company_id
+            for involved_company_id in involved_company_ids
+            if involved_company_id not in _involved_company_cache
+        ]
+        if uncached_involved_company_ids:
+            try:
+                for involved_company in await get_involved_companies_on_igdb(
+                    uncached_involved_company_ids, client_id, access_token
+                ):
+                    _involved_company_cache[involved_company.id] = involved_company
+            except httpx.HTTPError:
+                logger.error("Failed to fetch involved companies batch")
 
-    publisher_company_ids = {
-        involved.company
-        for game in games
-        for involved_company_id in (game.involved_companies or [])
-        if (involved := _involved_company_cache.get(involved_company_id)) is not None
-        and involved.publisher
-        and involved.company is not None
-    }
-    uncached_publisher_company_ids = [
-        company_id for company_id in publisher_company_ids if company_id not in _company_cache
-    ]
-    if uncached_publisher_company_ids:
-        try:
-            for company in await get_companies_on_igdb(
-                uncached_publisher_company_ids, client_id, access_token
-            ):
-                if company.name:
-                    _company_cache[company.id] = company.name
-        except httpx.HTTPError:
-            logger.error("Failed to fetch companies batch")
+        publisher_company_ids = {
+            involved.company
+            for game in games
+            for involved_company_id in (game.involved_companies or [])
+            if (involved := _involved_company_cache.get(involved_company_id)) is not None
+            and involved.publisher
+            and involved.company is not None
+        }
+        uncached_publisher_company_ids = [
+            company_id for company_id in publisher_company_ids if company_id not in _company_cache
+        ]
+        if uncached_publisher_company_ids:
+            try:
+                for company in await get_companies_on_igdb(
+                    uncached_publisher_company_ids, client_id, access_token
+                ):
+                    if company.name:
+                        _company_cache[company.id] = company.name
+            except httpx.HTTPError:
+                logger.error("Failed to fetch companies batch")
 
     time_to_beat_by_game_id: dict[int, tuple[int, float, float, float]] = {}
     uncached_time_to_beat_ids = [
@@ -463,7 +477,14 @@ async def _enrich_search_results(
 
 
 async def search(
-    search_term: str, client_id: str, client_secret: str, steamgriddb_api_key: str | None
+    search_term: str,
+    client_id: str,
+    client_secret: str,
+    steamgriddb_api_key: str | None,
+    limit: int = _SEARCH_RESULT_LIMIT,
+    include_genres: bool = True,
+    include_platforms: bool = True,
+    include_publisher: bool = True,
 ) -> list[EnrichedResult]:
     """Enriched search: finds games on IGDB, then fills in cover image,
     genres, platforms and beat-time data (falling back to HowLongToBeat
@@ -472,17 +493,28 @@ async def search(
     issue #105. The raw IGDB search hits are resolved, deduped, filtered
     to drop anything DLC-like, and ranked by game type (main_game/
     remake/remaster/expanded_game first) before being truncated to
-    _SEARCH_RESULT_LIMIT in _enrich_search_results - see issue #154,
-    where DLC/alternate-version hits were crowding the base game out of
+    `limit` in _enrich_search_results - see issue #154, where
+    DLC/alternate-version hits were crowding the base game out of
     the top results. `client_id`/`client_secret` are the caller's
     resolved IGDB credentials (their own, or the global settings
     fallback) - see routes/games.py::_resolve_igdb_credentials.
     `steamgriddb_api_key` is the calling user's resolved key (their own,
-    or the global fallback) - see routes/games.py::_resolve_steamgriddb_api_key."""
+    or the global fallback) - see routes/games.py::_resolve_steamgriddb_api_key.
+    `limit`/`include_genres`/`include_platforms`/`include_publisher` let
+    a caller that only needs the top match and a subset of its data
+    skip the rest of the work - see _enrich_search_results's docstring."""
     access_token = await get_valid_token(client_id, client_secret)
     search_results = await search_game_on_igdb(search_term, client_id, access_token)
     return await _enrich_search_results(
-        search_results, client_id, access_token, search_term, steamgriddb_api_key
+        search_results,
+        client_id,
+        access_token,
+        search_term,
+        steamgriddb_api_key,
+        limit=limit,
+        include_genres=include_genres,
+        include_platforms=include_platforms,
+        include_publisher=include_publisher,
     )
 
 

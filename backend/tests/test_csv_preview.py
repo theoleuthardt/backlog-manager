@@ -1,0 +1,443 @@
+import asyncio
+from datetime import UTC, datetime
+from decimal import Decimal
+
+import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from backlog_manager_backend.csv import preview
+from backlog_manager_backend.csv.parse_csv import ColumnConfig
+from backlog_manager_backend.errors import ConflictError
+from backlog_manager_backend.integrations.types import EnrichedResult, HltbResultData
+from backlog_manager_backend.repositories import backlog_entry_repo, user_repo
+from backlog_manager_backend.schemas.backlog_entry import CreateBacklogEntryParams
+from backlog_manager_backend.schemas.user import CreateUserParams
+
+_COMPLETED_AT = datetime(2026, 7, 1, tzinfo=UTC).replace(tzinfo=None)
+
+_CONFIG = ColumnConfig(
+    title_column="A",
+    genre_column="B",
+    platform_column="C",
+    status_column="D",
+    playtime_column="E",
+    rating_column="F",
+    completed_at_column="G",
+    note_columns=["H"],
+    review_columns=["I"],
+)
+
+
+async def _make_user(session: AsyncSession, username: str = "csvpreview") -> object:
+    return await user_repo.create_user(
+        session,
+        CreateUserParams(username=username, email=f"{username}@example.com", password_hash="h"),
+    )
+
+
+def _hltb_result(title: str) -> HltbResultData:
+    return HltbResultData(
+        id=1,
+        hltb_id=1,
+        title=title,
+        image_url="https://example.com/cover.jpg",
+        main_story=8.5,
+        main_story_with_extras=12.0,
+        completionist=37.0,
+        last_updated_at="2024-01-01",
+    )
+
+
+def _igdb_result(title: str, genres: list[str] | None = None) -> EnrichedResult:
+    return EnrichedResult(
+        id=1,
+        hltb_id=1,
+        title=title,
+        image_url="https://example.com/igdb-cover.jpg",
+        genres=genres or ["Roguelike"],
+        platforms=["PC"],
+        main_story=10.0,
+        main_story_with_extras=15.0,
+        completionist=40.0,
+    )
+
+
+async def test_build_csv_preview_maps_all_fields(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_search(title: str) -> list[HltbResultData]:
+        return [_hltb_result(title)]
+
+    monkeypatch.setattr(preview, "search_game_on_hltb", fake_search)
+
+    items = await preview.build_csv_preview(
+        session,
+        user.id,
+        [
+            {
+                "A": "Celeste",
+                "B": "Platformer",
+                "C": "Owned",
+                "D": "Finished",
+                "E": "12.5",
+                "F": "11",
+                "G": "7.2026",
+                "H": "Yes",
+                "I": "Great game, loved the ending",
+            }
+        ],
+        _CONFIG,
+        headers={"H": "Stunner?"},
+    )
+
+    assert len(items) == 1
+    item = items[0]
+    assert item.title == "Celeste"
+    assert item.genre == "Platformer"
+    assert item.platform == ["PC"]
+    assert item.status == "Completed"
+    assert item.owned is True
+    assert item.playtime == Decimal("12.5")
+    assert item.review_stars == 10
+    assert item.completed_at == _COMPLETED_AT
+    assert item.note == "Stunner?: Yes"
+    assert item.review == "Great game, loved the ending"
+    assert item.matched is True
+    assert item.image_link == "https://example.com/cover.jpg"
+    assert item.duplicates == []
+
+
+async def test_build_csv_preview_marks_unmatched_games(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_search(title: str) -> list[HltbResultData]:
+        return []
+
+    monkeypatch.setattr(preview, "search_game_on_hltb", fake_search)
+
+    items = await preview.build_csv_preview(
+        session,
+        user.id,
+        [{"A": "Unknown Game", "B": "RPG", "C": "Owned", "D": ""}],
+        _CONFIG,
+    )
+
+    assert items[0].matched is False
+    assert items[0].image_link is None
+    assert items[0].status == "Not Started"
+
+
+async def test_build_csv_preview_skips_rows_without_a_title(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    monkeypatch.setattr(preview, "search_game_on_hltb", lambda title: pytest.fail("unreachable"))
+
+    items = await preview.build_csv_preview(
+        session, user.id, [{"A": "", "B": "RPG", "C": "Owned", "D": ""}], _CONFIG
+    )
+
+    assert items == []
+
+
+async def test_build_csv_preview_flags_existing_entry_as_duplicate_with_diffs(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    existing = await backlog_entry_repo.create_backlog_entry(
+        session,
+        CreateBacklogEntryParams(
+            user_id=user.id,
+            title="Celeste",
+            genre="Roguelike",
+            platform="Switch",
+            status="In Progress",
+            owned=True,
+            interest=5,
+        ),
+    )
+
+    async def fake_search(title: str) -> list[HltbResultData]:
+        return [_hltb_result(title)]
+
+    monkeypatch.setattr(preview, "search_game_on_hltb", fake_search)
+
+    items = await preview.build_csv_preview(
+        session,
+        user.id,
+        [{"A": "Celeste", "B": "Platformer", "C": "Owned", "D": "Finished"}],
+        _CONFIG,
+    )
+
+    assert len(items[0].duplicates) == 1
+    duplicate = items[0].duplicates[0]
+    assert duplicate.backlog_entry_id == existing.backlog_entry_id
+    diff_fields = {diff.field for diff in duplicate.diffs}
+    assert "genre" in diff_fields
+    assert "platform" in diff_fields
+    assert "status" in diff_fields
+
+
+async def test_build_csv_preview_uses_igdb_match_when_credentials_given(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_igdb_search(
+        title: str,
+        client_id: str,
+        client_secret: str,
+        steamgriddb_api_key: str | None,
+        **kwargs: object,
+    ) -> list[EnrichedResult]:
+        return [_igdb_result(title)]
+
+    monkeypatch.setattr(preview.game_service, "search", fake_igdb_search)
+    monkeypatch.setattr(
+        preview, "search_game_on_hltb", lambda title: pytest.fail("HLTB should not be used")
+    )
+
+    items = await preview.build_csv_preview(
+        session,
+        user.id,
+        [{"A": "Celeste", "B": "Platformer", "C": "Owned", "D": ""}],
+        _CONFIG,
+        igdb_credentials=("client-id", "client-secret"),
+    )
+
+    assert items[0].image_link == "https://example.com/igdb-cover.jpg"
+    assert items[0].main_time == Decimal("10.0")
+    assert items[0].matched is True
+
+
+async def test_build_csv_preview_falls_back_to_hltb_without_igdb_credentials(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    monkeypatch.setattr(
+        preview.game_service, "search", lambda *a, **kw: pytest.fail("IGDB should not be used")
+    )
+
+    async def fake_hltb_search(title: str) -> list[HltbResultData]:
+        return [_hltb_result(title)]
+
+    monkeypatch.setattr(preview, "search_game_on_hltb", fake_hltb_search)
+
+    items = await preview.build_csv_preview(
+        session,
+        user.id,
+        [{"A": "Celeste", "B": "Platformer", "C": "Owned", "D": ""}],
+        _CONFIG,
+        igdb_credentials=None,
+    )
+
+    assert items[0].image_link == "https://example.com/cover.jpg"
+
+
+async def test_build_csv_preview_uses_igdb_genre_when_sheet_says_yes(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_igdb_search(
+        title: str,
+        client_id: str,
+        client_secret: str,
+        steamgriddb_api_key: str | None,
+        **kwargs: object,
+    ) -> list[EnrichedResult]:
+        return [_igdb_result(title, genres=["Survival", "Sandbox"])]
+
+    monkeypatch.setattr(preview.game_service, "search", fake_igdb_search)
+
+    items = await preview.build_csv_preview(
+        session,
+        user.id,
+        [{"A": "Ark", "B": "Yes", "C": "Owned", "D": ""}],
+        _CONFIG,
+        igdb_credentials=("client-id", "client-secret"),
+    )
+
+    assert items[0].genre == "Survival, Sandbox"
+
+
+async def test_build_csv_preview_skips_igdb_lookups_not_needed_for_a_csv_row(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    calls: list[dict[str, object]] = []
+
+    async def fake_igdb_search(
+        title: str,
+        client_id: str,
+        client_secret: str,
+        steamgriddb_api_key: str | None,
+        **kwargs: object,
+    ) -> list[EnrichedResult]:
+        calls.append(kwargs)
+        return [_igdb_result(title)]
+
+    monkeypatch.setattr(preview.game_service, "search", fake_igdb_search)
+
+    await preview.build_csv_preview(
+        session,
+        user.id,
+        [{"A": "Celeste", "B": "Platformer", "C": "Owned", "D": ""}],
+        _CONFIG,
+        igdb_credentials=("client-id", "client-secret"),
+    )
+
+    assert calls == [
+        {"limit": 1, "include_genres": False, "include_platforms": False, "include_publisher": False}
+    ]
+
+
+async def test_build_csv_preview_keeps_sheet_genre_when_not_a_placeholder(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_igdb_search(
+        title: str,
+        client_id: str,
+        client_secret: str,
+        steamgriddb_api_key: str | None,
+        **kwargs: object,
+    ) -> list[EnrichedResult]:
+        return [_igdb_result(title, genres=["Survival"])]
+
+    monkeypatch.setattr(preview.game_service, "search", fake_igdb_search)
+
+    items = await preview.build_csv_preview(
+        session,
+        user.id,
+        [{"A": "Celeste", "B": "Platformer", "C": "Owned", "D": ""}],
+        _CONFIG,
+        igdb_credentials=("client-id", "client-secret"),
+    )
+
+    assert items[0].genre == "Platformer"
+
+
+async def test_build_csv_preview_reports_progress(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_search(title: str) -> list[HltbResultData]:
+        return []
+
+    monkeypatch.setattr(preview, "search_game_on_hltb", fake_search)
+
+    progress_calls: list[tuple[int, int]] = []
+
+    async def on_progress(processed: int, total: int) -> None:
+        progress_calls.append((processed, total))
+
+    await preview.build_csv_preview(
+        session,
+        user.id,
+        [{"A": "Celeste", "B": "Platformer", "C": "Owned", "D": ""}, {"A": "Hades", "B": "Roguelike", "C": "Owned", "D": ""}],
+        _CONFIG,
+        on_progress=on_progress,
+    )
+
+    assert progress_calls == [(1, 2), (2, 2)]
+
+
+async def test_build_csv_preview_matches_games_concurrently(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Regression test: matching used to run strictly sequentially, one
+    HowLongToBeat/IGDB round-trip (each several seconds of network
+    latency) per row - for a 1000+ row sheet that meant an hour-plus
+    preview. Matching now runs with bounded concurrency instead."""
+    user = await _make_user(session)
+    in_flight = 0
+    max_in_flight = 0
+
+    async def fake_search(title: str) -> list[HltbResultData]:
+        nonlocal in_flight, max_in_flight
+        in_flight += 1
+        max_in_flight = max(max_in_flight, in_flight)
+        await asyncio.sleep(0.05)
+        in_flight -= 1
+        return []
+
+    monkeypatch.setattr(preview, "search_game_on_hltb", fake_search)
+
+    records = [{"A": f"Game {i}", "B": "RPG", "C": "Owned", "D": ""} for i in range(8)]
+    await preview.build_csv_preview(session, user.id, records, _CONFIG)
+
+    assert max_in_flight > 1
+
+
+async def test_submit_csv_entries_creates_confirmed_rows(session: AsyncSession) -> None:
+    user = await _make_user(session)
+
+    created = await preview.submit_csv_entries(
+        session,
+        user.id,
+        [
+            preview.SubmitCsvEntry(
+                title="Celeste",
+                genre="Platformer",
+                platform=["PC"],
+                status="Completed",
+                owned=True,
+                playtime=Decimal("12.5"),
+                review_stars=9,
+                note="Great",
+                review="Loved the ending",
+                completed_at=_COMPLETED_AT,
+                image_link="https://example.com/cover.jpg",
+                main_time=Decimal("8.5"),
+            )
+        ],
+    )
+
+    assert len(created) == 1
+    assert created[0].title == "Celeste"
+    assert created[0].platform == "PC"
+    assert created[0].completed_at == _COMPLETED_AT
+    assert created[0].review == "Loved the ending"
+
+    entries = await backlog_entry_repo.get_backlog_entries_by_user(session, user.id)
+    assert len(entries) == 1
+
+
+async def test_submit_csv_entries_skips_conflicting_rows_without_failing_the_rest(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    call_count = 0
+
+    async def fake_create(session: AsyncSession, params: CreateBacklogEntryParams) -> object:
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            raise ConflictError("already exists")
+        return await backlog_entry_repo.create_backlog_entry(session, params)
+
+    monkeypatch.setattr(preview, "create_backlog_entry", fake_create)
+
+    created = await preview.submit_csv_entries(
+        session,
+        user.id,
+        [
+            preview.SubmitCsvEntry(
+                title="Celeste", genre="Platformer", platform=["PC"], status="Not Started", owned=True
+            ),
+            preview.SubmitCsvEntry(
+                title="Hades", genre="Roguelike", platform=["PC"], status="Not Started", owned=True
+            ),
+        ],
+    )
+
+    assert len(created) == 1
+    assert created[0].title == "Hades"

@@ -17,6 +17,7 @@ import { GameImage } from "components/GameImage";
 import { AchievementProgress } from "components/AchievementProgress";
 import { GamePriceSection } from "components/GamePriceSection";
 import { StatusSelect } from "components/StatusSelect";
+import { WrongGameDialog } from "components/WrongGameDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,6 +58,7 @@ import {
   useUpdateBacklogEntry,
 } from "~/hooks/useBacklog";
 import { useSteamGridDbCovers } from "~/hooks/useGameSearch";
+import type { GameSearchResult } from "~/lib/api/games";
 import { MAX_REVIEW_STARS } from "~/lib/reviewStars";
 import { statusColor } from "~/lib/statusStyle";
 
@@ -150,6 +152,7 @@ export const EntryDetail = (props: BacklogEntryProps) => (
 );
 
 const EntryDetailBody = (props: BacklogEntryProps) => {
+  const [title, setTitle] = useState(props.title);
   const [imageLink, setImageLink] = useState(props.imageLink);
   const [newImageUrl, setNewImageUrl] = useState("");
   const [playtime, setPlaytime] = useState<number | undefined>(props.playtime);
@@ -161,12 +164,18 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
   const [reviewStars, setReviewStars] = useState(props.reviewStars ?? 0);
   const [review, setReview] = useState(props.review ?? "");
   const [note, setNote] = useState(props.note ?? "");
+  const [mainTime, setMainTime] = useState(props.mainTime);
+  const [mainPlusExtraTime, setMainPlusExtraTime] = useState(
+    props.mainPlusExtraTime,
+  );
+  const [completionTime, setCompletionTime] = useState(props.completionTime);
   const [isLoading, setIsLoading] = useState(false);
   const [updateStatus, setUpdateStatus] = useState<
     "idle" | "success" | "error"
   >("idle");
   const [imagePopoverOpen, setImagePopoverOpen] = useState(false);
   const [coverPickerOpen, setCoverPickerOpen] = useState(false);
+  const [wrongGameDialogOpen, setWrongGameDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -201,6 +210,36 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
         error instanceof Error
           ? `Failed to update cover: ${error.message}`
           : "Failed to update cover. Please try again.",
+      );
+    }
+  };
+
+  const handleWrongGameSelected = async (result: GameSearchResult) => {
+    setWrongGameDialogOpen(false);
+    try {
+      await updateEntryMutation.mutateAsync({
+        entryId: props.id,
+        changes: {
+          title: result.title,
+          ...(result.genres.length > 0 ? { genre: result.genres } : {}),
+          imageLink: result.imageUrl ?? undefined,
+          mainTime: result.mainStory,
+          mainPlusExtraTime: result.mainStoryWithExtras,
+          completionTime: result.completionist,
+        },
+      });
+      setTitle(result.title);
+      if (result.genres.length > 0) setGenre(result.genres.join(", "));
+      setImageLink(result.imageUrl ?? "");
+      setMainTime(result.mainStory);
+      setMainPlusExtraTime(result.mainStoryWithExtras);
+      setCompletionTime(result.completionist);
+      toast.success("Game updated");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? `Failed to update game: ${error.message}`
+          : "Failed to update game. Please try again.",
       );
     }
   };
@@ -270,7 +309,7 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
     try {
       await deleteEntryMutation.mutateAsync(props.id);
 
-      toast.success(`"${props.title}" deleted successfully!`);
+      toast.success(`"${title}" deleted successfully!`);
       setDeleteDialogOpen(false);
     } catch (error) {
       console.error("Error deleting backlog entry:", error);
@@ -315,14 +354,14 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
           <div className="surface-glow shrink-0 self-start rounded-xl">
             <GameImage
               src={imageLink}
-              alt={props.imageAlt ?? props.title}
+              alt={props.imageAlt ?? title}
               width={128}
               height={192}
             />
           </div>
           <div className="flex min-w-0 flex-1 flex-col justify-end gap-3">
             <DialogTitle className="text-2xl leading-tight font-extrabold break-words sm:text-4xl">
-              {props.title}
+              {title}
             </DialogTitle>
             <div className="flex flex-col gap-2">
               <ChipList items={[...genres, ...platforms]} />
@@ -341,10 +380,14 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
                 onValueChange={setStatus}
                 className="bg-surface h-9 w-44"
               />
-              <GamePriceSection
-                steamAppId={props.steamAppId}
-                title={props.title}
-              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setWrongGameDialogOpen(true)}
+              >
+                Wrong Game
+              </Button>
+              <GamePriceSection steamAppId={props.steamAppId} title={title} />
               <div className="sm:ml-6">
                 <CategoryPicker entryId={props.id} />
               </div>
@@ -565,23 +608,34 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
           </TabsContent>
 
           <TabsContent value="progress" className="mt-4 space-y-6">
+            {props.completedAt && (
+              <p className="text-sm text-white/70">
+                Completed on{" "}
+                <span className="font-semibold text-white">
+                  {new Date(props.completedAt).toLocaleDateString(undefined, {
+                    year: "numeric",
+                    month: "long",
+                  })}
+                </span>
+              </p>
+            )}
             <div className="bg-surface space-y-4 rounded-xl border border-white/30 p-4">
               <h3 className="text-xs font-bold tracking-widest text-white/70 uppercase">
                 HowLongToBeat - your {playtime ?? 0}h so far
               </h3>
               <TimeBar
                 label="Main story"
-                hours={props.mainTime}
+                hours={mainTime}
                 playtime={playtime}
               />
               <TimeBar
                 label="Main + extra"
-                hours={props.mainPlusExtraTime}
+                hours={mainPlusExtraTime}
                 playtime={playtime}
               />
               <TimeBar
                 label="Completionist"
-                hours={props.completionTime}
+                hours={completionTime}
                 playtime={playtime}
               />
             </div>
@@ -641,7 +695,7 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
           <AlertDialogContent className="bg-background border-2 border-red-600">
             <AlertDialogHeader>
               <AlertDialogTitle className="text-xl">
-                Delete &quot;{props.title}&quot;?
+                Delete &quot;{title}&quot;?
               </AlertDialogTitle>
               <AlertDialogDescription className="text-white/70">
                 This action cannot be undone. This will permanently delete this
@@ -703,6 +757,13 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
           )}
         </Button>
       </footer>
+
+      <WrongGameDialog
+        open={wrongGameDialogOpen}
+        onOpenChange={setWrongGameDialogOpen}
+        initialQuery={title}
+        onSelect={(result) => void handleWrongGameSelected(result)}
+      />
     </>
   );
 };

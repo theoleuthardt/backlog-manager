@@ -39,6 +39,7 @@ export interface BacklogEntryData {
   completionTime?: number;
   playtime?: number;
   steamAppId?: number;
+  completedAt?: string;
 }
 
 /**
@@ -91,7 +92,7 @@ export interface CategoryData {
   description: string | null;
 }
 
-function toNumber(value: string | null | undefined): number | undefined {
+export function toNumber(value: string | null | undefined): number | undefined {
   if (value === null || value === undefined) return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
@@ -118,6 +119,7 @@ export function toEntryData(
     completionTime: toNumber(entry.completion_time),
     playtime: toNumber(entry.playtime),
     steamAppId: entry.steam_app_id ?? undefined,
+    completedAt: entry.completed_at ?? undefined,
   };
 }
 
@@ -143,9 +145,12 @@ export async function getEntryDuplicates(
   title: string,
   steamAppId?: number,
 ): Promise<BacklogEntryData[]> {
-  const { data, error } = await apiClient.GET("/api/backlog/entries/duplicates", {
-    params: { query: { title, steam_app_id: steamAppId } },
-  });
+  const { data, error } = await apiClient.GET(
+    "/api/backlog/entries/duplicates",
+    {
+      params: { query: { title, steam_app_id: steamAppId } },
+    },
+  );
   if (error)
     throw new Error(apiErrorMessage(error, "Failed to check for duplicates"));
   return data.map(toEntryData);
