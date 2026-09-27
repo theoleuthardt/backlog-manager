@@ -131,11 +131,25 @@ const TimeBar = ({
 /**
  * Detail dialog content of a backlog entry: a hero with the cover and
  * status, HUD-style stat tiles, and tabs for overview, progress and
- * review, over a fixed action bar. Radix unmounts it while the dialog
- * is closed, so the form state always starts from the entry's current
- * values (e.g. after a drag-and-drop status change).
+ * review, over a fixed action bar. The form state lives in EntryDetailBody,
+ * a child of DialogContent rather than of EntryDetail itself: DialogContent
+ * only unmounts children passed to it while the dialog is closed, not the
+ * component that renders DialogContent - EntryDetail's own hooks would keep
+ * their very first values across every close/reopen otherwise, missing any
+ * change made elsewhere (drag-and-drop, another device) in the meantime.
  */
-export const EntryDetail = (props: BacklogEntryProps) => {
+export const EntryDetail = (props: BacklogEntryProps) => (
+  <DialogContent
+    className="surface-glow bg-background flex h-dvh w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 p-0 sm:h-[min(92vh,56rem)] sm:w-[min(96vw,64rem)] sm:max-w-none sm:rounded-2xl sm:border-2 sm:border-white"
+    onOpenAutoFocus={(e) => e.preventDefault()}
+    showCloseButton={false}
+    aria-describedby={undefined}
+  >
+    <EntryDetailBody {...props} />
+  </DialogContent>
+);
+
+const EntryDetailBody = (props: BacklogEntryProps) => {
   const [imageLink, setImageLink] = useState(props.imageLink);
   const [newImageUrl, setNewImageUrl] = useState("");
   const [playtime, setPlaytime] = useState<number | undefined>(props.playtime);
@@ -275,12 +289,7 @@ export const EntryDetail = (props: BacklogEntryProps) => {
   const platforms = splitList(platform);
 
   return (
-    <DialogContent
-      className="surface-glow bg-background flex h-dvh w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 p-0 sm:h-[min(92vh,56rem)] sm:w-[min(96vw,64rem)] sm:max-w-none sm:rounded-2xl sm:border-2 sm:border-white"
-      onOpenAutoFocus={(e) => e.preventDefault()}
-      showCloseButton={false}
-      aria-describedby={undefined}
-    >
+    <>
       <header className="relative shrink-0 overflow-hidden border-b border-white/20">
         <div
           aria-hidden="true"
@@ -694,6 +703,6 @@ export const EntryDetail = (props: BacklogEntryProps) => {
           )}
         </Button>
       </footer>
-    </DialogContent>
+    </>
   );
 };
