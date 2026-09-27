@@ -134,6 +134,25 @@ describe("sortEntries", () => {
     expect(titles(sorted)).toEqual(["Five", "Three", "Unreviewed"]);
   });
 
+  it("treats a cleared (0) review as missing, same as never rated", () => {
+    const entries = [
+      entry({ id: 1, title: "Cleared", reviewStars: 0 }),
+      entry({ id: 2, title: "NeverRated" }),
+      entry({ id: 3, title: "OneStar", reviewStars: 1 }),
+    ];
+
+    const ascending = sortEntries(entries, {
+      sortBy: "review_stars",
+      direction: "asc",
+      statusOrder: STATUS_ORDER,
+    });
+
+    expect(titles(ascending).slice(0, 1)).toEqual(["OneStar"]);
+    expect(titles(ascending).slice(1)).toEqual(
+      expect.arrayContaining(["Cleared", "NeverRated"]),
+    );
+  });
+
   it("sorts by first genre alphabetically, empty genre last", () => {
     const entries = [
       entry({ id: 1, title: "NoGenre" }),

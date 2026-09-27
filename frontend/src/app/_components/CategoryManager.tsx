@@ -48,6 +48,8 @@ const CategoryRow = ({ category, otherNames, onDelete }: CategoryRowProps) => {
         changes,
       });
     } catch (saveError) {
+      setName(category.name);
+      setColor(category.color);
       toast.error(
         saveError instanceof Error
           ? saveError.message

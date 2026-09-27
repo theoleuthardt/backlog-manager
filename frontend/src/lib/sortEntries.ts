@@ -56,7 +56,7 @@ function keyFor(entry: BacklogEntryData, config: SortConfig): SortKey {
     case "interest":
       return entry.interest;
     case "review_stars":
-      return entry.reviewStars;
+      return entry.reviewStars === 0 ? undefined : entry.reviewStars;
   }
 }
 

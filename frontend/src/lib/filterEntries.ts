@@ -78,7 +78,14 @@ export function filterEntries(
     )
       return false;
     if (filters.ownedOnly && !entry.owned) return false;
-    return RANGE_KEYS.every((key) => withinRange(entry[key], filters[key]));
+    return RANGE_KEYS.every((key) =>
+      withinRange(
+        key === "reviewStars" && entry.reviewStars === 0
+          ? undefined
+          : entry[key],
+        filters[key],
+      ),
+    );
   });
 }
 

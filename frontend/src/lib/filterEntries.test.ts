@@ -121,6 +121,17 @@ describe("filterEntries", () => {
     ).toEqual([1, 3]);
   });
 
+  it("treats a cleared (0) review the same as never rated for the review-stars range", () => {
+    const entries = [
+      entry({ id: 1, reviewStars: 0 }),
+      entry({ id: 2, reviewStars: 2 }),
+    ];
+
+    expect(
+      ids(filterEntries(entries, withFilters({ reviewStars: [4, 5] }))),
+    ).toEqual([1]);
+  });
+
   it("applies playtime and the three HowLongToBeat ranges", () => {
     const entries = [
       entry({

@@ -301,6 +301,25 @@ export const DashboardContent = () => {
     <BacklogEntry key={entry.id} {...entry} />
   );
 
+  const sidebarPanel = (
+    <DashboardSidebar
+      sortBy={sortBy}
+      direction={direction}
+      onSortByChange={(next) => {
+        setSortOverride(next);
+        setDirectionOverride(null);
+      }}
+      onDirectionChange={setDirectionOverride}
+      filters={filters}
+      onFiltersChange={setFilters}
+      platformOptions={platformOptions}
+      genreOptions={genreOptions}
+      statusOptions={statusOptions}
+      categoryOptions={categoryOptions}
+      bounds={bounds}
+    />
+  );
+
   return (
     <MotionConfig reducedMotion="user">
       <div
@@ -328,22 +347,7 @@ export const DashboardContent = () => {
               className="w-76 p-2"
             >
               <div className="surface-glow bg-surface max-h-[calc(100vh-9rem)] overflow-y-auto rounded-2xl border-2 border-white p-4">
-                <DashboardSidebar
-                  sortBy={sortBy}
-                  direction={direction}
-                  onSortByChange={(next) => {
-                    setSortOverride(next);
-                    setDirectionOverride(null);
-                  }}
-                  onDirectionChange={setDirectionOverride}
-                  filters={filters}
-                  onFiltersChange={setFilters}
-                  platformOptions={platformOptions}
-                  genreOptions={genreOptions}
-                  statusOptions={statusOptions}
-                  categoryOptions={categoryOptions}
-                  bounds={bounds}
-                />
+                {sidebarPanel}
               </div>
             </motion.div>
           </motion.aside>
@@ -495,22 +499,7 @@ export const DashboardContent = () => {
                 </Button>
               }
             >
-              <DashboardSidebar
-                sortBy={sortBy}
-                direction={direction}
-                onSortByChange={(next) => {
-                  setSortOverride(next);
-                  setDirectionOverride(null);
-                }}
-                onDirectionChange={setDirectionOverride}
-                filters={filters}
-                onFiltersChange={setFilters}
-                platformOptions={platformOptions}
-                genreOptions={genreOptions}
-                statusOptions={statusOptions}
-                categoryOptions={categoryOptions}
-                bounds={bounds}
-              />
+              {sidebarPanel}
             </BottomSheet>
           </>
         )}
