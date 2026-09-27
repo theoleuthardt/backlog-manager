@@ -20,9 +20,12 @@ it into this round, so the next round can start from it.
   always sort **last**, in both directions.
 - The default sort is a per-account setting (`users.default_sort`, Account
   page) so the dashboard opens the way the user wants on every device.
-- "Category" is resolved client-side from the existing category endpoints,
-  because backlog entries do not embed their categories. It only runs
-  while that sort is selected.
+- Category data is resolved client-side from the existing category endpoints
+  (one request per category, since backlog entries do not embed their
+  categories) and loads on every dashboard visit, not only while sorting by
+  category - the same data backs the Category filter and the entry dialog's
+  chips. A single "categories per entry" endpoint would avoid this request
+  fan-out; left for a later round since category counts are small today.
 - Two latent filter bugs went away with the rewrite: the playtime slider
   used to be capped at whatever `maxPlaytime` was on the first render
   (100h before the data loaded), silently hiding longer games, and the

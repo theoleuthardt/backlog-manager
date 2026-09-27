@@ -46,7 +46,7 @@ npm run format:check # Check Prettier formatting
 npm run format:write # Apply Prettier formatting
 ```
 
-The frontend has a small vitest suite (`task frontend:test`) covering the pure logic in `src/lib/` (sorting, filtering, grouping, themes) - component and page behaviour is verified by running the app. The backend is tested with pytest.
+The frontend has a small vitest suite (`task frontend:test`) covering the pure logic in `src/lib/` (sorting, filtering, grouping, categories, themes) - component and page behaviour is verified by running the app. The backend is tested with pytest.
 
 Backend (`backend/`, uv-managed) — every command here has a task equivalent (`task install`, `task backend:dev`, `task test`, `task lint`); listed only as the underlying toolchain:
 ```bash
@@ -73,7 +73,7 @@ uv run ruff check .  # Lint
 **Key Directories** (all under `frontend/`):
 - `src/lib/api/` - typed REST client (`client.ts`, generated `schema.d.ts`) + one module per domain (`auth.ts`, `backlog.ts`, `csv.ts`, `games.ts`, `user.ts`, `twoFactor.ts`), each mapping the backend's snake_case responses to the frontend's camelCase shapes
 - `src/hooks/` - React Query hooks wrapping `lib/api/*` calls
-- `src/lib/` - framework-free logic with vitest tests next to it: `sortEntries.ts`, `filterEntries.ts`, `groupEntries.ts`, `themes.ts`
+- `src/lib/` - framework-free logic with vitest tests next to it: `sortEntries.ts`, `filterEntries.ts`, `groupEntries.ts`, `categories.ts`, `themes.ts`, `reviewStars.ts`, `statusStyle.ts`
 - `src/app/context/AuthContext.tsx` - auth state (login, 2FA challenge, current user), replaces NextAuth's `SessionProvider`
 - `src/app/context/ThemeContext.tsx` - active theme + custom themes (backed by the account, cached in `localStorage`); `DashboardContext.tsx` shares the search text between navbar and grid
 - `src/app/_components/` - React components
@@ -84,7 +84,7 @@ uv run ruff check .  # Lint
 - `services/` - business logic (`auth_service.py`, `game_service.py`, ...)
 - `repositories/` - SQLAlchemy data access, one module per entity
 - `models/` - SQLAlchemy declarative models
-- `schemas/` - msgspec request/response structs
+- `schemas/` - msgspec request/response structs; `types.py` holds boundary types shared across schemas (currently `HexColor`, a `#rrggbb`-validated string used by both category and theme colours)
 - `integrations/` - external APIs (`igdb.py`, `howlongtobeat.py`)
 - `auth/` - password hashing, JWT tokens, TOTP/2FA
 

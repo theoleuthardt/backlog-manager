@@ -162,14 +162,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [isHydrated, theme, preview]);
 
   const persist = useCallback(
-    async (next: ThemeSelection): Promise<boolean> => {
+    async (
+      next: ThemeSelection,
+      options: { includeCustomThemes: boolean },
+    ): Promise<boolean> => {
       const previous = selection;
       writeCache(next);
       if (!user) return true;
       try {
         await updateCurrentUser({
           theme: next.id,
-          customThemes: next.customThemes,
+          ...(options.includeCustomThemes
+            ? { customThemes: next.customThemes }
+            : {}),
         });
         await refreshUser();
         return true;
@@ -186,7 +191,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const setTheme = useCallback(
     (themeId: string) =>
-      persist({ id: themeId, customThemes: selection.customThemes }),
+      persist(
+        { id: themeId, customThemes: selection.customThemes },
+        { includeCustomThemes: false },
+      ),
     [persist, selection.customThemes],
   );
 
@@ -195,26 +203,32 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       const exists = selection.customThemes.some(
         (existing) => existing.id === custom.id,
       );
-      return persist({
-        id: custom.id,
-        customThemes: exists
-          ? selection.customThemes.map((existing) =>
-              existing.id === custom.id ? custom : existing,
-            )
-          : [...selection.customThemes, custom],
-      });
+      return persist(
+        {
+          id: custom.id,
+          customThemes: exists
+            ? selection.customThemes.map((existing) =>
+                existing.id === custom.id ? custom : existing,
+              )
+            : [...selection.customThemes, custom],
+        },
+        { includeCustomThemes: true },
+      );
     },
     [persist, selection.customThemes],
   );
 
   const deleteCustomTheme = useCallback(
     (customId: string) =>
-      persist({
-        id: selection.id === customId ? DEFAULT_THEME_ID : selection.id,
-        customThemes: selection.customThemes.filter(
-          (existing) => existing.id !== customId,
-        ),
-      }),
+      persist(
+        {
+          id: selection.id === customId ? DEFAULT_THEME_ID : selection.id,
+          customThemes: selection.customThemes.filter(
+            (existing) => existing.id !== customId,
+          ),
+        },
+        { includeCustomThemes: true },
+      ),
     [persist, selection],
   );
 

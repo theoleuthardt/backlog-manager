@@ -1,4 +1,4 @@
-export const CATEGORY_NAME_MAX_LENGTH = 40;
+export const CATEGORY_NAME_MAX_LENGTH = 100;
 
 export const CATEGORY_COLORS = [
   "#38bdf8",
