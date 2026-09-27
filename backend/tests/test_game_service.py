@@ -1058,6 +1058,57 @@ async def test_get_game_covers_caches_across_calls(
     assert call_count == 1
 
 
+async def test_get_game_covers_by_steamgriddb_id_raises_without_api_key(
+    game_service: ModuleType,
+) -> None:
+    with pytest.raises(RuntimeError, match="SteamGridDB API key not configured"):
+        await game_service.get_game_covers_by_steamgriddb_id(5000, None)
+
+
+async def test_get_game_covers_by_steamgriddb_id_returns_urls_sorted_by_score(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def fake_get_grids_by_steamgriddb_id(
+        game_id: int, api_key: str
+    ) -> list[SteamGridDBGrid]:
+        return [
+            SteamGridDBGrid(id=1, url="https://example.com/low.png", thumb="", score=10),
+            SteamGridDBGrid(id=2, url="https://example.com/high.png", thumb="", score=90),
+        ]
+
+    monkeypatch.setattr(
+        game_service, "get_grids_by_steamgriddb_id", fake_get_grids_by_steamgriddb_id
+    )
+
+    covers = await game_service.get_game_covers_by_steamgriddb_id(5000, "key")
+
+    assert covers == ["https://example.com/high.png", "https://example.com/low.png"]
+
+
+async def test_search_steamgriddb_covers_raises_without_api_key(
+    game_service: ModuleType,
+) -> None:
+    with pytest.raises(RuntimeError, match="SteamGridDB API key not configured"):
+        await game_service.search_steamgriddb_covers("term", None)
+
+
+async def test_search_steamgriddb_covers_returns_search_results(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.integrations.types import SteamGridDBSearchResult
+
+    async def fake_search_steamgriddb_games(
+        term: str, api_key: str
+    ) -> list[SteamGridDBSearchResult]:
+        return [SteamGridDBSearchResult(id=1, name="En Garde!")]
+
+    monkeypatch.setattr(game_service, "search_steamgriddb_games", fake_search_steamgriddb_games)
+
+    results = await game_service.search_steamgriddb_covers("En Garde!", "key")
+
+    assert results == [SteamGridDBSearchResult(id=1, name="En Garde!")]
+
+
 async def test_get_game_covers_still_requires_a_key_once_the_cache_is_warm(
     game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:

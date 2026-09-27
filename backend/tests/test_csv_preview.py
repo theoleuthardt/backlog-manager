@@ -2,6 +2,7 @@ import asyncio
 from datetime import UTC, datetime
 from decimal import Decimal
 
+import httpx
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -212,6 +213,47 @@ async def test_build_csv_preview_uses_igdb_match_when_credentials_given(
     assert items[0].image_link == "https://example.com/igdb-cover.jpg"
     assert items[0].main_time == Decimal("10.0")
     assert items[0].matched is True
+
+
+async def test_build_csv_preview_retries_igdb_after_a_transient_error(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A single-title lookup outside a big import never hits this path,
+    but 1000+ concurrent rows against IGDB's rate limit can - a
+    transient failure used to permanently mark the row unmatched with
+    no retry."""
+    user = await _make_user(session)
+    call_count = 0
+
+    async def flaky_igdb_search(
+        title: str,
+        client_id: str,
+        client_secret: str,
+        steamgriddb_api_key: str | None,
+        **kwargs: object,
+    ) -> list[EnrichedResult]:
+        nonlocal call_count
+        call_count += 1
+        if call_count < 3:
+            raise httpx.HTTPStatusError(
+                "429", request=httpx.Request("GET", "https://api.igdb.com"), response=None
+            )
+        return [_igdb_result(title)]
+
+    monkeypatch.setattr(preview.game_service, "search", flaky_igdb_search)
+    monkeypatch.setattr(preview, "_MATCH_RETRY_BACKOFF_SECONDS", 0.01)
+
+    items = await preview.build_csv_preview(
+        session,
+        user.id,
+        [{"A": "Celeste", "B": "Platformer", "C": "Owned", "D": ""}],
+        _CONFIG,
+        igdb_credentials=("client-id", "client-secret"),
+    )
+
+    assert call_count == 3
+    assert items[0].matched is True
+    assert items[0].image_link == "https://example.com/igdb-cover.jpg"
 
 
 async def test_build_csv_preview_falls_back_to_hltb_without_igdb_credentials(

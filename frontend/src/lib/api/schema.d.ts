@@ -715,6 +715,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/games/steamgriddb-covers-by-id": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GetSteamgriddbCoversById */
+        get: operations["ApiGamesSteamgriddbCoversByIdGetSteamgriddbCoversById"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/games/steamgriddb-search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** SearchSteamgriddb */
+        get: operations["ApiGamesSteamgriddbSearchSearchSteamgriddb"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/games/{steam_app_id}/price": {
         parameters: {
             query?: never;
@@ -1111,6 +1145,11 @@ export interface components {
         };
         /** PublicUsername */
         PublicUsername: {
+            id: number;
+            name: string;
+        };
+        /** SteamGridDBSearchResult */
+        SteamGridDBSearchResult: {
             id: number;
             name: string;
         };
@@ -3153,6 +3192,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": string[];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiGamesSteamgriddbCoversByIdGetSteamgriddbCoversById: {
+        parameters: {
+            query: {
+                game_id: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiGamesSteamgriddbSearchSearchSteamgriddb: {
+        parameters: {
+            query: {
+                search_term: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SteamGridDBSearchResult"][];
                 };
             };
             /** @description Bad request syntax or unsupported method */

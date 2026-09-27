@@ -228,6 +228,16 @@ class SteamGridDBGridsEnvelope(msgspec.Struct):
     data: list[SteamGridDBGrid] = []
 
 
+class SteamGridDBSearchResult(msgspec.Struct):
+    id: int
+    name: str
+
+
+class SteamGridDBSearchEnvelope(msgspec.Struct):
+    success: bool
+    data: list[SteamGridDBSearchResult] = []
+
+
 class SteamStoreSearchItem(msgspec.Struct):
     """One hit from the storefront search endpoint: `type` is "app" for
     games and e.g. "dlc"/"bundle"/"mod" for everything else - only "app"

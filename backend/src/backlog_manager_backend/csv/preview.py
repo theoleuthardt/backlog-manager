@@ -19,6 +19,7 @@ from backlog_manager_backend.errors import (
     ValidationError,
 )
 from backlog_manager_backend.integrations.howlongtobeat import search_game_on_hltb
+from backlog_manager_backend.integrations.types import EnrichedResult
 from backlog_manager_backend.repositories.backlog_entry_repo import (
     create_backlog_entry,
     get_backlog_entry_duplicates,
@@ -107,10 +108,43 @@ class _GameMatch(msgspec.Struct):
 _GENRE_PLACEHOLDERS = {"yes", "y", "no", "n"}
 
 _MATCH_CONCURRENCY = 4
+_MATCH_RETRY_ATTEMPTS = 3
+_MATCH_RETRY_BACKOFF_SECONDS = 1.0
 
 
 def _needs_genre_fallback(genre_raw: str) -> bool:
     return not genre_raw or genre_raw.lower() in _GENRE_PLACEHOLDERS
+
+
+async def _search_igdb_with_retry(
+    title: str,
+    client_id: str,
+    client_secret: str,
+    steamgriddb_api_key: str | None,
+    need_genres: bool,
+) -> list[EnrichedResult]:
+    """A single title lookup outside a bulk import never hits IGDB's
+    rate limit, but hundreds of concurrent rows can - retried up to
+    _MATCH_RETRY_ATTEMPTS times (linear backoff) before giving up and
+    treating the title as unmatched, rather than one transient 429/5xx
+    permanently losing that row's match for the rest of the import."""
+    for attempt in range(_MATCH_RETRY_ATTEMPTS):
+        try:
+            return await game_service.search(
+                title,
+                client_id,
+                client_secret,
+                steamgriddb_api_key,
+                limit=1,
+                include_genres=need_genres,
+                include_platforms=False,
+                include_publisher=False,
+            )
+        except (httpx.HTTPError, RuntimeError):
+            if attempt == _MATCH_RETRY_ATTEMPTS - 1:
+                return []
+            await asyncio.sleep(_MATCH_RETRY_BACKOFF_SECONDS * (attempt + 1))
+    return []
 
 
 async def _match_game(
@@ -130,19 +164,9 @@ async def _match_game(
     False, since none of that is used here."""
     if igdb_credentials is not None:
         client_id, client_secret = igdb_credentials
-        try:
-            igdb_results = await game_service.search(
-                title,
-                client_id,
-                client_secret,
-                steamgriddb_api_key,
-                limit=1,
-                include_genres=need_genres,
-                include_platforms=False,
-                include_publisher=False,
-            )
-        except (httpx.HTTPError, RuntimeError):
-            igdb_results = []
+        igdb_results = await _search_igdb_with_retry(
+            title, client_id, client_secret, steamgriddb_api_key, need_genres
+        )
         if igdb_results:
             match = igdb_results[0]
             return _GameMatch(

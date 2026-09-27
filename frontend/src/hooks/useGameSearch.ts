@@ -5,6 +5,8 @@ import {
   getKeyShopPrices,
   getSteamAppId,
   getSteamGridDbCovers,
+  getSteamGridDbCoversById,
+  searchSteamGridDb,
 } from "~/lib/api/games";
 import { getSteamPlaytime } from "~/lib/api/steam";
 
@@ -55,6 +57,33 @@ export function useSteamGridDbCovers(
     refetchOnWindowFocus: false,
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60,
+    retry: 1,
+  });
+}
+
+export function useSteamGridDbCoversById(
+  gameId: number | undefined,
+  enabled: boolean,
+) {
+  return useQuery({
+    queryKey: ["steamgriddb-covers-by-id", gameId],
+    queryFn: () => getSteamGridDbCoversById(gameId!),
+    enabled: enabled && gameId !== undefined,
+    refetchOnWindowFocus: false,
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60,
+    retry: 1,
+  });
+}
+
+export function useSteamGridDbSearch(searchTerm: string) {
+  return useQuery({
+    queryKey: ["steamgriddb-search", searchTerm],
+    queryFn: () => searchSteamGridDb(searchTerm),
+    enabled: searchTerm.length > 0,
+    refetchOnWindowFocus: false,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
     retry: 1,
   });
 }

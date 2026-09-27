@@ -18,6 +18,7 @@ import { AchievementProgress } from "components/AchievementProgress";
 import { GamePriceSection } from "components/GamePriceSection";
 import { StatusSelect } from "components/StatusSelect";
 import { WrongGameDialog } from "components/WrongGameDialog";
+import { Spinner } from "~/components/ui/spinner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,7 +58,12 @@ import {
   useDeleteBacklogEntry,
   useUpdateBacklogEntry,
 } from "~/hooks/useBacklog";
-import { useSteamGridDbCovers } from "~/hooks/useGameSearch";
+import {
+  useSteamGridDbCovers,
+  useSteamGridDbCoversById,
+  useSteamGridDbSearch,
+} from "~/hooks/useGameSearch";
+import { SearchBar } from "components/SearchBar";
 import type { GameSearchResult } from "~/lib/api/games";
 import { MAX_REVIEW_STARS } from "~/lib/reviewStars";
 import { statusColor } from "~/lib/statusStyle";
@@ -175,15 +181,30 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
   >("idle");
   const [imagePopoverOpen, setImagePopoverOpen] = useState(false);
   const [coverPickerOpen, setCoverPickerOpen] = useState(false);
+  const [steamGridDbGameId, setSteamGridDbGameId] = useState<number | null>(
+    null,
+  );
+  const [coverSearchQuery, setCoverSearchQuery] = useState("");
+  const [debouncedCoverSearchQuery, setDebouncedCoverSearchQuery] =
+    useState("");
   const [wrongGameDialogOpen, setWrongGameDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const steamAppIdCovers = useSteamGridDbCovers(
+    props.steamAppId,
+    coverPickerOpen && steamGridDbGameId === null,
+  );
+  const searchedCovers = useSteamGridDbCoversById(
+    steamGridDbGameId ?? undefined,
+    coverPickerOpen && steamGridDbGameId !== null,
+  );
+  const coverSearchResults = useSteamGridDbSearch(debouncedCoverSearchQuery);
   const {
     data: steamGridDbCovers,
     isLoading: isLoadingCovers,
     isError: coversFailedToLoad,
-  } = useSteamGridDbCovers(props.steamAppId, coverPickerOpen);
+  } = steamGridDbGameId !== null ? searchedCovers : steamAppIdCovers;
 
   const updateEntryMutation = useUpdateBacklogEntry();
   const deleteEntryMutation = useDeleteBacklogEntry();
@@ -536,73 +557,120 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
                   </PopoverContent>
                 </Popover>
 
-                {props.steamAppId !== undefined && (
-                  <Dialog
-                    open={coverPickerOpen}
-                    onOpenChange={setCoverPickerOpen}
+                <Dialog
+                  open={coverPickerOpen}
+                  onOpenChange={(open) => {
+                    setCoverPickerOpen(open);
+                    if (!open) {
+                      setSteamGridDbGameId(null);
+                      setCoverSearchQuery("");
+                      setDebouncedCoverSearchQuery("");
+                    }
+                  }}
+                >
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <Images className="h-4 w-4" />
+                      Choose Cover
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent
+                    showCloseButton={false}
+                    className="bg-background flex h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-6xl flex-col border-2 border-white p-6 sm:h-[calc(100vh-6rem)] sm:max-w-6xl"
+                    aria-describedby={undefined}
                   >
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm" className="gap-2">
-                        <Images className="h-4 w-4" />
-                        Choose Cover
+                    <DialogClose asChild>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        aria-label="Close"
+                        className="absolute top-4 right-4 z-50 h-8 w-8"
+                      >
+                        <XIcon className="h-4 w-4 text-black" />
                       </Button>
-                    </DialogTrigger>
-                    <DialogContent
-                      showCloseButton={false}
-                      className="bg-background flex h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-6xl flex-col border-2 border-white p-6 sm:h-[calc(100vh-6rem)] sm:max-w-6xl"
-                      aria-describedby={undefined}
-                    >
-                      <DialogClose asChild>
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          aria-label="Close"
-                          className="absolute top-4 right-4 z-50 h-8 w-8"
-                        >
-                          <XIcon className="h-4 w-4 text-black" />
-                        </Button>
-                      </DialogClose>
-                      <DialogTitle className="flex items-center gap-1.5">
-                        <Images className="h-4 w-4" />
-                        SteamGridDB Covers
-                      </DialogTitle>
-                      <div className="flex-1 overflow-y-auto pr-1">
-                        {isLoadingCovers ? (
-                          <div className="flex items-center justify-center py-6">
-                            <Loader2 className="h-5 w-5 animate-spin" />
-                          </div>
-                        ) : coversFailedToLoad ? (
-                          <p className="text-sm text-red-400">
-                            Failed to load covers. Please try again.
-                          </p>
-                        ) : steamGridDbCovers &&
-                          steamGridDbCovers.length > 0 ? (
-                          <div className="grid grid-cols-[repeat(auto-fill,150px)] justify-center gap-2">
-                            {steamGridDbCovers.map((url) => (
-                              <button
-                                key={url}
-                                type="button"
-                                onClick={() => handleSelectCover(url)}
-                                className="overflow-hidden rounded border border-white/20 hover:border-white"
-                              >
-                                <GameImage
-                                  src={url}
-                                  alt="Cover option"
-                                  width={150}
-                                  height={225}
-                                />
-                              </button>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-sm text-white/60">
-                            No SteamGridDB covers available for this game.
-                          </p>
+                    </DialogClose>
+                    <DialogTitle className="flex items-center gap-1.5">
+                      <Images className="h-4 w-4" />
+                      SteamGridDB Covers
+                    </DialogTitle>
+                    <div className="flex items-center gap-2">
+                      <SearchBar
+                        value={coverSearchQuery}
+                        placeholder="Search a different title on SteamGridDB..."
+                        onInput={(e) =>
+                          setCoverSearchQuery(e.currentTarget.value)
+                        }
+                        onDebouncedChange={setDebouncedCoverSearchQuery}
+                        onClear={() => {
+                          setCoverSearchQuery("");
+                          setDebouncedCoverSearchQuery("");
+                        }}
+                        className="mb-0! flex-1"
+                      />
+                      {coverSearchResults.isPending &&
+                        debouncedCoverSearchQuery && (
+                          <Spinner className="size-5 text-white" />
                         )}
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                )}
+                    </div>
+                    <div className="flex-1 overflow-y-auto pr-1">
+                      {debouncedCoverSearchQuery &&
+                      (coverSearchResults.data ?? []).length > 0 ? (
+                        <div className="space-y-1">
+                          {(coverSearchResults.data ?? []).map((result) => (
+                            <button
+                              key={result.id}
+                              type="button"
+                              onClick={() => {
+                                setSteamGridDbGameId(result.id);
+                                setCoverSearchQuery("");
+                                setDebouncedCoverSearchQuery("");
+                              }}
+                              className="block w-full rounded border border-gray-700 bg-gray-900 p-2 text-left text-sm text-white hover:border-white"
+                            >
+                              {result.name}
+                            </button>
+                          ))}
+                        </div>
+                      ) : isLoadingCovers ? (
+                        <div className="flex items-center justify-center py-6">
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        </div>
+                      ) : coversFailedToLoad ? (
+                        <p className="text-sm text-red-400">
+                          Failed to load covers. Please try again.
+                        </p>
+                      ) : steamGridDbCovers && steamGridDbCovers.length > 0 ? (
+                        <div className="grid grid-cols-[repeat(auto-fill,150px)] justify-center gap-2">
+                          {steamGridDbCovers.map((url) => (
+                            <button
+                              key={url}
+                              type="button"
+                              onClick={() => handleSelectCover(url)}
+                              className="overflow-hidden rounded border border-white/20 hover:border-white"
+                            >
+                              <GameImage
+                                src={url}
+                                alt="Cover option"
+                                width={150}
+                                height={225}
+                              />
+                            </button>
+                          ))}
+                        </div>
+                      ) : props.steamAppId === undefined &&
+                        steamGridDbGameId === null ? (
+                        <p className="text-sm text-white/60">
+                          This entry has no Steam App ID - search above to find
+                          covers for it on SteamGridDB.
+                        </p>
+                      ) : (
+                        <p className="text-sm text-white/60">
+                          No SteamGridDB covers available for this game.
+                        </p>
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
           </TabsContent>

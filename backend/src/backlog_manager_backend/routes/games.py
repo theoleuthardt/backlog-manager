@@ -31,6 +31,7 @@ from backlog_manager_backend.integrations.types import (
     IGDBPlatform,
     IGDBSearchResult,
     KeyShopOffer,
+    SteamGridDBSearchResult,
 )
 from backlog_manager_backend.schemas.game_price import GamePrice
 from backlog_manager_backend.schemas.user import User
@@ -147,6 +148,37 @@ async def get_steamgriddb_covers(
         raise ServiceUnavailableException(_STEAMGRIDDB_UNAVAILABLE) from error
 
 
+@get("/api/games/steamgriddb-covers-by-id")
+async def get_steamgriddb_covers_by_id(
+    game_id: FromQuery[int], current_user: NamedDependency[User]
+) -> list[str]:
+    """Cover-picker fallback for a title with no Steam App ID - the
+    game_id here is SteamGridDB's own, resolved first via
+    search_steamgriddb (below)."""
+    try:
+        return await game_service.get_game_covers_by_steamgriddb_id(
+            game_id, _resolve_steamgriddb_api_key(current_user)
+        )
+    except RuntimeError as error:
+        raise ServiceUnavailableException(_STEAMGRIDDB_NOT_CONFIGURED) from error
+    except httpx.HTTPError as error:
+        raise ServiceUnavailableException(_STEAMGRIDDB_UNAVAILABLE) from error
+
+
+@get("/api/games/steamgriddb-search")
+async def search_steamgriddb(
+    search_term: FromQuery[str], current_user: NamedDependency[User]
+) -> list[SteamGridDBSearchResult]:
+    try:
+        return await game_service.search_steamgriddb_covers(
+            search_term, _resolve_steamgriddb_api_key(current_user)
+        )
+    except RuntimeError as error:
+        raise ServiceUnavailableException(_STEAMGRIDDB_NOT_CONFIGURED) from error
+    except httpx.HTTPError as error:
+        raise ServiceUnavailableException(_STEAMGRIDDB_UNAVAILABLE) from error
+
+
 @get("/api/games/{game_id:int}")
 async def get_game(
     game_id: FromPath[int], current_user: NamedDependency[User]
@@ -225,6 +257,8 @@ authenticated_games_router = Router(
         get_cover,
         get_genre,
         get_steamgriddb_covers,
+        get_steamgriddb_covers_by_id,
+        search_steamgriddb,
         get_game_price,
         get_key_shop_prices,
     ],

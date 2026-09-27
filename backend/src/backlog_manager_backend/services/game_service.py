@@ -20,13 +20,18 @@ from backlog_manager_backend.integrations.igdb import (
 from backlog_manager_backend.integrations.steam import (
     search_store_by_title as search_steam_store_by_title,
 )
-from backlog_manager_backend.integrations.steamgriddb import get_grids_by_steam_app_id
+from backlog_manager_backend.integrations.steamgriddb import (
+    get_grids_by_steam_app_id,
+    get_grids_by_steamgriddb_id,
+    search_steamgriddb_games,
+)
 from backlog_manager_backend.integrations.types import (
     EnrichedResult,
     IGDBCover,
     IGDBGameData,
     IGDBInvolvedCompany,
     IGDBSearchResult,
+    SteamGridDBSearchResult,
 )
 
 logger = structlog.get_logger()
@@ -177,6 +182,28 @@ async def get_game_covers(steam_app_id: int, api_key: str | None) -> list[str]:
         _steamgriddb_cover_cache.pop(next(iter(_steamgriddb_cover_cache)))
     _steamgriddb_cover_cache[steam_app_id] = urls
     return urls
+
+
+async def get_game_covers_by_steamgriddb_id(game_id: int, api_key: str | None) -> list[str]:
+    """Same as get_game_covers, but by SteamGridDB's own game id -
+    the cover-picker's fallback for a title with no Steam App ID
+    (non-Steam and fan games), resolved via search_steamgriddb_covers."""
+    if not api_key:
+        raise RuntimeError("SteamGridDB API key not configured")
+
+    grids = await get_grids_by_steamgriddb_id(game_id, api_key)
+    return [grid.url for grid in sorted(grids, key=lambda grid: grid.score, reverse=True)]
+
+
+async def search_steamgriddb_covers(
+    term: str, api_key: str | None
+) -> list[SteamGridDBSearchResult]:
+    """Title search against SteamGridDB's own catalogue, for the
+    cover-picker's no-Steam-App-ID fallback."""
+    if not api_key:
+        raise RuntimeError("SteamGridDB API key not configured")
+
+    return await search_steamgriddb_games(term, api_key)
 
 
 async def _try_get_steamgriddb_covers(steam_app_id: int, api_key: str | None) -> list[str]:
