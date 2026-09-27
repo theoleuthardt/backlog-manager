@@ -159,6 +159,7 @@ export const EntryDetail = (props: BacklogEntryProps) => (
 
 const EntryDetailBody = (props: BacklogEntryProps) => {
   const [title, setTitle] = useState(props.title);
+  const [description, setDescription] = useState(props.description);
   const [imageLink, setImageLink] = useState(props.imageLink);
   const [newImageUrl, setNewImageUrl] = useState("");
   const [playtime, setPlaytime] = useState<number | undefined>(props.playtime);
@@ -244,6 +245,7 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
           title: result.title,
           ...(result.genres.length > 0 ? { genre: result.genres } : {}),
           imageLink: result.imageUrl ?? undefined,
+          description: result.description ?? undefined,
           mainTime: result.mainStory,
           mainPlusExtraTime: result.mainStoryWithExtras,
           completionTime: result.completionist,
@@ -252,6 +254,7 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
       setTitle(result.title);
       if (result.genres.length > 0) setGenre(result.genres.join(", "));
       setImageLink(result.imageUrl ?? "");
+      setDescription(result.description ?? undefined);
       setMainTime(result.mainStory);
       setMainPlusExtraTime(result.mainStoryWithExtras);
       setCompletionTime(result.completionist);
@@ -519,6 +522,15 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
                 />
               </div>
             </div>
+
+            {description && (
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <p className="bg-surface rounded-lg border border-white/30 p-3 text-sm text-white/80">
+                  {description}
+                </p>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label>Cover</Label>

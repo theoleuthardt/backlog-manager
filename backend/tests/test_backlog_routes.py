@@ -70,6 +70,44 @@ async def test_create_and_update_entry_playtime_round_trips(
     assert update_response.json()["playtime"] == "12.00"
 
 
+async def test_create_and_update_entry_description_round_trips(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "descriptionowner@example.com")
+
+        create_response = client.post(
+            "/api/backlog/entries",
+            headers=headers,
+            json={
+                "title": "Celeste",
+                "genre": ["Platformer"],
+                "platform": ["PC"],
+                "status": "Not Started",
+                "owned": True,
+                "interest": 5,
+                "description": "Help Madeline survive her inner journey.",
+            },
+        )
+        assert create_response.status_code == 201
+        entry_id = create_response.json()["id"]
+        assert (
+            create_response.json()["description"]
+            == "Help Madeline survive her inner journey."
+        )
+
+        cleared_response = client.put(
+            f"/api/backlog/entries/{entry_id}",
+            headers=headers,
+            json={"description": None},
+        )
+
+    assert cleared_response.status_code == 200
+    assert cleared_response.json()["description"] is None
+
+
 async def test_list_entries_only_returns_own_entries(postgres_url: str, create_and_login) -> None:
     from backlog_manager_backend.app import create_app
 

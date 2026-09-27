@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS "blm-system"."BacklogEntries" (
     "Platform"       VARCHAR(100) NOT NULL,
     "ReleaseDate"    DATE,
     "ImageLink"      TEXT,
+    "Description"    TEXT,
     "MainTime"       NUMERIC(10,2),
     "MainPlusExtraTime" NUMERIC(10,2),
     "CompletionTime" NUMERIC(10,2),

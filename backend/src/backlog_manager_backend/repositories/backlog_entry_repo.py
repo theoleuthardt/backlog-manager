@@ -29,6 +29,7 @@ def _to_schema(model: BacklogEntryModel) -> BacklogEntry:
         updated_at=model.updated_at,
         release_date=model.release_date,
         image_link=model.image_link,
+        description=model.description,
         main_time=model.main_time,
         main_plus_extra_time=model.main_plus_extra_time,
         completion_time=model.completion_time,
@@ -54,6 +55,7 @@ async def create_backlog_entry(
         interest=params.interest,
         release_date=params.release_date,
         image_link=params.image_link,
+        description=params.description,
         main_time=params.main_time,
         main_plus_extra_time=params.main_plus_extra_time,
         completion_time=params.completion_time,
@@ -161,6 +163,8 @@ async def update_backlog_entry(
         model.release_date = params.release_date
     if params.image_link is not msgspec.UNSET:
         model.image_link = params.image_link
+    if params.description is not msgspec.UNSET:
+        model.description = params.description
     if params.main_time is not msgspec.UNSET:
         model.main_time = params.main_time
     if params.main_plus_extra_time is not msgspec.UNSET:

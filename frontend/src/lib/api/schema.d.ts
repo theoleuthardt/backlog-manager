@@ -852,6 +852,7 @@ export interface components {
             updated_at: string;
             release_date?: string | null;
             image_link?: string | null;
+            description?: string | null;
             main_time?: string | null;
             main_plus_extra_time?: string | null;
             completion_time?: string | null;
@@ -881,6 +882,7 @@ export interface components {
             interest: number;
             release_date?: string | null;
             image_link?: string | null;
+            description?: string | null;
             main_time?: string | null;
             main_plus_extra_time?: string | null;
             completion_time?: string | null;
@@ -1180,6 +1182,7 @@ export interface components {
             review?: string | null;
             completed_at?: string | null;
             image_link?: string | null;
+            description?: string | null;
             main_time?: string | null;
             main_plus_extra_time?: string | null;
             completion_time?: string | null;
@@ -1222,6 +1225,7 @@ export interface components {
             interest?: number;
             release_date?: string | null;
             image_link?: string | null;
+            description?: string | null;
             main_time?: string | null;
             main_plus_extra_time?: string | null;
             completion_time?: string | null;

@@ -151,6 +151,7 @@ export function CreationToolForm() {
     playtime: Number.parseFloat(effectivePlaytime) || 0,
     steamAppId: resolvedSteamAppId,
     imageLink: imageUrl.trim() || undefined,
+    description: descriptionFromUrl || undefined,
     mainTime: Number.parseFloat(mainStory) > 0 ? Number.parseFloat(mainStory) : undefined,
     mainPlusExtraTime:
       Number.parseFloat(mainStoryWithExtras) > 0

@@ -4455,6 +4455,16 @@
               }
             ]
           },
+          "description": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "main_time": {
             "oneOf": [
               {
@@ -4651,6 +4661,16 @@
             ]
           },
           "image_link": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": {
             "oneOf": [
               {
                 "type": "string"
@@ -6504,6 +6524,16 @@
               }
             ]
           },
+          "description": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "main_time": {
             "oneOf": [
               {
@@ -6694,6 +6724,16 @@
             ]
           },
           "image_link": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": {
             "oneOf": [
               {
                 "type": "string"
