@@ -573,11 +573,9 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
                   open={coverPickerOpen}
                   onOpenChange={(open) => {
                     setCoverPickerOpen(open);
-                    if (!open) {
-                      setSteamGridDbGameId(null);
-                      setCoverSearchQuery("");
-                      setDebouncedCoverSearchQuery("");
-                    }
+                    setSteamGridDbGameId(null);
+                    setCoverSearchQuery(open ? title : "");
+                    setDebouncedCoverSearchQuery(open ? title : "");
                   }}
                 >
                   <DialogTrigger asChild>

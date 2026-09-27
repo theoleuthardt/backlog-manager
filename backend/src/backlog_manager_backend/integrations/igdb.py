@@ -1,3 +1,5 @@
+import asyncio
+
 import httpx
 import msgspec
 import structlog
@@ -17,6 +19,39 @@ from backlog_manager_backend.integrations.types import (
 logger = structlog.get_logger()
 
 _TIMEOUT = httpx.Timeout(60.0)
+
+_IGDB_MAX_REQUESTS_PER_WINDOW = 4
+_IGDB_RATE_LIMIT_WINDOW_SECONDS = 1.0
+
+
+class _RateLimiter:
+    """Caps request *starts* to `max_calls` per `window_seconds` - a
+    permit is released `window_seconds` after it was acquired (not
+    after the request finishes), so it throttles to a request rate
+    rather than just a concurrency count, which is what IGDB's
+    documented per-second limit actually restricts."""
+
+    def __init__(self, max_calls: int, window_seconds: float) -> None:
+        self._semaphore = asyncio.Semaphore(max_calls)
+        self._window_seconds = window_seconds
+
+    async def acquire(self) -> None:
+        await self._semaphore.acquire()
+        asyncio.get_running_loop().call_later(self._window_seconds, self._semaphore.release)
+
+
+# Keyed by client_id, mirroring _token_cache in game_service.py - IGDB's
+# rate limit is enforced per credential, and different users (or the
+# server-wide fallback) must not throttle each other's independent quota.
+_igdb_rate_limiters: dict[str, _RateLimiter] = {}
+
+
+def _get_igdb_rate_limiter(client_id: str) -> _RateLimiter:
+    limiter = _igdb_rate_limiters.get(client_id)
+    if limiter is None:
+        limiter = _RateLimiter(_IGDB_MAX_REQUESTS_PER_WINDOW, _IGDB_RATE_LIMIT_WINDOW_SECONDS)
+        _igdb_rate_limiters[client_id] = limiter
+    return limiter
 
 
 async def generate_igdb_token(client_id: str, client_secret: str) -> IGDBTokenResponse:
@@ -52,6 +87,7 @@ async def _query_igdb[T](
     access_token: str,
     result_type: type[T],
 ) -> T:
+    await _get_igdb_rate_limiter(client_id).acquire()
     try:
         async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
             response = await client.post(
