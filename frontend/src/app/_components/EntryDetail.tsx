@@ -277,9 +277,7 @@ export const EntryDetail = (props: BacklogEntryProps) => {
   return (
     <DialogContent
       className="surface-glow bg-background flex h-dvh w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 p-0 sm:h-[min(92vh,56rem)] sm:w-[min(96vw,64rem)] sm:max-w-none sm:rounded-2xl sm:border-2 sm:border-white"
-      onOpenAutoFocus={(e: { preventDefault: () => void }) => {
-        e.preventDefault();
-      }}
+      onOpenAutoFocus={(e) => e.preventDefault()}
       showCloseButton={false}
       aria-describedby={undefined}
     >

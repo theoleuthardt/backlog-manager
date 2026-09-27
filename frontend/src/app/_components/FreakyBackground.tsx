@@ -13,13 +13,23 @@ interface Orb {
 
 const ORB_COUNT = 28;
 
+interface FreakyBackgroundProps {
+  accent: string;
+  glow: string;
+}
+
 /**
  * Drifting, pulsing neon orbs behind the whole app for the "freaky"
- * theme, tinted with the theme's accent and glow colours. Renders
- * nothing for users who prefer reduced motion, in which case the
- * theme falls back to its plain colours.
+ * theme, tinted with the theme's accent and glow colours. Takes them as
+ * props (from ThemeContext's resolved theme) rather than reading the
+ * --t-accent/--t-glow custom properties itself - this component's own
+ * mount effect would otherwise run before the parent's effect that sets
+ * those properties for a newly-selected theme, reading the previous
+ * theme's colours for one frame. Renders nothing for users who prefer
+ * reduced motion, in which case the theme falls back to its plain
+ * colours.
  */
-export const FreakyBackground = () => {
+export const FreakyBackground = ({ accent, glow }: FreakyBackgroundProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -27,10 +37,6 @@ export const FreakyBackground = () => {
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    const styles = getComputedStyle(document.documentElement);
-    const accent = styles.getPropertyValue("--t-accent").trim() || "#a3ff12";
-    const glow = styles.getPropertyValue("--t-glow").trim() || "#ff00e5";
 
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
@@ -92,7 +98,7 @@ export const FreakyBackground = () => {
       cancelAnimationFrame(animationId);
       window.removeEventListener("resize", handleResize);
     };
-  }, []);
+  }, [accent, glow]);
 
   return (
     <canvas

@@ -252,7 +252,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeContext.Provider value={value}>
-      {isHydrated && theme.id === "freaky" && !preview && <FreakyBackground />}
+      {isHydrated && theme.id === "freaky" && !preview && (
+        <FreakyBackground
+          accent={theme.colors.accent}
+          glow={theme.colors.glow}
+        />
+      )}
       {children}
     </ThemeContext.Provider>
   );

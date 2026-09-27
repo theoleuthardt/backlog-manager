@@ -21,7 +21,6 @@ import { AccountContent } from "./AccountContent";
 import { HeroCta } from "./HeroCta";
 import { AchievementProgress } from "./AchievementProgress";
 import { SteamContent } from "./SteamContent";
-import { ThemeMenu } from "./ThemeMenu";
 import { DashboardSearch } from "./DashboardSearch";
 import { ThemeCreator } from "./ThemeCreator";
 
@@ -49,7 +48,6 @@ export {
   HeroCta,
   AchievementProgress,
   SteamContent,
-  ThemeMenu,
   ThemeCreator,
   DashboardSearch,
 };

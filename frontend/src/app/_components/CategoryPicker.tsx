@@ -66,22 +66,35 @@ export const CategoryPicker = ({ entryId }: { entryId: number }) => {
 
   const handleCreate = async () => {
     if (!canCreate) return;
+    let created: Awaited<ReturnType<typeof createCategory.mutateAsync>>;
     try {
-      const created = await createCategory.mutateAsync({
+      created = await createCategory.mutateAsync({
         categoryName: newName.trim(),
         color,
       });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create category",
+      );
+      return;
+    }
+    // The category exists from here on regardless of what follows, so the
+    // form resets and picks up the new category through `categories` -
+    // only the immediate assignment (a convenience) can still fail.
+    setNewName("");
+    setNewColor(null);
+    nameInputRef.current?.focus();
+    try {
       await setEntryCategory.mutateAsync({
         entryId,
         categoryId: created.id,
         assigned: true,
       });
-      setNewName("");
-      setNewColor(null);
-      nameInputRef.current?.focus();
     } catch (error) {
+      const reason =
+        error instanceof Error ? error.message : "an error occurred";
       toast.error(
-        error instanceof Error ? error.message : "Failed to create category",
+        `Category "${created.name}" was created but could not be added to this game (${reason})`,
       );
     }
   };
