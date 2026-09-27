@@ -38,7 +38,13 @@ export const SearchBar = ({ ref, ...props }: SearchBarWithDebounceProps) => {
     <div className={`relative mb-4 w-full max-w-sm ${props.className}`}>
       {props.useIcon && (
         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-          <Image src="/search.png" alt="Search" width={20} height={20} />
+          <Image
+            src="/search.png"
+            alt="Search"
+            width={20}
+            height={20}
+            className="themed-icon"
+          />
         </div>
       )}
       <Input

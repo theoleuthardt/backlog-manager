@@ -1,0 +1,38 @@
+meta {
+  name: Set Custom Themes
+  type: http
+  seq: 14
+}
+
+put {
+  url: {{backendUrl}}/api/user/me
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "custom_themes": [
+      {
+        "id": "neon-night",
+        "name": "Neon Night",
+        "background": "#0a0014",
+        "surface": "#1a0033",
+        "foreground": "#f5e9ff",
+        "accent": "#ff2bd6",
+        "border": "#5b2a86",
+        "glow": "#00e5ff"
+      }
+    ]
+  }
+}
+
+docs {
+  Replaces the user's whole list of custom themes from the theme
+  creator (send [] to clear them). At most 10 themes; every colour must
+  be a #rrggbb hex value or the request is a 400. Run auth/Login first.
+}

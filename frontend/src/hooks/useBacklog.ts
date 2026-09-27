@@ -14,6 +14,8 @@ import {
 
 const ENTRIES_KEY = ["backlog-entries"] as const;
 const CUSTOM_STATUSES_KEY = ["custom-statuses"] as const;
+const CATEGORIES_KEY = ["categories"] as const;
+const ENTRY_CATEGORIES_KEY = ["entry-categories"] as const;
 
 export function useBacklogEntries() {
   return useQuery({
@@ -72,6 +74,163 @@ export function useUpdateBacklogEntry() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ENTRIES_KEY });
     },
+  });
+}
+
+const MOVE_ENTRY_MUTATION_KEY = ["move-entry-status"];
+
+/**
+ * Moves an entry to another status (dashboard drag and drop). The
+ * cached list is updated immediately so the card jumps groups without
+ * waiting for the round trip. A failed request reverts only that one
+ * entry's status rather than restoring the whole list to its
+ * pre-mutation snapshot - dragging a second card while this one's
+ * request is still in flight applies its own optimistic update to the
+ * same cached list, and a wholesale restore would discard that
+ * unrelated change too. For the same reason, onSettled only
+ * invalidates once no sibling move is still pending - invalidating
+ * while one is would refetch the server's not-yet-updated state for
+ * that other move and briefly overwrite its optimistic update, right
+ * before its own settle corrects it again.
+ */
+export function useMoveEntryToStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: MOVE_ENTRY_MUTATION_KEY,
+    mutationFn: ({ entryId, status }: { entryId: number; status: string }) =>
+      backlogApi.updateEntry(entryId, { status }),
+    onMutate: async ({ entryId, status }) => {
+      await queryClient.cancelQueries({ queryKey: ENTRIES_KEY });
+      const previousEntry = queryClient
+        .getQueryData<backlogApi.BacklogEntryData[]>(ENTRIES_KEY)
+        ?.find((entry) => entry.id === entryId);
+      queryClient.setQueryData<backlogApi.BacklogEntryData[]>(
+        ENTRIES_KEY,
+        (entries) =>
+          entries?.map((entry) =>
+            entry.id === entryId ? { ...entry, status } : entry,
+          ),
+      );
+      return { previousStatus: previousEntry?.status };
+    },
+    onError: (_error, { entryId }, context) => {
+      if (context?.previousStatus === undefined) return;
+      queryClient.setQueryData<backlogApi.BacklogEntryData[]>(
+        ENTRIES_KEY,
+        (entries) =>
+          entries?.map((entry) =>
+            entry.id === entryId
+              ? { ...entry, status: context.previousStatus! }
+              : entry,
+          ),
+      );
+    },
+    onSettled: async () => {
+      const stillMoving = queryClient.isMutating({
+        mutationKey: MOVE_ENTRY_MUTATION_KEY,
+      });
+      if (stillMoving <= 1) {
+        await queryClient.invalidateQueries({ queryKey: ENTRIES_KEY });
+      }
+    },
+  });
+}
+
+/**
+ * Every category of the user, for pickers and filters.
+ */
+export function useCategories() {
+  return useQuery({
+    queryKey: CATEGORIES_KEY,
+    queryFn: backlogApi.getCategories,
+  });
+}
+
+/**
+ * Maps entry id -> the categories it belongs to (alphabetical by name).
+ * Entries carry no category data themselves, so this walks the category
+ * endpoints - one request per category - and is the single source the
+ * dashboard uses for sorting, grouping, filtering and the entry dialog.
+ */
+export function useEntryCategories() {
+  return useQuery({
+    queryKey: ENTRY_CATEGORIES_KEY,
+    queryFn: async () => {
+      const categories = (await backlogApi.getCategories()).sort((a, b) =>
+        a.name.localeCompare(b.name),
+      );
+      const entriesPerCategory = await Promise.all(
+        categories.map((category) =>
+          backlogApi.getEntriesForCategory(category.id),
+        ),
+      );
+      const byEntry = new Map<number, backlogApi.CategoryData[]>();
+      categories.forEach((category, index) => {
+        for (const entry of entriesPerCategory[index] ?? []) {
+          byEntry.set(entry.id, [...(byEntry.get(entry.id) ?? []), category]);
+        }
+      });
+      return byEntry;
+    },
+  });
+}
+
+function useInvalidateCategories() {
+  const queryClient = useQueryClient();
+  return async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: CATEGORIES_KEY }),
+      queryClient.invalidateQueries({ queryKey: ENTRY_CATEGORIES_KEY }),
+    ]);
+  };
+}
+
+export function useCreateCategory() {
+  const invalidate = useInvalidateCategories();
+  return useMutation({
+    mutationFn: backlogApi.createCategory,
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpdateCategory() {
+  const invalidate = useInvalidateCategories();
+  return useMutation({
+    mutationFn: ({
+      categoryId,
+      changes,
+    }: {
+      categoryId: number;
+      changes: { categoryName?: string; color?: string };
+    }) => backlogApi.updateCategory(categoryId, changes),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeleteCategory() {
+  const invalidate = useInvalidateCategories();
+  return useMutation({
+    mutationFn: backlogApi.deleteCategory,
+    onSuccess: invalidate,
+  });
+}
+
+export function useSetEntryCategory() {
+  const invalidate = useInvalidateCategories();
+  return useMutation({
+    mutationFn: ({
+      entryId,
+      categoryId,
+      assigned,
+    }: {
+      entryId: number;
+      categoryId: number;
+      assigned: boolean;
+    }) =>
+      assigned
+        ? backlogApi.addCategoryToEntry(entryId, categoryId)
+        : backlogApi.removeCategoryFromEntry(entryId, categoryId),
+    onSuccess: invalidate,
   });
 }
 
@@ -147,9 +306,7 @@ export function useImportSteamWishlistStream(): {
 }
 
 export function useImportSteamLibraryAppIdsStream(): {
-  run: (
-    appIds: number[],
-  ) => Promise<backlogApi.BacklogEntryData[]>;
+  run: (appIds: number[]) => Promise<backlogApi.BacklogEntryData[]>;
   isRunning: boolean;
   progress: SteamSyncProgress | null;
 } {
@@ -162,7 +319,10 @@ export function useImportSteamLibraryAppIdsStream(): {
       setIsRunning(true);
       setProgress(null);
       try {
-        const entries = await importSteamLibraryAppIdsStream(appIds, setProgress);
+        const entries = await importSteamLibraryAppIdsStream(
+          appIds,
+          setProgress,
+        );
         await queryClient.invalidateQueries({ queryKey: ENTRIES_KEY });
         return entries;
       } finally {

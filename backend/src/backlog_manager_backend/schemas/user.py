@@ -1,6 +1,34 @@
 from datetime import datetime
+from typing import Annotated, Literal
 
 import msgspec
+
+from backlog_manager_backend.schemas.types import HexColor
+
+SortOption = Literal[
+    "status", "category", "genre", "playtime", "platform", "interest", "review_stars"
+]
+MAX_CUSTOM_THEMES = 10
+
+
+class CustomTheme(msgspec.Struct):
+    """A user-defined colour theme from the theme creator. Every colour
+    must be a plain #rrggbb hex value - they are injected into CSS
+    custom properties on the client, so anything freer-form (url(),
+    expression(), ...) is rejected here at the boundary."""
+
+    id: Annotated[str, msgspec.Meta(min_length=1, max_length=40)]
+    name: Annotated[str, msgspec.Meta(min_length=1, max_length=30)]
+    background: HexColor
+    surface: HexColor
+    foreground: HexColor
+    accent: HexColor
+    border: HexColor
+    glow: HexColor
+
+
+CustomThemes = Annotated[list[CustomTheme], msgspec.Meta(max_length=MAX_CUSTOM_THEMES)]
+ThemeName = Annotated[str, msgspec.Meta(min_length=1, max_length=50)]
 
 
 class User(msgspec.Struct):
@@ -20,6 +48,9 @@ class User(msgspec.Struct):
     discord_webhook_url_encrypted: str | None = None
     steam_auto_import_enabled: bool = False
     steam_family_ids: str | None = None
+    default_sort: str = "status"
+    theme: str = "dark"
+    custom_themes: list[CustomTheme] = msgspec.field(default_factory=list)
 
 
 class CreateUserParams(msgspec.Struct):
@@ -55,6 +86,9 @@ class UpdateUserParams(msgspec.Struct):
     is_admin: bool | msgspec.UnsetType = msgspec.UNSET
     totp_secret_encrypted: str | None | msgspec.UnsetType = msgspec.UNSET
     totp_enabled: bool | msgspec.UnsetType = msgspec.UNSET
+    default_sort: SortOption | msgspec.UnsetType = msgspec.UNSET
+    theme: ThemeName | msgspec.UnsetType = msgspec.UNSET
+    custom_themes: CustomThemes | msgspec.UnsetType = msgspec.UNSET
 
 
 class PublicUser(msgspec.Struct):
@@ -74,6 +108,9 @@ class PublicUser(msgspec.Struct):
     has_discord_webhook_url: bool = False
     steam_auto_import_enabled: bool = False
     steam_family_ids: str | None = None
+    default_sort: str = "status"
+    theme: str = "dark"
+    custom_themes: list[CustomTheme] = msgspec.field(default_factory=list)
 
     @classmethod
     def from_user(cls, user: User) -> "PublicUser":
@@ -92,6 +129,9 @@ class PublicUser(msgspec.Struct):
             has_discord_webhook_url=bool(user.discord_webhook_url_encrypted),
             steam_auto_import_enabled=user.steam_auto_import_enabled,
             steam_family_ids=user.steam_family_ids,
+            default_sort=user.default_sort,
+            theme=user.theme,
+            custom_themes=user.custom_themes,
         )
 
 
@@ -128,6 +168,9 @@ class UpdateOwnUserRequest(msgspec.Struct):
     discord_webhook_url: str | None | msgspec.UnsetType = msgspec.UNSET
     steam_auto_import_enabled: bool | msgspec.UnsetType = msgspec.UNSET
     steam_family_ids: str | None | msgspec.UnsetType = msgspec.UNSET
+    default_sort: SortOption | msgspec.UnsetType = msgspec.UNSET
+    theme: ThemeName | msgspec.UnsetType = msgspec.UNSET
+    custom_themes: CustomThemes | msgspec.UnsetType = msgspec.UNSET
 
 
 class UpdateUserAdminRequest(msgspec.Struct):
@@ -145,6 +188,9 @@ class UpdateUserAdminRequest(msgspec.Struct):
     discord_webhook_url: str | None | msgspec.UnsetType = msgspec.UNSET
     steam_auto_import_enabled: bool | msgspec.UnsetType = msgspec.UNSET
     steam_family_ids: str | None | msgspec.UnsetType = msgspec.UNSET
+    default_sort: SortOption | msgspec.UnsetType = msgspec.UNSET
+    theme: ThemeName | msgspec.UnsetType = msgspec.UNSET
+    custom_themes: CustomThemes | msgspec.UnsetType = msgspec.UNSET
     is_admin: bool | msgspec.UnsetType = msgspec.UNSET
 
 

@@ -7,6 +7,17 @@ from litestar.testing import TestClient
 
 
 @pytest.fixture
+def unconfigured_igdb(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The "not configured" tests must not depend on the developer's own
+    .env: a machine with IGDB credentials set would otherwise never
+    return the 503 they assert."""
+    from backlog_manager_backend.config import settings
+
+    monkeypatch.setattr(settings, "igdb_client_id", None)
+    monkeypatch.setattr(settings, "igdb_client_secret", None)
+
+
+@pytest.fixture
 def configured_igdb(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
     """Imported lazily - see test_game_service.py's game_service fixture
     for why (services.game_service -> config eagerly builds Settings()
@@ -83,7 +94,7 @@ async def test_search_game_requires_search_term(
 
 
 async def test_search_game_returns_503_when_igdb_not_configured(
-    postgres_url: str, create_and_login
+    unconfigured_igdb: None, postgres_url: str, create_and_login
 ) -> None:
     from backlog_manager_backend.app import create_app
 
@@ -291,7 +302,7 @@ async def test_enriched_search_batches_multiple_results(
 
 
 async def test_enriched_search_returns_503_when_igdb_not_configured(
-    postgres_url: str, create_and_login
+    unconfigured_igdb: None, postgres_url: str, create_and_login
 ) -> None:
     from backlog_manager_backend.app import create_app
 

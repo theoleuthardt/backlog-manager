@@ -899,6 +899,17 @@ export interface components {
             id: number;
             name: string;
         };
+        /** CustomTheme */
+        CustomTheme: {
+            id: string;
+            name: string;
+            background: string;
+            surface: string;
+            foreground: string;
+            accent: string;
+            border: string;
+            glow: string;
+        };
         /** EnrichedResult */
         EnrichedResult: {
             id: number;
@@ -1123,6 +1134,11 @@ export interface components {
             /** @default false */
             steam_auto_import_enabled?: boolean;
             steam_family_ids?: string | null;
+            /** @default status */
+            default_sort?: string;
+            /** @default dark */
+            theme?: string;
+            custom_themes?: components["schemas"]["CustomTheme"][];
         };
         /** PublicUsername */
         PublicUsername: {
@@ -1218,6 +1234,9 @@ export interface components {
             discord_webhook_url?: string | null;
             steam_auto_import_enabled?: boolean;
             steam_family_ids?: string | null;
+            default_sort?: "status" | "category" | "genre" | "playtime" | "platform" | "interest" | "review_stars";
+            theme?: string;
+            custom_themes?: components["schemas"]["CustomTheme"][];
         };
         /** UpdateUserAdminRequest */
         UpdateUserAdminRequest: {
@@ -1232,6 +1251,9 @@ export interface components {
             discord_webhook_url?: string | null;
             steam_auto_import_enabled?: boolean;
             steam_family_ids?: string | null;
+            default_sort?: "status" | "category" | "genre" | "playtime" | "platform" | "interest" | "review_stars";
+            theme?: string;
+            custom_themes?: components["schemas"]["CustomTheme"][];
             is_admin?: boolean;
         };
     };

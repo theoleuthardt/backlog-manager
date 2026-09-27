@@ -1,6 +1,8 @@
 import { apiClient, apiErrorMessage } from "./client";
 import type { CurrentUser } from "./auth";
 import type { components } from "./schema";
+import type { SortOption } from "~/lib/sortEntries";
+import type { CustomTheme } from "~/lib/themes";
 
 export interface UpdateCurrentUserInput {
   username?: string;
@@ -14,6 +16,9 @@ export interface UpdateCurrentUserInput {
   discordWebhookUrl?: string;
   steamAutoImportEnabled?: boolean;
   steamFamilyIds?: string;
+  defaultSort?: SortOption;
+  theme?: string;
+  customThemes?: CustomTheme[];
 }
 
 function toCurrentUser(user: components["schemas"]["PublicUser"]): CurrentUser {
@@ -32,6 +37,9 @@ function toCurrentUser(user: components["schemas"]["PublicUser"]): CurrentUser {
     hasDiscordWebhookUrl: user.has_discord_webhook_url ?? false,
     steamAutoImportEnabled: user.steam_auto_import_enabled ?? false,
     steamFamilyIds: user.steam_family_ids ?? undefined,
+    defaultSort: user.default_sort ?? "status",
+    theme: user.theme ?? "dark",
+    customThemes: user.custom_themes ?? [],
   };
 }
 
@@ -51,6 +59,9 @@ export async function updateCurrentUser(
       discord_webhook_url: input.discordWebhookUrl,
       steam_auto_import_enabled: input.steamAutoImportEnabled,
       steam_family_ids: input.steamFamilyIds,
+      default_sort: input.defaultSort,
+      theme: input.theme,
+      custom_themes: input.customThemes,
     },
   });
   if (error) throw new Error(apiErrorMessage(error, "Failed to update user"));

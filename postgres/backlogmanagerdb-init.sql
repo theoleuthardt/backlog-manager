@@ -19,6 +19,9 @@ CREATE TABLE IF NOT EXISTS "blm-system"."Users"(
     "IsAdmin" BOOLEAN NOT NULL DEFAULT FALSE,
     "TotpSecretEncrypted" TEXT,
     "TotpEnabled" BOOLEAN NOT NULL DEFAULT FALSE,
+    "DefaultSort" VARCHAR(20) NOT NULL DEFAULT 'status',
+    "Theme" VARCHAR(50) NOT NULL DEFAULT 'dark',
+    "CustomThemes" JSONB NOT NULL DEFAULT '[]'::jsonb,
     "CreatedAt" TIMESTAMP NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP),
     "UpdatedAt" TIMESTAMP NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP)
 );

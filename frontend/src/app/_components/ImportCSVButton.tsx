@@ -32,6 +32,7 @@ export const ImportCSVButton = ({
           alt="import CSV"
           width={32}
           height={32}
+          className="themed-icon"
         />
       ) : (
         children

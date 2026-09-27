@@ -25,6 +25,7 @@ export const Features = () => {
                   alt="backlog"
                   width={64}
                   height={64}
+                  className="themed-icon"
                 />
               </div>
               <h3 className="mb-4 text-2xl font-semibold text-white">
@@ -40,7 +41,13 @@ export const Features = () => {
               className="rounded-xl border-2 border-white bg-transparent p-8 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
             >
               <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-transparent">
-                <Image src="/filter.png" alt="filter" width={64} height={64} />
+                <Image
+                  src="/filter.png"
+                  alt="filter"
+                  width={64}
+                  height={64}
+                  className="themed-icon"
+                />
               </div>
               <h3 className="mb-4 text-2xl font-semibold text-white">
                 Organization & Filtering
@@ -61,6 +68,7 @@ export const Features = () => {
                   alt="csv_import"
                   width={64}
                   height={64}
+                  className="themed-icon"
                 />
               </div>
               <h3 className="mb-4 text-2xl font-semibold text-white">

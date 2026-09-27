@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "~/app/context/AuthContext";
 import { updateCurrentUser } from "~/lib/api/user";
+import { isSortOption, SORT_OPTIONS } from "~/lib/sortEntries";
 import {
   useEnrollTwoFactor,
   useVerifyTwoFactorEnrollment,
@@ -13,6 +15,13 @@ import {
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -40,6 +49,8 @@ const FILLED_BUTTON =
 
 export function AccountContent() {
   const { user, refreshUser } = useAuth();
+
+  const [isSavingDefaultSort, setIsSavingDefaultSort] = useState(false);
 
   const [isEnrollOpen, setIsEnrollOpen] = useState(false);
   const [enrollStep, setEnrollStep] = useState<EnrollStep>("qr");
@@ -257,6 +268,22 @@ export function AccountContent() {
     }
   };
 
+  const handleDefaultSortChange = async (value: string) => {
+    if (!isSortOption(value)) return;
+    setIsSavingDefaultSort(true);
+    try {
+      await updateCurrentUser({ defaultSort: value });
+      await refreshUser();
+      toast.success("Default sort saved");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to save default sort",
+      );
+    } finally {
+      setIsSavingDefaultSort(false);
+    }
+  };
+
   const openEnroll = () => {
     setCode("");
     setEnrollStep("qr");
@@ -320,6 +347,41 @@ export function AccountContent() {
         <p className="text-sm text-gray-300">Signed in as</p>
         <p className="text-lg font-semibold">{user.name}</p>
         <p className="text-gray-300">{user.email}</p>
+      </div>
+
+      <div className="rounded-lg border-2 border-white bg-black p-6">
+        <h2 className="mb-2 text-xl font-semibold">Dashboard</h2>
+        <p className="mb-4 text-sm text-gray-300">
+          The dashboard opens sorted by this option. You can still change the
+          sort order from the dashboard at any time.
+        </p>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="default-sort">Default sort</Label>
+          <Select
+            value={isSortOption(user.defaultSort) ? user.defaultSort : "status"}
+            onValueChange={(value) => void handleDefaultSortChange(value)}
+            disabled={isSavingDefaultSort}
+          >
+            <SelectTrigger id="default-sort" className="w-full sm:w-64">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <p className="mt-4 text-sm text-gray-300">
+          Pick a theme from the palette icon in the navbar, or build your own
+          in the{" "}
+          <Link href="/themes" className="underline">
+            theme creator
+          </Link>
+          .
+        </p>
       </div>
 
       <div className="rounded-lg border-2 border-white bg-black p-6">

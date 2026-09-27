@@ -4589,7 +4589,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "maximum": 10
           },
           "review": {
             "oneOf": [
@@ -4626,10 +4627,13 @@
       "CreateCategoryRequest": {
         "properties": {
           "category_name": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1
           },
           "color": {
             "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$",
             "default": "#000000"
           },
           "description": {
@@ -4704,6 +4708,56 @@
           "name"
         ],
         "title": "CustomStatusResponse"
+      },
+      "CustomTheme": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 30,
+            "minLength": 1
+          },
+          "background": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "surface": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "foreground": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "accent": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "border": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "glow": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          }
+        },
+        "type": "object",
+        "required": [
+          "accent",
+          "background",
+          "border",
+          "foreground",
+          "glow",
+          "id",
+          "name",
+          "surface"
+        ],
+        "title": "CustomTheme"
       },
       "EnrichedResult": {
         "properties": {
@@ -6162,6 +6216,20 @@
                 "type": "null"
               }
             ]
+          },
+          "default_sort": {
+            "type": "string",
+            "default": "status"
+          },
+          "theme": {
+            "type": "string",
+            "default": "dark"
+          },
+          "custom_themes": {
+            "items": {
+              "$ref": "#/components/schemas/CustomTheme"
+            },
+            "type": "array"
           }
         },
         "type": "object",
@@ -6470,7 +6538,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "maximum": 10
           },
           "review": {
             "oneOf": [
@@ -6504,14 +6573,17 @@
               {
                 "type": "string"
               }
-            ]
+            ],
+            "maxLength": 100,
+            "minLength": 1
           },
           "color": {
             "oneOf": [
               {
                 "type": "string"
               }
-            ]
+            ],
+            "pattern": "^#[0-9a-fA-F]{6}$"
           },
           "description": {
             "oneOf": [
@@ -6639,6 +6711,42 @@
                 "type": "null"
               }
             ]
+          },
+          "default_sort": {
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "status",
+                  "category",
+                  "genre",
+                  "playtime",
+                  "platform",
+                  "interest",
+                  "review_stars"
+                ]
+              }
+            ]
+          },
+          "theme": {
+            "oneOf": [
+              {
+                "type": "string"
+              }
+            ],
+            "maxLength": 50,
+            "minLength": 1
+          },
+          "custom_themes": {
+            "oneOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/CustomTheme"
+                },
+                "type": "array"
+              }
+            ],
+            "maxItems": 10
           }
         },
         "type": "object",
@@ -6744,6 +6852,42 @@
                 "type": "null"
               }
             ]
+          },
+          "default_sort": {
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "status",
+                  "category",
+                  "genre",
+                  "playtime",
+                  "platform",
+                  "interest",
+                  "review_stars"
+                ]
+              }
+            ]
+          },
+          "theme": {
+            "oneOf": [
+              {
+                "type": "string"
+              }
+            ],
+            "maxLength": 50,
+            "minLength": 1
+          },
+          "custom_themes": {
+            "oneOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/CustomTheme"
+                },
+                "type": "array"
+              }
+            ],
+            "maxItems": 10
           },
           "is_admin": {
             "oneOf": [

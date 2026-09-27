@@ -181,7 +181,13 @@ export const ImportCSVContent = () => {
   return (
     <div className="flex flex-col items-center justify-center gap-8 py-12">
       <div className="flex flex-col items-center gap-4">
-        <Image src="/csv_import.png" alt="import CSV" width={64} height={64} />
+        <Image
+          src="/csv_import.png"
+          alt="import CSV"
+          width={64}
+          height={64}
+          className="themed-icon"
+        />
         <h1 className="text-3xl font-bold">Import Backlog from CSV</h1>
         <p className="max-w-md text-center text-gray-400">
           Select a CSV file to import your game backlog entries

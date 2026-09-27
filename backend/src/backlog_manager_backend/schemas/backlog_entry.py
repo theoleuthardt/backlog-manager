@@ -1,7 +1,11 @@
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Annotated
 
 import msgspec
+
+MAX_REVIEW_STARS = 10
+ReviewStars = Annotated[float, msgspec.Meta(ge=0, le=MAX_REVIEW_STARS)]
 
 
 class BacklogEntry(msgspec.Struct):
@@ -159,7 +163,7 @@ class CreateBacklogEntryRequest(msgspec.Struct):
     completion_time: Decimal | None = None
     playtime: Decimal | None = None
     steam_app_id: int | None = None
-    review_stars: float | None = None
+    review_stars: ReviewStars | None = None
     review: str | None = None
     note: str | None = None
 
@@ -182,6 +186,6 @@ class UpdateBacklogEntryRequest(msgspec.Struct):
     completion_time: Decimal | None | msgspec.UnsetType = msgspec.UNSET
     playtime: Decimal | None | msgspec.UnsetType = msgspec.UNSET
     steam_app_id: int | None | msgspec.UnsetType = msgspec.UNSET
-    review_stars: float | None | msgspec.UnsetType = msgspec.UNSET
+    review_stars: ReviewStars | None | msgspec.UnsetType = msgspec.UNSET
     review: str | None | msgspec.UnsetType = msgspec.UNSET
     note: str | None | msgspec.UnsetType = msgspec.UNSET
