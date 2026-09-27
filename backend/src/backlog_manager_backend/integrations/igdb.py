@@ -102,17 +102,24 @@ async def search_game_on_igdb(
     can drop the base game before game_service.search ever gets a
     chance to filter/rank by game type.
 
-    A colon anywhere in the query makes this endpoint return zero hits,
-    confirmed live against the real API for many well-known titles that
-    themselves have one in their display name ("The Legend of Zelda:
-    Breath of the Wild", "Persona 5: Royal", "Phoenix Wright: Ace
-    Attorney - Justice for All", ...) - stripped here rather than left
-    to silently return nothing."""
-    escaped_term = search_term.replace(":", "").replace('"', '\\"')
+    Uses IGDB's `search "term";` clause rather than `where name ~
+    *"term"*;` - the latter is a literal wildcard substring match on
+    the stored name with no typo/word-order/missing-word tolerance and
+    (confirmed live against the real API) returns zero hits outright
+    for any query containing a colon, even for titles that have one
+    themselves ("The Legend of Zelda: Breath of the Wild", "Persona 5:
+    Royal", ...). `search` is IGDB's own full-text/fuzzy index (what
+    igdb.com's own search box uses) - it handles colons natively and
+    also resolves titles the sheet-sourced search term only partially
+    or inconsistently matches (e.g. "First Berserker Khazan" finding
+    "The First Berserker: Khazan", or "Ace Attorney 3" finding "Phoenix
+    Wright: Ace Attorney - Trials and Tribulations" via its Japanese
+    numbering) - though it still doesn't correct genuine misspellings."""
+    escaped_term = search_term.replace('"', '\\"')
     body = (
         "fields alternative_name,character,checksum,collection,company,description,"
         "game,name,platform,published_at,test_dummy,theme; "
-        f'where name ~ *"{escaped_term}"*; limit {_SEARCH_RAW_RESULT_LIMIT};'
+        f'search "{escaped_term}"; limit {_SEARCH_RAW_RESULT_LIMIT};'
     )
     try:
         return await _query_igdb("search", body, client_id, access_token, list[IGDBSearchResult])
