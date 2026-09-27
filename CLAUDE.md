@@ -106,8 +106,10 @@ so legacy `bg-black text-white border-white` classes follow the theme. In
 new UI use the semantic tokens (`bg-background`, `bg-surface`,
 `text-foreground`, `bg-primary`) rather than raw colours, and add the
 `themed-icon` class to the white PNG icons from `public/` so they stay
-visible in light themes. `docs/DASHBOARD_UX.md` records the dashboard design
-decisions.
+visible in light themes. `globals.css`'s `surface-glow` (a themed hover/focus
+glow) is declared with Tailwind v4's `@utility` rather than a plain class -
+that's what makes variants like `hover:surface-glow` generate real CSS.
+`docs/DASHBOARD_UX.md` records the dashboard design decisions.
 
 ## ESLint Rules
 

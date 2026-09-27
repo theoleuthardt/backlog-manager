@@ -147,10 +147,6 @@
   filter: brightness(0) invert(1) var(--t-icon-filter);
 }
 
-/* A Tailwind v4 @utility (not a plain class) so variants like
-   hover:surface-glow and lg:surface-glow generate real CSS - a plain
-   class here would make Tailwind treat "hover:surface-glow" as an
-   unknown, no-op utility name instead of an actual hover selector. */
 @utility surface-glow {
   box-shadow:
     0 0 0 1px color-mix(in oklab, var(--t-glow) 35%, transparent),

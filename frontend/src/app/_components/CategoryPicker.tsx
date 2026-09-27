@@ -65,7 +65,7 @@ export const CategoryPicker = ({ entryId }: { entryId: number }) => {
   };
 
   const handleCreate = async () => {
-    if (!canCreate) return;
+    if (!canCreate || createCategory.isPending) return;
     let created: Awaited<ReturnType<typeof createCategory.mutateAsync>>;
     try {
       created = await createCategory.mutateAsync({

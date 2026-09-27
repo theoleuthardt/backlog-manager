@@ -88,7 +88,7 @@ const MOVE_ENTRY_MUTATION_KEY = ["move-entry-status"];
  * request is still in flight applies its own optimistic update to the
  * same cached list, and a wholesale restore would discard that
  * unrelated change too. For the same reason, onSettled only
- * invalidates once no sibling move is still pending: invalidating
+ * invalidates once no sibling move is still pending - invalidating
  * while one is would refetch the server's not-yet-updated state for
  * that other move and briefly overwrite its optimistic update, right
  * before its own settle corrects it again.
@@ -129,7 +129,7 @@ export function useMoveEntryToStatus() {
       const stillMoving = queryClient.isMutating({
         mutationKey: MOVE_ENTRY_MUTATION_KEY,
       });
-      if (stillMoving === 0) {
+      if (stillMoving <= 1) {
         await queryClient.invalidateQueries({ queryKey: ENTRIES_KEY });
       }
     },
