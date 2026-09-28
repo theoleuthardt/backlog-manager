@@ -2,7 +2,28 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { AuthCard } from "components/AuthCard";
+import { Button } from "shadcn_components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Spinner } from "~/components/ui/spinner";
 import { useAuth } from "~/app/context/AuthContext";
+
+const APP_BUTTON =
+  "border-2 border-white bg-black text-white hover:bg-white hover:text-black";
+
+const AUTH_INPUT =
+  "h-11 border-white/40 bg-black text-white placeholder:text-gray-500";
+
+const FormError = ({ message }: { message: string | null }) =>
+  message && (
+    <p
+      role="alert"
+      className="border-destructive/50 bg-destructive/10 text-destructive rounded-lg border px-3 py-2 text-sm"
+    >
+      {message}
+    </p>
+  );
 
 export default function LoginPage() {
   const { user, login, completeTwoFactorLogin, logout, isLoading } = useAuth();
@@ -54,115 +75,131 @@ export default function LoginPage() {
     setError(null);
   };
 
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-black">
-      <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 text-white">
-        {isLoading ? (
-          <p className="text-lg text-gray-300">Loading...</p>
-        ) : !user && challengeToken ? (
-          <>
-            <h1 className="mb-6 text-5xl font-extrabold text-white text-shadow-md sm:text-[5rem]">
-              Two-Factor Authentication
-            </h1>
-            <p className="mb-8 text-center text-lg text-gray-300">
-              Enter the 6-digit code from your authenticator app, or one of
-              your backup codes.
-            </p>
-            <form
-              onSubmit={handleTwoFactorSubmit}
-              className="flex w-full max-w-sm flex-col gap-4"
-            >
-              {error && <p className="text-center text-red-400">{error}</p>}
-              <input
-                type="text"
-                name="code"
-                placeholder="123456"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                required
-                autoComplete="one-time-code"
-                autoFocus
-                className="w-full rounded-lg border border-gray-600 bg-black/20 px-4 py-3 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
-              />
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="rounded-full bg-blue-600 px-10 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {isSubmitting ? "Verifying..." : "Verify"}
-              </button>
-              <button
-                type="button"
-                onClick={handleStartOver}
-                className="text-sm text-gray-400 underline transition hover:text-gray-200"
-              >
-                Start over
-              </button>
-            </form>
-          </>
-        ) : !user ? (
-          <>
-            <h1 className="mb-6 text-5xl font-extrabold text-white text-shadow-md sm:text-[5rem]">
-              Welcome Back
-            </h1>
-            <p className="mb-8 text-center text-lg text-gray-300">
-              Log in to access your dashboard and manage your content.
-            </p>
-            <form
-              onSubmit={handleSubmit}
-              className="flex w-full max-w-sm flex-col gap-4"
-            >
-              {error && <p className="text-center text-red-400">{error}</p>}
-              <input
-                type="email"
-                name="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-                className="w-full rounded-lg border border-gray-600 bg-black/20 px-4 py-3 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
-              />
-              <input
-                type="password"
-                name="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-                className="w-full rounded-lg border border-gray-600 bg-black/20 px-4 py-3 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
-              />
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="rounded-full bg-blue-600 px-10 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {isSubmitting ? "Logging in..." : "Login"}
-              </button>
-            </form>
-          </>
-        ) : (
-          <div className="flex flex-col items-center gap-4">
-            <p className="mb-6 text-2xl">You are logged in as {user.name}.</p>
-            <button
-              onClick={() => router.push("/dashboard")}
-              className="rounded-full bg-blue-600 px-10 py-3 font-semibold text-white transition hover:bg-blue-700"
-            >
-              Go to Dashboard
-            </button>
-            <p className="mb-4 text-center text-lg text-gray-300">
-              If you want to logout, click the button below.
-            </p>
-            <button
-              onClick={logout}
-              className="rounded-full bg-white/10 px-10 py-3 font-semibold text-white transition hover:bg-white/20"
-            >
-              Sign out
-            </button>
+  if (isLoading) {
+    return (
+      <AuthCard title="Backlog Manager" description="Checking your session...">
+        <div className="flex justify-center py-4">
+          <Spinner className="text-primary h-8 w-8" />
+        </div>
+      </AuthCard>
+    );
+  }
+
+  if (user) {
+    return (
+      <AuthCard
+        title={`Hi, ${user.name}`}
+        description="You are already signed in."
+      >
+        <div className="flex flex-col gap-3">
+          <Button
+            size="lg"
+            variant="outline"
+            className={APP_BUTTON}
+            onClick={() => router.push("/dashboard")}
+          >
+            Go to Dashboard
+          </Button>
+          <Button
+            size="lg"
+            variant="outline"
+            className={APP_BUTTON}
+            onClick={logout}
+          >
+            Sign out
+          </Button>
+        </div>
+      </AuthCard>
+    );
+  }
+
+  if (challengeToken) {
+    return (
+      <AuthCard
+        title="Two-factor authentication"
+        description="Enter the 6-digit code from your authenticator app, or one of your backup codes."
+      >
+        <form onSubmit={handleTwoFactorSubmit} className="flex flex-col gap-4">
+          <FormError message={error} />
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="code">Verification code</Label>
+            <Input
+              id="code"
+              type="text"
+              name="code"
+              placeholder="123456"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              required
+              autoComplete="one-time-code"
+              autoFocus
+              className={`${AUTH_INPUT} text-center tracking-widest`}
+            />
           </div>
-        )}
-      </div>
-    </main>
+          <Button
+            type="submit"
+            size="lg"
+            variant="outline"
+            className={APP_BUTTON}
+            disabled={isSubmitting}
+          >
+            {isSubmitting && <Spinner />}
+            {isSubmitting ? "Verifying..." : "Verify"}
+          </Button>
+          <Button type="button" variant="link" onClick={handleStartOver}>
+            Start over
+          </Button>
+        </form>
+      </AuthCard>
+    );
+  }
+
+  return (
+    <AuthCard
+      title="Welcome back!"
+      description="Log in to access your dashboard and manage your backlog."
+    >
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <FormError message={error} />
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            name="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+            autoFocus
+            className={AUTH_INPUT}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
+            type="password"
+            name="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            autoComplete="current-password"
+            className={AUTH_INPUT}
+          />
+        </div>
+        <Button
+          type="submit"
+          size="lg"
+          variant="outline"
+          className={APP_BUTTON}
+          disabled={isSubmitting}
+        >
+          {isSubmitting && <Spinner />}
+          {isSubmitting ? "Logging in..." : "Login"}
+        </Button>
+      </form>
+    </AuthCard>
   );
 }
