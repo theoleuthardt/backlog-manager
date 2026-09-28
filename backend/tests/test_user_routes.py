@@ -811,6 +811,31 @@ async def test_new_user_has_default_dashboard_preferences(
     assert body["custom_themes"] == []
 
 
+async def test_new_user_has_not_completed_setup(postgres_url: str, create_and_login) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "freshsetup@example.com")
+        response = client.get("/api/user/me", headers=headers)
+
+    assert response.json()["setup_completed"] is False
+
+
+async def test_update_own_user_marks_setup_completed(postgres_url: str, create_and_login) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "finishsetup@example.com")
+        update_response = client.put(
+            "/api/user/me", headers=headers, json={"setup_completed": True}
+        )
+        me_response = client.get("/api/user/me", headers=headers)
+
+    assert update_response.status_code == 200
+    assert update_response.json()["setup_completed"] is True
+    assert me_response.json()["setup_completed"] is True
+
+
 async def test_update_own_user_sets_default_sort_and_theme(
     postgres_url: str, create_and_login
 ) -> None:
