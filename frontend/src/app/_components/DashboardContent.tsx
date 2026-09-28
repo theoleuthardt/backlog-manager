@@ -459,9 +459,7 @@ export const DashboardContent = () => {
                     onToggle={() => toggleGroup(group.status)}
                   >
                     {group.entries.map((entry) => (
-                      <DraggableEntry key={entry.id} entryId={entry.id}>
-                        {renderEntry(entry)}
-                      </DraggableEntry>
+                      <DraggableEntry key={entry.id} entry={entry} />
                     ))}
                   </StatusGroupSection>
                 ))}
