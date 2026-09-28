@@ -59,6 +59,7 @@ import {
 import type { GameSearchResult } from "~/lib/api/games";
 import { MAX_REVIEW_STARS } from "~/lib/reviewStars";
 import { statusColor } from "~/lib/statusStyle";
+import { youtubeEmbedUrl } from "~/lib/trailer";
 
 const INTEREST_SEGMENTS = 10;
 
@@ -130,8 +131,8 @@ const TimeBar = ({
 
 /**
  * Detail dialog content of a backlog entry: a hero with the cover and
- * status, HUD-style stat tiles, and tabs for overview, progress and
- * review, over a fixed action bar. The form state lives in EntryDetailBody,
+ * status, HUD-style stat tiles, and tabs for overview, progress, review
+ * and trailer, over a fixed action bar. The form state lives in EntryDetailBody,
  * a child of DialogContent rather than of EntryDetail itself: DialogContent
  * only unmounts children passed to it while the dialog is closed, not the
  * component that renders DialogContent - EntryDetail's own hooks would keep
@@ -153,6 +154,7 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
   const [title, setTitle] = useState(props.title);
   const [steamAppId, setSteamAppId] = useState(props.steamAppId);
   const [description, setDescription] = useState(props.description);
+  const [trailerLink, setTrailerLink] = useState(props.trailerLink);
   const [imageLink, setImageLink] = useState(props.imageLink);
   const [newImageUrl, setNewImageUrl] = useState("");
   const [playtime, setPlaytime] = useState<number | undefined>(props.playtime);
@@ -218,6 +220,7 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
           ...(result.genres.length > 0 ? { genre: result.genres } : {}),
           imageLink: result.imageUrl,
           description: result.description,
+          trailerLink: result.trailerUrl,
           mainTime: result.mainStory,
           mainPlusExtraTime: result.mainStoryWithExtras,
           completionTime: result.completionist,
@@ -228,6 +231,7 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
       if (result.genres.length > 0) setGenre(result.genres.join(", "));
       setImageLink(result.imageUrl ?? "");
       setDescription(result.description ?? undefined);
+      setTrailerLink(result.trailerUrl ?? undefined);
       setMainTime(result.mainStory);
       setMainPlusExtraTime(result.mainStoryWithExtras);
       setCompletionTime(result.completionist);
@@ -324,6 +328,7 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
   const canReview = status === "Completed";
   const genres = splitList(genre);
   const platforms = splitList(platform);
+  const trailerEmbedUrl = youtubeEmbedUrl(trailerLink);
 
   return (
     <>
@@ -524,6 +529,7 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="progress">Progress</TabsTrigger>
             <TabsTrigger value="review">Review &amp; notes</TabsTrigger>
+            <TabsTrigger value="trailer">Trailer</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="mt-4 space-y-6">
@@ -627,6 +633,26 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
                 />
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="trailer" className="mt-4">
+            {trailerEmbedUrl ? (
+              <div className="surface-glow bg-surface aspect-video w-full overflow-hidden rounded-xl border border-white/30">
+                <iframe
+                  src={trailerEmbedUrl}
+                  title={`${title} trailer`}
+                  className="h-full w-full"
+                  loading="lazy"
+                  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  referrerPolicy="strict-origin-when-cross-origin"
+                />
+              </div>
+            ) : (
+              <p className="bg-surface rounded-xl border border-white/30 p-6 text-center text-sm text-white/70">
+                No trailer available for this game.
+              </p>
+            )}
           </TabsContent>
         </Tabs>
       </div>

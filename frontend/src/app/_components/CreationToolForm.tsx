@@ -62,6 +62,7 @@ export function CreationToolForm() {
   const imageUrlFromUrl = searchParams.get("imageUrl") ?? "";
   const descriptionFromUrl = searchParams.get("description") ?? "";
   const publisherFromUrl = searchParams.get("publisher") ?? "";
+  const trailerUrlFromUrl = searchParams.get("trailerUrl") ?? "";
   const genresFromUrl = searchParams.get("genres") ?? "";
   const platformsFromUrl = searchParams.get("platforms") ?? "";
   const mainStoryFromUrl = Number.parseFloat(
@@ -156,6 +157,7 @@ export function CreationToolForm() {
     steamAppId: resolvedSteamAppId,
     imageLink: imageUrl.trim() || undefined,
     description: descriptionFromUrl || undefined,
+    trailerLink: trailerUrlFromUrl || undefined,
     mainTime: Number.parseFloat(mainStory) > 0 ? Number.parseFloat(mainStory) : undefined,
     mainPlusExtraTime:
       Number.parseFloat(mainStoryWithExtras) > 0

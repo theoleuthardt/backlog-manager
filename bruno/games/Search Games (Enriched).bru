@@ -23,8 +23,10 @@ docs {
   auth/Login first.
 
   Searches IGDB, then enriches the top 8 matches with cover image, genres,
-  platforms, and beat times (IGDB game_time_to_beats, falling back to
-  HowLongToBeat when IGDB has no data for that game). This is the slowest
+  platforms, beat times (IGDB game_time_to_beats, falling back to
+  HowLongToBeat when IGDB has no data for that game) and a trailer_url (a
+  YouTube watch link from IGDB game_videos, null when the game has none;
+  a video named "Trailer" is preferred). This is the slowest
   endpoint since it makes several sequential IGDB requests per game.
 
   503 if neither the caller nor the server has IGDB credentials

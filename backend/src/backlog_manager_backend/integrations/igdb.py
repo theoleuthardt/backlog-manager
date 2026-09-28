@@ -9,6 +9,7 @@ from backlog_manager_backend.integrations.types import (
     IGDBCover,
     IGDBGameData,
     IGDBGameTimeToBeat,
+    IGDBGameVideo,
     IGDBGenre,
     IGDBInvolvedCompany,
     IGDBPlatform,
@@ -258,6 +259,23 @@ async def get_games_on_igdb(
     )
     try:
         return await _query_igdb("games", body, client_id, access_token, list[IGDBGameData])
+    except httpx.HTTPStatusError:
+        return []
+
+
+async def get_game_videos_on_igdb(
+    game_ids: list[int], client_id: str, access_token: str
+) -> list[IGDBGameVideo]:
+    if not game_ids:
+        return []
+    body = (
+        "fields checksum,game,name,video_id;"
+        f" where game = {_id_list(game_ids)}; limit 500;"
+    )
+    try:
+        return await _query_igdb(
+            "game_videos", body, client_id, access_token, list[IGDBGameVideo]
+        )
     except httpx.HTTPStatusError:
         return []
 

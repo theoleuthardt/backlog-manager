@@ -9,6 +9,7 @@ from backlog_manager_backend.integrations import igdb
 from backlog_manager_backend.integrations.igdb import (
     generate_igdb_token,
     get_covers_on_igdb,
+    get_game_videos_on_igdb,
     get_games_on_igdb,
     get_games_time_to_beat_on_igdb,
     get_genre_on_igdb,
@@ -310,3 +311,43 @@ async def test_get_games_time_to_beat_on_igdb_makes_no_request_for_empty_ids(
     _mock_client(handler, monkeypatch)
 
     assert await get_games_time_to_beat_on_igdb([], "cid", "tok") == []
+
+
+async def test_get_game_videos_on_igdb_batches_ids_into_one_request(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/v4/game_videos"
+        body = request.content.decode()
+        assert "game = (1,2)" in body
+        assert "video_id" in body
+        assert "limit" in body
+        return httpx.Response(
+            200, json=[{"id": 10, "game": 1, "name": "Launch Trailer", "video_id": "abc123DEF45"}]
+        )
+
+    _mock_client(handler, monkeypatch)
+
+    videos = await get_game_videos_on_igdb([1, 2], "cid", "tok")
+
+    assert videos[0].game == 1
+    assert videos[0].video_id == "abc123DEF45"
+
+
+async def test_get_game_videos_on_igdb_makes_no_request_for_empty_ids(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise AssertionError("should not be called for an empty id list")
+
+    _mock_client(handler, monkeypatch)
+
+    assert await get_game_videos_on_igdb([], "cid", "tok") == []
+
+
+async def test_get_game_videos_on_igdb_returns_empty_list_on_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _mock_client(lambda request: httpx.Response(500), monkeypatch)
+
+    assert await get_game_videos_on_igdb([1], "cid", "tok") == []

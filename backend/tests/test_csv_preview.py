@@ -50,7 +50,10 @@ def _hltb_result(title: str) -> HltbResultData:
 
 
 def _igdb_result(
-    title: str, genres: list[str] | None = None, description: str | None = None
+    title: str,
+    genres: list[str] | None = None,
+    description: str | None = None,
+    trailer_url: str | None = None,
 ) -> EnrichedResult:
     return EnrichedResult(
         id=1,
@@ -63,6 +66,7 @@ def _igdb_result(
         main_story_with_extras=15.0,
         completionist=40.0,
         description=description,
+        trailer_url=trailer_url,
     )
 
 
@@ -345,6 +349,52 @@ async def test_build_csv_preview_carries_igdb_description_through_to_submit(
     )
 
     assert result.created[0].description == "Help Madeline survive her inner journey."
+
+
+async def test_build_csv_preview_carries_igdb_trailer_through_to_submit(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    trailer = "https://www.youtube.com/watch?v=abc123DEF45"
+
+    async def fake_igdb_search(
+        title: str,
+        client_id: str,
+        client_secret: str,
+        steamgriddb_api_key: str | None,
+        **kwargs: object,
+    ) -> list[EnrichedResult]:
+        return [_igdb_result(title, trailer_url=trailer)]
+
+    monkeypatch.setattr(preview.game_service, "search", fake_igdb_search)
+    _stub_igdb_token(monkeypatch)
+
+    items = await preview.build_csv_preview(
+        session,
+        user.id,
+        [{"A": "Celeste", "B": "Platformer", "C": "Owned", "D": ""}],
+        _CONFIG,
+        igdb_credentials=("client-id", "client-secret"),
+    )
+
+    assert items[0].trailer_link == trailer
+
+    result = await preview.submit_csv_entries(
+        session,
+        user.id,
+        [
+            preview.SubmitCsvEntry(
+                title=items[0].title,
+                genre=items[0].genre,
+                platform=items[0].platform,
+                status=items[0].status,
+                owned=items[0].owned,
+                trailer_link=items[0].trailer_link,
+            )
+        ],
+    )
+
+    assert result.created[0].trailer_link == trailer
 
 
 async def test_build_csv_preview_retries_igdb_after_a_transient_error(

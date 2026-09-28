@@ -202,6 +202,11 @@ async def test_enriched_search(
             return httpx.Response(200, json=[{"id": 5, "image_id": "cover123"}])
         if request.url.path == "/v4/game_time_to_beats":
             return httpx.Response(200, json=[{"id": 1, "game_id": 1, "normally": 3600}])
+        if request.url.path == "/v4/game_videos":
+            return httpx.Response(
+                200,
+                json=[{"id": 20, "game": 1, "name": "Launch Trailer", "video_id": "abc123DEF45"}],
+            )
         raise AssertionError(f"unexpected request: {request.url}")
 
     _mock_igdb(handler, monkeypatch)
@@ -218,6 +223,7 @@ async def test_enriched_search(
     assert (
         body[0]["image_url"] == "https://images.igdb.com/igdb/image/upload/t_cover_big/cover123.jpg"
     )
+    assert body[0]["trailer_url"] == "https://www.youtube.com/watch?v=abc123DEF45"
 
 
 async def test_enriched_search_requires_authentication(
@@ -279,6 +285,8 @@ async def test_enriched_search_batches_multiple_results(
                     {"id": 2, "game_id": 2, "normally": 7200},
                 ],
             )
+        if request.url.path == "/v4/game_videos":
+            return httpx.Response(200, json=[])
         raise AssertionError(f"unexpected request: {request.url}")
 
     _mock_igdb(handler, monkeypatch)
@@ -298,6 +306,7 @@ async def test_enriched_search_batches_multiple_results(
         "/v4/genres": 1,
         "/v4/platforms": 1,
         "/v4/game_time_to_beats": 1,
+        "/v4/game_videos": 1,
     }
 
 

@@ -10,6 +10,7 @@ from backlog_manager_backend.integrations.types import (
     IGDBCover,
     IGDBGameData,
     IGDBGameTimeToBeat,
+    IGDBGameVideo,
     IGDBGenre,
     IGDBInvolvedCompany,
     IGDBPlatform,
@@ -35,9 +36,17 @@ def game_service(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
     monkeypatch.setattr(module, "_company_cache", {})
     monkeypatch.setattr(module, "_game_cache", {})
     monkeypatch.setattr(module, "_cover_cache", {})
+    monkeypatch.setattr(module, "_trailer_cache", {})
     monkeypatch.setattr(module, "_time_to_beat_cache", {})
     monkeypatch.setattr(module, "_steam_app_id_by_title", {})
     monkeypatch.setattr(module, "_steamgriddb_cover_cache", {})
+
+    async def no_videos(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameVideo]:
+        return []
+
+    monkeypatch.setattr(module, "get_game_videos_on_igdb", no_videos)
     return module
 
 
@@ -1281,3 +1290,133 @@ async def test_search_falls_back_to_igdb_cover_when_steamgriddb_has_none(
     assert results[0].image_url == (
         "https://images.igdb.com/igdb/image/upload/t_cover_big/abc123.jpg"
     )
+
+
+def _stub_single_game_search(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch, game_ids: list[int]
+) -> None:
+    async def fake_search_game_on_igdb(
+        search_term: str, client_id: str, access_token: str
+    ) -> list[IGDBSearchResult]:
+        return [IGDBSearchResult(id=game_id, game=game_id, name="Celeste") for game_id in game_ids]
+
+    async def fake_get_games_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameData]:
+        return [
+            IGDBGameData(id=game_id, name=f"Game {game_id}", game_type=0) for game_id in game_ids
+        ]
+
+    async def fake_get_games_time_to_beat_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameTimeToBeat]:
+        return [
+            IGDBGameTimeToBeat(id=game_id, game_id=game_id, normally=3600) for game_id in game_ids
+        ]
+
+    async def fake_get_valid_token(client_id: str, client_secret: str) -> str:
+        return "tok"
+
+    monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
+    monkeypatch.setattr(game_service, "get_games_on_igdb", fake_get_games_on_igdb)
+    monkeypatch.setattr(
+        game_service, "get_games_time_to_beat_on_igdb", fake_get_games_time_to_beat_on_igdb
+    )
+    monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
+
+
+async def test_search_enriches_trailer_url_preferring_a_video_named_trailer(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _stub_single_game_search(game_service, monkeypatch, [1])
+
+    async def fake_get_game_videos_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameVideo]:
+        return [
+            IGDBGameVideo(id=10, game=1, name="Gameplay", video_id="gameplay0001"),
+            IGDBGameVideo(id=11, game=1, name="Launch Trailer", video_id="trailer00001"),
+        ]
+
+    monkeypatch.setattr(game_service, "get_game_videos_on_igdb", fake_get_game_videos_on_igdb)
+
+    results = await game_service.search("Celeste", "cid", "secret", None)
+
+    assert results[0].trailer_url == "https://www.youtube.com/watch?v=trailer00001"
+
+
+async def test_search_falls_back_to_the_first_video_when_none_is_named_trailer(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _stub_single_game_search(game_service, monkeypatch, [1])
+
+    async def fake_get_game_videos_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameVideo]:
+        return [
+            IGDBGameVideo(id=10, game=1, name="Gameplay", video_id="gameplay0001"),
+            IGDBGameVideo(id=11, game=1, name="Overview", video_id="overview0001"),
+        ]
+
+    monkeypatch.setattr(game_service, "get_game_videos_on_igdb", fake_get_game_videos_on_igdb)
+
+    results = await game_service.search("Celeste", "cid", "secret", None)
+
+    assert results[0].trailer_url == "https://www.youtube.com/watch?v=gameplay0001"
+
+
+async def test_search_leaves_trailer_url_empty_when_igdb_has_no_video(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _stub_single_game_search(game_service, monkeypatch, [1])
+
+    async def fake_get_game_videos_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameVideo]:
+        return []
+
+    monkeypatch.setattr(game_service, "get_game_videos_on_igdb", fake_get_game_videos_on_igdb)
+
+    results = await game_service.search("Celeste", "cid", "secret", None)
+
+    assert results[0].trailer_url is None
+
+
+async def test_search_still_returns_results_when_the_videos_batch_fails(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _stub_single_game_search(game_service, monkeypatch, [1])
+
+    async def fake_get_game_videos_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameVideo]:
+        raise httpx.ConnectError("boom")
+
+    monkeypatch.setattr(game_service, "get_game_videos_on_igdb", fake_get_game_videos_on_igdb)
+
+    results = await game_service.search("Celeste", "cid", "secret", None)
+
+    assert results[0].title == "Game 1"
+    assert results[0].trailer_url is None
+
+
+async def test_search_batches_and_caches_video_lookups(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _stub_single_game_search(game_service, monkeypatch, [1, 2])
+    calls: list[list[int]] = []
+
+    async def fake_get_game_videos_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameVideo]:
+        calls.append(sorted(game_ids))
+        return [IGDBGameVideo(id=10, game=1, name="Trailer", video_id="trailer00001")]
+
+    monkeypatch.setattr(game_service, "get_game_videos_on_igdb", fake_get_game_videos_on_igdb)
+
+    first = await game_service.search("Celeste", "cid", "secret", None)
+    await game_service.search("Celeste", "cid", "secret", None)
+
+    assert calls == [[1, 2]]
+    trailers = {result.id: result.trailer_url for result in first}
+    assert trailers == {1: "https://www.youtube.com/watch?v=trailer00001", 2: None}

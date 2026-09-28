@@ -10,6 +10,7 @@ from backlog_manager_backend.integrations.igdb import (
     generate_igdb_token,
     get_companies_on_igdb,
     get_covers_on_igdb,
+    get_game_videos_on_igdb,
     get_games_on_igdb,
     get_games_time_to_beat_on_igdb,
     get_genres_on_igdb,
@@ -29,6 +30,7 @@ from backlog_manager_backend.integrations.types import (
     EnrichedResult,
     IGDBCover,
     IGDBGameData,
+    IGDBGameVideo,
     IGDBInvolvedCompany,
     IGDBSearchResult,
     SteamGridDBSearchResult,
@@ -69,6 +71,9 @@ _company_cache: dict[int, str] = {}
 # directly serves issue #105's "cache requests for game information" ask.
 _game_cache: dict[int, IGDBGameData] = {}
 _cover_cache: dict[int, IGDBCover] = {}
+# game id -> YouTube watch URL, or None for a game IGDB has no video for,
+# so a repeat search doesn't re-query games that are known to have none.
+_trailer_cache: dict[int, str | None] = {}
 # hltb_id, main_story, main_story_with_extras, completionist - populated
 # from whichever source (IGDB or the HLTB fallback) resolved a game, so a
 # repeat search for a game IGDB has no beat-time data for doesn't re-fire
@@ -127,6 +132,20 @@ def _is_dlc_like(game: IGDBGameData) -> bool:
     if game.game_type in _EXCLUDED_GAME_TYPES:
         return True
     return game.game_type is None and game.parent_game is not None
+
+
+def _pick_trailer_url(videos: list[IGDBGameVideo]) -> str | None:
+    """A video whose name contains "trailer" is preferred over the rest
+    (IGDB also lists gameplay and overview clips); otherwise the first
+    video with an id wins."""
+    playable = [video for video in videos if video.video_id]
+    if not playable:
+        return None
+    chosen = next(
+        (video for video in playable if "trailer" in (video.name or "").casefold()),
+        playable[0],
+    )
+    return f"https://www.youtube.com/watch?v={chosen.video_id}"
 
 
 def _seconds_to_hours(seconds: int | None) -> float:
@@ -432,6 +451,20 @@ async def _enrich_search_results(
         except httpx.HTTPError:
             logger.error("Failed to fetch time-to-beat batch")
 
+    uncached_trailer_game_ids = [game.id for game in games if game.id not in _trailer_cache]
+    if uncached_trailer_game_ids:
+        try:
+            videos = await get_game_videos_on_igdb(
+                uncached_trailer_game_ids, client_id, access_token
+            )
+        except httpx.HTTPError:
+            logger.error("Failed to fetch game videos batch")
+        else:
+            for game_id in uncached_trailer_game_ids:
+                _trailer_cache[game_id] = _pick_trailer_url(
+                    [video for video in videos if video.game == game_id]
+                )
+
     games_needing_hltb = [game for game in games if game.id not in _time_to_beat_cache]
     if games_needing_hltb:
         await asyncio.gather(*(_resolve_time_to_beat(game) for game in games_needing_hltb))
@@ -496,6 +529,7 @@ async def _enrich_search_results(
                     completionist=completionist,
                     description=game.summary,
                     publisher=publisher_name,
+                    trailer_url=_trailer_cache.get(game.id),
                 )
             )
         except httpx.HTTPError:

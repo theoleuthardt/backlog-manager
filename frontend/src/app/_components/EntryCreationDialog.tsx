@@ -151,6 +151,7 @@ export const EntryCreationDialog = ({
                               500,
                             ) ?? "",
                           publisher: searchResults[selectedIndex].publisher ?? "",
+                          trailerUrl: searchResults[selectedIndex].trailerUrl ?? "",
                         },
                       }}
                       className="flex justify-center"

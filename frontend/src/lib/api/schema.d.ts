@@ -853,6 +853,7 @@ export interface components {
             release_date?: string | null;
             image_link?: string | null;
             description?: string | null;
+            trailer_link?: string | null;
             main_time?: string | null;
             main_plus_extra_time?: string | null;
             completion_time?: string | null;
@@ -883,6 +884,7 @@ export interface components {
             release_date?: string | null;
             image_link?: string | null;
             description?: string | null;
+            trailer_link?: string | null;
             main_time?: string | null;
             main_plus_extra_time?: string | null;
             completion_time?: string | null;
@@ -953,6 +955,7 @@ export interface components {
             steam_app_id?: null;
             description?: string | null;
             publisher?: string | null;
+            trailer_url?: string | null;
         };
         /** GamePrice */
         GamePrice: {
@@ -1187,6 +1190,7 @@ export interface components {
             completed_at?: string | null;
             image_link?: string | null;
             description?: string | null;
+            trailer_link?: string | null;
             main_time?: string | null;
             main_plus_extra_time?: string | null;
             completion_time?: string | null;
@@ -1230,6 +1234,7 @@ export interface components {
             release_date?: string | null;
             image_link?: string | null;
             description?: string | null;
+            trailer_link?: string | null;
             main_time?: string | null;
             main_plus_extra_time?: string | null;
             completion_time?: string | null;

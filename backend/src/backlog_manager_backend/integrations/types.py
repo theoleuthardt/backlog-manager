@@ -124,6 +124,18 @@ class IGDBGameTimeToBeat(msgspec.Struct):
     updated_at: int | None = None
 
 
+class IGDBGameVideo(msgspec.Struct):
+    """One game_videos record: `video_id` is the YouTube video id (IGDB
+    only hosts YouTube links), `name` a free-form label such as "Launch
+    Trailer" or "Gameplay"."""
+
+    id: int
+    checksum: str | None = None
+    game: int | None = None
+    name: str | None = None
+    video_id: str | None = None
+
+
 class IGDBCover(msgspec.Struct):
     id: int
     alpha_channel: bool | None = None
@@ -190,6 +202,7 @@ class EnrichedResult(msgspec.Struct):
     steam_app_id: None = None
     description: str | None = None
     publisher: str | None = None
+    trailer_url: str | None = None
 
 
 class SteamOwnedGame(msgspec.Struct):
