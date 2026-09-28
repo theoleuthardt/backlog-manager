@@ -7,6 +7,7 @@ import structlog
 
 from backlog_manager_backend.integrations.howlongtobeat import search_game_on_hltb
 from backlog_manager_backend.integrations.igdb import (
+    IGDB_MAX_RESULTS,
     generate_igdb_token,
     get_companies_on_igdb,
     get_covers_on_igdb,
@@ -466,9 +467,9 @@ async def _enrich_search_results(
             logger.error("Failed to fetch game videos batch")
         else:
             for game_id in uncached_trailer_game_ids:
-                _trailer_cache[game_id] = _pick_trailer_url(
-                    [video for video in videos if video.game == game_id]
-                )
+                game_videos = [video for video in videos if video.game == game_id]
+                if game_videos or len(videos) < IGDB_MAX_RESULTS:
+                    _trailer_cache[game_id] = _pick_trailer_url(game_videos)
 
     games_needing_hltb = [game for game in games if game.id not in _time_to_beat_cache]
     if games_needing_hltb:

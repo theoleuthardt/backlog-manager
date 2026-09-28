@@ -1411,6 +1411,33 @@ async def test_search_does_not_cache_a_missing_trailer_when_the_videos_batch_fai
     assert second[0].trailer_url == "https://www.youtube.com/watch?v=trailer0001"
 
 
+async def test_search_does_not_cache_a_missing_trailer_when_the_videos_batch_hit_the_limit(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.integrations.igdb import IGDB_MAX_RESULTS
+
+    _stub_single_game_search(game_service, monkeypatch, [1, 2])
+    calls: list[list[int]] = []
+
+    async def fake_get_game_videos_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameVideo]:
+        calls.append(sorted(game_ids))
+        return [
+            IGDBGameVideo(id=index, game=1, name="Gameplay", video_id="gameplay001")
+            for index in range(IGDB_MAX_RESULTS)
+        ]
+
+    monkeypatch.setattr(game_service, "get_game_videos_on_igdb", fake_get_game_videos_on_igdb)
+
+    first = await game_service.search("Celeste", "cid", "secret", None)
+    await game_service.search("Celeste", "cid", "secret", None)
+
+    trailers = {result.id: result.trailer_url for result in first}
+    assert trailers == {1: "https://www.youtube.com/watch?v=gameplay001", 2: None}
+    assert calls == [[1, 2], [2]]
+
+
 async def test_search_leaves_trailer_url_empty_when_igdb_has_no_video(
     game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:

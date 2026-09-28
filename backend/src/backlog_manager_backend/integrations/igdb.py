@@ -21,6 +21,8 @@ logger = structlog.get_logger()
 
 _TIMEOUT = httpx.Timeout(60.0)
 
+IGDB_MAX_RESULTS = 500
+
 _IGDB_MAX_REQUESTS_PER_WINDOW = 4
 _IGDB_RATE_LIMIT_WINDOW_SECONDS = 1.0
 
@@ -273,7 +275,7 @@ async def get_game_videos_on_igdb(
         return []
     body = (
         "fields checksum,game,name,video_id;"
-        f" where game = {_id_list(game_ids)}; limit 500;"
+        f" where game = {_id_list(game_ids)}; limit {IGDB_MAX_RESULTS};"
     )
     return await _query_igdb("game_videos", body, client_id, access_token, list[IGDBGameVideo])
 
