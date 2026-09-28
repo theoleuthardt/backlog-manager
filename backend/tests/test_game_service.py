@@ -1334,15 +1334,15 @@ async def test_search_enriches_trailer_url_preferring_a_video_named_trailer(
         game_ids: list[int], client_id: str, access_token: str
     ) -> list[IGDBGameVideo]:
         return [
-            IGDBGameVideo(id=10, game=1, name="Gameplay", video_id="gameplay0001"),
-            IGDBGameVideo(id=11, game=1, name="Launch Trailer", video_id="trailer00001"),
+            IGDBGameVideo(id=10, game=1, name="Gameplay", video_id="gameplay001"),
+            IGDBGameVideo(id=11, game=1, name="Launch Trailer", video_id="trailer0001"),
         ]
 
     monkeypatch.setattr(game_service, "get_game_videos_on_igdb", fake_get_game_videos_on_igdb)
 
     results = await game_service.search("Celeste", "cid", "secret", None)
 
-    assert results[0].trailer_url == "https://www.youtube.com/watch?v=trailer00001"
+    assert results[0].trailer_url == "https://www.youtube.com/watch?v=trailer0001"
 
 
 async def test_search_falls_back_to_the_first_video_when_none_is_named_trailer(
@@ -1354,15 +1354,61 @@ async def test_search_falls_back_to_the_first_video_when_none_is_named_trailer(
         game_ids: list[int], client_id: str, access_token: str
     ) -> list[IGDBGameVideo]:
         return [
-            IGDBGameVideo(id=10, game=1, name="Gameplay", video_id="gameplay0001"),
-            IGDBGameVideo(id=11, game=1, name="Overview", video_id="overview0001"),
+            IGDBGameVideo(id=10, game=1, name="Gameplay", video_id="gameplay001"),
+            IGDBGameVideo(id=11, game=1, name="Overview", video_id="overview001"),
         ]
 
     monkeypatch.setattr(game_service, "get_game_videos_on_igdb", fake_get_game_videos_on_igdb)
 
     results = await game_service.search("Celeste", "cid", "secret", None)
 
-    assert results[0].trailer_url == "https://www.youtube.com/watch?v=gameplay0001"
+    assert results[0].trailer_url == "https://www.youtube.com/watch?v=gameplay001"
+
+
+async def test_search_skips_videos_whose_id_is_not_a_valid_youtube_id(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _stub_single_game_search(game_service, monkeypatch, [1, 2])
+
+    async def fake_get_game_videos_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameVideo]:
+        return [
+            IGDBGameVideo(id=10, game=1, name="Trailer", video_id="short"),
+            IGDBGameVideo(id=11, game=1, name="Gameplay", video_id="gameplay001"),
+            IGDBGameVideo(id=12, game=2, name="Trailer", video_id="not a valid"),
+        ]
+
+    monkeypatch.setattr(game_service, "get_game_videos_on_igdb", fake_get_game_videos_on_igdb)
+
+    results = await game_service.search("Celeste", "cid", "secret", None)
+
+    trailers = {result.id: result.trailer_url for result in results}
+    assert trailers == {1: "https://www.youtube.com/watch?v=gameplay001", 2: None}
+
+
+async def test_search_does_not_cache_a_missing_trailer_when_the_videos_batch_fails(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _stub_single_game_search(game_service, monkeypatch, [1])
+    attempts = 0
+
+    async def flaky_get_game_videos_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameVideo]:
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            raise httpx.ConnectError("boom")
+        return [IGDBGameVideo(id=10, game=1, name="Trailer", video_id="trailer0001")]
+
+    monkeypatch.setattr(game_service, "get_game_videos_on_igdb", flaky_get_game_videos_on_igdb)
+
+    first = await game_service.search("Celeste", "cid", "secret", None)
+    second = await game_service.search("Celeste", "cid", "secret", None)
+
+    assert first[0].trailer_url is None
+    assert second[0].trailer_url == "https://www.youtube.com/watch?v=trailer0001"
 
 
 async def test_search_leaves_trailer_url_empty_when_igdb_has_no_video(
@@ -1410,7 +1456,7 @@ async def test_search_batches_and_caches_video_lookups(
         game_ids: list[int], client_id: str, access_token: str
     ) -> list[IGDBGameVideo]:
         calls.append(sorted(game_ids))
-        return [IGDBGameVideo(id=10, game=1, name="Trailer", video_id="trailer00001")]
+        return [IGDBGameVideo(id=10, game=1, name="Trailer", video_id="trailer0001")]
 
     monkeypatch.setattr(game_service, "get_game_videos_on_igdb", fake_get_game_videos_on_igdb)
 
@@ -1419,4 +1465,4 @@ async def test_search_batches_and_caches_video_lookups(
 
     assert calls == [[1, 2]]
     trailers = {result.id: result.trailer_url for result in first}
-    assert trailers == {1: "https://www.youtube.com/watch?v=trailer00001", 2: None}
+    assert trailers == {1: "https://www.youtube.com/watch?v=trailer0001", 2: None}

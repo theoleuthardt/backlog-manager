@@ -52,6 +52,8 @@ _SEARCH_RESULT_LIMIT = 20
 # #154, where these were crowding the base game out of the top results.
 _MAIN_GAME_TYPE_RANKS = {0: 0, 8: 1, 9: 1, 10: 1}
 _OTHER_GAME_TYPE_RANK = 2
+
+_YOUTUBE_VIDEO_ID = re.compile(r"[A-Za-z0-9_-]{11}")
 _EXCLUDED_GAME_TYPES = {1, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14}
 
 # Keyed by the full (client_id, client_secret) pair rather than a
@@ -71,8 +73,6 @@ _company_cache: dict[int, str] = {}
 # directly serves issue #105's "cache requests for game information" ask.
 _game_cache: dict[int, IGDBGameData] = {}
 _cover_cache: dict[int, IGDBCover] = {}
-# game id -> YouTube watch URL, or None for a game IGDB has no video for,
-# so a repeat search doesn't re-query games that are known to have none.
 _trailer_cache: dict[int, str | None] = {}
 # hltb_id, main_story, main_story_with_extras, completionist - populated
 # from whichever source (IGDB or the HLTB fallback) resolved a game, so a
@@ -137,8 +137,13 @@ def _is_dlc_like(game: IGDBGameData) -> bool:
 def _pick_trailer_url(videos: list[IGDBGameVideo]) -> str | None:
     """A video whose name contains "trailer" is preferred over the rest
     (IGDB also lists gameplay and overview clips); otherwise the first
-    video with an id wins."""
-    playable = [video for video in videos if video.video_id]
+    video wins. Videos whose id isn't a well-formed YouTube id are
+    skipped, since the stored link is validated against the same
+    pattern (schemas/types.py::YouTubeWatchUrl) when an entry is
+    created from it."""
+    playable = [
+        video for video in videos if video.video_id and _YOUTUBE_VIDEO_ID.fullmatch(video.video_id)
+    ]
     if not playable:
         return None
     chosen = next(

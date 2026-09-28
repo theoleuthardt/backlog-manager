@@ -266,18 +266,16 @@ async def get_games_on_igdb(
 async def get_game_videos_on_igdb(
     game_ids: list[int], client_id: str, access_token: str
 ) -> list[IGDBGameVideo]:
+    """Unlike the sibling lookups, a failed request raises instead of
+    returning [] - the caller caches "this game has no video" and must
+    be able to tell that apart from a transient IGDB error."""
     if not game_ids:
         return []
     body = (
         "fields checksum,game,name,video_id;"
         f" where game = {_id_list(game_ids)}; limit 500;"
     )
-    try:
-        return await _query_igdb(
-            "game_videos", body, client_id, access_token, list[IGDBGameVideo]
-        )
-    except httpx.HTTPStatusError:
-        return []
+    return await _query_igdb("game_videos", body, client_id, access_token, list[IGDBGameVideo])
 
 
 async def get_covers_on_igdb(

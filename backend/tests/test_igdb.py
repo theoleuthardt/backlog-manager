@@ -345,9 +345,10 @@ async def test_get_game_videos_on_igdb_makes_no_request_for_empty_ids(
     assert await get_game_videos_on_igdb([], "cid", "tok") == []
 
 
-async def test_get_game_videos_on_igdb_returns_empty_list_on_error(
+async def test_get_game_videos_on_igdb_raises_on_error_so_callers_do_not_cache_a_miss(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _mock_client(lambda request: httpx.Response(500), monkeypatch)
 
-    assert await get_game_videos_on_igdb([1], "cid", "tok") == []
+    with pytest.raises(httpx.HTTPStatusError):
+        await get_game_videos_on_igdb([1], "cid", "tok")
