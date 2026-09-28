@@ -140,10 +140,12 @@ export async function previewCsvStream(
   content: string,
   config: ColumnConfig,
   onProgress: (progress: CsvImportProgress) => void,
+  signal?: AbortSignal,
 ): Promise<CsvPreviewItem[]> {
   const { response, error } = await apiClient.POST("/api/csv/preview/stream", {
     parseAs: "stream",
     body: toMatchCsvRequestBody(content, config),
+    signal,
   });
   if (error)
     throw new Error(apiErrorMessage(error, "Failed to preview CSV import"));
@@ -174,12 +176,29 @@ export interface SubmitCsvEntry {
   completionTime?: number;
 }
 
+export interface SkippedCsvEntry {
+  title: string;
+  reason: string;
+}
+
+export interface SubmitCsvResult {
+  created: BacklogEntryData[];
+  skipped: SkippedCsvEntry[];
+}
+
+interface SubmitCsvStreamResponse {
+  created: components["schemas"]["BacklogEntryResponse"][];
+  skipped: SkippedCsvEntry[];
+}
+
 export async function submitCsvStream(
   entries: SubmitCsvEntry[],
   onProgress: (progress: CsvImportProgress) => void,
-): Promise<BacklogEntryData[]> {
+  signal?: AbortSignal,
+): Promise<SubmitCsvResult> {
   const { response, error } = await apiClient.POST("/api/csv/submit/stream", {
     parseAs: "stream",
+    signal,
     body: entries.map((entry) => ({
       title: entry.title,
       genre: entry.genre,
@@ -206,9 +225,12 @@ export async function submitCsvStream(
   });
   if (error)
     throw new Error(apiErrorMessage(error, "Failed to submit CSV import"));
-  const created = await streamSse<
-    CsvImportProgress,
-    components["schemas"]["BacklogEntryResponse"][]
-  >(response, { onProgress });
-  return created.map(toEntryData);
+  const result = await streamSse<CsvImportProgress, SubmitCsvStreamResponse>(
+    response,
+    { onProgress },
+  );
+  return {
+    created: result.created.map(toEntryData),
+    skipped: result.skipped,
+  };
 }

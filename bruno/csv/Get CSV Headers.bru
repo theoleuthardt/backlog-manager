@@ -1,0 +1,27 @@
+meta {
+  name: Get CSV Headers
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{backendUrl}}/api/csv/headers
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "content": "Title,Genre,Platform,Status\nElden Ring,RPG,PC,In Progress\nHades,Roguelike,PC,Completed\n"
+  }
+}
+
+docs {
+  Reads just the header row (column letter -> header text) so the
+  import UI can label each column picker with its real name instead of
+  a blind spreadsheet letter. Run auth/Login first.
+}

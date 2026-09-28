@@ -2,7 +2,9 @@ import asyncio
 import contextlib
 from collections.abc import AsyncIterator, Awaitable, Callable
 
+import httpx
 import msgspec
+import structlog
 from cryptography.fernet import InvalidToken
 from litestar import Router, post
 from litestar.datastructures import CacheControlHeader
@@ -20,11 +22,13 @@ from backlog_manager_backend.csv.parse_csv import (
 from backlog_manager_backend.csv.preview import (
     CsvPreviewItem,
     ProgressCallback,
+    SkippedCsvEntry,
     SubmitCsvEntry,
     build_csv_preview,
     submit_csv_entries,
 )
 from backlog_manager_backend.db import async_session
+from backlog_manager_backend.errors import ConflictError, NotFoundError, ValidationError
 from backlog_manager_backend.integrations.types import IGDBCredentials
 from backlog_manager_backend.schemas.backlog_entry import BacklogEntryResponse
 from backlog_manager_backend.schemas.csv import (
@@ -34,10 +38,14 @@ from backlog_manager_backend.schemas.csv import (
 )
 from backlog_manager_backend.schemas.user import User
 
+logger = structlog.get_logger()
+
 _NO_STORE = CacheControlHeader(no_store=True)
 _SSE_DONE = "done"
 _SSE_ERROR = "error"
 _SSE_PROGRESS = "progress"
+_EXTERNAL_SERVICE_UNAVAILABLE = "An external game database is currently unavailable"
+_IMPORT_FAILED = "Import failed - check the server logs for details"
 
 _user_import_locks: dict[int, asyncio.Lock] = {}
 
@@ -101,9 +109,9 @@ def _column_config(data: MatchCsvRequest) -> ColumnConfig:
     )
 
 
-async def _stream_csv_messages[T](
-    run: Callable[[ProgressCallback], Awaitable[list[T]]],
-    encode_result: Callable[[list[T]], str],
+async def _stream_csv_messages[R](
+    run: Callable[[ProgressCallback], Awaitable[R]],
+    encode_result: Callable[[R], str],
 ) -> AsyncIterator[ServerSentEventMessage]:
     """SSE bridge for the CSV preview/submit endpoints - mirrors
     routes/steam.py's `_stream_steam_messages` (kept as a separate copy
@@ -121,12 +129,24 @@ async def _stream_csv_messages[T](
 
     async def run_operation() -> None:
         """Any failure is reported as an SSE error event rather than
-        left to crash the stream - hence the broad except."""
+        left to crash the stream - hence the broad except. Only known
+        domain errors (raised with an already-safe, user-facing
+        message) are forwarded as-is; anything else - an unexpected
+        internal or driver exception - is logged server-side and
+        reported generically, since its str() can carry raw SQL/driver
+        detail that must not reach the client."""
         try:
             result = await run(on_progress)
             await queue.put(ServerSentEventMessage(event=_SSE_DONE, data=encode_result(result)))
-        except Exception as error:  # noqa: BLE001
+        except (ConflictError, NotFoundError, ValidationError) as error:
             await queue.put(ServerSentEventMessage(event=_SSE_ERROR, data=str(error)))
+        except httpx.HTTPError:
+            await queue.put(
+                ServerSentEventMessage(event=_SSE_ERROR, data=_EXTERNAL_SERVICE_UNAVAILABLE)
+            )
+        except Exception as error:  # noqa: BLE001
+            logger.error("CSV import stream failed", error=str(error))
+            await queue.put(ServerSentEventMessage(event=_SSE_ERROR, data=_IMPORT_FAILED))
         finally:
             await queue.put(None)
 
@@ -182,6 +202,11 @@ async def preview_csv_stream(data: MatchCsvRequest, current_user: NamedDependenc
     )
 
 
+class SubmitCsvStreamResult(msgspec.Struct):
+    created: list[BacklogEntryResponse]
+    skipped: list[SkippedCsvEntry]
+
+
 @post("/api/csv/submit/stream", status_code=200, media_type="text/event-stream")
 async def submit_csv_stream(
     data: list[SubmitCsvEntry], current_user: NamedDependency[User]
@@ -192,13 +217,16 @@ async def submit_csv_stream(
     recomputing anything server-side."""
     lock = _get_user_import_lock(current_user.id)
 
-    async def run(on_progress: ProgressCallback) -> list[BacklogEntryResponse]:
+    async def run(on_progress: ProgressCallback) -> SubmitCsvStreamResult:
         async with lock, async_session() as db_session:
-            created = await submit_csv_entries(db_session, current_user.id, data, on_progress)
-            return [BacklogEntryResponse.from_entry(entry) for entry in created]
+            result = await submit_csv_entries(db_session, current_user.id, data, on_progress)
+            return SubmitCsvStreamResult(
+                created=[BacklogEntryResponse.from_entry(entry) for entry in result.created],
+                skipped=result.skipped,
+            )
 
     return ServerSentEvent(
-        _stream_csv_messages(run, lambda items: msgspec.json.encode(items).decode())
+        _stream_csv_messages(run, lambda result: msgspec.json.encode(result).decode())
     )
 
 

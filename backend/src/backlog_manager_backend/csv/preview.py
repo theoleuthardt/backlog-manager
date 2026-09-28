@@ -9,7 +9,7 @@ import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.csv.field_parsing import clamp_rating, parse_completed_at
-from backlog_manager_backend.csv.parse_csv import ColumnConfig, CSVRecord, _safe_string
+from backlog_manager_backend.csv.parse_csv import ColumnConfig, CSVRecord, safe_string
 from backlog_manager_backend.csv.platform_mapping import PlatformMapping, normalize_platform
 from backlog_manager_backend.csv.status_mapping import StatusMapping, normalize_status
 from backlog_manager_backend.errors import (
@@ -393,45 +393,45 @@ async def build_csv_preview(
 
     parsed_rows: list[_ParsedRow] = []
     for row_index, record in enumerate(records, start=1):
-        title = _safe_string(record.get(config.title_column), "").strip()
+        title = safe_string(record.get(config.title_column), "").strip()
         if not title:
             await tick()
             continue
 
-        genre_raw = _safe_string(record.get(config.genre_column), "").strip()
+        genre_raw = safe_string(record.get(config.genre_column), "").strip()
 
-        platform_raw = _safe_string(record.get(config.platform_column), "").strip()
+        platform_raw = safe_string(record.get(config.platform_column), "").strip()
         platform_mapping = (
             normalize_platform(platform_raw) if platform_raw else PlatformMapping(platform=[], owned=True)
         )
 
-        status_mapping = normalize_status(_safe_string(record.get(config.status_column), ""))
+        status_mapping = normalize_status(safe_string(record.get(config.status_column), ""))
 
         playtime = (
-            _parse_decimal(_safe_string(record.get(config.playtime_column), ""))
+            _parse_decimal(safe_string(record.get(config.playtime_column), ""))
             if config.playtime_column
             else None
         )
         review_stars = (
-            clamp_rating(_safe_string(record.get(config.rating_column), ""))
+            clamp_rating(safe_string(record.get(config.rating_column), ""))
             if config.rating_column
             else None
         )
         completed_at = (
-            parse_completed_at(_safe_string(record.get(config.completed_at_column), ""))
+            parse_completed_at(safe_string(record.get(config.completed_at_column), ""))
             if config.completed_at_column
             else None
         )
 
         note_parts = [status_mapping.note, platform_mapping.note]
         for column in config.note_columns:
-            value = _safe_string(record.get(column), "").strip()
+            value = safe_string(record.get(column), "").strip()
             if value:
                 note_parts.append(f"{headers.get(column, column)}: {value}")
         note = _join_note(*note_parts)
 
         review_parts = [
-            _safe_string(record.get(column), "").strip() for column in config.review_columns
+            safe_string(record.get(column), "").strip() for column in config.review_columns
         ]
         review = _join_note(*review_parts)
 
@@ -507,20 +507,48 @@ async def build_csv_preview(
     return items
 
 
+class SkippedCsvEntry(msgspec.Struct):
+    title: str
+    reason: str
+
+
+class SubmitCsvResult(msgspec.Struct):
+    created: list[BacklogEntry]
+    skipped: list[SkippedCsvEntry]
+
+
+def _skip_reason(error: ConflictError | NotFoundError | ValidationError | DatabaseError) -> str:
+    """DatabaseError's message embeds the wrapped driver/SQL cause (see
+    errors.py) - safe for server logs, not for a client-facing skip
+    reason. The other three are raised with a controlled, already-safe
+    message."""
+    if isinstance(error, DatabaseError):
+        return "Database error - see server logs for details"
+    return str(error)
+
+
 async def submit_csv_entries(
     session: AsyncSession,
     user_id: int,
     entries: list[SubmitCsvEntry],
     on_progress: ProgressCallback | None = None,
-) -> list[BacklogEntry]:
+) -> SubmitCsvResult:
     """Creates one backlog entry per confirmed preview row. Mirrors
     steam_service.import_library's per-row error handling: a
     ConflictError from the DB's unique constraint (steam_app_id-based,
     rarely hit by CSV rows) is treated as already-imported and skipped
     rather than failing the whole submit, and the same goes for any
     other per-row failure - one bad row must not discard every row
-    after it."""
+    after it. Skipped rows are reported back (title + reason) rather
+    than only logged, so the user can see which rows a 1000+-row import
+    silently dropped and why. `completed_at` is only passed through for
+    rows normalized to "Completed" - the DB trigger clears the column
+    on every UPDATE where status isn't Completed, and passing it
+    through unconditionally on INSERT would create the same
+    inconsistent state (a non-Completed row with a completion date)
+    the trigger exists to prevent."""
     created: list[BacklogEntry] = []
+    skipped: list[SkippedCsvEntry] = []
     total = len(entries)
 
     for index, entry in enumerate(entries, start=1):
@@ -547,13 +575,16 @@ async def submit_csv_entries(
                         ),
                         note=entry.note,
                         review=entry.review,
-                        completed_at=entry.completed_at,
+                        completed_at=(
+                            entry.completed_at if entry.status == "Completed" else None
+                        ),
                     ),
                 )
             )
         except (ConflictError, NotFoundError, ValidationError, DatabaseError) as error:
             logger.warning("Skipping CSV row during submit", title=entry.title, error=str(error))
+            skipped.append(SkippedCsvEntry(title=entry.title, reason=_skip_reason(error)))
         if on_progress:
             await on_progress(index, total)
 
-    return created
+    return SubmitCsvResult(created=created, skipped=skipped)

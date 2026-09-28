@@ -16,10 +16,14 @@ import {
 } from "~/hooks/useCsvImport";
 import { DEFAULT_STATUSES } from "~/lib/api/backlog";
 import type { GameSearchResult } from "~/lib/api/games";
-import type { ColumnConfig, CsvPreviewItem } from "~/lib/api/csv";
+import type { ColumnConfig, CsvPreviewItem, SkippedCsvEntry } from "~/lib/api/csv";
 
 const FILLED_BUTTON =
   "border-2 border-white bg-white text-black hover:bg-gray-900 hover:text-white";
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === "AbortError";
+}
 
 const DEFAULT_CONFIG: ColumnConfig = {
   titleColumn: "A",
@@ -281,10 +285,11 @@ const PreviewRow = memo(function PreviewRow({
         )}
         {item.note && <span>Note: {item.note}</span>}
         {item.review && <span>Review: {item.review}</span>}
-        {!item.matched && (
-          <span className="text-yellow-400">
-            No match found - will import without cover/times
-          </span>
+        {!item.imageLink && (
+          <span className="text-yellow-400">No cover found</span>
+        )}
+        {item.mainTime === undefined && (
+          <span className="text-yellow-400">No beat times found</span>
         )}
       </div>
       <DuplicateWarning item={item} />
@@ -304,6 +309,8 @@ export const ImportCSVContent = () => {
   const [coverPickerRowIndex, setCoverPickerRowIndex] = useState<number | null>(
     null,
   );
+  const [skippedEntries, setSkippedEntries] = useState<SkippedCsvEntry[]>([]);
+  const [skippedExpanded, setSkippedExpanded] = useState(false);
 
   const csvHeaders = useCsvHeaders();
   const csvPreview = useCsvPreviewStream();
@@ -323,6 +330,7 @@ export const ImportCSVContent = () => {
 
     setPreview(null);
     setHeaders(null);
+    setSkippedEntries([]);
     try {
       const fileContent = await file.text();
       setContent(fileContent);
@@ -345,6 +353,10 @@ export const ImportCSVContent = () => {
         toast.info("No rows with a title found to preview");
       }
     } catch (error) {
+      if (isAbortError(error)) {
+        toast.info("Preview cancelled");
+        return;
+      }
       toast.error(
         error instanceof Error ? error.message : "Failed to preview CSV import",
       );
@@ -354,7 +366,7 @@ export const ImportCSVContent = () => {
   const handleSubmit = async () => {
     if (!preview || preview.length === 0) return;
     try {
-      const created = await csvSubmit.run(
+      const result = await csvSubmit.run(
         preview.map((item) => ({
           title: item.title,
           genre: item.genre,
@@ -373,13 +385,22 @@ export const ImportCSVContent = () => {
           completionTime: item.completionTime,
         })),
       );
+      const createdCount = result.created.length;
+      const skippedCount = result.skipped.length;
       toast.success(
-        `Imported ${created.length} backlog entr${created.length === 1 ? "y" : "ies"}`,
+        skippedCount > 0
+          ? `Imported ${createdCount} backlog entr${createdCount === 1 ? "y" : "ies"}, skipped ${skippedCount}`
+          : `Imported ${createdCount} backlog entr${createdCount === 1 ? "y" : "ies"}`,
       );
+      setSkippedEntries(result.skipped);
       setPreview(null);
       setContent(null);
       setHeaders(null);
     } catch (error) {
+      if (isAbortError(error)) {
+        toast.info("Import cancelled");
+        return;
+      }
       toast.error(
         error instanceof Error ? error.message : "Failed to submit CSV import",
       );
@@ -426,7 +447,7 @@ export const ImportCSVContent = () => {
 
   const handleCoverSelected = (url: string) => {
     if (coverPickerRowIndex === null) return;
-    updateRow(coverPickerRowIndex, { imageLink: url, matched: true });
+    updateRow(coverPickerRowIndex, { imageLink: url });
     setCoverPickerRowIndex(null);
   };
 
@@ -466,6 +487,36 @@ export const ImportCSVContent = () => {
         className="hidden"
         onChange={(e) => void handleFileChange(e)}
       />
+
+      {skippedEntries.length > 0 && (
+        <div className="border-destructive/50 bg-destructive/10 w-full max-w-3xl rounded-lg border p-4 text-sm">
+          <button
+            type="button"
+            onClick={() => setSkippedExpanded(!skippedExpanded)}
+            className="text-destructive flex w-full items-center gap-1.5 text-left font-semibold"
+          >
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            {skippedEntries.length} row{skippedEntries.length === 1 ? "" : "s"}{" "}
+            skipped during import
+            {skippedExpanded ? (
+              <ChevronUp className="ml-auto h-4 w-4" />
+            ) : (
+              <ChevronDown className="ml-auto h-4 w-4" />
+            )}
+          </button>
+          {skippedExpanded && (
+            <ul className="border-destructive/30 mt-2 space-y-1 border-t pt-2">
+              {skippedEntries.map((entry, index) => (
+                <li key={`${entry.title}-${index}`}>
+                  <span className="font-medium">{entry.title}</span>
+                  {" - "}
+                  {entry.reason}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {headers && (
         <div className="w-full max-w-3xl rounded-lg border-2 border-white bg-black p-6">
@@ -536,17 +587,24 @@ export const ImportCSVContent = () => {
             onChange={(noteColumns) => setConfig({ ...config, noteColumns })}
           />
 
-          <Button
-            className={`${FILLED_BUTTON} mt-6`}
-            onClick={() => void handlePreview()}
-            disabled={isBusy}
-          >
-            {csvPreview.isRunning
-              ? csvPreview.progress
-                ? `Loading ${csvPreview.progress.processed}/${csvPreview.progress.total}...`
-                : "Loading preview..."
-              : "Preview import"}
-          </Button>
+          <div className="mt-6 flex items-center gap-3">
+            <Button
+              className={FILLED_BUTTON}
+              onClick={() => void handlePreview()}
+              disabled={isBusy}
+            >
+              {csvPreview.isRunning
+                ? csvPreview.progress
+                  ? `Loading ${csvPreview.progress.processed}/${csvPreview.progress.total}...`
+                  : "Loading preview..."
+                : "Preview import"}
+            </Button>
+            {csvPreview.isRunning && (
+              <Button variant="destructive" onClick={csvPreview.cancel}>
+                Cancel
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
@@ -557,17 +615,24 @@ export const ImportCSVContent = () => {
               Preview ({preview.length} entr{preview.length === 1 ? "y" : "ies"}
               )
             </h2>
-            <Button
-              className={FILLED_BUTTON}
-              onClick={() => void handleSubmit()}
-              disabled={isBusy || preview.length === 0}
-            >
-              {csvSubmit.isRunning
-                ? csvSubmit.progress
-                  ? `Importing ${csvSubmit.progress.processed}/${csvSubmit.progress.total}...`
-                  : "Importing..."
-                : "Submit import"}
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button
+                className={FILLED_BUTTON}
+                onClick={() => void handleSubmit()}
+                disabled={isBusy || preview.length === 0}
+              >
+                {csvSubmit.isRunning
+                  ? csvSubmit.progress
+                    ? `Importing ${csvSubmit.progress.processed}/${csvSubmit.progress.total}...`
+                    : "Importing..."
+                  : "Submit import"}
+              </Button>
+              {csvSubmit.isRunning && (
+                <Button variant="destructive" onClick={csvSubmit.cancel}>
+                  Cancel
+                </Button>
+              )}
+            </div>
           </div>
           <div className="max-h-[32rem] overflow-y-auto rounded-lg border border-white/20">
             {preview.map((item) => (

@@ -58,7 +58,7 @@ def parse_csv_content(file_content: str) -> list[CSVRecord]:
     return records
 
 
-def _safe_string(value: object, default: str = "") -> str:
+def safe_string(value: object, default: str = "") -> str:
     if isinstance(value, str):
         return value
     if value is None:

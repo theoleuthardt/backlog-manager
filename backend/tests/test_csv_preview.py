@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.csv import preview
 from backlog_manager_backend.csv.parse_csv import ColumnConfig
-from backlog_manager_backend.errors import ConflictError
+from backlog_manager_backend.errors import ConflictError, DatabaseError
 from backlog_manager_backend.integrations.types import EnrichedResult, HltbResultData
 from backlog_manager_backend.repositories import backlog_entry_repo, user_repo
 from backlog_manager_backend.schemas.backlog_entry import CreateBacklogEntryParams
@@ -329,7 +329,7 @@ async def test_build_csv_preview_carries_igdb_description_through_to_submit(
 
     assert items[0].description == "Help Madeline survive her inner journey."
 
-    created = await preview.submit_csv_entries(
+    result = await preview.submit_csv_entries(
         session,
         user.id,
         [
@@ -344,7 +344,7 @@ async def test_build_csv_preview_carries_igdb_description_through_to_submit(
         ],
     )
 
-    assert created[0].description == "Help Madeline survive her inner journey."
+    assert result.created[0].description == "Help Madeline survive her inner journey."
 
 
 async def test_build_csv_preview_retries_igdb_after_a_transient_error(
@@ -643,7 +643,7 @@ async def test_build_csv_preview_matches_games_concurrently(
 async def test_submit_csv_entries_creates_confirmed_rows(session: AsyncSession) -> None:
     user = await _make_user(session)
 
-    created = await preview.submit_csv_entries(
+    result = await preview.submit_csv_entries(
         session,
         user.id,
         [
@@ -664,14 +664,44 @@ async def test_submit_csv_entries_creates_confirmed_rows(session: AsyncSession) 
         ],
     )
 
-    assert len(created) == 1
-    assert created[0].title == "Celeste"
-    assert created[0].platform == "PC"
-    assert created[0].completed_at == _COMPLETED_AT
-    assert created[0].review == "Loved the ending"
+    assert len(result.created) == 1
+    assert result.created[0].title == "Celeste"
+    assert result.created[0].platform == "PC"
+    assert result.created[0].completed_at == _COMPLETED_AT
+    assert result.created[0].review == "Loved the ending"
+    assert result.skipped == []
 
     entries = await backlog_entry_repo.get_backlog_entries_by_user(session, user.id)
     assert len(entries) == 1
+
+
+async def test_submit_csv_entries_clears_completed_at_for_a_non_completed_status(
+    session: AsyncSession,
+) -> None:
+    """A sheet row can carry a completion date alongside a status the
+    sheet's own normalization didn't map to "Completed" (e.g. a status
+    qualifier note like "Playing (Backseat)") - passing completed_at
+    through unconditionally would create a state the DB trigger's own
+    invariant (no completion date on a non-Completed row) forbids on
+    every subsequent UPDATE."""
+    user = await _make_user(session)
+
+    result = await preview.submit_csv_entries(
+        session,
+        user.id,
+        [
+            preview.SubmitCsvEntry(
+                title="Celeste",
+                genre="Platformer",
+                platform=["PC"],
+                status="In Progress",
+                owned=True,
+                completed_at=_COMPLETED_AT,
+            )
+        ],
+    )
+
+    assert result.created[0].completed_at is None
 
 
 async def test_submit_csv_entries_skips_conflicting_rows_without_failing_the_rest(
@@ -689,7 +719,7 @@ async def test_submit_csv_entries_skips_conflicting_rows_without_failing_the_res
 
     monkeypatch.setattr(preview, "create_backlog_entry", fake_create)
 
-    created = await preview.submit_csv_entries(
+    result = await preview.submit_csv_entries(
         session,
         user.id,
         [
@@ -702,5 +732,34 @@ async def test_submit_csv_entries_skips_conflicting_rows_without_failing_the_res
         ],
     )
 
-    assert len(created) == 1
-    assert created[0].title == "Hades"
+    assert len(result.created) == 1
+    assert result.created[0].title == "Hades"
+    assert len(result.skipped) == 1
+    assert result.skipped[0].title == "Celeste"
+    assert result.skipped[0].reason == "already exists"
+
+
+async def test_submit_csv_entries_reports_a_generic_reason_for_a_database_error(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """DatabaseError's message embeds the wrapped driver/SQL cause -
+    fine for the server log, not for a client-facing skip reason."""
+    user = await _make_user(session)
+
+    async def fake_create(session: AsyncSession, params: CreateBacklogEntryParams) -> object:
+        raise DatabaseError("create_backlog_entry", cause="duplicate key value violates ...")
+
+    monkeypatch.setattr(preview, "create_backlog_entry", fake_create)
+
+    result = await preview.submit_csv_entries(
+        session,
+        user.id,
+        [
+            preview.SubmitCsvEntry(
+                title="Celeste", genre="Platformer", platform=["PC"], status="Not Started", owned=True
+            )
+        ],
+    )
+
+    assert result.created == []
+    assert result.skipped[0].reason == "Database error - see server logs for details"

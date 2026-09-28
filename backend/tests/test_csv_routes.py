@@ -150,8 +150,9 @@ async def test_submit_csv_stream_creates_entries(postgres_url: str, create_and_l
     messages = _parse_sse(response.text)
     done_events = [json.loads(data) for event, data in messages if event == "done"]
     assert len(done_events) == 1
-    assert done_events[0][0]["title"] == "Celeste"
-    assert done_events[0][0]["status"] == "Completed"
+    assert done_events[0]["created"][0]["title"] == "Celeste"
+    assert done_events[0]["created"][0]["status"] == "Completed"
+    assert done_events[0]["skipped"] == []
 
     assert entries_response.status_code == 200
     assert entries_response.json()[0]["title"] == "Celeste"
@@ -208,3 +209,34 @@ async def test_stream_csv_messages_cancels_the_background_task_on_early_exit() -
     await asyncio.sleep(0)
 
     assert reached_the_end is False
+
+
+async def _drain_error(run: object) -> str:
+    from backlog_manager_backend.routes.csv import _stream_csv_messages
+
+    messages = [message async for message in _stream_csv_messages(run, lambda items: "[]")]
+    error_messages = [message for message in messages if message.event == "error"]
+    assert len(error_messages) == 1
+    return error_messages[0].data or ""
+
+
+async def test_stream_csv_messages_forwards_a_known_domain_error_as_is() -> None:
+    from backlog_manager_backend.errors import ValidationError
+
+    async def run(on_progress: object) -> list[object]:
+        raise ValidationError("Referenced resource does not exist")
+
+    assert await _drain_error(run) == "Referenced resource does not exist"
+
+
+async def test_stream_csv_messages_hides_an_unexpected_error_behind_a_generic_message() -> None:
+    """An unexpected exception's str() can carry raw internal/driver
+    detail (see errors.py's DatabaseError) - must never reach the
+    client verbatim, unlike a deliberately-raised domain error."""
+
+    async def run(on_progress: object) -> list[object]:
+        raise RuntimeError("relation \"BacklogEntries\" column \"Secret\" leaked")
+
+    error_text = await _drain_error(run)
+    assert "Secret" not in error_text
+    assert error_text == "Import failed - check the server logs for details"

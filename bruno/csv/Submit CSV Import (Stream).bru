@@ -1,0 +1,43 @@
+meta {
+  name: Submit CSV Import (Stream)
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{backendUrl}}/api/csv/submit/stream
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  [
+    {
+      "title": "Elden Ring",
+      "genre": "RPG",
+      "platform": ["PC"],
+      "status": "In Progress",
+      "owned": true
+    }
+  ]
+}
+
+docs {
+  SSE submit (media_type: text/event-stream) - Bruno's plain HTTP
+  request type will just return the raw event-stream body once the
+  connection closes, not live progress. Creates one backlog entry per
+  confirmed preview row from "Preview CSV Import (Stream)" - the body
+  is the client-confirmed row list, nothing is recomputed server-side.
+  Run auth/Login first.
+
+  Emits a `progress` event per row processed, then a `done` event
+  carrying {created: BacklogEntryResponse[], skipped: [{title,
+  reason}]} - a per-row failure (e.g. a duplicate steam_app_id, or a
+  field exceeding its DB column length) is skipped rather than failing
+  the whole submit, and reported back with its title and reason
+  instead of only being logged server-side.
+}
