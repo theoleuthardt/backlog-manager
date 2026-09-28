@@ -9,6 +9,9 @@ import { Label } from "~/components/ui/label";
 import { Spinner } from "~/components/ui/spinner";
 import { useAuth } from "~/app/context/AuthContext";
 
+const APP_BUTTON =
+  "border-2 border-white bg-black text-white hover:bg-white hover:text-black";
+
 const FormError = ({ message }: { message: string | null }) =>
   message && (
     <p
@@ -86,10 +89,20 @@ export default function LoginPage() {
         description="You are already signed in."
       >
         <div className="flex flex-col gap-3">
-          <Button size="lg" onClick={() => router.push("/dashboard")}>
+          <Button
+            size="lg"
+            variant="outline"
+            className={APP_BUTTON}
+            onClick={() => router.push("/dashboard")}
+          >
             Go to Dashboard
           </Button>
-          <Button size="lg" variant="outline" onClick={logout}>
+          <Button
+            size="lg"
+            variant="outline"
+            className={APP_BUTTON}
+            onClick={logout}
+          >
             Sign out
           </Button>
         </div>
@@ -120,7 +133,13 @@ export default function LoginPage() {
               className="h-11 text-center tracking-widest"
             />
           </div>
-          <Button type="submit" size="lg" disabled={isSubmitting}>
+          <Button
+            type="submit"
+            size="lg"
+            variant="outline"
+            className={APP_BUTTON}
+            disabled={isSubmitting}
+          >
             {isSubmitting && <Spinner />}
             {isSubmitting ? "Verifying..." : "Verify"}
           </Button>
@@ -134,7 +153,7 @@ export default function LoginPage() {
 
   return (
     <AuthCard
-      title="Welcome back"
+      title="Welcome back!"
       description="Log in to access your dashboard and manage your backlog."
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -167,7 +186,13 @@ export default function LoginPage() {
             className="h-11"
           />
         </div>
-        <Button type="submit" size="lg" disabled={isSubmitting}>
+        <Button
+          type="submit"
+          size="lg"
+          variant="outline"
+          className={APP_BUTTON}
+          disabled={isSubmitting}
+        >
           {isSubmitting && <Spinner />}
           {isSubmitting ? "Logging in..." : "Login"}
         </Button>

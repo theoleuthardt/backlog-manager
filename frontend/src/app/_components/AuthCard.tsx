@@ -32,8 +32,12 @@ export const AuthCard = ({ title, description, children }: AuthCardProps) => (
         Backlog-Manager
       </Link>
       <section className="bg-card text-card-foreground border-border surface-glow w-full max-w-md rounded-2xl border p-8 shadow-lg">
-        <h1 className="text-3xl font-extrabold tracking-tight">{title}</h1>
-        <p className="text-muted-foreground mt-2 mb-6 text-sm">{description}</p>
+        <h1 className="text-center text-3xl font-extrabold tracking-tight">
+          {title}
+        </h1>
+        <p className="text-muted-foreground mt-2 mb-6 text-center text-sm">
+          {description}
+        </p>
         {children}
       </section>
     </main>
