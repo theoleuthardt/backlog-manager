@@ -63,7 +63,7 @@ _TIMEOUT = httpx.Timeout(15.0)
 _CACHE_MAX_BYTES = 1024 * 1024 * 1024
 
 _CACHE_HEADERS = {
-    "Cache-Control": "public, max-age=86400, immutable",
+    "Cache-Control": "public, max-age=2592000, immutable",
     "Access-Control-Allow-Origin": "*",
 }
 
