@@ -119,6 +119,17 @@ def _needs_genre_fallback(genre_raw: str) -> bool:
     return not genre_raw or genre_raw.lower() in _GENRE_PLACEHOLDERS
 
 
+def _is_retryable_igdb_error(error: httpx.HTTPError | RuntimeError) -> bool:
+    """429 and 5xx are IGDB's own transient-failure signals; a 4xx other
+    than 429 (e.g. 401 from invalid credentials) or a RuntimeError (e.g.
+    an empty access token) won't succeed on retry, so the row fails
+    immediately instead of wasting _MATCH_RETRY_ATTEMPTS on something
+    that can't change mid-import."""
+    if isinstance(error, httpx.HTTPStatusError):
+        return error.response.status_code == 429 or error.response.status_code >= 500
+    return isinstance(error, httpx.HTTPError)
+
+
 async def _search_igdb_with_retry(
     title: str,
     client_id: str,
@@ -143,8 +154,8 @@ async def _search_igdb_with_retry(
                 include_platforms=False,
                 include_publisher=False,
             )
-        except (httpx.HTTPError, RuntimeError):
-            if attempt == _MATCH_RETRY_ATTEMPTS - 1:
+        except (httpx.HTTPError, RuntimeError) as error:
+            if not _is_retryable_igdb_error(error) or attempt == _MATCH_RETRY_ATTEMPTS - 1:
                 return []
             await asyncio.sleep(_MATCH_RETRY_BACKOFF_SECONDS * (attempt + 1))
     return []
@@ -194,6 +205,25 @@ async def _match_game(
     return None
 
 
+async def _validated_igdb_credentials(
+    igdb_credentials: tuple[str, str] | None,
+) -> tuple[str, str] | None:
+    """Resolves a token for `igdb_credentials` once, up front, rather
+    than letting every row's _search_igdb_with_retry independently
+    discover the same invalid client_id/client_secret pair (get_valid_token
+    caches successes, not failures, so an unvalidated pair would retry
+    and fail identically on every single row of a bulk import)."""
+    if igdb_credentials is None:
+        return None
+    client_id, client_secret = igdb_credentials
+    try:
+        await game_service.get_valid_token(client_id, client_secret)
+    except (httpx.HTTPError, RuntimeError) as error:
+        logger.warning("IGDB credentials invalid for CSV import", error=str(error))
+        return None
+    return igdb_credentials
+
+
 async def _match_all_games(
     rows: list[tuple[str, bool]],
     igdb_credentials: tuple[str, str] | None,
@@ -235,6 +265,16 @@ def _join_note(*parts: str | None) -> str | None:
     return joined or None
 
 
+def _format_decimal(value: Decimal | None) -> str:
+    """Normalizes trailing zeros (e.g. `12.50` vs `12.5`) so numerically
+    identical values compare equal as diff strings; `format(..., "f")`
+    keeps the result in fixed-point notation even when `normalize()`
+    itself would switch to scientific notation (e.g. `Decimal("100")`)."""
+    if value is None:
+        return ""
+    return format(value.normalize(), "f")
+
+
 def _diff_entry(
     existing: BacklogEntry,
     genre: str,
@@ -253,8 +293,8 @@ def _diff_entry(
         "status": (existing.status, status),
         "owned": (str(existing.owned), str(owned)),
         "playtime": (
-            str(existing.playtime) if existing.playtime is not None else "",
-            str(playtime) if playtime is not None else "",
+            _format_decimal(existing.playtime),
+            _format_decimal(playtime),
         ),
         "review_stars": (
             str(existing.review_stars) if existing.review_stars is not None else "",
@@ -406,9 +446,10 @@ async def build_csv_preview(
             )
         )
 
+    validated_igdb_credentials = await _validated_igdb_credentials(igdb_credentials)
     matches = await _match_all_games(
         [(row.title, _needs_genre_fallback(row.genre_raw)) for row in parsed_rows],
-        igdb_credentials,
+        validated_igdb_credentials,
         steamgriddb_api_key,
         tick,
     )

@@ -42,8 +42,10 @@ import {
   Rocket,
 } from "lucide-react";
 import { StatusSelect } from "components/StatusSelect";
+import { FieldDiffList } from "components/FieldDiffList";
 import { useCreateBacklogEntry } from "~/hooks/useBacklog";
 import { getEntryDuplicates } from "~/lib/api/backlog";
+import { computeFieldDiffs } from "~/lib/diffFields";
 import { MAX_REVIEW_STARS } from "~/lib/reviewStars";
 import type { BacklogEntryData, CreateBacklogEntryInput } from "~/lib/api/backlog";
 import { useSteamAppId, useSteamPlaytime } from "~/hooks/useGameSearch";
@@ -140,6 +142,8 @@ export function CreationToolForm() {
 
   const createEntryMutation = useCreateBacklogEntry();
   const [duplicates, setDuplicates] = useState<BacklogEntryData[] | null>(null);
+  const [duplicatePayload, setDuplicatePayload] =
+    useState<CreateBacklogEntryInput | null>(null);
 
   const buildPayload = (): CreateBacklogEntryInput => ({
     title: title.trim(),
@@ -174,10 +178,12 @@ export function CreationToolForm() {
   };
 
   const handleAddAnyway = async () => {
+    const payload = duplicatePayload ?? buildPayload();
     setDuplicates(null);
+    setDuplicatePayload(null);
     setIsLoading(true);
     try {
-      await createEntry(buildPayload());
+      await createEntry(payload);
     } catch (error) {
       console.error("Error creating backlog entry:", error);
       setCreateStatus("error");
@@ -223,6 +229,7 @@ export function CreationToolForm() {
       );
       if (found.length > 0) {
         setDuplicates(found);
+        setDuplicatePayload(payload);
         return;
       }
       await createEntry(payload);
@@ -680,7 +687,10 @@ export function CreationToolForm() {
       <AlertDialog
         open={duplicates !== null}
         onOpenChange={(open) => {
-          if (!open) setDuplicates(null);
+          if (!open) {
+            setDuplicates(null);
+            setDuplicatePayload(null);
+          }
         }}
       >
         <AlertDialogContent>
@@ -691,16 +701,44 @@ export function CreationToolForm() {
                 You already have {duplicates?.length}{" "}
                 {duplicates?.length === 1 ? "entry" : "entries"} for this game
                 in your backlog:
-                <ul className="mt-2 list-disc pl-5">
+                <div className="mt-2 max-h-72 space-y-3 overflow-y-auto">
                   {duplicates?.map((duplicate) => (
-                    <li key={duplicate.id}>
-                      <span className="font-semibold">{duplicate.title}</span>
-                      {duplicate.platform.length > 0 &&
-                        ` (${duplicate.platform.join(", ")}, ${duplicate.status})`}
-                    </li>
+                    <div key={duplicate.id}>
+                      <p className="font-semibold text-white">
+                        {duplicate.title}
+                        {duplicate.platform.length > 0 &&
+                          ` (${duplicate.platform.join(", ")}, ${duplicate.status})`}
+                      </p>
+                      {duplicatePayload && (
+                        <div className="mt-1">
+                          <FieldDiffList
+                            diffs={computeFieldDiffs(
+                              {
+                                genre: duplicate.genre,
+                                platform: duplicate.platform,
+                                status: duplicate.status,
+                                owned: duplicate.owned,
+                                playtime: duplicate.playtime,
+                                reviewStars: duplicate.reviewStars,
+                                note: duplicate.note,
+                              },
+                              {
+                                genre: duplicatePayload.genre,
+                                platform: duplicatePayload.platform,
+                                status: duplicatePayload.status,
+                                owned: duplicatePayload.owned,
+                                playtime: duplicatePayload.playtime,
+                                reviewStars: duplicatePayload.reviewStars,
+                                note: duplicatePayload.note,
+                              },
+                            )}
+                          />
+                        </div>
+                      )}
+                    </div>
                   ))}
-                </ul>
-                Do you want to add this game anyway?
+                </div>
+                <p className="mt-3">Do you want to add this game anyway?</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>

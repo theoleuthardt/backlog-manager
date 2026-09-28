@@ -1,6 +1,10 @@
 import msgspec
 
 
+class CsvHeadersRequest(msgspec.Struct):
+    content: str
+
+
 class MatchCsvRequest(msgspec.Struct):
     content: str
     title_column: str

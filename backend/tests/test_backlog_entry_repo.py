@@ -4,7 +4,7 @@ from decimal import Decimal
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backlog_manager_backend.errors import NotFoundError
+from backlog_manager_backend.errors import NotFoundError, ValidationError
 from backlog_manager_backend.repositories import (
     backlog_entry_repo,
     category_backlog_entry_repo,
@@ -127,6 +127,34 @@ async def test_create_backlog_entry_with_playtime(session: AsyncSession) -> None
     )
 
     assert entry.playtime == Decimal("12.5")
+
+
+async def test_create_backlog_entry_rejects_a_field_exceeding_its_column_length(
+    session: AsyncSession,
+) -> None:
+    """"Genre" is VARCHAR(100) - a value that overflows it must degrade
+    to a ValidationError (as CSV import rows, sourced from an untrusted
+    spreadsheet, can easily produce) rather than an uncaught DataError,
+    and the session must stay usable for the next row afterward rather
+    than staying stuck in a failed transaction."""
+    user = await _make_user(session)
+
+    with pytest.raises(ValidationError):
+        await backlog_entry_repo.create_backlog_entry(
+            session,
+            CreateBacklogEntryParams(
+                user_id=user.id,
+                title="Overlong Genre Game",
+                genre="x" * 101,
+                platform="PC",
+                status="Not Started",
+                owned=True,
+                interest=5,
+            ),
+        )
+
+    entry = await _make_entry(session, user.id, title="Next Row")
+    assert entry.title == "Next Row"
 
 
 async def test_update_backlog_entry_playtime(session: AsyncSession) -> None:

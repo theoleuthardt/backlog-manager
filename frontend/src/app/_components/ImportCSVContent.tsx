@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "shadcn_components/ui/button";
 import { Input } from "shadcn_components/ui/input";
 import { CoverPickerDialog } from "components/CoverPickerDialog";
+import { FieldDiffList } from "components/FieldDiffList";
 import { GameImage } from "components/GameImage";
 import { WrongGameDialog } from "components/WrongGameDialog";
 import {
@@ -140,21 +141,9 @@ function DuplicateWarning({ item }: { item: CsvPreviewItem }) {
               className="border-t border-yellow-500/30 pt-2"
             >
               <p className="font-medium text-white">{duplicate.title}</p>
-              {duplicate.diffs.length === 0 ? (
-                <p className="text-gray-400">
-                  No differences from the existing entry.
-                </p>
-              ) : (
-                <ul className="mt-1 space-y-0.5 text-gray-300">
-                  {duplicate.diffs.map((diff) => (
-                    <li key={diff.field}>
-                      <span className="font-medium">{diff.field}</span>:{" "}
-                      {diff.existing || "(empty)"} →{" "}
-                      {diff.proposed || "(empty)"}
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <div className="mt-1">
+                <FieldDiffList diffs={duplicate.diffs} />
+              </div>
             </div>
           ))}
         </div>
@@ -334,10 +323,10 @@ export const ImportCSVContent = () => {
 
     setPreview(null);
     setHeaders(null);
-    const fileContent = await file.text();
-    setContent(fileContent);
     try {
-      const fetchedHeaders = await csvHeaders.run(fileContent, DEFAULT_CONFIG);
+      const fileContent = await file.text();
+      setContent(fileContent);
+      const fetchedHeaders = await csvHeaders.run(fileContent);
       setHeaders(fetchedHeaders);
       setConfig(DEFAULT_CONFIG);
     } catch (error) {

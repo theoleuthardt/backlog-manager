@@ -81,7 +81,7 @@ async def search_steamgriddb_games(term: str, api_key: str) -> list[SteamGridDBS
     """Title search against SteamGridDB's own catalogue (distinct from
     both IGDB's and Steam's) - lets a title with no Steam App ID still
     get matched to a SteamGridDB game id for get_grids_by_steamgriddb_id."""
-    response = await _get(_SEARCH_URL.format(term=quote(term)), api_key)
+    response = await _get(_SEARCH_URL.format(term=quote(term, safe="")), api_key)
     if response.status_code == 404:
         return []
     try:

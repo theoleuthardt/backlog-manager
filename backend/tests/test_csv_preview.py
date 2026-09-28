@@ -66,6 +66,18 @@ def _igdb_result(
     )
 
 
+def _stub_igdb_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    """build_csv_preview validates IGDB credentials once, up front, by
+    resolving a token before matching any row - stub it out wherever a
+    test's credentials aren't meant to be exercised for real, mirroring
+    how these tests already stub out game_service.search."""
+
+    async def fake_get_valid_token(client_id: str, client_secret: str) -> str:
+        return "fake-token"
+
+    monkeypatch.setattr(preview.game_service, "get_valid_token", fake_get_valid_token)
+
+
 async def test_build_csv_preview_maps_all_fields(
     session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -186,6 +198,40 @@ async def test_build_csv_preview_flags_existing_entry_as_duplicate_with_diffs(
     assert "status" in diff_fields
 
 
+async def test_build_csv_preview_treats_equal_playtime_with_different_precision_as_no_diff(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    await backlog_entry_repo.create_backlog_entry(
+        session,
+        CreateBacklogEntryParams(
+            user_id=user.id,
+            title="Celeste",
+            genre="Platformer",
+            platform="PC",
+            status="Completed",
+            owned=True,
+            interest=5,
+            playtime=Decimal("12.50"),
+        ),
+    )
+
+    async def fake_search(title: str) -> list[HltbResultData]:
+        return [_hltb_result(title)]
+
+    monkeypatch.setattr(preview, "search_game_on_hltb", fake_search)
+
+    items = await preview.build_csv_preview(
+        session,
+        user.id,
+        [{"A": "Celeste", "B": "Platformer", "C": "Owned", "D": "Finished", "E": "12.5"}],
+        _CONFIG,
+    )
+
+    diff_fields = {diff.field for diff in items[0].duplicates[0].diffs}
+    assert "playtime" not in diff_fields
+
+
 async def test_build_csv_preview_uses_igdb_match_when_credentials_given(
     session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -201,6 +247,7 @@ async def test_build_csv_preview_uses_igdb_match_when_credentials_given(
         return [_igdb_result(title)]
 
     monkeypatch.setattr(preview.game_service, "search", fake_igdb_search)
+    _stub_igdb_token(monkeypatch)
     monkeypatch.setattr(
         preview, "search_game_on_hltb", lambda title: pytest.fail("HLTB should not be used")
     )
@@ -233,6 +280,7 @@ async def test_build_csv_preview_carries_igdb_description_through_to_submit(
         return [_igdb_result(title, description="Help Madeline survive her inner journey.")]
 
     monkeypatch.setattr(preview.game_service, "search", fake_igdb_search)
+    _stub_igdb_token(monkeypatch)
 
     items = await preview.build_csv_preview(
         session,
@@ -282,12 +330,14 @@ async def test_build_csv_preview_retries_igdb_after_a_transient_error(
         nonlocal call_count
         call_count += 1
         if call_count < 3:
+            request = httpx.Request("GET", "https://api.igdb.com")
             raise httpx.HTTPStatusError(
-                "429", request=httpx.Request("GET", "https://api.igdb.com"), response=None
+                "429", request=request, response=httpx.Response(429, request=request)
             )
         return [_igdb_result(title)]
 
     monkeypatch.setattr(preview.game_service, "search", flaky_igdb_search)
+    _stub_igdb_token(monkeypatch)
     monkeypatch.setattr(preview, "_MATCH_RETRY_BACKOFF_SECONDS", 0.01)
 
     items = await preview.build_csv_preview(
@@ -301,6 +351,51 @@ async def test_build_csv_preview_retries_igdb_after_a_transient_error(
     assert call_count == 3
     assert items[0].matched is True
     assert items[0].image_link == "https://example.com/igdb-cover.jpg"
+
+
+async def test_build_csv_preview_does_not_retry_a_non_transient_igdb_error(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A 401 (e.g. credentials that were valid at the preflight check but
+    got revoked mid-import) won't succeed on retry - falls back to
+    HowLongToBeat after a single attempt instead of burning through
+    _MATCH_RETRY_ATTEMPTS on something that can't change."""
+    user = await _make_user(session)
+    call_count = 0
+
+    async def unauthorized_igdb_search(
+        title: str,
+        client_id: str,
+        client_secret: str,
+        steamgriddb_api_key: str | None,
+        **kwargs: object,
+    ) -> list[EnrichedResult]:
+        nonlocal call_count
+        call_count += 1
+        request = httpx.Request("GET", "https://api.igdb.com")
+        raise httpx.HTTPStatusError(
+            "401", request=request, response=httpx.Response(401, request=request)
+        )
+
+    monkeypatch.setattr(preview.game_service, "search", unauthorized_igdb_search)
+    _stub_igdb_token(monkeypatch)
+    monkeypatch.setattr(preview, "_MATCH_RETRY_BACKOFF_SECONDS", 0.01)
+
+    async def fake_hltb_search(title: str) -> list[HltbResultData]:
+        return [_hltb_result(title)]
+
+    monkeypatch.setattr(preview, "search_game_on_hltb", fake_hltb_search)
+
+    items = await preview.build_csv_preview(
+        session,
+        user.id,
+        [{"A": "Celeste", "B": "Platformer", "C": "Owned", "D": ""}],
+        _CONFIG,
+        igdb_credentials=("client-id", "client-secret"),
+    )
+
+    assert call_count == 1
+    assert items[0].image_link == "https://example.com/cover.jpg"
 
 
 async def test_build_csv_preview_falls_back_to_hltb_without_igdb_credentials(
@@ -328,6 +423,45 @@ async def test_build_csv_preview_falls_back_to_hltb_without_igdb_credentials(
     assert items[0].image_link == "https://example.com/cover.jpg"
 
 
+async def test_build_csv_preview_falls_back_to_hltb_once_for_invalid_igdb_credentials(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Invalid IGDB credentials must be discovered once, up front, and
+    every row should then skip straight to HowLongToBeat - not have
+    each row independently retry the same doomed IGDB auth failure."""
+    user = await _make_user(session)
+    token_attempts = 0
+
+    async def failing_get_valid_token(client_id: str, client_secret: str) -> str:
+        nonlocal token_attempts
+        token_attempts += 1
+        raise RuntimeError("Failed to generate IGDB access token")
+
+    monkeypatch.setattr(preview.game_service, "get_valid_token", failing_get_valid_token)
+    monkeypatch.setattr(
+        preview.game_service, "search", lambda *a, **kw: pytest.fail("IGDB should not be used")
+    )
+
+    async def fake_hltb_search(title: str) -> list[HltbResultData]:
+        return [_hltb_result(title)]
+
+    monkeypatch.setattr(preview, "search_game_on_hltb", fake_hltb_search)
+
+    items = await preview.build_csv_preview(
+        session,
+        user.id,
+        [
+            {"A": "Celeste", "B": "Platformer", "C": "Owned", "D": ""},
+            {"A": "Hades", "B": "Roguelike", "C": "Owned", "D": ""},
+        ],
+        _CONFIG,
+        igdb_credentials=("bad-client-id", "bad-client-secret"),
+    )
+
+    assert token_attempts == 1
+    assert all(item.image_link == "https://example.com/cover.jpg" for item in items)
+
+
 async def test_build_csv_preview_uses_igdb_genre_when_sheet_says_yes(
     session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -343,6 +477,7 @@ async def test_build_csv_preview_uses_igdb_genre_when_sheet_says_yes(
         return [_igdb_result(title, genres=["Survival", "Sandbox"])]
 
     monkeypatch.setattr(preview.game_service, "search", fake_igdb_search)
+    _stub_igdb_token(monkeypatch)
 
     items = await preview.build_csv_preview(
         session,
@@ -372,6 +507,7 @@ async def test_build_csv_preview_skips_igdb_lookups_not_needed_for_a_csv_row(
         return [_igdb_result(title)]
 
     monkeypatch.setattr(preview.game_service, "search", fake_igdb_search)
+    _stub_igdb_token(monkeypatch)
 
     await preview.build_csv_preview(
         session,
@@ -401,6 +537,7 @@ async def test_build_csv_preview_keeps_sheet_genre_when_not_a_placeholder(
         return [_igdb_result(title, genres=["Survival"])]
 
     monkeypatch.setattr(preview.game_service, "search", fake_igdb_search)
+    _stub_igdb_token(monkeypatch)
 
     items = await preview.build_csv_preview(
         session,

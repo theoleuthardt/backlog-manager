@@ -1,6 +1,6 @@
 import msgspec
 from sqlalchemy import delete, func, or_, select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.errors import NotFoundError, handle_database_error
@@ -69,7 +69,7 @@ async def create_backlog_entry(
     session.add(model)
     try:
         await session.commit()
-    except IntegrityError as error:
+    except DBAPIError as error:
         await session.rollback()
         handle_database_error(error, "create_backlog_entry")
     await session.refresh(model)

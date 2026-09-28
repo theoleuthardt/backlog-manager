@@ -170,6 +170,22 @@ async def test_search_steamgriddb_games_returns_parsed_results(
     assert results[0].name == "En Garde!"
 
 
+async def test_search_steamgriddb_games_encodes_slash_in_term(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A title like "Ori and the Blind Forest: Definitive Edition/GOTY"
+    must have its `/` percent-encoded - otherwise it's indistinguishable
+    from a literal path separator and would split the request path."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.raw_path == b"/api/v2/search/autocomplete/AC%2FDC"
+        return httpx.Response(200, json={"success": True, "data": []})
+
+    _mock_client(handler, monkeypatch)
+
+    await search_steamgriddb_games("AC/DC", "api-key")
+
+
 async def test_search_steamgriddb_games_returns_empty_list_when_unsuccessful(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

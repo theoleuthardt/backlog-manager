@@ -22,8 +22,12 @@ def clamp_rating(raw: str) -> int | None:
 
 def parse_completed_at(raw: str) -> datetime | None:
     """Parses the sheet's `M.YYYY` completion date (day is unknown, so
-    it defaults to the 1st of the month). `IDK` and blank cells both
-    mean "no date recorded", not an error."""
+    it defaults to the 1st of the month) into a naive datetime - the
+    "CompletedAt" column is TIMESTAMP WITHOUT TIME ZONE, and a sheet
+    month/year has no timezone of its own to begin with. `IDK` and
+    blank cells both mean "no date recorded", not an error; a
+    syntactically valid but out-of-range year (e.g. "7.0000") is
+    likewise treated as unparseable rather than raising."""
     trimmed = raw.strip()
     if not trimmed or trimmed.upper() == "IDK":
         return None
@@ -36,6 +40,7 @@ def parse_completed_at(raw: str) -> datetime | None:
     year = int(match.group("year"))
     if not 1 <= month <= 12:
         return None
-    # Naive - the "CompletedAt" column is TIMESTAMP WITHOUT TIME ZONE, and
-    # a sheet month/year has no timezone of its own to begin with.
-    return datetime(year, month, 1, tzinfo=UTC).replace(tzinfo=None)
+    try:
+        return datetime(year, month, 1, tzinfo=UTC).replace(tzinfo=None)
+    except ValueError:
+        return None

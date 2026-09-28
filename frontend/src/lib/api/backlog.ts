@@ -76,8 +76,8 @@ export interface UpdateBacklogEntryInput {
   status?: string;
   owned?: boolean;
   interest?: number;
-  imageLink?: string;
-  description?: string;
+  imageLink?: string | null;
+  description?: string | null;
   mainTime?: number;
   mainPlusExtraTime?: number;
   completionTime?: number;

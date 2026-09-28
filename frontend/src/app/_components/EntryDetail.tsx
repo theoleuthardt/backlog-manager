@@ -151,6 +151,7 @@ export const EntryDetail = (props: BacklogEntryProps) => (
 
 const EntryDetailBody = (props: BacklogEntryProps) => {
   const [title, setTitle] = useState(props.title);
+  const [steamAppId, setSteamAppId] = useState(props.steamAppId);
   const [description, setDescription] = useState(props.description);
   const [imageLink, setImageLink] = useState(props.imageLink);
   const [newImageUrl, setNewImageUrl] = useState("");
@@ -215,11 +216,12 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
         changes: {
           title: result.title,
           ...(result.genres.length > 0 ? { genre: result.genres } : {}),
-          imageLink: result.imageUrl ?? undefined,
-          description: result.description ?? undefined,
+          imageLink: result.imageUrl,
+          description: result.description,
           mainTime: result.mainStory,
           mainPlusExtraTime: result.mainStoryWithExtras,
           completionTime: result.completionist,
+          steamAppId: null,
         },
       });
       setTitle(result.title);
@@ -229,6 +231,7 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
       setMainTime(result.mainStory);
       setMainPlusExtraTime(result.mainStoryWithExtras);
       setCompletionTime(result.completionist);
+      setSteamAppId(undefined);
       toast.success("Game updated");
     } catch (error) {
       toast.error(
@@ -382,7 +385,7 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
               >
                 Wrong Game
               </Button>
-              <GamePriceSection steamAppId={props.steamAppId} title={title} />
+              <GamePriceSection steamAppId={steamAppId} title={title} />
               <div className="flex flex-wrap items-center gap-2 sm:ml-6">
                 <CategoryPicker entryId={props.id} />
 
@@ -432,7 +435,7 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
                 <CoverPickerDialog
                   open={coverPickerOpen}
                   onOpenChange={setCoverPickerOpen}
-                  steamAppId={props.steamAppId}
+                  steamAppId={steamAppId}
                   initialQuery={title}
                   onSelect={(url) => void handleSelectCover(url)}
                 />
@@ -587,7 +590,7 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
                 playtime={playtime}
               />
             </div>
-            <AchievementProgress steamAppId={props.steamAppId} />
+            <AchievementProgress steamAppId={steamAppId} />
           </TabsContent>
 
           <TabsContent value="review" className="mt-4 space-y-4">

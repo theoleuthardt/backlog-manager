@@ -35,8 +35,8 @@ export function CoverPickerDialog({
   const [steamGridDbGameId, setSteamGridDbGameId] = useState<number | null>(
     null,
   );
-  const [searchQuery, setSearchQuery] = useState(initialQuery);
-  const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [wasOpen, setWasOpen] = useState(open);
 
   if (open !== wasOpen) {

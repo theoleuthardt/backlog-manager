@@ -913,6 +913,10 @@ export interface components {
             /** @default false */
             is_admin?: boolean;
         };
+        /** CsvHeadersRequest */
+        CsvHeadersRequest: {
+            content: string;
+        };
         /** CsvHeadersResponse */
         CsvHeadersResponse: {
             headers: {
@@ -2808,7 +2812,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["MatchCsvRequest"];
+                "application/json": components["schemas"]["CsvHeadersRequest"];
             };
         };
         responses: {

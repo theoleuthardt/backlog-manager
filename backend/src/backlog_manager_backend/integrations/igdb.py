@@ -40,13 +40,14 @@ class _RateLimiter:
         asyncio.get_running_loop().call_later(self._window_seconds, self._semaphore.release)
 
 
-# Keyed by client_id, mirroring _token_cache in game_service.py - IGDB's
-# rate limit is enforced per credential, and different users (or the
-# server-wide fallback) must not throttle each other's independent quota.
 _igdb_rate_limiters: dict[str, _RateLimiter] = {}
 
 
 def _get_igdb_rate_limiter(client_id: str) -> _RateLimiter:
+    """Keyed by client_id, mirroring _token_cache in game_service.py -
+    IGDB's rate limit is enforced per credential, and different users
+    (or the server-wide fallback) must not throttle each other's
+    independent quota."""
     limiter = _igdb_rate_limiters.get(client_id)
     if limiter is None:
         limiter = _RateLimiter(_IGDB_MAX_REQUESTS_PER_WINDOW, _IGDB_RATE_LIMIT_WINDOW_SECONDS)

@@ -1,21 +1,15 @@
 import { useCallback, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import * as csvApi from "~/lib/api/csv";
-import type { BacklogEntryData } from "~/lib/api/backlog";
-import type {
-  ColumnConfig,
-  CsvImportProgress,
-  CsvPreviewItem,
-  SubmitCsvEntry,
-} from "~/lib/api/csv";
+import type { ColumnConfig, CsvImportProgress, SubmitCsvEntry } from "~/lib/api/csv";
 
 export function useCsvHeaders() {
   const [isLoading, setIsLoading] = useState(false);
 
-  const run = useCallback(async (content: string, config: ColumnConfig) => {
+  const run = useCallback(async (content: string) => {
     setIsLoading(true);
     try {
-      return await csvApi.getCsvHeaders(content, config);
+      return await csvApi.getCsvHeaders(content);
     } finally {
       setIsLoading(false);
     }
@@ -24,11 +18,7 @@ export function useCsvHeaders() {
   return { run, isLoading };
 }
 
-export function useCsvPreviewStream(): {
-  run: (content: string, config: ColumnConfig) => Promise<CsvPreviewItem[]>;
-  isRunning: boolean;
-  progress: CsvImportProgress | null;
-} {
+export function useCsvPreviewStream() {
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState<CsvImportProgress | null>(null);
 
@@ -46,11 +36,7 @@ export function useCsvPreviewStream(): {
   return { run, isRunning, progress };
 }
 
-export function useCsvSubmitStream(): {
-  run: (entries: SubmitCsvEntry[]) => Promise<BacklogEntryData[]>;
-  isRunning: boolean;
-  progress: CsvImportProgress | null;
-} {
+export function useCsvSubmitStream() {
   const queryClient = useQueryClient();
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState<CsvImportProgress | null>(null);

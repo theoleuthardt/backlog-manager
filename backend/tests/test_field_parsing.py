@@ -48,3 +48,10 @@ def test_parse_completed_at_returns_none_for_invalid_month() -> None:
 
 def test_parse_completed_at_returns_none_for_unparseable_text() -> None:
     assert parse_completed_at("sometime last year") is None
+
+
+def test_parse_completed_at_returns_none_for_out_of_range_year() -> None:
+    """"7.0000" matches the M.YYYY pattern syntactically (year is
+    exactly 4 digits) but year 0 is outside datetime's valid range -
+    must degrade to None like any other unparseable value, not raise."""
+    assert parse_completed_at("7.0000") is None

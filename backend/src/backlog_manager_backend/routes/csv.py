@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 from collections.abc import AsyncIterator, Awaitable, Callable
 
 import msgspec
@@ -26,7 +27,11 @@ from backlog_manager_backend.csv.preview import (
 from backlog_manager_backend.db import async_session
 from backlog_manager_backend.integrations.types import IGDBCredentials
 from backlog_manager_backend.schemas.backlog_entry import BacklogEntryResponse
-from backlog_manager_backend.schemas.csv import CsvHeadersResponse, MatchCsvRequest
+from backlog_manager_backend.schemas.csv import (
+    CsvHeadersRequest,
+    CsvHeadersResponse,
+    MatchCsvRequest,
+)
 from backlog_manager_backend.schemas.user import User
 
 _NO_STORE = CacheControlHeader(no_store=True)
@@ -128,11 +133,16 @@ async def _stream_csv_messages[T](
         while (message := await queue.get()) is not None:
             yield message
     finally:
-        await task
+        if not task.done():
+            task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
 
 
 @post("/api/csv/headers", status_code=200)
-async def get_csv_headers(data: MatchCsvRequest, current_user: NamedDependency[User]) -> CsvHeadersResponse:
+async def get_csv_headers(
+    data: CsvHeadersRequest, current_user: NamedDependency[User]
+) -> CsvHeadersResponse:
     """Reads just the header row so the import UI can label each column
     picker with its real name instead of a blind spreadsheet letter."""
     return CsvHeadersResponse(headers=extract_csv_headers(data.content))

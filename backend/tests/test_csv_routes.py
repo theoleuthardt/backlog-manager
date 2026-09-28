@@ -1,3 +1,4 @@
+import asyncio
 import json
 
 import pytest
@@ -154,3 +155,30 @@ async def test_submit_csv_stream_creates_entries(postgres_url: str, create_and_l
 
     assert entries_response.status_code == 200
     assert entries_response.json()[0]["title"] == "Celeste"
+
+
+async def test_stream_csv_messages_cancels_the_background_task_on_early_exit() -> None:
+    """A client disconnecting mid-stream (or any other early consumer
+    exit) must stop the background row-processing task rather than
+    letting it keep running - covers what test_preview/submit_csv_stream
+    above can't: they always drain the stream to completion."""
+    from backlog_manager_backend.csv.preview import ProgressCallback
+    from backlog_manager_backend.routes.csv import _stream_csv_messages
+
+    reached_the_end = False
+
+    async def run(on_progress: ProgressCallback) -> list[object]:
+        nonlocal reached_the_end
+        await on_progress(1, 10)
+        await asyncio.sleep(10)
+        reached_the_end = True
+        return []
+
+    generator = _stream_csv_messages(run, lambda items: "[]")
+    first_message = await generator.__anext__()
+    assert first_message.event == "progress"
+
+    await generator.aclose()
+    await asyncio.sleep(0)
+
+    assert reached_the_end is False

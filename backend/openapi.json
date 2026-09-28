@@ -2953,7 +2953,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/MatchCsvRequest"
+                "$ref": "#/components/schemas/CsvHeadersRequest"
               }
             }
           },
@@ -4841,6 +4841,18 @@
           "username"
         ],
         "title": "CreateUserRequest"
+      },
+      "CsvHeadersRequest": {
+        "properties": {
+          "content": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "title": "CsvHeadersRequest"
       },
       "CsvHeadersResponse": {
         "properties": {

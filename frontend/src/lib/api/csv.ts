@@ -42,10 +42,9 @@ function toMatchCsvRequestBody(
 
 export async function getCsvHeaders(
   content: string,
-  config: ColumnConfig,
 ): Promise<Record<string, string>> {
   const { data, error } = await apiClient.POST("/api/csv/headers", {
-    body: toMatchCsvRequestBody(content, config),
+    body: { content },
   });
   if (error)
     throw new Error(apiErrorMessage(error, "Failed to read CSV headers"));

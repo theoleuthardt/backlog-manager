@@ -24,8 +24,8 @@ export function WrongGameDialog({
   initialQuery = "",
   onSelect,
 }: WrongGameDialogProps) {
-  const [searchQuery, setSearchQuery] = useState(initialQuery);
-  const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [wasOpen, setWasOpen] = useState(open);
   const gameSearch = useGameSearch(debouncedQuery);
 
