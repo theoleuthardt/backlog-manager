@@ -22,11 +22,17 @@ describe("youtubeEmbedUrl", () => {
 
   it("returns null for anything that is not a canonical YouTube watch link", () => {
     expect(youtubeEmbedUrl("javascript:alert(1)")).toBeNull();
-    expect(youtubeEmbedUrl("https://example.com/watch?v=abc123DEF45")).toBeNull();
     expect(
-      youtubeEmbedUrl("https://www.youtube.com.evil.example/watch?v=abc123DEF45"),
+      youtubeEmbedUrl("https://example.com/watch?v=abc123DEF45"),
     ).toBeNull();
-    expect(youtubeEmbedUrl("https://www.youtube.com/watch?v=tooshort")).toBeNull();
+    expect(
+      youtubeEmbedUrl(
+        "https://www.youtube.com.evil.example/watch?v=abc123DEF45",
+      ),
+    ).toBeNull();
+    expect(
+      youtubeEmbedUrl("https://www.youtube.com/watch?v=tooshort"),
+    ).toBeNull();
     expect(
       youtubeEmbedUrl("https://www.youtube.com/watch?v=abc123DEF45&autoplay=1"),
     ).toBeNull();

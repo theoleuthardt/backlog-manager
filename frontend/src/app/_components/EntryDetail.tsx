@@ -18,6 +18,7 @@ import { GameImage } from "components/GameImage";
 import { AchievementProgress } from "components/AchievementProgress";
 import { GamePriceSection } from "components/GamePriceSection";
 import { StatusSelect } from "components/StatusSelect";
+import { TrailerDialog } from "components/TrailerDialog";
 import { WrongGameDialog } from "components/WrongGameDialog";
 import {
   AlertDialog,
@@ -637,17 +638,7 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
 
           <TabsContent value="trailer" className="mt-4">
             {trailerEmbedUrl ? (
-              <div className="surface-glow bg-surface aspect-video w-full overflow-hidden rounded-xl border border-white/30">
-                <iframe
-                  src={trailerEmbedUrl}
-                  title={`${title} trailer`}
-                  className="h-full w-full"
-                  loading="lazy"
-                  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                  referrerPolicy="strict-origin-when-cross-origin"
-                />
-              </div>
+              <TrailerDialog title={title} embedUrl={trailerEmbedUrl} />
             ) : (
               <p className="bg-surface rounded-xl border border-white/30 p-6 text-center text-sm text-white/70">
                 No trailer available for this game.
