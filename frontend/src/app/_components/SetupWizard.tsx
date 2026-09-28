@@ -48,7 +48,7 @@ export function SetupWizard() {
 
   const isLastStep = stepIndex === STEPS.length - 1;
 
-  const save = async (input: UpdateCurrentUserInput): Promise<boolean> => {
+  const save = async (input: UpdateCurrentUserInput) => {
     setIsSaving(true);
     try {
       await updateCurrentUser(input);
@@ -81,6 +81,10 @@ export function SetupWizard() {
   };
 
   const handleNext = async () => {
+    if (stepIndex === 2 && !igdbClientId.trim() !== !igdbClientSecret.trim()) {
+      toast.error("Enter both the IGDB Client ID and Client Secret, or neither");
+      return;
+    }
     const input = stepInput();
     if (Object.keys(input).length > 0 && !(await save(input))) return;
     setStepIndex((index) => index + 1);
