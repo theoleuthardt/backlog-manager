@@ -12,6 +12,9 @@ import { useAuth } from "~/app/context/AuthContext";
 const APP_BUTTON =
   "border-2 border-white bg-black text-white hover:bg-white hover:text-black";
 
+const AUTH_INPUT =
+  "h-11 border-white/40 bg-black text-white placeholder:text-gray-500";
+
 const FormError = ({ message }: { message: string | null }) =>
   message && (
     <p
@@ -130,7 +133,7 @@ export default function LoginPage() {
               required
               autoComplete="one-time-code"
               autoFocus
-              className="h-11 text-center tracking-widest"
+              className={`${AUTH_INPUT} text-center tracking-widest`}
             />
           </div>
           <Button
@@ -170,7 +173,7 @@ export default function LoginPage() {
             required
             autoComplete="email"
             autoFocus
-            className="h-11"
+            className={AUTH_INPUT}
           />
         </div>
         <div className="flex flex-col gap-2">
@@ -183,7 +186,7 @@ export default function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
             required
             autoComplete="current-password"
-            className="h-11"
+            className={AUTH_INPUT}
           />
         </div>
         <Button
