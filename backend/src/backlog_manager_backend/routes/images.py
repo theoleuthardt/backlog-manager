@@ -60,7 +60,7 @@ _MAX_IMAGE_BYTES = 10 * 1024 * 1024
 
 _TIMEOUT = httpx.Timeout(15.0)
 
-_CACHE_MAX_BYTES = 128 * 1024 * 1024
+_CACHE_MAX_BYTES = 1024 * 1024 * 1024
 
 _CACHE_HEADERS = {
     "Cache-Control": "public, max-age=86400, immutable",
