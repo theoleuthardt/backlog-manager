@@ -17,6 +17,10 @@ def test_clamp_rating_clamps_values_above_ten() -> None:
     assert clamp_rating("11") == 10
 
 
+def test_clamp_rating_clamps_negative_values_to_zero() -> None:
+    assert clamp_rating("-5") == 0
+
+
 def test_clamp_rating_returns_none_for_empty_or_placeholder() -> None:
     assert clamp_rating("") is None
     assert clamp_rating("-") is None

@@ -727,7 +727,10 @@ export function CreationToolForm() {
                                 platform: duplicatePayload.platform,
                                 status: duplicatePayload.status,
                                 owned: duplicatePayload.owned,
-                                playtime: duplicatePayload.playtime,
+                                playtime:
+                                  duplicatePayload.playtime && duplicatePayload.playtime > 0
+                                    ? duplicatePayload.playtime
+                                    : undefined,
                                 reviewStars: duplicatePayload.reviewStars,
                                 note: duplicatePayload.note,
                               },

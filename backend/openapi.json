@@ -6488,12 +6488,13 @@
           "review_stars": {
             "oneOf": [
               {
-                "type": "integer"
+                "type": "number"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "maximum": 10
           },
           "note": {
             "oneOf": [

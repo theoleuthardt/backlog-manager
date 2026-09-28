@@ -120,10 +120,12 @@ async def _stream_csv_messages[T](
         )
 
     async def run_operation() -> None:
+        """Any failure is reported as an SSE error event rather than
+        left to crash the stream - hence the broad except."""
         try:
             result = await run(on_progress)
             await queue.put(ServerSentEventMessage(event=_SSE_DONE, data=encode_result(result)))
-        except Exception as error:  # noqa: BLE001 - reported as an SSE error event, not left to crash the stream
+        except Exception as error:  # noqa: BLE001
             await queue.put(ServerSentEventMessage(event=_SSE_ERROR, data=str(error)))
         finally:
             await queue.put(None)

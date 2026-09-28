@@ -7,9 +7,9 @@ _MONTH_YEAR_RE = re.compile(r"^(?P<month>\d{1,2})\.(?P<year>\d{4})$")
 
 
 def clamp_rating(raw: str) -> int | None:
-    """MYY-sheet ratings go above the app's 10-star max - clamp rather
-    than reject, since the relative ordering (a 10 beats an 8) still
-    means the same thing either way."""
+    """MYY-sheet ratings can go above the app's 10-star max (or, rarely,
+    negative) - clamp rather than reject, since the relative ordering
+    (a 10 beats an 8) still means the same thing either way."""
     trimmed = raw.strip()
     if not trimmed or trimmed == "-":
         return None
@@ -17,7 +17,7 @@ def clamp_rating(raw: str) -> int | None:
         value = int(trimmed)
     except ValueError:
         return None
-    return min(value, MAX_REVIEW_STARS)
+    return max(0, min(value, MAX_REVIEW_STARS))
 
 
 def parse_completed_at(raw: str) -> datetime | None:

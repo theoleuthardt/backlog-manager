@@ -157,6 +157,32 @@ async def test_submit_csv_stream_creates_entries(postgres_url: str, create_and_l
     assert entries_response.json()[0]["title"] == "Celeste"
 
 
+async def test_submit_csv_stream_rejects_a_review_stars_value_outside_the_valid_range(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "csvsubmitinvalid@example.com")
+
+        response = client.post(
+            "/api/csv/submit/stream",
+            headers=headers,
+            json=[
+                {
+                    "title": "Celeste",
+                    "genre": "Platformer",
+                    "platform": ["PC"],
+                    "status": "Completed",
+                    "owned": True,
+                    "review_stars": 42,
+                }
+            ],
+        )
+
+    assert response.status_code == 400
+
+
 async def test_stream_csv_messages_cancels_the_background_task_on_early_exit() -> None:
     """A client disconnecting mid-stream (or any other early consumer
     exit) must stop the background row-processing task rather than

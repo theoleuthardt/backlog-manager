@@ -24,7 +24,11 @@ from backlog_manager_backend.repositories.backlog_entry_repo import (
     create_backlog_entry,
     get_backlog_entry_duplicates,
 )
-from backlog_manager_backend.schemas.backlog_entry import BacklogEntry, CreateBacklogEntryParams
+from backlog_manager_backend.schemas.backlog_entry import (
+    BacklogEntry,
+    CreateBacklogEntryParams,
+    ReviewStars,
+)
 from backlog_manager_backend.services import game_service
 
 logger = structlog.get_logger()
@@ -88,7 +92,7 @@ class SubmitCsvEntry(msgspec.Struct):
     status: str
     owned: bool
     playtime: Decimal | None = None
-    review_stars: int | None = None
+    review_stars: ReviewStars | None = None
     note: str | None = None
     review: str | None = None
     completed_at: datetime | None = None
@@ -538,7 +542,9 @@ async def submit_csv_entries(
                         main_plus_extra_time=entry.main_plus_extra_time,
                         completion_time=entry.completion_time,
                         playtime=entry.playtime,
-                        review_stars=entry.review_stars,
+                        review_stars=(
+                            round(entry.review_stars) if entry.review_stars is not None else None
+                        ),
                         note=entry.note,
                         review=entry.review,
                         completed_at=entry.completed_at,
