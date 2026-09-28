@@ -19,17 +19,17 @@ export const AuthCard = ({ title, description, children }: AuthCardProps) => (
     <main className="drop-in relative z-10 flex min-h-screen flex-col items-center justify-center gap-6 px-4 py-12">
       <Link
         href="/"
-        className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm transition-colors"
+        className="text-foreground flex items-center gap-3 text-3xl font-bold transition-opacity hover:opacity-80"
       >
         <Image
-          src="/favicon.ico"
+          src="/logo_mana.png"
           alt=""
-          width={20}
-          height={20}
+          width={56}
+          height={56}
           unoptimized
-          className="rounded"
+          className="themed-icon h-14 w-14"
         />
-        Backlog Manager
+        Backlog-Manager
       </Link>
       <section className="bg-card text-card-foreground border-border surface-glow w-full max-w-md rounded-2xl border p-8 shadow-lg">
         <h1 className="text-3xl font-extrabold tracking-tight">{title}</h1>
