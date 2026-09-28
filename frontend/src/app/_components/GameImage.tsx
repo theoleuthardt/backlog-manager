@@ -43,6 +43,8 @@ export function GameImage(props: GameImageProps) {
         alt={props.alt || "Game cover"}
         fill
         unoptimized
+        loading="lazy"
+        decoding="async"
         onError={handleError}
         onLoad={handleLoadingComplete}
         className={`pointer-events-none object-cover ${props.className ?? ""}`}

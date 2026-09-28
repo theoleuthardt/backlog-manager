@@ -1,10 +1,17 @@
+import hashlib
+from collections import OrderedDict
+from typing import NamedTuple
 from urllib.parse import urlparse
 
 import httpx
 import structlog
-from litestar import Response, get
+from litestar import Request, Response, get
 from litestar.params import FromQuery
-from litestar.status_codes import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND
+from litestar.status_codes import (
+    HTTP_304_NOT_MODIFIED,
+    HTTP_400_BAD_REQUEST,
+    HTTP_404_NOT_FOUND,
+)
 
 logger = structlog.get_logger()
 
@@ -52,6 +59,72 @@ _ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif", 
 _MAX_IMAGE_BYTES = 10 * 1024 * 1024
 
 _TIMEOUT = httpx.Timeout(15.0)
+
+_CACHE_MAX_BYTES = 128 * 1024 * 1024
+
+_CACHE_HEADERS = {
+    "Cache-Control": "public, max-age=86400, immutable",
+    "Access-Control-Allow-Origin": "*",
+}
+
+
+class _CachedImage(NamedTuple):
+    body: bytes
+    content_type: str
+    etag: str
+
+
+class _ImageCache:
+    """Byte-bounded in-memory LRU of proxied covers, keyed by upstream URL.
+
+    Large backlogs request hundreds of covers per dashboard load; serving
+    repeats from memory spares the upstream hosts (which rate-limit) and
+    cuts latency. Only successfully validated images are ever stored.
+    """
+
+    def __init__(self, max_bytes: int) -> None:
+        self._max_bytes = max_bytes
+        self._size = 0
+        self._entries: OrderedDict[str, _CachedImage] = OrderedDict()
+
+    def get(self, url: str) -> _CachedImage | None:
+        entry = self._entries.get(url)
+        if entry is not None:
+            self._entries.move_to_end(url)
+        return entry
+
+    def put(self, url: str, body: bytes, content_type: str) -> _CachedImage:
+        entry = _CachedImage(body, content_type, f'"{hashlib.sha256(body).hexdigest()[:32]}"')
+        if len(body) > self._max_bytes:
+            return entry
+        previous = self._entries.pop(url, None)
+        if previous is not None:
+            self._size -= len(previous.body)
+        self._entries[url] = entry
+        self._size += len(body)
+        while self._size > self._max_bytes:
+            _, evicted = self._entries.popitem(last=False)
+            self._size -= len(evicted.body)
+        return entry
+
+    def clear(self) -> None:
+        self._entries.clear()
+        self._size = 0
+
+
+_image_cache = _ImageCache(_CACHE_MAX_BYTES)
+
+
+def clear_image_cache() -> None:
+    """Empties the proxy cache (used by tests for isolation)."""
+    _image_cache.clear()
+
+
+def _respond(image: _CachedImage, request: Request) -> Response:
+    headers = {**_CACHE_HEADERS, "ETag": image.etag}
+    if request.headers.get("if-none-match") == image.etag:
+        return Response(b"", status_code=HTTP_304_NOT_MODIFIED, headers=headers)
+    return Response(image.body, media_type=image.content_type, headers=headers)
 
 _BASE_HEADERS = {
     "User-Agent": (
@@ -114,10 +187,14 @@ async def _fetch_following_allowed_redirects(
 
 
 @get("/api/images/proxy")
-async def proxy_image(url: FromQuery[str]) -> Response:
+async def proxy_image(url: FromQuery[str], request: Request) -> Response:
     parsed = urlparse(url)
     if parsed.scheme != "https" or not _is_allowed_host(parsed.hostname):
         return _INVALID_URL
+
+    cached = _image_cache.get(url)
+    if cached is not None:
+        return _respond(cached, request)
 
     try:
         async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
@@ -156,11 +233,4 @@ async def proxy_image(url: FromQuery[str]) -> Response:
         logger.error("Error proxying image", url=url, error=str(error))
         return _NOT_FOUND
 
-    return Response(
-        bytes(body),
-        media_type=content_type,
-        headers={
-            "Cache-Control": "public, max-age=86400, immutable",
-            "Access-Control-Allow-Origin": "*",
-        },
-    )
+    return _respond(_image_cache.put(url, bytes(body), content_type), request)

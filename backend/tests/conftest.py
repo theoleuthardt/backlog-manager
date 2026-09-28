@@ -39,6 +39,15 @@ def _reset_igdb_rate_limiters() -> None:
     igdb._igdb_rate_limiters = {}
 
 
+@pytest.fixture(autouse=True)
+def _reset_image_cache() -> None:
+    """Tests reuse the same cover URLs with different mocked upstream
+    responses, so a cached image from one test must not leak into the next."""
+    from backlog_manager_backend.routes import images
+
+    images.clear_image_cache()
+
+
 @pytest.fixture(scope="session", autouse=True)
 async def _seed_schema(postgres_url: str) -> None:
     dsn = postgres_url.replace("postgresql+asyncpg", "postgresql")
