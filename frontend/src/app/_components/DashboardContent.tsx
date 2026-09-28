@@ -12,7 +12,7 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
-import { ChevronsLeft, Loader2, SlidersHorizontal } from "lucide-react";
+import { ChevronsLeft, Clock, Loader2, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "shadcn_components/ui/button";
 import { BacklogEntry } from "components/BacklogEntry";
@@ -96,6 +96,10 @@ export const DashboardContent = () => {
   const direction = directionOverride ?? defaultDirectionFor(sortBy);
 
   const entries = useMemo(() => backlogData ?? [], [backlogData]);
+  const totalMainTime = useMemo(
+    () => entries.reduce((sum, entry) => sum + (entry.mainTime ?? 0), 0),
+    [entries],
+  );
 
   const statusOptions = useMemo(
     () =>
@@ -413,6 +417,14 @@ export const DashboardContent = () => {
             <p className="text-sm text-white/70" aria-live="polite">
               {visibleEntries.length} of {entries.length} game
               {entries.length === 1 ? "" : "s"}
+            </p>
+            <p
+              className="flex items-center gap-1.5 text-sm text-white/70"
+              title="Sum of the main-story beat time across every entry in your backlog"
+            >
+              <Clock className="h-3.5 w-3.5" />
+              {Math.round(totalMainTime).toLocaleString()}h total main story
+              time
             </p>
             {user?.steamId && <SteamSyncButton className="ml-auto" />}
           </div>

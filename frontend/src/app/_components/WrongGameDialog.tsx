@@ -26,18 +26,19 @@ export function WrongGameDialog({
 }: WrongGameDialogProps) {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
+  const [wasOpen, setWasOpen] = useState(open);
   const gameSearch = useGameSearch(debouncedQuery);
 
-  const handleOpenChange = (nextOpen: boolean) => {
-    if (nextOpen) {
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
       setSearchQuery(initialQuery);
       setDebouncedQuery(initialQuery);
     }
-    onOpenChange(nextOpen);
-  };
+  }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="bg-background flex max-h-[80vh] w-full max-w-xl flex-col gap-4 border-2 border-white p-6"
         aria-describedby={undefined}

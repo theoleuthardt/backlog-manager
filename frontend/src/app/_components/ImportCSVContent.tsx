@@ -5,6 +5,7 @@ import { AlertTriangle, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "shadcn_components/ui/button";
 import { Input } from "shadcn_components/ui/input";
+import { CoverPickerDialog } from "components/CoverPickerDialog";
 import { GameImage } from "components/GameImage";
 import { WrongGameDialog } from "components/WrongGameDialog";
 import {
@@ -174,11 +175,13 @@ const PreviewRow = memo(function PreviewRow({
   onChange,
   onRemove,
   onWrongGame,
+  onPickCover,
 }: {
   item: CsvPreviewItem;
   onChange: (rowIndex: number, updates: Partial<CsvPreviewItem>) => void;
   onRemove: (rowIndex: number) => void;
   onWrongGame: (rowIndex: number) => void;
+  onPickCover: (rowIndex: number) => void;
 }) {
   const statusOptions = DEFAULT_STATUSES.includes(
     item.status as (typeof DEFAULT_STATUSES)[number],
@@ -189,12 +192,20 @@ const PreviewRow = memo(function PreviewRow({
   return (
     <div className="border-b border-white/10 p-3 last:border-b-0">
       <div className="flex items-start gap-3">
-        <GameImage
-          src={item.imageLink ?? ""}
-          alt={item.title}
-          width={48}
-          height={64}
-        />
+        <button
+          type="button"
+          onClick={() => onPickCover(item.rowIndex)}
+          aria-label={`Choose cover for ${item.title}`}
+          title="Choose cover"
+          className="shrink-0 overflow-hidden rounded border border-transparent hover:border-white"
+        >
+          <GameImage
+            src={item.imageLink ?? ""}
+            alt={item.title}
+            width={48}
+            height={64}
+          />
+        </button>
         <div className="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-4">
           <Input
             value={item.title}
@@ -299,6 +310,9 @@ export const ImportCSVContent = () => {
   const [config, setConfig] = useState<ColumnConfig>(DEFAULT_CONFIG);
   const [preview, setPreview] = useState<CsvPreviewItem[] | null>(null);
   const [wrongGameRowIndex, setWrongGameRowIndex] = useState<number | null>(
+    null,
+  );
+  const [coverPickerRowIndex, setCoverPickerRowIndex] = useState<number | null>(
     null,
   );
 
@@ -419,6 +433,16 @@ export const ImportCSVContent = () => {
 
   const wrongGameItem = preview?.find(
     (item) => item.rowIndex === wrongGameRowIndex,
+  );
+
+  const handleCoverSelected = (url: string) => {
+    if (coverPickerRowIndex === null) return;
+    updateRow(coverPickerRowIndex, { imageLink: url, matched: true });
+    setCoverPickerRowIndex(null);
+  };
+
+  const coverPickerItem = preview?.find(
+    (item) => item.rowIndex === coverPickerRowIndex,
   );
 
   return (
@@ -564,6 +588,7 @@ export const ImportCSVContent = () => {
                 onChange={updateRow}
                 onRemove={removeRow}
                 onWrongGame={setWrongGameRowIndex}
+                onPickCover={setCoverPickerRowIndex}
               />
             ))}
           </div>
@@ -577,6 +602,15 @@ export const ImportCSVContent = () => {
         }}
         initialQuery={wrongGameItem?.title}
         onSelect={handleGameSelected}
+      />
+
+      <CoverPickerDialog
+        open={coverPickerRowIndex !== null}
+        onOpenChange={(open) => {
+          if (!open) setCoverPickerRowIndex(null);
+        }}
+        initialQuery={coverPickerItem?.title ?? ""}
+        onSelect={handleCoverSelected}
       />
     </div>
   );
