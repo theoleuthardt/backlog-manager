@@ -9,14 +9,6 @@ interface AuthCardProps {
   children: React.ReactNode;
 }
 
-/**
- * Shared shell of the auth pages: the landing page's star background with
- * a floating app mark (plain text, not a link: the Tauri app has no
- * landing page to go back to) and a centred card in the same black/white
- * bordered style as the account cards, lit by a soft halo in the theme's
- * accent and glow colours. Motion honours the user's reduced-motion
- * setting.
- */
 export const AuthCard = ({ title, description, children }: AuthCardProps) => (
   <MotionConfig reducedMotion="user">
     <div className="relative min-h-screen overflow-hidden">
