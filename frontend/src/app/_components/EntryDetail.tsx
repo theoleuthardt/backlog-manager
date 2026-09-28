@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
   Check,
   Clock,
@@ -155,7 +155,6 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
   const [steamAppId, setSteamAppId] = useState(props.steamAppId);
   const [description, setDescription] = useState(props.description);
   const [trailerLink, setTrailerLink] = useState(props.trailerLink);
-  const tabsRef = useRef<HTMLDivElement>(null);
   const [imageLink, setImageLink] = useState(props.imageLink);
   const [newImageUrl, setNewImageUrl] = useState("");
   const [playtime, setPlaytime] = useState<number | undefined>(props.playtime);
@@ -451,7 +450,7 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
         </div>
       </header>
 
-      <div className="[container-type:size] min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+      <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <StatTile icon={<Clock className="h-3.5 w-3.5" />} label="Playtime">
             <div className="flex items-center gap-2">
@@ -525,21 +524,7 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
           </StatTile>
         </div>
 
-        <Tabs
-          ref={tabsRef}
-          defaultValue="overview"
-          onValueChange={(value) => {
-            if (value === "trailer") {
-              requestAnimationFrame(() =>
-                tabsRef.current?.scrollIntoView({
-                  behavior: "smooth",
-                  block: "start",
-                }),
-              );
-            }
-          }}
-          className="mt-6"
-        >
+        <Tabs defaultValue="overview" className="mt-6">
           <TabsList className="w-full sm:w-fit">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="progress">Progress</TabsTrigger>
@@ -652,12 +637,7 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
 
           <TabsContent value="trailer" className="mt-4">
             {trailerEmbedUrl ? (
-              <div
-                className="surface-glow bg-surface mx-auto aspect-video w-full overflow-hidden rounded-xl border border-white/30"
-                style={{
-                  maxWidth: "max(20rem, calc((100cqh - 5rem) * 16 / 9))",
-                }}
-              >
+              <div className="surface-glow bg-surface aspect-video w-full overflow-hidden rounded-xl border border-white/30">
                 <iframe
                   src={trailerEmbedUrl}
                   title={`${title} trailer`}
