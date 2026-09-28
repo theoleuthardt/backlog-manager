@@ -7,8 +7,11 @@
  * Payloads are renamed to space-free asset names first, because GitHub
  * rewrites spaces in release asset names and the manifest URLs must match the
  * uploaded names exactly. Only macOS (app bundle tarball), Linux (AppImage)
- * and Windows (NSIS installer) support in-app updates; DEB, RPM, MSI and DMG
- * installers are not touched.
+ * and Windows (NSIS installer) support in-app updates. The Linux and Windows
+ * entries use installer-specific keys (`-appimage`, `-nsis`): the updater
+ * looks up `{os}-{arch}-{installer}` for the running installer type first, so
+ * DEB, RPM and MSI installs find no entry instead of being offered a payload
+ * they cannot apply.
  */
 import { existsSync, readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -21,12 +24,12 @@ const PLATFORMS = [
     assetName: (_name, version) => `Backlog-Manager_${version}_aarch64.app.tar.gz`,
   },
   {
-    platform: "linux-x86_64",
+    platform: "linux-x86_64-appimage",
     pattern: /\.AppImage$/,
     assetName: (name) => safeAssetName(name),
   },
   {
-    platform: "windows-x86_64",
+    platform: "windows-x86_64-nsis",
     pattern: /-setup\.exe$/,
     assetName: (name) => safeAssetName(name),
   },

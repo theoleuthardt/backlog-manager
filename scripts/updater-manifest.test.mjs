@@ -46,8 +46,8 @@ describe("buildManifest", () => {
       pubDate: "2026-09-28T10:00:00.000Z",
       assets: [
         { platform: "darwin-aarch64", name: "Backlog-Manager.app.tar.gz", signature: "mac-sig" },
-        { platform: "linux-x86_64", name: "Backlog-Manager_1.2.3_amd64.AppImage", signature: "linux-sig" },
-        { platform: "windows-x86_64", name: "Backlog-Manager_1.2.3_x64-setup.exe", signature: "win-sig" },
+        { platform: "linux-x86_64-appimage", name: "Backlog-Manager_1.2.3_amd64.AppImage", signature: "linux-sig" },
+        { platform: "windows-x86_64-nsis", name: "Backlog-Manager_1.2.3_x64-setup.exe", signature: "win-sig" },
       ],
     });
 
@@ -59,11 +59,11 @@ describe("buildManifest", () => {
           signature: "mac-sig",
           url: `https://github.com/${REPO}/releases/download/v1.2.3/Backlog-Manager.app.tar.gz`,
         },
-        "linux-x86_64": {
+        "linux-x86_64-appimage": {
           signature: "linux-sig",
           url: `https://github.com/${REPO}/releases/download/v1.2.3/Backlog-Manager_1.2.3_amd64.AppImage`,
         },
-        "windows-x86_64": {
+        "windows-x86_64-nsis": {
           signature: "win-sig",
           url: `https://github.com/${REPO}/releases/download/v1.2.3/Backlog-Manager_1.2.3_x64-setup.exe`,
         },
@@ -81,12 +81,12 @@ describe("writeManifest", () => {
 
     assert.deepEqual(Object.keys(manifest.platforms).sort(), [
       "darwin-aarch64",
-      "linux-x86_64",
-      "windows-x86_64",
+      "linux-x86_64-appimage",
+      "windows-x86_64-nsis",
     ]);
     assert.equal(manifest.platforms["darwin-aarch64"].signature, "mac-sig");
-    assert.equal(manifest.platforms["linux-x86_64"].signature, "linux-sig");
-    assert.equal(manifest.platforms["windows-x86_64"].signature, "win-sig");
+    assert.equal(manifest.platforms["linux-x86_64-appimage"].signature, "linux-sig");
+    assert.equal(manifest.platforms["windows-x86_64-nsis"].signature, "win-sig");
     assert.equal(
       manifest.platforms["darwin-aarch64"].url,
       `https://github.com/${REPO}/releases/download/v1.2.3/Backlog-Manager_1.2.3_aarch64.app.tar.gz`,
