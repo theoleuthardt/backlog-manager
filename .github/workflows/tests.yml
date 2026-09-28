@@ -36,6 +36,38 @@ jobs:
           CI: 'true'
         run: uv run pytest
 
+  frontend:
+    name: Frontend Lint, Typecheck and Tests
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Lint and typecheck
+        working-directory: frontend
+        run: npm run check
+
+      - name: Run vitest
+        working-directory: frontend
+        run: npm test
+
   release-scripts:
     name: Release Script Tests
     runs-on: ubuntu-latest
