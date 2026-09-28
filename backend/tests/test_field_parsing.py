@@ -21,6 +21,11 @@ def test_clamp_rating_clamps_negative_values_to_zero() -> None:
     assert clamp_rating("-5") == 0
 
 
+def test_clamp_rating_rounds_fractional_values() -> None:
+    assert clamp_rating("8.6") == 9
+    assert clamp_rating("8.4") == 8
+
+
 def test_clamp_rating_returns_none_for_empty_or_placeholder() -> None:
     assert clamp_rating("") is None
     assert clamp_rating("-") is None
@@ -29,6 +34,16 @@ def test_clamp_rating_returns_none_for_empty_or_placeholder() -> None:
 
 def test_clamp_rating_returns_none_for_non_numeric() -> None:
     assert clamp_rating("n/a") is None
+
+
+def test_clamp_rating_returns_none_for_infinity_and_nan() -> None:
+    """float() accepts "inf"/"nan"-style strings where int() would
+    reject them - round(float("inf")) raises OverflowError rather than
+    ValueError, which would otherwise crash the whole CSV import on one
+    malformed rating cell instead of just skipping it."""
+    assert clamp_rating("inf") is None
+    assert clamp_rating("-inf") is None
+    assert clamp_rating("nan") is None
 
 
 def test_parse_completed_at_parses_month_dot_year() -> None:

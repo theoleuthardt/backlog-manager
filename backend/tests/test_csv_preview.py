@@ -198,6 +198,43 @@ async def test_build_csv_preview_flags_existing_entry_as_duplicate_with_diffs(
     assert "status" in diff_fields
 
 
+async def test_build_csv_preview_formats_owned_diff_as_yes_no(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Renders through the same FieldDiffList component as the Creation
+    Tool's duplicate dialog, which formats booleans as Yes/No - a bare
+    str(bool) here ("True"/"False") would look inconsistent next to it."""
+    user = await _make_user(session)
+    await backlog_entry_repo.create_backlog_entry(
+        session,
+        CreateBacklogEntryParams(
+            user_id=user.id,
+            title="Celeste",
+            genre="Platformer",
+            platform="PC",
+            status="Completed",
+            owned=False,
+            interest=5,
+        ),
+    )
+
+    async def fake_search(title: str) -> list[HltbResultData]:
+        return [_hltb_result(title)]
+
+    monkeypatch.setattr(preview, "search_game_on_hltb", fake_search)
+
+    items = await preview.build_csv_preview(
+        session,
+        user.id,
+        [{"A": "Celeste", "B": "Platformer", "C": "Owned", "D": "Finished"}],
+        _CONFIG,
+    )
+
+    owned_diff = next(diff for diff in items[0].duplicates[0].diffs if diff.field == "owned")
+    assert owned_diff.existing == "No"
+    assert owned_diff.proposed == "Yes"
+
+
 async def test_build_csv_preview_treats_equal_playtime_with_different_precision_as_no_diff(
     session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:

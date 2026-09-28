@@ -20,6 +20,7 @@ def test_owned_with_unrecognized_qualifier_is_flagged_unknown() -> None:
 
     assert result.platform == ["PC", "Unknown"]
     assert result.owned is True
+    assert result.note == "(Switch)"
 
 
 def test_friend_keeps_owned_true_but_tags_friend() -> None:
@@ -80,6 +81,7 @@ def test_unrecognized_value_is_flagged_unknown_without_dropping_info() -> None:
 
     assert result.platform == ["Vita", "Unknown"]
     assert result.owned is True
+    assert result.note == "(Hacked)"
 
 
 def test_typos_and_whitespace_are_normalized() -> None:

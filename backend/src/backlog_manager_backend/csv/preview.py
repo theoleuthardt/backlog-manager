@@ -295,7 +295,7 @@ def _diff_entry(
         "genre": (existing.genre, genre),
         "platform": (", ".join(existing_platform), ", ".join(platform)),
         "status": (existing.status, status),
-        "owned": (str(existing.owned), str(owned)),
+        "owned": ("Yes" if existing.owned else "No", "Yes" if owned else "No"),
         "playtime": (
             _format_decimal(existing.playtime),
             _format_decimal(playtime),

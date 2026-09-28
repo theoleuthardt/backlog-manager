@@ -42,8 +42,9 @@ export function CoverPickerDialog({
   if (open !== wasOpen) {
     setWasOpen(open);
     setSteamGridDbGameId(null);
-    setSearchQuery(open ? initialQuery : "");
-    setDebouncedQuery(open ? initialQuery : "");
+    const prefillQuery = open && steamAppId === undefined ? initialQuery : "";
+    setSearchQuery(prefillQuery);
+    setDebouncedQuery(prefillQuery);
   }
 
   const steamAppIdCovers = useSteamGridDbCovers(

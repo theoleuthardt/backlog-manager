@@ -172,6 +172,28 @@ async def test_update_backlog_entry_playtime(session: AsyncSession) -> None:
     assert updated.playtime == Decimal(30)
 
 
+async def test_update_backlog_entry_rejects_a_field_exceeding_its_column_length(
+    session: AsyncSession,
+) -> None:
+    """Mirrors test_create_backlog_entry_rejects_a_field_exceeding_its_column_length -
+    the update path has its own commit/rollback and must degrade the
+    same way."""
+    user = await _make_user(session)
+    entry = await _make_entry(session, user.id)
+
+    with pytest.raises(ValidationError):
+        await backlog_entry_repo.update_backlog_entry(
+            session,
+            UpdateBacklogEntryParams(backlog_entry_id=entry.backlog_entry_id, genre="x" * 101),
+        )
+
+    updated = await backlog_entry_repo.update_backlog_entry(
+        session,
+        UpdateBacklogEntryParams(backlog_entry_id=entry.backlog_entry_id, genre="RPG"),
+    )
+    assert updated.genre == "RPG"
+
+
 async def test_update_backlog_entry_to_completed_sets_completed_at(
     session: AsyncSession,
 ) -> None:
