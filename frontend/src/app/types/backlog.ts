@@ -16,6 +16,7 @@ export interface BacklogEntryProps {
   review?: string;
   note?: string;
   description?: string;
+  trailerLink?: string;
   mainTime?: number;
   mainPlusExtraTime?: number;
   completionTime?: number;

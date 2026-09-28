@@ -77,6 +77,7 @@ export interface CsvPreviewItem {
   completedAt: string | null;
   imageLink: string | null;
   description: string | null;
+  trailerLink: string | null;
   mainTime?: number;
   mainPlusExtraTime?: number;
   completionTime?: number;
@@ -98,6 +99,7 @@ interface CsvPreviewItemResponse {
   completed_at: string | null;
   image_link: string | null;
   description: string | null;
+  trailer_link: string | null;
   main_time: string | null;
   main_plus_extra_time: string | null;
   completion_time: string | null;
@@ -124,6 +126,7 @@ function toCsvPreviewItem(raw: CsvPreviewItemResponse): CsvPreviewItem {
     completedAt: raw.completed_at,
     imageLink: raw.image_link,
     description: raw.description,
+    trailerLink: raw.trailer_link,
     mainTime: toNumber(raw.main_time),
     mainPlusExtraTime: toNumber(raw.main_plus_extra_time),
     completionTime: toNumber(raw.completion_time),
@@ -171,6 +174,7 @@ export interface SubmitCsvEntry {
   completedAt?: string | null;
   imageLink?: string | null;
   description?: string | null;
+  trailerLink?: string | null;
   mainTime?: number;
   mainPlusExtraTime?: number;
   completionTime?: number;
@@ -212,6 +216,7 @@ export async function submitCsvStream(
       completed_at: entry.completedAt ?? null,
       image_link: entry.imageLink ?? null,
       description: entry.description ?? null,
+      trailer_link: entry.trailerLink ?? null,
       main_time: entry.mainTime !== undefined ? String(entry.mainTime) : null,
       main_plus_extra_time:
         entry.mainPlusExtraTime !== undefined

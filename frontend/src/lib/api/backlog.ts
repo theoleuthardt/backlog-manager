@@ -35,6 +35,7 @@ export interface BacklogEntryData {
   review?: string;
   note?: string;
   description?: string;
+  trailerLink?: string;
   mainTime?: number;
   mainPlusExtraTime?: number;
   completionTime?: number;
@@ -59,6 +60,7 @@ export interface CreateBacklogEntryInput {
   interest: number;
   imageLink?: string;
   description?: string;
+  trailerLink?: string;
   mainTime?: number;
   mainPlusExtraTime?: number;
   completionTime?: number;
@@ -78,6 +80,7 @@ export interface UpdateBacklogEntryInput {
   interest?: number;
   imageLink?: string | null;
   description?: string | null;
+  trailerLink?: string | null;
   mainTime?: number;
   mainPlusExtraTime?: number;
   completionTime?: number;
@@ -118,6 +121,7 @@ export function toEntryData(
     review: entry.review ?? undefined,
     note: entry.note ?? undefined,
     description: entry.description ?? undefined,
+    trailerLink: entry.trailer_link ?? undefined,
     mainTime: toNumber(entry.main_time),
     mainPlusExtraTime: toNumber(entry.main_plus_extra_time),
     completionTime: toNumber(entry.completion_time),
@@ -196,6 +200,7 @@ export async function createEntry(
       interest: input.interest,
       image_link: input.imageLink,
       description: input.description,
+      trailer_link: input.trailerLink,
       main_time: input.mainTime?.toString(),
       main_plus_extra_time: input.mainPlusExtraTime?.toString(),
       completion_time: input.completionTime?.toString(),
@@ -228,6 +233,7 @@ export async function updateEntry(
         interest: changes.interest,
         image_link: changes.imageLink,
         description: changes.description,
+        trailer_link: changes.trailerLink,
         main_time: changes.mainTime?.toString(),
         main_plus_extra_time: changes.mainPlusExtraTime?.toString(),
         completion_time: changes.completionTime?.toString(),

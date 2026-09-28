@@ -4465,6 +4465,16 @@
               }
             ]
           },
+          "trailer_link": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "main_time": {
             "oneOf": [
               {
@@ -4679,6 +4689,17 @@
                 "type": "null"
               }
             ]
+          },
+          "trailer_link": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "pattern": "^https://www\\.youtube\\.com/watch\\?v=[A-Za-z0-9_-]{11}$"
           },
           "main_time": {
             "oneOf": [
@@ -4991,6 +5012,16 @@
             ]
           },
           "publisher": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "trailer_url": {
             "oneOf": [
               {
                 "type": "string"
@@ -6547,6 +6578,17 @@
               }
             ]
           },
+          "trailer_link": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "pattern": "^https://www\\.youtube\\.com/watch\\?v=[A-Za-z0-9_-]{11}$"
+          },
           "main_time": {
             "oneOf": [
               {
@@ -6755,6 +6797,17 @@
                 "type": "null"
               }
             ]
+          },
+          "trailer_link": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "pattern": "^https://www\\.youtube\\.com/watch\\?v=[A-Za-z0-9_-]{11}$"
           },
           "main_time": {
             "oneOf": [

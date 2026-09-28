@@ -7,9 +7,11 @@ import structlog
 
 from backlog_manager_backend.integrations.howlongtobeat import search_game_on_hltb
 from backlog_manager_backend.integrations.igdb import (
+    IGDB_MAX_RESULTS,
     generate_igdb_token,
     get_companies_on_igdb,
     get_covers_on_igdb,
+    get_game_videos_on_igdb,
     get_games_on_igdb,
     get_games_time_to_beat_on_igdb,
     get_genres_on_igdb,
@@ -29,6 +31,7 @@ from backlog_manager_backend.integrations.types import (
     EnrichedResult,
     IGDBCover,
     IGDBGameData,
+    IGDBGameVideo,
     IGDBInvolvedCompany,
     IGDBSearchResult,
     SteamGridDBSearchResult,
@@ -50,6 +53,8 @@ _SEARCH_RESULT_LIMIT = 20
 # #154, where these were crowding the base game out of the top results.
 _MAIN_GAME_TYPE_RANKS = {0: 0, 8: 1, 9: 1, 10: 1}
 _OTHER_GAME_TYPE_RANK = 2
+
+_YOUTUBE_VIDEO_ID = re.compile(r"[A-Za-z0-9_-]{11}")
 _EXCLUDED_GAME_TYPES = {1, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14}
 
 # Keyed by the full (client_id, client_secret) pair rather than a
@@ -69,6 +74,7 @@ _company_cache: dict[int, str] = {}
 # directly serves issue #105's "cache requests for game information" ask.
 _game_cache: dict[int, IGDBGameData] = {}
 _cover_cache: dict[int, IGDBCover] = {}
+_trailer_cache: dict[int, str | None] = {}
 # hltb_id, main_story, main_story_with_extras, completionist - populated
 # from whichever source (IGDB or the HLTB fallback) resolved a game, so a
 # repeat search for a game IGDB has no beat-time data for doesn't re-fire
@@ -127,6 +133,25 @@ def _is_dlc_like(game: IGDBGameData) -> bool:
     if game.game_type in _EXCLUDED_GAME_TYPES:
         return True
     return game.game_type is None and game.parent_game is not None
+
+
+def _pick_trailer_url(videos: list[IGDBGameVideo]) -> str | None:
+    """A video whose name contains "trailer" is preferred over the rest
+    (IGDB also lists gameplay and overview clips); otherwise the first
+    video wins. Videos whose id isn't a well-formed YouTube id are
+    skipped, since the stored link is validated against the same
+    pattern (schemas/types.py::YouTubeWatchUrl) when an entry is
+    created from it."""
+    playable = [
+        video for video in videos if video.video_id and _YOUTUBE_VIDEO_ID.fullmatch(video.video_id)
+    ]
+    if not playable:
+        return None
+    chosen = next(
+        (video for video in playable if "trailer" in (video.name or "").casefold()),
+        playable[0],
+    )
+    return f"https://www.youtube.com/watch?v={chosen.video_id}"
 
 
 def _seconds_to_hours(seconds: int | None) -> float:
@@ -432,6 +457,20 @@ async def _enrich_search_results(
         except httpx.HTTPError:
             logger.error("Failed to fetch time-to-beat batch")
 
+    uncached_trailer_game_ids = [game.id for game in games if game.id not in _trailer_cache]
+    if uncached_trailer_game_ids:
+        try:
+            videos = await get_game_videos_on_igdb(
+                uncached_trailer_game_ids, client_id, access_token
+            )
+        except httpx.HTTPError:
+            logger.error("Failed to fetch game videos batch")
+        else:
+            for game_id in uncached_trailer_game_ids:
+                game_videos = [video for video in videos if video.game == game_id]
+                if game_videos or len(videos) < IGDB_MAX_RESULTS:
+                    _trailer_cache[game_id] = _pick_trailer_url(game_videos)
+
     games_needing_hltb = [game for game in games if game.id not in _time_to_beat_cache]
     if games_needing_hltb:
         await asyncio.gather(*(_resolve_time_to_beat(game) for game in games_needing_hltb))
@@ -496,6 +535,7 @@ async def _enrich_search_results(
                     completionist=completionist,
                     description=game.summary,
                     publisher=publisher_name,
+                    trailer_url=_trailer_cache.get(game.id),
                 )
             )
         except httpx.HTTPError:

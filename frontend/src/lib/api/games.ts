@@ -13,6 +13,7 @@ export interface GameSearchResult {
   completionist: number;
   description: string | null;
   publisher: string | null;
+  trailerUrl: string | null;
 }
 
 /**
@@ -41,6 +42,7 @@ export async function enrichedSearch(
     completionist: result.completionist,
     description: result.description ?? null,
     publisher: result.publisher ?? null,
+    trailerUrl: result.trailer_url ?? null,
   }));
 }
 

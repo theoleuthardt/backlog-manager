@@ -9,6 +9,7 @@ from backlog_manager_backend.integrations.types import (
     IGDBCover,
     IGDBGameData,
     IGDBGameTimeToBeat,
+    IGDBGameVideo,
     IGDBGenre,
     IGDBInvolvedCompany,
     IGDBPlatform,
@@ -19,6 +20,8 @@ from backlog_manager_backend.integrations.types import (
 logger = structlog.get_logger()
 
 _TIMEOUT = httpx.Timeout(60.0)
+
+IGDB_MAX_RESULTS = 500
 
 _IGDB_MAX_REQUESTS_PER_WINDOW = 4
 _IGDB_RATE_LIMIT_WINDOW_SECONDS = 1.0
@@ -260,6 +263,21 @@ async def get_games_on_igdb(
         return await _query_igdb("games", body, client_id, access_token, list[IGDBGameData])
     except httpx.HTTPStatusError:
         return []
+
+
+async def get_game_videos_on_igdb(
+    game_ids: list[int], client_id: str, access_token: str
+) -> list[IGDBGameVideo]:
+    """Unlike the sibling lookups, a failed request raises instead of
+    returning [] - the caller caches "this game has no video" and must
+    be able to tell that apart from a transient IGDB error."""
+    if not game_ids:
+        return []
+    body = (
+        "fields checksum,game,name,video_id;"
+        f" where game = {_id_list(game_ids)}; limit {IGDB_MAX_RESULTS};"
+    )
+    return await _query_igdb("game_videos", body, client_id, access_token, list[IGDBGameVideo])
 
 
 async def get_covers_on_igdb(

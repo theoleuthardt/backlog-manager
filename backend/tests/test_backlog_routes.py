@@ -108,6 +108,70 @@ async def test_create_and_update_entry_description_round_trips(
     assert cleared_response.json()["description"] is None
 
 
+async def test_create_and_update_entry_trailer_link_round_trips(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    trailer = "https://www.youtube.com/watch?v=abc123DEF45"
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "trailerowner@example.com")
+
+        create_response = client.post(
+            "/api/backlog/entries",
+            headers=headers,
+            json={
+                "title": "Celeste",
+                "genre": ["Platformer"],
+                "platform": ["PC"],
+                "status": "Not Started",
+                "owned": True,
+                "interest": 5,
+                "trailer_link": trailer,
+            },
+        )
+        assert create_response.status_code == 201
+        entry_id = create_response.json()["id"]
+        assert create_response.json()["trailer_link"] == trailer
+
+        unchanged_response = client.put(
+            f"/api/backlog/entries/{entry_id}", headers=headers, json={"note": "hi"}
+        )
+        assert unchanged_response.json()["trailer_link"] == trailer
+
+        cleared_response = client.put(
+            f"/api/backlog/entries/{entry_id}", headers=headers, json={"trailer_link": None}
+        )
+
+    assert cleared_response.status_code == 200
+    assert cleared_response.json()["trailer_link"] is None
+
+
+async def test_create_entry_rejects_a_trailer_link_that_is_not_a_youtube_watch_url(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "badtrailer@example.com")
+
+        response = client.post(
+            "/api/backlog/entries",
+            headers=headers,
+            json={
+                "title": "Celeste",
+                "genre": ["Platformer"],
+                "platform": ["PC"],
+                "status": "Not Started",
+                "owned": True,
+                "interest": 5,
+                "trailer_link": "javascript:alert(1)",
+            },
+        )
+
+    assert response.status_code == 400
+
+
 async def test_list_entries_only_returns_own_entries(postgres_url: str, create_and_login) -> None:
     from backlog_manager_backend.app import create_app
 

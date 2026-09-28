@@ -29,6 +29,7 @@ from backlog_manager_backend.schemas.backlog_entry import (
     CreateBacklogEntryParams,
     ReviewStars,
 )
+from backlog_manager_backend.schemas.types import YouTubeWatchUrl
 from backlog_manager_backend.services import game_service
 
 logger = structlog.get_logger()
@@ -78,6 +79,7 @@ class CsvPreviewItem(msgspec.Struct):
     completed_at: datetime | None = None
     image_link: str | None = None
     description: str | None = None
+    trailer_link: str | None = None
     main_time: Decimal | None = None
     main_plus_extra_time: Decimal | None = None
     completion_time: Decimal | None = None
@@ -98,6 +100,7 @@ class SubmitCsvEntry(msgspec.Struct):
     completed_at: datetime | None = None
     image_link: str | None = None
     description: str | None = None
+    trailer_link: YouTubeWatchUrl | None = None
     main_time: Decimal | None = None
     main_plus_extra_time: Decimal | None = None
     completion_time: Decimal | None = None
@@ -110,6 +113,7 @@ class _GameMatch(msgspec.Struct):
     completionist: float
     genres: list[str] = []
     description: str | None = None
+    trailer_url: str | None = None
 
 
 _GENRE_PLACEHOLDERS = {"yes", "y", "no", "n"}
@@ -194,6 +198,7 @@ async def _match_game(
                 completionist=match.completionist,
                 genres=match.genres,
                 description=match.description,
+                trailer_url=match.trailer_url,
             )
 
     hltb_results = await search_game_on_hltb(title)
@@ -494,6 +499,7 @@ async def build_csv_preview(
                 completed_at=row.completed_at,
                 image_link=game_match.image_url if game_match else None,
                 description=game_match.description if game_match else None,
+                trailer_link=game_match.trailer_url if game_match else None,
                 main_time=Decimal(str(game_match.main_story)) if game_match else None,
                 main_plus_extra_time=(
                     Decimal(str(game_match.main_story_with_extras)) if game_match else None
@@ -566,6 +572,7 @@ async def submit_csv_entries(
                         interest=5,
                         image_link=entry.image_link,
                         description=entry.description,
+                        trailer_link=entry.trailer_link,
                         main_time=entry.main_time,
                         main_plus_extra_time=entry.main_plus_extra_time,
                         completion_time=entry.completion_time,
