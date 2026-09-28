@@ -35,3 +35,24 @@ jobs:
         env:
           CI: 'true'
         run: uv run pytest
+
+  release-scripts:
+    name: Release Script Tests
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "20"
+
+      - name: Run updater manifest tests
+        run: node --test scripts/updater-manifest.test.mjs

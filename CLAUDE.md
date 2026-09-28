@@ -61,7 +61,7 @@ uv run ruff check .  # Lint
 
 ## Architecture
 
-**Frontend stack:** Next.js 15+ with App Router, calling the backend directly over REST via a typed `openapi-fetch` client generated from the backend's OpenAPI schema, JWT Bearer token in `localStorage` for auth (no NextAuth), Tailwind CSS + shadcn/ui components. Lives entirely in `frontend/`. Distributed as a Tauri desktop app (static export) rather than centrally hosted.
+**Frontend stack:** Next.js 15+ with App Router, calling the backend directly over REST via a typed `openapi-fetch` client generated from the backend's OpenAPI schema, JWT Bearer token in `localStorage` for auth (no NextAuth), Tailwind CSS + shadcn/ui components. Lives entirely in `frontend/`. Distributed as a Tauri desktop app (static export) rather than centrally hosted; the app updates itself via the Tauri updater plugin from GitHub Releases (signing key, `latest.json` and pinned plugin versions: see `docs/TAURI.md`).
 
 **Backend stack:** Python/Litestar, uv-managed, SQLAlchemy 2.0 async + asyncpg, full REST API (backlog CRUD, auth incl. TOTP 2FA, CSV import/export, IGDB/HowLongToBeat integrations). Lives entirely in `backend/`. This is the only piece of the app hosted as a public, always-on service, at `blm.theocloud.dev`. See issue #104 for the migration history off Next.js/tRPC.
 

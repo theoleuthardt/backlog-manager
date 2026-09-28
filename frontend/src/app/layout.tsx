@@ -6,6 +6,7 @@ import { Geist } from "next/font/google";
 import { ApiProvider } from "~/lib/api/provider";
 import { AuthProvider } from "~/app/context/AuthContext";
 import { Toaster } from "~/components/ui/sonner";
+import { AppUpdater } from "~/app/_components/AppUpdater";
 import { ThemeProvider } from "~/app/context/ThemeContext";
 import { THEME_CACHE_KEY } from "~/lib/themes";
 
@@ -41,6 +42,7 @@ export default function RootLayout({
           </AuthProvider>
         </ApiProvider>
         <Toaster />
+        <AppUpdater />
       </body>
     </html>
   );

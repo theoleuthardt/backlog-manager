@@ -12,6 +12,7 @@ import {
   useVerifyTwoFactorEnrollment,
   useDisableTwoFactor,
 } from "~/hooks/useTwoFactor";
+import { AppUpdateSection } from "~/app/_components/AppUpdateSection";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -678,6 +679,8 @@ export function AccountContent() {
           )}
         </div>
       </div>
+
+      <AppUpdateSection />
 
       <Dialog
         open={isEnrollOpen}
