@@ -27,6 +27,18 @@ def postgres_url() -> Generator[str, None, None]:
         yield os.environ["POSTGRES_URL"]
 
 
+@pytest.fixture(autouse=True)
+def _reset_igdb_rate_limiters() -> None:
+    """Many tests share the same literal client_id ("cid") - without a
+    reset, permits one test's mocked requests consumed from that
+    client_id's rate limiter would still be held when a later,
+    unrelated test runs within the same window, making it block for up
+    to a second waiting on a limit that has nothing to do with it."""
+    from backlog_manager_backend.integrations import igdb
+
+    igdb._igdb_rate_limiters = {}
+
+
 @pytest.fixture(scope="session", autouse=True)
 async def _seed_schema(postgres_url: str) -> None:
     dsn = postgres_url.replace("postgresql+asyncpg", "postgresql")

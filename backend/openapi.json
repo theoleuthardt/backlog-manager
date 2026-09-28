@@ -2945,15 +2945,15 @@
         ]
       }
     },
-    "/api/csv/parse": {
+    "/api/csv/headers": {
       "post": {
-        "summary": "ParseCsv",
-        "operationId": "ApiCsvParseParseCsv",
+        "summary": "GetCsvHeaders",
+        "operationId": "ApiCsvHeadersGetCsvHeaders",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ParseCsvRequest"
+                "$ref": "#/components/schemas/CsvHeadersRequest"
               }
             }
           },
@@ -2962,15 +2962,19 @@
         "responses": {
           "200": {
             "description": "Request fulfilled, document follows",
-            "headers": {},
+            "headers": {
+              "cache-control": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "additionalProperties": {},
-                    "type": "object"
-                  },
-                  "type": "array"
+                  "$ref": "#/components/schemas/CsvHeadersResponse"
                 }
               }
             }
@@ -3014,18 +3018,23 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
-    "/api/csv/import": {
+    "/api/csv/preview/stream": {
       "post": {
-        "summary": "ImportCsv",
-        "operationId": "ApiCsvImportImportCsv",
+        "summary": "PreviewCsvStream",
+        "operationId": "ApiCsvPreviewStreamPreviewCsvStream",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ImportCsvRequest"
+                "$ref": "#/components/schemas/MatchCsvRequest"
               }
             }
           },
@@ -3034,12 +3043,18 @@
         "responses": {
           "200": {
             "description": "Request fulfilled, document follows",
-            "headers": {},
-            "content": {
-              "application/json": {
+            "headers": {
+              "cache-control": {
                 "schema": {
-                  "$ref": "#/components/schemas/ImportResult"
-                }
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            },
+            "content": {
+              "text/event-stream": {
+                "schema": {}
               }
             }
           },
@@ -3082,97 +3097,48 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
-    "/api/csv/import/{session_id}/progress": {
-      "get": {
-        "summary": "GetCsvImportProgress",
-        "operationId": "ApiCsvImportSessionIdProgressGetCsvImportProgress",
-        "parameters": [
-          {
-            "name": "session_id",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "deprecated": false
-          }
-        ],
+    "/api/csv/submit/stream": {
+      "post": {
+        "summary": "SubmitCsvStream",
+        "operationId": "ApiCsvSubmitStreamSubmitCsvStream",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "$ref": "#/components/schemas/SubmitCsvEntry"
+                },
+                "type": "array"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "Request fulfilled, document follows",
-            "headers": {},
-            "content": {
-              "application/json": {
+            "headers": {
+              "cache-control": {
                 "schema": {
-                  "$ref": "#/components/schemas/ImportProgressResponse"
-                }
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
               }
-            }
-          },
-          "400": {
-            "description": "Bad request syntax or unsupported method",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "properties": {
-                    "status_code": {
-                      "type": "integer"
-                    },
-                    "detail": {
-                      "type": "string"
-                    },
-                    "extra": {
-                      "additionalProperties": {},
-                      "type": [
-                        "null",
-                        "object",
-                        "array"
-                      ]
-                    }
-                  },
-                  "type": "object",
-                  "required": [
-                    "detail",
-                    "status_code"
-                  ],
-                  "description": "Validation Exception",
-                  "examples": [
-                    {
-                      "status_code": 400,
-                      "detail": "Bad Request",
-                      "extra": {}
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        },
-        "deprecated": false
-      }
-    },
-    "/api/csv/import/{session_id}/cancel": {
-      "post": {
-        "summary": "CancelCsvImport",
-        "operationId": "ApiCsvImportSessionIdCancelCancelCsvImport",
-        "parameters": [
-          {
-            "name": "session_id",
-            "in": "path",
-            "schema": {
-              "type": "string"
             },
-            "required": true,
-            "deprecated": false
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Request fulfilled, nothing follows",
-            "headers": {}
+            "content": {
+              "text/event-stream": {
+                "schema": {}
+              }
+            }
           },
           "400": {
             "description": "Bad request syntax or unsupported method",
@@ -3213,7 +3179,12 @@
             }
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/api/games/search": {
@@ -3838,6 +3809,164 @@
         ]
       }
     },
+    "/api/games/steamgriddb-covers-by-id": {
+      "get": {
+        "summary": "GetSteamgriddbCoversById",
+        "operationId": "ApiGamesSteamgriddbCoversByIdGetSteamgriddbCoversById",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true,
+            "deprecated": false,
+            "allowEmptyValue": false,
+            "allowReserved": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request syntax or unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Validation Exception",
+                  "examples": [
+                    {
+                      "status_code": 400,
+                      "detail": "Bad Request",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/games/steamgriddb-search": {
+      "get": {
+        "summary": "SearchSteamgriddb",
+        "operationId": "ApiGamesSteamgriddbSearchSearchSteamgriddb",
+        "parameters": [
+          {
+            "name": "search_term",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "deprecated": false,
+            "allowEmptyValue": false,
+            "allowReserved": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SteamGridDBSearchResult"
+                  },
+                  "type": "array"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request syntax or unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Validation Exception",
+                  "examples": [
+                    {
+                      "status_code": 400,
+                      "detail": "Bad Request",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/games/{steam_app_id}/price": {
       "get": {
         "summary": "GetGamePrice",
@@ -4326,6 +4455,16 @@
               }
             ]
           },
+          "description": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "main_time": {
             "oneOf": [
               {
@@ -4531,6 +4670,16 @@
               }
             ]
           },
+          "description": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "main_time": {
             "oneOf": [
               {
@@ -4692,6 +4841,33 @@
           "username"
         ],
         "title": "CreateUserRequest"
+      },
+      "CsvHeadersRequest": {
+        "properties": {
+          "content": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "title": "CsvHeadersRequest"
+      },
+      "CsvHeadersResponse": {
+        "properties": {
+          "headers": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          }
+        },
+        "type": "object",
+        "required": [
+          "headers"
+        ],
+        "title": "CsvHeadersResponse"
       },
       "CustomStatusResponse": {
         "properties": {
@@ -5949,83 +6125,6 @@
         ],
         "title": "IGDBSearchResult"
       },
-      "ImportCsvRequest": {
-        "properties": {
-          "content": {
-            "type": "string"
-          },
-          "title_column": {
-            "type": "string"
-          },
-          "genre_column": {
-            "type": "string"
-          },
-          "platform_column": {
-            "type": "string"
-          },
-          "status_column": {
-            "type": "string"
-          },
-          "session_id": {
-            "oneOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "content",
-          "genre_column",
-          "platform_column",
-          "status_column",
-          "title_column"
-        ],
-        "title": "ImportCsvRequest"
-      },
-      "ImportProgressResponse": {
-        "properties": {
-          "processed": {
-            "type": "integer"
-          }
-        },
-        "type": "object",
-        "required": [
-          "processed"
-        ],
-        "title": "ImportProgressResponse"
-      },
-      "ImportResult": {
-        "properties": {
-          "success": {
-            "type": "integer",
-            "default": 0
-          },
-          "failed": {
-            "type": "integer",
-            "default": 0
-          },
-          "errors": {
-            "items": {
-              "$ref": "#/components/schemas/RecordError"
-            },
-            "type": "array"
-          },
-          "missing_games": {
-            "items": {
-              "$ref": "#/components/schemas/MissingGame"
-            },
-            "type": "array"
-          }
-        },
-        "type": "object",
-        "required": [],
-        "title": "ImportResult"
-      },
       "KeyShopOffer": {
         "properties": {
           "shop": {
@@ -6116,41 +6215,75 @@
         "required": [],
         "title": "LoginResult"
       },
-      "MissingGame": {
-        "properties": {
-          "title": {
-            "type": "string"
-          },
-          "genre": {
-            "type": "string"
-          },
-          "platform": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string"
-          }
-        },
-        "type": "object",
-        "required": [
-          "genre",
-          "platform",
-          "status",
-          "title"
-        ],
-        "title": "MissingGame"
-      },
-      "ParseCsvRequest": {
+      "MatchCsvRequest": {
         "properties": {
           "content": {
             "type": "string"
+          },
+          "title_column": {
+            "type": "string"
+          },
+          "genre_column": {
+            "type": "string"
+          },
+          "platform_column": {
+            "type": "string"
+          },
+          "status_column": {
+            "type": "string"
+          },
+          "playtime_column": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rating_column": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "completed_at_column": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "note_columns": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "review_columns": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           }
         },
         "type": "object",
         "required": [
-          "content"
+          "content",
+          "genre_column",
+          "platform_column",
+          "status_column",
+          "title_column"
         ],
-        "title": "ParseCsvRequest"
+        "title": "MatchCsvRequest"
       },
       "PublicUser": {
         "properties": {
@@ -6260,21 +6393,21 @@
         ],
         "title": "PublicUsername"
       },
-      "RecordError": {
+      "SteamGridDBSearchResult": {
         "properties": {
-          "title": {
-            "type": "string"
+          "id": {
+            "type": "integer"
           },
-          "error": {
+          "name": {
             "type": "string"
           }
         },
         "type": "object",
         "required": [
-          "error",
-          "title"
+          "id",
+          "name"
         ],
-        "title": "RecordError"
+        "title": "SteamGridDBSearchResult"
       },
       "SteamPreviewItem": {
         "properties": {
@@ -6321,6 +6454,139 @@
           "appid"
         ],
         "title": "SteamWishlistItem"
+      },
+      "SubmitCsvEntry": {
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "genre": {
+            "type": "string"
+          },
+          "platform": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "status": {
+            "type": "string"
+          },
+          "owned": {
+            "type": "boolean"
+          },
+          "playtime": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "review_stars": {
+            "oneOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "maximum": 10
+          },
+          "note": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "review": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "completed_at": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "image_link": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "main_time": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "main_plus_extra_time": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "completion_time": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "genre",
+          "owned",
+          "platform",
+          "status",
+          "title"
+        ],
+        "title": "SubmitCsvEntry"
       },
       "TokenResponse": {
         "properties": {
@@ -6471,6 +6737,16 @@
             ]
           },
           "image_link": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": {
             "oneOf": [
               {
                 "type": "string"

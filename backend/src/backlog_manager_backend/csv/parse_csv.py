@@ -1,23 +1,8 @@
 import csv
 import io
 import string
-from decimal import Decimal
 
 import msgspec
-import structlog
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from backlog_manager_backend.errors import (
-    ConflictError,
-    DatabaseError,
-    NotFoundError,
-    ValidationError,
-)
-from backlog_manager_backend.integrations.howlongtobeat import search_game_on_hltb
-from backlog_manager_backend.repositories.backlog_entry_repo import create_backlog_entry
-from backlog_manager_backend.schemas.backlog_entry import CreateBacklogEntryParams
-
-logger = structlog.get_logger()
 
 CSVRecord = dict[str, object]
 
@@ -29,31 +14,40 @@ class ColumnConfig(msgspec.Struct):
     genre_column: str
     platform_column: str
     status_column: str
+    playtime_column: str | None = None
+    rating_column: str | None = None
+    completed_at_column: str | None = None
+    note_columns: list[str] = []
+    review_columns: list[str] = []
 
 
-class MissingGame(msgspec.Struct):
-    title: str
-    genre: str
-    platform: str
-    status: str
-
-
-class RecordError(msgspec.Struct):
-    title: str
-    error: str
-
-
-class ImportResult(msgspec.Struct):
-    success: int = 0
-    failed: int = 0
-    errors: list[RecordError] = []
-    missing_games: list[MissingGame] = []
+def extract_csv_headers(file_content: str) -> dict[str, str]:
+    """The first row's cell text per column letter (e.g. {"A": "Game",
+    "B": "Genre"}) - lets the import UI label each column picker with
+    its real header instead of a blind spreadsheet letter."""
+    reader = csv.reader(io.StringIO(file_content))
+    try:
+        header_row = next(reader)
+    except StopIteration:
+        return {}
+    return {
+        _COLUMN_KEYS[index]: value
+        for index, value in enumerate(header_row)
+        if index < len(_COLUMN_KEYS)
+    }
 
 
 def parse_csv_content(file_content: str) -> list[CSVRecord]:
+    """Splits every row after the header row into a letter-keyed dict.
+    The first row is always treated as a header (matching how every
+    spreadsheet export used against this feature actually looks) and
+    never becomes a data record - see extract_csv_headers for reading
+    it back out."""
     reader = csv.reader(io.StringIO(file_content))
     records: list[CSVRecord] = []
-    for row in reader:
+    for row_index, row in enumerate(reader):
+        if row_index == 0:
+            continue
         if not row or (len(row) == 1 and row[0] == ""):
             continue
         record: CSVRecord = {}
@@ -64,7 +58,7 @@ def parse_csv_content(file_content: str) -> list[CSVRecord]:
     return records
 
 
-def _safe_string(value: object, default: str = "") -> str:
+def safe_string(value: object, default: str = "") -> str:
     if isinstance(value, str):
         return value
     if value is None:
@@ -72,164 +66,3 @@ def _safe_string(value: object, default: str = "") -> str:
     if isinstance(value, (int, float, bool)):
         return str(value)
     return default
-
-
-_import_progress: dict[str, int] = {}
-_import_cancel_flags: dict[str, bool] = {}
-_import_session_owners: dict[str, int] = {}
-
-_SESSION_ID_IN_USE = "Import session ID is already in use by another import"
-
-
-def get_import_progress(session_id: str) -> int:
-    return _import_progress.get(session_id, 0)
-
-
-def set_import_progress(session_id: str, processed: int) -> None:
-    _import_progress[session_id] = processed
-
-
-def clear_import_progress(session_id: str) -> None:
-    _import_progress.pop(session_id, None)
-    _import_cancel_flags.pop(session_id, None)
-    _import_session_owners.pop(session_id, None)
-
-
-def set_import_session_owner(session_id: str, user_id: int) -> None:
-    """Guards against two concurrent requests racing on the same
-    session_id: while an import is running, a different user_id
-    reusing it is rejected outright rather than silently taking over
-    ownership, which would let them hijack that import's progress/cancel
-    endpoints. Once the import finishes, clear_import_progress() (see
-    the finally block below) frees the session_id again - by then there
-    is nothing left for a later reuse to expose."""
-    existing_owner = _import_session_owners.get(session_id)
-    if existing_owner is not None and existing_owner != user_id:
-        raise ConflictError(_SESSION_ID_IN_USE)
-    _import_session_owners[session_id] = user_id
-
-
-def get_import_session_owner(session_id: str) -> int | None:
-    """None for a session_id that was never registered (unknown to the
-    server, e.g. a typo) - distinct from a real owner mismatch, which
-    callers should treat as "not found" rather than leaking that the
-    session belongs to someone else."""
-    return _import_session_owners.get(session_id)
-
-
-def set_cancel_flag(session_id: str, cancelled: bool) -> None:
-    if cancelled:
-        _import_cancel_flags[session_id] = True
-    else:
-        _import_cancel_flags.pop(session_id, None)
-
-
-def get_cancel_flag(session_id: str) -> bool:
-    return _import_cancel_flags.get(session_id, False)
-
-
-def is_cancelled(session_id: str) -> bool:
-    return get_cancel_flag(session_id)
-
-
-async def import_backlog_entries_from_csv(
-    session: AsyncSession,
-    user_id: int,
-    records: list[CSVRecord],
-    config: ColumnConfig,
-    session_id: str | None = None,
-) -> ImportResult:
-    """The `finally` block below runs on every exit path (success,
-    exception, or this coroutine being cancelled) so a session_id is
-    always freed once this import is done, rather than leaking
-    progress/cancel/ownership state for a session_id nobody will ever
-    import with again. set_import_session_owner() still protects a
-    *concurrent* request racing on the same session_id while this
-    import is still running - the collision case it guards against."""
-    result = ImportResult(errors=[], missing_games=[])
-    processed_count = 0
-
-    if session_id:
-        set_import_session_owner(session_id, user_id)
-
-    try:
-        for record in records:
-            if session_id and is_cancelled(session_id):
-                logger.info(
-                    "Import cancelled",
-                    processed=processed_count + 1,
-                    total=len(records),
-                )
-                break
-
-            title = _safe_string(record.get(config.title_column), "").strip()
-
-            if not title:
-                result.failed += 1
-                result.errors.append(
-                    RecordError(
-                        title="Unknown",
-                        error=f"Title (column {config.title_column}) is required",
-                    )
-                )
-                processed_count += 1
-                if session_id:
-                    set_import_progress(session_id, processed_count)
-                continue
-
-            search_results = await search_game_on_hltb(title)
-
-            if session_id and is_cancelled(session_id):
-                logger.info(
-                    "Import cancelled",
-                    processed=processed_count + 1,
-                    total=len(records),
-                )
-                break
-
-            game_data = search_results[0] if search_results else None
-
-            if game_data is None:
-                result.missing_games.append(
-                    MissingGame(
-                        title=title,
-                        genre=_safe_string(record.get(config.genre_column), "Unknown"),
-                        platform=_safe_string(record.get(config.platform_column), "Unknown"),
-                        status=_safe_string(record.get(config.status_column), "Not Started"),
-                    )
-                )
-                processed_count += 1
-                if session_id:
-                    set_import_progress(session_id, processed_count)
-                continue
-
-            try:
-                await create_backlog_entry(
-                    session,
-                    CreateBacklogEntryParams(
-                        user_id=user_id,
-                        title=title,
-                        genre=_safe_string(record.get(config.genre_column), "Unknown"),
-                        platform=_safe_string(record.get(config.platform_column), "Unknown"),
-                        status=_safe_string(record.get(config.status_column), "Not Started"),
-                        owned=True,
-                        interest=5,
-                        image_link=game_data.image_url,
-                        main_time=Decimal(str(game_data.main_story)),
-                        main_plus_extra_time=Decimal(str(game_data.main_story_with_extras)),
-                        completion_time=Decimal(str(game_data.completionist)),
-                    ),
-                )
-                result.success += 1
-            except (NotFoundError, ConflictError, ValidationError, DatabaseError) as error:
-                result.failed += 1
-                result.errors.append(RecordError(title=title, error=str(error)))
-            finally:
-                processed_count += 1
-                if session_id:
-                    set_import_progress(session_id, processed_count)
-
-        return result
-    finally:
-        if session_id:
-            clear_import_progress(session_id)

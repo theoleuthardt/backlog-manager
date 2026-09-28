@@ -1,63 +1,81 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import * as csvApi from "~/lib/api/csv";
-import { createEntry } from "~/lib/api/backlog";
+import type { ColumnConfig, CsvImportProgress, SubmitCsvEntry } from "~/lib/api/csv";
 
-export function useImportCsv() {
-  return useMutation({
-    mutationFn: csvApi.importCsv,
-  });
+export function useCsvHeaders() {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const run = useCallback(async (content: string) => {
+    setIsLoading(true);
+    try {
+      return await csvApi.getCsvHeaders(content);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { run, isLoading };
 }
 
-export function useImportProgress(sessionId: string | null, enabled: boolean) {
-  return useQuery({
-    queryKey: ["csv-import-progress", sessionId],
-    queryFn: () => csvApi.getImportProgress(sessionId ?? ""),
-    enabled: sessionId !== null && enabled,
-    retry: false,
-    refetchInterval: (query) => (query.state.error ? false : 200),
-  });
+export function useCsvPreviewStream() {
+  const [isRunning, setIsRunning] = useState(false);
+  const [progress, setProgress] = useState<CsvImportProgress | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const run = useCallback(async (content: string, config: ColumnConfig) => {
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    setIsRunning(true);
+    setProgress(null);
+    try {
+      return await csvApi.previewCsvStream(
+        content,
+        config,
+        setProgress,
+        controller.signal,
+      );
+    } finally {
+      abortControllerRef.current = null;
+      setIsRunning(false);
+      setProgress(null);
+    }
+  }, []);
+
+  const cancel = useCallback(() => {
+    abortControllerRef.current?.abort();
+  }, []);
+
+  return { run, cancel, isRunning, progress };
 }
 
-export function useCancelCsvImport() {
-  return useMutation({
-    mutationFn: csvApi.cancelImport,
-  });
-}
-
-export function useCreateMissingGameEntry() {
+export function useCsvSubmitStream() {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (input: {
-      genre: string;
-      platform: string;
-      status: string;
-      imageLink: string | null;
-      mainTime: number;
-      mainPlusExtraTime: number;
-      completionTime: number;
-      title: string;
-    }) => {
-      return createEntry({
-        title: input.title,
-        genre: input.genre
-          .split(",")
-          .map((g) => g.trim())
-          .filter(Boolean),
-        platform: input.platform
-          .split(",")
-          .map((p) => p.trim())
-          .filter(Boolean),
-        status: input.status,
-        owned: true,
-        interest: 5,
-        imageLink: input.imageLink ?? undefined,
-        mainTime: input.mainTime,
-        mainPlusExtraTime: input.mainPlusExtraTime,
-        completionTime: input.completionTime,
-      });
+  const [isRunning, setIsRunning] = useState(false);
+  const [progress, setProgress] = useState<CsvImportProgress | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const run = useCallback(
+    async (entries: SubmitCsvEntry[]) => {
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+      setIsRunning(true);
+      setProgress(null);
+      try {
+        return await csvApi.submitCsvStream(entries, setProgress, controller.signal);
+      } finally {
+        await queryClient.invalidateQueries({ queryKey: ["backlog-entries"] });
+        abortControllerRef.current = null;
+        setIsRunning(false);
+        setProgress(null);
+      }
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["backlog-entries"] });
-    },
-  });
+    [queryClient],
+  );
+
+  const cancel = useCallback(() => {
+    abortControllerRef.current?.abort();
+  }, []);
+
+  return { run, cancel, isRunning, progress };
 }

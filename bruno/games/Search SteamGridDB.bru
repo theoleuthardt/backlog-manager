@@ -1,0 +1,28 @@
+meta {
+  name: Search SteamGridDB
+  type: http
+  seq: 12
+}
+
+get {
+  url: {{backendUrl}}/api/games/steamgriddb-search?search_term=En Garde
+  body: none
+  auth: bearer
+}
+
+params:query {
+  search_term: En Garde
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Title search against SteamGridDB's own catalogue - lets a game with
+  no Steam App ID still be matched to a SteamGridDB game id for "Get
+  SteamGridDB Covers By Id". Run auth/Login first.
+
+  503 if neither the caller nor the server has a SteamGridDB API key
+  configured, or if SteamGridDB is unreachable.
+}

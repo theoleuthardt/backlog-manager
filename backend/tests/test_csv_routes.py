@@ -1,36 +1,69 @@
+import asyncio
+import json
+
+import pytest
 from litestar.testing import TestClient
+
+
+def _parse_sse(body: str) -> list[tuple[str | None, str]]:
+    """Mirrors test_steam_routes.py's _parse_sse - see its docstring."""
+    messages: list[tuple[str | None, str]] = []
+    for raw_message in body.strip("\r\n").split("\r\n\r\n"):
+        event: str | None = None
+        data_lines: list[str] = []
+        for line in raw_message.split("\r\n"):
+            if line.startswith("event: "):
+                event = line.removeprefix("event: ")
+            elif line.startswith("data: "):
+                data_lines.append(line.removeprefix("data: "))
+        if data_lines:
+            messages.append((event, "\n".join(data_lines)))
+    return messages
 
 
 async def test_csv_routes_require_authentication(postgres_url: str) -> None:
     from backlog_manager_backend.app import create_app
 
     with TestClient(app=create_app()) as client:
-        response = client.post("/api/csv/parse", json={"content": "a,b,c"})
+        response = client.post("/api/csv/headers", json={"content": "a,b,c"})
 
     assert response.status_code == 401
 
 
-async def test_parse_csv_splits_columns(postgres_url: str, create_and_login) -> None:
+async def test_get_csv_headers_reads_first_row(postgres_url: str, create_and_login) -> None:
     from backlog_manager_backend.app import create_app
 
     with TestClient(app=create_app()) as client:
-        headers = await create_and_login(client, "csvparser@example.com")
+        headers = await create_and_login(client, "csvheaders@example.com")
 
         response = client.post(
-            "/api/csv/parse",
+            "/api/csv/headers",
             headers=headers,
-            json={"content": "Celeste,Platformer,PC,Not Started"},
+            json={
+                "content": "Game,Genre,Platform,Status\nCeleste,Platformer,PC,Not Started",
+                "title_column": "A",
+                "genre_column": "B",
+                "platform_column": "C",
+                "status_column": "D",
+            },
         )
 
     assert response.status_code == 200
-    assert response.json() == [{"A": "Celeste", "B": "Platformer", "C": "PC", "D": "Not Started"}]
+    assert response.json() == {"headers": {"A": "Game", "B": "Genre", "C": "Platform", "D": "Status"}}
 
 
-async def test_import_csv_creates_entries_and_reports_missing_games(
-    postgres_url: str, create_and_login, monkeypatch
+async def test_preview_csv_stream_reports_progress_then_done(
+    postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """IGDB credentials are cleared so this stays HowLongToBeat-only
+    regardless of what this machine's own .env has configured -
+    IGDB-specific matching is covered separately in test_csv_preview.py."""
     from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.config import settings
     from backlog_manager_backend.integrations.types import HltbResultData
+
+    monkeypatch.setattr(settings, "igdb_client_id", None)
+    monkeypatch.setattr(settings, "igdb_client_secret", None)
 
     async def fake_search(title: str) -> list[HltbResultData]:
         if title == "Celeste":
@@ -48,16 +81,20 @@ async def test_import_csv_creates_entries_and_reports_missing_games(
             ]
         return []
 
-    monkeypatch.setattr("backlog_manager_backend.csv.parse_csv.search_game_on_hltb", fake_search)
+    monkeypatch.setattr("backlog_manager_backend.csv.preview.search_game_on_hltb", fake_search)
 
     with TestClient(app=create_app()) as client:
-        headers = await create_and_login(client, "csvimporter@example.com")
+        headers = await create_and_login(client, "csvpreviewstream@example.com")
 
         response = client.post(
-            "/api/csv/import",
+            "/api/csv/preview/stream",
             headers=headers,
             json={
-                "content": "Celeste,Platformer,PC,Not Started\nUnknown Game,RPG,PC,Not Started",
+                "content": (
+                    "Game,Genre,Platform,Status\n"
+                    "Celeste,Platformer,Owned,Finished\n"
+                    "Unknown Game,RPG,Owned,\n"
+                ),
                 "title_column": "A",
                 "genre_column": "B",
                 "platform_column": "C",
@@ -66,110 +103,140 @@ async def test_import_csv_creates_entries_and_reports_missing_games(
         )
 
     assert response.status_code == 200
-    body = response.json()
-    assert body["success"] == 1
-    assert body["failed"] == 0
-    assert len(body["missing_games"]) == 1
-    assert body["missing_games"][0]["title"] == "Unknown Game"
+    assert response.headers["content-type"].startswith("text/event-stream")
+    messages = _parse_sse(response.text)
 
-    entries_response = client.get("/api/backlog/entries", headers=headers)
+    progress_events = [json.loads(data) for event, data in messages if event == "progress"]
+    assert progress_events == [{"processed": 1, "total": 2}, {"processed": 2, "total": 2}]
+
+    done_events = [json.loads(data) for event, data in messages if event == "done"]
+    assert len(done_events) == 1
+    items = done_events[0]
+    assert len(items) == 2
+    celeste = next(item for item in items if item["title"] == "Celeste")
+    assert celeste["status"] == "Completed"
+    assert celeste["platform"] == ["PC"]
+    assert celeste["matched"] is True
+    unknown = next(item for item in items if item["title"] == "Unknown Game")
+    assert unknown["matched"] is False
+
+
+async def test_submit_csv_stream_creates_entries(postgres_url: str, create_and_login) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "csvsubmitstream@example.com")
+
+        response = client.post(
+            "/api/csv/submit/stream",
+            headers=headers,
+            json=[
+                {
+                    "title": "Celeste",
+                    "genre": "Platformer",
+                    "platform": ["PC"],
+                    "status": "Completed",
+                    "owned": True,
+                    "playtime": "12.5",
+                    "review_stars": 9,
+                    "completed_at": "2026-07-01T00:00:00",
+                }
+            ],
+        )
+
+        entries_response = client.get("/api/backlog/entries", headers=headers)
+
+    assert response.status_code == 200
+    messages = _parse_sse(response.text)
+    done_events = [json.loads(data) for event, data in messages if event == "done"]
+    assert len(done_events) == 1
+    assert done_events[0]["created"][0]["title"] == "Celeste"
+    assert done_events[0]["created"][0]["status"] == "Completed"
+    assert done_events[0]["skipped"] == []
+
     assert entries_response.status_code == 200
     assert entries_response.json()[0]["title"] == "Celeste"
 
 
-async def test_get_and_cancel_import_progress(postgres_url: str, create_and_login) -> None:
-    from backlog_manager_backend.app import create_app
-
-    with TestClient(app=create_app()) as client:
-        headers = await create_and_login(client, "csvprogress@example.com")
-
-        initial = client.get("/api/csv/import/session-abc/progress", headers=headers)
-        cancel_response = client.post("/api/csv/import/session-abc/cancel", headers=headers)
-
-    assert initial.status_code == 200
-    assert initial.json() == {"processed": 0}
-    assert cancel_response.status_code == 204
-
-
-async def test_import_session_progress_and_cancel_are_bound_to_their_owner(
+async def test_submit_csv_stream_rejects_a_review_stars_value_outside_the_valid_range(
     postgres_url: str, create_and_login
 ) -> None:
-    """Regression test for an IDOR: the progress/cancel endpoints used
-    to trust the client-supplied session_id alone, so any authenticated
-    user could poll or cancel *another* user's in-progress CSV import
-    just by guessing/knowing their session_id."""
     from backlog_manager_backend.app import create_app
-    from backlog_manager_backend.csv.parse_csv import (
-        clear_import_progress,
-        set_import_session_owner,
-    )
-
-    session_id = "owned-session-xyz"
 
     with TestClient(app=create_app()) as client:
-        owner_headers = await create_and_login(client, "csvidorowner@example.com")
-        intruder_headers = await create_and_login(client, "csvidorintruder@example.com")
-        owner_id = client.get("/api/user/me", headers=owner_headers).json()["id"]
+        headers = await create_and_login(client, "csvsubmitinvalid@example.com")
 
-        # Session state is only held for the duration of a real import
-        # (freed once it finishes), so an in-progress import is
-        # simulated here directly rather than by racing a real one.
-        set_import_session_owner(session_id, owner_id)
-        try:
-            intruder_progress = client.get(
-                f"/api/csv/import/{session_id}/progress", headers=intruder_headers
-            )
-            intruder_cancel = client.post(
-                f"/api/csv/import/{session_id}/cancel", headers=intruder_headers
-            )
-            owner_progress = client.get(
-                f"/api/csv/import/{session_id}/progress", headers=owner_headers
-            )
-        finally:
-            clear_import_progress(session_id)
+        response = client.post(
+            "/api/csv/submit/stream",
+            headers=headers,
+            json=[
+                {
+                    "title": "Celeste",
+                    "genre": "Platformer",
+                    "platform": ["PC"],
+                    "status": "Completed",
+                    "owned": True,
+                    "review_stars": 42,
+                }
+            ],
+        )
 
-    assert intruder_progress.status_code == 404
-    assert intruder_cancel.status_code == 404
-    assert owner_progress.status_code == 200
+    assert response.status_code == 400
 
 
-async def test_import_rejects_session_id_owned_by_another_user(
-    postgres_url: str, create_and_login
-) -> None:
-    """Regression test: reusing another user's still-active session_id
-    used to silently reassign ownership to the new caller instead of
-    being rejected."""
-    from backlog_manager_backend.app import create_app
-    from backlog_manager_backend.csv.parse_csv import (
-        clear_import_progress,
-        set_import_session_owner,
-    )
+async def test_stream_csv_messages_cancels_the_background_task_on_early_exit() -> None:
+    """A client disconnecting mid-stream (or any other early consumer
+    exit) must stop the background row-processing task rather than
+    letting it keep running - covers what test_preview/submit_csv_stream
+    above can't: they always drain the stream to completion."""
+    from backlog_manager_backend.csv.preview import ProgressCallback
+    from backlog_manager_backend.routes.csv import _stream_csv_messages
 
-    session_id = "contested-session-xyz"
+    reached_the_end = False
 
-    with TestClient(app=create_app()) as client:
-        owner_headers = await create_and_login(client, "csvcontestowner@example.com")
-        intruder_headers = await create_and_login(client, "csvcontestintruder@example.com")
-        owner_id = client.get("/api/user/me", headers=owner_headers).json()["id"]
+    async def run(on_progress: ProgressCallback) -> list[object]:
+        nonlocal reached_the_end
+        await on_progress(1, 10)
+        await asyncio.sleep(10)
+        reached_the_end = True
+        return []
 
-        # Simulates an import still in progress and owned by `owner` -
-        # session state is freed once a real import finishes, so this is
-        # seeded directly here rather than by waiting for one.
-        set_import_session_owner(session_id, owner_id)
-        try:
-            intruder_import = client.post(
-                "/api/csv/import",
-                headers=intruder_headers,
-                json={
-                    "content": "",
-                    "title_column": "A",
-                    "genre_column": "B",
-                    "platform_column": "C",
-                    "status_column": "D",
-                    "session_id": session_id,
-                },
-            )
-        finally:
-            clear_import_progress(session_id)
+    generator = _stream_csv_messages(run, lambda items: "[]")
+    first_message = await generator.__anext__()
+    assert first_message.event == "progress"
 
-    assert intruder_import.status_code == 409
+    await generator.aclose()
+    await asyncio.sleep(0)
+
+    assert reached_the_end is False
+
+
+async def _drain_error(run: object) -> str:
+    from backlog_manager_backend.routes.csv import _stream_csv_messages
+
+    messages = [message async for message in _stream_csv_messages(run, lambda items: "[]")]
+    error_messages = [message for message in messages if message.event == "error"]
+    assert len(error_messages) == 1
+    return error_messages[0].data or ""
+
+
+async def test_stream_csv_messages_forwards_a_known_domain_error_as_is() -> None:
+    from backlog_manager_backend.errors import ValidationError
+
+    async def run(on_progress: object) -> list[object]:
+        raise ValidationError("Referenced resource does not exist")
+
+    assert await _drain_error(run) == "Referenced resource does not exist"
+
+
+async def test_stream_csv_messages_hides_an_unexpected_error_behind_a_generic_message() -> None:
+    """An unexpected exception's str() can carry raw internal/driver
+    detail (see errors.py's DatabaseError) - must never reach the
+    client verbatim, unlike a deliberately-raised domain error."""
+
+    async def run(on_progress: object) -> list[object]:
+        raise RuntimeError("relation \"BacklogEntries\" column \"Secret\" leaked")
+
+    error_text = await _drain_error(run)
+    assert "Secret" not in error_text
+    assert error_text == "Import failed - check the server logs for details"

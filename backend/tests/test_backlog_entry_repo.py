@@ -1,9 +1,10 @@
+from datetime import UTC, datetime
 from decimal import Decimal
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backlog_manager_backend.errors import NotFoundError
+from backlog_manager_backend.errors import NotFoundError, ValidationError
 from backlog_manager_backend.repositories import (
     backlog_entry_repo,
     category_backlog_entry_repo,
@@ -55,6 +56,33 @@ async def test_create_backlog_entry(session: AsyncSession) -> None:
     assert entry.completed_at is None
 
 
+async def test_create_backlog_entry_accepts_a_historical_completed_at(
+    session: AsyncSession,
+) -> None:
+    """CSV import needs to backfill a historical completion date for
+    already-finished games (the trigger_update_completed_at DB trigger
+    only fires on UPDATE, not INSERT, and always stamps CURRENT_TIMESTAMP
+    rather than a caller-supplied date)."""
+    user = await _make_user(session)
+    completed_at = datetime(2026, 7, 1, tzinfo=UTC).replace(tzinfo=None)
+
+    entry = await backlog_entry_repo.create_backlog_entry(
+        session,
+        CreateBacklogEntryParams(
+            user_id=user.id,
+            title="Celeste",
+            genre="Platformer",
+            platform="PC",
+            status="Completed",
+            owned=True,
+            interest=8,
+            completed_at=completed_at,
+        ),
+    )
+
+    assert entry.completed_at == completed_at
+
+
 async def test_get_backlog_entries_by_user(session: AsyncSession) -> None:
     user = await _make_user(session)
     await _make_entry(session, user.id, title="Game A")
@@ -101,6 +129,34 @@ async def test_create_backlog_entry_with_playtime(session: AsyncSession) -> None
     assert entry.playtime == Decimal("12.5")
 
 
+async def test_create_backlog_entry_rejects_a_field_exceeding_its_column_length(
+    session: AsyncSession,
+) -> None:
+    """"Genre" is VARCHAR(100) - a value that overflows it must degrade
+    to a ValidationError (as CSV import rows, sourced from an untrusted
+    spreadsheet, can easily produce) rather than an uncaught DataError,
+    and the session must stay usable for the next row afterward rather
+    than staying stuck in a failed transaction."""
+    user = await _make_user(session)
+
+    with pytest.raises(ValidationError):
+        await backlog_entry_repo.create_backlog_entry(
+            session,
+            CreateBacklogEntryParams(
+                user_id=user.id,
+                title="Overlong Genre Game",
+                genre="x" * 101,
+                platform="PC",
+                status="Not Started",
+                owned=True,
+                interest=5,
+            ),
+        )
+
+    entry = await _make_entry(session, user.id, title="Next Row")
+    assert entry.title == "Next Row"
+
+
 async def test_update_backlog_entry_playtime(session: AsyncSession) -> None:
     user = await _make_user(session)
     entry = await _make_entry(session, user.id)
@@ -114,6 +170,28 @@ async def test_update_backlog_entry_playtime(session: AsyncSession) -> None:
     )
 
     assert updated.playtime == Decimal(30)
+
+
+async def test_update_backlog_entry_rejects_a_field_exceeding_its_column_length(
+    session: AsyncSession,
+) -> None:
+    """Mirrors test_create_backlog_entry_rejects_a_field_exceeding_its_column_length -
+    the update path has its own commit/rollback and must degrade the
+    same way."""
+    user = await _make_user(session)
+    entry = await _make_entry(session, user.id)
+
+    with pytest.raises(ValidationError):
+        await backlog_entry_repo.update_backlog_entry(
+            session,
+            UpdateBacklogEntryParams(backlog_entry_id=entry.backlog_entry_id, genre="x" * 101),
+        )
+
+    updated = await backlog_entry_repo.update_backlog_entry(
+        session,
+        UpdateBacklogEntryParams(backlog_entry_id=entry.backlog_entry_id, genre="RPG"),
+    )
+    assert updated.genre == "RPG"
 
 
 async def test_update_backlog_entry_to_completed_sets_completed_at(

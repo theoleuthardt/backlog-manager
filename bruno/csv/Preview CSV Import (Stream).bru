@@ -1,0 +1,46 @@
+meta {
+  name: Preview CSV Import (Stream)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{backendUrl}}/api/csv/preview/stream
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "content": "Title,Genre,Platform,Status\nElden Ring,RPG,PC,In Progress\nHades,Roguelike,PC,Completed\n",
+    "title_column": "A",
+    "genre_column": "B",
+    "platform_column": "C",
+    "status_column": "D",
+    "playtime_column": null,
+    "rating_column": null,
+    "completed_at_column": null,
+    "note_columns": [],
+    "review_columns": []
+  }
+}
+
+docs {
+  SSE preview (media_type: text/event-stream) - Bruno's plain HTTP
+  request type will just return the raw event-stream body once the
+  connection closes, not live progress. Parses+matches every row
+  against IGDB/HowLongToBeat and the user's existing backlog without
+  writing anything. Run auth/Login first.
+
+  Emits a `progress` event per row processed, then a `done` event
+  carrying the full preview list (title, genre, platform, status,
+  owned, playtime, review_stars, note, review, completed_at,
+  image_link, description, main_time, main_plus_extra_time,
+  completion_time, matched, duplicates). The user confirms (and can
+  edit or drop) rows from this preview before "Submit CSV Import
+  (Stream)" actually creates them.
+}

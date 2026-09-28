@@ -34,11 +34,13 @@ export interface BacklogEntryData {
   reviewStars?: number;
   review?: string;
   note?: string;
+  description?: string;
   mainTime?: number;
   mainPlusExtraTime?: number;
   completionTime?: number;
   playtime?: number;
   steamAppId?: number;
+  completedAt?: string;
 }
 
 /**
@@ -56,6 +58,7 @@ export interface CreateBacklogEntryInput {
   owned: boolean;
   interest: number;
   imageLink?: string;
+  description?: string;
   mainTime?: number;
   mainPlusExtraTime?: number;
   completionTime?: number;
@@ -73,7 +76,8 @@ export interface UpdateBacklogEntryInput {
   status?: string;
   owned?: boolean;
   interest?: number;
-  imageLink?: string;
+  imageLink?: string | null;
+  description?: string | null;
   mainTime?: number;
   mainPlusExtraTime?: number;
   completionTime?: number;
@@ -91,7 +95,7 @@ export interface CategoryData {
   description: string | null;
 }
 
-function toNumber(value: string | null | undefined): number | undefined {
+export function toNumber(value: string | null | undefined): number | undefined {
   if (value === null || value === undefined) return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
@@ -113,11 +117,13 @@ export function toEntryData(
     reviewStars: entry.review_stars ?? undefined,
     review: entry.review ?? undefined,
     note: entry.note ?? undefined,
+    description: entry.description ?? undefined,
     mainTime: toNumber(entry.main_time),
     mainPlusExtraTime: toNumber(entry.main_plus_extra_time),
     completionTime: toNumber(entry.completion_time),
     playtime: toNumber(entry.playtime),
     steamAppId: entry.steam_app_id ?? undefined,
+    completedAt: entry.completed_at ?? undefined,
   };
 }
 
@@ -143,9 +149,12 @@ export async function getEntryDuplicates(
   title: string,
   steamAppId?: number,
 ): Promise<BacklogEntryData[]> {
-  const { data, error } = await apiClient.GET("/api/backlog/entries/duplicates", {
-    params: { query: { title, steam_app_id: steamAppId } },
-  });
+  const { data, error } = await apiClient.GET(
+    "/api/backlog/entries/duplicates",
+    {
+      params: { query: { title, steam_app_id: steamAppId } },
+    },
+  );
   if (error)
     throw new Error(apiErrorMessage(error, "Failed to check for duplicates"));
   return data.map(toEntryData);
@@ -186,6 +195,7 @@ export async function createEntry(
       owned: input.owned,
       interest: input.interest,
       image_link: input.imageLink,
+      description: input.description,
       main_time: input.mainTime?.toString(),
       main_plus_extra_time: input.mainPlusExtraTime?.toString(),
       completion_time: input.completionTime?.toString(),
@@ -217,6 +227,7 @@ export async function updateEntry(
         owned: changes.owned,
         interest: changes.interest,
         image_link: changes.imageLink,
+        description: changes.description,
         main_time: changes.mainTime?.toString(),
         main_plus_extra_time: changes.mainPlusExtraTime?.toString(),
         completion_time: changes.completionTime?.toString(),

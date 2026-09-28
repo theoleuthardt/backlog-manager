@@ -64,6 +64,34 @@ export async function getSteamGridDbCovers(
   return data;
 }
 
+export async function getSteamGridDbCoversById(
+  gameId: number,
+): Promise<string[]> {
+  const { data, error } = await apiClient.GET(
+    "/api/games/steamgriddb-covers-by-id",
+    { params: { query: { game_id: gameId } } },
+  );
+  if (error)
+    throw new Error(apiErrorMessage(error, "Failed to load cover options"));
+  return data;
+}
+
+export interface SteamGridDbSearchResult {
+  id: number;
+  name: string;
+}
+
+export async function searchSteamGridDb(
+  searchTerm: string,
+): Promise<SteamGridDbSearchResult[]> {
+  const { data, error } = await apiClient.GET("/api/games/steamgriddb-search", {
+    params: { query: { search_term: searchTerm } },
+  });
+  if (error)
+    throw new Error(apiErrorMessage(error, "SteamGridDB search failed"));
+  return data;
+}
+
 export interface GamePriceDeal {
   store: string;
   iconUrl: string;

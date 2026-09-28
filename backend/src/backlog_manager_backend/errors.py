@@ -1,11 +1,12 @@
 """Domain error types, and mapping PostgreSQL SQLSTATE codes to them."""
 
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import DBAPIError
 
 _UNIQUE_VIOLATION = "23505"
 _FOREIGN_KEY_VIOLATION = "23503"
 _NOT_NULL_VIOLATION = "23502"
 _INVALID_TEXT_REPRESENTATION = "22P02"
+_STRING_DATA_RIGHT_TRUNCATION = "22001"
 
 
 class DatabaseError(Exception):
@@ -47,6 +48,8 @@ def handle_database_error(error: Exception, operation: str) -> None:
         raise ValidationError("Required field is missing") from error
     if sqlstate == _INVALID_TEXT_REPRESENTATION:
         raise ValidationError("Invalid data format") from error
+    if sqlstate == _STRING_DATA_RIGHT_TRUNCATION:
+        raise ValidationError("A field exceeds its maximum length") from error
 
-    cause = error.orig if isinstance(error, IntegrityError) else error
+    cause = error.orig if isinstance(error, DBAPIError) else error
     raise DatabaseError(operation, cause) from error

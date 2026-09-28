@@ -21,6 +21,7 @@ class BacklogEntry(msgspec.Struct):
     updated_at: datetime
     release_date: date | None = None
     image_link: str | None = None
+    description: str | None = None
     main_time: Decimal | None = None
     main_plus_extra_time: Decimal | None = None
     completion_time: Decimal | None = None
@@ -33,6 +34,14 @@ class BacklogEntry(msgspec.Struct):
 
 
 class CreateBacklogEntryParams(msgspec.Struct):
+    """`completed_at` is create-only, deliberately absent from
+    UpdateBacklogEntryParams below: the DB trigger
+    trigger_update_completed_at owns that column on every UPDATE (it
+    stamps CURRENT_TIMESTAMP when status moves to Completed, and clears
+    it whenever status isn't Completed) - only INSERT bypasses the
+    trigger, which is needed to backfill a historical completion date
+    the trigger itself could never produce."""
+
     user_id: int
     title: str
     genre: str
@@ -42,6 +51,7 @@ class CreateBacklogEntryParams(msgspec.Struct):
     interest: int
     release_date: date | None = None
     image_link: str | None = None
+    description: str | None = None
     main_time: Decimal | None = None
     main_plus_extra_time: Decimal | None = None
     completion_time: Decimal | None = None
@@ -50,6 +60,7 @@ class CreateBacklogEntryParams(msgspec.Struct):
     review_stars: int | None = None
     review: str | None = None
     note: str | None = None
+    completed_at: datetime | None = None
 
 
 class UpdateBacklogEntryParams(msgspec.Struct):
@@ -68,6 +79,7 @@ class UpdateBacklogEntryParams(msgspec.Struct):
     interest: int | msgspec.UnsetType = msgspec.UNSET
     release_date: date | None | msgspec.UnsetType = msgspec.UNSET
     image_link: str | None | msgspec.UnsetType = msgspec.UNSET
+    description: str | None | msgspec.UnsetType = msgspec.UNSET
     main_time: Decimal | None | msgspec.UnsetType = msgspec.UNSET
     main_plus_extra_time: Decimal | None | msgspec.UnsetType = msgspec.UNSET
     completion_time: Decimal | None | msgspec.UnsetType = msgspec.UNSET
@@ -113,6 +125,7 @@ class BacklogEntryResponse(msgspec.Struct):
     updated_at: datetime
     release_date: date | None = None
     image_link: str | None = None
+    description: str | None = None
     main_time: Decimal | None = None
     main_plus_extra_time: Decimal | None = None
     completion_time: Decimal | None = None
@@ -137,6 +150,7 @@ class BacklogEntryResponse(msgspec.Struct):
             updated_at=entry.updated_at,
             release_date=entry.release_date,
             image_link=entry.image_link,
+            description=entry.description,
             main_time=entry.main_time,
             main_plus_extra_time=entry.main_plus_extra_time,
             completion_time=entry.completion_time,
@@ -158,6 +172,7 @@ class CreateBacklogEntryRequest(msgspec.Struct):
     interest: int
     release_date: date | None = None
     image_link: str | None = None
+    description: str | None = None
     main_time: Decimal | None = None
     main_plus_extra_time: Decimal | None = None
     completion_time: Decimal | None = None
@@ -181,6 +196,7 @@ class UpdateBacklogEntryRequest(msgspec.Struct):
     interest: int | msgspec.UnsetType = msgspec.UNSET
     release_date: date | None | msgspec.UnsetType = msgspec.UNSET
     image_link: str | None | msgspec.UnsetType = msgspec.UNSET
+    description: str | None | msgspec.UnsetType = msgspec.UNSET
     main_time: Decimal | None | msgspec.UnsetType = msgspec.UNSET
     main_plus_extra_time: Decimal | None | msgspec.UnsetType = msgspec.UNSET
     completion_time: Decimal | None | msgspec.UnsetType = msgspec.UNSET

@@ -1,8 +1,11 @@
+import asyncio
+import time
 from collections.abc import Callable
 
 import httpx
 import pytest
 
+from backlog_manager_backend.integrations import igdb
 from backlog_manager_backend.integrations.igdb import (
     generate_igdb_token,
     get_covers_on_igdb,
@@ -87,6 +90,52 @@ async def test_search_game_on_igdb_escapes_quotes_in_search_term(
     await search_game_on_igdb('quote " injection', "cid", "tok")
 
     assert b'\\"' in captured["body"]
+
+
+async def test_search_game_on_igdb_uses_the_search_clause(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`search "term";` is IGDB's own full-text/fuzzy index rather than
+    a literal wildcard substring match on the stored name - it handles
+    colons and other punctuation natively (confirmed live against the
+    real API for titles like "Persona 5: Royal"), so the search term is
+    passed through as-is rather than stripped."""
+    captured: dict[str, bytes] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["body"] = request.content
+        return httpx.Response(200, json=[])
+
+    _mock_client(handler, monkeypatch)
+
+    await search_game_on_igdb("Persona 5: Royal", "cid", "tok")
+
+    assert b'search "Persona 5: Royal";' in captured["body"]
+
+
+async def test_query_igdb_throttles_requests_per_client_id(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A 1284-row CSV import running _MATCH_CONCURRENCY=4 rows at once,
+    each row firing several sequential IGDB requests, can burst well
+    past IGDB's real per-second rate limit even though only 4 *rows*
+    run concurrently - every call now shares one rate limiter per
+    client_id (matching how the limit is actually enforced, per
+    credential) rather than relying on retry-after-the-fact alone."""
+    monkeypatch.setattr(igdb, "_igdb_rate_limiters", {})
+    monkeypatch.setattr(igdb, "_IGDB_MAX_REQUESTS_PER_WINDOW", 2)
+    monkeypatch.setattr(igdb, "_IGDB_RATE_LIMIT_WINDOW_SECONDS", 0.1)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=[])
+
+    _mock_client(handler, monkeypatch)
+
+    start = time.monotonic()
+    await asyncio.gather(*(search_game_on_igdb("term", "cid", "tok") for _ in range(4)))
+    elapsed = time.monotonic() - start
+
+    assert elapsed >= 0.1
 
 
 async def test_search_game_on_igdb_returns_empty_list_on_error(

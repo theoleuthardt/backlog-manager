@@ -537,6 +537,97 @@ async def test_get_steamgriddb_covers_returns_503_on_transport_failure(
     assert response.status_code == 503
 
 
+async def test_get_steamgriddb_covers_by_id_returns_urls(
+    _reset_steamgriddb_cache: None,
+    postgres_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+    create_and_login,
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.routes import user as user_routes
+
+    monkeypatch.setattr(user_routes.settings, "steamgriddb_api_key", "key")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/api/v2/grids/game/5000"
+        return httpx.Response(
+            200,
+            json={
+                "success": True,
+                "data": [
+                    {
+                        "id": 1,
+                        "url": "https://cdn2.steamgriddb.com/grid/1.png",
+                        "thumb": "https://cdn2.steamgriddb.com/thumb/1.png",
+                        "score": 10,
+                    }
+                ],
+            },
+        )
+
+    _mock_igdb(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "steamgriddbcoversbyid@example.com")
+        response = client.get(
+            "/api/games/steamgriddb-covers-by-id", headers=headers, params={"game_id": 5000}
+        )
+
+    assert response.status_code == 200
+    assert response.json() == ["https://cdn2.steamgriddb.com/grid/1.png"]
+
+
+async def test_search_steamgriddb_returns_results(
+    _reset_steamgriddb_cache: None,
+    postgres_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+    create_and_login,
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.routes import user as user_routes
+
+    monkeypatch.setattr(user_routes.settings, "steamgriddb_api_key", "key")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/api/v2/search/autocomplete/En Garde!"
+        return httpx.Response(
+            200, json={"success": True, "data": [{"id": 5000, "name": "En Garde!"}]}
+        )
+
+    _mock_igdb(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "steamgriddbsearch@example.com")
+        response = client.get(
+            "/api/games/steamgriddb-search",
+            headers=headers,
+            params={"search_term": "En Garde!"},
+        )
+
+    assert response.status_code == 200
+    assert response.json() == [{"id": 5000, "name": "En Garde!"}]
+
+
+async def test_search_steamgriddb_returns_503_when_not_configured(
+    _reset_steamgriddb_cache: None,
+    postgres_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+    create_and_login,
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.routes import user as user_routes
+
+    monkeypatch.setattr(user_routes.settings, "steamgriddb_api_key", None)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "steamgriddbsearchunconfigured@example.com")
+        response = client.get(
+            "/api/games/steamgriddb-search", headers=headers, params={"search_term": "term"}
+        )
+
+    assert response.status_code == 503
+
+
 async def test_get_steamgriddb_covers_prefers_users_own_key_over_server_fallback(
     _reset_steamgriddb_cache: None,
     postgres_url: str,

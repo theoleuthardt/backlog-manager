@@ -24,6 +24,11 @@ function parseSseMessage(raw: string): { event: string | null; data: string } {
  * then "\n..."), so normalizing each chunk before concatenating (rather
  * than searching the combined buffer) would fail to recognize the
  * reassembled separator.
+ *
+ * If the request was made with an `AbortSignal` that later fires,
+ * `reader.read()` rejects with an `AbortError` - left to propagate as
+ * any other stream failure, since the backend's own SSE bridge already
+ * cancels its background task when the client disconnects.
  */
 export async function streamSse<TProgress, TResult>(
   response: Response,

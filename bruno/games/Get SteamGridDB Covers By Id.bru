@@ -1,0 +1,29 @@
+meta {
+  name: Get SteamGridDB Covers By Id
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{backendUrl}}/api/games/steamgriddb-covers-by-id?game_id=5713
+  body: none
+  auth: bearer
+}
+
+params:query {
+  game_id: 5713
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Cover-picker fallback for a title with no Steam App ID - game_id is
+  SteamGridDB's own game id, resolved first via "Search SteamGridDB".
+  Run auth/Login first.
+
+  Returns an empty list if SteamGridDB has no grids for the game (not
+  an error). 503 if neither the caller nor the server has a
+  SteamGridDB API key configured, or if SteamGridDB is unreachable.
+}

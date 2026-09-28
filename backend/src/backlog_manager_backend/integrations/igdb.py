@@ -1,3 +1,5 @@
+import asyncio
+
 import httpx
 import msgspec
 import structlog
@@ -17,6 +19,40 @@ from backlog_manager_backend.integrations.types import (
 logger = structlog.get_logger()
 
 _TIMEOUT = httpx.Timeout(60.0)
+
+_IGDB_MAX_REQUESTS_PER_WINDOW = 4
+_IGDB_RATE_LIMIT_WINDOW_SECONDS = 1.0
+
+
+class _RateLimiter:
+    """Caps request *starts* to `max_calls` per `window_seconds` - a
+    permit is released `window_seconds` after it was acquired (not
+    after the request finishes), so it throttles to a request rate
+    rather than just a concurrency count, which is what IGDB's
+    documented per-second limit actually restricts."""
+
+    def __init__(self, max_calls: int, window_seconds: float) -> None:
+        self._semaphore = asyncio.Semaphore(max_calls)
+        self._window_seconds = window_seconds
+
+    async def acquire(self) -> None:
+        await self._semaphore.acquire()
+        asyncio.get_running_loop().call_later(self._window_seconds, self._semaphore.release)
+
+
+_igdb_rate_limiters: dict[str, _RateLimiter] = {}
+
+
+def _get_igdb_rate_limiter(client_id: str) -> _RateLimiter:
+    """Keyed by client_id, mirroring _token_cache in game_service.py -
+    IGDB's rate limit is enforced per credential, and different users
+    (or the server-wide fallback) must not throttle each other's
+    independent quota."""
+    limiter = _igdb_rate_limiters.get(client_id)
+    if limiter is None:
+        limiter = _RateLimiter(_IGDB_MAX_REQUESTS_PER_WINDOW, _IGDB_RATE_LIMIT_WINDOW_SECONDS)
+        _igdb_rate_limiters[client_id] = limiter
+    return limiter
 
 
 async def generate_igdb_token(client_id: str, client_secret: str) -> IGDBTokenResponse:
@@ -52,6 +88,7 @@ async def _query_igdb[T](
     access_token: str,
     result_type: type[T],
 ) -> T:
+    await _get_igdb_rate_limiter(client_id).acquire()
     try:
         async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
             response = await client.post(
@@ -100,12 +137,26 @@ async def search_game_on_igdb(
     DLC'd franchise can have dozens of hits ahead of the base game
     (SnowRunner has 65 non-base-game hits alone), so a small raw limit
     can drop the base game before game_service.search ever gets a
-    chance to filter/rank by game type."""
+    chance to filter/rank by game type.
+
+    Uses IGDB's `search "term";` clause rather than `where name ~
+    *"term"*;` - the latter is a literal wildcard substring match on
+    the stored name with no typo/word-order/missing-word tolerance and
+    (confirmed live against the real API) returns zero hits outright
+    for any query containing a colon, even for titles that have one
+    themselves ("The Legend of Zelda: Breath of the Wild", "Persona 5:
+    Royal", ...). `search` is IGDB's own full-text/fuzzy index (what
+    igdb.com's own search box uses) - it handles colons natively and
+    also resolves titles the sheet-sourced search term only partially
+    or inconsistently matches (e.g. "First Berserker Khazan" finding
+    "The First Berserker: Khazan", or "Ace Attorney 3" finding "Phoenix
+    Wright: Ace Attorney - Trials and Tribulations" via its Japanese
+    numbering) - though it still doesn't correct genuine misspellings."""
     escaped_term = search_term.replace('"', '\\"')
     body = (
         "fields alternative_name,character,checksum,collection,company,description,"
         "game,name,platform,published_at,test_dummy,theme; "
-        f'where name ~ *"{escaped_term}"*; limit {_SEARCH_RAW_RESULT_LIMIT};'
+        f'search "{escaped_term}"; limit {_SEARCH_RAW_RESULT_LIMIT};'
     )
     try:
         return await _query_igdb("search", body, client_id, access_token, list[IGDBSearchResult])

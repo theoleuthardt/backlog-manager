@@ -205,6 +205,60 @@ async def test_search_reuses_cached_genre_and_platform_names(
     assert platforms_call_count == 1
 
 
+async def test_search_skips_genres_platforms_and_publisher_when_not_requested(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def fail_if_called(*args: object, **kwargs: object) -> list[object]:
+        pytest.fail("should not be called when the corresponding include_* flag is False")
+
+    async def fake_search_game_on_igdb(
+        search_term: str, client_id: str, access_token: str
+    ) -> list[IGDBSearchResult]:
+        return [IGDBSearchResult(id=1, game=1, name="Celeste")]
+
+    async def fake_get_games_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameData]:
+        return [
+            IGDBGameData(
+                id=1, name="Celeste", cover=None, genres=[10], platforms=[6], involved_companies=[9001]
+            )
+        ]
+
+    async def fake_get_games_time_to_beat_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameTimeToBeat]:
+        return [IGDBGameTimeToBeat(id=1, game_id=1, normally=3600)]
+
+    async def fake_get_valid_token(client_id: str, client_secret: str) -> str:
+        return "tok"
+
+    monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
+    monkeypatch.setattr(game_service, "get_games_on_igdb", fake_get_games_on_igdb)
+    monkeypatch.setattr(game_service, "get_genres_on_igdb", fail_if_called)
+    monkeypatch.setattr(game_service, "get_platforms_on_igdb", fail_if_called)
+    monkeypatch.setattr(game_service, "get_involved_companies_on_igdb", fail_if_called)
+    monkeypatch.setattr(game_service, "get_companies_on_igdb", fail_if_called)
+    monkeypatch.setattr(
+        game_service, "get_games_time_to_beat_on_igdb", fake_get_games_time_to_beat_on_igdb
+    )
+    monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
+
+    results = await game_service.search(
+        "Celeste",
+        "cid",
+        "secret",
+        None,
+        include_genres=False,
+        include_platforms=False,
+        include_publisher=False,
+    )
+
+    assert results[0].genres == []
+    assert results[0].platforms == []
+    assert results[0].publisher is None
+
+
 async def test_search_falls_back_to_hltb_when_igdb_has_no_beat_time(
     game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -1002,6 +1056,57 @@ async def test_get_game_covers_caches_across_calls(
     await game_service.get_game_covers(220, "key")
 
     assert call_count == 1
+
+
+async def test_get_game_covers_by_steamgriddb_id_raises_without_api_key(
+    game_service: ModuleType,
+) -> None:
+    with pytest.raises(RuntimeError, match="SteamGridDB API key not configured"):
+        await game_service.get_game_covers_by_steamgriddb_id(5000, None)
+
+
+async def test_get_game_covers_by_steamgriddb_id_returns_urls_sorted_by_score(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def fake_get_grids_by_steamgriddb_id(
+        game_id: int, api_key: str
+    ) -> list[SteamGridDBGrid]:
+        return [
+            SteamGridDBGrid(id=1, url="https://example.com/low.png", thumb="", score=10),
+            SteamGridDBGrid(id=2, url="https://example.com/high.png", thumb="", score=90),
+        ]
+
+    monkeypatch.setattr(
+        game_service, "get_grids_by_steamgriddb_id", fake_get_grids_by_steamgriddb_id
+    )
+
+    covers = await game_service.get_game_covers_by_steamgriddb_id(5000, "key")
+
+    assert covers == ["https://example.com/high.png", "https://example.com/low.png"]
+
+
+async def test_search_steamgriddb_covers_raises_without_api_key(
+    game_service: ModuleType,
+) -> None:
+    with pytest.raises(RuntimeError, match="SteamGridDB API key not configured"):
+        await game_service.search_steamgriddb_covers("term", None)
+
+
+async def test_search_steamgriddb_covers_returns_search_results(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.integrations.types import SteamGridDBSearchResult
+
+    async def fake_search_steamgriddb_games(
+        term: str, api_key: str
+    ) -> list[SteamGridDBSearchResult]:
+        return [SteamGridDBSearchResult(id=1, name="En Garde!")]
+
+    monkeypatch.setattr(game_service, "search_steamgriddb_games", fake_search_steamgriddb_games)
+
+    results = await game_service.search_steamgriddb_covers("En Garde!", "key")
+
+    assert results == [SteamGridDBSearchResult(id=1, name="En Garde!")]
 
 
 async def test_get_game_covers_still_requires_a_key_once_the_cache_is_warm(
