@@ -23,7 +23,7 @@ export const AuthCard = ({ title, description, children }: AuthCardProps) => (
       <UniverseBackground />
       <main className="relative z-10 flex min-h-screen flex-col items-center justify-center gap-8 px-4 py-12">
         <motion.div
-          animate={{ y: [0, -8, 0] }}
+          animate={{ y: [0, -18, 0], scale: [1, 1.05, 1] }}
           transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
         >
           <Link
