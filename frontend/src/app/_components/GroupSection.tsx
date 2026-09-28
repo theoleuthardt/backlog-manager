@@ -1,18 +1,18 @@
 "use client";
-import { Children, useState } from "react";
+import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 
 const PAGE_SIZE = 60;
 
-interface GroupSectionProps {
+export interface GroupSectionProps<T> {
   label: string;
-  count: number;
+  items: readonly T[];
+  renderItem: (item: T) => React.ReactNode;
   color: string;
   isCollapsed: boolean;
   onToggle: () => void;
   isDropTarget?: boolean;
   emptyHint?: string;
-  children: React.ReactNode;
 }
 
 /**
@@ -21,21 +21,22 @@ interface GroupSectionProps {
  * renders a slim dashed placeholder (used for drag-and-drop targets)
  * instead of the grid. Only the first PAGE_SIZE cards are mounted, with a
  * button to reveal more, so groups holding thousands of games stay
- * responsive.
+ * responsive: `renderItem` is only invoked for the visible items, and
+ * each element it returns must carry its own key.
  */
-export const GroupSection = ({
+export function GroupSection<T>({
   label,
-  count,
+  items,
+  renderItem,
   color,
   isCollapsed,
   onToggle,
   isDropTarget = false,
   emptyHint,
-  children,
-}: GroupSectionProps) => {
+}: GroupSectionProps<T>) {
+  const count = items.length;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const cards = Children.toArray(children);
-  const hiddenCount = cards.length - visibleCount;
+  const hiddenCount = count - visibleCount;
 
   return (
     <section
@@ -78,7 +79,7 @@ export const GroupSection = ({
         (count > 0 || !emptyHint ? (
           <>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(9.375rem,1fr))] justify-items-center gap-2">
-              {cards.slice(0, visibleCount)}
+              {items.slice(0, visibleCount).map(renderItem)}
             </div>
             {hiddenCount > 0 && (
               <button
@@ -98,4 +99,4 @@ export const GroupSection = ({
         ))}
     </section>
   );
-};
+}

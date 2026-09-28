@@ -82,3 +82,68 @@ def test_image_cache_evicts_least_recently_used_over_budget() -> None:
     assert cache.get("b") is None
     assert cache.get("a") is not None
     assert cache.get("c") is not None
+
+
+def test_image_cache_treats_expired_entries_as_misses() -> None:
+    from backlog_manager_backend.routes.images import _ImageCache
+
+    now = 1000.0
+    cache = _ImageCache(max_bytes=100, ttl_seconds=60, clock=lambda: now)
+    cache.put("a", b"1234", "image/png")
+
+    now = 1059.0
+    assert cache.get("a") is not None
+
+    now = 1061.0
+    assert cache.get("a") is None
+
+
+@pytest.mark.parametrize(
+    "header_for",
+    [
+        lambda etag: f"W/{etag}",
+        lambda etag: f'"other", {etag}',
+        lambda etag: f'"other", W/{etag}',
+        lambda etag: "*",
+    ],
+)
+async def test_proxy_image_returns_304_for_weak_or_listed_etags(
+    header_for: Callable[[str], str], monkeypatch: pytest.MonkeyPatch, postgres_url: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"etag-bytes", headers={"content-type": "image/png"})
+
+    _mock_client(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        first = client.get("/api/images/proxy", params={"url": _URL})
+        conditional = client.get(
+            "/api/images/proxy",
+            params={"url": _URL},
+            headers={"If-None-Match": header_for(first.headers["etag"])},
+        )
+
+    assert conditional.status_code == 304
+
+
+async def test_proxy_image_returns_200_when_no_listed_etag_matches(
+    monkeypatch: pytest.MonkeyPatch, postgres_url: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"etag-bytes", headers={"content-type": "image/png"})
+
+    _mock_client(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        response = client.get(
+            "/api/images/proxy",
+            params={"url": _URL},
+            headers={"If-None-Match": '"nope", W/"nada"'},
+        )
+
+    assert response.status_code == 200
+    assert response.content == b"etag-bytes"
