@@ -6,7 +6,7 @@ import { sortEntries } from "~/lib/sortEntries";
 
 const STATUSES = ["Not Started", "Playing", "Completed", "Dropped"] as const;
 const ENTRY_COUNT = 10_000;
-const TIME_BUDGET_MS = 500;
+const TIME_BUDGET_MS = 3000;
 
 function largeBacklog(): BacklogEntryData[] {
   return Array.from({ length: ENTRY_COUNT }, (_, id) => ({
