@@ -30,6 +30,7 @@ def configured_igdb(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
     monkeypatch.setattr(module, "_platform_cache", {})
     monkeypatch.setattr(module, "_game_cache", {})
     monkeypatch.setattr(module, "_cover_cache", {})
+    monkeypatch.setattr(module, "_trailer_cache", {})
     monkeypatch.setattr(module, "_time_to_beat_cache", {})
     monkeypatch.setattr(settings, "igdb_client_id", "cid")
     monkeypatch.setattr(settings, "igdb_client_secret", "secret")
