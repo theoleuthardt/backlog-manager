@@ -38,7 +38,7 @@ async def test_proxy_image_streams_igdb_image(
     assert response.status_code == 200
     assert response.content == b"fake-image-bytes"
     assert response.headers["content-type"] == "image/jpeg"
-    assert response.headers["cache-control"] == "public, max-age=86400, immutable"
+    assert response.headers["cache-control"] == "public, max-age=2592000, immutable"
 
 
 async def test_proxy_image_sends_referer_and_origin_for_hltb(

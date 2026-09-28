@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Clock } from "lucide-react";
 import { GameImage } from "components/GameImage";
 import { statusColor } from "~/lib/statusStyle";
@@ -16,14 +17,14 @@ interface EntryTileProps {
  * over the bottom of the cover, a coloured dot marks the status, and a
  * thin bar shows playtime against the HowLongToBeat main-story time.
  */
-export const EntryTile = ({
+export const EntryTile = memo(function EntryTile({
   title,
   imageLink,
   imageAlt,
   status,
   playtime,
   mainTime,
-}: EntryTileProps) => {
+}: EntryTileProps) {
   const progress =
     playtime !== undefined && mainTime !== undefined && mainTime > 0
       ? Math.min(100, (playtime / mainTime) * 100)
@@ -71,4 +72,4 @@ export const EntryTile = ({
       )}
     </div>
   );
-};
+});

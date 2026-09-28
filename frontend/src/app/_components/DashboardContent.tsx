@@ -304,6 +304,9 @@ export const DashboardContent = () => {
   const renderEntry = (entry: BacklogEntryData) => (
     <BacklogEntry key={entry.id} {...entry} />
   );
+  const renderDraggableEntry = (entry: BacklogEntryData) => (
+    <DraggableEntry key={entry.id} entry={entry} />
+  );
 
   const sidebarPanel = (
     <DashboardSidebar
@@ -452,18 +455,13 @@ export const DashboardContent = () => {
                   <StatusGroupSection
                     key={group.status}
                     status={group.status}
-                    count={group.entries.length}
+                    items={group.entries}
+                    renderItem={renderDraggableEntry}
                     isCollapsed={collapsedGroups.includes(
                       groupKey(group.status),
                     )}
                     onToggle={() => toggleGroup(group.status)}
-                  >
-                    {group.entries.map((entry) => (
-                      <DraggableEntry key={entry.id} entryId={entry.id}>
-                        {renderEntry(entry)}
-                      </DraggableEntry>
-                    ))}
-                  </StatusGroupSection>
+                  />
                 ))}
               </div>
               {createPortal(
@@ -479,7 +477,8 @@ export const DashboardContent = () => {
                 <GroupSection
                   key={group.label}
                   label={group.label}
-                  count={group.entries.length}
+                  items={group.entries}
+                  renderItem={renderEntry}
                   color={
                     (sortBy === "category"
                       ? categoryColors.get(group.label)
@@ -487,9 +486,7 @@ export const DashboardContent = () => {
                   }
                   isCollapsed={collapsedGroups.includes(groupKey(group.label))}
                   onToggle={() => toggleGroup(group.label)}
-                >
-                  {group.entries.map(renderEntry)}
-                </GroupSection>
+                />
               ))}
             </div>
           )}

@@ -1,10 +1,19 @@
+import hashlib
+import time
+from collections import OrderedDict
+from collections.abc import Callable
+from typing import NamedTuple
 from urllib.parse import urlparse
 
 import httpx
 import structlog
-from litestar import Response, get
+from litestar import Request, Response, get
 from litestar.params import FromQuery
-from litestar.status_codes import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND
+from litestar.status_codes import (
+    HTTP_304_NOT_MODIFIED,
+    HTTP_400_BAD_REQUEST,
+    HTTP_404_NOT_FOUND,
+)
 
 logger = structlog.get_logger()
 
@@ -52,6 +61,110 @@ _ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif", 
 _MAX_IMAGE_BYTES = 10 * 1024 * 1024
 
 _TIMEOUT = httpx.Timeout(15.0)
+
+_CACHE_MAX_BYTES = 1024 * 1024 * 1024
+
+_CACHE_TTL_SECONDS = 30 * 24 * 60 * 60
+
+_CACHE_HEADERS = {
+    "Cache-Control": f"public, max-age={_CACHE_TTL_SECONDS}, immutable",
+    "Access-Control-Allow-Origin": "*",
+}
+
+
+class _CachedImage(NamedTuple):
+    body: bytes
+    content_type: str
+    etag: str
+    expires_at: float
+
+
+class _ImageCache:
+    """Byte-bounded in-memory LRU of proxied covers, keyed by upstream URL.
+
+    Large backlogs request hundreds of covers per dashboard load; serving
+    repeats from memory spares the upstream hosts (which rate-limit) and
+    cuts latency. Only successfully validated images are ever stored, and
+    an entry older than `ttl_seconds` counts as a miss so it gets
+    refetched - the same period the response's max-age tells clients to
+    keep it.
+    """
+
+    def __init__(
+        self,
+        max_bytes: int,
+        ttl_seconds: float = _CACHE_TTL_SECONDS,
+        clock: Callable[[], float] = time.monotonic,
+    ) -> None:
+        self._max_bytes = max_bytes
+        self._ttl_seconds = ttl_seconds
+        self._clock = clock
+        self._size = 0
+        self._entries: OrderedDict[str, _CachedImage] = OrderedDict()
+
+    def get(self, url: str) -> _CachedImage | None:
+        entry = self._entries.get(url)
+        if entry is None:
+            return None
+        if entry.expires_at <= self._clock():
+            self._remove(url)
+            return None
+        self._entries.move_to_end(url)
+        return entry
+
+    def put(self, url: str, body: bytes, content_type: str) -> _CachedImage:
+        entry = _CachedImage(
+            body,
+            content_type,
+            f'"{hashlib.sha256(body).hexdigest()[:32]}"',
+            self._clock() + self._ttl_seconds,
+        )
+        if len(body) > self._max_bytes:
+            return entry
+        if url in self._entries:
+            self._remove(url)
+        self._entries[url] = entry
+        self._size += len(body)
+        while self._size > self._max_bytes:
+            _, evicted = self._entries.popitem(last=False)
+            self._size -= len(evicted.body)
+        return entry
+
+    def clear(self) -> None:
+        self._entries.clear()
+        self._size = 0
+
+    def _remove(self, url: str) -> None:
+        self._size -= len(self._entries.pop(url).body)
+
+
+_image_cache = _ImageCache(_CACHE_MAX_BYTES)
+
+
+def clear_image_cache() -> None:
+    """Empties the proxy cache (used by tests for isolation)."""
+    _image_cache.clear()
+
+
+def _matches_if_none_match(header: str | None, etag: str) -> bool:
+    """Weak comparison of a (possibly comma-separated) If-None-Match value
+    against `etag`. Cloudflare rewrites strong ETags to weak ones when it
+    compresses a response, so `W/"x"` must match `"x"`."""
+    if header is None:
+        return False
+    for candidate in header.split(","):
+        candidate = candidate.strip()
+        if candidate == "*" or candidate.removeprefix("W/") == etag:
+            return True
+    return False
+
+
+def _respond(image: _CachedImage, request: Request) -> Response:
+    headers = {**_CACHE_HEADERS, "ETag": image.etag}
+    if _matches_if_none_match(request.headers.get("if-none-match"), image.etag):
+        return Response(b"", status_code=HTTP_304_NOT_MODIFIED, headers=headers)
+    return Response(image.body, media_type=image.content_type, headers=headers)
+
 
 _BASE_HEADERS = {
     "User-Agent": (
@@ -114,10 +227,14 @@ async def _fetch_following_allowed_redirects(
 
 
 @get("/api/images/proxy")
-async def proxy_image(url: FromQuery[str]) -> Response:
+async def proxy_image(url: FromQuery[str], request: Request) -> Response:
     parsed = urlparse(url)
     if parsed.scheme != "https" or not _is_allowed_host(parsed.hostname):
         return _INVALID_URL
+
+    cached = _image_cache.get(url)
+    if cached is not None:
+        return _respond(cached, request)
 
     try:
         async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
@@ -156,11 +273,4 @@ async def proxy_image(url: FromQuery[str]) -> Response:
         logger.error("Error proxying image", url=url, error=str(error))
         return _NOT_FOUND
 
-    return Response(
-        bytes(body),
-        media_type=content_type,
-        headers={
-            "Cache-Control": "public, max-age=86400, immutable",
-            "Access-Control-Allow-Origin": "*",
-        },
-    )
+    return _respond(_image_cache.put(url, bytes(body), content_type), request)
