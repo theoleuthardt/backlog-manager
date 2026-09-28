@@ -419,12 +419,13 @@ export const DashboardContent = () => {
               {entries.length === 1 ? "" : "s"}
             </p>
             <p
-              className="flex items-center gap-1.5 text-sm text-white/70"
+              className="order-last basis-full items-center gap-1.5 text-sm text-white/70 sm:order-none sm:flex sm:basis-auto"
               title="Sum of the main-story beat time across every entry in your backlog"
             >
-              <Clock className="h-3.5 w-3.5" />
-              {Math.round(totalMainTime).toLocaleString()}h total main story
-              time
+              <span className="inline-flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5" />
+                {Math.round(totalMainTime).toLocaleString()}h to beat
+              </span>
             </p>
             {user?.steamId && <SteamSyncButton className="ml-auto" />}
           </div>
