@@ -1,6 +1,5 @@
 "use client";
 import Image from "next/image";
-import Link from "next/link";
 import { MotionConfig, motion } from "motion/react";
 import { UniverseBackground } from "components/UniverseBackground";
 
@@ -12,7 +11,8 @@ interface AuthCardProps {
 
 /**
  * Shared shell of the auth pages: the landing page's star background with
- * a floating app mark and a centred card in the same black/white
+ * a floating app mark (plain text, not a link: the Tauri app has no
+ * landing page to go back to) and a centred card in the same black/white
  * bordered style as the account cards, lit by a soft halo in the theme's
  * accent and glow colours. Motion honours the user's reduced-motion
  * setting.
@@ -26,9 +26,8 @@ export const AuthCard = ({ title, description, children }: AuthCardProps) => (
           animate={{ y: [0, -32, 0], scale: [1, 1.1, 1] }}
           transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Link
-            href="/"
-            className="text-foreground flex items-center gap-3 text-3xl font-bold transition-opacity hover:opacity-80"
+          <div
+            className="text-foreground flex items-center gap-3 text-3xl font-bold"
             style={{ textShadow: "0 0 18px var(--t-glow)" }}
           >
             <Image
@@ -41,7 +40,7 @@ export const AuthCard = ({ title, description, children }: AuthCardProps) => (
               style={{ filter: "drop-shadow(0 0 10px var(--t-glow))" }}
             />
             Backlog-Manager
-          </Link>
+          </div>
         </motion.div>
         <motion.div
           initial={{ opacity: 0, y: 24, scale: 0.97 }}
