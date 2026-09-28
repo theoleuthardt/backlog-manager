@@ -17,6 +17,7 @@ export interface CurrentUser {
   hasDiscordWebhookUrl: boolean;
   steamAutoImportEnabled: boolean;
   steamFamilyIds?: string;
+  setupCompleted: boolean;
   defaultSort: string;
   theme: string;
   customThemes: CustomTheme[];
@@ -70,6 +71,7 @@ export async function getCurrentUser(): Promise<CurrentUser> {
     hasDiscordWebhookUrl: data.has_discord_webhook_url ?? false,
     steamAutoImportEnabled: data.steam_auto_import_enabled ?? false,
     steamFamilyIds: data.steam_family_ids ?? undefined,
+    setupCompleted: data.setup_completed ?? false,
     defaultSort: data.default_sort ?? "status",
     theme: data.theme ?? "dark",
     customThemes: data.custom_themes ?? [],

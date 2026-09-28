@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "~/app/context/AuthContext";
+import { setupRedirect } from "~/lib/setupWizard";
 
 /**
  * Replaces the old NextAuth-based proxy.ts route guard: the backend
@@ -15,14 +16,19 @@ import { useAuth } from "~/app/context/AuthContext";
 export function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const redirectTo = user ? setupRedirect(user, pathname) : null;
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (isLoading) return;
+    if (!user) {
       router.replace("/login");
+    } else if (redirectTo) {
+      router.replace(redirectTo);
     }
-  }, [isLoading, user, router]);
+  }, [isLoading, user, redirectTo, router]);
 
-  if (isLoading || !user) {
+  if (isLoading || !user || redirectTo) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black text-white">
         <p>Loading...</p>
