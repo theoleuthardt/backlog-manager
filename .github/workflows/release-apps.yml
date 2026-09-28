@@ -44,6 +44,7 @@ jobs:
     name: Build desktop apps
     needs: version
     uses: ./.github/workflows/tauri-build.yml
+    secrets: inherit
     with:
       version: ${{ needs.version.outputs.version }}
 
@@ -55,12 +56,24 @@ jobs:
       contents: write
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
       - name: Download platform artifacts
         uses: actions/download-artifact@v7
         with:
           pattern: backlog-manager-*
           path: dist
           merge-multiple: true
+
+      - name: Generate updater manifest
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          TAG: ${{ needs.version.outputs.tag }}
+          REPO: ${{ github.repository }}
+        run: node scripts/updater-manifest.mjs dist "$VERSION" "$TAG" "$REPO"
 
       - name: Create release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2

@@ -39,6 +39,7 @@ tasks:
     cmds:
       - task: backend:test
       - task: frontend:test
+      - task: release:test
 
   check:
     desc: Lint + typecheck the frontend, lint the backend
@@ -91,6 +92,11 @@ tasks:
     dir: "{{.FRONTEND_DIR}}"
     cmds:
       - npm test
+
+  release:test:
+    desc: Test the release pipeline's updater manifest script
+    cmds:
+      - node --test scripts/updater-manifest.test.mjs
 
   backend:install:
     desc: Install backend dependencies (uv sync)

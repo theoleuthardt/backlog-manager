@@ -64,8 +64,19 @@ sudo pacman -S --needed webkit2gtk-4.1 base-devel curl wget file openssl \
 
 ## CI
 
-- `.github/workflows/tauri-build.yml` builds installers for Windows, macOS and Linux. It only builds - no code signing, no publishing. Signing needs real certificates ([Windows](https://v2.tauri.app/distribute/sign/windows/), [macOS](https://v2.tauri.app/distribute/sign/macos/), [Linux](https://v2.tauri.app/distribute/sign/linux/)) that aren't part of this repo. Runnable manually via `workflow_dispatch` for ad-hoc testing, or called by `release-apps.yml` below.
-- `.github/workflows/release-apps.yml` is the prod release pipeline - manual (`workflow_dispatch`) only, never on a push/tag. It computes the next version automatically (patch bump on the latest `v*.*.*` tag, or `frontend/package.json`'s version if there's no tag yet), builds all three platforms via `tauri-build.yml`, and publishes a GitHub Release under that version with every platform's installer attached.
+- `.github/workflows/tauri-build.yml` builds installers for Windows, macOS and Linux. It only builds - no OS code signing, no publishing (the updater signature below is separate and required). Signing needs real certificates ([Windows](https://v2.tauri.app/distribute/sign/windows/), [macOS](https://v2.tauri.app/distribute/sign/macos/), [Linux](https://v2.tauri.app/distribute/sign/linux/)) that aren't part of this repo. Runnable manually via `workflow_dispatch` for ad-hoc testing, or called by `release-apps.yml` below.
+- `.github/workflows/release-apps.yml` is the prod release pipeline - manual (`workflow_dispatch`) only, never on a push/tag. It computes the next version automatically (patch bump on the latest `v*.*.*` tag, or `frontend/package.json`'s version if there's no tag yet), builds all three platforms via `tauri-build.yml`, and publishes a GitHub Release under that version with every platform's installer attached, plus the update payloads and `latest.json` (see below).
+
+## Self-update
+
+The desktop app updates itself through the official [Tauri updater plugin](https://v2.tauri.app/plugin/updater/) (issue #202) rather than a hand-rolled downloader: it already verifies a signature, replaces the installed app per platform and restarts it. On start the app checks `https://github.com/theoleuthardt/backlog-manager/releases/latest/download/latest.json` and offers to install a newer version in a toast; the account page has a manual "Check for updates" card. Neither does anything in the browser build.
+
+- Supported: macOS (`.app.tar.gz`), Linux (AppImage), Windows (NSIS `.exe`). DEB, RPM, MSI and DMG installs have to be updated by reinstalling; `latest.json` uses the installer-specific keys `linux-x86_64-appimage` and `windows-x86_64-nsis` so those installs are never offered a payload they cannot apply (their update check reports a failure instead).
+- Updates are signed with a minisign key pair, independent of OS code signing. The public key is in `tauri.conf.json` (`plugins.updater.pubkey`); the private key must be stored as the repository secret `TAURI_SIGNING_PRIVATE_KEY` (key file contents, plus `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` if it has a password). Every `tauri build` needs it because `bundle.createUpdaterArtifacts` is on. Losing the private key means installed apps can never be updated again - they would need a manual reinstall with a new public key.
+- Generate a new key pair with `npx tauri signer generate -w ~/.tauri/backlog-manager-updater.key` (from `frontend/`).
+- `scripts/updater-manifest.mjs` runs in `release-apps.yml` after the artifacts are downloaded: it renames the signed payloads to space-free names (GitHub rewrites spaces in asset names) and writes `latest.json` with each platform's URL and signature. It fails the release if a platform's signed payload is missing. Tests: `task release:test`.
+- The npm plugin packages in `frontend/package.json` are pinned to the exact version of the matching Rust crate in `Cargo.toml` - `tauri build` refuses mismatched major/minor versions.
+- Only the first release built after this change carries the updater, so installs made before it have to be reinstalled once by hand.
 
 ## Known limitation
 
