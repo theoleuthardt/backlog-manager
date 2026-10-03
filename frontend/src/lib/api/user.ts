@@ -16,6 +16,7 @@ export interface UpdateCurrentUserInput {
   discordWebhookUrl?: string;
   steamAutoImportEnabled?: boolean;
   steamFamilyIds?: string;
+  setupCompleted?: boolean;
   defaultSort?: SortOption;
   theme?: string;
   customThemes?: CustomTheme[];
@@ -37,6 +38,7 @@ function toCurrentUser(user: components["schemas"]["PublicUser"]): CurrentUser {
     hasDiscordWebhookUrl: user.has_discord_webhook_url ?? false,
     steamAutoImportEnabled: user.steam_auto_import_enabled ?? false,
     steamFamilyIds: user.steam_family_ids ?? undefined,
+    setupCompleted: user.setup_completed ?? false,
     defaultSort: user.default_sort ?? "status",
     theme: user.theme ?? "dark",
     customThemes: user.custom_themes ?? [],
@@ -59,6 +61,7 @@ export async function updateCurrentUser(
       discord_webhook_url: input.discordWebhookUrl,
       steam_auto_import_enabled: input.steamAutoImportEnabled,
       steam_family_ids: input.steamFamilyIds,
+      setup_completed: input.setupCompleted,
       default_sort: input.defaultSort,
       theme: input.theme,
       custom_themes: input.customThemes,

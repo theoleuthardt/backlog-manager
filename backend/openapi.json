@@ -6381,6 +6381,10 @@
               }
             ]
           },
+          "setup_completed": {
+            "type": "boolean",
+            "default": false
+          },
           "default_sort": {
             "type": "string",
             "default": "status"
@@ -7041,6 +7045,13 @@
               }
             ]
           },
+          "setup_completed": {
+            "oneOf": [
+              {
+                "type": "boolean"
+              }
+            ]
+          },
           "default_sort": {
             "oneOf": [
               {
@@ -7179,6 +7190,13 @@
               },
               {
                 "type": "null"
+              }
+            ]
+          },
+          "setup_completed": {
+            "oneOf": [
+              {
+                "type": "boolean"
               }
             ]
           },

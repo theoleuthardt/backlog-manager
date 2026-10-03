@@ -53,6 +53,7 @@ def _to_schema(model: UserModel) -> User:
         discord_webhook_url_encrypted=model.discord_webhook_url_encrypted,
         steam_auto_import_enabled=model.steam_auto_import_enabled,
         steam_family_ids=model.steam_family_ids,
+        setup_completed=model.setup_completed,
         default_sort=model.default_sort,
         theme=model.theme,
         custom_themes=msgspec.convert(model.custom_themes, list[CustomTheme]),
@@ -129,6 +130,8 @@ async def update_user(session: AsyncSession, params: UpdateUserParams) -> User:
         model.steam_auto_import_enabled = params.steam_auto_import_enabled
     if params.steam_family_ids is not msgspec.UNSET:
         model.steam_family_ids = params.steam_family_ids
+    if params.setup_completed is not msgspec.UNSET:
+        model.setup_completed = params.setup_completed
     if params.default_sort is not msgspec.UNSET:
         model.default_sort = params.default_sort
     if params.theme is not msgspec.UNSET:

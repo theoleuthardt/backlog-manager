@@ -1146,6 +1146,8 @@ export interface components {
             /** @default false */
             steam_auto_import_enabled?: boolean;
             steam_family_ids?: string | null;
+            /** @default false */
+            setup_completed?: boolean;
             /** @default status */
             default_sort?: string;
             /** @default dark */
@@ -1267,6 +1269,7 @@ export interface components {
             discord_webhook_url?: string | null;
             steam_auto_import_enabled?: boolean;
             steam_family_ids?: string | null;
+            setup_completed?: boolean;
             default_sort?: "status" | "category" | "genre" | "playtime" | "platform" | "interest" | "review_stars";
             theme?: string;
             custom_themes?: components["schemas"]["CustomTheme"][];
@@ -1284,6 +1287,7 @@ export interface components {
             discord_webhook_url?: string | null;
             steam_auto_import_enabled?: boolean;
             steam_family_ids?: string | null;
+            setup_completed?: boolean;
             default_sort?: "status" | "category" | "genre" | "playtime" | "platform" | "interest" | "review_stars";
             theme?: string;
             custom_themes?: components["schemas"]["CustomTheme"][];
