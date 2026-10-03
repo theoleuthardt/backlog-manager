@@ -238,6 +238,18 @@ export function SetupWizard() {
                 onChange={(e) => setIgdbClientSecret(e.target.value)}
                 className={WIZARD_INPUT}
               />
+              <p className="text-xs text-gray-500">
+                Create a Twitch application at{" "}
+                <a
+                  href="https://dev.twitch.tv/console/apps"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 underline hover:text-blue-300"
+                >
+                  dev.twitch.tv/console/apps
+                </a>{" "}
+                to get an IGDB Client ID and Client Secret.
+              </p>
             </div>
           </div>
         )}
