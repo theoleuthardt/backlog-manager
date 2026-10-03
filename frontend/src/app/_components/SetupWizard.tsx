@@ -67,7 +67,9 @@ export function SetupWizard() {
     if (stepIndex === 0) return { defaultSort };
     if (stepIndex === 1) {
       return {
-        ...(steamId.trim() ? { steamId: steamId.trim() } : {}),
+        ...(steamId.trim() !== (user.steamId ?? "")
+          ? { steamId: steamId.trim() }
+          : {}),
         ...(steamApiKey.trim() ? { steamApiKey: steamApiKey.trim() } : {}),
       };
     }
