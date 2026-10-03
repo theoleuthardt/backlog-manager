@@ -456,7 +456,17 @@ export function AccountContent() {
         <p className="mt-6 mb-2 text-sm text-gray-300">
           {user.hasSteamApiKey
             ? "Your own Steam Web API key is set and used for syncing playtimes."
-            : "Optionally set your own Steam Web API key. Falls back to the server's key otherwise."}
+            : "Optionally set your own Steam Web API key. Falls back to the server's key otherwise."}{" "}
+          Create or look up your key on{" "}
+          <a
+            href="https://steamcommunity.com/dev/apikey"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 underline hover:text-blue-300"
+          >
+            Steam&apos;s API key page
+          </a>
+          .
         </p>
         <div className="flex max-w-sm gap-2">
           <Input

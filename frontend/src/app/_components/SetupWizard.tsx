@@ -172,6 +172,20 @@ export function SetupWizard() {
                 placeholder="17-digit SteamID64"
                 className={WIZARD_INPUT}
               />
+              <p className="text-xs text-gray-500">
+                Open your Steam profile page: if its URL ends in a long number,
+                that&apos;s your SteamID64. If it ends in a custom name, look it
+                up with{" "}
+                <a
+                  href="https://steamdb.com/en/tools/steam-id-finder"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 underline hover:text-blue-300"
+                >
+                  SteamDB&apos;s SteamID finder
+                </a>
+                .
+              </p>
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="setup-steam-key">Steam Web API key</Label>
@@ -183,6 +197,18 @@ export function SetupWizard() {
                 placeholder="Steam Web API key"
                 className={WIZARD_INPUT}
               />
+              <p className="text-xs text-gray-500">
+                Create or look up your key on{" "}
+                <a
+                  href="https://steamcommunity.com/dev/apikey"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 underline hover:text-blue-300"
+                >
+                  Steam&apos;s API key page
+                </a>
+                .
+              </p>
             </div>
           </div>
         )}
