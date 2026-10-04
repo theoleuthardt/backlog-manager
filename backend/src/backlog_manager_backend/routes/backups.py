@@ -10,11 +10,16 @@ from litestar.datastructures import CacheControlHeader
 from litestar.di import NamedDependency, Provide
 from litestar.exceptions import ClientException, NotFoundException
 from litestar.params import FromPath
-from litestar.status_codes import HTTP_200_OK, HTTP_201_CREATED, HTTP_204_NO_CONTENT
+from litestar.status_codes import (
+    HTTP_200_OK,
+    HTTP_201_CREATED,
+    HTTP_204_NO_CONTENT,
+    HTTP_409_CONFLICT,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.auth.dependencies import BEARER_SECURITY_REQUIREMENT, get_current_user
-from backlog_manager_backend.errors import NotFoundError, ValidationError
+from backlog_manager_backend.errors import ConflictError, NotFoundError, ValidationError
 from backlog_manager_backend.schemas.backup import BackupSummary, RestoreResult
 from backlog_manager_backend.schemas.user import User
 from backlog_manager_backend.services import backup_service
@@ -72,6 +77,8 @@ async def restore_backup(
         raise NotFoundException(_BACKUP_NOT_FOUND) from error
     except ValidationError as error:
         raise ClientException(str(error)) from error
+    except ConflictError as error:
+        raise ClientException(str(error), status_code=HTTP_409_CONFLICT) from error
 
 
 @delete("/api/backups/{backup_id:int}", status_code=HTTP_204_NO_CONTENT)

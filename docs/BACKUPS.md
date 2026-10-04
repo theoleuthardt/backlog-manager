@@ -32,7 +32,7 @@ space content, which belongs to two people. Every query in
 
 Everything except `manual` is skipped when the backlog is empty (an empty
 snapshot must never push real ones out through retention) or identical to
-the user's latest backup. Retention is counted per kind, so a burst of safety
+the user's latest backup of the same kind. Retention is counted per kind, so a burst of safety
 snapshots cannot evict the daily ones. The scheduler is switched off with
 `BACKUP_SCHEDULER_ENABLED=false` (the test suite does this).
 

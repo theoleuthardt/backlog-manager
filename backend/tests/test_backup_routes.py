@@ -180,3 +180,48 @@ async def test_scheduler_is_not_started_when_disabled(postgres_url: str, monkeyp
 
     with TestClient(app=app):
         assert not hasattr(app.state, "backup_scheduler_task")
+
+
+async def test_restoring_a_backup_the_database_rejects_returns_409(
+    postgres_url: str, create_and_login
+) -> None:
+    from sqlalchemy import update
+
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.db import async_session
+    from backlog_manager_backend.models.user_backup import UserBackup
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "backupconflict@example.com")
+        for title, steam_app_id in (("One", 10), ("Two", 20)):
+            response = client.post(
+                "/api/backlog/entries",
+                headers=headers,
+                json={
+                    "title": title,
+                    "genre": ["RPG"],
+                    "platform": ["PC"],
+                    "status": "Not Started",
+                    "owned": True,
+                    "interest": 7,
+                    "steam_app_id": steam_app_id,
+                },
+            )
+            assert response.status_code == 201
+        backup = client.post("/api/backups", headers=headers).json()
+
+        async with async_session() as db_session:
+            model = await db_session.get(UserBackup, backup["id"])
+            entries = [{**entry, "steam_app_id": 10} for entry in model.payload["entries"]]
+            await db_session.execute(
+                update(UserBackup)
+                .where(UserBackup.id == backup["id"])
+                .values(payload={**model.payload, "entries": entries})
+            )
+            await db_session.commit()
+
+        response = client.post(f"/api/backups/{backup['id']}/restore", headers=headers)
+        titles = _titles(client, headers)
+
+    assert response.status_code == 409
+    assert titles == ["One", "Two"]

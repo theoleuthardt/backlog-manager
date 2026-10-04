@@ -422,3 +422,38 @@ async def test_scheduled_run_does_not_back_up_again_within_the_interval(
     await backup_service.create_due_auto_backups(session)
 
     assert len(await backup_service.list_backups(session, user.id)) == 1
+
+
+async def test_a_safety_backup_is_stored_even_when_another_kind_has_the_same_content(
+    backup_service: ModuleType, session: AsyncSession
+) -> None:
+    user = await _make_user(session, "safetysamekind")
+    await _seed(session, user.id)
+    manual = await backup_service.create_manual_backup(session, user.id)
+
+    result = await backup_service.restore_backup(session, user.id, manual.id)
+
+    assert result.safety_backup_id is not None
+    assert result.safety_backup_id != manual.id
+
+
+async def test_scheduled_run_continues_after_one_user_fails(
+    backup_service: ModuleType, session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    failing = await _make_user(session, "schedulefail")
+    healthy = await _make_user(session, "schedulehealthy")
+    await _seed(session, failing.id)
+    await _seed(session, healthy.id)
+    original = backup_service.create_backup
+
+    async def flaky(session_: AsyncSession, user_id: int, kind: str):
+        if user_id == failing.id:
+            raise RuntimeError("boom")
+        return await original(session_, user_id, kind)
+
+    monkeypatch.setattr(backup_service, "create_backup", flaky)
+
+    await backup_service.create_due_auto_backups(session)
+
+    assert await backup_service.list_backups(session, failing.id) == []
+    assert len(await backup_service.list_backups(session, healthy.id)) == 1

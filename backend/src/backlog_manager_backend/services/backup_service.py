@@ -5,7 +5,9 @@ scheduler in app.py), on request (kind "manual") and as safety nets right
 before something destructive (kinds "pre-restore", "pre-delete",
 "pre-import"). Every kind except "manual" is skipped when the backlog is
 empty (nothing to protect, and an empty snapshot must never push real ones
-out through retention) or identical to the user's latest backup. Retention
+out through retention) or identical to the user's latest backup of the same
+kind (so a safety snapshot is still stored when a manual backup happens to
+hold the same content - it is what the restore's undo points at). Retention
 is counted per kind in RETENTION, so a burst of safety snapshots can't
 evict the daily ones."""
 
@@ -78,7 +80,7 @@ async def create_backup(session: AsyncSession, user_id: int, kind: str) -> Backu
     if not payload.entries and not payload.categories:
         return None
 
-    latest = await backup_repo.get_latest_backup(session, user_id)
+    latest = await backup_repo.get_latest_backup(session, user_id, kind)
     if latest is not None and latest.content_hash == _content_hash(payload):
         return None
 
@@ -104,7 +106,7 @@ async def restore_backup(session: AsyncSession, user_id: int, backup_id: int) ->
     snapshot of the current state is taken first (so the restore itself can
     be undone by restoring that one), and the swap is a single transaction.
     `safety_backup_id` is None when the current state was empty or already
-    identical to the latest backup."""
+    identical to the latest pre-restore backup."""
     backup = await backup_repo.get_backup(session, user_id, backup_id)
     payload = _decode_payload(backup.payload)
 
@@ -121,13 +123,19 @@ async def restore_backup(session: AsyncSession, user_id: int, backup_id: int) ->
 
 async def create_due_auto_backups(session: AsyncSession) -> None:
     """One scheduler tick: snapshots every user whose last automatic
-    backup is older than AUTO_BACKUP_INTERVAL (or who has none)."""
+    backup is older than AUTO_BACKUP_INTERVAL (or who has none). A failure
+    for one user is logged and rolled back so it cannot stop the others
+    from being backed up."""
     due_before = datetime.now(UTC).replace(tzinfo=None) - AUTO_BACKUP_INTERVAL
     for user in await user_repo.get_all_users(session):
-        latest_auto = await backup_repo.get_latest_backup(session, user.id, AUTO)
-        if latest_auto is not None and latest_auto.created_at > due_before:
-            continue
-        await create_backup(session, user.id, AUTO)
+        try:
+            latest_auto = await backup_repo.get_latest_backup(session, user.id, AUTO)
+            if latest_auto is not None and latest_auto.created_at > due_before:
+                continue
+            await create_backup(session, user.id, AUTO)
+        except Exception:
+            await session.rollback()
+            logger.exception("auto_backup_failed", user_id=user.id)
 
 
 async def run_scheduler(interval_seconds: float) -> None:
