@@ -8,6 +8,11 @@ export interface EntryRef {
   status?: string;
 }
 
+export interface CategoryRef {
+  id: number;
+  name: string;
+}
+
 export interface EntryActions {
   openEntry: (id: number) => void;
   selectionMode: boolean;
@@ -17,6 +22,13 @@ export interface EntryActions {
   requestDelete: (entries: readonly EntryRef[]) => void;
   changeStatus: (entry: EntryRef, status: string) => void;
   statusOptions: readonly string[];
+  categories: readonly CategoryRef[];
+  categoriesByEntry: ReadonlyMap<number, readonly CategoryRef[]>;
+  toggleCategory: (
+    entryId: number,
+    categoryId: number,
+    assigned: boolean,
+  ) => void;
 }
 
 const EntryActionsContext = createContext<EntryActions | null>(null);

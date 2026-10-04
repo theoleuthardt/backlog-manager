@@ -1,5 +1,5 @@
 "use client";
-import { ChevronUp, Trash2, X } from "lucide-react";
+import { ChevronDown, Trash2, X } from "lucide-react";
 import { Button } from "shadcn_components/ui/button";
 import {
   DropdownMenu,
@@ -21,7 +21,8 @@ interface BulkActionBarProps {
 }
 
 /**
- * Floating bar shown while the dashboard is in selection mode: the
+ * Bar pinned to the top of the dashboard column while it is in selection
+ * mode, shown while the dashboard is in selection mode: the
  * number of selected games, select-all/clear shortcuts and the bulk
  * actions (change status, delete) that apply to the selection.
  */
@@ -39,7 +40,7 @@ export const BulkActionBar = ({
   <div
     role="toolbar"
     aria-label="Bulk actions"
-    className="surface-glow bg-surface fixed bottom-4 left-1/2 z-40 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-2 rounded-2xl border-2 border-white px-4 py-3"
+    className="surface-glow bg-surface sticky top-4 z-40 flex flex-wrap items-center justify-center gap-2 self-center rounded-2xl border-2 border-white px-4 py-3"
   >
     <span className="text-sm font-semibold" aria-live="polite">
       {selectedCount} selected
@@ -72,10 +73,10 @@ export const BulkActionBar = ({
           className="gap-1.5"
         >
           Set status
-          <ChevronUp className="h-4 w-4" />
+          <ChevronDown className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="center" side="top">
+      <DropdownMenuContent align="center">
         {statusOptions.map((status) => (
           <DropdownMenuItem key={status} onSelect={() => onSetStatus(status)}>
             {status}

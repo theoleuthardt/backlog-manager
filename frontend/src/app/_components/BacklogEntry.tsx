@@ -1,9 +1,10 @@
 "use client";
 import { memo } from "react";
 import { motion } from "motion/react";
-import { Check, ExternalLink, ListChecks, Trash2 } from "lucide-react";
+import { Check, ExternalLink, ListChecks, Tags, Trash2 } from "lucide-react";
 import {
   ContextMenu,
+  ContextMenuCheckboxItem,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuLabel,
@@ -34,7 +35,13 @@ export const BacklogEntry = memo(function BacklogEntry(
     requestDelete,
     changeStatus,
     statusOptions,
+    categories,
+    categoriesByEntry,
+    toggleCategory,
   } = useEntryActions();
+  const assignedCategoryIds = new Set(
+    (categoriesByEntry.get(props.id) ?? []).map((category) => category.id),
+  );
   const isSelected = selectedIds.has(props.id);
   const entry = { id: props.id, title: props.title, status: props.status };
 
@@ -42,7 +49,7 @@ export const BacklogEntry = memo(function BacklogEntry(
     selectionMode ? toggleSelected(props.id) : openEntry(props.id);
 
   return (
-    <ContextMenu>
+    <ContextMenu modal={false}>
       <ContextMenuTrigger asChild>
         <div
           className={`relative w-[9.375rem] cursor-pointer rounded-xl ${props.className ?? ""}`}
@@ -52,7 +59,7 @@ export const BacklogEntry = memo(function BacklogEntry(
             tabIndex={0}
             aria-label={props.title}
             aria-pressed={selectionMode ? isSelected : undefined}
-            className={`rounded-xl leading-[0] outline-none focus-visible:ring-2 focus-visible:ring-white ${isSelected ? "ring-primary ring-4" : ""}`}
+            className={`relative rounded-xl leading-[0] outline-none focus-visible:ring-2 focus-visible:ring-white ${isSelected ? "ring-primary ring-4" : ""}`}
             whileHover={{ scale: 1.05, y: -4 }}
             whileTap={{ scale: 0.98 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
@@ -72,15 +79,15 @@ export const BacklogEntry = memo(function BacklogEntry(
               mainTime={props.mainTime}
               inSharedSpace={props.inSharedSpace}
             />
+            {selectionMode && (
+              <span
+                aria-hidden="true"
+                className={`pointer-events-none absolute top-2 left-2 flex h-6 w-6 items-center justify-center rounded-full border-2 ${isSelected ? "bg-primary text-primary-foreground border-primary" : "border-white bg-black/60"}`}
+              >
+                {isSelected && <Check className="h-4 w-4" />}
+              </span>
+            )}
           </motion.div>
-          {selectionMode && (
-            <span
-              aria-hidden="true"
-              className={`pointer-events-none absolute top-2 left-2 flex h-6 w-6 items-center justify-center rounded-full border-2 ${isSelected ? "bg-primary text-primary-foreground border-primary" : "border-white bg-black/60"}`}
-            >
-              {isSelected && <Check className="h-4 w-4" />}
-            </span>
-          )}
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
@@ -105,6 +112,26 @@ export const BacklogEntry = memo(function BacklogEntry(
               >
                 {status}
               </ContextMenuItem>
+            ))}
+          </ContextMenuSubContent>
+        </ContextMenuSub>
+        <ContextMenuSub>
+          <ContextMenuSubTrigger disabled={categories.length === 0}>
+            <Tags />
+            Categories
+          </ContextMenuSubTrigger>
+          <ContextMenuSubContent className="max-h-72">
+            {categories.map((category) => (
+              <ContextMenuCheckboxItem
+                key={category.id}
+                checked={assignedCategoryIds.has(category.id)}
+                onSelect={(event) => event.preventDefault()}
+                onCheckedChange={(checked) =>
+                  toggleCategory(props.id, category.id, checked)
+                }
+              >
+                {category.name}
+              </ContextMenuCheckboxItem>
             ))}
           </ContextMenuSubContent>
         </ContextMenuSub>

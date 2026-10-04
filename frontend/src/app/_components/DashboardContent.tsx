@@ -73,6 +73,7 @@ import {
   filterEntries,
   type EntryFilters,
 } from "~/lib/filterEntries";
+import { sortCategoriesByName } from "~/lib/categories";
 import { MAX_REVIEW_STARS } from "~/lib/reviewStars";
 import { groupEntriesByStatus, groupSortedEntries } from "~/lib/groupEntries";
 import {
@@ -186,6 +187,10 @@ export const DashboardContent = ({
 
   const { data: entryCategories } = useEntryCategories();
   const { data: allCategories = [] } = useCategories();
+  const sortedCategories = useMemo(
+    () => sortCategoriesByName(allCategories),
+    [allCategories],
+  );
   const categoryOptions = useMemo(
     () =>
       allCategories
@@ -293,6 +298,7 @@ export const DashboardContent = ({
   );
 
   const moveEntryMutate = moveEntry.mutate;
+  const setEntryCategoryMutate = setEntryCategory.mutate;
   const changeStatus = useCallback(
     (entry: EntryRef, status: string) => {
       const previousStatus = entry.status;
@@ -342,8 +348,30 @@ export const DashboardContent = ({
       requestDelete: setPendingDelete,
       changeStatus,
       statusOptions,
+      categories: sortedCategories,
+      categoriesByEntry: entryCategories ?? new Map(),
+      toggleCategory: (entryId, categoryId, assigned) =>
+        setEntryCategoryMutate(
+          { entryId, categoryId, assigned },
+          {
+            onError: (error) =>
+              toast.error(
+                error instanceof Error
+                  ? error.message
+                  : "Failed to update categories",
+              ),
+          },
+        ),
     }),
-    [selectionMode, selectedIds, changeStatus, statusOptions],
+    [
+      selectionMode,
+      selectedIds,
+      changeStatus,
+      statusOptions,
+      sortedCategories,
+      entryCategories,
+      setEntryCategoryMutate,
+    ],
   );
 
   const endSelection = () => {
@@ -633,6 +661,24 @@ export const DashboardContent = ({
               </div>
             </div>
 
+            {selectionMode && (
+              <BulkActionBar
+                selectedCount={selectedEntryRefs.length}
+                visibleCount={visibleEntries.length}
+                statusOptions={statusOptions}
+                isBusy={bulkUpdateStatus.isPending || bulkDelete.isPending}
+                onSelectAllVisible={() =>
+                  setSelectedIds(
+                    new Set(visibleEntries.map((entry) => entry.id)),
+                  )
+                }
+                onClearSelection={() => setSelectedIds(new Set())}
+                onSetStatus={(status) => void handleBulkStatus(status)}
+                onDelete={() => setPendingDelete(selectedEntryRefs)}
+                onDone={endSelection}
+              />
+            )}
+
             {entries.length === 0 ? (
               <EmptyState
                 title="Your backlog is empty"
@@ -753,22 +799,6 @@ export const DashboardContent = ({
         >
           {openEntry && <EntryDetail key={openEntry.id} {...openEntry} />}
         </Dialog>
-
-        {selectionMode && (
-          <BulkActionBar
-            selectedCount={selectedEntryRefs.length}
-            visibleCount={visibleEntries.length}
-            statusOptions={statusOptions}
-            isBusy={bulkUpdateStatus.isPending || bulkDelete.isPending}
-            onSelectAllVisible={() =>
-              setSelectedIds(new Set(visibleEntries.map((entry) => entry.id)))
-            }
-            onClearSelection={() => setSelectedIds(new Set())}
-            onSetStatus={(status) => void handleBulkStatus(status)}
-            onDelete={() => setPendingDelete(selectedEntryRefs)}
-            onDone={endSelection}
-          />
-        )}
 
         <AlertDialog
           open={pendingDelete !== null}
