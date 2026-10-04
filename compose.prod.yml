@@ -43,7 +43,8 @@ services:
 
   price-check-cron:
     image: curlimages/curl:latest
-    env_file: .env
+    environment:
+      PRICE_CHECK_CRON_SECRET: ${PRICE_CHECK_CRON_SECRET}
     entrypoint:
       - sh
       - -c

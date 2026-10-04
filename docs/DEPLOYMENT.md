@@ -22,8 +22,17 @@ Desktop app (Tauri) --HTTPS--> Cloudflare --tunnel--> cloudflared --HTTP--> <ser
 ```
 
 Only the backend is public. The frontend ships as the Tauri desktop app, so
-there is no frontend container and no pgAdmin on the server. TLS ends at
-Cloudflare; between cloudflared and the backend the traffic is plain HTTP.
+there is no frontend container and no pgAdmin on the server.
+
+Cloudflare's HTTPS covers the path from the client to Cloudflare, and the
+tunnel from Cloudflare to cloudflared is encrypted too, but the last hop from
+cloudflared to the backend is plain HTTP and carries logins and tokens. Keep
+that hop on the loopback interface: run cloudflared on the same machine as the
+backend, point it at `localhost:8000` and bind the port to `127.0.0.1`
+(`BACKEND_BIND_ADDRESS`, the default in `.env.prod.example`). If cloudflared
+has to run on another machine, that connection must stay on a private network
+segment you control (for example a dedicated VLAN): anyone who can sniff or
+spoof it sees the credentials.
 
 ## What the compose file does
 
@@ -53,8 +62,9 @@ In the Zero Trust dashboard (labels differ slightly between versions):
    command on the machine that can reach the backend.
 2. Add a **Public hostname** (newer dashboards: *Published applications*):
    subdomain `blm`, domain `theocloud.dev`, empty path, service type **HTTP**
-   (the backend speaks plain HTTP), URL `<server-lan-ip>:8000` - or
-   `localhost:8000` when cloudflared runs on the same machine as the backend.
+   (the backend speaks plain HTTP), URL `localhost:8000` when cloudflared runs
+   on the same machine as the backend (recommended), or `<server-lan-ip>:8000`
+   when it runs on another machine (see the note above about that hop).
 3. Cloudflare creates the proxied `blm` CNAME itself; delete an existing `blm`
    DNS record first.
 4. Do not put Cloudflare Access (a login page) in front of the API: the desktop
@@ -70,10 +80,10 @@ In the Zero Trust dashboard (labels differ slightly between versions):
 ## 2. Server
 
 Docker with Compose v2 (Dockhand/Hawser implies it); the commands below use
-`docker compose`, with Podman use `podman compose`. If cloudflared runs on
-another machine, the backend port must be reachable from it; set
-`BACKEND_BIND_ADDRESS` to the server's LAN IP so the port is not open on every
-interface (`127.0.0.1` when cloudflared runs on the same machine).
+`docker compose`, with Podman use `podman compose`. With cloudflared on the
+same machine keep `BACKEND_BIND_ADDRESS=127.0.0.1`. Only if it runs on another
+machine set it to the server's LAN IP (never `0.0.0.0`), so the port is
+reachable from that machine alone and not open on every interface.
 
 Pin one commit for the first install. The init SQL creates the schema of
 exactly one version and the image stamps its own migration head on a fresh
