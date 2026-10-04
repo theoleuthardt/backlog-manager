@@ -1,0 +1,22 @@
+meta {
+  name: Get IGDB Sync Pending Count
+  type: http
+  seq: 30
+}
+
+get {
+  url: {{backendUrl}}/api/igdb-sync/pending-count
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Number of personal entries the IGDB sync would touch: those without a
+  genre or description, or whose title carries trademark symbols. The
+  confirmation dialog of the dashboard's IGDB sync button shows it. Run
+  auth/Login first.
+}

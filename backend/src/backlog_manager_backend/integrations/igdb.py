@@ -167,6 +167,25 @@ async def search_game_on_igdb(
         return []
 
 
+async def search_games_by_name_on_igdb(
+    search_term: str, client_id: str, access_token: str
+) -> list[IGDBSearchResult]:
+    """Wildcard substring match on the stored game name through the
+    `games` endpoint, for the "search more" path: it finds titles the
+    fuzzy `search` index misses (e.g. one spelled with punctuation the
+    query lacks). The hits are returned as search results pointing at
+    the game itself so game_service can resolve them like any other
+    hit. The caller passes a punctuation-free term, since the wildcard
+    match is literal."""
+    escaped_term = search_term.replace('"', '\\"')
+    body = f'fields id,name; where name ~ *"{escaped_term}"*; limit 100;'
+    try:
+        games = await _query_igdb("games", body, client_id, access_token, list[IGDBGameData])
+    except httpx.HTTPStatusError:
+        return []
+    return [IGDBSearchResult(id=game.id, game=game.id, name=game.name) for game in games]
+
+
 async def get_game_on_igdb(game_id: str, client_id: str, access_token: str) -> list[IGDBGameData]:
     body = (
         "fields age_ratings,aggregated_rating,aggregated_rating_count,alternative_names,"

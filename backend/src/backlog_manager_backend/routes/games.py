@@ -101,13 +101,18 @@ async def search_game(
 
 @get("/api/games/enriched-search")
 async def enriched_search(
-    search_term: FromQuery[str], current_user: NamedDependency[User]
+    search_term: FromQuery[str],
+    current_user: NamedDependency[User],
+    deep: FromQuery[bool] = False,
 ) -> list[EnrichedResult]:
+    """`deep` is the "search more" mode, see game_service.search."""
     client_id, client_secret = _resolve_igdb_credentials(current_user)
     steamgriddb_api_key = _resolve_steamgriddb_api_key(current_user)
     try:
         return await _call_igdb(
-            game_service.search(search_term, client_id, client_secret, steamgriddb_api_key)
+            game_service.search(
+                search_term, client_id, client_secret, steamgriddb_api_key, deep=deep
+            )
         )
     except RuntimeError as error:
         raise ServiceUnavailableException(_IGDB_NOT_CONFIGURED) from error

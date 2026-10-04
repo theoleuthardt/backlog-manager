@@ -1,0 +1,30 @@
+meta {
+  name: Sync IGDB Data (Stream)
+  type: http
+  seq: 31
+}
+
+post {
+  url: {{backendUrl}}/api/igdb-sync/stream
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  SSE endpoint (media_type: text/event-stream): looks up the top IGDB
+  match for every personal entry that lacks a genre or description and
+  fills in what is missing (genre, description, trailer, beat-times -
+  never overwriting existing values; Steam-linked titles also lose
+  trademark symbols). Emits a `progress` event ({"processed", "total"})
+  per entry, then a `done` event with the updated entries, or an `error`
+  event.
+
+  Bruno returns the raw event-stream body once the connection closes.
+  Run auth/Login first.
+
+  503 if neither the caller nor the server has IGDB credentials
+}

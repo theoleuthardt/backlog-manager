@@ -683,6 +683,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/igdb-sync/pending-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GetPendingCount */
+        get: operations["ApiIgdbSyncPendingCountGetPendingCount"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/igdb-sync/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** SyncIgdbDataStream */
+        post: operations["ApiIgdbSyncStreamSyncIgdbDataStream"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/csv/headers": {
         parameters: {
             query?: never;
@@ -3948,6 +3982,56 @@ export interface operations {
             };
         };
     };
+    ApiIgdbSyncPendingCountGetPendingCount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    "cache-control"?: string;
+                    "X-Frame-Options"?: string;
+                    "Referrer-Policy"?: string;
+                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": number;
+                };
+            };
+        };
+    };
+    ApiIgdbSyncStreamSyncIgdbDataStream: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    "cache-control"?: string;
+                    "X-Frame-Options"?: string;
+                    "Referrer-Policy"?: string;
+                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": unknown;
+                };
+            };
+        };
+    };
     ApiCsvHeadersGetCsvHeaders: {
         parameters: {
             query?: never;
@@ -4125,6 +4209,7 @@ export interface operations {
         parameters: {
             query: {
                 search_term: string;
+                deep?: boolean;
             };
             header?: never;
             path?: never;

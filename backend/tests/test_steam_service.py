@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.errors import ConflictError, ValidationError
 from backlog_manager_backend.integrations.types import (
+    EnrichedResult,
     HltbResultData,
     SteamAchievement,
     SteamAchievementSchema,
@@ -1230,3 +1231,261 @@ async def test_sync_playtimes_and_import_updates_the_users_space_playtime(
     assert theirs.playtime is None
     assert theirs.partner_playtime == Decimal("8.50")
     assert await backlog_entry_repo.get_backlog_entries_by_user(session, user.id) == []
+
+
+async def test_import_library_strips_trademark_symbols_from_titles(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [SteamOwnedGame(appid=1091500, name="Cyberpunk 2077®", playtime_forever=0)]
+
+    async def no_cover(app_id: int, key: str | None) -> str | None:
+        return None
+
+    hltb_titles: list[str] = []
+
+    async def fake_search_game_on_hltb(search_term: str) -> list[HltbResultData]:
+        hltb_titles.append(search_term)
+        return []
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+    monkeypatch.setattr(steam_service, "_try_get_cover", no_cover)
+    monkeypatch.setattr(steam_service, "search_game_on_hltb", fake_search_game_on_hltb)
+
+    created = await steam_service.import_library(session, user, "api-key")
+
+    assert [entry.title for entry in created] == ["Cyberpunk 2077"]
+    assert hltb_titles == ["Cyberpunk 2077"]
+
+
+async def test_preview_library_strips_trademark_symbols_from_titles(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [SteamOwnedGame(appid=1, name="DOOM™ Eternal ©", playtime_forever=0)]
+
+    async def no_cover(app_id: int, key: str | None) -> str | None:
+        return None
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+    monkeypatch.setattr(steam_service, "_try_get_cover", no_cover)
+
+    preview = await steam_service.preview_library(session, user, "api-key")
+
+    assert [item.title for item in preview] == ["DOOM Eternal"]
+
+
+async def test_preview_and_import_wishlist_strip_trademark_symbols_from_titles(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    item = SteamWishlistItem(appid=292030, priority=0, date_added=1600000000)
+
+    async def fake_get_wishlist(steam_id: str) -> list[SteamWishlistItem]:
+        return [item]
+
+    async def fake_get_steam_app_details(
+        app_ids: list[int], budget: object = None
+    ) -> dict[int, SteamAppDetails]:
+        return {292030: SteamAppDetails(name="The Witcher® 3: Wild Hunt™", header_image=None)}
+
+    async def no_cover(app_id: int, key: str | None) -> str | None:
+        return None
+
+    monkeypatch.setattr(steam_service, "get_wishlist", fake_get_wishlist)
+    monkeypatch.setattr(steam_service, "_get_steam_app_details", fake_get_steam_app_details)
+    monkeypatch.setattr(steam_service, "_try_get_cover", no_cover)
+
+    preview = await steam_service.preview_wishlist(session, user)
+    created = await steam_service.import_wishlist(session, user, [item])
+
+    assert [entry.title for entry in preview] == ["The Witcher 3: Wild Hunt"]
+    assert [entry.title for entry in created] == ["The Witcher 3: Wild Hunt"]
+
+
+def _igdb_result(**overrides: object) -> EnrichedResult:
+    fields: dict[str, object] = {
+        "id": 1,
+        "hltb_id": 1,
+        "title": "Cyberpunk 2077",
+        "image_url": None,
+        "genres": ["RPG", "Shooter"],
+        "platforms": [],
+        "main_story": 25.0,
+        "main_story_with_extras": 60.0,
+        "completionist": 100.0,
+        "description": "Open world RPG",
+        "trailer_url": "https://www.youtube.com/watch?v=trailer0001",
+    }
+    fields.update(overrides)
+    return EnrichedResult(**fields)
+
+
+async def test_import_library_enriches_entries_with_igdb_data(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    searched: list[tuple[str, str, str, int]] = []
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [SteamOwnedGame(appid=1091500, name="Cyberpunk 2077™", playtime_forever=0)]
+
+    async def no_cover(app_id: int, key: str | None) -> str | None:
+        return None
+
+    async def fake_search(
+        title: str, client_id: str, client_secret: str, steamgriddb_api_key: str | None, **kwargs
+    ) -> list[EnrichedResult]:
+        searched.append((title, client_id, client_secret, kwargs["limit"]))
+        return [_igdb_result()]
+
+    async def hltb_must_not_run(search_term: str) -> list[HltbResultData]:
+        raise AssertionError("HLTB is only the fallback when IGDB has no beat-times")
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+    monkeypatch.setattr(steam_service, "_try_get_cover", no_cover)
+    monkeypatch.setattr(steam_service.game_service, "search", fake_search)
+    monkeypatch.setattr(steam_service, "search_game_on_hltb", hltb_must_not_run)
+
+    [entry] = await steam_service.import_library(
+        session, user, "api-key", igdb_credentials=("cid", "secret")
+    )
+
+    assert searched == [("Cyberpunk 2077", "cid", "secret", 1)]
+    assert entry.genre == "RPG, Shooter"
+    assert entry.description == "Open world RPG"
+    assert entry.trailer_link == "https://www.youtube.com/watch?v=trailer0001"
+    assert entry.main_time == Decimal("25.0")
+    assert entry.main_plus_extra_time == Decimal("60.0")
+    assert entry.completion_time == Decimal("100.0")
+
+
+async def test_import_library_falls_back_to_hltb_when_the_igdb_match_has_no_times(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [SteamOwnedGame(appid=1, name="Obscure Game", playtime_forever=0)]
+
+    async def no_cover(app_id: int, key: str | None) -> str | None:
+        return None
+
+    async def fake_search(*args: object, **kwargs: object) -> list[EnrichedResult]:
+        return [_igdb_result(main_story=0.0, main_story_with_extras=0.0, completionist=0.0)]
+
+    async def fake_search_game_on_hltb(search_term: str) -> list[HltbResultData]:
+        return [
+            HltbResultData(
+                id=5,
+                hltb_id=5,
+                title="Obscure Game",
+                image_url="",
+                main_story=7.0,
+                main_story_with_extras=9.0,
+                completionist=12.0,
+                last_updated_at="2024-01-01",
+            )
+        ]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+    monkeypatch.setattr(steam_service, "_try_get_cover", no_cover)
+    monkeypatch.setattr(steam_service.game_service, "search", fake_search)
+    monkeypatch.setattr(steam_service, "search_game_on_hltb", fake_search_game_on_hltb)
+
+    [entry] = await steam_service.import_library(
+        session, user, "api-key", igdb_credentials=("cid", "secret")
+    )
+
+    assert entry.genre == "RPG, Shooter"
+    assert entry.main_time == Decimal("7.0")
+    assert entry.completion_time == Decimal("12.0")
+
+
+async def test_import_library_still_imports_when_igdb_is_unreachable(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=0)]
+
+    async def no_cover(app_id: int, key: str | None) -> str | None:
+        return None
+
+    async def failing_search(*args: object, **kwargs: object) -> list[EnrichedResult]:
+        raise httpx.ConnectError("boom")
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+    monkeypatch.setattr(steam_service, "_try_get_cover", no_cover)
+    monkeypatch.setattr(steam_service.game_service, "search", failing_search)
+
+    [entry] = await steam_service.import_library(
+        session, user, "api-key", igdb_credentials=("cid", "secret")
+    )
+
+    assert entry.title == "Portal 2"
+    assert entry.genre == ""
+    assert entry.description is None
+
+
+async def test_import_library_skips_igdb_without_credentials(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=0)]
+
+    async def no_cover(app_id: int, key: str | None) -> str | None:
+        return None
+
+    async def search_must_not_run(*args: object, **kwargs: object) -> list[EnrichedResult]:
+        raise AssertionError("IGDB must not be queried without credentials")
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+    monkeypatch.setattr(steam_service, "_try_get_cover", no_cover)
+    monkeypatch.setattr(steam_service.game_service, "search", search_must_not_run)
+
+    [entry] = await steam_service.import_library(session, user, "api-key")
+
+    assert entry.genre == ""
+
+
+async def test_import_wishlist_enriches_entries_with_igdb_data(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    searched: list[str] = []
+
+    async def fake_get_steam_app_details(
+        app_ids: list[int], budget: object = None
+    ) -> dict[int, SteamAppDetails]:
+        return {292030: SteamAppDetails(name="The Witcher® 3: Wild Hunt", header_image=None)}
+
+    async def no_cover(app_id: int, key: str | None) -> str | None:
+        return None
+
+    async def fake_search(title: str, *args: object, **kwargs: object) -> list[EnrichedResult]:
+        searched.append(title)
+        return [_igdb_result(genres=["RPG"], description="Monster hunter")]
+
+    monkeypatch.setattr(steam_service, "_get_steam_app_details", fake_get_steam_app_details)
+    monkeypatch.setattr(steam_service, "_try_get_cover", no_cover)
+    monkeypatch.setattr(steam_service.game_service, "search", fake_search)
+
+    [entry] = await steam_service.import_wishlist(
+        session,
+        user,
+        [SteamWishlistItem(appid=292030, priority=0, date_added=1600000000)],
+        igdb_credentials=("cid", "secret"),
+    )
+
+    assert searched == ["The Witcher 3: Wild Hunt"]
+    assert entry.genre == "RPG"
+    assert entry.description == "Monster hunter"
+    assert entry.main_time == Decimal("25.0")
