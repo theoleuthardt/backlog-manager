@@ -22,8 +22,6 @@ dependencies = [
     "structlog>=26.1.0",
 ]
 
-[project.scripts]
-backlog-manager-backend = "backlog_manager_backend:main"
 
 [build-system]
 requires = ["uv_build>=0.8.13,<0.9.0"]

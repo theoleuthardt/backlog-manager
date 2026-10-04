@@ -4,7 +4,6 @@ import httpx
 import pytest
 
 from backlog_manager_backend.integrations.howlongtobeat import (
-    get_game_by_id_on_hltb,
     search_game_on_hltb,
 )
 
@@ -81,27 +80,3 @@ async def test_search_game_on_hltb_returns_empty_list_on_timeout(
     _mock_client(handler, monkeypatch)
 
     assert await search_game_on_hltb("Celeste") == []
-
-
-async def test_get_game_by_id_on_hltb_returns_parsed_result(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    def handler(request: httpx.Request) -> httpx.Response:
-        assert request.url.path == "/hltb/1"
-        return httpx.Response(200, json=_SAMPLE_RESULT)
-
-    _mock_client(handler, monkeypatch)
-
-    result = await get_game_by_id_on_hltb(1)
-
-    assert result.title == "Celeste"
-
-
-async def test_get_game_by_id_on_hltb_raises_on_error(monkeypatch: pytest.MonkeyPatch) -> None:
-    def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(404)
-
-    _mock_client(handler, monkeypatch)
-
-    with pytest.raises(httpx.HTTPStatusError):
-        await get_game_by_id_on_hltb(999)

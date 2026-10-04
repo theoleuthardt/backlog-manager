@@ -70,21 +70,3 @@ export async function updateCurrentUser(
   if (error) throw new Error(apiErrorMessage(error, "Failed to update user"));
   return toCurrentUser(data);
 }
-
-export async function deleteCurrentUser(): Promise<void> {
-  const { error } = await apiClient.DELETE("/api/user/me");
-  if (error) throw new Error(apiErrorMessage(error, "Failed to delete user"));
-}
-
-export async function getUserByUsername(
-  username: string,
-): Promise<{ id: number; name: string }> {
-  const { data, error } = await apiClient.GET(
-    "/api/user/by-username/{username}",
-    {
-      params: { path: { username } },
-    },
-  );
-  if (error) throw new Error(apiErrorMessage(error, "User not found"));
-  return data;
-}

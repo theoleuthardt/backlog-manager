@@ -1,7 +1,7 @@
 import { apiClient, apiErrorMessage } from "./client";
 import type { components } from "./schema";
 
-export interface SpaceMember {
+interface SpaceMember {
   username: string;
   status: "active" | "invited";
   isMe: boolean;

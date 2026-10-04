@@ -180,33 +180,6 @@ export async function getEntryDuplicates(
   return data.map(toEntryData);
 }
 
-export async function getEntryById(
-  entryId: number,
-  spaceId?: number,
-): Promise<BacklogEntryData> {
-  const { data, error } = await apiClient.GET(
-    "/api/backlog/entries/{entry_id}",
-    {
-      params: { path: { entry_id: entryId }, query: { space_id: spaceId } },
-    },
-  );
-  if (error)
-    throw new Error(apiErrorMessage(error, "Failed to load backlog entry"));
-  return toEntryData(data);
-}
-
-export async function getEntriesByStatus(
-  status: string,
-  spaceId?: number,
-): Promise<BacklogEntryData[]> {
-  const { data, error } = await apiClient.GET("/api/backlog/entries", {
-    params: { query: { status, space_id: spaceId } },
-  });
-  if (error)
-    throw new Error(apiErrorMessage(error, "Failed to load backlog entries"));
-  return data.map(toEntryData);
-}
-
 export async function createEntry(
   input: CreateBacklogEntryInput,
   spaceId?: number,
@@ -391,21 +364,6 @@ export async function deleteCategory(
   );
   if (error)
     throw new Error(apiErrorMessage(error, "Failed to delete category"));
-}
-
-export async function getCategoriesForEntry(
-  entryId: number,
-  spaceId?: number,
-): Promise<CategoryData[]> {
-  const { data, error } = await apiClient.GET(
-    "/api/backlog/entries/{entry_id}/categories",
-    { params: { path: { entry_id: entryId }, query: { space_id: spaceId } } },
-  );
-  if (error)
-    throw new Error(
-      apiErrorMessage(error, "Failed to load categories for entry"),
-    );
-  return data.map(toCategoryData);
 }
 
 export async function getEntriesForCategory(

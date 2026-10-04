@@ -14,10 +14,10 @@ from backlog_manager_backend.integrations.types import (
     CheapSharkStore,
     CheapSharkStoreImages,
 )
+from backlog_manager_backend.models.user_game_price_alert import UserGamePriceAlert
 from backlog_manager_backend.repositories import (
     backlog_entry_repo,
     game_price_repo,
-    user_game_price_alert_repo,
     user_repo,
 )
 from backlog_manager_backend.schemas.backlog_entry import CreateBacklogEntryParams
@@ -86,6 +86,13 @@ def _detail(
             )
         ],
     )
+
+
+async def _last_alerted_price(
+    session: AsyncSession, user_id: int, steam_app_id: int
+) -> Decimal | None:
+    model = await session.get(UserGamePriceAlert, (user_id, steam_app_id))
+    return model.last_alerted_price if model is not None else None
 
 
 async def test_get_price_info_uses_fresh_cache_without_refetching(
@@ -219,7 +226,7 @@ async def test_check_prices_and_alert_sends_discord_message_when_newly_on_sale(
     assert sent[0][0] == _REAL_WEBHOOK_URL
     assert "Half-Life 2" in sent[0][1]
 
-    last_alerted = await user_game_price_alert_repo.get_last_alerted_price(session, user.id, 220)
+    last_alerted = await _last_alerted_price(session, user.id, 220)
     assert last_alerted == Decimal("9.99")
 
 
@@ -375,13 +382,11 @@ async def test_check_prices_and_alert_reverts_dedup_when_delivery_fails(
 
     first_run_alerts = await price_service.check_prices_and_alert(session)
     assert first_run_alerts == 0
-    assert await user_game_price_alert_repo.get_last_alerted_price(session, user.id, 220) is None
+    assert await _last_alerted_price(session, user.id, 220) is None
 
     second_run_alerts = await price_service.check_prices_and_alert(session)
     assert second_run_alerts == 1
-    assert await user_game_price_alert_repo.get_last_alerted_price(
-        session, user.id, 220
-    ) == Decimal("9.99")
+    assert await _last_alerted_price(session, user.id, 220) == Decimal("9.99")
 
 
 async def test_resolve_discord_webhook_url_prefers_users_own_webhook(

@@ -1,4 +1,3 @@
-from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -54,23 +53,3 @@ async def remove_backlog_entry_from_category(
     await session.delete(model)
     await session.commit()
     return schema
-
-
-async def delete_category_backlog_entries(
-    session: AsyncSession, category_id: int
-) -> list[CategoryBacklogEntry]:
-    result = await session.execute(
-        select(CategoryBacklogEntryModel).where(
-            CategoryBacklogEntryModel.category_id == category_id
-        )
-    )
-    models = list(result.scalars().all())
-    schemas = [_to_schema(model) for model in models]
-
-    await session.execute(
-        delete(CategoryBacklogEntryModel).where(
-            CategoryBacklogEntryModel.category_id == category_id
-        )
-    )
-    await session.commit()
-    return schemas

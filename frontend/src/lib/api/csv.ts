@@ -51,13 +51,13 @@ export async function getCsvHeaders(
   return data.headers;
 }
 
-export interface FieldDiff {
+interface FieldDiff {
   field: string;
   existing: string;
   proposed: string;
 }
 
-export interface DuplicateMatch {
+interface DuplicateMatch {
   backlogEntryId: number;
   title: string;
   diffs: FieldDiff[];

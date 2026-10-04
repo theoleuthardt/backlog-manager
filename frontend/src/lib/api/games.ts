@@ -94,7 +94,7 @@ export async function searchSteamGridDb(
   return data;
 }
 
-export interface GamePriceDeal {
+interface GamePriceDeal {
   store: string;
   iconUrl: string;
   price: number;

@@ -81,23 +81,3 @@ async def test_remove_backlog_entry_from_category_not_found(session: AsyncSessio
             session,
             CategoryBacklogAssociationParams(category_id=999_999_999, backlog_entry_id=999_999_999),
         )
-
-
-async def test_delete_category_backlog_entries(session: AsyncSession) -> None:
-    _, category, entry = await _make_user_category_entry(session)
-    await category_backlog_entry_repo.add_category_to_backlog_entry(
-        session,
-        CategoryBacklogAssociationParams(
-            category_id=category.category_id, backlog_entry_id=entry.backlog_entry_id
-        ),
-    )
-
-    deleted = await category_backlog_entry_repo.delete_category_backlog_entries(
-        session, category.category_id
-    )
-
-    assert [d.backlog_entry_id for d in deleted] == [entry.backlog_entry_id]
-    assert (
-        await backlog_entry_repo.get_backlog_entries_for_category(session, category.category_id)
-        == []
-    )

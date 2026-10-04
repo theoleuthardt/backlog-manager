@@ -32,18 +32,6 @@ export async function syncSteamPlaytimesStream(
   return streamEntries(response, onProgress);
 }
 
-export async function importSteamLibraryStream(
-  onProgress: (progress: SteamSyncProgress) => void,
-): Promise<BacklogEntryData[]> {
-  const { response, error } = await apiClient.POST(
-    "/api/user/steam/import/stream",
-    { parseAs: "stream", body: null },
-  );
-  if (error)
-    throw new Error(apiErrorMessage(error, "Failed to import Steam library"));
-  return streamEntries(response, onProgress);
-}
-
 export async function importSteamLibraryAppIdsStream(
   appIds: number[],
   onProgress: (progress: SteamSyncProgress) => void,
@@ -130,7 +118,7 @@ export async function getSteamPlaytime(
   return data == null ? null : Number(data);
 }
 
-export interface AchievementInfo {
+interface AchievementInfo {
   apiname: string;
   displayName: string;
   description: string | null;

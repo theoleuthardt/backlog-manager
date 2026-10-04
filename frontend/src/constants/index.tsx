@@ -1,7 +1,5 @@
 import { landingPageNavLinks } from "./navbarLinks";
 import { dashboardNavLinks } from "./navbarLinks";
-import { BacklogEntryDummyData } from "./backlogEntryDummyData";
-import { gameSearchbarDummyResults } from "./gameSearchbarDummyResults";
 import { creationToolNavLinks } from "./navbarLinks";
 import { importCSVNavLinks } from "./navbarLinks";
 import { exportCSVNavLinks } from "./navbarLinks";
@@ -9,12 +7,9 @@ import { accountNavLinks } from "./navbarLinks";
 import { steamNavLinks } from "./navbarLinks";
 import { spaceNavLinks } from "./navbarLinks";
 
-export { type NavbarLink } from "~/app/types";
 export {
   landingPageNavLinks,
   dashboardNavLinks,
-  BacklogEntryDummyData,
-  gameSearchbarDummyResults,
   creationToolNavLinks,
   importCSVNavLinks,
   exportCSVNavLinks,
