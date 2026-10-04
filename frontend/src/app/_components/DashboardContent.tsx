@@ -87,7 +87,7 @@ export const DashboardContent = ({
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const [sidebarToggle, setSidebarToggle] = useState<boolean | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const isSidebarOpen = sidebarToggle ?? isDesktop;
+  const isSidebarOpen = sidebarToggle ?? false;
 
   const [selectedFilters, setFilters] = useState<EntryFilters>(EMPTY_FILTERS);
   const [sortOverride, setSortOverride] = useState<SortOption | null>(null);
