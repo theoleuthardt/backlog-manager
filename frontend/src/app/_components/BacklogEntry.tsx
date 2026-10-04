@@ -1,7 +1,14 @@
 "use client";
 import { memo } from "react";
 import { motion } from "motion/react";
-import { Check, ExternalLink, ListChecks, Tags, Trash2 } from "lucide-react";
+import {
+  ArrowRightLeft,
+  Check,
+  ExternalLink,
+  ListChecks,
+  Tags,
+  Trash2,
+} from "lucide-react";
 import {
   ContextMenu,
   ContextMenuCheckboxItem,
@@ -102,7 +109,10 @@ export const BacklogEntry = memo(function BacklogEntry(
           Select
         </ContextMenuItem>
         <ContextMenuSub>
-          <ContextMenuSubTrigger>Move to status</ContextMenuSubTrigger>
+          <ContextMenuSubTrigger>
+            <ArrowRightLeft />
+            Move to status
+          </ContextMenuSubTrigger>
           <ContextMenuSubContent>
             {statusOptions.map((status) => (
               <ContextMenuItem
