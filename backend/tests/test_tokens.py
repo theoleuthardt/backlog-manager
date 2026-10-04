@@ -138,3 +138,21 @@ def test_decode_access_token_treats_a_missing_version_claim_as_zero(tokens: Modu
     )
 
     assert tokens.decode_access_token(legacy_token).token_version == 0
+
+
+@pytest.mark.parametrize("bad_version", [True, False, "1", 1.5, None])
+def test_decode_access_token_rejects_a_non_integer_version_claim(
+    tokens: ModuleType, bad_version: object
+) -> None:
+    """bool is an int subclass in Python, so `tv: true` must be rejected
+    explicitly rather than read as version 1."""
+    from jose import jwt
+
+    bad_token = jwt.encode(
+        {"sub": "42", "purpose": "access", "tv": bad_version, "exp": int(time.time()) + 60},
+        tokens.settings.auth_secret,
+        algorithm="HS256",
+    )
+
+    with pytest.raises(tokens.TokenError):
+        tokens.decode_access_token(bad_token)

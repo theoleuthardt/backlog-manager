@@ -342,6 +342,26 @@ async def test_restore_rolls_back_completely_when_the_database_rejects_the_data(
     assert await _state(session, user.id) == state_before
 
 
+async def test_restore_rolls_back_completely_on_an_unexpected_error(
+    backup_service: ModuleType, session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session, "unexpectedfail")
+    await _seed(session, user.id)
+    backup = await backup_service.create_manual_backup(session, user.id)
+    state_before = await _state(session, user.id)
+
+    async def failing_flush(*args: object, **kwargs: object) -> None:
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(session, "flush", failing_flush)
+
+    with pytest.raises(RuntimeError):
+        await backup_service.restore_backup(session, user.id, backup.id)
+
+    monkeypatch.undo()
+    assert await _state(session, user.id) == state_before
+
+
 async def test_old_backups_beyond_the_retention_limit_are_pruned(
     backup_service: ModuleType, session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:

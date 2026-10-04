@@ -186,7 +186,7 @@ async def replace_user_content(
     except DBAPIError as error:
         await session.rollback()
         handle_database_error(error, "replace_user_content")
-    except ValidationError:
+    except Exception:
         await session.rollback()
         raise
 

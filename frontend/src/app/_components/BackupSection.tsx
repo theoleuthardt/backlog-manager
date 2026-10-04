@@ -53,8 +53,18 @@ export function BackupSection() {
   const restoreMutation = useRestoreBackup();
   const renameMutation = useRenameBackup();
   const [restoreTarget, setRestoreTarget] = useState<Backup | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Backup | null>(null);
   const [renamingId, setRenamingId] = useState<number | null>(null);
   const [nameDraft, setNameDraft] = useState("");
+
+  const handleDelete = () => {
+    if (!deleteTarget) return;
+    deleteMutation.mutate(deleteTarget.id, {
+      onSuccess: () => toast.success("Backup deleted"),
+      onError: (error) => toast.error(error.message),
+    });
+    setDeleteTarget(null);
+  };
 
   const startRename = (backup: Backup) => {
     setRenamingId(backup.id);
@@ -212,12 +222,11 @@ export function BackupSection() {
                 variant="outline"
                 size="sm"
                 className={OUTLINE_BUTTON}
-                onClick={() =>
-                  deleteMutation.mutate(backup.id, {
-                    onError: (error) => toast.error(error.message),
-                  })
+                onClick={() => setDeleteTarget(backup)}
+                disabled={
+                  deleteMutation.isPending &&
+                  deleteMutation.variables === backup.id
                 }
-                disabled={deleteMutation.isPending}
               >
                 Delete
               </Button>
@@ -255,6 +264,39 @@ export function BackupSection() {
               disabled={restoreMutation.isPending}
             >
               {restoreMutation.isPending ? "Restoring..." : "Restore"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+      >
+        <AlertDialogContent className="border-2 border-white bg-black">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">
+              Delete this backup?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-300">
+              {deleteTarget &&
+                `"${backupTitle(deleteTarget)}" from ${formatBackupDate(
+                  deleteTarget.createdAt,
+                )} (${backupContentSummary(deleteTarget)}) is removed permanently. This cannot be undone.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className={OUTLINE_BUTTON}>
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              variant="outline"
+              className={OUTLINE_BUTTON}
+              onClick={handleDelete}
+            >
+              Delete
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

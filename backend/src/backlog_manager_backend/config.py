@@ -40,15 +40,12 @@ class Settings(BaseSettings):
     # API from (see cors_allowed_origins_list) - the frontend talks to this
     # backend directly, cross-origin, rather than through a Next.js proxy.
     cors_allowed_origins: str = "http://localhost:3000"
-    # Comma-separated IPs/CIDRs of reverse proxies (e.g. the cloudflared
-    # container) whose CF-Connecting-IP header may be believed - see
-    # auth/client_ip.py. Empty means the header is never trusted.
+    # Comma-separated IPs/CIDRs of trusted reverse proxies - see
+    # auth/client_ip.py.
     trusted_proxy_ips: str = ""
-    # Serves /schema (OpenAPI JSON, Swagger, ...). Off by default so a
-    # public deployment doesn't hand out its own route map.
+    # Serves the OpenAPI schema and Swagger UI under /schema.
     enable_docs: bool = False
-    # Runs the daily automatic per-user backups (see
-    # services/backup_service.py) inside the API process.
+    # Runs the automatic per-user backup scheduler in the API process.
     backup_scheduler_enabled: bool = True
 
     @field_validator("auth_secret")

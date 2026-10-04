@@ -35,7 +35,10 @@ Everything except `manual` is skipped when the backlog is empty (an empty
 snapshot must never push real ones out through retention) or identical to
 the user's latest backup of the same kind. Retention is counted per kind, so a burst of safety
 snapshots cannot evict the daily ones. The scheduler is switched off with
-`BACKUP_SCHEDULER_ENABLED=false` (the test suite does this).
+`BACKUP_SCHEDULER_ENABLED=false` (the test suite does this). It runs inside
+the API process, so the backend must run with a single worker (the
+Containerfile's plain `uvicorn` command does); several workers would each run
+a loop and could store duplicate automatic snapshots.
 
 ## Restoring
 

@@ -90,5 +90,5 @@ export async function downloadBackup(backupId: number): Promise<void> {
   link.href = url;
   link.download = `backlog-backup-${backupId}.json`;
   link.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 }

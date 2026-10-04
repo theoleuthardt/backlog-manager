@@ -71,7 +71,7 @@ def decode_access_token(token: str) -> AccessTokenClaims:
     if payload.get("purpose", _ACCESS_TOKEN_PURPOSE) != _ACCESS_TOKEN_PURPOSE:
         raise TokenError("Token is not an access token")
     token_version = payload.get("tv", 0)
-    if not isinstance(token_version, int):
+    if not isinstance(token_version, int) or isinstance(token_version, bool):
         raise TokenError("Token version is not valid")
     return AccessTokenClaims(_extract_subject(payload), token_version)
 
