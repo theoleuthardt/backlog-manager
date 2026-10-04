@@ -68,7 +68,15 @@ function uniqueSorted(values: Iterable<string>): string[] {
   return Array.from(new Set(values)).sort((a, b) => a.localeCompare(b));
 }
 
-export const DashboardContent = () => {
+/**
+ * `toolbarStart` is rendered in the stats row, immediately left of the
+ * Steam sync button (the shared space page puts its controls there).
+ */
+export const DashboardContent = ({
+  toolbarStart,
+}: {
+  toolbarStart?: React.ReactNode;
+} = {}) => {
   const { user } = useAuth();
   const { searchQuery } = useDashboard();
   const { theme } = useTheme();
@@ -430,7 +438,10 @@ export const DashboardContent = () => {
                 {Math.round(totalMainTime).toLocaleString()}h to beat
               </span>
             </p>
-            {user?.steamId && <SteamSyncButton className="ml-auto" />}
+            <div className="ml-auto flex items-center gap-2">
+              {toolbarStart}
+              {user?.steamId && <SteamSyncButton />}
+            </div>
           </div>
 
           {entries.length === 0 ? (

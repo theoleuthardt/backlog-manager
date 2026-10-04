@@ -76,13 +76,34 @@ function InviteForm() {
 }
 
 /**
- * Unobtrusive space controls: a small button whose hover (or click, on
- * touch) popover explains how the space works and holds the leave
- * action, which still asks for confirmation. Only a missing partner or a
- * pending invitation is shown inline, since those need an action or
- * explain why the grid is empty.
+ * Inline notice shown only while the space has no active partner: the
+ * invite form when nobody is invited, or the pending invitation. Those
+ * need an action or explain why the grid is empty, so they stay visible.
  */
-function SpaceHeader({ space }: { space: SpaceData }) {
+function SpaceNotice({ space }: { space: SpaceData }) {
+  const partner = space.members.find((member) => !member.isMe);
+  if (partner?.status === "active") return null;
+
+  return (
+    <div className="mb-3 flex flex-wrap items-center justify-end gap-3">
+      {partner === undefined ? (
+        <InviteForm />
+      ) : (
+        <span className="text-foreground/70 text-sm">
+          Waiting for {partner.username} to accept your invitation.
+        </span>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Unobtrusive space controls, placed left of the Steam sync button: a
+ * small button whose hover (or click, on touch) popover explains how the
+ * space works and holds the leave action, which still asks for
+ * confirmation.
+ */
+function SpaceControls({ space }: { space: SpaceData }) {
   const leave = useLeaveSpace();
   const partner = space.members.find((member) => !member.isMe);
   const [infoOpen, setInfoOpen] = useState(false);
@@ -112,13 +133,7 @@ function SpaceHeader({ space }: { space: SpaceData }) {
     partner?.status === "invited" ? "Cancel invitation" : "Leave space";
 
   return (
-    <div className="mb-3 flex flex-wrap items-center justify-end gap-3">
-      {partner === undefined && <InviteForm />}
-      {partner?.status === "invited" && (
-        <span className="text-foreground/70 text-sm">
-          Waiting for {partner.username} to accept your invitation.
-        </span>
-      )}
+    <>
       <Popover open={infoOpen} onOpenChange={setInfoOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -177,7 +192,7 @@ function SpaceHeader({ space }: { space: SpaceData }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 }
 
@@ -272,8 +287,8 @@ export function SpacePage() {
   } else {
     content = (
       <>
-        <SpaceHeader space={space} />
-        <DashboardContent />
+        <SpaceNotice space={space} />
+        <DashboardContent toolbarStart={<SpaceControls space={space} />} />
       </>
     );
   }
