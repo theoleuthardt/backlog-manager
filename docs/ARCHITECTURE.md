@@ -190,11 +190,12 @@ must match the credentials in the app's `POSTGRES_URL`.
   the explicit cache config, so the explicit config stays the single source.
   `NEXT_PUBLIC_API_URL` is baked into the static export at build time, the same
   variable the container publish workflow uses.
-- `release-apps.yml` is the manual-only prod release stage: it computes the
-  next version (patch bump on the latest `v*.*.*` tag, or the version in
-  `frontend/package.json` when no tag exists yet), builds the desktop app
-  through `tauri-build.yml` and publishes a GitHub Release with every
-  platform's installer attached.
+- `release-apps.yml` is the manual-only prod release stage: it decides the
+  version with `scripts/release-version.mjs` (the optional `version` input
+  when given - plain `X.Y.Z`, greater than the latest tag - otherwise a patch
+  bump on the latest `v*.*.*` tag, or the version in `frontend/package.json`
+  when no tag exists yet), builds the desktop app through `tauri-build.yml` and
+  publishes a GitHub Release with every platform's installer attached.
 
 **Backend tooling.** pytest-asyncio runs every test and fixture in one
 session-scoped event loop: `db.py`'s engine is a module-level singleton bound
