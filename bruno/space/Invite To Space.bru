@@ -1,0 +1,28 @@
+meta {
+  name: Invite To Space
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{backendUrl}}/api/space/invitations
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "username": "friend"
+  }
+}
+
+docs {
+  Invites the user registered under that username into the caller's
+  space, creating it on the first invitation. 404 for an unknown
+  username, 400 for inviting yourself, 409 when the space already has
+  two members or the invitee already belongs to / is invited to a space.
+}

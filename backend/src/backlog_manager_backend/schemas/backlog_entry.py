@@ -21,6 +21,7 @@ class BacklogEntry(msgspec.Struct):
     interest: int
     created_at: datetime
     updated_at: datetime
+    space_id: int | None = None
     release_date: date | None = None
     image_link: str | None = None
     description: str | None = None
@@ -29,6 +30,8 @@ class BacklogEntry(msgspec.Struct):
     main_plus_extra_time: Decimal | None = None
     completion_time: Decimal | None = None
     playtime: Decimal | None = None
+    partner_playtime: Decimal | None = None
+    in_shared_space: bool = False
     steam_app_id: int | None = None
     review_stars: int | None = None
     review: str | None = None
@@ -52,6 +55,7 @@ class CreateBacklogEntryParams(msgspec.Struct):
     status: str
     owned: bool
     interest: int
+    space_id: int | None = None
     release_date: date | None = None
     image_link: str | None = None
     description: str | None = None
@@ -136,6 +140,8 @@ class BacklogEntryResponse(msgspec.Struct):
     main_plus_extra_time: Decimal | None = None
     completion_time: Decimal | None = None
     playtime: Decimal | None = None
+    partner_playtime: Decimal | None = None
+    in_shared_space: bool = False
     steam_app_id: int | None = None
     review_stars: int | None = None
     review: str | None = None
@@ -162,6 +168,8 @@ class BacklogEntryResponse(msgspec.Struct):
             main_plus_extra_time=entry.main_plus_extra_time,
             completion_time=entry.completion_time,
             playtime=entry.playtime,
+            partner_playtime=entry.partner_playtime,
+            in_shared_space=entry.in_shared_space,
             steam_app_id=entry.steam_app_id,
             review_stars=entry.review_stars,
             review=entry.review,

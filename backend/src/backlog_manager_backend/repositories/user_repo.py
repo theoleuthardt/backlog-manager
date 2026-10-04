@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.errors import NotFoundError, ValidationError, handle_database_error
 from backlog_manager_backend.models.user import User as UserModel
+from backlog_manager_backend.repositories import space_repo
 from backlog_manager_backend.schemas.user import (
     CreateUserParams,
     CustomTheme,
@@ -211,6 +212,10 @@ async def delete_user(session: AsyncSession, user_id: int) -> User:
 
     if await _is_last_admin(session, model):
         raise ValidationError(_LAST_ADMIN_ERROR)
+
+    membership = await space_repo.get_membership(session, user_id)
+    if membership is not None:
+        await space_repo.remove_member(session, membership.space_id, user_id)
 
     schema = _to_schema(model)
     await session.delete(model)

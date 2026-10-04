@@ -388,6 +388,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/space": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GetSpace */
+        get: operations["ApiSpaceGetSpace"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/space/invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** InviteToSpace */
+        post: operations["ApiSpaceInvitationsInviteToSpace"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/space/invitations/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** AcceptSpaceInvitation */
+        post: operations["ApiSpaceInvitationsAcceptAcceptSpaceInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/space/membership": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** LeaveSpace */
+        delete: operations["ApiSpaceMembershipLeaveSpace"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/user/me": {
         parameters: {
             query?: never;
@@ -944,6 +1012,9 @@ export interface components {
             main_plus_extra_time?: string | null;
             completion_time?: string | null;
             playtime?: string | null;
+            partner_playtime?: string | null;
+            /** @default false */
+            in_shared_space?: boolean;
             steam_app_id?: number | null;
             review_stars?: number | null;
             review?: string | null;
@@ -1182,6 +1253,10 @@ export interface components {
             name?: string | null;
             published_at?: number | null;
         };
+        /** InviteToSpaceRequest */
+        InviteToSpaceRequest: {
+            username: string;
+        };
         /** KeyShopOffer */
         KeyShopOffer: {
             shop: string;
@@ -1259,6 +1334,18 @@ export interface components {
             entry_count: number;
             category_count: number;
             safety_backup_id?: number | null;
+        };
+        /** SpaceMemberResponse */
+        SpaceMemberResponse: {
+            username: string;
+            status: string;
+            is_me: boolean;
+        };
+        /** SpaceResponse */
+        SpaceResponse: {
+            space_id: number | null;
+            my_status: string | null;
+            members: components["schemas"]["SpaceMemberResponse"][];
         };
         /** SteamGridDBSearchResult */
         SteamGridDBSearchResult: {
@@ -1416,9 +1503,9 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -1442,9 +1529,9 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -1484,11 +1571,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "Referrer-Policy"?: string;
                     "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -1528,11 +1615,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "Referrer-Policy"?: string;
                     "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -1569,9 +1656,9 @@ export interface operations {
             201: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -1597,9 +1684,9 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -1640,9 +1727,9 @@ export interface operations {
             204: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -1677,9 +1764,9 @@ export interface operations {
             204: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -1690,6 +1777,7 @@ export interface operations {
         parameters: {
             query?: {
                 status?: string | null;
+                space_id?: number | null;
             };
             header?: never;
             path?: never;
@@ -1701,9 +1789,9 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -1712,6 +1800,21 @@ export interface operations {
             };
             /** @description Bad request syntax or unsupported method */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1729,7 +1832,9 @@ export interface operations {
     };
     ApiBacklogEntriesCreateEntry: {
         parameters: {
-            query?: never;
+            query?: {
+                space_id?: number | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1744,9 +1849,9 @@ export interface operations {
             201: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -1755,6 +1860,36 @@ export interface operations {
             };
             /** @description Bad request syntax or unsupported method */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Request conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1772,7 +1907,9 @@ export interface operations {
     };
     ApiBacklogEntriesDeleteAllEntries: {
         parameters: {
-            query?: never;
+            query?: {
+                space_id?: number | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1783,13 +1920,43 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": number;
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
                 };
             };
         };
@@ -1799,6 +1966,7 @@ export interface operations {
             query: {
                 title: string;
                 steam_app_id?: number | null;
+                space_id?: number | null;
             };
             header?: never;
             path?: never;
@@ -1810,9 +1978,9 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -1821,6 +1989,21 @@ export interface operations {
             };
             /** @description Bad request syntax or unsupported method */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1838,7 +2021,9 @@ export interface operations {
     };
     ApiBacklogEntriesEntryIdGetEntry: {
         parameters: {
-            query?: never;
+            query?: {
+                space_id?: number | null;
+            };
             header?: never;
             path: {
                 entry_id: number;
@@ -1851,9 +2036,9 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -1862,6 +2047,21 @@ export interface operations {
             };
             /** @description Bad request syntax or unsupported method */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1879,7 +2079,9 @@ export interface operations {
     };
     ApiBacklogEntriesEntryIdUpdateEntry: {
         parameters: {
-            query?: never;
+            query?: {
+                space_id?: number | null;
+            };
             header?: never;
             path: {
                 entry_id: number;
@@ -1896,9 +2098,9 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -1920,11 +2122,43 @@ export interface operations {
                     };
                 };
             };
+            /** @description Nothing matches the given URI */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Request conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
         };
     };
     ApiBacklogEntriesEntryIdDeleteEntry: {
         parameters: {
-            query?: never;
+            query?: {
+                space_id?: number | null;
+            };
             header?: never;
             path: {
                 entry_id: number;
@@ -1937,15 +2171,30 @@ export interface operations {
             204: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
             };
             /** @description Bad request syntax or unsupported method */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1963,7 +2212,9 @@ export interface operations {
     };
     ApiBacklogEntriesEntryIdCategoriesGetCategoriesForEntry: {
         parameters: {
-            query?: never;
+            query?: {
+                space_id?: number | null;
+            };
             header?: never;
             path: {
                 entry_id: number;
@@ -1976,9 +2227,9 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -1987,6 +2238,21 @@ export interface operations {
             };
             /** @description Bad request syntax or unsupported method */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2004,7 +2270,9 @@ export interface operations {
     };
     ApiBacklogEntriesEntryIdCategoriesCategoryIdAddCategoryToEntry: {
         parameters: {
-            query?: never;
+            query?: {
+                space_id?: number | null;
+            };
             header?: never;
             path: {
                 entry_id: number;
@@ -2018,15 +2286,30 @@ export interface operations {
             201: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
             };
             /** @description Bad request syntax or unsupported method */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2044,7 +2327,9 @@ export interface operations {
     };
     ApiBacklogEntriesEntryIdCategoriesCategoryIdRemoveCategoryFromEntry: {
         parameters: {
-            query?: never;
+            query?: {
+                space_id?: number | null;
+            };
             header?: never;
             path: {
                 entry_id: number;
@@ -2058,15 +2343,30 @@ export interface operations {
             204: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
             };
             /** @description Bad request syntax or unsupported method */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2084,7 +2384,9 @@ export interface operations {
     };
     ApiBacklogCategoriesListCategories: {
         parameters: {
-            query?: never;
+            query?: {
+                space_id?: number | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2095,20 +2397,52 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["CategoryResponse"][];
                 };
             };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
         };
     };
     ApiBacklogCategoriesCreateCategory: {
         parameters: {
-            query?: never;
+            query?: {
+                space_id?: number | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2123,9 +2457,9 @@ export interface operations {
             201: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2134,6 +2468,21 @@ export interface operations {
             };
             /** @description Bad request syntax or unsupported method */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2151,7 +2500,9 @@ export interface operations {
     };
     ApiBacklogCategoriesCategoryIdUpdateCategory: {
         parameters: {
-            query?: never;
+            query?: {
+                space_id?: number | null;
+            };
             header?: never;
             path: {
                 category_id: number;
@@ -2168,9 +2519,9 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2192,11 +2543,28 @@ export interface operations {
                     };
                 };
             };
+            /** @description Nothing matches the given URI */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
         };
     };
     ApiBacklogCategoriesCategoryIdDeleteCategory: {
         parameters: {
-            query?: never;
+            query?: {
+                space_id?: number | null;
+            };
             header?: never;
             path: {
                 category_id: number;
@@ -2209,9 +2577,9 @@ export interface operations {
             204: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -2231,11 +2599,28 @@ export interface operations {
                     };
                 };
             };
+            /** @description Nothing matches the given URI */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
         };
     };
     ApiBacklogCategoriesCategoryIdEntriesGetEntriesForCategory: {
         parameters: {
-            query?: never;
+            query?: {
+                space_id?: number | null;
+            };
             header?: never;
             path: {
                 category_id: number;
@@ -2248,9 +2633,9 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2272,11 +2657,28 @@ export interface operations {
                     };
                 };
             };
+            /** @description Nothing matches the given URI */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
         };
     };
     ApiBacklogStatusesListCustomStatuses: {
         parameters: {
-            query?: never;
+            query?: {
+                space_id?: number | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2287,20 +2689,52 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["CustomStatusResponse"][];
                 };
             };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
         };
     };
     ApiBacklogStatusesCreateCustomStatus: {
         parameters: {
-            query?: never;
+            query?: {
+                space_id?: number | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2315,9 +2749,9 @@ export interface operations {
             201: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2326,6 +2760,21 @@ export interface operations {
             };
             /** @description Bad request syntax or unsupported method */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2358,7 +2807,9 @@ export interface operations {
     };
     ApiBacklogStatusesStatusIdUpdateCustomStatus: {
         parameters: {
-            query?: never;
+            query?: {
+                space_id?: number | null;
+            };
             header?: never;
             path: {
                 status_id: number;
@@ -2375,9 +2826,9 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2433,7 +2884,9 @@ export interface operations {
     };
     ApiBacklogStatusesStatusIdDeleteCustomStatus: {
         parameters: {
-            query?: never;
+            query?: {
+                space_id?: number | null;
+            };
             header?: never;
             path: {
                 status_id: number;
@@ -2446,9 +2899,9 @@ export interface operations {
             204: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -2497,11 +2950,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "Referrer-Policy"?: string;
                     "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2522,11 +2975,11 @@ export interface operations {
             /** @description Document created, URL follows */
             201: {
                 headers: {
+                    "Referrer-Policy"?: string;
                     "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2549,11 +3002,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "Referrer-Policy"?: string;
                     "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2591,11 +3044,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "Referrer-Policy"?: string;
                     "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2633,11 +3086,11 @@ export interface operations {
             /** @description Request fulfilled, nothing follows */
             204: {
                 headers: {
+                    "Referrer-Policy"?: string;
                     "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -2659,7 +3112,7 @@ export interface operations {
             };
         };
     };
-    ApiUserMeGetOwnUser: {
+    ApiSpaceGetSpace: {
         parameters: {
             query?: never;
             header?: never;
@@ -2672,10 +3125,166 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Frame-Options"?: string;
                     "Referrer-Policy"?: string;
+                    "X-Frame-Options"?: string;
                     "X-Content-Type-Options"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpaceResponse"];
+                };
+            };
+        };
+    };
+    ApiSpaceInvitationsInviteToSpace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InviteToSpaceRequest"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    "Strict-Transport-Security"?: string;
+                    "Referrer-Policy"?: string;
+                    "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Request conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiSpaceInvitationsAcceptAcceptSpaceInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    "Strict-Transport-Security"?: string;
+                    "Referrer-Policy"?: string;
+                    "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpaceResponse"];
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiSpaceMembershipLeaveSpace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    "Strict-Transport-Security"?: string;
+                    "Referrer-Policy"?: string;
+                    "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ApiUserMeGetOwnUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    "Referrer-Policy"?: string;
+                    "Strict-Transport-Security"?: string;
+                    "X-Frame-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2700,11 +3309,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "Referrer-Policy"?: string;
                     "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2740,11 +3349,11 @@ export interface operations {
             /** @description Request fulfilled, nothing follows */
             204: {
                 headers: {
+                    "Referrer-Policy"?: string;
                     "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -2765,11 +3374,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "Referrer-Policy"?: string;
                     "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2805,11 +3414,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "Referrer-Policy"?: string;
                     "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2834,11 +3443,11 @@ export interface operations {
             /** @description Document created, URL follows */
             201: {
                 headers: {
+                    "Referrer-Policy"?: string;
                     "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2876,11 +3485,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "Referrer-Policy"?: string;
                     "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2922,11 +3531,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "Referrer-Policy"?: string;
                     "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2964,11 +3573,11 @@ export interface operations {
             /** @description Request fulfilled, nothing follows */
             204: {
                 headers: {
+                    "Referrer-Policy"?: string;
                     "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -3002,11 +3611,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "Referrer-Policy"?: string;
                     "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3027,11 +3636,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "Referrer-Policy"?: string;
                     "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3052,11 +3661,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "Referrer-Policy"?: string;
                     "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3081,11 +3690,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "Referrer-Policy"?: string;
                     "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3123,11 +3732,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "Referrer-Policy"?: string;
                     "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3163,11 +3772,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "Referrer-Policy"?: string;
                     "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3192,11 +3801,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "Referrer-Policy"?: string;
                     "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3232,11 +3841,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "Referrer-Policy"?: string;
                     "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3259,11 +3868,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "Referrer-Policy"?: string;
                     "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3303,11 +3912,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "Referrer-Policy"?: string;
                     "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3347,11 +3956,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "Referrer-Policy"?: string;
                     "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3391,11 +4000,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
+                    "Referrer-Policy"?: string;
                     "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
                     "cache-control"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3434,9 +4043,9 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3475,9 +4084,9 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3516,9 +4125,9 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3557,9 +4166,9 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3598,9 +4207,9 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3639,9 +4248,9 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3680,9 +4289,9 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3721,9 +4330,9 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3762,9 +4371,9 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3803,9 +4412,9 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3844,9 +4453,9 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3885,9 +4494,9 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3926,9 +4535,9 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3967,9 +4576,9 @@ export interface operations {
             200: {
                 headers: {
                     "Strict-Transport-Security"?: string;
-                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
+                    "X-Content-Type-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {

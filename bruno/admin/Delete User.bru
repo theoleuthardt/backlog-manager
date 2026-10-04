@@ -17,7 +17,8 @@ auth:bearer {
 docs {
   Admin-only. DESTRUCTIVE AND IRREVERSIBLE - permanently deletes any
   user by id and, via cascading foreign keys, all of their backlog
-  entries and categories. Run auth/Login with an is_admin=true account,
+  entries and categories. Content the user created in a shared space
+  is handed over to their space partner instead. Run auth/Login with an is_admin=true account,
   then "Create User", first so adminUserId points at a disposable test
   account rather than a real one.
 

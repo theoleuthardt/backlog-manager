@@ -26,7 +26,11 @@ from backlog_manager_backend.integrations.types import (
     SteamOwnedGame,
     SteamWishlistItem,
 )
-from backlog_manager_backend.repositories import backlog_entry_repo
+from backlog_manager_backend.repositories import (
+    backlog_entry_repo,
+    space_entry_member_repo,
+    space_repo,
+)
 from backlog_manager_backend.schemas.backlog_entry import (
     BacklogEntry,
     CreateBacklogEntryParams,
@@ -244,6 +248,32 @@ async def sync_playtimes(
             )
         )
     return updated
+
+
+async def sync_space_playtimes(
+    session: AsyncSession, user: User, owned_games: list[SteamOwnedGame]
+) -> None:
+    """Writes the user's own Steam playtime onto the entries of the
+    shared space they are an active member of, as their per-member
+    playtime (see space_entry_member_repo). Space entries always carry a
+    steam_app_id, so no title matching is needed; games the user doesn't
+    own on Steam are left untouched. Nothing is ever imported into a
+    space - only existing entries are updated."""
+    membership = await space_repo.get_membership(session, user.id)
+    if membership is None or membership.status != "active":
+        return
+    owned_by_app_id = {game.appid: game for game in owned_games}
+    entries = await backlog_entry_repo.get_backlog_entries_by_space(session, membership.space_id)
+    for entry in await space_entry_member_repo.apply_member_data(session, entries, user.id):
+        owned_game = owned_by_app_id.get(entry.steam_app_id) if entry.steam_app_id else None
+        if owned_game is None:
+            continue
+        playtime = _minutes_to_hours(owned_game.playtime_forever)
+        if entry.playtime == playtime:
+            continue
+        await space_entry_member_repo.upsert_member_data(
+            session, entry.backlog_entry_id, user.id, playtime=playtime
+        )
 
 
 async def _try_get_cover(steam_app_id: int, steamgriddb_api_key: str | None) -> str | None:
@@ -483,6 +513,7 @@ async def sync_playtimes_and_import(
         _validate_candidate_count(owned_games)
 
     updated = await sync_playtimes(session, user, api_key, owned_games)
+    await sync_space_playtimes(session, user, owned_games)
     if auto_import:
         updated = updated + await import_library(
             session,

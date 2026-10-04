@@ -10,6 +10,10 @@ delete {
   auth: bearer
 }
 
+params:query {
+  ~space_id: {{spaceId}}
+}
+
 auth:bearer {
   token: {{authToken}}
 }
@@ -18,6 +22,11 @@ docs {
   Permanently deletes every backlog entry of the caller (category
   associations cascade with them) and returns the number of entries
   removed. Destructive - there is no undo. Only affects the caller's
-  own entries; other users' backlogs are untouched. Run auth/Login
+  own entries; other users' backlogs are untouched, and a shared
+  space's entries are never touched without space_id.
+
+  Enable space_id (run space/Get Space first) to delete every entry of
+  the shared space instead - for both members, not just your own. 404
+  when the caller is not an active member of that space. Run auth/Login
   first.
 }

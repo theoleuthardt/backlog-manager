@@ -457,3 +457,84 @@ async def test_scheduled_run_continues_after_one_user_fails(
 
     assert await backup_service.list_backups(session, failing.id) == []
     assert len(await backup_service.list_backups(session, healthy.id)) == 1
+
+
+async def _seed_space_content(session: AsyncSession, user_id: int) -> int:
+    """Shared space content carries the creating user's id but a SpaceID."""
+    from backlog_manager_backend.repositories import space_repo
+
+    space_id = await space_repo.create_space(session, user_id)
+    entry = await backlog_entry_repo.create_backlog_entry(
+        session,
+        CreateBacklogEntryParams(
+            user_id=user_id,
+            title="Shared game",
+            genre="Co-op",
+            platform="PC",
+            status="Not Started",
+            owned=True,
+            interest=5,
+            steam_app_id=999,
+            space_id=space_id,
+        ),
+    )
+    category = await category_repo.create_category(
+        session,
+        CreateCategoryParams(user_id=user_id, category_name="Shared cat", space_id=space_id),
+    )
+    await category_backlog_entry_repo.add_category_to_backlog_entry(
+        session,
+        CategoryBacklogAssociationParams(
+            category_id=category.category_id, backlog_entry_id=entry.backlog_entry_id
+        ),
+    )
+    await custom_status_repo.create_custom_status(
+        session, CreateCustomStatusParams(user_id=user_id, name="Shared status", space_id=space_id)
+    )
+    return space_id
+
+
+async def test_backup_snapshots_only_personal_content_not_shared_space_content(
+    backup_service: ModuleType, session: AsyncSession
+) -> None:
+    user = await _make_user(session, "spaceexcluded")
+    await _seed(session, user.id)
+    await _seed_space_content(session, user.id)
+
+    backup = await backup_service.create_manual_backup(session, user.id)
+    exported = await backup_service.export_backup(session, user.id, backup.id)
+
+    assert backup.entry_count == 2
+    assert backup.category_count == 1
+    assert [entry.title for entry in exported.entries] == ["Hades", "Celeste"]
+    assert [status.name for status in exported.custom_statuses] == ["Parked"]
+
+
+async def test_restore_leaves_shared_space_content_untouched(
+    backup_service: ModuleType, session: AsyncSession
+) -> None:
+    from backlog_manager_backend.repositories import space_repo
+
+    user = await _make_user(session, "spacesurvives")
+    await _seed(session, user.id)
+    space_id = await _seed_space_content(session, user.id)
+    backup = await backup_service.create_manual_backup(session, user.id)
+
+    await backup_service.restore_backup(session, user.id, backup.id)
+
+    space_entries = await backlog_entry_repo.get_backlog_entries_by_space(session, space_id)
+    space_categories = await category_repo.get_categories_by_space(session, space_id)
+    space_statuses = await custom_status_repo.get_custom_statuses_by_space(session, space_id)
+    assert [entry.title for entry in space_entries] == ["Shared game"]
+    assert [category.name for category in space_categories] == ["Shared cat"]
+    assert [status.name for status in space_statuses] == ["Shared status"]
+    assert await space_repo.get_membership(session, user.id) is not None
+
+
+async def test_auto_backup_ignores_a_backlog_that_only_has_shared_space_content(
+    backup_service: ModuleType, session: AsyncSession
+) -> None:
+    user = await _make_user(session, "spaceonly")
+    await _seed_space_content(session, user.id)
+
+    assert await backup_service.create_backup(session, user.id, "auto") is None

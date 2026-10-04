@@ -18,6 +18,7 @@ def _to_schema(model: CategoryModel) -> Category:
     return Category(
         category_id=model.id,
         user_id=model.user_id,
+        space_id=model.space_id,
         name=model.name,
         color=model.color,
         description=model.description,
@@ -29,6 +30,7 @@ def _to_schema(model: CategoryModel) -> Category:
 async def create_category(session: AsyncSession, params: CreateCategoryParams) -> Category:
     model = CategoryModel(
         user_id=params.user_id,
+        space_id=params.space_id,
         name=params.category_name,
         color=params.color,
         description=params.description,
@@ -44,8 +46,18 @@ async def create_category(session: AsyncSession, params: CreateCategoryParams) -
 
 
 async def get_categories_by_user(session: AsyncSession, user_id: int) -> list[Category]:
+    """Only the user's personal categories, see get_categories_by_space."""
     result = await session.execute(
-        select(CategoryModel).where(CategoryModel.user_id == user_id)
+        select(CategoryModel).where(
+            CategoryModel.user_id == user_id, CategoryModel.space_id.is_(None)
+        )
+    )
+    return [_to_schema(row) for row in result.scalars().all()]
+
+
+async def get_categories_by_space(session: AsyncSession, space_id: int) -> list[Category]:
+    result = await session.execute(
+        select(CategoryModel).where(CategoryModel.space_id == space_id)
     )
     return [_to_schema(row) for row in result.scalars().all()]
 

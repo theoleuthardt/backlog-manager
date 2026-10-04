@@ -1,7 +1,7 @@
 """add token_version, failed_login_attempts and locked_until to users
 
 Revision ID: d1a7c3e9f5b4
-Revises: c9e3a7f1d5b2
+Revises: e1a4c7b9d2f6
 Create Date: 2026-10-04 10:00:00.000000
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = 'd1a7c3e9f5b4'
-down_revision: Union[str, Sequence[str], None] = 'c9e3a7f1d5b2'
+down_revision: Union[str, Sequence[str], None] = 'e1a4c7b9d2f6'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

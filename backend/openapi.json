@@ -25,13 +25,6 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
               "Referrer-Policy": {
                 "schema": {
                   "type": "string"
@@ -40,6 +33,13 @@
                 "deprecated": false
               },
               "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -85,13 +85,6 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
               "Referrer-Policy": {
                 "schema": {
                   "type": "string"
@@ -100,6 +93,13 @@
                 "deprecated": false
               },
               "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -173,6 +173,13 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -187,7 +194,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -195,13 +202,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -277,6 +277,13 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -291,7 +298,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -299,13 +306,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -378,13 +378,6 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
               "Referrer-Policy": {
                 "schema": {
                   "type": "string"
@@ -393,6 +386,13 @@
                 "deprecated": false
               },
               "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -445,13 +445,6 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
               "Referrer-Policy": {
                 "schema": {
                   "type": "string"
@@ -460,6 +453,13 @@
                 "deprecated": false
               },
               "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -550,13 +550,6 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
               "Referrer-Policy": {
                 "schema": {
                   "type": "string"
@@ -565,6 +558,13 @@
                 "deprecated": false
               },
               "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -638,13 +638,6 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
               "Referrer-Policy": {
                 "schema": {
                   "type": "string"
@@ -653,6 +646,13 @@
                 "deprecated": false
               },
               "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -695,6 +695,24 @@
             "deprecated": false,
             "allowEmptyValue": false,
             "allowReserved": false
+          },
+          {
+            "name": "space_id",
+            "in": "query",
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required": false,
+            "deprecated": false,
+            "allowEmptyValue": false,
+            "allowReserved": false
           }
         ],
         "responses": {
@@ -702,13 +720,6 @@
             "description": "Request fulfilled, document follows",
             "headers": {
               "Strict-Transport-Security": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -728,6 +739,13 @@
                 },
                 "required": false,
                 "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
               }
             },
             "content": {
@@ -737,6 +755,44 @@
                     "$ref": "#/components/schemas/BacklogEntryResponse"
                   },
                   "type": "array"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
                 }
               }
             }
@@ -790,6 +846,26 @@
       "post": {
         "summary": "CreateEntry",
         "operationId": "ApiBacklogEntriesCreateEntry",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "query",
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required": false,
+            "deprecated": false,
+            "allowEmptyValue": false,
+            "allowReserved": false
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -811,7 +887,186 @@
                 "required": false,
                 "deprecated": false
               },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BacklogEntryResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request syntax or unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Validation Exception",
+                  "examples": [
+                    {
+                      "status_code": 400,
+                      "detail": "Bad Request",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "_ Conflict Exception",
+                  "examples": [
+                    {
+                      "status_code": 409,
+                      "detail": "Conflict",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "DeleteAllEntries",
+        "operationId": "ApiBacklogEntriesDeleteAllEntries",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "query",
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required": false,
+            "deprecated": false,
+            "allowEmptyValue": false,
+            "allowReserved": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -831,12 +1086,57 @@
                 },
                 "required": false,
                 "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
               }
             },
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BacklogEntryResponse"
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
                 }
               }
             }
@@ -886,58 +1186,6 @@
             "BearerAuth": []
           }
         ]
-      },
-      "delete": {
-        "summary": "DeleteAllEntries",
-        "operationId": "ApiBacklogEntriesDeleteAllEntries",
-        "responses": {
-          "200": {
-            "description": "Request fulfilled, document follows",
-            "headers": {
-              "Strict-Transport-Security": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "Referrer-Policy": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "X-Frame-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "integer"
-                }
-              }
-            }
-          }
-        },
-        "deprecated": false,
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
       }
     },
     "/api/backlog/entries/duplicates": {
@@ -973,6 +1221,24 @@
             "deprecated": false,
             "allowEmptyValue": false,
             "allowReserved": false
+          },
+          {
+            "name": "space_id",
+            "in": "query",
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required": false,
+            "deprecated": false,
+            "allowEmptyValue": false,
+            "allowReserved": false
           }
         ],
         "responses": {
@@ -980,13 +1246,6 @@
             "description": "Request fulfilled, document follows",
             "headers": {
               "Strict-Transport-Security": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -1006,6 +1265,13 @@
                 },
                 "required": false,
                 "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
               }
             },
             "content": {
@@ -1015,6 +1281,44 @@
                     "$ref": "#/components/schemas/BacklogEntryResponse"
                   },
                   "type": "array"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
                 }
               }
             }
@@ -1079,6 +1383,24 @@
             },
             "required": true,
             "deprecated": false
+          },
+          {
+            "name": "space_id",
+            "in": "query",
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required": false,
+            "deprecated": false,
+            "allowEmptyValue": false,
+            "allowReserved": false
           }
         ],
         "responses": {
@@ -1086,13 +1408,6 @@
             "description": "Request fulfilled, document follows",
             "headers": {
               "Strict-Transport-Security": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -1112,12 +1427,57 @@
                 },
                 "required": false,
                 "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
               }
             },
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BacklogEntryResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
                 }
               }
             }
@@ -1180,6 +1540,24 @@
             },
             "required": true,
             "deprecated": false
+          },
+          {
+            "name": "space_id",
+            "in": "query",
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required": false,
+            "deprecated": false,
+            "allowEmptyValue": false,
+            "allowReserved": false
           }
         ],
         "requestBody": {
@@ -1203,13 +1581,6 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
               "Referrer-Policy": {
                 "schema": {
                   "type": "string"
@@ -1223,12 +1594,57 @@
                 },
                 "required": false,
                 "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
               }
             },
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BacklogEntryResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
                 }
               }
             }
@@ -1270,6 +1686,44 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "Request conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "_ Conflict Exception",
+                  "examples": [
+                    {
+                      "status_code": 409,
+                      "detail": "Conflict",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
           }
         },
         "deprecated": false,
@@ -1291,6 +1745,24 @@
             },
             "required": true,
             "deprecated": false
+          },
+          {
+            "name": "space_id",
+            "in": "query",
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required": false,
+            "deprecated": false,
+            "allowEmptyValue": false,
+            "allowReserved": false
           }
         ],
         "responses": {
@@ -1298,13 +1770,6 @@
             "description": "Request fulfilled, nothing follows",
             "headers": {
               "Strict-Transport-Security": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -1324,6 +1789,51 @@
                 },
                 "required": false,
                 "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
+                }
               }
             }
           },
@@ -1387,6 +1897,24 @@
             },
             "required": true,
             "deprecated": false
+          },
+          {
+            "name": "space_id",
+            "in": "query",
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required": false,
+            "deprecated": false,
+            "allowEmptyValue": false,
+            "allowReserved": false
           }
         ],
         "responses": {
@@ -1394,13 +1922,6 @@
             "description": "Request fulfilled, document follows",
             "headers": {
               "Strict-Transport-Security": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -1420,6 +1941,13 @@
                 },
                 "required": false,
                 "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
               }
             },
             "content": {
@@ -1429,6 +1957,44 @@
                     "$ref": "#/components/schemas/CategoryResponse"
                   },
                   "type": "array"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
                 }
               }
             }
@@ -1502,6 +2068,24 @@
             },
             "required": true,
             "deprecated": false
+          },
+          {
+            "name": "space_id",
+            "in": "query",
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required": false,
+            "deprecated": false,
+            "allowEmptyValue": false,
+            "allowReserved": false
           }
         ],
         "responses": {
@@ -1509,13 +2093,6 @@
             "description": "Document created, URL follows",
             "headers": {
               "Strict-Transport-Security": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -1535,6 +2112,51 @@
                 },
                 "required": false,
                 "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
+                }
               }
             }
           },
@@ -1605,6 +2227,24 @@
             },
             "required": true,
             "deprecated": false
+          },
+          {
+            "name": "space_id",
+            "in": "query",
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required": false,
+            "deprecated": false,
+            "allowEmptyValue": false,
+            "allowReserved": false
           }
         ],
         "responses": {
@@ -1612,13 +2252,6 @@
             "description": "Request fulfilled, nothing follows",
             "headers": {
               "Strict-Transport-Security": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -1638,6 +2271,51 @@
                 },
                 "required": false,
                 "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
+                }
               }
             }
           },
@@ -1692,18 +2370,31 @@
       "get": {
         "summary": "ListCategories",
         "operationId": "ApiBacklogCategoriesListCategories",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "query",
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required": false,
+            "deprecated": false,
+            "allowEmptyValue": false,
+            "allowReserved": false
+          }
+        ],
         "responses": {
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
               "Strict-Transport-Security": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -1723,6 +2414,13 @@
                 },
                 "required": false,
                 "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
               }
             },
             "content": {
@@ -1732,6 +2430,82 @@
                     "$ref": "#/components/schemas/CategoryResponse"
                   },
                   "type": "array"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request syntax or unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Validation Exception",
+                  "examples": [
+                    {
+                      "status_code": 400,
+                      "detail": "Bad Request",
+                      "extra": {}
+                    }
+                  ]
                 }
               }
             }
@@ -1747,6 +2521,26 @@
       "post": {
         "summary": "CreateCategory",
         "operationId": "ApiBacklogCategoriesCreateCategory",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "query",
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required": false,
+            "deprecated": false,
+            "allowEmptyValue": false,
+            "allowReserved": false
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -1768,13 +2562,6 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
               "Referrer-Policy": {
                 "schema": {
                   "type": "string"
@@ -1788,12 +2575,57 @@
                 },
                 "required": false,
                 "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
               }
             },
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CategoryResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
                 }
               }
             }
@@ -1858,6 +2690,24 @@
             },
             "required": true,
             "deprecated": false
+          },
+          {
+            "name": "space_id",
+            "in": "query",
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required": false,
+            "deprecated": false,
+            "allowEmptyValue": false,
+            "allowReserved": false
           }
         ],
         "requestBody": {
@@ -1881,13 +2731,6 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
               "Referrer-Policy": {
                 "schema": {
                   "type": "string"
@@ -1901,12 +2744,57 @@
                 },
                 "required": false,
                 "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
               }
             },
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CategoryResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
                 }
               }
             }
@@ -1969,6 +2857,24 @@
             },
             "required": true,
             "deprecated": false
+          },
+          {
+            "name": "space_id",
+            "in": "query",
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required": false,
+            "deprecated": false,
+            "allowEmptyValue": false,
+            "allowReserved": false
           }
         ],
         "responses": {
@@ -1976,13 +2882,6 @@
             "description": "Request fulfilled, nothing follows",
             "headers": {
               "Strict-Transport-Security": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -2002,6 +2901,51 @@
                 },
                 "required": false,
                 "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
+                }
               }
             }
           },
@@ -2065,6 +3009,24 @@
             },
             "required": true,
             "deprecated": false
+          },
+          {
+            "name": "space_id",
+            "in": "query",
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required": false,
+            "deprecated": false,
+            "allowEmptyValue": false,
+            "allowReserved": false
           }
         ],
         "responses": {
@@ -2072,13 +3034,6 @@
             "description": "Request fulfilled, document follows",
             "headers": {
               "Strict-Transport-Security": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -2098,6 +3053,13 @@
                 },
                 "required": false,
                 "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
               }
             },
             "content": {
@@ -2107,6 +3069,44 @@
                     "$ref": "#/components/schemas/BacklogEntryResponse"
                   },
                   "type": "array"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
                 }
               }
             }
@@ -2162,18 +3162,31 @@
       "get": {
         "summary": "ListCustomStatuses",
         "operationId": "ApiBacklogStatusesListCustomStatuses",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "query",
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required": false,
+            "deprecated": false,
+            "allowEmptyValue": false,
+            "allowReserved": false
+          }
+        ],
         "responses": {
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
               "Strict-Transport-Security": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -2193,6 +3206,13 @@
                 },
                 "required": false,
                 "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
               }
             },
             "content": {
@@ -2202,6 +3222,82 @@
                     "$ref": "#/components/schemas/CustomStatusResponse"
                   },
                   "type": "array"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request syntax or unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Validation Exception",
+                  "examples": [
+                    {
+                      "status_code": 400,
+                      "detail": "Bad Request",
+                      "extra": {}
+                    }
+                  ]
                 }
               }
             }
@@ -2217,6 +3313,26 @@
       "post": {
         "summary": "CreateCustomStatus",
         "operationId": "ApiBacklogStatusesCreateCustomStatus",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "query",
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required": false,
+            "deprecated": false,
+            "allowEmptyValue": false,
+            "allowReserved": false
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -2238,13 +3354,6 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
               "Referrer-Policy": {
                 "schema": {
                   "type": "string"
@@ -2258,12 +3367,57 @@
                 },
                 "required": false,
                 "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
               }
             },
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CustomStatusResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
                 }
               }
             }
@@ -2366,6 +3520,24 @@
             },
             "required": true,
             "deprecated": false
+          },
+          {
+            "name": "space_id",
+            "in": "query",
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required": false,
+            "deprecated": false,
+            "allowEmptyValue": false,
+            "allowReserved": false
           }
         ],
         "requestBody": {
@@ -2389,13 +3561,6 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
               "Referrer-Policy": {
                 "schema": {
                   "type": "string"
@@ -2404,6 +3569,13 @@
                 "deprecated": false
               },
               "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -2553,6 +3725,24 @@
             },
             "required": true,
             "deprecated": false
+          },
+          {
+            "name": "space_id",
+            "in": "query",
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required": false,
+            "deprecated": false,
+            "allowEmptyValue": false,
+            "allowReserved": false
           }
         ],
         "responses": {
@@ -2560,13 +3750,6 @@
             "description": "Request fulfilled, nothing follows",
             "headers": {
               "Strict-Transport-Security": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -2581,6 +3764,13 @@
                 "deprecated": false
               },
               "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -2682,6 +3872,13 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -2696,7 +3893,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -2704,13 +3901,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -2744,6 +3934,13 @@
           "201": {
             "description": "Document created, URL follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -2758,7 +3955,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -2766,13 +3963,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -2816,6 +4006,13 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -2830,7 +4027,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -2838,13 +4035,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -2924,6 +4114,13 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -2938,7 +4135,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -2946,13 +4143,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -3034,6 +4224,13 @@
           "204": {
             "description": "Request fulfilled, nothing follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -3048,7 +4245,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -3056,13 +4253,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -3118,6 +4308,370 @@
         ]
       }
     },
+    "/api/space": {
+      "get": {
+        "summary": "GetSpace",
+        "operationId": "ApiSpaceGetSpace",
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {
+              "Strict-Transport-Security": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpaceResponse"
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/space/invitations": {
+      "post": {
+        "summary": "InviteToSpace",
+        "operationId": "ApiSpaceInvitationsInviteToSpace",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteToSpaceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Document created, URL follows",
+            "headers": {
+              "Strict-Transport-Security": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request syntax or unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Validation Exception",
+                  "examples": [
+                    {
+                      "status_code": 400,
+                      "detail": "Bad Request",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "_ Space Conflict Exception",
+                  "examples": [
+                    {
+                      "status_code": 409,
+                      "detail": "Conflict",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/space/invitations/accept": {
+      "post": {
+        "summary": "AcceptSpaceInvitation",
+        "operationId": "ApiSpaceInvitationsAcceptAcceptSpaceInvitation",
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {
+              "Strict-Transport-Security": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpaceResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/space/membership": {
+      "delete": {
+        "summary": "LeaveSpace",
+        "operationId": "ApiSpaceMembershipLeaveSpace",
+        "responses": {
+          "204": {
+            "description": "Request fulfilled, nothing follows",
+            "headers": {
+              "Strict-Transport-Security": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/user/me": {
       "get": {
         "summary": "GetOwnUser",
@@ -3126,6 +4680,13 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -3140,7 +4701,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -3148,13 +4709,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -3195,6 +4749,13 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -3209,7 +4770,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -3217,13 +4778,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -3292,6 +4846,13 @@
           "204": {
             "description": "Request fulfilled, nothing follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -3306,7 +4867,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -3314,13 +4875,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -3357,6 +4911,13 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -3371,7 +4932,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -3379,13 +4940,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -3451,6 +5005,13 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -3465,7 +5026,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -3473,13 +5034,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -3523,6 +5077,13 @@
           "201": {
             "description": "Document created, URL follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -3537,7 +5098,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -3545,13 +5106,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -3633,6 +5187,13 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -3647,7 +5208,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -3655,13 +5216,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -3751,6 +5305,13 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -3765,7 +5326,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -3773,13 +5334,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -3859,6 +5413,13 @@
           "204": {
             "description": "Request fulfilled, nothing follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -3873,7 +5434,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -3881,13 +5442,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -3951,6 +5505,13 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -3965,7 +5526,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -3973,13 +5534,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -4015,6 +5569,13 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -4029,7 +5590,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -4037,13 +5598,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -4079,6 +5633,13 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -4093,7 +5654,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -4101,13 +5662,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -4158,6 +5712,13 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -4172,7 +5733,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -4180,13 +5741,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -4268,6 +5822,13 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -4282,7 +5843,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -4290,13 +5851,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -4367,6 +5921,13 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -4381,7 +5942,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -4389,13 +5950,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -4444,6 +5998,13 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -4458,7 +6019,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -4466,13 +6027,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -4541,6 +6095,13 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -4555,7 +6116,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -4563,13 +6124,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -4613,6 +6167,13 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -4627,7 +6188,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -4635,13 +6196,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -4729,6 +6283,13 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -4743,7 +6304,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -4751,13 +6312,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -4838,6 +6392,13 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -4852,7 +6413,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -4860,13 +6421,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -4948,6 +6502,13 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
               "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
@@ -4962,7 +6523,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "Referrer-Policy": {
+              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -4970,13 +6531,6 @@
                 "deprecated": false
               },
               "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "cache-control": {
                 "schema": {
                   "type": "string"
                 },
@@ -5065,13 +6619,6 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
               "Referrer-Policy": {
                 "schema": {
                   "type": "string"
@@ -5080,6 +6627,13 @@
                 "deprecated": false
               },
               "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5173,13 +6727,6 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
               "Referrer-Policy": {
                 "schema": {
                   "type": "string"
@@ -5188,6 +6735,13 @@
                 "deprecated": false
               },
               "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5279,13 +6833,6 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
               "Referrer-Policy": {
                 "schema": {
                   "type": "string"
@@ -5294,6 +6841,13 @@
                 "deprecated": false
               },
               "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5385,13 +6939,6 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
               "Referrer-Policy": {
                 "schema": {
                   "type": "string"
@@ -5400,6 +6947,13 @@
                 "deprecated": false
               },
               "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5491,13 +7045,6 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
               "Referrer-Policy": {
                 "schema": {
                   "type": "string"
@@ -5506,6 +7053,13 @@
                 "deprecated": false
               },
               "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5597,13 +7151,6 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
               "Referrer-Policy": {
                 "schema": {
                   "type": "string"
@@ -5612,6 +7159,13 @@
                 "deprecated": false
               },
               "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5703,13 +7257,6 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
               "Referrer-Policy": {
                 "schema": {
                   "type": "string"
@@ -5718,6 +7265,13 @@
                 "deprecated": false
               },
               "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5811,13 +7365,6 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
               "Referrer-Policy": {
                 "schema": {
                   "type": "string"
@@ -5826,6 +7373,13 @@
                 "deprecated": false
               },
               "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5919,13 +7473,6 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
               "Referrer-Policy": {
                 "schema": {
                   "type": "string"
@@ -5934,6 +7481,13 @@
                 "deprecated": false
               },
               "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -6027,13 +7581,6 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
               "Referrer-Policy": {
                 "schema": {
                   "type": "string"
@@ -6042,6 +7589,13 @@
                 "deprecated": false
               },
               "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -6133,13 +7687,6 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
               "Referrer-Policy": {
                 "schema": {
                   "type": "string"
@@ -6148,6 +7695,13 @@
                 "deprecated": false
               },
               "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -6239,13 +7793,6 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
               "Referrer-Policy": {
                 "schema": {
                   "type": "string"
@@ -6254,6 +7801,13 @@
                 "deprecated": false
               },
               "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -6347,13 +7901,6 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
               "Referrer-Policy": {
                 "schema": {
                   "type": "string"
@@ -6362,6 +7909,13 @@
                 "deprecated": false
               },
               "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -6459,13 +8013,6 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
               "Referrer-Policy": {
                 "schema": {
                   "type": "string"
@@ -6474,6 +8021,13 @@
                 "deprecated": false
               },
               "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -6770,6 +8324,20 @@
                 "type": "null"
               }
             ]
+          },
+          "partner_playtime": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "in_shared_space": {
+            "type": "boolean",
+            "default": false
           },
           "steam_app_id": {
             "oneOf": [
@@ -8441,6 +10009,18 @@
         ],
         "title": "IGDBSearchResult"
       },
+      "InviteToSpaceRequest": {
+        "properties": {
+          "username": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username"
+        ],
+        "title": "InviteToSpaceRequest"
+      },
       "KeyShopOffer": {
         "properties": {
           "shop": {
@@ -8738,6 +10318,63 @@
           "entry_count"
         ],
         "title": "RestoreResult"
+      },
+      "SpaceMemberResponse": {
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "is_me": {
+            "type": "boolean"
+          }
+        },
+        "type": "object",
+        "required": [
+          "is_me",
+          "status",
+          "username"
+        ],
+        "title": "SpaceMemberResponse"
+      },
+      "SpaceResponse": {
+        "properties": {
+          "space_id": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "my_status": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/SpaceMemberResponse"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object",
+        "required": [
+          "members",
+          "my_status",
+          "space_id"
+        ],
+        "title": "SpaceResponse"
       },
       "SteamGridDBSearchResult": {
         "properties": {

@@ -1,17 +1,19 @@
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import BigInteger, CheckConstraint, ForeignKey, UniqueConstraint
+from sqlalchemy import BigInteger, CheckConstraint, ForeignKey, Index, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backlog_manager_backend.models import TIMESTAMP_DEFAULT, Base
 
 
 class BacklogEntry(Base):
-    """The UserID+SteamAppId unique constraint only rejects two entries
-    for the same user sharing the same non-null Steam App ID - Postgres
-    treats every NULL SteamAppId as distinct, so it doesn't limit how
-    many entries without one a user can have."""
+    """SpaceID is NULL for personal entries and set for entries of a
+    shared space. The two partial unique indexes only reject two entries
+    in the same scope (one user's personal backlog, or one space)
+    sharing the same non-null Steam App ID - Postgres treats every NULL
+    SteamAppId as distinct, so they don't limit how many entries without
+    one a scope can have."""
 
     __tablename__ = "BacklogEntries"
     __table_args__ = (
@@ -19,8 +21,19 @@ class BacklogEntry(Base):
             '"Interest" >= 1 AND "Interest" <= 10',
             name="BacklogEntries_Interest_check",
         ),
-        UniqueConstraint(
-            "UserID", "SteamAppId", name="BacklogEntries_UserID_SteamAppId_key"
+        Index(
+            "BacklogEntries_UserID_SteamAppId_key",
+            "UserID",
+            "SteamAppId",
+            unique=True,
+            postgresql_where=text('"SpaceID" IS NULL'),
+        ),
+        Index(
+            "BacklogEntries_SpaceID_SteamAppId_key",
+            "SpaceID",
+            "SteamAppId",
+            unique=True,
+            postgresql_where=text('"SpaceID" IS NOT NULL'),
         ),
         {"schema": "blm-system"},
     )
@@ -30,6 +43,11 @@ class BacklogEntry(Base):
         "UserID",
         BigInteger,
         ForeignKey("blm-system.Users.UserID", ondelete="CASCADE", onupdate="CASCADE"),
+    )
+    space_id: Mapped[int | None] = mapped_column(
+        "SpaceID",
+        BigInteger,
+        ForeignKey("blm-system.Spaces.SpaceID", ondelete="CASCADE", onupdate="CASCADE"),
     )
     title: Mapped[str] = mapped_column("Title")
     genre: Mapped[str] = mapped_column("Genre")

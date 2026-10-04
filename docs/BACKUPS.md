@@ -15,10 +15,11 @@ credentials or API keys. Entry references inside the payload are positions,
 not database ids, so identical content always hashes identically.
 
 Not included: account settings and themes, price-alert state (keyed by Steam
-app id, unaffected by a restore), and - once shared spaces land - shared
-space content, which belongs to two people. Every query in
-`repositories/backup_repo.py` must then keep to the personal scope
-(`SpaceID IS NULL`).
+app id, unaffected by a restore), and shared space content, which belongs
+to two people. Shared rows carry their creator's `UserID` plus a `SpaceID`,
+so every query in `repositories/backup_repo.py` - including the deletes a
+restore starts with - filters on `SpaceID IS NULL`; a restore never touches a
+space. A delete-all inside a space takes no backup for the same reason.
 
 ## When snapshots are taken
 

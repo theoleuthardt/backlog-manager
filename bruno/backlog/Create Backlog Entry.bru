@@ -10,6 +10,10 @@ post {
   auth: bearer
 }
 
+params:query {
+  ~space_id: {{spaceId}}
+}
+
 auth:bearer {
   token: {{authToken}}
 }
@@ -46,6 +50,13 @@ docs {
   Creates a backlog entry for the logged-in user and stores its id in
   the entryId environment variable, used by every other request in this
   folder. Run auth/Login first, then this.
+
+  With the space_id query param the entry is created in the shared
+  space instead (Steam games only: steam_app_id is required). Its
+  playtime, review_stars and review then belong to the caller alone.
+  404 when the caller is not an active member of that space, 400 when
+  steam_app_id is missing, 409 when the Steam game already exists in the
+  same backlog (personal or space).
 
   genre/platform arrive as lists here and are joined into one
   ", "-separated column server-side (a value containing a literal comma

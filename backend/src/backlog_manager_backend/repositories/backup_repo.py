@@ -54,12 +54,15 @@ def _to_summary(model: UserBackup) -> BackupSummary:
 
 
 async def load_user_content(session: AsyncSession, user_id: int) -> BackupPayload:
-    """Reads the user's whole personal backlog content into a snapshot
-    payload, ordered by id so the same content always serialises the
+    """Reads the user's whole personal backlog content (SpaceID IS NULL -
+    shared space rows carry their creator's UserID but belong to two
+    people) into a snapshot payload, ordered by id so the same content always serialises the
     same way."""
     entry_models = (
         await session.scalars(
-            select(BacklogEntry).where(BacklogEntry.user_id == user_id).order_by(BacklogEntry.id)
+            select(BacklogEntry)
+            .where(BacklogEntry.user_id == user_id, BacklogEntry.space_id.is_(None))
+            .order_by(BacklogEntry.id)
         )
     ).all()
     refs = {model.id: position for position, model in enumerate(entry_models, start=1)}
@@ -68,7 +71,7 @@ async def load_user_content(session: AsyncSession, user_id: int) -> BackupPayloa
         await session.execute(
             select(CategoryBacklogEntry.category_id, CategoryBacklogEntry.backlog_entry_id)
             .join(Category, Category.id == CategoryBacklogEntry.category_id)
-            .where(Category.user_id == user_id)
+            .where(Category.user_id == user_id, Category.space_id.is_(None))
         )
     ).all()
     refs_by_category: dict[int, list[int]] = {}
@@ -77,12 +80,16 @@ async def load_user_content(session: AsyncSession, user_id: int) -> BackupPayloa
 
     category_models = (
         await session.scalars(
-            select(Category).where(Category.user_id == user_id).order_by(Category.id)
+            select(Category)
+            .where(Category.user_id == user_id, Category.space_id.is_(None))
+            .order_by(Category.id)
         )
     ).all()
     status_models = (
         await session.scalars(
-            select(CustomStatus).where(CustomStatus.user_id == user_id).order_by(CustomStatus.id)
+            select(CustomStatus)
+            .where(CustomStatus.user_id == user_id, CustomStatus.space_id.is_(None))
+            .order_by(CustomStatus.id)
         )
     ).all()
 
@@ -117,15 +124,22 @@ async def load_user_content(session: AsyncSession, user_id: int) -> BackupPayloa
 async def replace_user_content(
     session: AsyncSession, user_id: int, payload: BackupPayload
 ) -> None:
-    """Swaps the user's whole personal backlog content for the payload in
-    one transaction: any failure (a payload the database rejects, e.g.
+    """Swaps the user's whole personal backlog content (never shared space
+    rows) for the payload in one transaction: any failure (a payload the database rejects, e.g.
     two entries sharing a Steam app id) rolls back to the untouched
     previous content. Rows are re-created with fresh ids - category links
     are rebuilt from the payload's refs."""
     try:
-        await session.execute(delete(BacklogEntry).where(BacklogEntry.user_id == user_id))
-        await session.execute(delete(Category).where(Category.user_id == user_id))
-        await session.execute(delete(CustomStatus).where(CustomStatus.user_id == user_id))
+        await session.execute(delete(BacklogEntry).where(
+                BacklogEntry.user_id == user_id, BacklogEntry.space_id.is_(None)
+            )
+        )
+        await session.execute(delete(Category).where(Category.user_id == user_id, Category.space_id.is_(None))
+        )
+        await session.execute(delete(CustomStatus).where(
+                CustomStatus.user_id == user_id, CustomStatus.space_id.is_(None)
+            )
+        )
 
         entry_models = {
             entry.ref: BacklogEntry(

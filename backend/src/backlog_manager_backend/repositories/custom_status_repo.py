@@ -17,6 +17,7 @@ def _to_schema(model: CustomStatusModel) -> CustomStatus:
     return CustomStatus(
         status_id=model.id,
         user_id=model.user_id,
+        space_id=model.space_id,
         name=model.name,
         created_at=model.created_at,
         updated_at=model.updated_at,
@@ -26,7 +27,9 @@ def _to_schema(model: CustomStatusModel) -> CustomStatus:
 async def create_custom_status(
     session: AsyncSession, params: CreateCustomStatusParams
 ) -> CustomStatus:
-    model = CustomStatusModel(user_id=params.user_id, name=params.name)
+    model = CustomStatusModel(
+        user_id=params.user_id, space_id=params.space_id, name=params.name
+    )
     session.add(model)
     try:
         await session.commit()
@@ -40,8 +43,20 @@ async def create_custom_status(
 async def get_custom_statuses_by_user(
     session: AsyncSession, user_id: int
 ) -> list[CustomStatus]:
+    """Only the user's personal statuses, see get_custom_statuses_by_space."""
     result = await session.execute(
-        select(CustomStatusModel).where(CustomStatusModel.user_id == user_id)
+        select(CustomStatusModel).where(
+            CustomStatusModel.user_id == user_id, CustomStatusModel.space_id.is_(None)
+        )
+    )
+    return [_to_schema(row) for row in result.scalars().all()]
+
+
+async def get_custom_statuses_by_space(
+    session: AsyncSession, space_id: int
+) -> list[CustomStatus]:
+    result = await session.execute(
+        select(CustomStatusModel).where(CustomStatusModel.space_id == space_id)
     )
     return [_to_schema(row) for row in result.scalars().all()]
 
@@ -66,12 +81,15 @@ async def update_custom_status(
     model.name = params.name
     model.updated_at = now_truncated_to_minute()
     if old_name != params.name:
+        scope = (
+            BacklogEntryModel.space_id == model.space_id
+            if model.space_id is not None
+            else (BacklogEntryModel.user_id == model.user_id)
+            & BacklogEntryModel.space_id.is_(None)
+        )
         await session.execute(
             update(BacklogEntryModel)
-            .where(
-                BacklogEntryModel.user_id == model.user_id,
-                BacklogEntryModel.status == old_name,
-            )
+            .where(scope, BacklogEntryModel.status == old_name)
             .values(status=params.name)
         )
     try:

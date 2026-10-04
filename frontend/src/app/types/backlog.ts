@@ -5,6 +5,8 @@ export interface BacklogEntryProps {
   id: number;
   title: string;
   playtime?: number;
+  partnerPlaytime?: number;
+  inSharedSpace?: boolean;
   imageLink: string;
   imageAlt?: string;
   genre?: string[];
