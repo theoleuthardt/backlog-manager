@@ -107,7 +107,9 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    """Downgrade schema."""
+    """Downgrade schema. Irreversibly deletes every shared-space entry
+    (with its per-member data), category and custom status, since the
+    restored unique constraints cannot hold them next to personal rows."""
     op.drop_table('SpaceEntryMemberData', schema=SCHEMA)
 
     op.execute(f'DELETE FROM "{SCHEMA}"."CustomStatuses" WHERE "SpaceID" IS NOT NULL')

@@ -480,6 +480,68 @@ async def test_duplicate_check_is_scoped_to_the_space(postgres_url: str, create_
     assert personal == []
 
 
+async def test_space_entry_cannot_lose_its_steam_app_id(postgres_url: str, create_and_login) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        owner = await create_and_login(client, "spaceunlinkowner@example.com")
+        guest = await create_and_login(client, "spaceunlinkguest@example.com")
+        space_id = _make_space(client, owner, guest, "spaceunlinkguest")
+        entry = client.post(
+            f"/api/backlog/entries?space_id={space_id}", headers=owner, json=_entry_payload()
+        ).json()
+
+        response = client.put(
+            f"/api/backlog/entries/{entry['id']}?space_id={space_id}",
+            headers=owner,
+            json={"steam_app_id": None},
+        )
+
+    assert response.status_code == 400
+
+
+async def test_invalid_space_update_does_not_persist_member_data(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        owner = await create_and_login(client, "spaceatomicowner@example.com")
+        guest = await create_and_login(client, "spaceatomicguest@example.com")
+        space_id = _make_space(client, owner, guest, "spaceatomicguest")
+        entry = client.post(
+            f"/api/backlog/entries?space_id={space_id}", headers=owner, json=_entry_payload()
+        ).json()
+        url = f"/api/backlog/entries/{entry['id']}?space_id={space_id}"
+
+        rejected = client.put(url, headers=owner, json={"playtime": 99, "genre": ["a,b"]})
+        after = client.get(url, headers=owner).json()
+
+    assert rejected.status_code == 400
+    assert after["playtime"] is None
+
+
+async def test_leaving_removes_the_leavers_member_data(postgres_url: str, create_and_login) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        owner = await create_and_login(client, "spacedataowner@example.com")
+        guest = await create_and_login(client, "spacedataguest@example.com")
+        space_id = _make_space(client, owner, guest, "spacedataguest")
+        entry = client.post(
+            f"/api/backlog/entries?space_id={space_id}",
+            headers=guest,
+            json=_entry_payload(playtime=7, review_stars=5),
+        ).json()
+
+        client.delete("/api/space/membership", headers=guest)
+        owner_view = client.get(
+            f"/api/backlog/entries/{entry['id']}?space_id={space_id}", headers=owner
+        ).json()
+
+    assert owner_view["partner_playtime"] is None
+
+
 async def test_personal_entry_is_flagged_when_the_game_is_also_in_the_space(
     postgres_url: str, create_and_login
 ) -> None:

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { BACKLOG_QUERY_KEYS } from "~/hooks/useBacklog";
 import * as spaceApi from "~/lib/api/space";
 
 const SPACE_KEY = ["space"] as const;
@@ -40,10 +41,9 @@ export function useLeaveSpace() {
   return useMutation({
     mutationFn: spaceApi.leaveSpace,
     onSuccess: async () => {
-      queryClient.removeQueries({ queryKey: ["backlog-entries"] });
-      queryClient.removeQueries({ queryKey: ["categories"] });
-      queryClient.removeQueries({ queryKey: ["entry-categories"] });
-      queryClient.removeQueries({ queryKey: ["custom-statuses"] });
+      for (const queryKey of BACKLOG_QUERY_KEYS) {
+        queryClient.removeQueries({ queryKey });
+      }
       await queryClient.invalidateQueries({ queryKey: SPACE_KEY });
     },
   });

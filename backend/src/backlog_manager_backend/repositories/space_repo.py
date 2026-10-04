@@ -3,8 +3,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.errors import handle_database_error
+from backlog_manager_backend.models.backlog_entry import BacklogEntry as BacklogEntryModel
 from backlog_manager_backend.models.space import Space as SpaceModel
 from backlog_manager_backend.models.space import SpaceMember as SpaceMemberModel
+from backlog_manager_backend.models.space_entry_member_data import SpaceEntryMemberData
 from backlog_manager_backend.models.user import User as UserModel
 from backlog_manager_backend.schemas.space import SpaceMemberRecord
 from backlog_manager_backend.utils import now_truncated_to_minute
@@ -87,7 +89,16 @@ async def remove_member(session: AsyncSession, space_id: int, user_id: int) -> N
     """Removes one member and deletes the space (with its entries,
     categories and statuses, via ON DELETE CASCADE) once no active
     member is left - a space holding only a pending invitation is
-    meaningless."""
+    meaningless. The leaver's per-member data (playtime, rating, review)
+    on the space's entries is deleted with them, so the remaining member
+    no longer sees their playtime."""
+    space_entry_ids = select(BacklogEntryModel.id).where(BacklogEntryModel.space_id == space_id)
+    await session.execute(
+        delete(SpaceEntryMemberData).where(
+            SpaceEntryMemberData.user_id == user_id,
+            SpaceEntryMemberData.backlog_entry_id.in_(space_entry_ids),
+        )
+    )
     await session.execute(
         delete(SpaceMemberModel).where(
             SpaceMemberModel.space_id == space_id, SpaceMemberModel.user_id == user_id

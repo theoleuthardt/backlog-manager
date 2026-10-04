@@ -18,6 +18,13 @@ const CUSTOM_STATUSES_KEY = ["custom-statuses"] as const;
 const CATEGORIES_KEY = ["categories"] as const;
 const ENTRY_CATEGORIES_KEY = ["entry-categories"] as const;
 
+export const BACKLOG_QUERY_KEYS = [
+  ENTRIES_KEY,
+  CATEGORIES_KEY,
+  ENTRY_CATEGORIES_KEY,
+  CUSTOM_STATUSES_KEY,
+] as const;
+
 /**
  * Cache keys carry the backlog scope (a shared space id, or "personal")
  * as their last element, so the personal backlog and a space never share

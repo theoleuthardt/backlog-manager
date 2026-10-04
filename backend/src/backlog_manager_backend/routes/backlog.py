@@ -249,7 +249,7 @@ async def get_entry(
     return (await _present(db_session, [entry], current_user))[0]
 
 
-@put("/api/backlog/entries/{entry_id:int}", raises=[NotFoundException])
+@put("/api/backlog/entries/{entry_id:int}", raises=[NotFoundException, ValidationException])
 async def update_entry(
     entry_id: FromPath[int],
     data: UpdateBacklogEntryRequest,
@@ -260,11 +260,39 @@ async def update_entry(
     """In a shared space, playtime, review_stars and review are the
     caller's own member data and never touch the shared entry row."""
     await _get_scoped_entry(db_session, entry_id, current_user, space_id)
+    if space_id is not None and data.steam_app_id is None:
+        raise ValidationException("Entries in a shared space must stay linked to a Steam game")
 
     review_stars = data.review_stars
     if isinstance(review_stars, float):
         review_stars = round(review_stars)
 
+    params = UpdateBacklogEntryParams(
+        backlog_entry_id=entry_id,
+        title=data.title,
+        genre=_join_tags("genre", data.genre) if isinstance(data.genre, list) else data.genre,
+        platform=(
+            _join_tags("platform", data.platform)
+            if isinstance(data.platform, list)
+            else data.platform
+        ),
+        status=data.status,
+        owned=data.owned,
+        interest=data.interest,
+        release_date=data.release_date,
+        image_link=data.image_link,
+        description=data.description,
+        trailer_link=data.trailer_link,
+        main_time=data.main_time,
+        main_plus_extra_time=data.main_plus_extra_time,
+        completion_time=data.completion_time,
+        playtime=data.playtime if space_id is None else msgspec.UNSET,
+        steam_app_id=data.steam_app_id,
+        review_stars=review_stars if space_id is None else msgspec.UNSET,
+        review=data.review if space_id is None else msgspec.UNSET,
+        note=data.note,
+    )
+    entry = await backlog_entry_repo.update_backlog_entry(db_session, params)
     if space_id is not None:
         await space_entry_member_repo.upsert_member_data(
             db_session,
@@ -274,35 +302,6 @@ async def update_entry(
             review_stars=review_stars,
             review=data.review,
         )
-
-    entry = await backlog_entry_repo.update_backlog_entry(
-        db_session,
-        UpdateBacklogEntryParams(
-            backlog_entry_id=entry_id,
-            title=data.title,
-            genre=_join_tags("genre", data.genre) if isinstance(data.genre, list) else data.genre,
-            platform=(
-                _join_tags("platform", data.platform)
-                if isinstance(data.platform, list)
-                else data.platform
-            ),
-            status=data.status,
-            owned=data.owned,
-            interest=data.interest,
-            release_date=data.release_date,
-            image_link=data.image_link,
-            description=data.description,
-            trailer_link=data.trailer_link,
-            main_time=data.main_time,
-            main_plus_extra_time=data.main_plus_extra_time,
-            completion_time=data.completion_time,
-            playtime=data.playtime if space_id is None else msgspec.UNSET,
-            steam_app_id=data.steam_app_id,
-            review_stars=review_stars if space_id is None else msgspec.UNSET,
-            review=data.review if space_id is None else msgspec.UNSET,
-            note=data.note,
-        ),
-    )
     return (await _present(db_session, [entry], current_user))[0]
 
 
