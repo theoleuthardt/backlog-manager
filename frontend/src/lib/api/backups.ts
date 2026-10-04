@@ -27,6 +27,8 @@ function toBackup(backup: components["schemas"]["BackupSummary"]): Backup {
   };
 }
 
+const DOWNLOAD_URL_LIFETIME_MS = 10_000;
+
 export async function listBackups(): Promise<Backup[]> {
   const { data, error } = await apiClient.GET("/api/backups");
   if (error) throw new Error(apiErrorMessage(error, "Failed to load backups"));
@@ -89,6 +91,8 @@ export async function downloadBackup(backupId: number): Promise<void> {
   const link = document.createElement("a");
   link.href = url;
   link.download = `backlog-backup-${backupId}.json`;
+  document.body.appendChild(link);
   link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 0);
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), DOWNLOAD_URL_LIFETIME_MS);
 }

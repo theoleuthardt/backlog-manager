@@ -238,7 +238,7 @@ export function BackupSection() {
       <AlertDialog
         open={restoreTarget !== null}
         onOpenChange={(open) => {
-          if (!open) setRestoreTarget(null);
+          if (!open && !restoreMutation.isPending) setRestoreTarget(null);
         }}
       >
         <AlertDialogContent className="border-2 border-white bg-black">
@@ -254,7 +254,10 @@ export function BackupSection() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className={OUTLINE_BUTTON}>
+            <AlertDialogCancel
+              className={OUTLINE_BUTTON}
+              disabled={restoreMutation.isPending}
+            >
               Cancel
             </AlertDialogCancel>
             <Button
