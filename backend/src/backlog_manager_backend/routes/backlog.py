@@ -43,6 +43,7 @@ from backlog_manager_backend.schemas.custom_status import (
     UpdateCustomStatusRequest,
 )
 from backlog_manager_backend.schemas.user import User
+from backlog_manager_backend.services import backup_service
 
 _ENTRY_NOT_FOUND = "Backlog entry not found"
 _CATEGORY_NOT_FOUND = "Category not found"
@@ -334,10 +335,13 @@ async def delete_all_entries(
     entry of the caller's personal backlog, or of the shared space when
     `space_id` is given and the caller is an active member (category
     associations cascade). Without `space_id` a space's entries are
-    never touched. Returns the number of entries removed."""
+    never touched. Returns the number of entries removed. A personal wipe
+    takes a "pre-delete" backup first so it can be reverted from the
+    backups list; shared space content is not part of backups."""
     await _require_space_access(db_session, current_user, space_id)
     if space_id is not None:
         return await backlog_entry_repo.delete_backlog_entries_by_space(db_session, space_id)
+    await backup_service.create_backup(db_session, current_user.id, backup_service.PRE_DELETE)
     return await backlog_entry_repo.delete_backlog_entries_by_user(db_session, current_user.id)
 
 

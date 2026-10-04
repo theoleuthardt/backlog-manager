@@ -28,14 +28,18 @@ async def get_current_user(request: Request, db_session: NamedDependency[AsyncSe
 
     token = auth_header.removeprefix(_BEARER_PREFIX)
     try:
-        user_id = decode_access_token(token)
+        claims = decode_access_token(token)
     except TokenError as error:
         raise NotAuthorizedException(str(error)) from error
 
     try:
-        return await get_user_by_id(db_session, user_id)
+        user = await get_user_by_id(db_session, claims.user_id)
     except NotFoundError as error:
         raise NotAuthorizedException("User not found") from error
+
+    if user.token_version != claims.token_version:
+        raise NotAuthorizedException("Token has been revoked")
+    return user
 
 
 async def require_admin(authenticated_user: NamedDependency[User]) -> User:

@@ -1,0 +1,21 @@
+meta {
+  name: List Backups
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{backendUrl}}/api/backups
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  The caller's backups, newest first, without their payloads. kind is
+  auto (daily), manual, or a safety snapshot taken right before something
+  destructive: pre-restore, pre-delete, pre-import.
+}

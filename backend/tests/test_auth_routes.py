@@ -21,10 +21,10 @@ async def test_login_rejects_wrong_password(postgres_url: str, create_and_login)
     app = create_app()
 
     with TestClient(app=app) as client:
-        await create_and_login(client, "wrongpwroute@example.com", password="hunter22")
+        await create_and_login(client, "wrongpwroute@example.com", password="hunter2hunter2")
         login_response = client.post(
             "/api/auth/login",
-            json={"email": "wrongpwroute@example.com", "password": "not-hunter22"},
+            json={"email": "wrongpwroute@example.com", "password": "not-hunter2hunter2"},
         )
 
     assert login_response.status_code == 401
@@ -38,7 +38,7 @@ async def test_login_rejects_unknown_email(postgres_url: str) -> None:
     with TestClient(app=app) as client:
         login_response = client.post(
             "/api/auth/login",
-            json={"email": "nobody@example.com", "password": "hunter22"},
+            json={"email": "nobody@example.com", "password": "hunter2hunter2"},
         )
 
     assert login_response.status_code == 401
@@ -196,7 +196,7 @@ async def test_login_requires_a_second_step_once_two_factor_is_enabled(
 
         login_response = client.post(
             "/api/auth/login",
-            json={"email": "twofactorloginroute@example.com", "password": "hunter22"},
+            json={"email": "twofactorloginroute@example.com", "password": "hunter2hunter2"},
         )
         login_body = login_response.json()
 
@@ -231,7 +231,7 @@ async def test_login_verify_rejects_wrong_code(postgres_url: str, create_and_log
 
         login_response = client.post(
             "/api/auth/login",
-            json={"email": "loginverifywrongroute@example.com", "password": "hunter22"},
+            json={"email": "loginverifywrongroute@example.com", "password": "hunter2hunter2"},
         )
         challenge_token = login_response.json()["challenge_token"]
 
@@ -257,7 +257,7 @@ async def test_login_verify_backup_code_can_only_be_used_once(
         def get_challenge_token() -> str:
             response = client.post(
                 "/api/auth/login",
-                json={"email": "backuponceroute@example.com", "password": "hunter22"},
+                json={"email": "backuponceroute@example.com", "password": "hunter2hunter2"},
             )
             return response.json()["challenge_token"]
 
@@ -291,7 +291,7 @@ async def test_a_two_factor_challenge_token_cannot_be_used_as_a_bearer_token(
 
         login_response = client.post(
             "/api/auth/login",
-            json={"email": "purposeconfusionroute@example.com", "password": "hunter22"},
+            json={"email": "purposeconfusionroute@example.com", "password": "hunter2hunter2"},
         )
         challenge_token = login_response.json()["challenge_token"]
 
@@ -314,13 +314,20 @@ async def test_disable_two_factor_requires_correct_password(
         await _enroll_and_verify(client, headers)
 
         wrong_password_response = client.post(
-            "/api/auth/2fa/disable", json={"password": "not-hunter22"}, headers=headers
+            "/api/auth/2fa/disable", json={"password": "not-hunter2hunter2"}, headers=headers
         )
         disable_response = client.post(
-            "/api/auth/2fa/disable", json={"password": "hunter22"}, headers=headers
+            "/api/auth/2fa/disable", json={"password": "hunter2hunter2"}, headers=headers
         )
-        me_response = client.get("/api/user/me", headers=headers)
+        stale_token_response = client.get("/api/user/me", headers=headers)
+        relogin_response = client.post(
+            "/api/auth/login",
+            json={"email": "disableroute@example.com", "password": "hunter2hunter2"},
+        )
+        fresh_headers = {"Authorization": f"Bearer {relogin_response.json()['access_token']}"}
+        me_response = client.get("/api/user/me", headers=fresh_headers)
 
     assert wrong_password_response.status_code == 400
     assert disable_response.status_code == 204
+    assert stale_token_response.status_code == 401
     assert me_response.json()["is_two_factor_enabled"] is False

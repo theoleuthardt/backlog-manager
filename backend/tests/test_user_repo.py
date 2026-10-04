@@ -38,6 +38,29 @@ async def test_create_user(session: AsyncSession) -> None:
     assert user.updated_at is not None
 
 
+async def test_update_user_bumps_the_token_version_when_the_password_changes(
+    session: AsyncSession,
+) -> None:
+    user = await _make_user(session)
+
+    updated = await user_repo.update_user(
+        session, UpdateUserParams(user_id=user.id, password_hash="new-hash")
+    )
+
+    assert user.token_version == 0
+    assert updated.token_version == 1
+
+
+async def test_update_user_keeps_the_token_version_for_other_changes(
+    session: AsyncSession,
+) -> None:
+    user = await _make_user(session)
+
+    updated = await user_repo.update_user(session, UpdateUserParams(user_id=user.id, theme="dark"))
+
+    assert updated.token_version == 0
+
+
 async def test_create_user_duplicate_email_conflicts(session: AsyncSession) -> None:
     await _make_user(session, username="first", email="dupe@example.com")
 

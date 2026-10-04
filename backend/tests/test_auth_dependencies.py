@@ -103,3 +103,34 @@ async def test_require_admin_rejects_a_non_admin_user(
 
     with pytest.raises(PermissionDeniedException):
         await dependencies.require_admin(non_admin)
+
+
+async def test_get_current_user_rejects_a_token_from_an_older_token_version(
+    dependencies: ModuleType, session: AsyncSession
+) -> None:
+    from backlog_manager_backend.auth.tokens import create_access_token
+    from backlog_manager_backend.schemas.user import UpdateUserParams
+
+    user = await _make_user(session)
+    stale_token = create_access_token(user.id, token_version=0)
+    await user_repo.update_user(session, UpdateUserParams(user_id=user.id, password_hash="new"))
+    request = RequestFactory().get(headers={"Authorization": f"Bearer {stale_token}"})
+
+    with pytest.raises(NotAuthorizedException):
+        await dependencies.get_current_user(request, session)
+
+
+async def test_get_current_user_accepts_a_token_matching_the_current_token_version(
+    dependencies: ModuleType, session: AsyncSession
+) -> None:
+    from backlog_manager_backend.auth.tokens import create_access_token
+    from backlog_manager_backend.schemas.user import UpdateUserParams
+
+    user = await _make_user(session)
+    await user_repo.update_user(session, UpdateUserParams(user_id=user.id, password_hash="new"))
+    fresh_token = create_access_token(user.id, token_version=1)
+    request = RequestFactory().get(headers={"Authorization": f"Bearer {fresh_token}"})
+
+    current_user = await dependencies.get_current_user(request, session)
+
+    assert current_user.id == user.id

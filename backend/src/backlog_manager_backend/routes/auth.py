@@ -16,6 +16,7 @@ routes/user.py's user_router: every handler routed here must declare
 unprotected."""
 
 from litestar import Router, post
+from litestar.datastructures import CacheControlHeader
 from litestar.di import NamedDependency, Provide
 from litestar.exceptions import ClientException, NotAuthorizedException
 from litestar.middleware.rate_limit import RateLimitConfig
@@ -27,6 +28,7 @@ from litestar.status_codes import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backlog_manager_backend.auth.client_ip import get_client_ip
 from backlog_manager_backend.auth.dependencies import BEARER_SECURITY_REQUIREMENT, get_current_user
 from backlog_manager_backend.errors import ConflictError, ValidationError
 from backlog_manager_backend.schemas.auth import (
@@ -42,11 +44,19 @@ from backlog_manager_backend.schemas.auth import (
 from backlog_manager_backend.schemas.user import User
 from backlog_manager_backend.services import auth_service
 
-_login_rate_limit = RateLimitConfig(rate_limit=("minute", 10))
-_two_factor_login_rate_limit = RateLimitConfig(rate_limit=("minute", 10))
+_login_rate_limit = RateLimitConfig(rate_limit=("minute", 10), identifier_for_request=get_client_ip)
+_two_factor_login_rate_limit = RateLimitConfig(
+    rate_limit=("minute", 10), identifier_for_request=get_client_ip
+)
+_NO_STORE = CacheControlHeader(no_store=True)
 
 
-@post("/api/auth/login", status_code=HTTP_200_OK, middleware=[_login_rate_limit.middleware])
+@post(
+    "/api/auth/login",
+    status_code=HTTP_200_OK,
+    middleware=[_login_rate_limit.middleware],
+    cache_control=_NO_STORE,
+)
 async def login(data: LoginParams, db_session: NamedDependency[AsyncSession]) -> LoginResult:
     try:
         return await auth_service.login(db_session, data)
@@ -58,6 +68,7 @@ async def login(data: LoginParams, db_session: NamedDependency[AsyncSession]) ->
     "/api/auth/2fa/login-verify",
     status_code=HTTP_200_OK,
     middleware=[_two_factor_login_rate_limit.middleware],
+    cache_control=_NO_STORE,
 )
 async def login_verify(
     data: TwoFactorLoginVerifyParams, db_session: NamedDependency[AsyncSession]
@@ -114,9 +125,16 @@ async def disable_two_factor(
         raise ClientException(str(error)) from error
 
 
+@post("/api/auth/logout-all", status_code=HTTP_204_NO_CONTENT, security=BEARER_SECURITY_REQUIREMENT)
+async def logout_all_sessions(
+    db_session: NamedDependency[AsyncSession], current_user: NamedDependency[User]
+) -> None:
+    await auth_service.revoke_sessions(db_session, current_user.id)
+
+
 two_factor_router = Router(
     path="",
-    route_handlers=[enroll_two_factor, verify_two_factor, disable_two_factor],
+    route_handlers=[enroll_two_factor, verify_two_factor, disable_two_factor, logout_all_sessions],
     dependencies={"current_user": Provide(get_current_user)},
     security=BEARER_SECURITY_REQUIREMENT,
 )

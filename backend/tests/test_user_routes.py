@@ -43,7 +43,7 @@ async def test_update_own_user_hashes_new_password(postgres_url: str, create_and
 
     with TestClient(app=app) as client:
         headers = await create_and_login(
-            client, "passwordchange@example.com", password="original-pw"
+            client, "passwordchange@example.com", password="original-password"
         )
 
         update_response = client.put(
@@ -52,7 +52,7 @@ async def test_update_own_user_hashes_new_password(postgres_url: str, create_and
 
         old_login = client.post(
             "/api/auth/login",
-            json={"email": "passwordchange@example.com", "password": "original-pw"},
+            json={"email": "passwordchange@example.com", "password": "original-password"},
         )
         new_login = client.post(
             "/api/auth/login",
@@ -98,11 +98,11 @@ async def test_delete_own_user_removes_account(postgres_url: str, create_and_log
     app = create_app()
 
     with TestClient(app=app) as client:
-        headers = await create_and_login(client, "deleteme@example.com", password="hunter22")
+        headers = await create_and_login(client, "deleteme@example.com", password="hunter2hunter2")
         delete_response = client.delete("/api/user/me", headers=headers)
         login_after_delete = client.post(
             "/api/auth/login",
-            json={"email": "deleteme@example.com", "password": "hunter22"},
+            json={"email": "deleteme@example.com", "password": "hunter2hunter2"},
         )
 
     assert delete_response.status_code == 204
@@ -194,7 +194,7 @@ async def test_admin_can_create_list_update_and_delete_users(
             json={
                 "username": "createdbyadmin",
                 "email": "createdbyadmin@example.com",
-                "password": "hunter22",
+                "password": "hunter2hunter2",
             },
         )
         assert create_response.status_code == 201
@@ -238,7 +238,7 @@ async def test_non_admin_cannot_create_users(postgres_url: str, create_and_login
             json={
                 "username": "shouldnotexist",
                 "email": "shouldnotexist@example.com",
-                "password": "hunter22",
+                "password": "hunter2hunter2",
             },
         )
 

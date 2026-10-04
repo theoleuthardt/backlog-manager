@@ -30,6 +30,11 @@ class User(Base):
     is_admin: Mapped[bool] = mapped_column("IsAdmin", server_default=text("false"))
     totp_secret_encrypted: Mapped[str | None] = mapped_column("TotpSecretEncrypted")
     totp_enabled: Mapped[bool] = mapped_column("TotpEnabled", server_default=text("false"))
+    token_version: Mapped[int] = mapped_column("TokenVersion", server_default=text("0"))
+    failed_login_attempts: Mapped[int] = mapped_column(
+        "FailedLoginAttempts", server_default=text("0")
+    )
+    locked_until: Mapped[datetime | None] = mapped_column("LockedUntil")
     setup_completed: Mapped[bool] = mapped_column(
         "SetupCompleted", server_default=text("false")
     )

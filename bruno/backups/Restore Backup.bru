@@ -1,0 +1,24 @@
+meta {
+  name: Restore Backup
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{backendUrl}}/api/backups/{{backupId}}/restore
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Replaces the caller's personal backlog with the snapshot, in one
+  transaction. A pre-restore snapshot of the current state is taken first
+  (safety_backup_id in the response, null if there was nothing to
+  protect), so restoring that one undoes this restore. 404 for an unknown
+  or foreign backup, 400 for a corrupt or incompatible one, 409 when the
+  database rejects the snapshot's data (nothing is changed).
+}

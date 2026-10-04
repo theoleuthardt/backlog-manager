@@ -1,0 +1,29 @@
+meta {
+  name: Create Backup
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{backendUrl}}/api/backups
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+script:post-response {
+  if (res.body.id) {
+    bru.setEnvVar("backupId", res.body.id);
+  }
+}
+
+docs {
+  Takes a manual snapshot of the caller's personal backlog (entries,
+  categories with their links, custom statuses) and stores its id in the
+  backupId environment variable for the other requests in this folder.
+  Always stores a snapshot, even of an unchanged backlog. Oldest manual
+  snapshots beyond the retention limit (20) are dropped. 201 on success.
+}

@@ -1,3 +1,5 @@
+from datetime import UTC, datetime, timedelta
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.auth.backup_codes import generate_backup_codes
@@ -31,12 +33,32 @@ from backlog_manager_backend.schemas.user import (
 
 _DUMMY_PASSWORD_HASH = hash_password("not-a-real-password-used-only-for-timing")
 
-MIN_PASSWORD_LENGTH = 8
+MIN_PASSWORD_LENGTH = 12
+MAX_PASSWORD_LENGTH = 128
+MAX_FAILED_LOGIN_ATTEMPTS = 5
+LOGIN_LOCK_DURATION = timedelta(minutes=15)
+
+_INVALID_CREDENTIALS = "Invalid email or password"
 
 
 def validate_password_strength(password: str) -> None:
+    """The upper bound keeps an attacker from making the server spend
+    Argon2 time on megabyte-sized "passwords"."""
     if len(password) < MIN_PASSWORD_LENGTH:
         raise ValidationError(f"Password must be at least {MIN_PASSWORD_LENGTH} characters long")
+    if len(password) > MAX_PASSWORD_LENGTH:
+        raise ValidationError(f"Password must be at most {MAX_PASSWORD_LENGTH} characters long")
+
+
+def _is_locked(user: User) -> bool:
+    return user.locked_until is not None and user.locked_until > datetime.now(UTC).replace(
+        tzinfo=None
+    )
+
+
+async def revoke_sessions(session: AsyncSession, user_id: int) -> None:
+    """Invalidates every access token issued for this user so far."""
+    await user_repo.bump_token_version(session, user_id)
 
 
 async def create_user(session: AsyncSession, params: CreateUserRequest) -> User:
@@ -68,18 +90,39 @@ async def login(session: AsyncSession, params: LoginParams) -> LoginResult:
     faster and letting an attacker enumerate which emails are
     registered. Once the password check passes, an account with 2FA
     enabled gets a short-lived challenge token instead of a real access
-    token - see verify_two_factor_login."""
+    token - see verify_two_factor_login.
+
+    After MAX_FAILED_LOGIN_ATTEMPTS wrong passwords the account is locked
+    for LOGIN_LOCK_DURATION; a locked account answers with the same
+    generic error even for the correct password, so the lock itself
+    reveals nothing. The failed-attempt counter is only reset by a fully
+    completed login (after the second factor, when one is enabled) -
+    resetting it on the password step alone would give an attacker who
+    knows the password unlimited second-factor guesses."""
     user = await user_repo.get_user_by_email(session, params.email)
     password_hash = user.password_hash if user and user.password_hash else _DUMMY_PASSWORD_HASH
     password_matches = verify_password(password_hash, params.password)
 
+    if user is not None and _is_locked(user):
+        raise ValidationError(_INVALID_CREDENTIALS)
+
     if user is None or not user.password_hash or not password_matches:
-        raise ValidationError("Invalid email or password")
+        if user is not None:
+            await user_repo.record_failed_login(
+                session, user.id, MAX_FAILED_LOGIN_ATTEMPTS, LOGIN_LOCK_DURATION
+            )
+        raise ValidationError(_INVALID_CREDENTIALS)
 
     if user.totp_enabled:
         return LoginResult(requires_2fa=True, challenge_token=create_two_factor_challenge_token(user.id))
 
-    return LoginResult(access_token=create_access_token(user.id))
+    await _reset_failed_logins_if_needed(session, user)
+    return LoginResult(access_token=create_access_token(user.id, user.token_version))
+
+
+async def _reset_failed_logins_if_needed(session: AsyncSession, user: User) -> None:
+    if user.failed_login_attempts or user.locked_until is not None:
+        await user_repo.reset_failed_logins(session, user.id)
 
 
 async def enroll_two_factor(session: AsyncSession, user: User) -> TwoFactorEnrollResponse:
@@ -139,6 +182,7 @@ async def disable_two_factor(session: AsyncSession, user: User, password: str) -
         UpdateUserParams(user_id=user.id, totp_secret_encrypted=None, totp_enabled=False),
     )
     await backup_code_repo.delete_all_backup_codes(session, user.id)
+    await revoke_sessions(session, user.id)
 
 
 async def verify_two_factor_login(session: AsyncSession, challenge_token: str, code: str) -> str:
@@ -158,11 +202,17 @@ async def verify_two_factor_login(session: AsyncSession, challenge_token: str, c
     if not user.totp_enabled or not user.totp_secret_encrypted:
         raise ValidationError("Two-factor authentication is not enabled for this account")
 
+    if _is_locked(user):
+        raise ValidationError("Invalid or expired two-factor challenge")
+
     secret = decrypt_secret(user.totp_secret_encrypted)
-    if verify_totp_code(secret, code):
-        return create_access_token(user.id)
+    if verify_totp_code(secret, code) or await backup_code_repo.verify_and_consume_backup_code(
+        session, user.id, code
+    ):
+        await _reset_failed_logins_if_needed(session, user)
+        return create_access_token(user.id, user.token_version)
 
-    if await backup_code_repo.verify_and_consume_backup_code(session, user.id, code):
-        return create_access_token(user.id)
-
+    await user_repo.record_failed_login(
+        session, user.id, MAX_FAILED_LOGIN_ATTEMPTS, LOGIN_LOCK_DURATION
+    )
     raise ValidationError("Invalid two-factor code")

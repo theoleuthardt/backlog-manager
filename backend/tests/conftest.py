@@ -23,6 +23,7 @@ def postgres_url() -> Generator[str, None, None]:
             "postgresql+psycopg2", "postgresql+asyncpg"
         )
         os.environ.setdefault("AUTH_SECRET", "test-only-secret-not-for-production")
+        os.environ.setdefault("BACKUP_SCHEDULER_ENABLED", "false")
         os.environ.setdefault("TOTP_ENCRYPTION_KEY", Fernet.generate_key().decode())
         yield os.environ["POSTGRES_URL"]
 
@@ -101,7 +102,7 @@ async def create_and_login(_seed_schema: None) -> AsyncGenerator[Callable[..., A
     created_emails: list[str] = []
 
     async def _create_and_login(
-        client, email: str, password: str = "hunter22", is_admin: bool = False
+        client, email: str, password: str = "hunter2hunter2", is_admin: bool = False
     ) -> dict[str, str]:
         from backlog_manager_backend.db import async_session
         from backlog_manager_backend.schemas.user import CreateUserRequest

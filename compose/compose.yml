@@ -14,7 +14,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "${POSTGRES_PORT}:5432"
+      - "127.0.0.1:${POSTGRES_PORT}:5432"
 
   db-monitoring:
     image: dpage/pgadmin4
@@ -22,7 +22,7 @@ services:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
     ports:
-      - "${PGADMIN_PORT}:80"
+      - "127.0.0.1:${PGADMIN_PORT}:80"
 
 volumes:
   postgres_data:

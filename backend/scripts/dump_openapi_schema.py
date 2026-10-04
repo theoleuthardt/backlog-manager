@@ -11,12 +11,15 @@ import json
 import os
 from pathlib import Path
 
+from cryptography.fernet import Fernet
+
 # Settings requires these with no default (they're security-sensitive, so
 # no baked-in fallback) - schema generation never touches the database or
 # signs anything, so any well-formed placeholder is fine here.
 os.environ.setdefault("POSTGRES_URL", "postgresql+asyncpg://user:password@localhost/db")
 os.environ.setdefault("AUTH_SECRET", "schema-generation-only-not-a-real-secret")
-os.environ.setdefault("TOTP_ENCRYPTION_KEY", "schema-generation-only-not-a-real-secret")
+os.environ.setdefault("TOTP_ENCRYPTION_KEY", Fernet.generate_key().decode())
+os.environ["ENABLE_DOCS"] = "true"
 
 from backlog_manager_backend.app import create_app
 
