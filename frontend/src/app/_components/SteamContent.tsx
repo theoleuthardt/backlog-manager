@@ -16,9 +16,7 @@ import {
   useImportSteamWishlistStream,
   useSteamLibraryPreviewStream,
 } from "~/hooks/useBacklog";
-
-const FILLED_BUTTON =
-  "border-2 border-white bg-white text-black hover:bg-gray-900 hover:text-white";
+import { FILLED_BUTTON } from "~/lib/buttonStyles";
 
 type PreviewSource = "library" | "wishlist";
 
@@ -78,7 +76,10 @@ function SteamPreviewTable({
         </Button>
       </div>
       {isImporting && progress && (
-        <SyncProgressBar processed={progress.processed} total={progress.total} />
+        <SyncProgressBar
+          processed={progress.processed}
+          total={progress.total}
+        />
       )}
       <div className="max-h-[24rem] overflow-y-auto rounded-lg border-2 border-white/20">
         <table className="w-full">
@@ -218,7 +219,9 @@ export function SteamContent() {
 
   const handleRemoveFromPreview = (steamAppId: number) => {
     setPreview((current) =>
-      current ? current.filter((item) => item.steamAppId !== steamAppId) : current,
+      current
+        ? current.filter((item) => item.steamAppId !== steamAppId)
+        : current,
     );
   };
 

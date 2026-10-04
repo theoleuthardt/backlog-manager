@@ -41,13 +41,9 @@ import {
   AlertDialogFooter,
   AlertDialogCancel,
 } from "~/components/ui/alert-dialog";
+import { OUTLINE_BUTTON, FILLED_BUTTON } from "~/lib/buttonStyles";
 
 type EnrollStep = "qr" | "backup-codes";
-
-const OUTLINE_BUTTON =
-  "border-2 border-white bg-black text-white hover:bg-white hover:text-black";
-const FILLED_BUTTON =
-  "border-2 border-white bg-white text-black hover:bg-gray-900 hover:text-white";
 
 export function AccountContent() {
   const { user, refreshUser } = useAuth();
@@ -377,8 +373,8 @@ export function AccountContent() {
           </Select>
         </div>
         <p className="mt-4 text-sm text-gray-300">
-          Pick a theme from the palette icon in the navbar, or build your own
-          in the{" "}
+          Pick a theme from the palette icon in the navbar, or build your own in
+          the{" "}
           <Link href="/themes" className="underline">
             theme creator
           </Link>

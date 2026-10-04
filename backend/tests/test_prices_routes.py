@@ -64,3 +64,19 @@ async def test_check_prices_runs_sweep_with_valid_secret(
 
     assert response.status_code == 200
     assert response.json() == {"alerts_sent": 3}
+
+
+async def test_check_prices_rejects_a_non_ascii_secret_without_crashing(
+    monkeypatch: pytest.MonkeyPatch, postgres_url: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.routes import prices as prices_routes
+
+    monkeypatch.setattr(prices_routes.settings, "price_check_cron_secret", "shh")
+
+    with TestClient(app=create_app()) as client:
+        response = client.post(
+            "/api/prices/check", headers={"X-Cron-Secret": "schüssel".encode("latin-1")}
+        )
+
+    assert response.status_code == 401

@@ -1,16 +1,5 @@
 name: Tauri Build
 
-# Builds the desktop app for Windows, macOS and Linux. Only builds
-# installers - it does not sign or publish them (see issue #14's own "Code
-# Signing" section - that needs real certificates this workflow doesn't
-# have). Callable in two ways:
-#   - workflow_dispatch: manual ad-hoc build for testing, using whatever
-#     version is already committed in package.json/tauri.conf.json.
-#   - workflow_call: invoked by release-apps.yml with an explicit `version`
-#     input, which gets stamped into the build before it runs. No tag-push
-#     trigger here - release-apps.yml is the only thing that creates release
-#     tags, and it already calls this workflow directly, so a tag-push
-#     trigger would just build everything a second time.
 on:
   workflow_dispatch:
     inputs:
@@ -44,12 +33,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
-          # v5 auto-caches based on package.json's "packageManager" field on
-          # top of the explicit cache config above - keep the exact previous
-          # behavior instead of layering both.
           package-manager-cache: false
 
       - name: Install Rust
@@ -97,8 +83,6 @@ jobs:
       - name: Build Tauri app
         working-directory: frontend
         env:
-          # Baked into the static export at build time - same variable the
-          # web/container publish workflow uses.
           NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}

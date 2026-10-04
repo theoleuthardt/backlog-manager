@@ -1,8 +1,5 @@
 name: Build & Publish
 
-# Builds the frontend and backend container images and publishes them to
-# GitHub Container Registry (ghcr.io) - only after a merge to main, never
-# on open pull requests (see build.yml for the PR-time test-build).
 on:
   push:
     branches:

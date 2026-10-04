@@ -13,12 +13,13 @@ Users can track games with metadata from HowLongToBeat and IGDB, organize games 
 **Always use `task <name>` (see `Taskfile.yml`, requires [go-task](https://taskfile.dev)) when running commands in this repo, instead of calling `npm run ...` / `uv run ...` / `docker compose ...` directly.** It wraps both the frontend (npm) and backend (uv) toolchains plus the local Postgres compose stack under one unified command surface, so any command run from Claude Code should go through it if a matching task exists. `task` (no args) lists everything available; the most common ones:
 
 ```bash
-task install       # npm install (frontend) + uv sync (backend)
+task install       # npm install (frontend) + uv sync (backend); needs Node 22.12+ (`nvm use` reads the root .nvmrc)
 task dev           # Next.js dev server
 task backend:dev   # Litestar dev server (uvicorn --reload)
 task db:up         # local Postgres + pgAdmin via compose.yml
 task test          # backend (pytest) + frontend (vitest) suites
 task lint          # frontend (eslint) + backend (ruff)
+task format        # prettier (frontend) + ruff format (backend); task format:check only verifies
 task audit         # known-vulnerability scan of the locked frontend + backend dependencies
 task backend:migration -- "add foo column"   # new Alembic revision
 task backend:migrate                          # alembic upgrade head
@@ -82,7 +83,7 @@ uv run ruff check .  # Lint
 
 **Key Directories** (all under `backend/src/backlog_manager_backend/`):
 - `routes/` - Litestar HTTP handlers (`auth.py`, `backlog.py`, `backups.py`, `csv.py`, `games.py`, `images.py`, `prices.py`, `space.py`, `steam.py`, `user.py`, `health.py`)
-- `services/` - business logic (`auth_service.py`, `game_service.py`, ...)
+- `services/` - business logic (`auth_service.py`, `game_service.py`, `credentials.py` for the per-user-credential-with-server-fallback resolution shared by the routes, ...)
 - `repositories/` - SQLAlchemy data access, one module per entity
 - `models/` - SQLAlchemy declarative models
 - `schemas/` - msgspec request/response structs; `types.py` holds boundary types shared across schemas (currently `HexColor`, a `#rrggbb`-validated string used by both category and theme colours)

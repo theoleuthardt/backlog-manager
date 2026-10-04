@@ -1,9 +1,5 @@
 name: Build
 
-# Test-builds the frontend and backend container images on every PR - this
-# never pushes anywhere, it only proves the images still build with the
-# PR's changes. Actual publishing happens in build-and-publish.yml, only
-# after a merge to main.
 on:
   pull_request:
     branches:

@@ -23,7 +23,10 @@ export function FieldDiffList({ diffs }: { diffs: FieldDiffEntry[] }) {
   return (
     <div className="border-border overflow-hidden rounded border font-mono text-xs">
       {diffs.map((diff) => (
-        <div key={diff.field} className="border-border border-b last:border-b-0">
+        <div
+          key={diff.field}
+          className="border-border border-b last:border-b-0"
+        >
           <div className="bg-muted text-muted-foreground px-2 py-0.5 text-[10px] font-semibold tracking-wide">
             {FIELD_LABELS[diff.field] ?? diff.field}
           </div>

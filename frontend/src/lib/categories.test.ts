@@ -17,9 +17,9 @@ describe("categoryNameError", () => {
   });
 
   it("rejects names that are too long", () => {
-    expect(categoryNameError("x".repeat(CATEGORY_NAME_MAX_LENGTH + 1), [])).toMatch(
-      /max/i,
-    );
+    expect(
+      categoryNameError("x".repeat(CATEGORY_NAME_MAX_LENGTH + 1), []),
+    ).toMatch(/max/i);
   });
 
   it("rejects duplicates case-insensitively after trimming", () => {

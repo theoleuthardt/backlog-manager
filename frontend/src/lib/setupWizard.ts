@@ -1,4 +1,4 @@
-export const SETUP_PATH = "/setup";
+const SETUP_PATH = "/setup";
 
 /**
  * Where RequireAuth must send an authenticated user for the current

@@ -1,4 +1,5 @@
 import { apiClient, apiErrorMessage } from "./client";
+import { isHttpUrl } from "~/lib/safeUrl";
 
 export interface GameSearchResult {
   id: number;
@@ -94,7 +95,7 @@ export async function searchSteamGridDb(
   return data;
 }
 
-export interface GamePriceDeal {
+interface GamePriceDeal {
   store: string;
   iconUrl: string;
   price: number;
@@ -122,13 +123,15 @@ export async function getGamePrice(steamAppId: number): Promise<GamePriceInfo> {
     throw new Error(apiErrorMessage(error, "Failed to load price info"));
   return {
     steamAppId: data.steam_app_id,
-    deals: data.deals.map((deal) => ({
-      store: String(deal.store),
-      iconUrl: String(deal.icon),
-      price: Number(deal.price),
-      retailPrice: Number(deal.retail_price),
-      url: String(deal.url),
-    })),
+    deals: data.deals
+      .filter((deal) => isHttpUrl(String(deal.url)))
+      .map((deal) => ({
+        store: String(deal.store),
+        iconUrl: String(deal.icon),
+        price: Number(deal.price),
+        retailPrice: Number(deal.retail_price),
+        url: String(deal.url),
+      })),
     onSale: data.on_sale,
     checkedAt: data.checked_at,
     cheapestPriceEver: data.cheapest_price_ever
@@ -153,12 +156,14 @@ export async function getKeyShopPrices(title: string): Promise<KeyShopOffer[]> {
   });
   if (error)
     throw new Error(apiErrorMessage(error, "Failed to load key shop prices"));
-  return data.map((offer) => ({
-    shop: offer.shop,
-    title: offer.title,
-    price: Number(offer.price),
-    currency: offer.currency,
-    url: offer.url,
-    discountPct: offer.discount_pct ?? null,
-  }));
+  return data
+    .filter((offer) => isHttpUrl(offer.url))
+    .map((offer) => ({
+      shop: offer.shop,
+      title: offer.title,
+      price: Number(offer.price),
+      currency: offer.currency,
+      url: offer.url,
+      discountPct: offer.discount_pct ?? null,
+    }));
 }

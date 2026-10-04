@@ -32,8 +32,6 @@ def normalize_status(raw: str) -> StatusMapping:
         canonical = _STATUS_ALIASES.get(match.group("base").lower())
         if canonical is not None:
             qualifier = match.group("qualifier")
-            return StatusMapping(
-                status=canonical, note=f"({qualifier})" if qualifier else None
-            )
+            return StatusMapping(status=canonical, note=f"({qualifier})" if qualifier else None)
 
     return StatusMapping(status=trimmed)

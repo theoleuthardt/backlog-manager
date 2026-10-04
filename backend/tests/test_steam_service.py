@@ -136,12 +136,12 @@ async def test_sync_playtimes_requires_exact_title_match_for_unlinked_entries(
     session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     user = await _make_user(session)
-    await _make_entry(
-        session, user.id, title="Skyrim", steam_app_id=None, playtime=Decimal("1.00")
-    )
+    await _make_entry(session, user.id, title="Skyrim", steam_app_id=None, playtime=Decimal("1.00"))
 
     async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
-        return [SteamOwnedGame(appid=489830, name="The Elder Scrolls V: Skyrim", playtime_forever=3300)]
+        return [
+            SteamOwnedGame(appid=489830, name="The Elder Scrolls V: Skyrim", playtime_forever=3300)
+        ]
 
     monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
 
@@ -176,12 +176,8 @@ async def test_sync_playtimes_title_fallback_skips_ambiguous_entry_title(
     session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     user = await _make_user(session)
-    await _make_entry(
-        session, user.id, title="Tetris", steam_app_id=None, playtime=Decimal("1.00")
-    )
-    await _make_entry(
-        session, user.id, title="TETRIS", steam_app_id=None, playtime=Decimal("1.00")
-    )
+    await _make_entry(session, user.id, title="Tetris", steam_app_id=None, playtime=Decimal("1.00"))
+    await _make_entry(session, user.id, title="TETRIS", steam_app_id=None, playtime=Decimal("1.00"))
 
     async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
         return [SteamOwnedGame(appid=1001, name="Tetris", playtime_forever=60)]
@@ -216,9 +212,7 @@ async def test_sync_playtimes_skips_unlinked_entry_with_ambiguous_title(
     session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     user = await _make_user(session)
-    await _make_entry(
-        session, user.id, title="Tetris", steam_app_id=None, playtime=Decimal("1.00")
-    )
+    await _make_entry(session, user.id, title="Tetris", steam_app_id=None, playtime=Decimal("1.00"))
 
     async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
         return [
@@ -242,9 +236,7 @@ async def test_get_library_playtime_returns_hours_for_owned_app(
 
     monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
 
-    playtime = await steam_service.get_library_playtime(
-        "76561197960287930", "api-key", 1245620
-    )
+    playtime = await steam_service.get_library_playtime("76561197960287930", "api-key", 1245620)
 
     assert playtime == Decimal("55.00")
 
@@ -257,9 +249,7 @@ async def test_get_library_playtime_returns_none_for_unowned_app(
 
     monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
 
-    playtime = await steam_service.get_library_playtime(
-        "76561197960287930", "api-key", 1245620
-    )
+    playtime = await steam_service.get_library_playtime("76561197960287930", "api-key", 1245620)
 
     assert playtime is None
 
@@ -304,7 +294,10 @@ async def test_import_library_creates_entries_for_new_owned_games(
     assert created[0].playtime == Decimal("2.00")
     assert created[0].status == "Not Started"
     assert created[0].owned is True
-    assert created[0].image_link == "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/620/library_600x900.jpg"
+    assert (
+        created[0].image_link
+        == "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/620/library_600x900.jpg"
+    )
 
 
 async def test_import_library_sets_cover_when_steamgriddb_key_is_given(
@@ -1147,9 +1140,7 @@ async def test_import_wishlist_uses_capsule_cover_when_budget_skips_lookup(
 
     monkeypatch.setattr(steam_service, "_OperationBudget", SpentBudget)
 
-    created = await steam_service.import_wishlist(
-        session, user, [SteamWishlistItem(appid=620)]
-    )
+    created = await steam_service.import_wishlist(session, user, [SteamWishlistItem(appid=620)])
 
     assert len(created) == 1
     assert created[0].image_link == (
@@ -1202,7 +1193,9 @@ async def test_sync_playtimes_and_import_updates_the_users_space_playtime(
     user = await _make_user(session)
     other = await user_repo.create_user(
         session,
-        CreateUserParams(username="steampartner", email="steampartner@example.com", password_hash="h"),
+        CreateUserParams(
+            username="steampartner", email="steampartner@example.com", password_hash="h"
+        ),
     )
     space_id = await space_repo.create_space(session, user.id)
     await space_repo.add_invited_member(session, space_id, other.id)

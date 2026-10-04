@@ -16,10 +16,12 @@ import {
 } from "~/hooks/useCsvImport";
 import { DEFAULT_STATUSES } from "~/lib/api/backlog";
 import type { GameSearchResult } from "~/lib/api/games";
-import type { ColumnConfig, CsvPreviewItem, SkippedCsvEntry } from "~/lib/api/csv";
-
-const FILLED_BUTTON =
-  "border-2 border-white bg-white text-black hover:bg-gray-900 hover:text-white";
+import type {
+  ColumnConfig,
+  CsvPreviewItem,
+  SkippedCsvEntry,
+} from "~/lib/api/csv";
+import { FILLED_BUTTON } from "~/lib/buttonStyles";
 
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === "AbortError";

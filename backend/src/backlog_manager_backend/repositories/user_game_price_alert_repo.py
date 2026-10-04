@@ -9,13 +9,6 @@ from backlog_manager_backend.models.user_game_price_alert import (
 from backlog_manager_backend.utils import now_truncated_to_minute
 
 
-async def get_last_alerted_price(
-    session: AsyncSession, user_id: int, steam_app_id: int
-) -> Decimal | None:
-    model = await session.get(UserGamePriceAlertModel, (user_id, steam_app_id))
-    return model.last_alerted_price if model is not None else None
-
-
 async def try_claim_alert(
     session: AsyncSession, user_id: int, steam_app_id: int, price: Decimal
 ) -> bool:
@@ -50,9 +43,7 @@ async def try_claim_alert(
     return result.first() is not None
 
 
-async def clear_last_alerted_price(
-    session: AsyncSession, user_id: int, steam_app_id: int
-) -> None:
+async def clear_last_alerted_price(session: AsyncSession, user_id: int, steam_app_id: int) -> None:
     model = await session.get(UserGamePriceAlertModel, (user_id, steam_app_id))
     if model is not None:
         await session.delete(model)

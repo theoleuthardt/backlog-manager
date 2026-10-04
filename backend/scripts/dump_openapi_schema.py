@@ -1,5 +1,6 @@
 """Writes the Litestar app's OpenAPI 3.1 schema to backend/openapi.json,
-without needing a running server, a real database, or real secrets - the
+without needing a running server, a real database, or real secrets (the
+required settings get throwaway placeholder values below) - the
 schema is static, derived purely from the route handlers and their msgspec
 DTOs. The frontend's `openapi-typescript` step reads this file to generate
 a type-safe `openapi-fetch` client (see #104's decision on OpenAPI codegen).
@@ -13,9 +14,6 @@ from pathlib import Path
 
 from cryptography.fernet import Fernet
 
-# Settings requires these with no default (they're security-sensitive, so
-# no baked-in fallback) - schema generation never touches the database or
-# signs anything, so any well-formed placeholder is fine here.
 os.environ.setdefault("POSTGRES_URL", "postgresql+asyncpg://user:password@localhost/db")
 os.environ.setdefault("AUTH_SECRET", "schema-generation-only-not-a-real-secret")
 os.environ.setdefault("TOTP_ENCRYPTION_KEY", Fernet.generate_key().decode())

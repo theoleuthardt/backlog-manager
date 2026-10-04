@@ -41,45 +41,40 @@ logger = structlog.get_logger()
 
 _SEARCH_RESULT_LIMIT = 20
 
-# IGDB's /games endpoint's `game_type` enum (formerly called `category`
-# in IGDB's docs and in this codebase - that name still exists as a
-# field you can request, but IGDB silently returns nothing for it; the
-# working field for the same enum is `game_type`). 0 main_game, 8
-# remake, 9 remaster, 10 expanded_game rank as "real games" a title
-# search should surface, ranked in that order; everything else
-# (dlc_addon, expansion, bundle, standalone_expansion, mod, episode,
-# season, port, fork, pack, update) is excluded from search results
-# entirely by _is_dlc_like below, not just ranked last - see issue
-# #154, where these were crowding the base game out of the top results.
 _MAIN_GAME_TYPE_RANKS = {0: 0, 8: 1, 9: 1, 10: 1}
+"""IGDB's `game_type` enum (formerly `category`, which IGDB still accepts as a
+field but silently returns nothing for): 0 main_game, 8 remake, 9 remaster and
+10 expanded_game are the "real games" a title search surfaces, in that order.
+Every other type (dlc_addon, expansion, bundle, mod, episode, port, ...) is
+excluded from search results entirely by `_is_dlc_like`, not just ranked last
+- see issue #154, where they crowded the base game out of the top results."""
+
 _OTHER_GAME_TYPE_RANK = 2
 
 _YOUTUBE_VIDEO_ID = re.compile(r"[A-Za-z0-9_-]{11}")
 _EXCLUDED_GAME_TYPES = {1, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14}
 
-# Keyed by the full (client_id, client_secret) pair rather than a
-# single global slot, and rather than client_id alone - two different
-# credential pairs (a user's own vs. another user's, or the global
-# fallback) must never share a cached access token even if they
-# happen to share a client_id, since that would silently spend one
-# credential's quota against a request made under a different one.
-# The tuple never leaves this process (not logged, not persisted), so
-# there's no need to hash it - it's just a dict key.
 _token_cache: dict[tuple[str, str], dict[str, object]] = {}
+"""Keyed by the full (client_id, client_secret) pair, not a single global
+slot or client_id alone: two credential pairs (a user's own, another user's,
+the global fallback) must never share a cached access token even with the
+same client_id, since that would spend one credential's quota on a request
+made under another. The tuple never leaves this process, so it needs no
+hashing."""
 _genre_cache: dict[int, str] = {}
 _platform_cache: dict[int, str] = {}
 _involved_company_cache: dict[int, IGDBInvolvedCompany] = {}
 _company_cache: dict[int, str] = {}
-# Unbounded, no-TTL, same style as the genre/platform caches above -
-# directly serves issue #105's "cache requests for game information" ask.
 _game_cache: dict[int, IGDBGameData] = {}
+"""Unbounded and without TTL, like the genre/platform caches above (issue
+#105, "cache requests for game information")."""
 _cover_cache: dict[int, IGDBCover] = {}
 _trailer_cache: dict[int, str | None] = {}
-# hltb_id, main_story, main_story_with_extras, completionist - populated
-# from whichever source (IGDB or the HLTB fallback) resolved a game, so a
-# repeat search for a game IGDB has no beat-time data for doesn't re-fire
-# a live HLTB scrape every time.
 _time_to_beat_cache: dict[int, tuple[int, float, float, float]] = {}
+"""(hltb_id, main_story, main_story_with_extras, completionist), filled from
+whichever source (IGDB or the HLTB fallback) resolved a game, so a repeat
+search for a game IGDB has no beat-time data for doesn't trigger another live
+HLTB scrape."""
 
 _STEAM_APP_ID_CACHE_TTL_SECONDS = 24 * 60 * 60
 _STEAM_APP_ID_CACHE_MAX_SIZE = 2000
@@ -87,12 +82,12 @@ _STEAM_APP_ID_CACHE_MAX_SIZE = 2000
 _steam_app_id_by_title: dict[str, tuple[int | None, float]] = {}
 _steam_app_id_lock = asyncio.Lock()
 
-# Bounded (unlike the IGDB caches above, whose keys only ever come from
-# IGDB's own search results) since steam_app_id is a caller-supplied
-# query param on the public cover-picker endpoint - an unbounded cache
-# keyed by it would let repeated requests for distinct (real or made
-# up) app ids grow memory for the life of the worker.
 _STEAMGRIDDB_COVER_CACHE_MAX_SIZE = 500
+"""The SteamGridDB cover cache is bounded, unlike the IGDB caches above whose
+keys only come from IGDB's own search results: steam_app_id is a
+caller-supplied query param on the public cover-picker endpoint, so an
+unbounded cache would grow with every distinct (even made-up) app id."""
+
 _steamgriddb_cover_cache: dict[int, list[str]] = {}
 
 
@@ -322,9 +317,7 @@ async def _enrich_search_results(
     preferred over the IGDB cover when configured and a Steam App ID
     could be resolved for the title, since SteamGridDB has far better
     cover-art availability than IGDB."""
-    game_ids = [
-        result.game if result.game is not None else result.id for result in search_results
-    ]
+    game_ids = [result.game if result.game is not None else result.id for result in search_results]
 
     uncached_game_ids = [game_id for game_id in game_ids if game_id not in _game_cache]
     if uncached_game_ids:
@@ -437,9 +430,7 @@ async def _enrich_search_results(
                 logger.error("Failed to fetch companies batch")
 
     time_to_beat_by_game_id: dict[int, tuple[int, float, float, float]] = {}
-    uncached_time_to_beat_ids = [
-        game.id for game in games if game.id not in _time_to_beat_cache
-    ]
+    uncached_time_to_beat_ids = [game.id for game in games if game.id not in _time_to_beat_cache]
     if uncached_time_to_beat_ids:
         try:
             for entry in await get_games_time_to_beat_on_igdb(
@@ -492,8 +483,7 @@ async def _enrich_search_results(
             cover = _cover_cache.get(game.cover) if game.cover else None
             if cover and cover.image_id:
                 image_url = (
-                    "https://images.igdb.com/igdb/image/upload/"
-                    f"t_cover_big/{cover.image_id}.jpg"
+                    f"https://images.igdb.com/igdb/image/upload/t_cover_big/{cover.image_id}.jpg"
                 )
 
             steamgriddb_urls = steamgriddb_covers_by_game_id.get(game.id, [])
@@ -501,7 +491,9 @@ async def _enrich_search_results(
                 image_url = steamgriddb_urls[0]
 
             genres = [
-                _genre_cache[genre_id] for genre_id in (game.genres or []) if genre_id in _genre_cache
+                _genre_cache[genre_id]
+                for genre_id in (game.genres or [])
+                if genre_id in _genre_cache
             ]
             platforms = [
                 _platform_cache[platform_id]
@@ -619,10 +611,7 @@ async def find_steam_app_id(title: str) -> int | None:
     normalized = normalize_game_title(title)
     async with _steam_app_id_lock:
         cached = _steam_app_id_by_title.get(normalized)
-        if (
-            cached is not None
-            and time.monotonic() - cached[1] < _STEAM_APP_ID_CACHE_TTL_SECONDS
-        ):
+        if cached is not None and time.monotonic() - cached[1] < _STEAM_APP_ID_CACHE_TTL_SECONDS:
             return cached[0]
     try:
         items = await search_steam_store_by_title(title)
@@ -630,9 +619,7 @@ async def find_steam_app_id(title: str) -> int | None:
         logger.error("Failed to search Steam store", title=title)
         return None
     app_hits = [item for item in items if item.type == "app" and item.id]
-    matching_hits = [
-        item for item in app_hits if normalize_game_title(item.name) == normalized
-    ]
+    matching_hits = [item for item in app_hits if normalize_game_title(item.name) == normalized]
     app_id = matching_hits[0].id if matching_hits else None
     async with _steam_app_id_lock:
         _remember_steam_app_id(normalized, app_id)

@@ -1,9 +1,5 @@
 import { useCallback, useState } from "react";
-import {
-  checkForUpdate,
-  installUpdate,
-  type AppUpdate,
-} from "~/lib/appUpdate";
+import { checkForUpdate, installUpdate, type AppUpdate } from "~/lib/appUpdate";
 
 export type AppUpdaterStatus =
   | "idle"

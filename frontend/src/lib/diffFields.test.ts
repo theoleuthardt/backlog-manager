@@ -42,7 +42,12 @@ describe("computeFieldDiffs", () => {
   });
 
   it("treats undefined playtime/reviewStars/note as empty rather than 'undefined'", () => {
-    const existing = { ...baseline, playtime: undefined, reviewStars: undefined, note: undefined };
+    const existing = {
+      ...baseline,
+      playtime: undefined,
+      reviewStars: undefined,
+      note: undefined,
+    };
     const proposed = baseline;
 
     const diffs = computeFieldDiffs(existing, proposed);

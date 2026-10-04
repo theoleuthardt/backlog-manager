@@ -2,34 +2,6 @@ import type { ReactNode } from "react";
 import type { NavbarLink } from "./navigation";
 
 /**
- * UniSlider component props
- */
-export interface UniSliderProps {
-  className?: string;
-  defaultValue: number;
-  maxvalue: number;
-  step: number;
-  ref?: React.RefObject<HTMLInputElement>;
-}
-
-/**
- * Custom dropdown menu component props
- */
-export interface DropdownMenuProps {
-  className?: string;
-  items: DropdownItem[];
-  triggerText?: string;
-  triggerIcon?: React.ReactNode;
-}
-
-/**
- * Dropdown menu item
- */
-export interface DropdownItem {
-  text: string;
-}
-
-/**
  * Game image component props
  */
 export interface GameImageProps {

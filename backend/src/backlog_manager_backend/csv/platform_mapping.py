@@ -82,9 +82,7 @@ def _normalize_with_qualifier(base: str, qualifier: str) -> PlatformMapping:
         storefront = _STOREFRONT_ALIASES.get(qualifier.lower())
         if storefront is not None:
             return PlatformMapping(platform=["PC", storefront], owned=True)
-        return PlatformMapping(
-            platform=["PC", _UNKNOWN_TAG], owned=True, note=f"({qualifier})"
-        )
+        return PlatformMapping(platform=["PC", _UNKNOWN_TAG], owned=True, note=f"({qualifier})")
 
     if qualifier.lower() == "dlc":
         return PlatformMapping(platform=[base], owned=True, note="(DLC)")
@@ -92,8 +90,6 @@ def _normalize_with_qualifier(base: str, qualifier: str) -> PlatformMapping:
     emu_match = _EMU_QUALIFIER_RE.match(qualifier)
     if emu_match:
         system = _canonicalize(emu_match.group("system"))
-        return PlatformMapping(
-            platform=[base, f"{system} (Emulator)"], owned=True
-        )
+        return PlatformMapping(platform=[base, f"{system} (Emulator)"], owned=True)
 
     return PlatformMapping(platform=[base, _UNKNOWN_TAG], owned=True, note=f"({qualifier})")

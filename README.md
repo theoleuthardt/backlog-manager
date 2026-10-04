@@ -57,7 +57,7 @@ these once before your first `task install`:
 
 | Tool | Why |
 | ---- | --- |
-| [Node.js 20+](https://nodejs.org) (or [nvm](https://github.com/nvm-sh/nvm)) | runs the Next.js frontend |
+| [Node.js 22](https://nodejs.org) (or [nvm](https://github.com/nvm-sh/nvm)) | runs the Next.js frontend |
 | [uv](https://docs.astral.sh/uv/) | Python backend dependency and tool management |
 | [go-task](https://taskfile.dev) | unified command surface for every repo command |
 | [Podman](https://podman.io/) + a Compose provider | local Postgres stack (`podman-compose`, e.g. `brew install podman-compose` on macOS — `podman compose` delegates to whichever provider is on your `PATH`) |

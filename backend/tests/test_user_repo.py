@@ -124,15 +124,12 @@ async def test_update_user_partial(session: AsyncSession) -> None:
     )
 
     assert updated.name == "renamed"
-    assert updated.email == "original@example.com"  # unchanged fields stay untouched
+    assert updated.email == "original@example.com"
 
 
 async def test_update_user_can_clear_steam_id_with_explicit_none(
     session: AsyncSession,
 ) -> None:
-    # steam_id isn't exposed on the User response schema (matching the
-    # original TS mapUser(), which never included it either), so verify
-    # against the underlying model directly instead.
     created = await _make_user(session, steam_id="steam123")
     assert (await session.get(UserModel, created.id)).steam_id == "steam123"
 
@@ -141,7 +138,7 @@ async def test_update_user_can_clear_steam_id_with_explicit_none(
     )
 
     assert (await session.get(UserModel, created.id)).steam_id is None
-    assert updated.name == created.name  # omitted field stays untouched
+    assert updated.name == created.name
 
 
 async def test_update_user_not_found(session: AsyncSession) -> None:
@@ -248,13 +245,10 @@ async def test_last_admin_check_locks_admin_rows_for_the_transaction(postgres_ur
     async def hold_the_lock() -> None:
         async with async_session() as locking_session, locking_session.begin():
             await locking_session.get(UserModel, admin.id, with_for_update=True)
-            # Hold the lock long enough for the second query to prove
-            # it's actually blocked, not just incidentally slower.
             await asyncio.sleep(0.3)
             assert not second_query_completed.is_set()
 
     async def try_to_lock_the_same_row() -> None:
-        # Give hold_the_lock a head start so it acquires the lock first.
         await asyncio.sleep(0.05)
         async with async_session() as contending_session, contending_session.begin():
             await contending_session.get(UserModel, admin.id, with_for_update=True)

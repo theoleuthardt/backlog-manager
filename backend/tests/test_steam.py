@@ -349,6 +349,7 @@ async def test_get_app_details_returns_none_when_unknown(monkeypatch: pytest.Mon
     _mock_client(handler, monkeypatch)
     assert await get_app_details(999999) is None
 
+
 async def test_get_steam_library_cover_if_exists_returns_url_when_200(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -360,7 +361,10 @@ async def test_get_steam_library_cover_if_exists_returns_url_when_200(
 
     _mock_client(handler, monkeypatch)
     url = await get_steam_library_cover_if_exists(620)
-    assert url == "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/620/library_600x900.jpg"
+    assert (
+        url
+        == "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/620/library_600x900.jpg"
+    )
 
 
 async def test_get_steam_library_cover_if_exists_returns_none_when_404(
@@ -371,7 +375,9 @@ async def test_get_steam_library_cover_if_exists_returns_none_when_404(
     def handler(request: httpx.Request) -> httpx.Response:
         if request.method == "HEAD":
             return httpx.Response(404)
-        return httpx.Response(200, json={"response": {"store_items": [{"id": 999999, "success": 15}]}})
+        return httpx.Response(
+            200, json={"response": {"store_items": [{"id": 999999, "success": 15}]}}
+        )
 
     _mock_client(handler, monkeypatch)
     assert await get_steam_library_cover_if_exists(999999) is None
@@ -464,7 +470,13 @@ async def test_get_steam_library_cover_if_exists_uses_1x_capsule_when_2x_missing
     [
         {"response": {}},
         {"response": {"store_items": [{"id": 9, "success": 15}]}},
-        {"response": {"store_items": [{"id": 9, "success": 1, "assets": {"asset_url_format": "x/${FILENAME}"}}]}},
+        {
+            "response": {
+                "store_items": [
+                    {"id": 9, "success": 1, "assets": {"asset_url_format": "x/${FILENAME}"}}
+                ]
+            }
+        },
     ],
 )
 async def test_get_steam_library_cover_if_exists_returns_none_without_library_assets(

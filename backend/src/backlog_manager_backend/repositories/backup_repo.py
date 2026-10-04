@@ -122,22 +122,23 @@ async def load_user_content(session: AsyncSession, user_id: int) -> BackupPayloa
     )
 
 
-async def replace_user_content(
-    session: AsyncSession, user_id: int, payload: BackupPayload
-) -> None:
+async def replace_user_content(session: AsyncSession, user_id: int, payload: BackupPayload) -> None:
     """Swaps the user's whole personal backlog content (never shared space
     rows) for the payload in one transaction: any failure (a payload the database rejects, e.g.
     two entries sharing a Steam app id) rolls back to the untouched
     previous content. Rows are re-created with fresh ids - category links
     are rebuilt from the payload's refs."""
     try:
-        await session.execute(delete(BacklogEntry).where(
+        await session.execute(
+            delete(BacklogEntry).where(
                 BacklogEntry.user_id == user_id, BacklogEntry.space_id.is_(None)
             )
         )
-        await session.execute(delete(Category).where(Category.user_id == user_id, Category.space_id.is_(None))
+        await session.execute(
+            delete(Category).where(Category.user_id == user_id, Category.space_id.is_(None))
         )
-        await session.execute(delete(CustomStatus).where(
+        await session.execute(
+            delete(CustomStatus).where(
                 CustomStatus.user_id == user_id, CustomStatus.space_id.is_(None)
             )
         )

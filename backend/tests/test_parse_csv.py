@@ -2,7 +2,9 @@ from backlog_manager_backend.csv import parse_csv
 
 
 def test_extract_csv_headers_reads_first_row_by_column_letter() -> None:
-    headers = parse_csv.extract_csv_headers("Game,Genre,Platform,Status\nCeleste,Platformer,PC,Not Started")
+    headers = parse_csv.extract_csv_headers(
+        "Game,Genre,Platform,Status\nCeleste,Platformer,PC,Not Started"
+    )
 
     assert headers == {"A": "Game", "B": "Genre", "C": "Platform", "D": "Status"}
 

@@ -16,8 +16,9 @@ def postgres_url() -> Generator[str, None, None]:
     """Starts a real Postgres container for the test session, seeds the
     real schema (same file the frontend/CI use), and points the app's
     settings at it (must run before backlog_manager_backend.db is
-    imported anywhere, since the engine is created at import time)."""
-    # dbname matches the init SQL's hardcoded `ALTER DATABASE "backlog-manager-db"`
+    imported anywhere, since the engine is created at import time). The
+    database name must match the init SQL's hardcoded
+    `ALTER DATABASE "backlog-manager-db"`."""
     with PostgresContainer("postgres:17-alpine", dbname="backlog-manager-db") as pg:
         os.environ["POSTGRES_URL"] = pg.get_connection_url().replace(
             "postgresql+psycopg2", "postgresql+asyncpg"
@@ -85,7 +86,9 @@ async def session(_seed_schema: None) -> AsyncGenerator[AsyncSession, None]:
 
 
 @pytest.fixture
-async def create_and_login(_seed_schema: None) -> AsyncGenerator[Callable[..., Awaitable[dict[str, str]]], None]:
+async def create_and_login(
+    _seed_schema: None,
+) -> AsyncGenerator[Callable[..., Awaitable[dict[str, str]]], None]:
     """There is no public self-registration endpoint, so route-level
     tests (via a real TestClient hitting the app's own, separately
     committed session) need another way to seed a user: this creates

@@ -1,13 +1,6 @@
-export type {
-  BacklogEntryProps,
-  BacklogEntryData,
-  GameSearchResult,
-} from "./backlog";
+export type { BacklogEntryProps } from "./backlog";
 
 export type {
-  UniSliderProps,
-  DropdownMenuProps,
-  DropdownItem,
   GameImageProps,
   SearchBarProps,
   ScrollSectionProps,

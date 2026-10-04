@@ -1,30 +1,32 @@
 /**
- * The app now lives in frontend/, but .env files stay at the repo root
- * (compose.yml needs them there for its own variable substitution). Load
- * them explicitly before env.js validates process.env - Next's own env
- * loading only checks its own cwd.
- */
-import { config as loadEnv } from "dotenv";
-loadEnv({ path: new URL("../.env", import.meta.url) });
-
-/**
- * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially useful
- * for Docker builds.
+ * Next.js config.
  *
- * Dynamic import (not a static one) so it runs after loadEnv() above: ES
- * module imports are hoisted ahead of a file's own top-level statements
- * regardless of source order, so a static import here would validate
- * process.env before loadEnv() ever ran.
+ * - Unsupported Node versions abort here with a clear message instead of
+ *   failing later with cryptic webpack errors.
+ * - The app lives in frontend/ but .env files stay at the repo root
+ *   (compose.yml needs them there), so they are loaded explicitly before
+ *   env.js validates process.env; Next's own env loading only checks its own
+ *   cwd. env.js is imported dynamically because static imports are hoisted
+ *   above top-level statements and would validate before loadEnv() ran. Set
+ *   SKIP_ENV_VALIDATION to skip the validation (useful for Docker builds).
+ * - TAURI_BUILD=1 switches to a static export: the desktop app is a WebView
+ *   loading static files, no Next.js server runs inside it (docs/TAURI.md).
+ *   Branching on an env var instead of swapping in a separate config file
+ *   means a build killed mid-run can never leave the wrong config on disk.
  */
+const SUPPORTED_NODE_MAJORS = [22];
+const nodeMajor = Number(process.versions.node.split(".")[0]);
+if (!SUPPORTED_NODE_MAJORS.includes(nodeMajor)) {
+  throw new Error(
+    `Node.js ${process.versions.node} is not supported: this project runs on Node ${SUPPORTED_NODE_MAJORS.join(" or ")} (Node 20 is end of life, and versions like 23.x break the build with cryptic webpack errors). Run \`nvm use\` in the repo root.`,
+  );
+}
+
+import { config as loadEnv } from "dotenv";
+loadEnv({ path: new URL("../.env", import.meta.url), quiet: true });
+
 await import("./src/env.js");
 
-// The Tauri desktop build needs a static export (`output: 'export'`) - no
-// Next.js server runs inside the app, it's a WebView loading static files
-// (see docs/TAURI.md). Branching on an env var here, rather than keeping a
-// separate next.config.tauri.js swapped in at build time, avoids ever
-// touching this file on disk: a build that gets killed mid-run (CI
-// cancellation, a crashed process, ...) can't leave the repo with the
-// wrong config committed, which a file-swap script's cleanup step could.
 const isTauriBuild = process.env.TAURI_BUILD === "1";
 
 /** @type {import("next").NextConfig} */

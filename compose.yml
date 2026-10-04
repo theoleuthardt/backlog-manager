@@ -5,13 +5,10 @@ services:
       context: ./frontend
       dockerfile: Containerfile
       args:
-        # Not .env's NODE_ENV - `next build` always needs "production".
         NODE_ENV: production
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     environment:
       - NODE_ENV=production
-      # Not .env's HOSTNAME=localhost - the container needs to bind all
-      # interfaces to be reachable via the port mapping below.
       - HOSTNAME=0.0.0.0
       - PORT=${NEXTJS_PORT}
     ports:

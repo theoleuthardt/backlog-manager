@@ -157,6 +157,53 @@ boundary rather than letting snake_case leak into components.
 | Steam Web API | Owned-games playtime sync, library import, achievements, Family sharing | Steam Web API key (per-user or server-wide) | Sync/import endpoints 503 if no key is configured anywhere |
 | SteamGridDB | Higher-quality cover art for Steam-imported games | SteamGridDB API key (per-user or server-wide) | Treated as fully optional — a missing key just skips cover lookup, never fails the request it's attached to |
 
+## Build, CI and configuration notes
+
+Config files (compose, workflows, `pyproject.toml`) carry no inline comments;
+the reasoning behind their non-obvious settings lives here.
+
+**Compose.** `compose.yml` overrides two values from `.env`: `NODE_ENV` is
+forced to `production` for the frontend image build (`next build` always needs
+it) and `HOSTNAME` to `0.0.0.0` (the container must bind all interfaces to be
+reachable through the port mapping). `compose/compose.yml` is the local Podman
+file for the PostgreSQL database and pgAdmin only; the postgres image needs the
+individual `POSTGRES_USER`/`POSTGRES_PASSWORD`/`POSTGRES_DB` variables, which
+must match the credentials in the app's `POSTGRES_URL`.
+
+**Workflows.**
+
+- `tests.yml` runs on every PR: backend lint, format check and pytest,
+  frontend lint, typecheck, format check and vitest, and the release script
+  tests.
+- `build.yml` test-builds the frontend and backend container images on every
+  PR; it never pushes anything. `build-and-publish.yml` publishes them to
+  ghcr.io, only after a merge to `main`, never for open pull requests.
+- `tauri-build.yml` builds the desktop installers for Windows, macOS and
+  Linux without signing or publishing them (code signing needs certificates it
+  does not have, see issue #14). It runs via `workflow_dispatch` for a manual
+  ad-hoc build of the version already committed in `package.json` /
+  `tauri.conf.json`, or via `workflow_call` from `release-apps.yml` with an
+  explicit `version` stamped into the build. It deliberately has no tag-push
+  trigger: `release-apps.yml` is the only thing that creates release tags and
+  already calls it directly, so a tag trigger would build everything twice.
+  `actions/setup-node` v5 auto-caches from the `packageManager` field on top of
+  the explicit cache config, so the explicit config stays the single source.
+  `NEXT_PUBLIC_API_URL` is baked into the static export at build time, the same
+  variable the container publish workflow uses.
+- `release-apps.yml` is the manual-only prod release stage: it computes the
+  next version (patch bump on the latest `v*.*.*` tag, or the version in
+  `frontend/package.json` when no tag exists yet), builds the desktop app
+  through `tauri-build.yml` and publishes a GitHub Release with every
+  platform's installer attached.
+
+**Backend tooling.** pytest-asyncio runs every test and fixture in one
+session-scoped event loop: `db.py`'s engine is a module-level singleton bound
+to a single loop, and a per-test loop (the default) causes "Event loop is
+closed" errors when the pool later recycles a connection from an already
+closed loop. Ruff excludes `alembic/versions`: `alembic revision
+--autogenerate` produces the same boilerplate every time and holding it to the
+hand-written code standard is noise.
+
 ## Related documents
 
 - [`docs/TAURI.md`](TAURI.md) — desktop app build, signing, and CI details.

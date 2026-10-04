@@ -53,23 +53,16 @@ DEFAULT_STATUSES = ("Not Started", "In Progress", "Completed", "On Hold", "Dropp
 _STATUS_NAME_MAX_LENGTH = 20
 
 
-class _StatusConflictException(ClientException):
-    """Documents the 409 a duplicate custom-status name raises, distinct
-    from ClientException's default 400 so it shows up in the OpenAPI
-    response union via the handlers' `raises=` declarations."""
-
-    status_code = HTTP_409_CONFLICT
-
-
 class _ConflictException(ClientException):
-    """Documents the 409 a duplicate Steam game in one scope raises."""
+    """Documents the 409 a duplicate custom-status name or a duplicate Steam
+    game in one scope raises, distinct from ClientException's default 400 so
+    it shows up in the OpenAPI response union via the handlers' `raises=`
+    declarations."""
 
     status_code = HTTP_409_CONFLICT
 
 
-async def _require_space_access(
-    session: AsyncSession, user: User, space_id: int | None
-) -> None:
+async def _require_space_access(session: AsyncSession, user: User, space_id: int | None) -> None:
     """Every scoped handler goes through this first: `space_id` selects
     the shared space instead of the caller's personal backlog, which is
     only allowed for an active member. Anyone else gets the same 404 as
@@ -507,7 +500,7 @@ async def _get_scoped_status(
 @post(
     "/api/backlog/statuses",
     status_code=201,
-    raises=[NotFoundException, ValidationException, _StatusConflictException],
+    raises=[NotFoundException, ValidationException, _ConflictException],
 )
 async def create_custom_status(
     data: CreateCustomStatusRequest,
@@ -525,7 +518,7 @@ async def create_custom_status(
             CreateCustomStatusParams(user_id=current_user.id, space_id=space_id, name=name),
         )
     except ConflictError as error:
-        raise _StatusConflictException(f"A status named {name!r} already exists") from error
+        raise _ConflictException(f"A status named {name!r} already exists") from error
     return CustomStatusResponse.from_status(status)
 
 
@@ -546,7 +539,7 @@ async def list_custom_statuses(
 
 @put(
     "/api/backlog/statuses/{status_id:int}",
-    raises=[NotFoundException, ValidationException, _StatusConflictException],
+    raises=[NotFoundException, ValidationException, _ConflictException],
 )
 async def update_custom_status(
     status_id: FromPath[int],
@@ -564,7 +557,7 @@ async def update_custom_status(
             db_session, UpdateCustomStatusParams(status_id=status_id, name=name)
         )
     except ConflictError as error:
-        raise _StatusConflictException(f"A status named {name!r} already exists") from error
+        raise _ConflictException(f"A status named {name!r} already exists") from error
     return CustomStatusResponse.from_status(status)
 
 

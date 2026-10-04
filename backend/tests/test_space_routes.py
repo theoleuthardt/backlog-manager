@@ -15,15 +15,21 @@ def _entry_payload(**overrides: object) -> dict[str, object]:
     return payload
 
 
-def _make_space(client: TestClient, owner_headers: dict, guest_headers: dict, guest_name: str) -> int:
-    invite = client.post("/api/space/invitations", headers=owner_headers, json={"username": guest_name})
+def _make_space(
+    client: TestClient, owner_headers: dict, guest_headers: dict, guest_name: str
+) -> int:
+    invite = client.post(
+        "/api/space/invitations", headers=owner_headers, json={"username": guest_name}
+    )
     assert invite.status_code == 201
     accept = client.post("/api/space/invitations/accept", headers=guest_headers)
     assert accept.status_code == 200
     return accept.json()["space_id"]
 
 
-async def test_space_state_is_empty_for_user_without_space(postgres_url: str, create_and_login) -> None:
+async def test_space_state_is_empty_for_user_without_space(
+    postgres_url: str, create_and_login
+) -> None:
     from backlog_manager_backend.app import create_app
 
     with TestClient(app=create_app()) as client:
@@ -41,7 +47,9 @@ async def test_invite_accept_flow(postgres_url: str, create_and_login) -> None:
         owner = await create_and_login(client, "spaceowner@example.com")
         guest = await create_and_login(client, "spaceguest@example.com")
 
-        invite = client.post("/api/space/invitations", headers=owner, json={"username": "spaceguest"})
+        invite = client.post(
+            "/api/space/invitations", headers=owner, json={"username": "spaceguest"}
+        )
         owner_state = client.get("/api/space", headers=owner).json()
         guest_state = client.get("/api/space", headers=guest).json()
         accept = client.post("/api/space/invitations/accept", headers=guest)
@@ -64,7 +72,9 @@ async def test_invite_unknown_username_is_404(postgres_url: str, create_and_logi
 
     with TestClient(app=create_app()) as client:
         headers = await create_and_login(client, "spaceinviter@example.com")
-        response = client.post("/api/space/invitations", headers=headers, json={"username": "nobodyhere"})
+        response = client.post(
+            "/api/space/invitations", headers=headers, json={"username": "nobodyhere"}
+        )
 
     assert response.status_code == 404
 
@@ -97,7 +107,9 @@ async def test_space_holds_at_most_two_users(postgres_url: str, create_and_login
     assert response.status_code == 409
 
 
-async def test_cannot_invite_user_who_already_has_a_space(postgres_url: str, create_and_login) -> None:
+async def test_cannot_invite_user_who_already_has_a_space(
+    postgres_url: str, create_and_login
+) -> None:
     from backlog_manager_backend.app import create_app
 
     with TestClient(app=create_app()) as client:
@@ -189,7 +201,9 @@ async def test_same_steam_game_cannot_be_added_twice_to_a_space(
         owner = await create_and_login(client, "spacedupowner@example.com")
         guest = await create_and_login(client, "spacedupguest@example.com")
         space_id = _make_space(client, owner, guest, "spacedupguest")
-        client.post(f"/api/backlog/entries?space_id={space_id}", headers=owner, json=_entry_payload())
+        client.post(
+            f"/api/backlog/entries?space_id={space_id}", headers=owner, json=_entry_payload()
+        )
 
         second = client.post(
             f"/api/backlog/entries?space_id={space_id}", headers=guest, json=_entry_payload()
@@ -346,7 +360,9 @@ async def test_rating_and_playtime_are_per_user_and_partner_playtime_is_visible(
     assert guest_view["partner_playtime"] == "12.50"
 
 
-async def test_personal_entries_have_no_partner_playtime(postgres_url: str, create_and_login) -> None:
+async def test_personal_entries_have_no_partner_playtime(
+    postgres_url: str, create_and_login
+) -> None:
     from backlog_manager_backend.app import create_app
 
     with TestClient(app=create_app()) as client:
@@ -378,14 +394,20 @@ async def test_categories_and_statuses_are_shared_within_the_space(
             json={"category_name": "Co-Op Nights", "color": "#ff0000"},
         ).json()
         status = client.post(
-            f"/api/backlog/statuses?space_id={space_id}", headers=owner, json={"name": "Next Session"}
+            f"/api/backlog/statuses?space_id={space_id}",
+            headers=owner,
+            json={"name": "Next Session"},
         )
         assign = client.post(
             f"/api/backlog/entries/{entry['id']}/categories/{category['id']}?space_id={space_id}",
             headers=guest,
         )
-        guest_categories = client.get(f"/api/backlog/categories?space_id={space_id}", headers=guest).json()
-        guest_statuses = client.get(f"/api/backlog/statuses?space_id={space_id}", headers=guest).json()
+        guest_categories = client.get(
+            f"/api/backlog/categories?space_id={space_id}", headers=guest
+        ).json()
+        guest_statuses = client.get(
+            f"/api/backlog/statuses?space_id={space_id}", headers=guest
+        ).json()
         in_category = client.get(
             f"/api/backlog/categories/{category['id']}/entries?space_id={space_id}", headers=owner
         ).json()
@@ -430,25 +452,33 @@ async def test_leaving_revokes_access_and_remaining_member_keeps_entries(
         owner = await create_and_login(client, "spaceleaveowner@example.com")
         guest = await create_and_login(client, "spaceleaveguest@example.com")
         space_id = _make_space(client, owner, guest, "spaceleaveguest")
-        client.post(f"/api/backlog/entries?space_id={space_id}", headers=owner, json=_entry_payload())
+        client.post(
+            f"/api/backlog/entries?space_id={space_id}", headers=owner, json=_entry_payload()
+        )
 
         leave = client.delete("/api/space/membership", headers=guest)
         guest_access = client.get(f"/api/backlog/entries?space_id={space_id}", headers=guest)
-        owner_entries = client.get(f"/api/backlog/entries?space_id={space_id}", headers=owner).json()
+        owner_entries = client.get(
+            f"/api/backlog/entries?space_id={space_id}", headers=owner
+        ).json()
 
     assert leave.status_code == 204
     assert guest_access.status_code == 404
     assert [e["title"] for e in owner_entries] == ["Deep Rock Galactic"]
 
 
-async def test_space_is_deleted_when_last_member_leaves(postgres_url: str, create_and_login) -> None:
+async def test_space_is_deleted_when_last_member_leaves(
+    postgres_url: str, create_and_login
+) -> None:
     from backlog_manager_backend.app import create_app
 
     with TestClient(app=create_app()) as client:
         owner = await create_and_login(client, "spacegoneowner@example.com")
         guest = await create_and_login(client, "spacegoneguest@example.com")
         space_id = _make_space(client, owner, guest, "spacegoneguest")
-        client.post(f"/api/backlog/entries?space_id={space_id}", headers=owner, json=_entry_payload())
+        client.post(
+            f"/api/backlog/entries?space_id={space_id}", headers=owner, json=_entry_payload()
+        )
 
         client.delete("/api/space/membership", headers=guest)
         client.delete("/api/space/membership", headers=owner)
@@ -466,7 +496,9 @@ async def test_duplicate_check_is_scoped_to_the_space(postgres_url: str, create_
         owner = await create_and_login(client, "spacedupchkowner@example.com")
         guest = await create_and_login(client, "spacedupchkguest@example.com")
         space_id = _make_space(client, owner, guest, "spacedupchkguest")
-        client.post(f"/api/backlog/entries?space_id={space_id}", headers=owner, json=_entry_payload())
+        client.post(
+            f"/api/backlog/entries?space_id={space_id}", headers=owner, json=_entry_payload()
+        )
 
         in_space = client.get(
             f"/api/backlog/entries/duplicates?title=Deep Rock Galactic&space_id={space_id}",
@@ -480,7 +512,9 @@ async def test_duplicate_check_is_scoped_to_the_space(postgres_url: str, create_
     assert personal == []
 
 
-async def test_space_entry_cannot_lose_its_steam_app_id(postgres_url: str, create_and_login) -> None:
+async def test_space_entry_cannot_lose_its_steam_app_id(
+    postgres_url: str, create_and_login
+) -> None:
     from backlog_manager_backend.app import create_app
 
     with TestClient(app=create_app()) as client:
@@ -509,7 +543,9 @@ async def test_updating_to_a_taken_steam_app_id_is_a_conflict(
         owner = await create_and_login(client, "spaceupdupowner@example.com")
         guest = await create_and_login(client, "spaceupdupguest@example.com")
         space_id = _make_space(client, owner, guest, "spaceupdupguest")
-        client.post(f"/api/backlog/entries?space_id={space_id}", headers=owner, json=_entry_payload())
+        client.post(
+            f"/api/backlog/entries?space_id={space_id}", headers=owner, json=_entry_payload()
+        )
         other = client.post(
             f"/api/backlog/entries?space_id={space_id}",
             headers=owner,
@@ -607,7 +643,9 @@ async def test_personal_entry_is_flagged_when_the_game_is_also_in_the_space(
             headers=guest,
             json=_entry_payload(title="Celeste", steam_app_id=504230),
         )
-        client.post(f"/api/backlog/entries?space_id={space_id}", headers=owner, json=_entry_payload())
+        client.post(
+            f"/api/backlog/entries?space_id={space_id}", headers=owner, json=_entry_payload()
+        )
 
         personal = {e["title"]: e for e in client.get("/api/backlog/entries", headers=guest).json()}
         shared = client.get(f"/api/backlog/entries?space_id={space_id}", headers=guest).json()
@@ -668,7 +706,9 @@ async def test_personal_delete_all_never_touches_the_space(
         owner = await create_and_login(client, "spacekeepowner@example.com")
         guest = await create_and_login(client, "spacekeepguest@example.com")
         space_id = _make_space(client, owner, guest, "spacekeepguest")
-        client.post(f"/api/backlog/entries?space_id={space_id}", headers=owner, json=_entry_payload())
+        client.post(
+            f"/api/backlog/entries?space_id={space_id}", headers=owner, json=_entry_payload()
+        )
 
         client.delete("/api/backlog/entries", headers=owner)
         remaining = client.get(f"/api/backlog/entries?space_id={space_id}", headers=guest).json()
@@ -699,11 +739,15 @@ async def test_deleting_an_account_keeps_its_space_content_for_the_partner(
             f"/api/backlog/entries/{entry['id']}/categories/{category['id']}?space_id={space_id}",
             headers=guest,
         )
-        client.post(f"/api/backlog/statuses?space_id={space_id}", headers=guest, json={"name": "Next"})
+        client.post(
+            f"/api/backlog/statuses?space_id={space_id}", headers=guest, json={"name": "Next"}
+        )
 
         deleted = client.delete("/api/user/me", headers=guest)
         entries = client.get(f"/api/backlog/entries?space_id={space_id}", headers=owner).json()
-        categories = client.get(f"/api/backlog/categories?space_id={space_id}", headers=owner).json()
+        categories = client.get(
+            f"/api/backlog/categories?space_id={space_id}", headers=owner
+        ).json()
         statuses = client.get(f"/api/backlog/statuses?space_id={space_id}", headers=owner).json()
         state = client.get("/api/space", headers=owner).json()
 
@@ -724,7 +768,9 @@ async def test_content_survives_the_creator_leaving_and_then_being_deleted(
         owner = await create_and_login(client, "spaceleavedelowner@example.com")
         guest = await create_and_login(client, "spaceleavedelguest@example.com")
         space_id = _make_space(client, owner, guest, "spaceleavedelguest")
-        client.post(f"/api/backlog/entries?space_id={space_id}", headers=guest, json=_entry_payload())
+        client.post(
+            f"/api/backlog/entries?space_id={space_id}", headers=guest, json=_entry_payload()
+        )
 
         client.delete("/api/space/membership", headers=guest)
         client.delete("/api/user/me", headers=guest)

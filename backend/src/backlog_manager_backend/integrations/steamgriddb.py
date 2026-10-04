@@ -71,9 +71,7 @@ async def get_grids_by_steamgriddb_id(game_id: int, api_key: str) -> list[SteamG
     id instead of a Steam App ID - the only way to fetch covers for a
     title with no Steam App ID (non-Steam and fan games), resolved
     first via search_steamgriddb_games."""
-    response = await _get(
-        _GRIDS_BY_GAME_ID_URL.format(game_id=game_id), api_key, _GRID_DIMENSIONS
-    )
+    response = await _get(_GRIDS_BY_GAME_ID_URL.format(game_id=game_id), api_key, _GRID_DIMENSIONS)
     return _decode_grids(response)
 
 

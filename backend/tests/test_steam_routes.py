@@ -692,6 +692,65 @@ async def test_import_steam_library_stream_reports_progress_then_done(
     assert titles == {"Celeste", "Portal 2"}
 
 
+async def test_import_steam_library_stream_with_an_empty_confirmed_list_imports_nothing(
+    postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    _configure_steam_api_key(monkeypatch)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "hltbapi1.azurewebsites.net":
+            return httpx.Response(200, json=[])
+        return httpx.Response(
+            200,
+            json={
+                "response": {
+                    "games": [{"appid": 504230, "name": "Celeste", "playtime_forever": 510}]
+                }
+            },
+        )
+
+    _mock_steam(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "steamimportempty@example.com")
+        client.put("/api/user/me", headers=headers, json={"steam_id": "76561197960287930"})
+
+        response = client.post("/api/user/steam/import/stream", headers=headers, json=[])
+        entries = client.get("/api/backlog/entries", headers=headers).json()
+
+    done_events = [json.loads(data) for event, data in _parse_sse(response.text) if event == "done"]
+    assert done_events == [[]]
+    assert entries == []
+
+
+async def test_steam_stream_reports_an_unexpected_error_generically(
+    postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.routes import steam as steam_routes
+
+    _configure_steam_api_key(monkeypatch)
+
+    async def failing_preview(*args: object, **kwargs: object) -> list[object]:
+        raise RuntimeError("SELECT secret FROM users failed")
+
+    monkeypatch.setattr(steam_routes.steam_service, "preview_library", failing_preview)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "steamstreamfail@example.com")
+        client.put("/api/user/me", headers=headers, json={"steam_id": "76561197960287930"})
+
+        response = client.post("/api/user/steam/library/preview/stream", headers=headers)
+
+    assert response.status_code == 200
+    assert _parse_sse(response.text) == [
+        ("error", "Steam operation failed - check the server logs for details")
+    ]
+    assert "SELECT" not in response.text
+
+
 async def test_sync_steam_playtimes_stream_reports_progress_only_for_auto_import(
     postgres_url: str, create_and_login, monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -27,7 +27,11 @@ export function computeFieldDiffs(
     ["platform", existing.platform.join(", "), proposed.platform.join(", ")],
     ["status", existing.status, proposed.status],
     ["owned", existing.owned ? "Yes" : "No", proposed.owned ? "Yes" : "No"],
-    ["playtime", formatNumber(existing.playtime), formatNumber(proposed.playtime)],
+    [
+      "playtime",
+      formatNumber(existing.playtime),
+      formatNumber(proposed.playtime),
+    ],
     [
       "review_stars",
       formatNumber(existing.reviewStars),
@@ -37,7 +41,9 @@ export function computeFieldDiffs(
   ];
 
   return pairs
-    .filter(([, existingValue, proposedValue]) => existingValue !== proposedValue)
+    .filter(
+      ([, existingValue, proposedValue]) => existingValue !== proposedValue,
+    )
     .map(([field, existingValue, proposedValue]) => ({
       field,
       existing: existingValue,

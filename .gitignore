@@ -1,5 +1,3 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
 node_modules
 .pnp
@@ -22,9 +20,7 @@ next-env.d.ts
 build
 dist
 
-# tool caches (Node/JS side - node_modules, .next, and the Python side
-# below already cover most of the rest; these are the ones tools write
-# outside those directories)
+# tool caches
 .cache/
 .eslintcache
 .stylelintcache
@@ -42,7 +38,6 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # local env files
-# do not commit any .env files to git, except for the .env.example file. https://create.t3.gg/en/usage/env-variables#using-environment-variables
 .env
 .env*.local
 .env.prod
@@ -58,20 +53,13 @@ yarn-error.log*
 /compose/.env
 .vscode/settings.json
 
-# tauri (desktop app) build artifacts, tracked in the source folder itself
-# but not fully covered by src-tauri/.gitignore on branches that predate it
-/src-tauri/target/
-/src-tauri/gen/schemas
-/src-tauri/resources/
-
 # claude
 .claude
 
-# personal reference data, not meant for git history
+# personal reference data
 /docs/MYY Master List - Full.csv
 
-# python (backend/ has its own .gitignore too; these are unanchored so they
-# also catch stray venvs/caches anywhere else in the repo)
+# python
 __pycache__/
 *.py[cod]
 .venv/

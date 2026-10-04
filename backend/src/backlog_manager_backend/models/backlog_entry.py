@@ -68,9 +68,5 @@ class BacklogEntry(Base):
     review: Mapped[str | None] = mapped_column("Review")
     note: Mapped[str | None] = mapped_column("Note")
     completed_at: Mapped[datetime | None] = mapped_column("CompletedAt")
-    created_at: Mapped[datetime] = mapped_column(
-        "CreatedAt", server_default=TIMESTAMP_DEFAULT
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        "UpdatedAt", server_default=TIMESTAMP_DEFAULT
-    )
+    created_at: Mapped[datetime] = mapped_column("CreatedAt", server_default=TIMESTAMP_DEFAULT)
+    updated_at: Mapped[datetime] = mapped_column("UpdatedAt", server_default=TIMESTAMP_DEFAULT)

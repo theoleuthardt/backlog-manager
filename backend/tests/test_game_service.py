@@ -230,7 +230,12 @@ async def test_search_skips_genres_platforms_and_publisher_when_not_requested(
     ) -> list[IGDBGameData]:
         return [
             IGDBGameData(
-                id=1, name="Celeste", cover=None, genres=[10], platforms=[6], involved_companies=[9001]
+                id=1,
+                name="Celeste",
+                cover=None,
+                genres=[10],
+                platforms=[6],
+                involved_companies=[9001],
             )
         ]
 
@@ -685,9 +690,7 @@ async def test_search_excludes_dlc_hits_that_crowd_out_the_base_game(
             for game_id in range(1, raw_hit_count)
         ]
         games.append(
-            IGDBGameData(
-                id=raw_hit_count, name="SnowRunner", game_type=0, genres=[], platforms=[]
-            )
+            IGDBGameData(id=raw_hit_count, name="SnowRunner", game_type=0, genres=[], platforms=[])
         )
         return games
 
@@ -695,8 +698,7 @@ async def test_search_excludes_dlc_hits_that_crowd_out_the_base_game(
         game_ids: list[int], client_id: str, access_token: str
     ) -> list[IGDBGameTimeToBeat]:
         return [
-            IGDBGameTimeToBeat(id=game_id, game_id=game_id, normally=3600)
-            for game_id in game_ids
+            IGDBGameTimeToBeat(id=game_id, game_id=game_id, normally=3600) for game_id in game_ids
         ]
 
     async def fake_get_valid_token(client_id: str, client_secret: str) -> str:
@@ -1036,9 +1038,7 @@ async def test_get_game_covers_returns_urls_sorted_by_score(
             SteamGridDBGrid(id=2, url="https://example.com/high.png", thumb="", score=90),
         ]
 
-    monkeypatch.setattr(
-        game_service, "get_grids_by_steam_app_id", fake_get_grids_by_steam_app_id
-    )
+    monkeypatch.setattr(game_service, "get_grids_by_steam_app_id", fake_get_grids_by_steam_app_id)
 
     covers = await game_service.get_game_covers(220, "key")
 
@@ -1057,9 +1057,7 @@ async def test_get_game_covers_caches_across_calls(
         call_count += 1
         return [SteamGridDBGrid(id=1, url="https://example.com/cover.png", thumb="")]
 
-    monkeypatch.setattr(
-        game_service, "get_grids_by_steam_app_id", fake_get_grids_by_steam_app_id
-    )
+    monkeypatch.setattr(game_service, "get_grids_by_steam_app_id", fake_get_grids_by_steam_app_id)
 
     await game_service.get_game_covers(220, "key")
     await game_service.get_game_covers(220, "key")
@@ -1077,9 +1075,7 @@ async def test_get_game_covers_by_steamgriddb_id_raises_without_api_key(
 async def test_get_game_covers_by_steamgriddb_id_returns_urls_sorted_by_score(
     game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    async def fake_get_grids_by_steamgriddb_id(
-        game_id: int, api_key: str
-    ) -> list[SteamGridDBGrid]:
+    async def fake_get_grids_by_steamgriddb_id(game_id: int, api_key: str) -> list[SteamGridDBGrid]:
         return [
             SteamGridDBGrid(id=1, url="https://example.com/low.png", thumb="", score=10),
             SteamGridDBGrid(id=2, url="https://example.com/high.png", thumb="", score=90),
@@ -1131,9 +1127,7 @@ async def test_get_game_covers_still_requires_a_key_once_the_cache_is_warm(
     ) -> list[SteamGridDBGrid]:
         return [SteamGridDBGrid(id=1, url="https://example.com/cover.png", thumb="")]
 
-    monkeypatch.setattr(
-        game_service, "get_grids_by_steam_app_id", fake_get_grids_by_steam_app_id
-    )
+    monkeypatch.setattr(game_service, "get_grids_by_steam_app_id", fake_get_grids_by_steam_app_id)
 
     await game_service.get_game_covers(220, "key")
 
@@ -1149,11 +1143,13 @@ async def test_get_game_covers_evicts_oldest_entry_once_cache_is_full(
     async def fake_get_grids_by_steam_app_id(
         steam_app_id: int, api_key: str
     ) -> list[SteamGridDBGrid]:
-        return [SteamGridDBGrid(id=steam_app_id, url=f"https://example.com/{steam_app_id}.png", thumb="")]
+        return [
+            SteamGridDBGrid(
+                id=steam_app_id, url=f"https://example.com/{steam_app_id}.png", thumb=""
+            )
+        ]
 
-    monkeypatch.setattr(
-        game_service, "get_grids_by_steam_app_id", fake_get_grids_by_steam_app_id
-    )
+    monkeypatch.setattr(game_service, "get_grids_by_steam_app_id", fake_get_grids_by_steam_app_id)
 
     await game_service.get_game_covers(1, "key")
     await game_service.get_game_covers(2, "key")
@@ -1217,9 +1213,7 @@ async def test_search_prefers_steamgriddb_cover_over_igdb(
         game_service, "get_games_time_to_beat_on_igdb", fake_get_games_time_to_beat_on_igdb
     )
     monkeypatch.setattr(game_service, "search_steam_store_by_title", fake_search_store)
-    monkeypatch.setattr(
-        game_service, "get_grids_by_steam_app_id", fake_get_grids_by_steam_app_id
-    )
+    monkeypatch.setattr(game_service, "get_grids_by_steam_app_id", fake_get_grids_by_steam_app_id)
     monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
 
     results = await game_service.search("Celeste", "cid", "secret", "key")
@@ -1280,9 +1274,7 @@ async def test_search_falls_back_to_igdb_cover_when_steamgriddb_has_none(
         game_service, "get_games_time_to_beat_on_igdb", fake_get_games_time_to_beat_on_igdb
     )
     monkeypatch.setattr(game_service, "search_steam_store_by_title", fake_search_store)
-    monkeypatch.setattr(
-        game_service, "get_grids_by_steam_app_id", fake_get_grids_by_steam_app_id
-    )
+    monkeypatch.setattr(game_service, "get_grids_by_steam_app_id", fake_get_grids_by_steam_app_id)
     monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
 
     results = await game_service.search("Celeste", "cid", "secret", "key")

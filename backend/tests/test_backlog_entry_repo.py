@@ -132,7 +132,7 @@ async def test_create_backlog_entry_with_playtime(session: AsyncSession) -> None
 async def test_create_backlog_entry_rejects_a_field_exceeding_its_column_length(
     session: AsyncSession,
 ) -> None:
-    """"Genre" is VARCHAR(100) - a value that overflows it must degrade
+    """ "Genre" is VARCHAR(100) - a value that overflows it must degrade
     to a ValidationError (as CSV import rows, sourced from an untrusted
     spreadsheet, can easily produce) rather than an uncaught DataError,
     and the session must stay usable for the next row afterward rather
@@ -164,9 +164,7 @@ async def test_update_backlog_entry_playtime(session: AsyncSession) -> None:
 
     updated = await backlog_entry_repo.update_backlog_entry(
         session,
-        UpdateBacklogEntryParams(
-            backlog_entry_id=entry.backlog_entry_id, playtime=Decimal(30)
-        ),
+        UpdateBacklogEntryParams(backlog_entry_id=entry.backlog_entry_id, playtime=Decimal(30)),
     )
 
     assert updated.playtime == Decimal(30)
@@ -203,7 +201,8 @@ async def test_update_backlog_entry_to_completed_sets_completed_at(
     entry = await _make_entry(session, user.id, status="In Progress")
 
     updated = await backlog_entry_repo.update_backlog_entry(
-        session, UpdateBacklogEntryParams(backlog_entry_id=entry.backlog_entry_id, status="Completed")
+        session,
+        UpdateBacklogEntryParams(backlog_entry_id=entry.backlog_entry_id, status="Completed"),
     )
 
     assert updated.status == "Completed"
@@ -240,7 +239,6 @@ async def test_update_backlog_entry_can_clear_nullable_field_with_explicit_none(
 
     assert cleared.review_stars is None
     assert cleared.note is None
-    # fields not mentioned in the update (left at UNSET) stay untouched
     assert cleared.title == "Elden Ring"
 
 
@@ -325,14 +323,12 @@ async def test_delete_backlog_entries_by_user(session: AsyncSession) -> None:
     assert deleted == 1
     assert await backlog_entry_repo.get_backlog_entries_by_user(session, user.id) == []
     assert [
-        e.backlog_entry_id for e in await backlog_entry_repo.get_backlog_entries_by_user(
-            session, other.id
-        )
+        e.backlog_entry_id
+        for e in await backlog_entry_repo.get_backlog_entries_by_user(session, other.id)
     ] == [other_entry.backlog_entry_id]
-    # the category association cascaded away with its entry
-    assert await category_repo.get_categories_for_backlog_entry(
-        session, entry.backlog_entry_id
-    ) == []
+    assert (
+        await category_repo.get_categories_for_backlog_entry(session, entry.backlog_entry_id) == []
+    )
 
 
 async def test_get_backlog_entries_for_category(session: AsyncSession) -> None:
@@ -355,6 +351,7 @@ async def test_get_backlog_entries_for_category(session: AsyncSession) -> None:
 
     assert [e.backlog_entry_id for e in entries] == [entry.backlog_entry_id]
 
+
 async def test_get_backlog_entry_duplicates_matches_title_case_insensitive(
     session: AsyncSession,
 ) -> None:
@@ -367,6 +364,7 @@ async def test_get_backlog_entry_duplicates_matches_title_case_insensitive(
 
     assert [d.backlog_entry_id for d in duplicates] != []
 
+
 async def test_get_backlog_entry_duplicates_matches_title_with_surrounding_whitespace(
     session: AsyncSession,
 ) -> None:
@@ -378,6 +376,7 @@ async def test_get_backlog_entry_duplicates_matches_title_with_surrounding_white
     )
 
     assert [d.backlog_entry_id for d in duplicates] == [entry.backlog_entry_id]
+
 
 async def test_get_backlog_entry_duplicates_matches_steam_app_id(
     session: AsyncSession,
@@ -393,6 +392,7 @@ async def test_get_backlog_entry_duplicates_matches_steam_app_id(
 
     assert [d.backlog_entry_id for d in duplicates] == [entry.backlog_entry_id]
 
+
 async def test_get_backlog_entry_duplicates_ignores_other_users(
     session: AsyncSession,
 ) -> None:
@@ -405,6 +405,7 @@ async def test_get_backlog_entry_duplicates_ignores_other_users(
     )
 
     assert duplicates == []
+
 
 async def test_get_backlog_entry_duplicates_no_match_returns_empty(
     session: AsyncSession,

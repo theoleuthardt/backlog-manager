@@ -42,3 +42,20 @@ preferable to leaving password guessing per account unbounded.
   PYSEC-2026-1325 (`ecdsa`, pulled in by `python-jose`, no fixed release):
   tokens are signed with HS256, so the ECDSA code path is never reached.
   Revisit if `python-jose` is replaced or the signing algorithm changes.
+  `task frontend:audit` covers production dependencies only (currently
+  clean), and CI runs the same `npm audit --omit=dev`, so a new advisory
+  against anything that ships fails the pull request.
+  `npm audit` on the full tree still reports `braces` (GHSA-vfj7-8cjw-p6xm,
+  reached through `eslint-config-next` -> `fast-glob` -> `micromatch`, ESLint
+  tooling that never ships): every released version is affected and no
+  patched release exists, so nothing can be upgraded. Because that finding
+  cannot be acted on, `frontend/.npmrc` sets `audit=false` to keep it from
+  showing up as noise after every `npm install`; run `npm audit` explicitly to
+  see it, and recheck when `braces` publishes a fix.
+- Node: the frontend runs on Node 22 (22.12+), pinned in `.nvmrc`, the
+  Containerfile and the workflows. Node 20 reached end of life in April 2026,
+  and other versions such as 23.x fail with cryptic webpack errors, so
+  `engine-strict` makes `npm install` reject them and `next.config.js` aborts
+  early with a clear message. Moving to a newer LTS means updating those pins
+  together with `SUPPORTED_NODE_MAJORS` and `engines`, and checking the
+  build.

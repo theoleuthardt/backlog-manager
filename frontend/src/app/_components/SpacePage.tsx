@@ -180,8 +180,8 @@ function SpaceControls({ space }: { space: SpaceData }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Leave the shared space?</AlertDialogTitle>
             <AlertDialogDescription>
-              You lose access to its entries. They stay with your partner;
-              once nobody is left in the space they are deleted.
+              You lose access to its entries. They stay with your partner; once
+              nobody is left in the space they are deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -210,14 +210,14 @@ function InvitationCard({ space }: { space: SpaceData }) {
   };
 
   return (
-    <div className="surface-glow bg-surface mx-auto mt-12 flex max-w-lg flex-col items-center gap-4 rounded-xl border border-border p-8 text-center">
+    <div className="surface-glow bg-surface border-border mx-auto mt-12 flex max-w-lg flex-col items-center gap-4 rounded-xl border p-8 text-center">
       <Users className="h-10 w-10" />
       <h1 className="text-xl font-bold">
         {inviter?.username ?? "Someone"} invited you to a shared space
       </h1>
-      <p className="text-sm text-foreground/70">
-        A shared backlog for games you play together. Your ratings and
-        playtime stay your own.
+      <p className="text-foreground/70 text-sm">
+        A shared backlog for games you play together. Your ratings and playtime
+        stay your own.
       </p>
       <div className="flex gap-3">
         <Button
@@ -232,7 +232,10 @@ function InvitationCard({ space }: { space: SpaceData }) {
           variant="outline"
           disabled={accept.isPending || decline.isPending}
           onClick={() =>
-            void run(() => decline.mutateAsync(), "Failed to decline invitation")
+            void run(
+              () => decline.mutateAsync(),
+              "Failed to decline invitation",
+            )
           }
         >
           Decline
@@ -244,13 +247,13 @@ function InvitationCard({ space }: { space: SpaceData }) {
 
 function NoSpaceCard() {
   return (
-    <div className="surface-glow bg-surface mx-auto mt-12 flex max-w-lg flex-col items-center gap-4 rounded-xl border border-border p-8 text-center">
+    <div className="surface-glow bg-surface border-border mx-auto mt-12 flex max-w-lg flex-col items-center gap-4 rounded-xl border p-8 text-center">
       <Users className="h-10 w-10" />
       <h1 className="text-xl font-bold">Start a shared space</h1>
-      <p className="text-sm text-foreground/70">
-        Invite a friend by username to keep a co-op backlog together. Status
-        and categories are shared, ratings and playtime stay your own, and
-        only Steam games can be added.
+      <p className="text-foreground/70 text-sm">
+        Invite a friend by username to keep a co-op backlog together. Status and
+        categories are shared, ratings and playtime stay your own, and only
+        Steam games can be added.
       </p>
       <InviteForm />
     </div>

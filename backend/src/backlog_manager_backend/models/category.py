@@ -25,9 +25,5 @@ class Category(Base):
     name: Mapped[str] = mapped_column("CategoryName")
     color: Mapped[str] = mapped_column("Color")
     description: Mapped[str | None] = mapped_column("Description")
-    created_at: Mapped[datetime] = mapped_column(
-        "CreatedAt", server_default=TIMESTAMP_DEFAULT
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        "UpdatedAt", server_default=TIMESTAMP_DEFAULT
-    )
+    created_at: Mapped[datetime] = mapped_column("CreatedAt", server_default=TIMESTAMP_DEFAULT)
+    updated_at: Mapped[datetime] = mapped_column("UpdatedAt", server_default=TIMESTAMP_DEFAULT)

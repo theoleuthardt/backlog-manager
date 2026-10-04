@@ -14,9 +14,7 @@ class CategoryBacklogEntry(Base):
     category_id: Mapped[int] = mapped_column(
         "CategoryID",
         BigInteger,
-        ForeignKey(
-            "blm-system.Categories.CategoryID", ondelete="CASCADE", onupdate="CASCADE"
-        ),
+        ForeignKey("blm-system.Categories.CategoryID", ondelete="CASCADE", onupdate="CASCADE"),
         primary_key=True,
     )
     backlog_entry_id: Mapped[int] = mapped_column(
@@ -29,9 +27,5 @@ class CategoryBacklogEntry(Base):
         ),
         primary_key=True,
     )
-    created_at: Mapped[datetime] = mapped_column(
-        "CreatedAt", server_default=TIMESTAMP_DEFAULT
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        "UpdatedAt", server_default=TIMESTAMP_DEFAULT
-    )
+    created_at: Mapped[datetime] = mapped_column("CreatedAt", server_default=TIMESTAMP_DEFAULT)
+    updated_at: Mapped[datetime] = mapped_column("UpdatedAt", server_default=TIMESTAMP_DEFAULT)

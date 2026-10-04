@@ -63,15 +63,9 @@ import type { GameSearchResult } from "~/lib/api/games";
 import { MAX_REVIEW_STARS } from "~/lib/reviewStars";
 import { statusColor } from "~/lib/statusStyle";
 import { youtubeEmbedUrl } from "~/lib/trailer";
+import { splitList } from "~/lib/splitList";
 
 const INTEREST_SEGMENTS = 10;
-
-function splitList(value: string): string[] {
-  return value
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
 
 const ChipList = ({ items }: { items: string[] }) =>
   items.length > 0 ? (
@@ -293,7 +287,6 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
         setTimeout(() => setUpdateStatus("idle"), 2000);
       } else {
         toast.info("No changes to update");
-        setIsLoading(false);
       }
     } catch (error) {
       console.error("Error updating backlog entry:", error);

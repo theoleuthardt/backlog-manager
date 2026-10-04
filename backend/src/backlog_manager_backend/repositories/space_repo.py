@@ -64,9 +64,7 @@ async def create_space(session: AsyncSession, owner_id: int) -> int:
 async def lock_space(session: AsyncSession, space_id: int) -> None:
     """Row-locks the space until the transaction ends, serializing
     concurrent invitations so the member limit can't be raced past."""
-    await session.execute(
-        select(SpaceModel.id).where(SpaceModel.id == space_id).with_for_update()
-    )
+    await session.execute(select(SpaceModel.id).where(SpaceModel.id == space_id).with_for_update())
 
 
 async def add_invited_member(session: AsyncSession, space_id: int, user_id: int) -> None:

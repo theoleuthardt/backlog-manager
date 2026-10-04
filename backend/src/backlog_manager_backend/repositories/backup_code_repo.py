@@ -12,9 +12,7 @@ async def create_backup_codes(session: AsyncSession, user_id: int, code_hashes: 
 
 
 async def delete_all_backup_codes(session: AsyncSession, user_id: int) -> None:
-    result = await session.execute(
-        select(UserBackupCode).where(UserBackupCode.user_id == user_id)
-    )
+    result = await session.execute(select(UserBackupCode).where(UserBackupCode.user_id == user_id))
     for row in result.scalars().all():
         await session.delete(row)
     await session.commit()

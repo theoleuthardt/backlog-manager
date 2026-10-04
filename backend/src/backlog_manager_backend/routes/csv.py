@@ -1,19 +1,14 @@
 import asyncio
-import contextlib
 from collections.abc import AsyncIterator, Awaitable, Callable
 
-import httpx
 import msgspec
 import structlog
-from cryptography.fernet import InvalidToken
 from litestar import Router, post
 from litestar.datastructures import CacheControlHeader
 from litestar.di import NamedDependency, Provide
 from litestar.response import ServerSentEvent, ServerSentEventMessage
 
 from backlog_manager_backend.auth.dependencies import BEARER_SECURITY_REQUIREMENT, get_current_user
-from backlog_manager_backend.auth.encryption import decrypt
-from backlog_manager_backend.config import settings
 from backlog_manager_backend.csv.parse_csv import (
     ColumnConfig,
     extract_csv_headers,
@@ -28,8 +23,7 @@ from backlog_manager_backend.csv.preview import (
     submit_csv_entries,
 )
 from backlog_manager_backend.db import async_session
-from backlog_manager_backend.errors import ConflictError, NotFoundError, ValidationError
-from backlog_manager_backend.integrations.types import IGDBCredentials
+from backlog_manager_backend.routes import sse
 from backlog_manager_backend.schemas.backlog_entry import BacklogEntryResponse
 from backlog_manager_backend.schemas.csv import (
     CsvHeadersRequest,
@@ -38,50 +32,18 @@ from backlog_manager_backend.schemas.csv import (
 )
 from backlog_manager_backend.schemas.user import User
 from backlog_manager_backend.services import backup_service
+from backlog_manager_backend.services.credentials import (
+    resolve_igdb_credentials_or_none,
+    resolve_steamgriddb_api_key_or_none,
+)
 
 logger = structlog.get_logger()
 
 _NO_STORE = CacheControlHeader(no_store=True)
-_SSE_DONE = "done"
-_SSE_ERROR = "error"
-_SSE_PROGRESS = "progress"
 _EXTERNAL_SERVICE_UNAVAILABLE = "An external game database is currently unavailable"
 _IMPORT_FAILED = "Import failed - check the server logs for details"
 
 _user_import_locks: dict[int, asyncio.Lock] = {}
-
-
-def _resolve_igdb_credentials(user: User) -> tuple[str, str] | None:
-    """Best-effort IGDB credential resolution for CSV import's genre/
-    cover enrichment - unlike routes/games.py::_resolve_igdb_credentials
-    (which this mirrors), missing/broken credentials resolve to None
-    rather than raising: a CSV preview should still work with
-    HowLongToBeat-only matching when IGDB isn't configured, not fail
-    outright."""
-    if user.igdb_credentials_encrypted and settings.steam_api_key_encryption_key:
-        try:
-            decrypted = decrypt(
-                user.igdb_credentials_encrypted, settings.steam_api_key_encryption_key
-            )
-            credentials = msgspec.json.decode(decrypted, type=IGDBCredentials)
-        except (InvalidToken, ValueError, msgspec.DecodeError):
-            return None
-        return credentials.client_id, credentials.client_secret
-    if settings.igdb_client_id and settings.igdb_client_secret:
-        return settings.igdb_client_id, settings.igdb_client_secret
-    return None
-
-
-def _resolve_steamgriddb_api_key(user: User) -> str | None:
-    """Mirrors routes/games.py::_resolve_steamgriddb_api_key, also
-    resolving to None (rather than raising) on a broken key so it
-    degrades the same way a missing key already does."""
-    if user.steamgriddb_api_key_encrypted and settings.steam_api_key_encryption_key:
-        try:
-            return decrypt(user.steamgriddb_api_key_encrypted, settings.steam_api_key_encryption_key)
-        except (InvalidToken, ValueError):
-            return None
-    return settings.steamgriddb_api_key
 
 
 def _get_user_import_lock(user_id: int) -> asyncio.Lock:
@@ -110,56 +72,17 @@ def _column_config(data: MatchCsvRequest) -> ColumnConfig:
     )
 
 
-async def _stream_csv_messages[R](
+def _stream_csv_messages[R](
     run: Callable[[ProgressCallback], Awaitable[R]],
     encode_result: Callable[[R], str],
 ) -> AsyncIterator[ServerSentEventMessage]:
-    """SSE bridge for the CSV preview/submit endpoints - mirrors
-    routes/steam.py's `_stream_steam_messages` (kept as a separate copy
-    rather than a shared import to avoid touching the Steam import
-    flow's own SSE machinery)."""
-    queue: asyncio.Queue[ServerSentEventMessage | None] = asyncio.Queue()
-
-    async def on_progress(processed: int, total: int) -> None:
-        await queue.put(
-            ServerSentEventMessage(
-                event=_SSE_PROGRESS,
-                data=msgspec.json.encode({"processed": processed, "total": total}).decode(),
-            )
-        )
-
-    async def run_operation() -> None:
-        """Any failure is reported as an SSE error event rather than
-        left to crash the stream - hence the broad except. Only known
-        domain errors (raised with an already-safe, user-facing
-        message) are forwarded as-is; anything else - an unexpected
-        internal or driver exception - is logged server-side and
-        reported generically, since its str() can carry raw SQL/driver
-        detail that must not reach the client."""
-        try:
-            result = await run(on_progress)
-            await queue.put(ServerSentEventMessage(event=_SSE_DONE, data=encode_result(result)))
-        except (ConflictError, NotFoundError, ValidationError) as error:
-            await queue.put(ServerSentEventMessage(event=_SSE_ERROR, data=str(error)))
-        except httpx.HTTPError:
-            await queue.put(
-                ServerSentEventMessage(event=_SSE_ERROR, data=_EXTERNAL_SERVICE_UNAVAILABLE)
-            )
-        except Exception as error:  # noqa: BLE001
-            logger.error("CSV import stream failed", error=str(error))
-            await queue.put(ServerSentEventMessage(event=_SSE_ERROR, data=_IMPORT_FAILED))
-        finally:
-            await queue.put(None)
-
-    task = asyncio.create_task(run_operation())
-    try:
-        while (message := await queue.get()) is not None:
-            yield message
-    finally:
-        if not task.done():
-            task.cancel()
-        with contextlib.suppress(asyncio.CancelledError):
-            await task
+    return sse.stream_operation(
+        run,
+        encode_result,
+        service_unavailable_message=_EXTERNAL_SERVICE_UNAVAILABLE,
+        failure_message=_IMPORT_FAILED,
+        log_event="csv_import_stream_failed",
+    )
 
 
 @post("/api/csv/headers", status_code=200)
@@ -172,7 +95,9 @@ async def get_csv_headers(
 
 
 @post("/api/csv/preview/stream", status_code=200, media_type="text/event-stream")
-async def preview_csv_stream(data: MatchCsvRequest, current_user: NamedDependency[User]) -> ServerSentEvent:
+async def preview_csv_stream(
+    data: MatchCsvRequest, current_user: NamedDependency[User]
+) -> ServerSentEvent:
     """SSE preview: parses+matches every row against HowLongToBeat and
     the user's existing backlog without writing anything - mirrors
     routes/steam.py's preview_steam_library_stream. The user confirms
@@ -181,8 +106,8 @@ async def preview_csv_stream(data: MatchCsvRequest, current_user: NamedDependenc
     records = parse_csv_content(data.content)
     headers = extract_csv_headers(data.content)
     config = _column_config(data)
-    igdb_credentials = _resolve_igdb_credentials(current_user)
-    steamgriddb_api_key = _resolve_steamgriddb_api_key(current_user)
+    igdb_credentials = resolve_igdb_credentials_or_none(current_user)
+    steamgriddb_api_key = resolve_steamgriddb_api_key_or_none(current_user)
     lock = _get_user_import_lock(current_user.id)
 
     async def run(on_progress: ProgressCallback) -> list[CsvPreviewItem]:

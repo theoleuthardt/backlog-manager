@@ -14,12 +14,8 @@ class Space(Base):
     __table_args__: ClassVar[dict[str, str]] = {"schema": "blm-system"}
 
     id: Mapped[int] = mapped_column("SpaceID", BigInteger, primary_key=True)
-    created_at: Mapped[datetime] = mapped_column(
-        "CreatedAt", server_default=TIMESTAMP_DEFAULT
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        "UpdatedAt", server_default=TIMESTAMP_DEFAULT
-    )
+    created_at: Mapped[datetime] = mapped_column("CreatedAt", server_default=TIMESTAMP_DEFAULT)
+    updated_at: Mapped[datetime] = mapped_column("UpdatedAt", server_default=TIMESTAMP_DEFAULT)
 
 
 class SpaceMember(Base):
@@ -29,9 +25,7 @@ class SpaceMember(Base):
 
     __tablename__ = "SpaceMembers"
     __table_args__ = (
-        CheckConstraint(
-            "\"Status\" IN ('invited', 'active')", name="SpaceMembers_Status_check"
-        ),
+        CheckConstraint("\"Status\" IN ('invited', 'active')", name="SpaceMembers_Status_check"),
         {"schema": "blm-system"},
     )
 
@@ -49,9 +43,5 @@ class SpaceMember(Base):
         unique=True,
     )
     status: Mapped[str] = mapped_column("Status")
-    created_at: Mapped[datetime] = mapped_column(
-        "CreatedAt", server_default=TIMESTAMP_DEFAULT
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        "UpdatedAt", server_default=TIMESTAMP_DEFAULT
-    )
+    created_at: Mapped[datetime] = mapped_column("CreatedAt", server_default=TIMESTAMP_DEFAULT)
+    updated_at: Mapped[datetime] = mapped_column("UpdatedAt", server_default=TIMESTAMP_DEFAULT)

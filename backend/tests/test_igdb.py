@@ -237,7 +237,9 @@ async def test_get_genres_on_igdb_batches_ids_into_one_request(
         body = request.content.decode()
         assert "id = (10,11)" in body
         assert "limit" in body
-        return httpx.Response(200, json=[{"id": 10, "name": "Adventure"}, {"id": 11, "name": "RPG"}])
+        return httpx.Response(
+            200, json=[{"id": 10, "name": "Adventure"}, {"id": 11, "name": "RPG"}]
+        )
 
     _mock_client(handler, monkeypatch)
 

@@ -24,7 +24,10 @@ interface AuthContextType {
   /** True until the initial "is there a valid stored token" check resolves. */
   isLoading: boolean;
   login: (email: string, password: string) => Promise<LoginOutcome>;
-  completeTwoFactorLogin: (challengeToken: string, code: string) => Promise<void>;
+  completeTwoFactorLogin: (
+    challengeToken: string,
+    code: string,
+  ) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -134,7 +137,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, login, completeTwoFactorLogin, logout, refreshUser }}
+      value={{
+        user,
+        isLoading,
+        login,
+        completeTwoFactorLogin,
+        logout,
+        refreshUser,
+      }}
     >
       {children}
     </AuthContext.Provider>

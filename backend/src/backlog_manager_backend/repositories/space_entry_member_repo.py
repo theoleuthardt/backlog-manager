@@ -96,11 +96,7 @@ async def upsert_member_data(
 ) -> None:
     """Same UNSET-vs-None semantics as UpdateBacklogEntryParams: an
     omitted field is left unchanged, an explicit None clears it."""
-    if (
-        playtime is msgspec.UNSET
-        and review_stars is msgspec.UNSET
-        and review is msgspec.UNSET
-    ):
+    if playtime is msgspec.UNSET and review_stars is msgspec.UNSET and review is msgspec.UNSET:
         return
     row = await session.get(SpaceEntryMemberData, (backlog_entry_id, user_id))
     if row is None:

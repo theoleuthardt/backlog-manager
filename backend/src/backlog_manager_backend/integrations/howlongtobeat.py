@@ -31,23 +31,3 @@ async def search_game_on_hltb(search_term: str) -> list[HltbResultData]:
         return msgspec.json.decode(response.content, type=list[HltbResultData])
     except msgspec.DecodeError:
         return []
-
-
-async def get_game_by_id_on_hltb(hltb_id: int) -> HltbResultData:
-    """Raises on failure (timeout, non-2xx) since callers rely on the
-    exception, matching the existing TS behavior of re-throwing."""
-    try:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(8.0)) as client:
-            response = await client.get(f"{_BASE_URL}/{hltb_id}")
-    except httpx.HTTPError as error:
-        logger.error("GetGameByID error", error=str(error))
-        raise
-
-    if response.status_code >= 400:
-        raise httpx.HTTPStatusError(
-            f"HowLongToBeat API error: {response.status_code}",
-            request=response.request,
-            response=response,
-        )
-
-    return msgspec.json.decode(response.content, type=HltbResultData)
