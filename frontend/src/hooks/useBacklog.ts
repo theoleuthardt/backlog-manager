@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useBacklogSpaceId } from "~/app/context/BacklogScopeContext";
 import * as backlogApi from "~/lib/api/backlog";
 import {
   getSteamAchievements,
@@ -17,24 +18,47 @@ const CUSTOM_STATUSES_KEY = ["custom-statuses"] as const;
 const CATEGORIES_KEY = ["categories"] as const;
 const ENTRY_CATEGORIES_KEY = ["entry-categories"] as const;
 
+export const BACKLOG_QUERY_KEYS = [
+  ENTRIES_KEY,
+  CATEGORIES_KEY,
+  ENTRY_CATEGORIES_KEY,
+  CUSTOM_STATUSES_KEY,
+] as const;
+
+/**
+ * Cache keys carry the backlog scope (a shared space id, or "personal")
+ * as their last element, so the personal backlog and a space never share
+ * cached data. Invalidating by the bare key prefix still refreshes both,
+ * which is what a Steam sync wants since it touches both.
+ */
+function scopedKey<K extends readonly string[]>(
+  key: K,
+  spaceId: number | undefined,
+) {
+  return [...key, spaceId ?? "personal"] as const;
+}
+
 export function useBacklogEntries() {
+  const spaceId = useBacklogSpaceId();
   return useQuery({
-    queryKey: ENTRIES_KEY,
-    queryFn: backlogApi.getEntries,
+    queryKey: scopedKey(ENTRIES_KEY, spaceId),
+    queryFn: () => backlogApi.getEntries(spaceId),
   });
 }
 
 export function useCustomStatuses() {
+  const spaceId = useBacklogSpaceId();
   return useQuery({
-    queryKey: CUSTOM_STATUSES_KEY,
-    queryFn: backlogApi.getCustomStatuses,
+    queryKey: scopedKey(CUSTOM_STATUSES_KEY, spaceId),
+    queryFn: () => backlogApi.getCustomStatuses(spaceId),
   });
 }
 
 export function useCreateCustomStatus() {
   const queryClient = useQueryClient();
+  const spaceId = useBacklogSpaceId();
   return useMutation({
-    mutationFn: backlogApi.createCustomStatus,
+    mutationFn: (name: string) => backlogApi.createCustomStatus(name, spaceId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: CUSTOM_STATUSES_KEY });
     },
@@ -43,18 +67,28 @@ export function useCreateCustomStatus() {
 
 export function useDeleteCustomStatus() {
   const queryClient = useQueryClient();
+  const spaceId = useBacklogSpaceId();
   return useMutation({
-    mutationFn: backlogApi.deleteCustomStatus,
+    mutationFn: (statusId: number) =>
+      backlogApi.deleteCustomStatus(statusId, spaceId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: CUSTOM_STATUSES_KEY });
     },
   });
 }
 
-export function useCreateBacklogEntry() {
+/**
+ * `targetSpaceId` lets the creation tool pick where the entry goes
+ * independently of the scope the page is rendered in; left undefined it
+ * follows the surrounding scope.
+ */
+export function useCreateBacklogEntry(targetSpaceId?: number) {
   const queryClient = useQueryClient();
+  const scopeSpaceId = useBacklogSpaceId();
+  const spaceId = targetSpaceId ?? scopeSpaceId;
   return useMutation({
-    mutationFn: backlogApi.createEntry,
+    mutationFn: (input: backlogApi.CreateBacklogEntryInput) =>
+      backlogApi.createEntry(input, spaceId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ENTRIES_KEY });
     },
@@ -63,6 +97,7 @@ export function useCreateBacklogEntry() {
 
 export function useUpdateBacklogEntry() {
   const queryClient = useQueryClient();
+  const spaceId = useBacklogSpaceId();
   return useMutation({
     mutationFn: ({
       entryId,
@@ -70,7 +105,7 @@ export function useUpdateBacklogEntry() {
     }: {
       entryId: number;
       changes: backlogApi.UpdateBacklogEntryInput;
-    }) => backlogApi.updateEntry(entryId, changes),
+    }) => backlogApi.updateEntry(entryId, changes, spaceId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ENTRIES_KEY });
     },
@@ -95,17 +130,19 @@ const MOVE_ENTRY_MUTATION_KEY = ["move-entry-status"];
  */
 export function useMoveEntryToStatus() {
   const queryClient = useQueryClient();
+  const spaceId = useBacklogSpaceId();
+  const entriesKey = scopedKey(ENTRIES_KEY, spaceId);
   return useMutation({
     mutationKey: MOVE_ENTRY_MUTATION_KEY,
     mutationFn: ({ entryId, status }: { entryId: number; status: string }) =>
-      backlogApi.updateEntry(entryId, { status }),
+      backlogApi.updateEntry(entryId, { status }, spaceId),
     onMutate: async ({ entryId, status }) => {
-      await queryClient.cancelQueries({ queryKey: ENTRIES_KEY });
+      await queryClient.cancelQueries({ queryKey: entriesKey });
       const previousEntry = queryClient
-        .getQueryData<backlogApi.BacklogEntryData[]>(ENTRIES_KEY)
+        .getQueryData<backlogApi.BacklogEntryData[]>(entriesKey)
         ?.find((entry) => entry.id === entryId);
       queryClient.setQueryData<backlogApi.BacklogEntryData[]>(
-        ENTRIES_KEY,
+        entriesKey,
         (entries) =>
           entries?.map((entry) =>
             entry.id === entryId ? { ...entry, status } : entry,
@@ -116,7 +153,7 @@ export function useMoveEntryToStatus() {
     onError: (_error, { entryId }, context) => {
       if (context?.previousStatus === undefined) return;
       queryClient.setQueryData<backlogApi.BacklogEntryData[]>(
-        ENTRIES_KEY,
+        entriesKey,
         (entries) =>
           entries?.map((entry) =>
             entry.id === entryId
@@ -140,9 +177,10 @@ export function useMoveEntryToStatus() {
  * Every category of the user, for pickers and filters.
  */
 export function useCategories() {
+  const spaceId = useBacklogSpaceId();
   return useQuery({
-    queryKey: CATEGORIES_KEY,
-    queryFn: backlogApi.getCategories,
+    queryKey: scopedKey(CATEGORIES_KEY, spaceId),
+    queryFn: () => backlogApi.getCategories(spaceId),
   });
 }
 
@@ -153,15 +191,16 @@ export function useCategories() {
  * dashboard uses for sorting, grouping, filtering and the entry dialog.
  */
 export function useEntryCategories() {
+  const spaceId = useBacklogSpaceId();
   return useQuery({
-    queryKey: ENTRY_CATEGORIES_KEY,
+    queryKey: scopedKey(ENTRY_CATEGORIES_KEY, spaceId),
     queryFn: async () => {
-      const categories = (await backlogApi.getCategories()).sort((a, b) =>
-        a.name.localeCompare(b.name),
+      const categories = (await backlogApi.getCategories(spaceId)).sort(
+        (a, b) => a.name.localeCompare(b.name),
       );
       const entriesPerCategory = await Promise.all(
         categories.map((category) =>
-          backlogApi.getEntriesForCategory(category.id),
+          backlogApi.getEntriesForCategory(category.id, spaceId),
         ),
       );
       const byEntry = new Map<number, backlogApi.CategoryData[]>();
@@ -187,14 +226,20 @@ function useInvalidateCategories() {
 
 export function useCreateCategory() {
   const invalidate = useInvalidateCategories();
+  const spaceId = useBacklogSpaceId();
   return useMutation({
-    mutationFn: backlogApi.createCategory,
+    mutationFn: (input: {
+      categoryName: string;
+      color?: string;
+      description?: string;
+    }) => backlogApi.createCategory(input, spaceId),
     onSuccess: invalidate,
   });
 }
 
 export function useUpdateCategory() {
   const invalidate = useInvalidateCategories();
+  const spaceId = useBacklogSpaceId();
   return useMutation({
     mutationFn: ({
       categoryId,
@@ -202,21 +247,24 @@ export function useUpdateCategory() {
     }: {
       categoryId: number;
       changes: { categoryName?: string; color?: string };
-    }) => backlogApi.updateCategory(categoryId, changes),
+    }) => backlogApi.updateCategory(categoryId, changes, spaceId),
     onSuccess: invalidate,
   });
 }
 
 export function useDeleteCategory() {
   const invalidate = useInvalidateCategories();
+  const spaceId = useBacklogSpaceId();
   return useMutation({
-    mutationFn: backlogApi.deleteCategory,
+    mutationFn: (categoryId: number) =>
+      backlogApi.deleteCategory(categoryId, spaceId),
     onSuccess: invalidate,
   });
 }
 
 export function useSetEntryCategory() {
   const invalidate = useInvalidateCategories();
+  const spaceId = useBacklogSpaceId();
   return useMutation({
     mutationFn: ({
       entryId,
@@ -228,16 +276,17 @@ export function useSetEntryCategory() {
       assigned: boolean;
     }) =>
       assigned
-        ? backlogApi.addCategoryToEntry(entryId, categoryId)
-        : backlogApi.removeCategoryFromEntry(entryId, categoryId),
+        ? backlogApi.addCategoryToEntry(entryId, categoryId, spaceId)
+        : backlogApi.removeCategoryFromEntry(entryId, categoryId, spaceId),
     onSuccess: invalidate,
   });
 }
 
 export function useDeleteBacklogEntry() {
   const queryClient = useQueryClient();
+  const spaceId = useBacklogSpaceId();
   return useMutation({
-    mutationFn: backlogApi.deleteEntry,
+    mutationFn: (entryId: number) => backlogApi.deleteEntry(entryId, spaceId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ENTRIES_KEY });
     },

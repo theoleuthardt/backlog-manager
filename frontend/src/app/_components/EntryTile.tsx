@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Clock } from "lucide-react";
+import { Clock, Users } from "lucide-react";
 import { GameImage } from "components/GameImage";
 import { statusColor } from "~/lib/statusStyle";
 
@@ -10,12 +10,15 @@ interface EntryTileProps {
   status?: string;
   playtime?: number;
   mainTime?: number;
+  inSharedSpace?: boolean;
 }
 
 /**
  * Cover card shown in the dashboard grid: the title sits on a gradient
  * over the bottom of the cover, a coloured dot marks the status, and a
- * thin bar shows playtime against the HowLongToBeat main-story time.
+ * thin bar shows playtime against the HowLongToBeat main-story time. A
+ * badge in the top right marks a personal entry whose game is also in
+ * the shared space.
  */
 export const EntryTile = memo(function EntryTile({
   title,
@@ -24,6 +27,7 @@ export const EntryTile = memo(function EntryTile({
   status,
   playtime,
   mainTime,
+  inSharedSpace,
 }: EntryTileProps) {
   const progress =
     playtime !== undefined && mainTime !== undefined && mainTime > 0
@@ -49,6 +53,15 @@ export const EntryTile = memo(function EntryTile({
             style={{ backgroundColor: statusColor(status) }}
           />
           <span className="truncate">{status}</span>
+        </span>
+      )}
+      {inSharedSpace && (
+        <span
+          className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-white backdrop-blur-sm"
+          title="Also in your shared space"
+        >
+          <Users className="h-3 w-3" aria-hidden="true" />
+          <span className="sr-only">Also in your shared space</span>
         </span>
       )}
       <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1 bg-gradient-to-t from-black/90 via-black/60 to-transparent px-2 pt-8 pb-2 leading-tight">

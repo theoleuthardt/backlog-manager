@@ -13,6 +13,7 @@ get {
 params:query {
   title: Elden Ring
   ~steam_app_id: 1245620
+  ~space_id: {{spaceId}}
 }
 
 auth:bearer {
@@ -24,5 +25,6 @@ docs {
   logged-in user's entries whose title matches the given title
   (case-insensitive) or whose steam_app_id matches, so the UI can ask
   whether to add the game anyway. Returns 400 if title is missing or
-  blank. Run auth/Login first.
+  blank. Enable space_id to check the shared space instead of the
+  personal backlog. Run auth/Login first.
 }

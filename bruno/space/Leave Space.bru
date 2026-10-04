@@ -1,0 +1,23 @@
+meta {
+  name: Leave Space
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{backendUrl}}/api/space/membership
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Leaves the caller's space, or declines their pending invitation. The
+  space and everything in it is deleted once no active member is left.
+  The caller's playtime, rating and review on the space's entries are
+  removed, while the entries, categories and statuses they created are
+  handed over to the remaining member.
+}

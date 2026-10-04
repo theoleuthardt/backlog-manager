@@ -15,6 +15,7 @@ import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Spinner } from "~/components/ui/spinner";
 import type { EntryCreationDialogProps } from "~/app/types";
+import { useBacklogSpaceId } from "~/app/context/BacklogScopeContext";
 import { useGameSearch } from "~/hooks/useGameSearch";
 import { useDebounce } from "~/hooks/useDebounce";
 
@@ -32,6 +33,8 @@ export const EntryCreationDialog = ({
     useGameSearch(debouncedSearchQuery);
 
   const resultsVisible = searchQuery.length > 0;
+  const targetQuery =
+    useBacklogSpaceId() === undefined ? {} : { target: "space" };
 
   return (
     <Dialog>
@@ -133,6 +136,7 @@ export const EntryCreationDialog = ({
                       href={{
                         pathname: "/creation-tool",
                         query: {
+                          ...targetQuery,
                           title: searchResults[selectedIndex].title,
                           imageUrl: searchResults[selectedIndex].imageUrl ?? "",
                           steamAppId: searchResults[selectedIndex].steamAppId ?? "",
@@ -171,6 +175,7 @@ export const EntryCreationDialog = ({
                     href={{
                       pathname: "/creation-tool",
                       query: {
+                        ...targetQuery,
                         title: searchQuery,
                         custom: "1",
                       },

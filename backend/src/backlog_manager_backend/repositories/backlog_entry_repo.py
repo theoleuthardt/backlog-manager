@@ -19,6 +19,7 @@ def _to_schema(model: BacklogEntryModel) -> BacklogEntry:
     return BacklogEntry(
         backlog_entry_id=model.id,
         user_id=model.user_id,
+        space_id=model.space_id,
         title=model.title,
         genre=model.genre,
         platform=model.platform,
@@ -48,6 +49,7 @@ async def create_backlog_entry(
 ) -> BacklogEntry:
     model = BacklogEntryModel(
         user_id=params.user_id,
+        space_id=params.space_id,
         title=params.title,
         genre=params.genre,
         platform=params.platform,
@@ -81,8 +83,21 @@ async def create_backlog_entry(
 async def get_backlog_entries_by_user(
     session: AsyncSession, user_id: int
 ) -> list[BacklogEntry]:
+    """Only the user's personal entries - entries of a shared space they
+    belong to are reached through get_backlog_entries_by_space."""
     result = await session.execute(
-        select(BacklogEntryModel).where(BacklogEntryModel.user_id == user_id)
+        select(BacklogEntryModel).where(
+            BacklogEntryModel.user_id == user_id, BacklogEntryModel.space_id.is_(None)
+        )
+    )
+    return [_to_schema(row) for row in result.scalars().all()]
+
+
+async def get_backlog_entries_by_space(
+    session: AsyncSession, space_id: int
+) -> list[BacklogEntry]:
+    result = await session.execute(
+        select(BacklogEntryModel).where(BacklogEntryModel.space_id == space_id)
     )
     return [_to_schema(row) for row in result.scalars().all()]
 
@@ -97,19 +112,30 @@ async def get_backlog_entry_by_id(
 
 
 async def get_backlog_entry_duplicates(
-    session: AsyncSession, user_id: int, title: str, steam_app_id: int | None
+    session: AsyncSession,
+    user_id: int,
+    title: str,
+    steam_app_id: int | None,
+    space_id: int | None = None,
 ) -> list[BacklogEntry]:
     """Pre-create duplicate check for the creation tool: returns the
-    user's own entries matching the title (case-insensitive) or the
-    steam app id, either of which signals the game is already tracked."""
+    entries of the same scope - the user's personal backlog, or the
+    shared space when `space_id` is given - matching the title
+    (case-insensitive) or the steam app id, either of which signals the
+    game is already tracked."""
     conditions = [
         func.lower(func.trim(BacklogEntryModel.title)) == title.strip().lower(),
     ]
     if steam_app_id is not None:
         conditions.append(BacklogEntryModel.steam_app_id == steam_app_id)
+    scope = (
+        BacklogEntryModel.space_id == space_id
+        if space_id is not None
+        else (BacklogEntryModel.user_id == user_id) & BacklogEntryModel.space_id.is_(None)
+    )
     result = await session.execute(
         select(BacklogEntryModel)
-        .where(BacklogEntryModel.user_id == user_id)
+        .where(scope)
         .where(or_(*conditions))
         .order_by(BacklogEntryModel.title)
     )
@@ -122,6 +148,7 @@ async def get_backlog_entries_by_status(
     result = await session.execute(
         select(BacklogEntryModel).where(
             BacklogEntryModel.user_id == params.user_id,
+            BacklogEntryModel.space_id.is_(None),
             BacklogEntryModel.status == params.status,
         )
     )
@@ -209,16 +236,30 @@ async def delete_backlog_entry(
     return schema
 
 
+async def delete_backlog_entries_by_space(session: AsyncSession, space_id: int) -> int:
+    """Space counterpart of delete_backlog_entries_by_user: deletes every
+    entry of the shared space (category associations and per-member data
+    cascade) and returns the number of rows removed."""
+    result = await session.execute(
+        delete(BacklogEntryModel).where(BacklogEntryModel.space_id == space_id)
+    )
+    await session.commit()
+    return result.rowcount or 0
+
+
 async def delete_backlog_entries_by_user(
     session: AsyncSession, user_id: int
 ) -> int:
-    """Deletes every backlog entry of a user in one bulk delete and
-    returns the number of rows removed. The category associations go
+    """Deletes every personal backlog entry of a user (never those of a
+    shared space) in one bulk delete and returns the number of rows
+    removed. The category associations go
     with them via the ON DELETE CASCADE on CategoryBacklogEntry -
     SQLAlchemy's bulk delete never loads the models, so its cascade
     configuration never runs; only the DB-level cascade does."""
     result = await session.execute(
-        delete(BacklogEntryModel).where(BacklogEntryModel.user_id == user_id)
+        delete(BacklogEntryModel).where(
+            BacklogEntryModel.user_id == user_id, BacklogEntryModel.space_id.is_(None)
+        )
     )
     await session.commit()
     return result.rowcount or 0

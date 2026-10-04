@@ -13,6 +13,9 @@ it into this round, so the next round can start from it.
 - The left bar is split into a **Sort by** and a **Filter** section. Sort
   options: status (default), category, genre, playtime, platform, interest
   level, review stars, plus an ascending/descending toggle.
+- The bar starts collapsed on every viewport (on desktop it opens and
+  closes with the "Sort & filter" button, below `lg` it is the bottom
+  sheet described under Responsive), so the grid gets the full width.
 - Text-like keys (status order, genre, platform, category) default to
   ascending, numeric keys (playtime, interest, review stars) to
   descending - the direction resets when the sort option changes.

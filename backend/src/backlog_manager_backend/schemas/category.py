@@ -13,6 +13,7 @@ class Category(msgspec.Struct):
     user_id: int
     name: str
     color: str
+    space_id: int | None = None
     description: str | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
@@ -21,6 +22,7 @@ class Category(msgspec.Struct):
 class CreateCategoryParams(msgspec.Struct):
     user_id: int
     category_name: str
+    space_id: int | None = None
     color: str = "#000000"
     description: str = "No description"
 

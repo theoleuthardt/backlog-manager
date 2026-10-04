@@ -17,6 +17,11 @@ class Category(Base):
         BigInteger,
         ForeignKey("blm-system.Users.UserID", ondelete="CASCADE", onupdate="CASCADE"),
     )
+    space_id: Mapped[int | None] = mapped_column(
+        "SpaceID",
+        BigInteger,
+        ForeignKey("blm-system.Spaces.SpaceID", ondelete="CASCADE", onupdate="CASCADE"),
+    )
     name: Mapped[str] = mapped_column("CategoryName")
     color: Mapped[str] = mapped_column("Color")
     description: Mapped[str | None] = mapped_column("Description")

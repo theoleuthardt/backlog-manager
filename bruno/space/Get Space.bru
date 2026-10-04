@@ -1,0 +1,29 @@
+meta {
+  name: Get Space
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{backendUrl}}/api/space
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+script:post-response {
+  if (res.body.space_id) {
+    bru.setEnvVar("spaceId", res.body.space_id);
+  }
+}
+
+docs {
+  The caller's shared space: its id, the caller's own status in it
+  ("active", or "invited" while an invitation is pending) and its
+  members. space_id and my_status are null when the caller belongs to
+  no space. Stores the id in the spaceId environment variable, which
+  the backlog requests' optional space_id query param uses.
+}

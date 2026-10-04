@@ -7,6 +7,7 @@ class CustomStatus(msgspec.Struct):
     status_id: int
     user_id: int
     name: str
+    space_id: int | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -14,6 +15,7 @@ class CustomStatus(msgspec.Struct):
 class CreateCustomStatusParams(msgspec.Struct):
     user_id: int
     name: str
+    space_id: int | None = None
 
 
 class UpdateCustomStatusParams(msgspec.Struct):

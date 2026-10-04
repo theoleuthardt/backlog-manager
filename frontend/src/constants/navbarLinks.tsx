@@ -3,6 +3,7 @@ import Image from "next/image";
 import { EntryCreationDialog } from "~/app/_components/EntryCreationDialog";
 import { ImportCSVButton } from "~/app/_components/ImportCSVButton";
 import { ExportCSVButton } from "~/app/_components/ExportCSVButton";
+import { SpaceNavLink } from "~/app/_components/SpaceNavLink";
 import {
   Tooltip,
   TooltipContent,
@@ -165,6 +166,22 @@ export const dashboardNavLinks: NavbarLink[] = [
     type: "link",
   },
   {
+    id: 7,
+    component: (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <SpaceNavLink />
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Shared space</p>
+        </TooltipContent>
+      </Tooltip>
+    ),
+    mobileComponent: <SpaceNavLink showLabel />,
+    label: "Shared space",
+    type: "component",
+  },
+  {
     id: 5,
     href: "/account",
     content: (
@@ -182,6 +199,81 @@ export const dashboardNavLinks: NavbarLink[] = [
   },
   {
     id: 6,
+    href: "/logout",
+    content: (
+      <Image
+        className="themed-icon scale-125"
+        src="/logout.png"
+        alt="logout"
+        width={32}
+        height={32}
+      />
+    ),
+    action: "logout",
+    label: "Log out",
+    type: "link",
+  },
+];
+
+export const spaceNavLinks: NavbarLink[] = [
+  {
+    id: 1,
+    component: (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <EntryCreationDialog
+            triggerClassName="!h-8 !w-8 !p-0 !border-0 !bg-transparent hover:!bg-transparent cursor-pointer"
+            showText={false}
+          />
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Add Backlog Entry</p>
+        </TooltipContent>
+      </Tooltip>
+    ),
+    mobileComponent: (
+      <EntryCreationDialog
+        triggerClassName="!h-11 w-full !justify-start gap-3 !px-3 text-base font-semibold !bg-transparent hover:!bg-white/10"
+        showText
+      />
+    ),
+    label: "Add entry",
+    type: "component",
+  },
+  {
+    id: 2,
+    href: "/dashboard",
+    content: (
+      <Image
+        src="/go-back.png"
+        alt="go-back"
+        width={32}
+        height={32}
+        className="themed-icon"
+      />
+    ),
+    action: "navigate",
+    label: "Back to dashboard",
+    type: "link",
+  },
+  {
+    id: 3,
+    href: "/account",
+    content: (
+      <Image
+        src="/account.png"
+        alt="account"
+        width={32}
+        height={32}
+        className="themed-icon"
+      />
+    ),
+    action: "navigate",
+    label: "Account",
+    type: "link",
+  },
+  {
+    id: 4,
     href: "/logout",
     content: (
       <Image
