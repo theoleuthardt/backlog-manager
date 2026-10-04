@@ -2,8 +2,6 @@ from collections.abc import Awaitable
 from typing import Annotated
 
 import httpx
-import msgspec
-from cryptography.fernet import InvalidToken
 from litestar import Router, get
 from litestar.di import NamedDependency, Provide
 from litestar.exceptions import ServiceUnavailableException
@@ -11,8 +9,6 @@ from litestar.params import FromPath, FromQuery, QueryParameter
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.auth.dependencies import BEARER_SECURITY_REQUIREMENT, get_current_user
-from backlog_manager_backend.auth.encryption import decrypt
-from backlog_manager_backend.config import settings
 from backlog_manager_backend.integrations.igdb import (
     get_cover_on_igdb,
     get_game_on_igdb,
@@ -24,7 +20,6 @@ from backlog_manager_backend.integrations.igdb import (
 from backlog_manager_backend.integrations.types import (
     EnrichedResult,
     IGDBCover,
-    IGDBCredentials,
     IGDBGameData,
     IGDBGameTimeToBeat,
     IGDBGenre,
@@ -36,6 +31,11 @@ from backlog_manager_backend.integrations.types import (
 from backlog_manager_backend.schemas.game_price import GamePrice
 from backlog_manager_backend.schemas.user import User
 from backlog_manager_backend.services import game_service, key_shop_price_service, price_service
+from backlog_manager_backend.services.credentials import (
+    StoredCredentialError,
+    resolve_igdb_credentials,
+    resolve_steamgriddb_api_key,
+)
 
 _IGDB_NOT_CONFIGURED = "IGDB integration is not configured"
 _IGDB_UNAVAILABLE = "IGDB is currently unreachable"
@@ -45,42 +45,24 @@ _CHEAPSHARK_UNAVAILABLE = "CheapShark is currently unreachable"
 
 
 def _resolve_igdb_credentials(user: User) -> tuple[str, str]:
-    """Per-user-credentials-with-global-fallback: a user's own stored
-    IGDB client_id/client_secret take priority over the server's
-    IGDB_CLIENT_ID/IGDB_CLIENT_SECRET env vars, which remain the
-    fallback for users who haven't set their own. Unlike SteamGridDB's
-    single API key, IGDB needs both halves of a Twitch OAuth2
-    client-credentials pair together - see
-    routes/user.py::_encrypt_igdb_credentials_if_present for why
-    they're stored as one encrypted blob rather than two columns."""
-    if user.igdb_credentials_encrypted and settings.steam_api_key_encryption_key:
-        try:
-            decrypted = decrypt(
-                user.igdb_credentials_encrypted, settings.steam_api_key_encryption_key
-            )
-            credentials = msgspec.json.decode(decrypted, type=IGDBCredentials)
-        except (InvalidToken, ValueError, msgspec.DecodeError) as error:
-            raise ServiceUnavailableException(_IGDB_UNAVAILABLE) from error
-        return credentials.client_id, credentials.client_secret
-    if settings.igdb_client_id and settings.igdb_client_secret:
-        return settings.igdb_client_id, settings.igdb_client_secret
-    raise ServiceUnavailableException(_IGDB_NOT_CONFIGURED)
+    """A stored pair that cannot be used and a missing configuration are
+    both a 503: IGDB cannot be queried without credentials."""
+    try:
+        credentials = resolve_igdb_credentials(user)
+    except StoredCredentialError as error:
+        raise ServiceUnavailableException(_IGDB_UNAVAILABLE) from error
+    if credentials is None:
+        raise ServiceUnavailableException(_IGDB_NOT_CONFIGURED)
+    return credentials
 
 
 def _resolve_steamgriddb_api_key(user: User) -> str | None:
-    """Per-user-key-with-global-fallback, mirroring
-    routes/steam.py::_resolve_api_key - except a missing key here
-    resolves to None rather than raising, since callers (game_service)
-    already treat "no key" as a legitimate, non-fatal state (skip
-    SteamGridDB, don't fail the whole search)."""
-    if user.steamgriddb_api_key_encrypted and settings.steam_api_key_encryption_key:
-        try:
-            return decrypt(
-                user.steamgriddb_api_key_encrypted, settings.steam_api_key_encryption_key
-            )
-        except (InvalidToken, ValueError) as error:
-            raise ServiceUnavailableException(_STEAMGRIDDB_UNAVAILABLE) from error
-    return settings.steamgriddb_api_key
+    """A missing key is a normal state (callers skip SteamGridDB and don't
+    fail the whole search), but a stored key that cannot be used is a 503."""
+    try:
+        return resolve_steamgriddb_api_key(user)
+    except StoredCredentialError as error:
+        raise ServiceUnavailableException(_STEAMGRIDDB_UNAVAILABLE) from error
 
 
 async def _igdb_credentials(user: User) -> tuple[str, str]:

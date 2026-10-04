@@ -83,7 +83,7 @@ uv run ruff check .  # Lint
 
 **Key Directories** (all under `backend/src/backlog_manager_backend/`):
 - `routes/` - Litestar HTTP handlers (`auth.py`, `backlog.py`, `backups.py`, `csv.py`, `games.py`, `images.py`, `prices.py`, `space.py`, `steam.py`, `user.py`, `health.py`)
-- `services/` - business logic (`auth_service.py`, `game_service.py`, ...)
+- `services/` - business logic (`auth_service.py`, `game_service.py`, `credentials.py` for the per-user-credential-with-server-fallback resolution shared by the routes, ...)
 - `repositories/` - SQLAlchemy data access, one module per entity
 - `models/` - SQLAlchemy declarative models
 - `schemas/` - msgspec request/response structs; `types.py` holds boundary types shared across schemas (currently `HexColor`, a `#rrggbb`-validated string used by both category and theme colours)

@@ -24,7 +24,7 @@ CRON_SECRET_SECURITY_REQUIREMENT = [{"CronSecret": []}]
 def _require_valid_cron_secret(provided: str | None) -> None:
     if not settings.price_check_cron_secret or not provided:
         raise NotAuthorizedException("Missing or unconfigured cron secret")
-    if not secrets.compare_digest(provided, settings.price_check_cron_secret):
+    if not secrets.compare_digest(provided.encode(), settings.price_check_cron_secret.encode()):
         raise NotAuthorizedException("Invalid cron secret")
 
 

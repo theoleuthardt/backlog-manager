@@ -194,6 +194,8 @@ tasks:
   backend:openapi:
     desc: Regenerate backend/openapi.json from the current route handlers
     dir: "{{.BACKEND_DIR}}"
+    env:
+      PYTHONHASHSEED: "0"
     cmds:
       - uv run python scripts/dump_openapi_schema.py
 
