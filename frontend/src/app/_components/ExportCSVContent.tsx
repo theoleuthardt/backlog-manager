@@ -72,6 +72,8 @@ export const ExportCSVContent = () => {
 
       toast.info(`Processing ${entries.length} entries...`);
 
+      const csvContent = convertToCSV(entries);
+
       const progressInterval = setInterval(() => {
         setProcessedEntries((prev) => {
           const next = Math.min(prev + 1, entries.length);
@@ -79,8 +81,6 @@ export const ExportCSVContent = () => {
           return next;
         });
       }, 10);
-
-      const csvContent = convertToCSV(entries);
 
       await new Promise((resolve) =>
         setTimeout(resolve, entries.length * 10 + 100),

@@ -29,11 +29,7 @@ import {
   AlertDialogFooter,
   AlertDialogCancel,
 } from "~/components/ui/alert-dialog";
-
-const OUTLINE_BUTTON =
-  "border-2 border-white bg-black text-white hover:bg-white hover:text-black";
-const FILLED_BUTTON =
-  "border-2 border-white bg-white text-black hover:bg-gray-900 hover:text-white";
+import { OUTLINE_BUTTON, FILLED_BUTTON } from "~/lib/buttonStyles";
 
 function formatBackupDate(createdAt: string): string {
   return new Date(`${createdAt}Z`).toLocaleString();

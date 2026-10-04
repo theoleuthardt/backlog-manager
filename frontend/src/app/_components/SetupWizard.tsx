@@ -19,13 +19,12 @@ import { useTheme } from "~/app/context/ThemeContext";
 import { updateCurrentUser, type UpdateCurrentUserInput } from "~/lib/api/user";
 import { isSortOption, SORT_OPTIONS, type SortOption } from "~/lib/sortEntries";
 import { BUILTIN_THEMES } from "~/lib/themes";
+import { FILLED_BUTTON } from "~/lib/buttonStyles";
 
 const STEPS = ["Look & feel", "Steam", "IGDB", "All set"] as const;
 
 const APP_BUTTON =
   "border-2 border-white bg-black text-white hover:bg-white hover:text-black";
-const FILLED_BUTTON =
-  "border-2 border-white bg-white text-black hover:bg-gray-900 hover:text-white";
 const WIZARD_INPUT =
   "h-11 border-white/40 bg-black text-white placeholder:text-gray-500";
 

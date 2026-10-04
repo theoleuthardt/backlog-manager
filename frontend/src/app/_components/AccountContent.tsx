@@ -41,13 +41,9 @@ import {
   AlertDialogFooter,
   AlertDialogCancel,
 } from "~/components/ui/alert-dialog";
+import { OUTLINE_BUTTON, FILLED_BUTTON } from "~/lib/buttonStyles";
 
 type EnrollStep = "qr" | "backup-codes";
-
-const OUTLINE_BUTTON =
-  "border-2 border-white bg-black text-white hover:bg-white hover:text-black";
-const FILLED_BUTTON =
-  "border-2 border-white bg-white text-black hover:bg-gray-900 hover:text-white";
 
 export function AccountContent() {
   const { user, refreshUser } = useAuth();

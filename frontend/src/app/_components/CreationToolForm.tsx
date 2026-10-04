@@ -59,6 +59,7 @@ import type {
 } from "~/lib/api/backlog";
 import { useSteamAppId, useSteamPlaytime } from "~/hooks/useGameSearch";
 import { toast } from "sonner";
+import { splitList } from "~/lib/splitList";
 
 const NO_SPINNER_CLASS =
   "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
@@ -101,10 +102,7 @@ export function CreationToolForm() {
   const [note, setNote] = useState("");
   const [playtime, setPlaytime] = useState("0");
   const [steamAppIdInput, setSteamAppIdInput] = useState<string | null>(null);
-  const platformOptions = platformsFromUrl
-    .split(",")
-    .map((p) => p.trim())
-    .filter(Boolean);
+  const platformOptions = splitList(platformsFromUrl);
   const [platform, setPlatform] = useState(platformOptions[0] ?? "");
   const [mainStory, setMainStory] = useState(
     Number.isFinite(mainStoryFromUrl) ? String(mainStoryFromUrl) : "0",
@@ -166,14 +164,8 @@ export function CreationToolForm() {
 
   const buildPayload = (): CreateBacklogEntryInput => ({
     title: title.trim(),
-    genre: genre
-      .split(",")
-      .map((g) => g.trim())
-      .filter(Boolean),
-    platform: platform
-      .split(",")
-      .map((p) => p.trim())
-      .filter(Boolean),
+    genre: splitList(genre),
+    platform: splitList(platform),
     status,
     owned,
     interest,

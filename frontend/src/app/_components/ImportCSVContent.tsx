@@ -21,9 +21,7 @@ import type {
   CsvPreviewItem,
   SkippedCsvEntry,
 } from "~/lib/api/csv";
-
-const FILLED_BUTTON =
-  "border-2 border-white bg-white text-black hover:bg-gray-900 hover:text-white";
+import { FILLED_BUTTON } from "~/lib/buttonStyles";
 
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === "AbortError";

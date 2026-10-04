@@ -16,9 +16,7 @@ import {
   useImportSteamWishlistStream,
   useSteamLibraryPreviewStream,
 } from "~/hooks/useBacklog";
-
-const FILLED_BUTTON =
-  "border-2 border-white bg-white text-black hover:bg-gray-900 hover:text-white";
+import { FILLED_BUTTON } from "~/lib/buttonStyles";
 
 type PreviewSource = "library" | "wishlist";
 
