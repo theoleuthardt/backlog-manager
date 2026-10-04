@@ -4,6 +4,7 @@ import type { components } from "./schema";
 export interface Backup {
   id: number;
   kind: string;
+  name: string | null;
   createdAt: string;
   entryCount: number;
   categoryCount: number;
@@ -19,6 +20,7 @@ function toBackup(backup: components["schemas"]["BackupSummary"]): Backup {
   return {
     id: backup.id,
     kind: backup.kind,
+    name: backup.name ?? null,
     createdAt: backup.created_at,
     entryCount: backup.entry_count,
     categoryCount: backup.category_count,
@@ -49,6 +51,18 @@ export async function restoreBackup(backupId: number): Promise<RestoreResult> {
     categoryCount: data.category_count,
     safetyBackupId: data.safety_backup_id ?? null,
   };
+}
+
+export async function renameBackup(
+  backupId: number,
+  name: string | null,
+): Promise<Backup> {
+  const { data, error } = await apiClient.PUT("/api/backups/{backup_id}", {
+    params: { path: { backup_id: backupId } },
+    body: { name },
+  });
+  if (error) throw new Error(apiErrorMessage(error, "Failed to rename backup"));
+  return toBackup(data);
 }
 
 export async function deleteBackup(backupId: number): Promise<void> {

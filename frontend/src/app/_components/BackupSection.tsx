@@ -7,11 +7,19 @@ import {
   useCreateBackup,
   useDeleteBackup,
   useDownloadBackup,
+  useRenameBackup,
   useRestoreBackup,
 } from "~/hooks/useBackups";
 import type { Backup } from "~/lib/api/backups";
-import { backupContentSummary, backupKindLabel } from "~/lib/backups";
+import {
+  backupContentSummary,
+  backupKindLabel,
+  backupTitle,
+  MAX_BACKUP_NAME_LENGTH,
+  normalizeBackupName,
+} from "~/lib/backups";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -43,7 +51,29 @@ export function BackupSection() {
   const deleteMutation = useDeleteBackup();
   const downloadMutation = useDownloadBackup();
   const restoreMutation = useRestoreBackup();
+  const renameMutation = useRenameBackup();
   const [restoreTarget, setRestoreTarget] = useState<Backup | null>(null);
+  const [renamingId, setRenamingId] = useState<number | null>(null);
+  const [nameDraft, setNameDraft] = useState("");
+
+  const startRename = (backup: Backup) => {
+    setRenamingId(backup.id);
+    setNameDraft(backup.name ?? "");
+  };
+
+  const handleRename = () => {
+    if (renamingId === null) return;
+    renameMutation.mutate(
+      { id: renamingId, name: normalizeBackupName(nameDraft) },
+      {
+        onSuccess: () => {
+          setRenamingId(null);
+          toast.success("Backup renamed");
+        },
+        onError: (error) => toast.error(error.message),
+      },
+    );
+  };
 
   const handleCreate = () => {
     createMutation.mutate(undefined, {
@@ -96,17 +126,58 @@ export function BackupSection() {
             key={backup.id}
             className="flex flex-wrap items-center justify-between gap-3 rounded border border-white/40 p-3"
           >
-            <div>
-              <p className="text-sm font-medium">
-                {backupKindLabel(backup.kind)}
-                <span className="ml-2 font-normal text-gray-300">
-                  {formatBackupDate(backup.createdAt)}
-                </span>
-              </p>
-              <p className="text-xs text-gray-300">
-                {backupContentSummary(backup)}
-              </p>
-            </div>
+            {renamingId === backup.id ? (
+              <form
+                className="flex flex-1 flex-wrap items-center gap-2"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  handleRename();
+                }}
+              >
+                <Input
+                  autoFocus
+                  aria-label="Backup name"
+                  placeholder={backupKindLabel(backup.kind)}
+                  maxLength={MAX_BACKUP_NAME_LENGTH}
+                  value={nameDraft}
+                  onChange={(event) => setNameDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") setRenamingId(null);
+                  }}
+                  className="min-w-48 flex-1 border-white/40 bg-black text-white"
+                />
+                <Button
+                  type="submit"
+                  size="sm"
+                  className={FILLED_BUTTON}
+                  disabled={renameMutation.isPending}
+                >
+                  {renameMutation.isPending ? "Saving..." : "Save"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className={OUTLINE_BUTTON}
+                  onClick={() => setRenamingId(null)}
+                >
+                  Cancel
+                </Button>
+              </form>
+            ) : (
+              <div>
+                <p className="text-sm font-medium">
+                  {backupTitle(backup)}
+                  <span className="ml-2 font-normal text-gray-300">
+                    {formatBackupDate(backup.createdAt)}
+                  </span>
+                </p>
+                <p className="text-xs text-gray-300">
+                  {backup.name !== null && `${backupKindLabel(backup.kind)} - `}
+                  {backupContentSummary(backup)}
+                </p>
+              </div>
+            )}
             <div className="flex gap-2">
               <Button
                 variant="outline"
@@ -115,6 +186,14 @@ export function BackupSection() {
                 onClick={() => setRestoreTarget(backup)}
               >
                 Restore
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className={OUTLINE_BUTTON}
+                onClick={() => startRename(backup)}
+              >
+                Rename
               </Button>
               <Button
                 variant="outline"

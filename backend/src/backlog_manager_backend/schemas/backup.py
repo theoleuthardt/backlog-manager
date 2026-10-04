@@ -62,12 +62,22 @@ class BackupPayload(msgspec.Struct):
     custom_statuses: list[BackupCustomStatus]
 
 
+MAX_BACKUP_NAME_LENGTH = 60
+
+
 class BackupSummary(msgspec.Struct):
     id: int
     kind: str
     created_at: datetime
     entry_count: int
     category_count: int
+    name: str | None = None
+
+
+class RenameBackupRequest(msgspec.Struct):
+    """A blank or null name clears the label."""
+
+    name: Annotated[str, msgspec.Meta(max_length=MAX_BACKUP_NAME_LENGTH)] | None = None
 
 
 class RestoreResult(msgspec.Struct):

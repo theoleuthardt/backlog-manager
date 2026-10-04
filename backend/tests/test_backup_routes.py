@@ -225,3 +225,57 @@ async def test_restoring_a_backup_the_database_rejects_returns_409(
 
     assert response.status_code == 409
     assert titles == ["One", "Two"]
+
+
+async def test_rename_backup_route_sets_and_clears_the_name(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "backuprename@example.com")
+        backup = client.post("/api/backups", headers=headers).json()
+        renamed = client.put(
+            f"/api/backups/{backup['id']}", headers=headers, json={"name": "Before the sale"}
+        )
+        listed = client.get("/api/backups", headers=headers).json()
+        cleared = client.put(f"/api/backups/{backup['id']}", headers=headers, json={"name": None})
+
+    assert backup["name"] is None
+    assert renamed.status_code == 200
+    assert renamed.json()["name"] == "Before the sale"
+    assert listed[0]["name"] == "Before the sale"
+    assert cleared.json()["name"] is None
+
+
+async def test_rename_backup_route_rejects_a_name_over_the_limit(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "backuprenamelong@example.com")
+        backup = client.post("/api/backups", headers=headers).json()
+        response = client.put(
+            f"/api/backups/{backup['id']}", headers=headers, json={"name": "x" * 61}
+        )
+
+    assert response.status_code == 400
+
+
+async def test_rename_backup_route_requires_authentication_and_ownership(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        owner_headers = await create_and_login(client, "backuprenameowner@example.com")
+        intruder_headers = await create_and_login(client, "backuprenameintruder@example.com")
+        backup = client.post("/api/backups", headers=owner_headers).json()
+        anonymous = client.put(f"/api/backups/{backup['id']}", json={"name": "x"})
+        foreign = client.put(
+            f"/api/backups/{backup['id']}", headers=intruder_headers, json={"name": "x"}
+        )
+
+    assert anonymous.status_code == 401
+    assert foreign.status_code == 404

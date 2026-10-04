@@ -18,7 +18,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -39,7 +39,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -78,7 +78,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -99,7 +99,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -173,7 +173,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -187,7 +187,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -201,7 +201,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -277,7 +277,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -291,7 +291,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -305,7 +305,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -371,7 +371,7 @@
           "201": {
             "description": "Document created, URL follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -392,7 +392,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -438,7 +438,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -459,7 +459,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -543,7 +543,7 @@
           "204": {
             "description": "Request fulfilled, nothing follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -564,7 +564,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -631,7 +631,7 @@
           "204": {
             "description": "Request fulfilled, nothing follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -652,7 +652,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -719,7 +719,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -740,7 +740,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -880,7 +880,7 @@
           "201": {
             "description": "Document created, URL follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -901,7 +901,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -1066,7 +1066,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -1087,7 +1087,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -1245,7 +1245,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -1266,7 +1266,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -1407,7 +1407,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -1428,7 +1428,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -1574,7 +1574,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -1595,7 +1595,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -1769,7 +1769,7 @@
           "204": {
             "description": "Request fulfilled, nothing follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -1790,7 +1790,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -1921,7 +1921,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -1942,7 +1942,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -2092,7 +2092,7 @@
           "201": {
             "description": "Document created, URL follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -2113,7 +2113,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -2251,7 +2251,7 @@
           "204": {
             "description": "Request fulfilled, nothing follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -2272,7 +2272,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -2394,7 +2394,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -2415,7 +2415,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -2555,7 +2555,7 @@
           "201": {
             "description": "Document created, URL follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -2576,7 +2576,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -2724,7 +2724,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -2745,7 +2745,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -2881,7 +2881,7 @@
           "204": {
             "description": "Request fulfilled, nothing follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -2902,7 +2902,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -3033,7 +3033,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -3054,7 +3054,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -3186,7 +3186,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -3207,7 +3207,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -3347,7 +3347,7 @@
           "201": {
             "description": "Document created, URL follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -3368,7 +3368,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -3554,7 +3554,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -3575,7 +3575,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -3749,7 +3749,7 @@
           "204": {
             "description": "Request fulfilled, nothing follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -3770,7 +3770,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -3872,7 +3872,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -3886,7 +3886,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -3900,7 +3900,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -3934,7 +3934,7 @@
           "201": {
             "description": "Document created, URL follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -3948,7 +3948,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -3962,7 +3962,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -4006,7 +4006,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -4020,7 +4020,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -4034,7 +4034,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -4114,7 +4114,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -4128,7 +4128,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -4142,7 +4142,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -4206,6 +4206,124 @@
       }
     },
     "/api/backups/{backup_id}": {
+      "put": {
+        "summary": "RenameBackup",
+        "operationId": "ApiBackupsBackupIdRenameBackup",
+        "parameters": [
+          {
+            "name": "backup_id",
+            "in": "path",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true,
+            "deprecated": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenameBackupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "Strict-Transport-Security": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "cache-control": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupSummary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request syntax or unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Validation Exception",
+                  "examples": [
+                    {
+                      "status_code": 400,
+                      "detail": "Bad Request",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
       "delete": {
         "summary": "DeleteBackup",
         "operationId": "ApiBackupsBackupIdDeleteBackup",
@@ -4224,7 +4342,7 @@
           "204": {
             "description": "Request fulfilled, nothing follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -4238,7 +4356,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -4252,7 +4370,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -4316,7 +4434,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -4337,7 +4455,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -4380,7 +4498,7 @@
           "201": {
             "description": "Document created, URL follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -4401,7 +4519,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -4541,7 +4659,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -4562,7 +4680,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -4633,7 +4751,7 @@
           "204": {
             "description": "Request fulfilled, nothing follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -4654,7 +4772,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -4680,7 +4798,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -4694,7 +4812,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -4708,7 +4826,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -4749,7 +4867,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -4763,7 +4881,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -4777,7 +4895,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -4846,7 +4964,7 @@
           "204": {
             "description": "Request fulfilled, nothing follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -4860,7 +4978,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -4874,7 +4992,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -4911,7 +5029,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -4925,7 +5043,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -4939,7 +5057,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -5005,7 +5123,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5019,7 +5137,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5033,7 +5151,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -5077,7 +5195,7 @@
           "201": {
             "description": "Document created, URL follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5091,7 +5209,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5105,7 +5223,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -5187,7 +5305,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5201,7 +5319,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5215,7 +5333,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -5305,7 +5423,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5319,7 +5437,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5333,7 +5451,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -5413,7 +5531,7 @@
           "204": {
             "description": "Request fulfilled, nothing follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5427,7 +5545,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5441,7 +5559,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -5505,7 +5623,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5519,7 +5637,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5533,7 +5651,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -5569,7 +5687,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5583,7 +5701,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5597,7 +5715,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -5633,7 +5751,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5647,7 +5765,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5661,7 +5779,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -5712,7 +5830,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5726,7 +5844,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5740,7 +5858,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -5822,7 +5940,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5836,7 +5954,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5850,7 +5968,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -5921,7 +6039,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5935,7 +6053,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -5949,7 +6067,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -5998,7 +6116,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -6012,7 +6130,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -6026,7 +6144,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -6095,7 +6213,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -6109,7 +6227,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -6123,7 +6241,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -6167,7 +6285,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -6181,7 +6299,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -6195,7 +6313,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -6283,7 +6401,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -6297,7 +6415,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -6311,7 +6429,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -6392,7 +6510,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -6406,7 +6524,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -6420,7 +6538,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -6502,7 +6620,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Referrer-Policy": {
+              "X-Frame-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -6516,7 +6634,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Frame-Options": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -6530,7 +6648,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Referrer-Policy": {
                 "schema": {
                   "type": "string"
                 },
@@ -6612,7 +6730,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -6633,7 +6751,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -6720,7 +6838,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -6741,7 +6859,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -6826,7 +6944,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -6847,7 +6965,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -6932,7 +7050,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -6953,7 +7071,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -7038,7 +7156,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -7059,7 +7177,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -7144,7 +7262,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -7165,7 +7283,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -7250,7 +7368,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -7271,7 +7389,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -7358,7 +7476,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -7379,7 +7497,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -7466,7 +7584,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -7487,7 +7605,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -7574,7 +7692,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -7595,7 +7713,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -7680,7 +7798,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -7701,7 +7819,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -7786,7 +7904,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -7807,7 +7925,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -7894,7 +8012,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -7915,7 +8033,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -8006,7 +8124,7 @@
           "200": {
             "description": "Request fulfilled, document follows",
             "headers": {
-              "Strict-Transport-Security": {
+              "X-Content-Type-Options": {
                 "schema": {
                   "type": "string"
                 },
@@ -8027,7 +8145,7 @@
                 "required": false,
                 "deprecated": false
               },
-              "X-Content-Type-Options": {
+              "Strict-Transport-Security": {
                 "schema": {
                   "type": "string"
                 },
@@ -8422,6 +8540,16 @@
           },
           "category_count": {
             "type": "integer"
+          },
+          "name": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -10292,6 +10420,24 @@
           "name"
         ],
         "title": "PublicUsername"
+      },
+      "RenameBackupRequest": {
+        "properties": {
+          "name": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "maxLength": 60
+          }
+        },
+        "type": "object",
+        "required": [],
+        "title": "RenameBackupRequest"
       },
       "RestoreResult": {
         "properties": {

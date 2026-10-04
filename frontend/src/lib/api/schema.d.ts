@@ -379,7 +379,8 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
+        /** RenameBackup */
+        put: operations["ApiBackupsBackupIdRenameBackup"];
         post?: never;
         /** DeleteBackup */
         delete: operations["ApiBackupsBackupIdDeleteBackup"];
@@ -1029,6 +1030,7 @@ export interface components {
             created_at: string;
             entry_count: number;
             category_count: number;
+            name?: string | null;
         };
         /** CategoryResponse */
         CategoryResponse: {
@@ -1329,6 +1331,10 @@ export interface components {
             id: number;
             name: string;
         };
+        /** RenameBackupRequest */
+        RenameBackupRequest: {
+            name?: string | null;
+        };
         /** RestoreResult */
         RestoreResult: {
             entry_count: number;
@@ -1502,10 +1508,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -1528,10 +1534,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -1571,11 +1577,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -1615,11 +1621,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -1655,10 +1661,10 @@ export interface operations {
             /** @description Document created, URL follows */
             201: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -1683,10 +1689,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -1726,10 +1732,10 @@ export interface operations {
             /** @description Request fulfilled, nothing follows */
             204: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -1763,10 +1769,10 @@ export interface operations {
             /** @description Request fulfilled, nothing follows */
             204: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -1788,10 +1794,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -1848,10 +1854,10 @@ export interface operations {
             /** @description Document created, URL follows */
             201: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -1919,10 +1925,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -1977,10 +1983,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2035,10 +2041,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2097,10 +2103,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2170,10 +2176,10 @@ export interface operations {
             /** @description Request fulfilled, nothing follows */
             204: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -2226,10 +2232,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2285,10 +2291,10 @@ export interface operations {
             /** @description Document created, URL follows */
             201: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -2342,10 +2348,10 @@ export interface operations {
             /** @description Request fulfilled, nothing follows */
             204: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -2396,10 +2402,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2456,10 +2462,10 @@ export interface operations {
             /** @description Document created, URL follows */
             201: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2518,10 +2524,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2576,10 +2582,10 @@ export interface operations {
             /** @description Request fulfilled, nothing follows */
             204: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -2632,10 +2638,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2688,10 +2694,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2748,10 +2754,10 @@ export interface operations {
             /** @description Document created, URL follows */
             201: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2825,10 +2831,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2898,10 +2904,10 @@ export interface operations {
             /** @description Request fulfilled, nothing follows */
             204: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -2950,11 +2956,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2975,11 +2981,11 @@ export interface operations {
             /** @description Document created, URL follows */
             201: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3002,11 +3008,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3044,15 +3050,61 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["RestoreResult"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBackupsBackupIdRenameBackup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                backup_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenameBackupRequest"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    "X-Frame-Options"?: string;
+                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupSummary"];
                 };
             };
             /** @description Bad request syntax or unsupported method */
@@ -3086,11 +3138,11 @@ export interface operations {
             /** @description Request fulfilled, nothing follows */
             204: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -3124,10 +3176,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3152,10 +3204,10 @@ export interface operations {
             /** @description Document created, URL follows */
             201: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -3219,10 +3271,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3258,10 +3310,10 @@ export interface operations {
             /** @description Request fulfilled, nothing follows */
             204: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -3280,11 +3332,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3309,11 +3361,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3349,11 +3401,11 @@ export interface operations {
             /** @description Request fulfilled, nothing follows */
             204: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -3374,11 +3426,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3414,11 +3466,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3443,11 +3495,11 @@ export interface operations {
             /** @description Document created, URL follows */
             201: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3485,11 +3537,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3531,11 +3583,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3573,11 +3625,11 @@ export interface operations {
             /** @description Request fulfilled, nothing follows */
             204: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -3611,11 +3663,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3636,11 +3688,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3661,11 +3713,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3690,11 +3742,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3732,11 +3784,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3772,11 +3824,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3801,11 +3853,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3841,11 +3893,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3868,11 +3920,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3912,11 +3964,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3956,11 +4008,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -4000,11 +4052,11 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Referrer-Policy"?: string;
-                    "Strict-Transport-Security"?: string;
                     "X-Frame-Options"?: string;
-                    "cache-control"?: string;
+                    "Strict-Transport-Security"?: string;
                     "X-Content-Type-Options"?: string;
+                    "cache-control"?: string;
+                    "Referrer-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -4042,10 +4094,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -4083,10 +4135,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -4124,10 +4176,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -4165,10 +4217,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -4206,10 +4258,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -4247,10 +4299,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -4288,10 +4340,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -4329,10 +4381,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -4370,10 +4422,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -4411,10 +4463,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -4452,10 +4504,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -4493,10 +4545,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -4534,10 +4586,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -4575,10 +4627,10 @@ export interface operations {
             /** @description Request fulfilled, document follows */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
+                    "X-Content-Type-Options"?: string;
                     "Referrer-Policy"?: string;
                     "X-Frame-Options"?: string;
-                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
                     [name: string]: unknown;
                 };
                 content: {

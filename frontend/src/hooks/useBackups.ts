@@ -20,6 +20,17 @@ export function useCreateBackup() {
   });
 }
 
+export function useRenameBackup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, name }: { id: number; name: string | null }) =>
+      backupsApi.renameBackup(id, name),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: BACKUPS_KEY });
+    },
+  });
+}
+
 export function useDeleteBackup() {
   const queryClient = useQueryClient();
   return useMutation({

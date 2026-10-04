@@ -46,5 +46,10 @@ rejection rolls back to the untouched previous state. Rows are re-created with
 new ids. Because of the `pre-restore` snapshot, restoring that snapshot undoes
 the restore.
 
+Any backup can carry a free-form label of up to 60 characters
+(`PUT /api/backups/{id}`, "Rename" in Account settings; a blank name clears
+it). The label lives in its own column, not in the payload, so renaming never
+changes the snapshot or its duplicate detection, and retention ignores it.
+
 `GET /api/backups/{id}/download` returns the payload as a JSON file for an
 off-machine copy. Backups of one user are never readable by another (404).

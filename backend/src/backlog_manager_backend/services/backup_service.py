@@ -23,6 +23,7 @@ from backlog_manager_backend.db import async_session
 from backlog_manager_backend.errors import ValidationError
 from backlog_manager_backend.repositories import backup_repo, user_repo
 from backlog_manager_backend.schemas.backup import (
+    MAX_BACKUP_NAME_LENGTH,
     PAYLOAD_VERSION,
     BackupPayload,
     BackupSummary,
@@ -94,6 +95,17 @@ async def list_backups(session: AsyncSession, user_id: int) -> list[BackupSummar
 async def export_backup(session: AsyncSession, user_id: int, backup_id: int) -> BackupPayload:
     backup = await backup_repo.get_backup(session, user_id, backup_id)
     return _decode_payload(backup.payload)
+
+
+async def rename_backup(
+    session: AsyncSession, user_id: int, backup_id: int, name: str | None
+) -> BackupSummary:
+    """Names are free-form labels (e.g. "Before the sale"); surrounding
+    whitespace is trimmed and a blank name clears the label."""
+    cleaned = name.strip() if name else None
+    if cleaned and len(cleaned) > MAX_BACKUP_NAME_LENGTH:
+        raise ValidationError(f"Name must be at most {MAX_BACKUP_NAME_LENGTH} characters long")
+    return await backup_repo.rename_backup(session, user_id, backup_id, cleaned or None)
 
 
 async def delete_backup(session: AsyncSession, user_id: int, backup_id: int) -> None:

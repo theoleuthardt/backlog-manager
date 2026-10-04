@@ -175,6 +175,7 @@ CREATE TABLE IF NOT EXISTS "blm-system"."UserBackups" (
     "BackupID"      BIGSERIAL PRIMARY KEY,
     "UserID"        BIGINT NOT NULL,
     "Kind"          VARCHAR(20) NOT NULL,
+    "Name"          VARCHAR(60),
     "ContentHash"   VARCHAR(64) NOT NULL,
     "EntryCount"    INTEGER NOT NULL,
     "CategoryCount" INTEGER NOT NULL,

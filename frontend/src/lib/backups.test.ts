@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { backupContentSummary, backupKindLabel } from "~/lib/backups";
+import {
+  backupContentSummary,
+  backupKindLabel,
+  backupTitle,
+  MAX_BACKUP_NAME_LENGTH,
+  normalizeBackupName,
+} from "~/lib/backups";
 
 describe("backupKindLabel", () => {
   it("names every backup kind the backend creates", () => {
@@ -32,5 +38,32 @@ describe("backupContentSummary", () => {
     expect(backupContentSummary({ entryCount: 0, categoryCount: 0 })).toBe(
       "0 games, 0 categories",
     );
+  });
+});
+
+describe("backupTitle", () => {
+  it("prefers the name the user gave", () => {
+    expect(backupTitle({ name: "Before the sale", kind: "manual" })).toBe(
+      "Before the sale",
+    );
+  });
+
+  it("falls back to the kind label without a name", () => {
+    expect(backupTitle({ name: null, kind: "auto" })).toBe("Automatic");
+  });
+});
+
+describe("normalizeBackupName", () => {
+  it("trims surrounding whitespace", () => {
+    expect(normalizeBackupName("  Pre-sale  ")).toBe("Pre-sale");
+  });
+
+  it("turns a blank name into null so the label is cleared", () => {
+    expect(normalizeBackupName("")).toBeNull();
+    expect(normalizeBackupName("   ")).toBeNull();
+  });
+
+  it("matches the backend's length limit", () => {
+    expect(MAX_BACKUP_NAME_LENGTH).toBe(60);
   });
 });

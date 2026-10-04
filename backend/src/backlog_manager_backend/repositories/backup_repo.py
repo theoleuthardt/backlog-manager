@@ -47,6 +47,7 @@ def _to_summary(model: UserBackup) -> BackupSummary:
     return BackupSummary(
         id=model.id,
         kind=model.kind,
+        name=model.name,
         created_at=model.created_at,
         entry_count=model.entry_count,
         category_count=model.category_count,
@@ -230,6 +231,16 @@ async def get_latest_backup(
     if kind is not None:
         query = query.where(UserBackup.kind == kind)
     return await session.scalar(query.order_by(UserBackup.id.desc()).limit(1))
+
+
+async def rename_backup(
+    session: AsyncSession, user_id: int, backup_id: int, name: str | None
+) -> BackupSummary:
+    model = await get_backup(session, user_id, backup_id)
+    model.name = name
+    await session.commit()
+    await session.refresh(model)
+    return _to_summary(model)
 
 
 async def delete_backup(session: AsyncSession, user_id: int, backup_id: int) -> None:

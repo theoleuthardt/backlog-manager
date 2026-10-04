@@ -538,3 +538,96 @@ async def test_auto_backup_ignores_a_backlog_that_only_has_shared_space_content(
     await _seed_space_content(session, user.id)
 
     assert await backup_service.create_backup(session, user.id, "auto") is None
+
+
+async def test_backups_have_no_name_by_default(
+    backup_service: ModuleType, session: AsyncSession
+) -> None:
+    user = await _make_user(session, "noname")
+    await _seed(session, user.id)
+
+    backup = await backup_service.create_manual_backup(session, user.id)
+
+    assert backup.name is None
+
+
+async def test_rename_backup_sets_the_name_shown_in_the_list(
+    backup_service: ModuleType, session: AsyncSession
+) -> None:
+    user = await _make_user(session, "renameuser")
+    await _seed(session, user.id)
+    backup = await backup_service.create_manual_backup(session, user.id)
+
+    renamed = await backup_service.rename_backup(session, user.id, backup.id, "Before the sale")
+
+    assert renamed.name == "Before the sale"
+    assert renamed.id == backup.id
+    assert [b.name for b in await backup_service.list_backups(session, user.id)] == [
+        "Before the sale"
+    ]
+
+
+async def test_rename_backup_trims_whitespace(
+    backup_service: ModuleType, session: AsyncSession
+) -> None:
+    user = await _make_user(session, "renametrim")
+    await _seed(session, user.id)
+    backup = await backup_service.create_manual_backup(session, user.id)
+
+    renamed = await backup_service.rename_backup(session, user.id, backup.id, "  Pre-sale  ")
+
+    assert renamed.name == "Pre-sale"
+
+
+@pytest.mark.parametrize("blank", [None, "", "   "])
+async def test_rename_backup_with_a_blank_name_clears_it(
+    backup_service: ModuleType, session: AsyncSession, blank: str | None
+) -> None:
+    user = await _make_user(session, "renameclear")
+    await _seed(session, user.id)
+    backup = await backup_service.create_manual_backup(session, user.id)
+    await backup_service.rename_backup(session, user.id, backup.id, "Named")
+
+    cleared = await backup_service.rename_backup(session, user.id, backup.id, blank)
+
+    assert cleared.name is None
+
+
+async def test_rename_backup_rejects_a_name_over_the_length_limit(
+    backup_service: ModuleType, session: AsyncSession
+) -> None:
+    user = await _make_user(session, "renamelong")
+    await _seed(session, user.id)
+    backup = await backup_service.create_manual_backup(session, user.id)
+
+    with pytest.raises(ValidationError):
+        await backup_service.rename_backup(
+            session, user.id, backup.id, "x" * (backup_service.MAX_BACKUP_NAME_LENGTH + 1)
+        )
+
+
+async def test_rename_backup_rejects_another_users_backup(
+    backup_service: ModuleType, session: AsyncSession
+) -> None:
+    owner = await _make_user(session, "renameowner")
+    intruder = await _make_user(session, "renameintruder")
+    await _seed(session, owner.id)
+    backup = await backup_service.create_manual_backup(session, owner.id)
+
+    with pytest.raises(NotFoundError):
+        await backup_service.rename_backup(session, intruder.id, backup.id, "Mine now")
+
+    assert (await backup_service.list_backups(session, owner.id))[0].name is None
+
+
+async def test_renaming_does_not_change_the_snapshot_content(
+    backup_service: ModuleType, session: AsyncSession
+) -> None:
+    user = await _make_user(session, "renamecontent")
+    await _seed(session, user.id)
+    backup = await backup_service.create_manual_backup(session, user.id)
+    before = await backup_service.export_backup(session, user.id, backup.id)
+
+    await backup_service.rename_backup(session, user.id, backup.id, "Renamed")
+
+    assert await backup_service.export_backup(session, user.id, backup.id) == before

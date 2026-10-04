@@ -1,0 +1,28 @@
+meta {
+  name: Rename Backup
+  type: http
+  seq: 6
+}
+
+put {
+  url: {{backendUrl}}/api/backups/{{backupId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "name": "Before the sale"
+  }
+}
+
+docs {
+  Sets the backup's label (max 60 characters, surrounding whitespace is
+  trimmed). A blank or null name clears it. The snapshot content is not
+  touched. 200 with the updated backup, 400 for a too-long name, 404 for an
+  unknown or foreign id.
+}

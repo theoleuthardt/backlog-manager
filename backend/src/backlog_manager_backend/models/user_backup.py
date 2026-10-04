@@ -26,6 +26,7 @@ class UserBackup(Base):
         ForeignKey("blm-system.Users.UserID", ondelete="CASCADE", onupdate="CASCADE"),
     )
     kind: Mapped[str] = mapped_column("Kind")
+    name: Mapped[str | None] = mapped_column("Name")
     content_hash: Mapped[str] = mapped_column("ContentHash")
     entry_count: Mapped[int] = mapped_column("EntryCount")
     category_count: Mapped[int] = mapped_column("CategoryCount")
