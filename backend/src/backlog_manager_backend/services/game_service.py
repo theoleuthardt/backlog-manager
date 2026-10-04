@@ -1,6 +1,7 @@
 import asyncio
 import re
 import time
+from decimal import Decimal
 
 import httpx
 import structlog
@@ -18,6 +19,7 @@ from backlog_manager_backend.integrations.igdb import (
     get_involved_companies_on_igdb,
     get_platforms_on_igdb,
     search_game_on_igdb,
+    search_games_by_name_on_igdb,
 )
 from backlog_manager_backend.integrations.steam import (
     search_store_by_title as search_steam_store_by_title,
@@ -40,6 +42,8 @@ from backlog_manager_backend.integrations.types import (
 logger = structlog.get_logger()
 
 _SEARCH_RESULT_LIMIT = 20
+_DEEP_SEARCH_RESULT_LIMIT = 50
+_PUNCTUATION = re.compile(r"[^\w\s]")
 
 _MAIN_GAME_TYPE_RANKS = {0: 0, 8: 1, 9: 1, 10: 1}
 """IGDB's `game_type` enum (formerly `category`, which IGDB still accepts as a
@@ -52,7 +56,13 @@ excluded from search results entirely by `_is_dlc_like`, not just ranked last
 _OTHER_GAME_TYPE_RANK = 2
 
 _YOUTUBE_VIDEO_ID = re.compile(r"[A-Za-z0-9_-]{11}")
+_TRADEMARK_SYMBOLS = re.compile(r"[™®©℠]")
 _EXCLUDED_GAME_TYPES = {1, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14}
+_DEEP_EXCLUDED_GAME_TYPES = {1, 2, 5, 6, 7, 12, 14}
+"""What a "search more" lookup still drops: DLC, expansions, mods, episodes,
+seasons, forks and updates. Bundles, standalone expansions, ports and packs
+are kept, since games like "Crash Bandicoot N. Sane Trilogy" only exist on
+IGDB as a bundle."""
 
 _token_cache: dict[tuple[str, str], dict[str, object]] = {}
 """Keyed by the full (client_id, client_secret) pair, not a single global
@@ -120,12 +130,14 @@ async def get_valid_token(client_id: str, client_secret: str) -> str:
     return token_response.access_token
 
 
-def _is_dlc_like(game: IGDBGameData) -> bool:
+def _is_dlc_like(game: IGDBGameData, deep: bool = False) -> bool:
     """True for anything a title search shouldn't surface as its own
     result: a game_type IGDB tags as DLC/expansion/bundle/etc, or - for
     the rarer case where game_type itself is missing - any entry that
-    links back to a parent_game, which no base game does."""
-    if game.game_type in _EXCLUDED_GAME_TYPES:
+    links back to a parent_game, which no base game does. A deep search
+    keeps bundles, standalone expansions, ports and packs."""
+    excluded = _DEEP_EXCLUDED_GAME_TYPES if deep else _EXCLUDED_GAME_TYPES
+    if game.game_type in excluded:
         return True
     return game.game_type is None and game.parent_game is not None
 
@@ -284,6 +296,7 @@ async def _enrich_search_results(
     include_genres: bool = True,
     include_platforms: bool = True,
     include_publisher: bool = True,
+    deep: bool = False,
 ) -> list[EnrichedResult]:
     """Batches every IGDB lookup needed to enrich a page of search
     results into (at most) one request per data type, instead of one
@@ -335,18 +348,23 @@ async def _enrich_search_results(
             unique_game_ids.append(game_id)
 
     candidate_game_ids = [
-        game_id for game_id in unique_game_ids if not _is_dlc_like(_game_cache[game_id])
+        game_id for game_id in unique_game_ids if not _is_dlc_like(_game_cache[game_id], deep)
     ]
 
-    normalized_search_term = search_term.strip().casefold()
+    def _comparable(title: str) -> str:
+        if deep:
+            return " ".join(_PUNCTUATION.sub(" ", title).split()).casefold()
+        return title.strip().casefold()
 
-    def _sort_key(game_id: int) -> tuple[int, bool]:
+    normalized_search_term = _comparable(search_term)
+
+    def _sort_key(game_id: int) -> tuple[int, int]:
         game = _game_cache[game_id]
-        is_exact_title_match = (game.name or "").strip().casefold() == normalized_search_term
-        return (
-            _MAIN_GAME_TYPE_RANKS.get(game.game_type, _OTHER_GAME_TYPE_RANK),
-            not is_exact_title_match,
-        )
+        is_exact_title_match = _comparable(game.name or "") == normalized_search_term
+        type_rank = _MAIN_GAME_TYPE_RANKS.get(game.game_type, _OTHER_GAME_TYPE_RANK)
+        if deep:
+            return (int(not is_exact_title_match), type_rank)
+        return (type_rank, int(not is_exact_title_match))
 
     ranked_game_ids = sorted(candidate_game_ids, key=_sort_key)[:limit]
 
@@ -544,6 +562,7 @@ async def search(
     include_genres: bool = True,
     include_platforms: bool = True,
     include_publisher: bool = True,
+    deep: bool = False,
 ) -> list[EnrichedResult]:
     """Enriched search: finds games on IGDB, then fills in cover image,
     genres, platforms and beat-time data (falling back to HowLongToBeat
@@ -561,15 +580,34 @@ async def search(
     or the global fallback) - see routes/games.py::_resolve_steamgriddb_api_key.
     `limit`/`include_genres`/`include_platforms`/`include_publisher` let
     a caller that only needs the top match and a subset of its data
-    skip the rest of the work - see _enrich_search_results's docstring."""
+    skip the rest of the work - see _enrich_search_results's docstring.
+
+    `deep` is the "search more" mode for a title the normal search
+    misses: it additionally searches the punctuation-free term and a
+    wildcard name match (IGDB spells "Overcooked! All You Can Eat" with
+    punctuation the query may lack), keeps bundles/ports/packs, ranks an
+    exact punctuation-insensitive title match first whatever its game
+    type (a missing game_type otherwise ranks last and falls off the
+    result limit, as with "A Way Out") and raises the result limit to
+    _DEEP_SEARCH_RESULT_LIMIT."""
     access_token = await get_valid_token(client_id, client_secret)
     search_results = await search_game_on_igdb(search_term, client_id, access_token)
+    if deep:
+        limit = max(limit, _DEEP_SEARCH_RESULT_LIMIT)
+        plain_term = " ".join(_PUNCTUATION.sub(" ", search_term).split())
+        if plain_term and plain_term != search_term:
+            search_results += await search_game_on_igdb(plain_term, client_id, access_token)
+        if plain_term:
+            search_results += await search_games_by_name_on_igdb(
+                plain_term, client_id, access_token
+            )
     return await _enrich_search_results(
         search_results,
         client_id,
         access_token,
         search_term,
         steamgriddb_api_key,
+        deep=deep,
         limit=limit,
         include_genres=include_genres,
         include_platforms=include_platforms,
@@ -577,8 +615,56 @@ async def search(
     )
 
 
+async def find_igdb_match(
+    title: str, igdb_credentials: tuple[str, str] | None
+) -> EnrichedResult | None:
+    """Best-effort IGDB lookup of the top match for one already-cleaned
+    title, for imports and the retroactive IGDB sync. SteamGridDB is
+    skipped (Steam's own cover is preferred), as are platforms and
+    publisher, which an entry doesn't carry from here. No credentials,
+    an IGDB outage and a title without a hit all resolve to None so the
+    caller keeps working with what it has."""
+    if igdb_credentials is None:
+        return None
+    client_id, client_secret = igdb_credentials
+    try:
+        results = await search(
+            title,
+            client_id,
+            client_secret,
+            None,
+            limit=1,
+            include_platforms=False,
+            include_publisher=False,
+        )
+    except (httpx.HTTPError, RuntimeError):
+        return None
+    return results[0] if results else None
+
+
+def igdb_times(match: EnrichedResult | None) -> tuple[Decimal, Decimal, Decimal] | None:
+    """The match's beat-times as Decimals, or None when there is no match
+    or it carries no real duration data (all zeros)."""
+    if match is None or not any(
+        (match.main_story, match.main_story_with_extras, match.completionist)
+    ):
+        return None
+    return (
+        Decimal(str(match.main_story)),
+        Decimal(str(match.main_story_with_extras)),
+        Decimal(str(match.completionist)),
+    )
+
+
+def clean_game_title(title: str) -> str:
+    """Steam appends trademark/copyright symbols to store names ("DOOM®
+    Eternal", "Portal™ 2") that IGDB's title search cannot match, so
+    imports strip them before storing a title or querying IGDB."""
+    return " ".join(_TRADEMARK_SYMBOLS.sub("", title).split())
+
+
 def normalize_game_title(title: str) -> str:
-    return re.sub(r"[™®©]", "", title).strip().lower()
+    return clean_game_title(title).lower()
 
 
 def _remember_steam_app_id(title: str, app_id: int | None) -> None:

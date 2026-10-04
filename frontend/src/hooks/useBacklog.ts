@@ -3,6 +3,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useBacklogSpaceId } from "~/app/context/BacklogScopeContext";
 import * as backlogApi from "~/lib/api/backlog";
 import {
+  getIgdbSyncPendingCount,
+  syncIgdbDataStream,
+  type IgdbSyncProgress,
+} from "~/lib/api/igdbSync";
+import {
   getSteamAchievements,
   importSteamLibraryAppIdsStream,
   importSteamWishlistStream,
@@ -291,6 +296,90 @@ export function useDeleteBacklogEntry() {
       await queryClient.invalidateQueries({ queryKey: ENTRIES_KEY });
     },
   });
+}
+
+export interface BulkResult {
+  succeeded: number;
+  failed: number;
+}
+
+function summarizeBulk(results: PromiseSettledResult<unknown>[]): BulkResult {
+  const failed = results.filter((result) => result.status === "rejected");
+  return { succeeded: results.length - failed.length, failed: failed.length };
+}
+
+export function useBulkUpdateStatus() {
+  const queryClient = useQueryClient();
+  const spaceId = useBacklogSpaceId();
+  return useMutation({
+    mutationFn: async ({
+      entryIds,
+      status,
+    }: {
+      entryIds: readonly number[];
+      status: string;
+    }) =>
+      summarizeBulk(
+        await Promise.allSettled(
+          entryIds.map((entryId) =>
+            backlogApi.updateEntry(entryId, { status }, spaceId),
+          ),
+        ),
+      ),
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey: ENTRIES_KEY });
+    },
+  });
+}
+
+export function useBulkDeleteEntries() {
+  const queryClient = useQueryClient();
+  const spaceId = useBacklogSpaceId();
+  return useMutation({
+    mutationFn: async (entryIds: readonly number[]) =>
+      summarizeBulk(
+        await Promise.allSettled(
+          entryIds.map((entryId) => backlogApi.deleteEntry(entryId, spaceId)),
+        ),
+      ),
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey: ENTRIES_KEY });
+    },
+  });
+}
+
+export function useIgdbSyncPendingCount(enabled: boolean) {
+  return useQuery({
+    queryKey: ["igdb-sync-pending-count"],
+    queryFn: getIgdbSyncPendingCount,
+    enabled,
+    gcTime: 0,
+  });
+}
+
+export function useSyncIgdbDataStream(): {
+  run: () => Promise<backlogApi.BacklogEntryData[]>;
+  isRunning: boolean;
+  progress: IgdbSyncProgress | null;
+} {
+  const queryClient = useQueryClient();
+  const [isRunning, setIsRunning] = useState(false);
+  const [progress, setProgress] = useState<IgdbSyncProgress | null>(null);
+
+  const run = useCallback(async () => {
+    setIsRunning(true);
+    setProgress(null);
+    try {
+      const entries = await syncIgdbDataStream(setProgress);
+      await queryClient.invalidateQueries({ queryKey: ENTRIES_KEY });
+      return entries;
+    } finally {
+      setIsRunning(false);
+      setProgress(null);
+    }
+  }, [queryClient]);
+
+  return { run, isRunning, progress };
 }
 
 interface SteamStreamState {

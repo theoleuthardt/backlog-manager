@@ -1485,3 +1485,161 @@ async def test_search_batches_and_caches_video_lookups(
     assert calls == [[1, 2]]
     trailers = {result.id: result.trailer_url for result in first}
     assert trailers == {1: "https://www.youtube.com/watch?v=trailer0001", 2: None}
+
+
+def _patch_deep_search(
+    game_service: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    search_hits: dict[str, list[IGDBSearchResult]],
+    name_hits: list[IGDBSearchResult],
+    games: list[IGDBGameData],
+    searched_terms: list[str],
+) -> None:
+    async def fake_search_game_on_igdb(
+        search_term: str, client_id: str, access_token: str
+    ) -> list[IGDBSearchResult]:
+        searched_terms.append(search_term)
+        return search_hits.get(search_term, [])
+
+    async def fake_search_games_by_name_on_igdb(
+        search_term: str, client_id: str, access_token: str
+    ) -> list[IGDBSearchResult]:
+        searched_terms.append(f"name:{search_term}")
+        return name_hits
+
+    async def fake_get_games_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameData]:
+        return [game for game in games if game.id in game_ids]
+
+    async def fake_get_games_time_to_beat_on_igdb(
+        game_ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameTimeToBeat]:
+        return [
+            IGDBGameTimeToBeat(id=game_id, game_id=game_id, normally=3600) for game_id in game_ids
+        ]
+
+    async def fake_get_valid_token(client_id: str, client_secret: str) -> str:
+        return "tok"
+
+    monkeypatch.setattr(game_service, "search_game_on_igdb", fake_search_game_on_igdb)
+    monkeypatch.setattr(
+        game_service, "search_games_by_name_on_igdb", fake_search_games_by_name_on_igdb
+    )
+    monkeypatch.setattr(game_service, "get_games_on_igdb", fake_get_games_on_igdb)
+    monkeypatch.setattr(
+        game_service, "get_games_time_to_beat_on_igdb", fake_get_games_time_to_beat_on_igdb
+    )
+    monkeypatch.setattr(game_service, "get_valid_token", fake_get_valid_token)
+
+
+async def test_deep_search_includes_bundles_a_normal_search_excludes(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """ "Crash Bandicoot N. Sane Trilogy" is tagged a bundle on IGDB."""
+    _patch_deep_search(
+        game_service,
+        monkeypatch,
+        search_hits={
+            "Crash Bandicoot N. Sane Trilogy": [IGDBSearchResult(id=1, game=1, name="Crash")]
+        },
+        name_hits=[],
+        games=[IGDBGameData(id=1, name="Crash Bandicoot N. Sane Trilogy", game_type=3, genres=[])],
+        searched_terms=[],
+    )
+
+    normal = await game_service.search("Crash Bandicoot N. Sane Trilogy", "cid", "secret", None)
+    deep = await game_service.search(
+        "Crash Bandicoot N. Sane Trilogy", "cid", "secret", None, deep=True
+    )
+
+    assert normal == []
+    assert [result.title for result in deep] == ["Crash Bandicoot N. Sane Trilogy"]
+
+
+async def test_deep_search_still_excludes_dlc(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _patch_deep_search(
+        game_service,
+        monkeypatch,
+        search_hits={"Game": [IGDBSearchResult(id=1, game=1, name="Game DLC")]},
+        name_hits=[],
+        games=[IGDBGameData(id=1, name="Game DLC", game_type=1, genres=[])],
+        searched_terms=[],
+    )
+
+    assert await game_service.search("Game", "cid", "secret", None, deep=True) == []
+
+
+async def test_deep_search_adds_a_punctuation_free_search_and_a_name_wildcard_search(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """ "Overcooked: All you can eat" is stored with an exclamation mark
+    ("Overcooked! All You Can Eat"), which the fuzzy index misses."""
+    searched_terms: list[str] = []
+    _patch_deep_search(
+        game_service,
+        monkeypatch,
+        search_hits={},
+        name_hits=[IGDBSearchResult(id=7, game=7, name="Overcooked! All You Can Eat")],
+        games=[IGDBGameData(id=7, name="Overcooked! All You Can Eat", game_type=0, genres=[])],
+        searched_terms=searched_terms,
+    )
+
+    normal = await game_service.search("Overcooked: All you can eat", "cid", "secret", None)
+    assert normal == []
+
+    searched_terms.clear()
+    deep = await game_service.search(
+        "Overcooked: All you can eat", "cid", "secret", None, deep=True
+    )
+
+    assert [result.title for result in deep] == ["Overcooked! All You Can Eat"]
+    assert "Overcooked All you can eat" in searched_terms
+    assert "name:Overcooked All you can eat" in searched_terms
+
+
+async def test_deep_search_ranks_an_exact_title_match_first_even_without_a_game_type(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """ "A Way Out" carries no game_type, which ranked it behind every
+    main game and cut it off by the result limit."""
+    others = [
+        IGDBGameData(id=game_id, name=f"Way Out {game_id}", game_type=0, genres=[])
+        for game_id in range(2, 32)
+    ]
+    games = [IGDBGameData(id=1, name="A Way Out", game_type=None, genres=[]), *others]
+    _patch_deep_search(
+        game_service,
+        monkeypatch,
+        search_hits={
+            "A Way Out": [IGDBSearchResult(id=game.id, game=game.id) for game in reversed(games)]
+        },
+        name_hits=[],
+        games=games,
+        searched_terms=[],
+    )
+
+    results = await game_service.search("A Way Out", "cid", "secret", None, deep=True)
+
+    assert results[0].title == "A Way Out"
+    assert len(results) > 20
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("Portal™ 2", "Portal 2"),
+        ("DOOM® Eternal", "DOOM Eternal"),
+        ("Hades ©", "Hades"),
+        ("Fable℠  Anniversary", "Fable Anniversary"),
+        ("  Tom Clancy’s Rainbow Six® Siege™  ", "Tom Clancy’s Rainbow Six Siege"),
+        ("Celeste", "Celeste"),
+    ],
+)
+def test_clean_game_title_strips_trademark_symbols(
+    game_service: ModuleType, raw: str, expected: str
+) -> None:
+    assert game_service.clean_game_title(raw) == expected

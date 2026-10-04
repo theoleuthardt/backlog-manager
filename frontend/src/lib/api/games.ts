@@ -21,13 +21,16 @@ export interface GameSearchResult {
  * `steamAppId` on each result is always null here - IGDB has no Steam
  * App ID mapping, so it's looked up separately (by title, against
  * Steam's app catalogue) via getSteamAppId once a result is selected,
- * see useSteamAppId.
+ * see useSteamAppId. `deep` is the "search more" mode that finds games
+ * the normal search misses (bundles, titles spelled with other
+ * punctuation).
  */
 export async function enrichedSearch(
   searchTerm: string,
+  deep = false,
 ): Promise<GameSearchResult[]> {
   const { data, error } = await apiClient.GET("/api/games/enriched-search", {
-    params: { query: { search_term: searchTerm } },
+    params: { query: { search_term: searchTerm, deep } },
   });
   if (error) throw new Error(apiErrorMessage(error, "Game search failed"));
   return data.map((result) => ({

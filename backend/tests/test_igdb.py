@@ -16,6 +16,7 @@ from backlog_manager_backend.integrations.igdb import (
     get_genres_on_igdb,
     get_platforms_on_igdb,
     search_game_on_igdb,
+    search_games_by_name_on_igdb,
 )
 
 
@@ -354,3 +355,43 @@ async def test_get_game_videos_on_igdb_raises_on_error_so_callers_do_not_cache_a
 
     with pytest.raises(httpx.HTTPStatusError):
         await get_game_videos_on_igdb([1], "cid", "tok")
+
+
+async def test_search_games_by_name_on_igdb_uses_a_wildcard_name_match(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/v4/games"
+        body = request.content.decode()
+        assert 'name ~ *"all you can eat"*' in body
+        return httpx.Response(200, json=[{"id": 7, "name": "Overcooked! All You Can Eat"}])
+
+    _mock_client(handler, monkeypatch)
+
+    results = await search_games_by_name_on_igdb("all you can eat", "cid", "tok")
+
+    assert [(result.id, result.game) for result in results] == [(7, 7)]
+
+
+async def test_search_games_by_name_on_igdb_escapes_quotes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, bytes] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["body"] = request.content
+        return httpx.Response(200, json=[])
+
+    _mock_client(handler, monkeypatch)
+
+    await search_games_by_name_on_igdb('quote " injection', "cid", "tok")
+
+    assert b'\\"' in captured["body"]
+
+
+async def test_search_games_by_name_on_igdb_returns_empty_on_an_http_error_status(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _mock_client(lambda request: httpx.Response(400), monkeypatch)
+
+    assert await search_games_by_name_on_igdb("x", "cid", "tok") == []

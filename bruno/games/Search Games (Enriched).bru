@@ -12,6 +12,7 @@ get {
 
 params:query {
   search_term: Zelda
+  ~deep: true
 }
 
 auth:bearer {
@@ -28,6 +29,11 @@ docs {
   YouTube watch link from IGDB game_videos, null when the game has none;
   a video named "Trailer" is preferred). This is the slowest
   endpoint since it makes several sequential IGDB requests per game.
+
+  `deep=true` is the "search more" mode: it also searches the
+  punctuation-free term and a wildcard name match, keeps bundles, ports
+  and packs, ranks an exact title match first and returns up to 50
+  results.
 
   503 if neither the caller nor the server has IGDB credentials
   configured, or if IGDB is unreachable.

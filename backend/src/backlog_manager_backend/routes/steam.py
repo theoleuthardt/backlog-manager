@@ -23,7 +23,10 @@ from backlog_manager_backend.routes import sse
 from backlog_manager_backend.schemas.backlog_entry import BacklogEntry, BacklogEntryResponse
 from backlog_manager_backend.schemas.user import User
 from backlog_manager_backend.services import steam_service
-from backlog_manager_backend.services.credentials import resolve_steamgriddb_api_key_or_none
+from backlog_manager_backend.services.credentials import (
+    resolve_igdb_credentials_or_none,
+    resolve_steamgriddb_api_key_or_none,
+)
 
 _STEAM_NOT_CONFIGURED = "Steam Web API integration is not configured"
 _STEAM_UNAVAILABLE = "Steam Web API is currently unreachable"
@@ -157,6 +160,7 @@ async def sync_steam_playtimes(
                 auto_import=current_user.steam_auto_import_enabled,
                 steamgriddb_api_key=steamgriddb_api_key,
                 family_steam_ids=_resolve_family_steam_ids(current_user),
+                igdb_credentials=resolve_igdb_credentials_or_none(current_user),
             )
     except ValidationError as error:
         raise ClientException(str(error)) from error
@@ -182,6 +186,7 @@ async def import_steam_library(
                 api_key,
                 steamgriddb_api_key=steamgriddb_api_key,
                 family_steam_ids=_resolve_family_steam_ids(current_user),
+                igdb_credentials=resolve_igdb_credentials_or_none(current_user),
             )
     except ValidationError as error:
         raise ClientException(str(error)) from error
@@ -203,6 +208,7 @@ async def sync_steam_playtimes_stream(
     api_key = _resolve_api_key(current_user)
     steamgriddb_api_key = resolve_steamgriddb_api_key_or_none(current_user)
     family_steam_ids = _resolve_family_steam_ids(current_user)
+    igdb_credentials = resolve_igdb_credentials_or_none(current_user)
     operation_lock = _get_user_operation_lock(current_user.id)
 
     async def run(on_progress: sse.ProgressCallback) -> list[BacklogEntry]:
@@ -215,6 +221,7 @@ async def sync_steam_playtimes_stream(
                 steamgriddb_api_key=steamgriddb_api_key,
                 on_progress=on_progress,
                 family_steam_ids=family_steam_ids,
+                igdb_credentials=igdb_credentials,
             )
 
     return ServerSentEvent(_stream_steam_operation(run))
@@ -240,6 +247,7 @@ async def import_steam_library_stream(
         _validate_wishlist_items(data)
         confirmed_app_ids = [item.appid for item in data]
 
+    igdb_credentials = resolve_igdb_credentials_or_none(current_user)
     operation_lock = _get_user_operation_lock(current_user.id)
 
     async def run(on_progress: sse.ProgressCallback) -> list[BacklogEntry]:
@@ -252,6 +260,7 @@ async def import_steam_library_stream(
                 on_progress=on_progress,
                 family_steam_ids=family_steam_ids,
                 confirmed_app_ids=confirmed_app_ids,
+                igdb_credentials=igdb_credentials,
             )
 
     return ServerSentEvent(_stream_steam_operation(run))
@@ -305,6 +314,7 @@ async def import_steam_wishlist_stream(
     _validate_wishlist_items(data)
     items = data
     steamgriddb_api_key = resolve_steamgriddb_api_key_or_none(current_user)
+    igdb_credentials = resolve_igdb_credentials_or_none(current_user)
     operation_lock = _get_user_operation_lock(current_user.id)
 
     async def run(on_progress: sse.ProgressCallback) -> list[BacklogEntry]:
@@ -315,6 +325,7 @@ async def import_steam_wishlist_stream(
                 items,
                 steamgriddb_api_key=steamgriddb_api_key,
                 on_progress=on_progress,
+                igdb_credentials=igdb_credentials,
             )
 
     return ServerSentEvent(_stream_steam_operation(run))

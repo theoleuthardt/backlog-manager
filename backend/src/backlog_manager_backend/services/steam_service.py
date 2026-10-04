@@ -104,6 +104,14 @@ def _validate_candidate_count(games: Sequence[SteamOwnedGame]) -> None:
         raise ValidationError(f"Steam import is limited to {IMPORT_MAX_ITEMS} items")
 
 
+def _wishlist_title(detail: SteamAppDetails | None, app_id: int) -> str:
+    """The cleaned store name for a wishlist item, or the generic
+    "Steam App <id>" when the store lookup returned nothing."""
+    if detail and detail.name:
+        return game_service.clean_game_title(detail.name)
+    return f"Steam App {app_id}"
+
+
 def _dedupe_app_ids(items: list[SteamWishlistItem]) -> list[int]:
     seen: set[int] = set()
     unique_app_ids: list[int] = []
@@ -340,15 +348,18 @@ async def import_library(
     on_progress: ProgressCallback | None = None,
     family_steam_ids: list[str] | None = None,
     confirmed_app_ids: list[int] | None = None,
+    igdb_credentials: tuple[str, str] | None = None,
 ) -> list[BacklogEntry]:
     """Creates a backlog entry for every Steam-owned game not already
-    linked to one by steam_app_id. Metadata beyond title/steam_app_id/
-    playtime is deliberately minimal (no IGDB enrichment, no genre); a
-    user can fill in genre etc. by hand afterwards. `steamgriddb_api_key`,
+    linked to one by steam_app_id. Titles have Steam's trademark symbols
+    stripped (see game_service.clean_game_title). `steamgriddb_api_key`,
     when the caller has one (their own, or the global fallback), fills
-    in a cover image per game too - best-effort, see _try_get_cover. A
-    HowLongToBeat time-to-beat lookup by title also runs for every
-    game unconditionally (no key needed) - best-effort, see
+    in a cover image per game too - best-effort, see _try_get_cover.
+    `igdb_credentials`, when given, adds genre, description, trailer and
+    beat-times from the top IGDB match for the cleaned title -
+    best-effort, see game_service.find_igdb_match; a game without a match (or
+    without IGDB beat-time data) falls back to a HowLongToBeat
+    time-to-beat lookup by title (no key needed), see
     _try_get_hltb_times.
 
     `confirmed_app_ids`, when given, restricts the import to those app
@@ -402,6 +413,10 @@ async def import_library(
         confirmed = set(confirmed_app_ids)
         games_to_import = [game for game in games_to_import if game.appid in confirmed]
     _validate_candidate_count(games_to_import)
+    games_to_import = [
+        msgspec.structs.replace(game, name=game_service.clean_game_title(game.name))
+        for game in games_to_import
+    ]
 
     existing_app_ids = {
         entry.steam_app_id
@@ -411,27 +426,39 @@ async def import_library(
     games_to_create = [game for game in games_to_import if game.appid not in existing_app_ids]
 
     budget = _OperationBudget()
-    covers_and_times = await asyncio.gather(
+    lookups = await asyncio.gather(
         *(
             asyncio.gather(
                 budget.lookup(
                     lambda game=game: _try_get_cover(game.appid, steamgriddb_api_key), None
                 ),
                 budget.lookup(
-                    lambda game=game: _try_get_hltb_times(game.name),
-                    (None, None, None),
+                    lambda game=game: game_service.find_igdb_match(game.name, igdb_credentials),
+                    None,
                 ),
             )
             for game in games_to_create
         )
     )
-    covers = {
-        game.appid: cover
-        for game, (cover, _) in zip(games_to_create, covers_and_times, strict=True)
-    }
-    times = {
-        game.appid: ttt for game, (_, ttt) in zip(games_to_create, covers_and_times, strict=True)
-    }
+    covers = {game.appid: cover for game, (cover, _) in zip(games_to_create, lookups, strict=True)}
+    matches = {game.appid: match for game, (_, match) in zip(games_to_create, lookups, strict=True)}
+    games_needing_hltb = [
+        game for game in games_to_create if game_service.igdb_times(matches[game.appid]) is None
+    ]
+    hltb_times = dict(
+        zip(
+            (game.appid for game in games_needing_hltb),
+            await asyncio.gather(
+                *(
+                    budget.lookup(
+                        lambda game=game: _try_get_hltb_times(game.name), (None, None, None)
+                    )
+                    for game in games_needing_hltb
+                )
+            ),
+            strict=True,
+        )
+    )
 
     created: list[BacklogEntry] = []
     total = len(games_to_import)
@@ -442,8 +469,9 @@ async def import_library(
             continue
         try:
             image_link = covers.get(game.appid)
-            main_time, main_plus_extra_time, completion_time = times.get(
-                game.appid, (None, None, None)
+            match = matches.get(game.appid)
+            main_time, main_plus_extra_time, completion_time = (
+                game_service.igdb_times(match) or hltb_times.get(game.appid) or (None, None, None)
             )
             created.append(
                 await backlog_entry_repo.create_backlog_entry(
@@ -451,7 +479,9 @@ async def import_library(
                     CreateBacklogEntryParams(
                         user_id=user.id,
                         title=game.name,
-                        genre="",
+                        genre=", ".join(match.genres) if match else "",
+                        description=match.description if match else None,
+                        trailer_link=match.trailer_url if match else None,
                         platform=_IMPORTED_PLATFORM,
                         status=_IMPORTED_STATUS,
                         owned=True,
@@ -490,6 +520,7 @@ async def sync_playtimes_and_import(
     steamgriddb_api_key: str | None = None,
     on_progress: ProgressCallback | None = None,
     family_steam_ids: list[str] | None = None,
+    igdb_credentials: tuple[str, str] | None = None,
 ) -> list[BacklogEntry]:
     """Single entry point for the "Sync Steam Playtimes" action: fetches
     the owned-games snapshot once and reuses it for both sync_playtimes
@@ -518,6 +549,7 @@ async def sync_playtimes_and_import(
             steamgriddb_api_key=steamgriddb_api_key,
             on_progress=on_progress,
             family_steam_ids=family_steam_ids,
+            igdb_credentials=igdb_credentials,
         )
     return updated
 
@@ -618,6 +650,10 @@ async def preview_library(
         if entry.steam_app_id is not None
     }
 
+    owned_games = [
+        msgspec.structs.replace(game, name=game_service.clean_game_title(game.name))
+        for game in owned_games
+    ]
     unlinked_games = [game for game in owned_games if game.appid not in existing_app_ids]
 
     budget = _OperationBudget()
@@ -690,7 +726,7 @@ async def preview_wishlist(
         preview.append(
             SteamPreviewItem(
                 steam_app_id=item.appid,
-                title=detail.name if detail and detail.name else f"Steam App {item.appid}",
+                title=_wishlist_title(detail, item.appid),
                 image_link=image_link,
             )
         )
@@ -703,13 +739,17 @@ async def import_wishlist(
     items: list[SteamWishlistItem],
     steamgriddb_api_key: str | None = None,
     on_progress: ProgressCallback | None = None,
+    igdb_credentials: tuple[str, str] | None = None,
 ) -> list[BacklogEntry]:
     """Creates a backlog entry for each wishlist item the user confirmed
     in the preview - unlike import_library this receives the items
     rather than fetching them, since the preview already happened and a
     re-fetch could have drifted in between. Status is "Not Owned" (the
     whole point of a wishlist) and owned is False; a SteamGridDB cover
-    replaces the preview's CDN capsule when one is available. Per-entry
+    replaces the preview's CDN capsule when one is available. Titles are
+    cleaned of trademark symbols, and `igdb_credentials`, when given,
+    adds genre, description, trailer and IGDB beat-times like
+    import_library does. Per-entry
     failures are caught, rolled back, and logged like import_library -
     see that docstring for why. Detail and cover lookups share one
     _OperationBudget (bounded concurrency + total deadline) - see issue
@@ -735,6 +775,24 @@ async def import_wishlist(
             strict=True,
         )
     )
+    named_app_ids = [app_id for app_id in unique_app_ids if (d := details.get(app_id)) and d.name]
+    matches = dict(
+        zip(
+            named_app_ids,
+            await asyncio.gather(
+                *(
+                    budget.lookup(
+                        lambda app_id=app_id: game_service.find_igdb_match(
+                            _wishlist_title(details.get(app_id), app_id), igdb_credentials
+                        ),
+                        None,
+                    )
+                    for app_id in named_app_ids
+                )
+            ),
+            strict=True,
+        )
+    )
 
     created: list[BacklogEntry] = []
     imported_app_ids: set[int] = set()
@@ -746,6 +804,8 @@ async def import_wishlist(
             continue
         try:
             detail = details.get(item.appid)
+            match = matches.get(item.appid)
+            times = game_service.igdb_times(match)
             image_link = (
                 cover_links.get(item.appid)
                 or (detail.header_image if detail else None)
@@ -756,8 +816,13 @@ async def import_wishlist(
                     session,
                     CreateBacklogEntryParams(
                         user_id=user.id,
-                        title=detail.name if detail and detail.name else f"Steam App {item.appid}",
-                        genre="",
+                        title=_wishlist_title(detail, item.appid),
+                        genre=", ".join(match.genres) if match else "",
+                        description=match.description if match else None,
+                        trailer_link=match.trailer_url if match else None,
+                        main_time=times[0] if times else None,
+                        main_plus_extra_time=times[1] if times else None,
+                        completion_time=times[2] if times else None,
                         platform=_IMPORTED_PLATFORM,
                         status=_WISHLIST_IMPORTED_STATUS,
                         owned=False,

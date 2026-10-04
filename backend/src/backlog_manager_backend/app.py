@@ -20,6 +20,7 @@ from backlog_manager_backend.routes.games import (
     get_steam_app_id,
 )
 from backlog_manager_backend.routes.health import health
+from backlog_manager_backend.routes.igdb_sync import igdb_sync_router
 from backlog_manager_backend.routes.images import proxy_image
 from backlog_manager_backend.routes.prices import price_check_router
 from backlog_manager_backend.routes.space import space_router
@@ -104,6 +105,7 @@ def create_app() -> Litestar:
             user_router,
             admin_user_router,
             steam_router,
+            igdb_sync_router,
             csv_router,
             authenticated_games_router,
             get_steam_app_id,

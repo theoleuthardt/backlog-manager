@@ -77,13 +77,14 @@ uv run ruff check .  # Lint
 - `src/hooks/` - React Query hooks wrapping `lib/api/*` calls
 - `src/lib/` - framework-free logic with vitest tests next to it: `sortEntries.ts`, `filterEntries.ts`, `groupEntries.ts`, `categories.ts`, `themes.ts`, `reviewStars.ts`, `statusStyle.ts`
 - `src/app/context/AuthContext.tsx` - auth state (login, 2FA challenge, current user), replaces NextAuth's `SessionProvider`
+- `src/app/context/EntryActionsContext.tsx` - what a dashboard tile can do (open the single entry dialog the dashboard owns, selection, context menu actions); keeps the entry dialog open when an entry moves between groups
 - `src/app/context/ThemeContext.tsx` - active theme + custom themes (backed by the account, cached in `localStorage`); `DashboardContext.tsx` shares the search text between navbar and grid
 - `src/app/_components/` - React components
 - `src/components/ui/` - shadcn/ui primitives
 
 **Key Directories** (all under `backend/src/backlog_manager_backend/`):
-- `routes/` - Litestar HTTP handlers (`auth.py`, `backlog.py`, `backups.py`, `csv.py`, `games.py`, `images.py`, `prices.py`, `space.py`, `steam.py`, `user.py`, `health.py`)
-- `services/` - business logic (`auth_service.py`, `game_service.py`, `credentials.py` for the per-user-credential-with-server-fallback resolution shared by the routes, ...)
+- `routes/` - Litestar HTTP handlers (`auth.py`, `backlog.py`, `backups.py`, `csv.py`, `games.py`, `igdb_sync.py`, `images.py`, `prices.py`, `space.py`, `steam.py`, `user.py`, `health.py`)
+- `services/` - business logic (`auth_service.py`, `game_service.py`, `igdb_sync_service.py` (retroactive IGDB data for existing entries), `credentials.py` for the per-user-credential-with-server-fallback resolution shared by the routes, ...)
 - `repositories/` - SQLAlchemy data access, one module per entity
 - `models/` - SQLAlchemy declarative models
 - `schemas/` - msgspec request/response structs; `types.py` holds boundary types shared across schemas (currently `HexColor`, a `#rrggbb`-validated string used by both category and theme colours)

@@ -34,3 +34,12 @@ export function categoryNameError(
     return "You already have a category with that name";
   return "";
 }
+
+/** A new array of the categories ordered alphabetically by name, ignoring case. */
+export function sortCategoriesByName<T extends { name: string }>(
+  categories: readonly T[],
+): T[] {
+  return [...categories].sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+  );
+}

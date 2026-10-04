@@ -58,7 +58,8 @@ export const SearchBar = ({ ref, ...props }: SearchBarWithDebounceProps) => {
       {displayValue && props.onClear && (
         <button
           onClick={handleClear}
-          className="absolute inset-y-0 right-0 flex items-center pr-3 text-red-500 transition-colors hover:text-red-700"
+          aria-label="Clear search"
+          className="text-foreground hover:text-foreground/70 absolute inset-y-0 right-0 flex cursor-pointer items-center pr-3 transition-colors"
           type="button"
         >
           <X size={20} />

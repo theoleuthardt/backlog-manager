@@ -255,6 +255,38 @@ async def test_enriched_search_requires_authentication(
     assert response.status_code == 401
 
 
+@pytest.mark.parametrize(("query", "expected_deep"), [({}, False), ({"deep": "true"}, True)])
+async def test_enriched_search_passes_the_deep_flag_to_the_service(
+    configured_igdb: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    postgres_url: str,
+    create_and_login,
+    query: dict[str, str],
+    expected_deep: bool,
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.services import game_service
+
+    received: list[bool] = []
+
+    async def fake_search(*args: object, deep: bool = False, **kwargs: object) -> list[object]:
+        received.append(deep)
+        return []
+
+    monkeypatch.setattr(game_service, "search", fake_search)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, f"deep{expected_deep}@example.com")
+        response = client.get(
+            "/api/games/enriched-search",
+            params={"search_term": "A Way Out", **query},
+            headers=headers,
+        )
+
+    assert response.status_code == 200
+    assert received == [expected_deep]
+
+
 async def test_enriched_search_batches_multiple_results(
     configured_igdb: ModuleType,
     monkeypatch: pytest.MonkeyPatch,
