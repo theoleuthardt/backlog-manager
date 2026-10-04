@@ -1,8 +1,7 @@
 # Backups
 
-The homelab already takes daily Proxmox backups of the Postgres database
-(see #108). Those protect against losing the machine but restore the whole
-database. The backend's own backups cover the other case: one user's
+Infrastructure-level database backups protect against losing the machine but
+restore the whole database. The backend's own backups cover the other case: one user's
 backlog gets damaged (a wrong bulk delete, a bad CSV import) and only that
 backlog should go back.
 
