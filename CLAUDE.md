@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Backlog Manager is a video game backlog manager. The frontend is a Next.js app (originally scaffolded with create-t3-app; tRPC and NextAuth have since been removed) living in `frontend/`; the backend is a standalone Python/Litestar service living in `backend/` (fully migrated off Next.js/tRPC — see issue #103/#104 for that history). The frontend calls the backend directly over REST with a JWT Bearer token. Only the backend is hosted as a public, always-on service (at `blm.theocloud.dev`); the frontend ships as a Tauri desktop app built from the Next.js codebase rather than being centrally hosted the same way.
+Backlog Manager is a video game backlog manager. The frontend is a Next.js app (originally scaffolded with create-t3-app; tRPC and NextAuth have since been removed) living in `frontend/`; the backend is a standalone Python/Litestar service living in `backend/` (fully migrated off Next.js/tRPC — see issue #103/#104 for that history). The frontend calls the backend directly over REST with a JWT Bearer token. Only the backend is meant to be hosted as a public, always-on service; the frontend ships as a Tauri desktop app built from the Next.js codebase rather than being centrally hosted the same way.
 
 Users can track games with metadata from HowLongToBeat and IGDB, organize games into categories via drag & drop, connect Steam accounts for playtime sync, and import/export CSV files.
 
@@ -65,7 +65,7 @@ uv run ruff check .  # Lint
 
 **Frontend stack:** Next.js 15+ with App Router, calling the backend directly over REST via a typed `openapi-fetch` client generated from the backend's OpenAPI schema, JWT Bearer token in `localStorage` for auth (no NextAuth), Tailwind CSS + shadcn/ui components. Lives entirely in `frontend/`. Distributed as a Tauri desktop app (static export) rather than centrally hosted; the app updates itself via the Tauri updater plugin from GitHub Releases (signing key, `latest.json` and pinned plugin versions: see `docs/TAURI.md`).
 
-**Backend stack:** Python/Litestar, uv-managed, SQLAlchemy 2.0 async + asyncpg, full REST API (backlog CRUD, auth incl. TOTP 2FA, CSV import/export, IGDB/HowLongToBeat integrations). Lives entirely in `backend/`. This is the only piece of the app hosted as a public, always-on service, at `blm.theocloud.dev`. See issue #104 for the migration history off Next.js/tRPC.
+**Backend stack:** Python/Litestar, uv-managed, SQLAlchemy 2.0 async + asyncpg, full REST API (backlog CRUD, auth incl. TOTP 2FA, CSV import/export, IGDB/HowLongToBeat integrations). Lives entirely in `backend/`. This is the only piece of the app meant to be hosted as a public, always-on service. See issue #104 for the migration history off Next.js/tRPC.
 
 **Path Aliases** (relative to `frontend/`):
 - `~/` → `./src/*`

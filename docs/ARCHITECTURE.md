@@ -25,7 +25,7 @@ instead — this file is about the shape of the system, not where files live.
                                                               └──────────────────┘
 ```
 
-Only the backend is hosted as a public, always-on service (`blm.theocloud.dev`).
+Only the backend is meant to be hosted as a public, always-on service.
 The frontend is never centrally hosted the same way: the plain web build
 (`next build`, `output: "standalone"`) is a normal server-rendered Next.js
 app that would need its own always-on host, which this project doesn't run;
@@ -203,6 +203,14 @@ closed" errors when the pool later recycles a connection from an already
 closed loop. Ruff excludes `alembic/versions`: `alembic revision
 --autogenerate` produces the same boilerplate every time and holding it to the
 hand-written code standard is noise.
+
+**Frontend runtime.** The frontend builds on Node 22 (22.12+), pinned in
+`.nvmrc`, `frontend/Containerfile` and the workflows. Node 20 reached end of
+life in April 2026, and other versions such as 23.x fail with cryptic webpack
+errors, so `engine-strict` makes `npm install` reject them and
+`next.config.js` aborts early with a clear message. Moving to a newer LTS means
+updating those pins together with `SUPPORTED_NODE_MAJORS` and `engines`, and
+checking the build.
 
 ## Related documents
 

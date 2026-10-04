@@ -76,7 +76,7 @@ These are the first two Alembic migrations in the repo that `create_table` rathe
 
 ## Triggering the sweep
 
-There's no in-process scheduler (see Context above), so a `price-check-cron` service in `compose.yml` runs alongside `backend` in the same Compose stack: a plain `curlimages/curl` container looping `curl -X POST http://backend:8000/api/prices/check` (container-to-container, over the Compose network) every 6 hours, using the `X-Cron-Secret` header from `PRICE_CHECK_CRON_SECRET`. Since `blm.theocloud.dev` is deployed from this same `compose.yml` (via Podman, see README's Deployment section) with `.env.prod` swapped in, this one service covers local dev and production alike — no separate scheduler infra (GitHub Actions cron, etc.) needed. `PRICE_CHECK_CRON_SECRET` (and, if a server-wide fallback webhook is wanted, `DISCORD_WEBHOOK_URL`) still need to be set in `.env`/`.env.prod` as appropriate for each environment.
+There's no in-process scheduler (see Context above), so a `price-check-cron` service in `compose.yml` runs alongside `backend` in the same Compose stack: a plain `curlimages/curl` container looping `curl -X POST http://backend:8000/api/prices/check` (container-to-container, over the Compose network) every 6 hours, using the `X-Cron-Secret` header from `PRICE_CHECK_CRON_SECRET`. The production stack (`compose.prod.yml`) runs the same service, so it covers local dev and production alike - no separate scheduler infra (GitHub Actions cron, etc.) needed. `PRICE_CHECK_CRON_SECRET` (and, if a server-wide fallback webhook is wanted, `DISCORD_WEBHOOK_URL`) still need to be set in the `.env` of each environment.
 
 ## Verification
 
