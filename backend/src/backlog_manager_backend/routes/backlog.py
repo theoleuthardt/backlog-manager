@@ -324,14 +324,20 @@ async def delete_entry(
     await backlog_entry_repo.delete_backlog_entry(db_session, entry_id)
 
 
-@delete("/api/backlog/entries", status_code=200)
+@delete("/api/backlog/entries", status_code=200, raises=[NotFoundException])
 async def delete_all_entries(
     db_session: NamedDependency[AsyncSession],
     current_user: NamedDependency[User],
+    space_id: FromQuery[int | None] = None,
 ) -> int:
     """Bulk variant of delete_entry - permanently deletes every backlog
-    entry of the caller (category associations cascade). Returns the
-    number of entries removed."""
+    entry of the caller's personal backlog, or of the shared space when
+    `space_id` is given and the caller is an active member (category
+    associations cascade). Without `space_id` a space's entries are
+    never touched. Returns the number of entries removed."""
+    await _require_space_access(db_session, current_user, space_id)
+    if space_id is not None:
+        return await backlog_entry_repo.delete_backlog_entries_by_space(db_session, space_id)
     return await backlog_entry_repo.delete_backlog_entries_by_user(db_session, current_user.id)
 
 

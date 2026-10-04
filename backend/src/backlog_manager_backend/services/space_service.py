@@ -32,7 +32,10 @@ async def invite_user(session: AsyncSession, inviter: User, username: str) -> No
     await space_repo.lock_space(session, space_id)
     if len(await space_repo.get_members(session, space_id)) >= MAX_SPACE_MEMBERS:
         raise ConflictError("This space is already full")
-    await space_repo.add_invited_member(session, space_id, invitee.id)
+    try:
+        await space_repo.add_invited_member(session, space_id, invitee.id)
+    except ConflictError as error:
+        raise ConflictError("That user already belongs to or is invited to a space") from error
 
 
 async def accept_invitation(session: AsyncSession, user: User) -> SpaceMemberRecord:

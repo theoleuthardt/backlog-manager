@@ -236,6 +236,17 @@ async def delete_backlog_entry(
     return schema
 
 
+async def delete_backlog_entries_by_space(session: AsyncSession, space_id: int) -> int:
+    """Space counterpart of delete_backlog_entries_by_user: deletes every
+    entry of the shared space (category associations and per-member data
+    cascade) and returns the number of rows removed."""
+    result = await session.execute(
+        delete(BacklogEntryModel).where(BacklogEntryModel.space_id == space_id)
+    )
+    await session.commit()
+    return result.rowcount or 0
+
+
 async def delete_backlog_entries_by_user(
     session: AsyncSession, user_id: int
 ) -> int:
