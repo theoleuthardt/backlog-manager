@@ -20,8 +20,14 @@ def _missing_igdb_data(entry: BacklogEntry) -> bool:
     return not entry.genre.strip() or entry.description is None
 
 
+def _has_dirty_steam_title(entry: BacklogEntry) -> bool:
+    return entry.steam_app_id is not None and entry.title != game_service.clean_game_title(
+        entry.title
+    )
+
+
 def _needs_sync(entry: BacklogEntry) -> bool:
-    return _missing_igdb_data(entry) or entry.title != game_service.clean_game_title(entry.title)
+    return _missing_igdb_data(entry) or _has_dirty_steam_title(entry)
 
 
 def _build_update(entry: BacklogEntry, match: EnrichedResult | None) -> UpdateBacklogEntryParams:

@@ -165,6 +165,7 @@ async def test_count_matches_the_entries_the_sync_would_handle(
     user = await _make_user(session)
     await _make_entry(session, user.id, title="Needs data")
     await _make_entry(session, user.id, title="Done", genre="X", description="Y")
-    await _make_entry(session, user.id, title="Dirty™", genre="X", description="Y")
+    await _make_entry(session, user.id, title="Dirty™", genre="X", description="Y", steam_app_id=7)
+    await _make_entry(session, user.id, title="Manual™", genre="X", description="Y")
 
     assert await igdb_sync_service.count_entries_needing_sync(session, user.id) == 2

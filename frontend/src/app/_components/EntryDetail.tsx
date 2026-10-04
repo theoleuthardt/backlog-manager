@@ -261,6 +261,7 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
   const changesKey = JSON.stringify(changes);
   const pendingChangesRef = useRef(changes);
   const isSavingRef = useRef(false);
+  const [saveRound, setSaveRound] = useState(0);
   const mutateEntryRef = useRef(updateEntryMutation.mutate);
 
   useEffect(() => {
@@ -279,6 +280,7 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
         .mutateAsync({ entryId: props.id, changes: pending })
         .then(() => {
           setSaveState("saved");
+          setSaveRound((round) => round + 1);
         })
         .catch((error: unknown) => {
           setSaveState("error");
@@ -294,7 +296,7 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
     }, AUTOSAVE_DELAY_MS);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [changesKey]);
+  }, [changesKey, saveRound]);
 
   useEffect(
     () => () => {
