@@ -2,6 +2,12 @@ name: Release Apps
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: Release version as X.Y.Z (empty = bump the patch of the latest release)
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -20,19 +26,14 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Compute next version
+      - name: Compute release version
         id: compute
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
         run: |
           LATEST_TAG=$(git tag -l 'v*.*.*' --sort=-v:refname | head -n1)
-          if [ -z "$LATEST_TAG" ]; then
-            VERSION=$(node -p "require('./frontend/package.json').version")
-          else
-            BASE="${LATEST_TAG#v}"
-            IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE"
-            VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
-          fi
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          PACKAGE_VERSION=$(node -p "require('./frontend/package.json').version")
+          node scripts/release-version.mjs "$LATEST_TAG" "$PACKAGE_VERSION" "$REQUESTED_VERSION" >> "$GITHUB_OUTPUT"
 
   build:
     name: Build desktop apps

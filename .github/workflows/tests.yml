@@ -98,5 +98,5 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Run updater manifest tests
-        run: node --test scripts/updater-manifest.test.mjs
+      - name: Run release script tests
+        run: node --test scripts/updater-manifest.test.mjs scripts/release-version.test.mjs
