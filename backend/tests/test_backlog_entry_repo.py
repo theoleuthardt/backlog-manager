@@ -239,7 +239,6 @@ async def test_update_backlog_entry_can_clear_nullable_field_with_explicit_none(
 
     assert cleared.review_stars is None
     assert cleared.note is None
-    # fields not mentioned in the update (left at UNSET) stay untouched
     assert cleared.title == "Elden Ring"
 
 
@@ -327,7 +326,6 @@ async def test_delete_backlog_entries_by_user(session: AsyncSession) -> None:
         e.backlog_entry_id
         for e in await backlog_entry_repo.get_backlog_entries_by_user(session, other.id)
     ] == [other_entry.backlog_entry_id]
-    # the category association cascaded away with its entry
     assert (
         await category_repo.get_categories_for_backlog_entry(session, entry.backlog_entry_id) == []
     )

@@ -22,7 +22,6 @@ dependencies = [
     "structlog>=26.1.0",
 ]
 
-
 [build-system]
 requires = ["uv_build>=0.8.13,<0.9.0"]
 build-backend = "uv_build"
@@ -37,16 +36,10 @@ dev = [
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-# db.py's engine is a module-level singleton bound to one event loop; a
-# per-test loop (pytest-asyncio's default) causes "Event loop is closed"
-# errors when the pool later tries to recycle a connection from a
-# different, already-closed loop.
 asyncio_default_fixture_loop_scope = "session"
 asyncio_default_test_loop_scope = "session"
 testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100
-# alembic revision --autogenerate produces this boilerplate every time;
-# holding it to the same lint standard as hand-written code is just noise.
 extend-exclude = ["alembic/versions"]

@@ -18,10 +18,6 @@ export const env = createEnv({
    * `NEXT_PUBLIC_`.
    */
   client: {
-    // Must be https: in production (the Bearer token would otherwise go
-    // out in cleartext) - loopback hosts are exempt since `next build`
-    // always runs with NODE_ENV=production internally, even for a local
-    // container build against http://localhost:8000.
     NEXT_PUBLIC_API_URL:
       process.env.NODE_ENV === "production"
         ? z
@@ -37,7 +33,7 @@ export const env = createEnv({
               },
               {
                 message:
-                  "NEXT_PUBLIC_API_URL must use https in production (loopback hosts like localhost are exempt)",
+                  "NEXT_PUBLIC_API_URL must use https in production, or the Bearer token travels in cleartext (loopback hosts like localhost are exempt, since `next build` always runs as production, even for a local container build)",
               },
             )
         : z.string().url().default("http://localhost:8000"),

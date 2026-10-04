@@ -87,7 +87,7 @@ async def test_update_category_can_clear_description_with_explicit_none(
     )
 
     assert updated.description is None
-    assert updated.name == "Games"  # omitted field stays untouched
+    assert updated.name == "Games"
 
 
 async def test_update_category_not_found(session: AsyncSession) -> None:

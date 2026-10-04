@@ -16,8 +16,9 @@ def postgres_url() -> Generator[str, None, None]:
     """Starts a real Postgres container for the test session, seeds the
     real schema (same file the frontend/CI use), and points the app's
     settings at it (must run before backlog_manager_backend.db is
-    imported anywhere, since the engine is created at import time)."""
-    # dbname matches the init SQL's hardcoded `ALTER DATABASE "backlog-manager-db"`
+    imported anywhere, since the engine is created at import time). The
+    database name must match the init SQL's hardcoded
+    `ALTER DATABASE "backlog-manager-db"`."""
     with PostgresContainer("postgres:17-alpine", dbname="backlog-manager-db") as pg:
         os.environ["POSTGRES_URL"] = pg.get_connection_url().replace(
             "postgresql+psycopg2", "postgresql+asyncpg"
