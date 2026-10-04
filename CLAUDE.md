@@ -19,6 +19,7 @@ task backend:dev   # Litestar dev server (uvicorn --reload)
 task db:up         # local Postgres + pgAdmin via compose.yml
 task test          # backend (pytest) + frontend (vitest) suites
 task lint          # frontend (eslint) + backend (ruff)
+task audit         # known-vulnerability scan of the locked frontend + backend dependencies
 task backend:migration -- "add foo column"   # new Alembic revision
 task backend:migrate                          # alembic upgrade head
 ```
@@ -80,13 +81,17 @@ uv run ruff check .  # Lint
 - `src/components/ui/` - shadcn/ui primitives
 
 **Key Directories** (all under `backend/src/backlog_manager_backend/`):
-- `routes/` - Litestar HTTP handlers (`auth.py`, `backlog.py`, `csv.py`, `games.py`, `images.py`, `steam.py`, `user.py`, `health.py`)
+- `routes/` - Litestar HTTP handlers (`auth.py`, `backlog.py`, `backups.py`, `csv.py`, `games.py`, `images.py`, `steam.py`, `user.py`, `health.py`)
 - `services/` - business logic (`auth_service.py`, `game_service.py`, ...)
 - `repositories/` - SQLAlchemy data access, one module per entity
 - `models/` - SQLAlchemy declarative models
 - `schemas/` - msgspec request/response structs; `types.py` holds boundary types shared across schemas (currently `HexColor`, a `#rrggbb`-validated string used by both category and theme colours)
 - `integrations/` - external APIs (`igdb.py`, `howlongtobeat.py`)
-- `auth/` - password hashing, JWT tokens, TOTP/2FA
+- `auth/` - password hashing, JWT tokens (carry the user's `TokenVersion` for revocation), TOTP/2FA, `client_ip.py` (proxy-aware client IP for the login rate limit)
+
+**Security:** the login rate limit keys on `CF-Connecting-IP` only for peers inside `TRUSTED_PROXY_IPS`; five failed password or 2FA attempts lock an account for 15 minutes; passwords are 12-128 characters; a password change, disabling 2FA or `POST /api/auth/logout-all` bumps `Users.TokenVersion` and thereby invalidates every issued access token; `/schema` only exists with `ENABLE_DOCS=true` (`scripts/dump_openapi_schema.py` sets it itself); startup rejects weak or placeholder secrets. Details and the deployment checklist: [`docs/SECURITY.md`](docs/SECURITY.md).
+
+**Backups:** `UserBackups` holds versioned JSON snapshots of one user's personal entries, categories and custom statuses (`services/backup_service.py`, `repositories/backup_repo.py`, `routes/backups.py`): hourly scheduler tick creating a daily `auto` snapshot, `manual` ones, and safety snapshots before restore, delete-all and CSV import; restore is one transaction. Frontend: `BackupSection` in Account settings. New backlog tables must be added to the snapshot/restore code in `backup_repo.py`. Details: [`docs/BACKUPS.md`](docs/BACKUPS.md).
 
 **Database:** SQLAlchemy 2.0 async models/repositories (`backend/src/backlog_manager_backend/{models,repositories,schemas}/`) against PostgreSQL (`postgres/backlogmanagerdb-init.sql`), Alembic baselined onto the existing schema (`backend/alembic/`, stamped rather than migrated from scratch) and used for all schema changes since. The old frontend-side raw-`pg` access layer (`frontend/src/server/db/`) no longer exists.
 
