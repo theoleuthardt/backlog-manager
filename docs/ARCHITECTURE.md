@@ -162,7 +162,9 @@ boundary rather than letting snake_case leak into components.
 Config files (compose, workflows, `pyproject.toml`) carry no inline comments;
 the reasoning behind their non-obvious settings lives here.
 
-**Compose.** `compose.yml` overrides two values from `.env`: `NODE_ENV` is
+**Compose.** `compose.prod.yml` is the production stack (database, one-shot
+migration job, backend, price-check cron; see `docs/DEPLOYMENT.md`).
+`compose.yml` overrides two values from `.env`: `NODE_ENV` is
 forced to `production` for the frontend image build (`next build` always needs
 it) and `HOSTNAME` to `0.0.0.0` (the container must bind all interfaces to be
 reachable through the port mapping). `compose/compose.yml` is the local Podman
@@ -206,6 +208,7 @@ hand-written code standard is noise.
 
 ## Related documents
 
+- [`docs/DEPLOYMENT.md`](DEPLOYMENT.md) — production stack, Cloudflare Tunnel, updates.
 - [`docs/TAURI.md`](TAURI.md) — desktop app build, signing, and CI details.
 - Root [`CLAUDE.md`](../CLAUDE.md) — commands, directory layout, coding
   conventions, and the Claude Code / issue workflow used on this repo.

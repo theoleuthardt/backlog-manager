@@ -28,7 +28,7 @@ games according to categories such as "Games I still want to play", "Games I'm c
 
 - **Frontend:** NextJS, in `frontend/` — calls the backend directly over REST, see issue #104 for the migration history.
 - **Backend:** Python/Litestar, in `backend/` as standalone REST API, SQLAlchemy 2.0 async + asyncpg against PostgreSQL.
-- **Deployment:** Container-Image on [Github Container Registry](ghcr.io) within this repo. Free to use and host yourself.
+- **Deployment:** Container-Image on [Github Container Registry](ghcr.io) within this repo. Free to use and host yourself - see [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full picture — why
 REST/JWT replaced tRPC/NextAuth, how the backend is layered, the image proxy's

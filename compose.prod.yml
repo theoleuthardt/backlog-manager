@@ -1,0 +1,60 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/backlogmanagerdb-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    image: ${BACKEND_IMAGE:-ghcr.io/theoleuthardt/backlog-manager-backend:latest}
+    env_file: .env
+    environment:
+      POSTGRES_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    command:
+      - sh
+      - -c
+      - 'if [ -z "$$(alembic current 2>/dev/null)" ]; then alembic stamp head; fi; alembic upgrade head'
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  backend:
+    image: ${BACKEND_IMAGE:-ghcr.io/theoleuthardt/backlog-manager-backend:latest}
+    env_file: .env
+    environment:
+      POSTGRES_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    ports:
+      - "${BACKEND_BIND_ADDRESS:-0.0.0.0}:${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  price-check-cron:
+    image: curlimages/curl:latest
+    env_file: .env
+    entrypoint:
+      - sh
+      - -c
+      - |
+        while true; do
+        curl --fail --connect-timeout 10 --max-time 300 --retry 5 --retry-delay 5 --retry-connrefused -X POST http://backend:8000/api/prices/check -H "X-Cron-Secret: $${PRICE_CHECK_CRON_SECRET}" || true
+        sleep 21600
+        done
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

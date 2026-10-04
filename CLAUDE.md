@@ -59,7 +59,7 @@ uv run pytest        # Run tests (spins up a real Postgres via testcontainers)
 uv run ruff check .  # Lint
 ```
 
-`.env`/`.env.example`/`.env.prod` stay at the repo root (not inside `frontend/`) since `compose.yml` needs them there for its own variable substitution; `frontend/next.config.js` loads the root `.env` explicitly via `dotenv` for local dev.
+`.env`/`.env.example`/`.env.prod`/`.env.prod.example` stay at the repo root (not inside `frontend/`) since `compose.yml` needs them there for its own variable substitution; `frontend/next.config.js` loads the root `.env` explicitly via `dotenv` for local dev.
 
 ## Architecture
 
@@ -97,6 +97,8 @@ uv run ruff check .  # Lint
 **Shared space:** two users can share one backlog (a "space", at most two members, invited by username; a user belongs to at most one). Entries, categories and custom statuses carry a nullable `SpaceID` (NULL = personal), and every route in `routes/backlog.py` takes an optional `space_id` query param that switches it to that space - membership is checked first and a non-member gets the same 404 as a missing space. Personal repo queries filter `SpaceID IS NULL`, so shared rows never leak into personal lists, CSV export or Steam sync. Status and categories are shared; playtime, rating and review are per member (`SpaceEntryMemberData`, overlaid onto the entry by `space_entry_member_repo.apply_member_data`, which also exposes `partner_playtime`). Only Steam games (`steam_app_id` required) can live in a space, and imports (CSV, Steam library/wishlist) never write to one; the Steam playtime sync only updates the caller's own space playtimes. Leaving a space or deleting an account hands the content the leaver created over to the remaining member (`space_repo.remove_member`, also called by `user_repo.delete_user`) and deletes the space once no active member is left; `DELETE /api/backlog/entries` with `space_id` empties the space. Personal entries are flagged `in_shared_space` when the same Steam game is also in the caller's space. Frontend: `BacklogScopeContext` supplies the space id to the hooks in `hooks/useBacklog.ts` (query keys carry the scope), so `/space` renders the regular `DashboardContent`; the creation tool has an "Add to" dropdown and the entry dialog an "Add to shared space" button.
 
 **Database:** SQLAlchemy 2.0 async models/repositories (`backend/src/backlog_manager_backend/{models,repositories,schemas}/`) against PostgreSQL (`postgres/backlogmanagerdb-init.sql`), Alembic baselined onto the existing schema (`backend/alembic/`, stamped rather than migrated from scratch) and used for all schema changes since. The old frontend-side raw-`pg` access layer (`frontend/src/server/db/`) no longer exists.
+
+**Production deployment:** `compose.prod.yml` (db, one-shot migration job, backend, price-check cron; pulls the published backend image) with `.env.prod.example` as its settings template; the full runbook - Cloudflare Tunnel, trusted proxy IPs, first start, updates - is [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). A new migration needs no extra deploy step (the `migrate` job runs on every start), but the init SQL must stay in sync with it, since fresh databases are created from it and then stamped at the head.
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the reasoning behind these choices (why REST/JWT replaced tRPC/NextAuth, the per-user-credential-with-server-wide-fallback pattern shared by IGDB/Steam/SteamGridDB, the image proxy's security posture) rather than just the shape of it.
 

@@ -27,6 +27,9 @@ preferable to leaving password guessing per account unbounded.
 
 ## Deployment checklist
 
+The step-by-step setup (compose stack, Cloudflare Tunnel, first start) is in
+[DEPLOYMENT.md](DEPLOYMENT.md); this is the security checklist for it.
+
 - `AUTH_SECRET`: `openssl rand -base64 32`; `TOTP_ENCRYPTION_KEY` and
   `STEAM_API_KEY_ENCRYPTION_KEY`: a Fernet key (see `.env.example`).
 - `TRUSTED_PROXY_IPS` set to the cloudflared network, so the rate limit sees
