@@ -47,8 +47,10 @@ preferable to leaving password guessing per account unbounded.
   `eslint-config-next`, ESLint tooling that never ships): every released
   version is affected and no patched release exists, so nothing can be
   upgraded - recheck when `braces` publishes a fix.
-- Node: the frontend builds on Node 20.19+ and 22.12+ only. Other versions
-  (e.g. 23.x) fail with cryptic webpack errors, so `engine-strict` makes
-  `npm install` reject them and `next.config.js` aborts early with a clear
-  message. Node 20 reached end of life in April 2026; moving the pin in
-  `.nvmrc`, the Containerfile and the workflows to 22 is the next step.
+- Node: the frontend runs on Node 22 (22.12+), pinned in `.nvmrc`, the
+  Containerfile and the workflows. Node 20 reached end of life in April 2026,
+  and other versions such as 23.x fail with cryptic webpack errors, so
+  `engine-strict` makes `npm install` reject them and `next.config.js` aborts
+  early with a clear message. Moving to a newer LTS means updating those pins
+  together with `SUPPORTED_NODE_MAJORS` and `engines`, and checking the
+  build.

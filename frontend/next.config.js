@@ -14,11 +14,11 @@
  *   Branching on an env var instead of swapping in a separate config file
  *   means a build killed mid-run can never leave the wrong config on disk.
  */
-const SUPPORTED_NODE_MAJORS = [20, 22];
+const SUPPORTED_NODE_MAJORS = [22];
 const nodeMajor = Number(process.versions.node.split(".")[0]);
 if (!SUPPORTED_NODE_MAJORS.includes(nodeMajor)) {
   throw new Error(
-    `Node.js ${process.versions.node} is not supported - the build breaks on it with cryptic webpack errors. Use Node ${SUPPORTED_NODE_MAJORS.join(" or ")} (run \`nvm use\` in the repo root).`,
+    `Node.js ${process.versions.node} is not supported: this project runs on Node ${SUPPORTED_NODE_MAJORS.join(" or ")} (Node 20 is end of life, and versions like 23.x break the build with cryptic webpack errors). Run \`nvm use\` in the repo root.`,
   );
 }
 

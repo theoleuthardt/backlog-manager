@@ -24,7 +24,7 @@ npm run tauri:build   # produces installers in src-tauri/target/release/bundle/
 ## Prerequisites
 
 ### All platforms
-- Node.js 20+ (already required for the web build)
+- Node.js 22 (already required for the web build)
 - [Rust](https://www.rust-lang.org/tools/install)
 
 ### macOS

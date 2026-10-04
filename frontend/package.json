@@ -59,7 +59,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.15",
     "@tauri-apps/cli": "^2.11.4",
-    "@types/node": "^20.14.10",
+    "@types/node": "^22.20.5",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
     "baseline-browser-mapping": "^2.8.32",
@@ -78,7 +78,7 @@
     "vitest": "^4.1.11"
   },
   "engines": {
-    "node": "^20.19.0 || ^22.12.0",
+    "node": "^22.12.0",
     "npm": ">=10.0.0"
   },
   "ct3aMetadata": {
