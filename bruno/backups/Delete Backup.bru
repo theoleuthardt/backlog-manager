@@ -1,0 +1,19 @@
+meta {
+  name: Delete Backup
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{backendUrl}}/api/backups/{{backupId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Deletes one backup. 204 on success, 404 for an unknown or foreign id.
+}

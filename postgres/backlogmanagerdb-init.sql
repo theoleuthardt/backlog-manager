@@ -125,6 +125,21 @@ CREATE TABLE IF NOT EXISTS "blm-system"."CustomStatuses" (
 );
 
 CREATE INDEX IF NOT EXISTS idx_categories_userid ON "blm-system"."Categories"("UserID");
+CREATE TABLE IF NOT EXISTS "blm-system"."UserBackups" (
+    "BackupID"      BIGSERIAL PRIMARY KEY,
+    "UserID"        BIGINT NOT NULL,
+    "Kind"          VARCHAR(20) NOT NULL,
+    "ContentHash"   VARCHAR(64) NOT NULL,
+    "EntryCount"    INTEGER NOT NULL,
+    "CategoryCount" INTEGER NOT NULL,
+    "Payload"       JSONB NOT NULL,
+    "CreatedAt"     TIMESTAMP NOT NULL DEFAULT timezone('utc', clock_timestamp()),
+    FOREIGN KEY ("UserID") REFERENCES "blm-system"."Users"("UserID")
+        ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_userbackups_userid ON "blm-system"."UserBackups"("UserID");
+
 CREATE INDEX IF NOT EXISTS idx_backlogentries_userid ON "blm-system"."BacklogEntries"("UserID");
 CREATE INDEX IF NOT EXISTS idx_backlogentries_status ON "blm-system"."BacklogEntries"("Status");
 

@@ -40,6 +40,7 @@ from backlog_manager_backend.schemas.custom_status import (
     UpdateCustomStatusRequest,
 )
 from backlog_manager_backend.schemas.user import User
+from backlog_manager_backend.services import backup_service
 
 _ENTRY_NOT_FOUND = "Backlog entry not found"
 _CATEGORY_NOT_FOUND = "Category not found"
@@ -226,7 +227,9 @@ async def delete_all_entries(
 ) -> int:
     """Bulk variant of delete_entry - permanently deletes every backlog
     entry of the caller (category associations cascade). Returns the
-    number of entries removed."""
+    number of entries removed. A "pre-delete" backup is taken first so the
+    wipe can be reverted from the backups list."""
+    await backup_service.create_backup(db_session, current_user.id, backup_service.PRE_DELETE)
     return await backlog_entry_repo.delete_backlog_entries_by_user(db_session, current_user.id)
 
 

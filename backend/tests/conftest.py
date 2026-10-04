@@ -23,6 +23,7 @@ def postgres_url() -> Generator[str, None, None]:
             "postgresql+psycopg2", "postgresql+asyncpg"
         )
         os.environ.setdefault("AUTH_SECRET", "test-only-secret-not-for-production")
+        os.environ.setdefault("BACKUP_SCHEDULER_ENABLED", "false")
         os.environ.setdefault("TOTP_ENCRYPTION_KEY", Fernet.generate_key().decode())
         yield os.environ["POSTGRES_URL"]
 

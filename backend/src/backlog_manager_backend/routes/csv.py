@@ -37,6 +37,7 @@ from backlog_manager_backend.schemas.csv import (
     MatchCsvRequest,
 )
 from backlog_manager_backend.schemas.user import User
+from backlog_manager_backend.services import backup_service
 
 logger = structlog.get_logger()
 
@@ -219,6 +220,9 @@ async def submit_csv_stream(
 
     async def run(on_progress: ProgressCallback) -> SubmitCsvStreamResult:
         async with lock, async_session() as db_session:
+            await backup_service.create_backup(
+                db_session, current_user.id, backup_service.PRE_IMPORT
+            )
             result = await submit_csv_entries(db_session, current_user.id, data, on_progress)
             return SubmitCsvStreamResult(
                 created=[BacklogEntryResponse.from_entry(entry) for entry in result.created],

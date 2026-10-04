@@ -1,0 +1,21 @@
+meta {
+  name: Download Backup
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{backendUrl}}/api/backups/{{backupId}}/download
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  The snapshot as a JSON attachment (versioned payload: entries,
+  categories, custom statuses). 404 if the backup doesn't exist or belongs
+  to another user.
+}

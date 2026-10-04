@@ -47,6 +47,9 @@ class Settings(BaseSettings):
     # Serves /schema (OpenAPI JSON, Swagger, ...). Off by default so a
     # public deployment doesn't hand out its own route map.
     enable_docs: bool = False
+    # Runs the daily automatic per-user backups (see
+    # services/backup_service.py) inside the API process.
+    backup_scheduler_enabled: bool = True
 
     @field_validator("auth_secret")
     @classmethod

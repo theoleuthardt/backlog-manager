@@ -24,6 +24,7 @@ from backlog_manager_backend.models.category_backlog_entry import (
 from backlog_manager_backend.models.custom_status import CustomStatus
 from backlog_manager_backend.models.game_price import GamePrice
 from backlog_manager_backend.models.user import User
+from backlog_manager_backend.models.user_backup import UserBackup
 from backlog_manager_backend.models.user_backup_code import UserBackupCode
 from backlog_manager_backend.models.user_game_price_alert import UserGamePriceAlert
 
@@ -35,6 +36,7 @@ __all__ = [
     "CustomStatus",
     "GamePrice",
     "User",
+    "UserBackup",
     "UserBackupCode",
     "UserGamePriceAlert",
 ]
