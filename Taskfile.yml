@@ -122,6 +122,26 @@ tasks:
     cmds:
       - uv run pytest
 
+  backend:audit:
+    desc: Audit the backend's locked dependencies for known vulnerabilities (pip-audit)
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - uv export --no-dev --no-hashes --no-emit-project --frozen -o .audit-requirements.txt
+      - uvx pip-audit --no-deps --disable-pip --ignore-vuln PYSEC-2026-1325 -r .audit-requirements.txt
+      - rm -f .audit-requirements.txt
+
+  frontend:audit:
+    desc: Audit the frontend's production dependencies for known vulnerabilities
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm audit --omit=dev
+
+  audit:
+    desc: Audit frontend and backend dependencies for known vulnerabilities
+    cmds:
+      - task: backend:audit
+      - task: frontend:audit
+
   backend:migrate:
     desc: Apply pending Alembic migrations
     dir: "{{.BACKEND_DIR}}"

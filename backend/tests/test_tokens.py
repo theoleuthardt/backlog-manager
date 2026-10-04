@@ -18,7 +18,7 @@ def tokens() -> ModuleType:
 def test_create_and_decode_access_token_round_trips(tokens: ModuleType) -> None:
     token = tokens.create_access_token(42)
 
-    assert tokens.decode_access_token(token) == 42
+    assert tokens.decode_access_token(token).user_id == 42
 
 
 def test_decode_access_token_rejects_garbage(tokens: ModuleType) -> None:
@@ -108,4 +108,33 @@ def test_decode_access_token_accepts_a_legacy_token_with_no_purpose_claim(
         algorithm="HS256",
     )
 
-    assert tokens.decode_access_token(legacy_token) == 42
+    assert tokens.decode_access_token(legacy_token).user_id == 42
+
+
+def test_access_token_carries_the_token_version(tokens: ModuleType) -> None:
+    token = tokens.create_access_token(42, token_version=3)
+
+    claims = tokens.decode_access_token(token)
+
+    assert claims.user_id == 42
+    assert claims.token_version == 3
+
+
+def test_access_token_version_defaults_to_zero(tokens: ModuleType) -> None:
+    token = tokens.create_access_token(42)
+
+    assert tokens.decode_access_token(token).token_version == 0
+
+
+def test_decode_access_token_treats_a_missing_version_claim_as_zero(tokens: ModuleType) -> None:
+    """Tokens issued before revocation existed carry no `tv` claim - they
+    stay valid (as version 0) until the user's version is first bumped."""
+    from jose import jwt
+
+    legacy_token = jwt.encode(
+        {"sub": "42", "purpose": "access", "exp": int(time.time()) + 60},
+        tokens.settings.auth_secret,
+        algorithm="HS256",
+    )
+
+    assert tokens.decode_access_token(legacy_token).token_version == 0

@@ -25,13 +25,13 @@ async def test_create_user_creates_user_with_hashed_password(
 
     user = await auth_service.create_user(
         session,
-        CreateUserRequest(username="newuser", email="newuser@example.com", password="hunter22"),
+        CreateUserRequest(username="newuser", email="newuser@example.com", password="hunter2hunter2"),
     )
 
     assert user.name == "newuser"
     assert user.email == "newuser@example.com"
     assert user.is_admin is False
-    assert user.password_hash != "hunter22"
+    assert user.password_hash != "hunter2hunter2"
 
 
 async def test_create_user_can_create_an_admin(
@@ -42,7 +42,7 @@ async def test_create_user_can_create_an_admin(
     user = await auth_service.create_user(
         session,
         CreateUserRequest(
-            username="newadmin", email="newadmin@example.com", password="hunter22", is_admin=True
+            username="newadmin", email="newadmin@example.com", password="hunter2hunter2", is_admin=True
         ),
     )
 
@@ -56,13 +56,13 @@ async def test_create_user_rejects_duplicate_email(
 
     await auth_service.create_user(
         session,
-        CreateUserRequest(username="first", email="dupe@example.com", password="hunter22"),
+        CreateUserRequest(username="first", email="dupe@example.com", password="hunter2hunter2"),
     )
 
     with pytest.raises(ConflictError):
         await auth_service.create_user(
             session,
-            CreateUserRequest(username="second", email="dupe@example.com", password="hunter22"),
+            CreateUserRequest(username="second", email="dupe@example.com", password="hunter2hunter2"),
         )
 
 
@@ -87,16 +87,16 @@ async def test_login_returns_token_for_correct_credentials(
 
     user = await auth_service.create_user(
         session,
-        CreateUserRequest(username="loginuser", email="loginuser@example.com", password="hunter22"),
+        CreateUserRequest(username="loginuser", email="loginuser@example.com", password="hunter2hunter2"),
     )
 
     result = await auth_service.login(
-        session, LoginParams(email="loginuser@example.com", password="hunter22")
+        session, LoginParams(email="loginuser@example.com", password="hunter2hunter2")
     )
 
     assert result.requires_2fa is False
     assert result.challenge_token is None
-    assert decode_access_token(result.access_token) == user.id
+    assert decode_access_token(result.access_token).user_id == user.id
 
 
 async def test_login_rejects_wrong_password(
@@ -107,12 +107,12 @@ async def test_login_rejects_wrong_password(
 
     await auth_service.create_user(
         session,
-        CreateUserRequest(username="wrongpw", email="wrongpw@example.com", password="hunter22"),
+        CreateUserRequest(username="wrongpw", email="wrongpw@example.com", password="hunter2hunter2"),
     )
 
     with pytest.raises(ValidationError):
         await auth_service.login(
-            session, LoginParams(email="wrongpw@example.com", password="not-hunter22")
+            session, LoginParams(email="wrongpw@example.com", password="not-hunter2hunter2")
         )
 
 
@@ -121,7 +121,7 @@ async def test_login_rejects_unknown_email(auth_service: ModuleType, session: As
 
     with pytest.raises(ValidationError):
         await auth_service.login(
-            session, LoginParams(email="nobody@example.com", password="hunter22")
+            session, LoginParams(email="nobody@example.com", password="hunter2hunter2")
         )
 
 
@@ -173,7 +173,7 @@ async def _create_user(auth_service: ModuleType, session: AsyncSession, email: s
 
     return await auth_service.create_user(
         session,
-        CreateUserRequest(username=email.split("@")[0], email=email, password="hunter22"),
+        CreateUserRequest(username=email.split("@")[0], email=email, password="hunter2hunter2"),
     )
 
 
@@ -297,7 +297,7 @@ async def test_disable_two_factor_clears_secret_and_backup_codes(
         auth_service, session, "disable@example.com"
     )
 
-    await auth_service.disable_two_factor(session, user, "hunter22")
+    await auth_service.disable_two_factor(session, user, "hunter2hunter2")
 
     user = await user_repo.get_user_by_id(session, user.id)
     assert user.totp_enabled is False
@@ -315,7 +315,7 @@ async def test_disable_two_factor_rejects_wrong_password(
     )
 
     with pytest.raises(ValidationError):
-        await auth_service.disable_two_factor(session, user, "not-hunter22")
+        await auth_service.disable_two_factor(session, user, "not-hunter2hunter2")
 
     user = await user_repo.get_user_by_id(session, user.id)
     assert user.totp_enabled is True
@@ -363,7 +363,7 @@ async def test_verify_two_factor_login_succeeds_with_a_totp_code(
         session, challenge_token, pyotp.TOTP(secret).now()
     )
 
-    assert decode_access_token(access_token) == user.id
+    assert decode_access_token(access_token).user_id == user.id
 
 
 async def test_verify_two_factor_login_succeeds_with_a_backup_code_and_consumes_it(
@@ -383,7 +383,7 @@ async def test_verify_two_factor_login_succeeds_with_a_backup_code_and_consumes_
         session, challenge_token, backup_codes[0]
     )
 
-    assert decode_access_token(access_token) == user.id
+    assert decode_access_token(access_token).user_id == user.id
 
     with pytest.raises(ValidationError):
         await auth_service.verify_two_factor_login(
@@ -454,9 +454,183 @@ async def test_login_returns_a_challenge_when_two_factor_is_enabled(
     )
 
     result = await auth_service.login(
-        session, LoginParams(email="twofactorlogin@example.com", password="hunter22")
+        session, LoginParams(email="twofactorlogin@example.com", password="hunter2hunter2")
     )
 
     assert result.requires_2fa is True
     assert result.access_token is None
     assert decode_two_factor_challenge_token(result.challenge_token) == user.id
+
+
+async def test_create_user_rejects_a_password_below_twelve_characters(
+    auth_service: ModuleType, session: AsyncSession
+) -> None:
+    from backlog_manager_backend.schemas.user import CreateUserRequest
+
+    with pytest.raises(ValidationError):
+        await auth_service.create_user(
+            session,
+            CreateUserRequest(username="elevenpw", email="elevenpw@example.com", password="a" * 11),
+        )
+
+
+async def test_create_user_rejects_a_password_above_128_characters(
+    auth_service: ModuleType, session: AsyncSession
+) -> None:
+    from backlog_manager_backend.schemas.user import CreateUserRequest
+
+    with pytest.raises(ValidationError):
+        await auth_service.create_user(
+            session,
+            CreateUserRequest(username="hugepw", email="hugepw@example.com", password="a" * 129),
+        )
+
+
+async def _fail_login(auth_service: ModuleType, session: AsyncSession, email: str, times: int) -> None:
+    from backlog_manager_backend.schemas.auth import LoginParams
+
+    for _ in range(times):
+        with pytest.raises(ValidationError):
+            await auth_service.login(session, LoginParams(email=email, password="wrong-password-1"))
+
+
+async def test_login_locks_the_account_after_five_failed_attempts(
+    auth_service: ModuleType, session: AsyncSession
+) -> None:
+    from backlog_manager_backend.schemas.auth import LoginParams
+
+    await _create_user(auth_service, session, "lockme@example.com")
+    await _fail_login(auth_service, session, "lockme@example.com", 5)
+
+    with pytest.raises(ValidationError):
+        await auth_service.login(
+            session, LoginParams(email="lockme@example.com", password="hunter2hunter2")
+        )
+
+
+async def test_login_below_the_threshold_does_not_lock_the_account(
+    auth_service: ModuleType, session: AsyncSession
+) -> None:
+    from backlog_manager_backend.schemas.auth import LoginParams
+
+    await _create_user(auth_service, session, "almostlocked@example.com")
+    await _fail_login(auth_service, session, "almostlocked@example.com", 4)
+
+    result = await auth_service.login(
+        session, LoginParams(email="almostlocked@example.com", password="hunter2hunter2")
+    )
+
+    assert result.access_token is not None
+
+
+async def test_successful_login_resets_the_failed_attempt_counter(
+    auth_service: ModuleType, session: AsyncSession
+) -> None:
+    from backlog_manager_backend.schemas.auth import LoginParams
+
+    await _create_user(auth_service, session, "resetcount@example.com")
+    await _fail_login(auth_service, session, "resetcount@example.com", 4)
+    await auth_service.login(
+        session, LoginParams(email="resetcount@example.com", password="hunter2hunter2")
+    )
+    await _fail_login(auth_service, session, "resetcount@example.com", 4)
+
+    result = await auth_service.login(
+        session, LoginParams(email="resetcount@example.com", password="hunter2hunter2")
+    )
+
+    assert result.access_token is not None
+
+
+async def test_login_accepts_the_correct_password_again_once_the_lock_expired(
+    auth_service: ModuleType, session: AsyncSession
+) -> None:
+    from datetime import timedelta
+
+    from backlog_manager_backend.models.user import User as UserModel
+    from backlog_manager_backend.schemas.auth import LoginParams
+    from backlog_manager_backend.utils import now_truncated_to_minute
+
+    user = await _create_user(auth_service, session, "lockexpired@example.com")
+    await _fail_login(auth_service, session, "lockexpired@example.com", 5)
+    model = await session.get(UserModel, user.id)
+    model.locked_until = now_truncated_to_minute() - timedelta(minutes=1)
+    await session.commit()
+
+    result = await auth_service.login(
+        session, LoginParams(email="lockexpired@example.com", password="hunter2hunter2")
+    )
+
+    assert result.access_token is not None
+
+
+async def test_locked_account_does_not_return_a_two_factor_challenge(
+    auth_service: ModuleType, session: AsyncSession
+) -> None:
+    from backlog_manager_backend.schemas.auth import LoginParams
+
+    await _enroll_and_enable(auth_service, session, "locked2fa@example.com")
+    await _fail_login(auth_service, session, "locked2fa@example.com", 5)
+
+    with pytest.raises(ValidationError):
+        await auth_service.login(
+            session, LoginParams(email="locked2fa@example.com", password="hunter2hunter2")
+        )
+
+
+async def test_failed_two_factor_codes_count_towards_the_lockout(
+    auth_service: ModuleType, session: AsyncSession
+) -> None:
+    import pyotp
+
+    from backlog_manager_backend.auth.tokens import create_two_factor_challenge_token
+
+    user, secret, _backup_codes = await _enroll_and_enable(
+        auth_service, session, "bruteforce2fa@example.com"
+    )
+    challenge = create_two_factor_challenge_token(user.id)
+    for _ in range(5):
+        with pytest.raises(ValidationError):
+            await auth_service.verify_two_factor_login(session, challenge, "000000")
+
+    with pytest.raises(ValidationError):
+        await auth_service.verify_two_factor_login(session, challenge, pyotp.TOTP(secret).now())
+
+
+async def test_revoke_sessions_increments_the_token_version(
+    auth_service: ModuleType, session: AsyncSession
+) -> None:
+    user = await _create_user(auth_service, session, "revoke@example.com")
+
+    await auth_service.revoke_sessions(session, user.id)
+    await auth_service.revoke_sessions(session, user.id)
+
+    assert (await user_repo.get_user_by_id(session, user.id)).token_version == 2
+
+
+async def test_login_issues_a_token_carrying_the_current_token_version(
+    auth_service: ModuleType, session: AsyncSession
+) -> None:
+    from backlog_manager_backend.auth.tokens import decode_access_token
+    from backlog_manager_backend.schemas.auth import LoginParams
+
+    user = await _create_user(auth_service, session, "tokenversion@example.com")
+    await auth_service.revoke_sessions(session, user.id)
+
+    result = await auth_service.login(
+        session, LoginParams(email="tokenversion@example.com", password="hunter2hunter2")
+    )
+
+    assert decode_access_token(result.access_token).token_version == 1
+
+
+async def test_disable_two_factor_revokes_existing_sessions(
+    auth_service: ModuleType, session: AsyncSession
+) -> None:
+    user, _secret, _backup_codes = await _enroll_and_enable(
+        auth_service, session, "disablerevoke@example.com"
+    )
+
+    await auth_service.disable_two_factor(session, user, "hunter2hunter2")
+
+    assert (await user_repo.get_user_by_id(session, user.id)).token_version == 1

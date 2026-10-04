@@ -8,6 +8,7 @@ a challenge token would decode successfully anywhere an access token is
 accepted, bypassing 2FA entirely."""
 
 import time
+from typing import NamedTuple
 
 from jose import JWTError, jwt
 
@@ -43,25 +44,36 @@ def _extract_subject(payload: dict) -> int:
         raise TokenError("Token subject is not a valid user id") from error
 
 
-def create_access_token(user_id: int) -> str:
+class AccessTokenClaims(NamedTuple):
+    user_id: int
+    token_version: int
+
+
+def create_access_token(user_id: int, token_version: int = 0) -> str:
     payload = {
         "sub": str(user_id),
         "purpose": _ACCESS_TOKEN_PURPOSE,
+        "tv": token_version,
         "exp": int(time.time()) + _ACCESS_TOKEN_LIFETIME_SECONDS,
     }
     return jwt.encode(payload, settings.auth_secret, algorithm=_ALGORITHM)
 
 
-def decode_access_token(token: str) -> int:
+def decode_access_token(token: str) -> AccessTokenClaims:
     """A missing purpose claim means this token was issued before the claim
     existed - it was always an access token (challenge tokens are new and
     always set purpose), so it's still accepted rather than logging out
     every existing session on deploy. Only an explicit, different purpose
-    (e.g. a 2fa_challenge token) is rejected."""
+    (e.g. a 2fa_challenge token) is rejected. A missing `tv` claim is
+    likewise version 0, which stays valid until the user's token version
+    is first bumped."""
     payload = _decode(token)
     if payload.get("purpose", _ACCESS_TOKEN_PURPOSE) != _ACCESS_TOKEN_PURPOSE:
         raise TokenError("Token is not an access token")
-    return _extract_subject(payload)
+    token_version = payload.get("tv", 0)
+    if not isinstance(token_version, int):
+        raise TokenError("Token version is not valid")
+    return AccessTokenClaims(_extract_subject(payload), token_version)
 
 
 def create_two_factor_challenge_token(user_id: int) -> str:

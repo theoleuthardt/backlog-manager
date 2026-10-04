@@ -48,6 +48,9 @@ class User(msgspec.Struct):
     discord_webhook_url_encrypted: str | None = None
     steam_auto_import_enabled: bool = False
     steam_family_ids: str | None = None
+    token_version: int = 0
+    failed_login_attempts: int = 0
+    locked_until: datetime | None = None
     setup_completed: bool = False
     default_sort: str = "status"
     theme: str = "dark"

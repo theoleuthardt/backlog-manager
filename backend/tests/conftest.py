@@ -101,7 +101,7 @@ async def create_and_login(_seed_schema: None) -> AsyncGenerator[Callable[..., A
     created_emails: list[str] = []
 
     async def _create_and_login(
-        client, email: str, password: str = "hunter22", is_admin: bool = False
+        client, email: str, password: str = "hunter2hunter2", is_admin: bool = False
     ) -> dict[str, str]:
         from backlog_manager_backend.db import async_session
         from backlog_manager_backend.schemas.user import CreateUserRequest

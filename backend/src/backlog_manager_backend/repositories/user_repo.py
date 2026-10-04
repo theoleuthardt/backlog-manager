@@ -1,5 +1,7 @@
+from datetime import UTC, datetime, timedelta
+
 import msgspec
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -53,6 +55,9 @@ def _to_schema(model: UserModel) -> User:
         discord_webhook_url_encrypted=model.discord_webhook_url_encrypted,
         steam_auto_import_enabled=model.steam_auto_import_enabled,
         steam_family_ids=model.steam_family_ids,
+        token_version=model.token_version,
+        failed_login_attempts=model.failed_login_attempts,
+        locked_until=model.locked_until,
         setup_completed=model.setup_completed,
         default_sort=model.default_sort,
         theme=model.theme,
@@ -116,6 +121,7 @@ async def update_user(session: AsyncSession, params: UpdateUserParams) -> User:
         model.email = params.email
     if params.password_hash is not msgspec.UNSET:
         model.password_hash = params.password_hash
+        model.token_version += 1
     if params.steam_id is not msgspec.UNSET:
         model.steam_id = params.steam_id
     if params.steam_api_key_encrypted is not msgspec.UNSET:
@@ -153,6 +159,49 @@ async def update_user(session: AsyncSession, params: UpdateUserParams) -> User:
         handle_database_error(error, "update_user")
     await session.refresh(model)
     return _to_schema(model)
+
+
+async def bump_token_version(session: AsyncSession, user_id: int) -> None:
+    """Invalidates every access token issued so far for this user."""
+    await session.execute(
+        update(UserModel)
+        .where(UserModel.id == user_id)
+        .values(token_version=UserModel.token_version + 1)
+    )
+    await session.commit()
+
+
+async def record_failed_login(
+    session: AsyncSession, user_id: int, max_attempts: int, lock_duration: timedelta
+) -> None:
+    """Increments the counter atomically in SQL (concurrent guesses can't
+    lose an increment) and locks the account once `max_attempts` is
+    reached, restarting the counter for the next window."""
+    attempts = await session.scalar(
+        update(UserModel)
+        .where(UserModel.id == user_id)
+        .values(failed_login_attempts=UserModel.failed_login_attempts + 1)
+        .returning(UserModel.failed_login_attempts)
+    )
+    if attempts is not None and attempts >= max_attempts:
+        await session.execute(
+            update(UserModel)
+            .where(UserModel.id == user_id)
+            .values(
+                failed_login_attempts=0,
+                locked_until=datetime.now(UTC).replace(tzinfo=None) + lock_duration,
+            )
+        )
+    await session.commit()
+
+
+async def reset_failed_logins(session: AsyncSession, user_id: int) -> None:
+    await session.execute(
+        update(UserModel)
+        .where(UserModel.id == user_id)
+        .values(failed_login_attempts=0, locked_until=None)
+    )
+    await session.commit()
 
 
 async def delete_user(session: AsyncSession, user_id: int) -> User:

@@ -52,7 +52,7 @@ async def test_bootstrap_creates_admin_when_no_users_exist(
     bootstrap: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(bootstrap.settings, "initial_admin_email", "bootstrap-admin@example.com")
-    monkeypatch.setattr(bootstrap.settings, "initial_admin_password", "hunter22")
+    monkeypatch.setattr(bootstrap.settings, "initial_admin_password", "hunter2hunter2")
 
     async def no_users(session: object) -> list[User]:
         return []
@@ -74,7 +74,7 @@ async def test_bootstrap_creates_admin_when_no_users_exist(
 
     assert len(created_with) == 1
     assert created_with[0].email == "bootstrap-admin@example.com"
-    assert created_with[0].password == "hunter22"
+    assert created_with[0].password == "hunter2hunter2"
     assert created_with[0].is_admin is True
 
 
@@ -82,7 +82,7 @@ async def test_bootstrap_is_a_noop_when_an_admin_already_exists(
     bootstrap: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(bootstrap.settings, "initial_admin_email", "bootstrap-admin2@example.com")
-    monkeypatch.setattr(bootstrap.settings, "initial_admin_password", "hunter22")
+    monkeypatch.setattr(bootstrap.settings, "initial_admin_password", "hunter2hunter2")
 
     async def one_admin(session: object) -> list[User]:
         return [_fake_user("someadmin@example.com", True)]
@@ -105,7 +105,7 @@ async def test_bootstrap_promotes_existing_user_with_matching_email(
     (e.g. a pre-migration account with no admin flag set) - promote
     that user instead of trying to create a duplicate."""
     monkeypatch.setattr(bootstrap.settings, "initial_admin_email", "regular@example.com")
-    monkeypatch.setattr(bootstrap.settings, "initial_admin_password", "hunter22")
+    monkeypatch.setattr(bootstrap.settings, "initial_admin_password", "hunter2hunter2")
 
     existing = _fake_user("regular@example.com", is_admin=False, user_id=42)
 
@@ -143,7 +143,7 @@ async def test_bootstrap_creates_new_admin_when_other_users_exist(
     """No admin exists, other (non-matching-email) users do - creates a
     fresh admin rather than mistaking "any users" for "an admin"."""
     monkeypatch.setattr(bootstrap.settings, "initial_admin_email", "newadmin@example.com")
-    monkeypatch.setattr(bootstrap.settings, "initial_admin_password", "hunter22")
+    monkeypatch.setattr(bootstrap.settings, "initial_admin_password", "hunter2hunter2")
 
     async def no_admins(session: object) -> list[User]:
         return [_fake_user("someoneelse@example.com", False)]
@@ -199,7 +199,7 @@ async def test_bootstrap_swallows_conflict_error(
     """A ConflictError (e.g. a concurrent bootstrap race) is expected
     and non-fatal - an admin exists either way."""
     monkeypatch.setattr(bootstrap.settings, "initial_admin_email", "race@example.com")
-    monkeypatch.setattr(bootstrap.settings, "initial_admin_password", "hunter22")
+    monkeypatch.setattr(bootstrap.settings, "initial_admin_password", "hunter2hunter2")
 
     async def no_admins(session: object) -> list[User]:
         return []

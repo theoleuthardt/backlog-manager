@@ -1,0 +1,22 @@
+meta {
+  name: Logout All Sessions
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{backendUrl}}/api/auth/logout-all
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Revokes every access token issued for the authenticated user so far
+  (including the one used for this request) by bumping the account's
+  token version. Log in again afterwards. 204 on success, 401 without a
+  valid token.
+}
