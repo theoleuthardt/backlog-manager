@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Check,
   Clock,
@@ -64,8 +64,10 @@ import { MAX_REVIEW_STARS } from "~/lib/reviewStars";
 import { statusColor } from "~/lib/statusStyle";
 import { youtubeEmbedUrl } from "~/lib/trailer";
 import { splitList } from "~/lib/splitList";
+import { diffEntryForm, type EntryForm } from "~/lib/entryChanges";
 
 const INTEREST_SEGMENTS = 10;
+const AUTOSAVE_DELAY_MS = 800;
 
 const ChipList = ({ items }: { items: string[] }) =>
   items.length > 0 ? (
@@ -168,9 +170,8 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
     props.mainPlusExtraTime,
   );
   const [completionTime, setCompletionTime] = useState(props.completionTime);
-  const [isLoading, setIsLoading] = useState(false);
-  const [updateStatus, setUpdateStatus] = useState<
-    "idle" | "success" | "error"
+  const [saveState, setSaveState] = useState<
+    "idle" | "saving" | "saved" | "error"
   >("idle");
   const [imagePopoverOpen, setImagePopoverOpen] = useState(false);
   const [coverPickerOpen, setCoverPickerOpen] = useState(false);
@@ -244,64 +245,66 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
     }
   };
 
-  const handleUpdate = async () => {
-    setIsLoading(true);
-    setUpdateStatus("idle");
-    try {
-      const changes: {
-        imageLink?: string;
-        genre?: string[];
-        platform?: string[];
-        status?: string;
-        owned?: boolean;
-        interest?: number;
-        playtime?: number;
-        reviewStars?: number;
-        review?: string;
-        note?: string;
-      } = {};
-
-      if (imageLink !== props.imageLink) changes.imageLink = imageLink;
-      if (playtime !== undefined && playtime !== props.playtime)
-        changes.playtime = playtime;
-      if (genre !== (props.genre?.join(", ") ?? ""))
-        changes.genre = splitList(genre);
-      if (platform !== (props.platform?.join(", ") ?? ""))
-        changes.platform = splitList(platform);
-      if (status !== (props.status ?? "")) changes.status = status;
-      if (owned !== (props.owned ?? false)) changes.owned = owned;
-      if (interest !== (props.interest ?? 0)) changes.interest = interest;
-      if (reviewStars !== (props.reviewStars ?? 0))
-        changes.reviewStars = reviewStars;
-      if (review !== (props.review ?? "")) changes.review = review;
-      if (note !== (props.note ?? "")) changes.note = note;
-
-      if (Object.keys(changes).length > 0) {
-        await updateEntryMutation.mutateAsync({
-          entryId: props.id,
-          changes,
-        });
-        setUpdateStatus("success");
-        toast.success("Entry updated successfully!");
-
-        setTimeout(() => setUpdateStatus("idle"), 2000);
-      } else {
-        toast.info("No changes to update");
-      }
-    } catch (error) {
-      console.error("Error updating backlog entry:", error);
-      setUpdateStatus("error");
-      toast.error(
-        error instanceof Error
-          ? `Failed to update: ${error.message}`
-          : "Failed to update entry. Please try again.",
-      );
-
-      setTimeout(() => setUpdateStatus("idle"), 3000);
-    } finally {
-      setIsLoading(false);
-    }
+  const form: EntryForm = {
+    imageLink,
+    playtime,
+    genre,
+    platform,
+    status,
+    owned,
+    interest,
+    reviewStars,
+    review,
+    note,
   };
+  const changes = diffEntryForm(form, props);
+  const changesKey = JSON.stringify(changes);
+  const pendingChangesRef = useRef(changes);
+  const isSavingRef = useRef(false);
+  const mutateEntryRef = useRef(updateEntryMutation.mutate);
+
+  useEffect(() => {
+    pendingChangesRef.current = changes;
+    mutateEntryRef.current = updateEntryMutation.mutate;
+  });
+
+  useEffect(() => {
+    if (Object.keys(pendingChangesRef.current).length === 0) return;
+    const timer = setTimeout(() => {
+      const pending = pendingChangesRef.current;
+      if (isSavingRef.current || Object.keys(pending).length === 0) return;
+      isSavingRef.current = true;
+      setSaveState("saving");
+      updateEntryMutation
+        .mutateAsync({ entryId: props.id, changes: pending })
+        .then(() => {
+          setSaveState("saved");
+        })
+        .catch((error: unknown) => {
+          setSaveState("error");
+          toast.error(
+            error instanceof Error
+              ? `Failed to save: ${error.message}`
+              : "Failed to save entry. Please try again.",
+          );
+        })
+        .finally(() => {
+          isSavingRef.current = false;
+        });
+    }, AUTOSAVE_DELAY_MS);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [changesKey]);
+
+  useEffect(
+    () => () => {
+      const pending = pendingChangesRef.current;
+      if (!isSavingRef.current && Object.keys(pending).length > 0)
+        mutateEntryRef.current({ entryId: props.id, changes: pending });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -642,7 +645,11 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
 
           <TabsContent value="trailer" className="mt-4">
             {trailerEmbedUrl ? (
-              <TrailerDialog title={title} embedUrl={trailerEmbedUrl} />
+              <TrailerDialog
+                title={title}
+                embedUrl={trailerEmbedUrl}
+                watchUrl={trailerLink ?? ""}
+              />
             ) : (
               <p className="bg-surface rounded-xl border border-white/30 p-6 text-center text-sm text-white/70">
                 No trailer available for this game.
@@ -697,37 +704,31 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
           </AlertDialogContent>
         </AlertDialog>
 
-        <Button
-          id="update-entry-button"
-          onClick={handleUpdate}
-          disabled={isLoading || updateStatus === "success"}
-          className={`min-w-40 gap-2 transition-colors duration-300 ${
-            updateStatus === "success"
-              ? "bg-green-600 text-white hover:bg-green-600"
-              : updateStatus === "error"
-                ? "bg-red-600 text-white hover:bg-red-600"
-                : ""
-          }`}
+        <p
+          id="entry-save-status"
+          role="status"
+          aria-live="polite"
+          className="flex min-w-40 items-center justify-end gap-2 text-sm text-white/70"
         >
-          {isLoading ? (
+          {saveState === "error" ? (
+            <span className="flex items-center gap-2 text-red-400">
+              <X className="h-4 w-4" />
+              Not saved
+            </span>
+          ) : saveState === "saving" || changesKey !== "{}" ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Updating...
+              Saving...
             </>
-          ) : updateStatus === "success" ? (
+          ) : saveState === "saved" ? (
             <>
               <Check className="h-4 w-4" />
-              Updated!
-            </>
-          ) : updateStatus === "error" ? (
-            <>
-              <X className="h-4 w-4" />
-              Failed
+              All changes saved
             </>
           ) : (
-            "Update Entry"
+            "Changes save automatically"
           )}
-        </Button>
+        </p>
       </footer>
 
       <WrongGameDialog

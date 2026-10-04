@@ -4,6 +4,7 @@ import {
   CATEGORY_NAME_MAX_LENGTH,
   categoryNameError,
   nextCategoryColor,
+  sortCategoriesByName,
 } from "~/lib/categories";
 import { isHexColor } from "~/lib/themes";
 
@@ -36,5 +37,33 @@ describe("nextCategoryColor", () => {
     expect(nextCategoryColor(0)).toBe(CATEGORY_COLORS[0]);
     expect(nextCategoryColor(CATEGORY_COLORS.length)).toBe(CATEGORY_COLORS[0]);
     expect(nextCategoryColor(1)).toBe(CATEGORY_COLORS[1]);
+  });
+});
+
+describe("sortCategoriesByName", () => {
+  const category = (id: number, name: string) => ({
+    id,
+    name,
+    color: "#38bdf8",
+    description: null,
+  });
+
+  it("orders categories alphabetically, ignoring case", () => {
+    const sorted = sortCategoriesByName([
+      category(1, "story"),
+      category(2, "Co-op"),
+      category(3, "Backlog night"),
+    ]);
+    expect(sorted.map((entry) => entry.name)).toEqual([
+      "Backlog night",
+      "Co-op",
+      "story",
+    ]);
+  });
+
+  it("does not mutate the input", () => {
+    const input = [category(1, "b"), category(2, "a")];
+    sortCategoriesByName(input);
+    expect(input.map((entry) => entry.id)).toEqual([1, 2]);
   });
 });

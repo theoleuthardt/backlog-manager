@@ -10,15 +10,23 @@ import {
 interface TrailerDialogProps {
   title: string;
   embedUrl: string;
+  watchUrl: string;
 }
 
 /**
  * Play card that opens the trailer in its own dialog, sized to the largest
  * 16:9 player that fits the viewport (the entry dialog itself is too short
  * to show a full-size video). The iframe only exists while the dialog is
- * open, so closing it also stops the video.
+ * open, so closing it also stops the video. The desktop app's webview
+ * sends no HTTP referrer, which makes YouTube refuse some embeds with
+ * error 153, so the dialog always offers the video on youtube.com as a
+ * fallback below the player.
  */
-export const TrailerDialog = ({ title, embedUrl }: TrailerDialogProps) => (
+export const TrailerDialog = ({
+  title,
+  embedUrl,
+  watchUrl,
+}: TrailerDialogProps) => (
   <Dialog>
     <DialogTrigger asChild>
       <button
@@ -50,6 +58,16 @@ export const TrailerDialog = ({ title, embedUrl }: TrailerDialogProps) => (
           referrerPolicy="strict-origin-when-cross-origin"
         />
       </div>
+      {watchUrl && (
+        <a
+          href={watchUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-4 py-3 text-sm text-white/70 underline-offset-2 hover:text-white hover:underline"
+        >
+          Video not playing? Watch it on YouTube
+        </a>
+      )}
     </DialogContent>
   </Dialog>
 );

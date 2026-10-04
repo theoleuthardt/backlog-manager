@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Check, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { CategoryManager } from "components/CategoryManager";
@@ -21,6 +21,7 @@ import {
   CATEGORY_NAME_MAX_LENGTH,
   categoryNameError,
   nextCategoryColor,
+  sortCategoriesByName,
 } from "~/lib/categories";
 
 /**
@@ -28,12 +29,18 @@ import {
  * hero: coloured chips (click the x to remove), a popover to toggle existing categories or create a new one that is
  * assigned right away, and the manage dialog for renaming, recolouring
  * and deleting. Changes are saved immediately, independent of the
- * entry form's Update button. After creating, focus returns to the name
+ * entry form's autosave. The list is alphabetical and stops wheel events
+ * from reaching the dialog's scroll lock so it scrolls with the mouse
+ * wheel. After creating, focus returns to the name
  * field: the create button disables itself, and losing focus to the
  * body would make the dialog's focus trap dismiss the popover.
  */
 export const CategoryPicker = ({ entryId }: { entryId: number }) => {
   const { data: categories = [] } = useCategories();
+  const sortedCategories = useMemo(
+    () => sortCategoriesByName(categories),
+    [categories],
+  );
   const { data: byEntry } = useEntryCategories();
   const setEntryCategory = useSetEntryCategory();
   const createCategory = useCreateCategory();
@@ -135,8 +142,11 @@ export const CategoryPicker = ({ entryId }: { entryId: number }) => {
           </PopoverTrigger>
           <PopoverContent className="w-72 space-y-3" align="start">
             {categories.length > 0 && (
-              <ul className="flex max-h-48 flex-col gap-1 overflow-y-auto">
-                {categories.map((category) => {
+              <ul
+                className="flex max-h-48 flex-col gap-1 overflow-y-auto"
+                onWheel={(event) => event.stopPropagation()}
+              >
+                {sortedCategories.map((category) => {
                   const isAssigned = assignedIds.has(category.id);
                   return (
                     <li key={category.id}>

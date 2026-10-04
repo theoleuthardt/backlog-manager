@@ -10,10 +10,10 @@ import {
 } from "~/lib/api/games";
 import { getSteamPlaytime } from "~/lib/api/steam";
 
-export function useGameSearch(searchTerm: string) {
+export function useGameSearch(searchTerm: string, deep = false) {
   return useQuery({
-    queryKey: ["game-search", searchTerm],
-    queryFn: () => enrichedSearch(searchTerm),
+    queryKey: ["game-search", searchTerm, deep],
+    queryFn: () => enrichedSearch(searchTerm, deep),
     enabled: searchTerm.length > 0,
     refetchOnWindowFocus: false,
     staleTime: 1000 * 60 * 5,

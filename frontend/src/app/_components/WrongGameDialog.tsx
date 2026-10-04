@@ -7,6 +7,7 @@ import {
 } from "shadcn_components/ui/dialog";
 import { GameImage } from "components/GameImage";
 import { SearchBar } from "components/SearchBar";
+import { Button } from "shadcn_components/ui/button";
 import { Spinner } from "~/components/ui/spinner";
 import { useGameSearch } from "~/hooks/useGameSearch";
 import type { GameSearchResult } from "~/lib/api/games";
@@ -27,15 +28,22 @@ export function WrongGameDialog({
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [wasOpen, setWasOpen] = useState(open);
-  const gameSearch = useGameSearch(debouncedQuery);
+  const [deepSearch, setDeepSearch] = useState(false);
+  const gameSearch = useGameSearch(debouncedQuery, deepSearch);
 
   if (open !== wasOpen) {
     setWasOpen(open);
     if (open) {
       setSearchQuery(initialQuery);
       setDebouncedQuery(initialQuery);
+      setDeepSearch(false);
     }
   }
+
+  const handleDebouncedChange = (value: string) => {
+    if (value !== debouncedQuery) setDeepSearch(false);
+    setDebouncedQuery(value);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -49,7 +57,7 @@ export function WrongGameDialog({
             value={searchQuery}
             placeholder="Search game..."
             onInput={(e) => setSearchQuery(e.currentTarget.value)}
-            onDebouncedChange={setDebouncedQuery}
+            onDebouncedChange={handleDebouncedChange}
             onClear={() => setSearchQuery("")}
             className="mb-0! flex-1"
           />
@@ -88,6 +96,16 @@ export function WrongGameDialog({
             (gameSearch.data ?? []).length === 0 && (
               <p className="text-sm text-gray-400">No results found.</p>
             )}
+          {debouncedQuery && !deepSearch && !gameSearch.isPending && (
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => setDeepSearch(true)}
+            >
+              Can&apos;t find your game? Search more
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>
