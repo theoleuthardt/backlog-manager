@@ -37,9 +37,30 @@ CREATE TABLE IF NOT EXISTS "blm-system"."UserBackupCodes" (
 );
 
 
+CREATE TABLE IF NOT EXISTS "blm-system"."Spaces" (
+    "SpaceID"   BIGSERIAL PRIMARY KEY,
+    "CreatedAt" TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP),
+    "UpdatedAt" TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP)
+);
+
+CREATE TABLE IF NOT EXISTS "blm-system"."SpaceMembers" (
+    "SpaceID"   BIGINT NOT NULL,
+    "UserID"    BIGINT NOT NULL UNIQUE,
+    "Status"    VARCHAR(10) NOT NULL CHECK ("Status" IN ('invited', 'active')),
+    "CreatedAt" TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP),
+    "UpdatedAt" TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP),
+    PRIMARY KEY ("SpaceID", "UserID"),
+    FOREIGN KEY ("SpaceID") REFERENCES "blm-system"."Spaces"("SpaceID")
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY ("UserID") REFERENCES "blm-system"."Users"("UserID")
+        ON DELETE CASCADE ON UPDATE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS "blm-system"."Categories" (
     "CategoryID"   BIGSERIAL PRIMARY KEY,
     "UserID"       BIGINT NOT NULL,
+    "SpaceID"      BIGINT REFERENCES "blm-system"."Spaces"("SpaceID")
+        ON DELETE CASCADE ON UPDATE CASCADE,
     "CategoryName" VARCHAR(100) NOT NULL,
     "Color"        VARCHAR(7) NOT NULL         DEFAULT '#000000',
     "Description"  TEXT                        DEFAULT 'No description',
@@ -52,6 +73,8 @@ CREATE TABLE IF NOT EXISTS "blm-system"."Categories" (
 CREATE TABLE IF NOT EXISTS "blm-system"."BacklogEntries" (
     "BacklogEntryID" BIGSERIAL PRIMARY KEY,
     "UserID"         BIGINT NOT NULL,
+    "SpaceID"        BIGINT REFERENCES "blm-system"."Spaces"("SpaceID")
+        ON DELETE CASCADE ON UPDATE CASCADE,
     "Title"          VARCHAR(255) NOT NULL,
     "Genre"          VARCHAR(100) NOT NULL,
     "Platform"       VARCHAR(100) NOT NULL,
@@ -74,8 +97,25 @@ CREATE TABLE IF NOT EXISTS "blm-system"."BacklogEntries" (
     "CreatedAt"      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP),
     "UpdatedAt"      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP),
     FOREIGN KEY ("UserID") REFERENCES "blm-system"."Users"("UserID")
+        ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "BacklogEntries_UserID_SteamAppId_key"
+    ON "blm-system"."BacklogEntries"("UserID", "SteamAppId") WHERE "SpaceID" IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS "BacklogEntries_SpaceID_SteamAppId_key"
+    ON "blm-system"."BacklogEntries"("SpaceID", "SteamAppId") WHERE "SpaceID" IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS "blm-system"."SpaceEntryMemberData" (
+    "BacklogEntryID" BIGINT NOT NULL,
+    "UserID"         BIGINT NOT NULL,
+    "Playtime"       NUMERIC(10,2),
+    "ReviewStars"    INTEGER,
+    "Review"         TEXT,
+    PRIMARY KEY ("BacklogEntryID", "UserID"),
+    FOREIGN KEY ("BacklogEntryID") REFERENCES "blm-system"."BacklogEntries"("BacklogEntryID")
         ON DELETE CASCADE ON UPDATE CASCADE,
-    UNIQUE ("UserID", "SteamAppId")
+    FOREIGN KEY ("UserID") REFERENCES "blm-system"."Users"("UserID")
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS "blm-system"."CategoryBacklogEntries" (
@@ -113,16 +153,23 @@ CREATE TABLE IF NOT EXISTS "blm-system"."UserGamePriceAlerts" (
 CREATE TABLE IF NOT EXISTS "blm-system"."CustomStatuses" (
     "StatusID"  BIGSERIAL PRIMARY KEY,
     "UserID"    BIGINT NOT NULL,
+    "SpaceID"   BIGINT REFERENCES "blm-system"."Spaces"("SpaceID")
+        ON DELETE CASCADE ON UPDATE CASCADE,
     "Name"      VARCHAR(20) NOT NULL,
     "CreatedAt" TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP),
     "UpdatedAt" TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP),
-    UNIQUE ("UserID", "Name"),
     FOREIGN KEY ("UserID") REFERENCES "blm-system"."Users"("UserID")
         ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS "CustomStatuses_UserID_Name_key"
+    ON "blm-system"."CustomStatuses"("UserID", "Name") WHERE "SpaceID" IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS "CustomStatuses_SpaceID_Name_key"
+    ON "blm-system"."CustomStatuses"("SpaceID", "Name") WHERE "SpaceID" IS NOT NULL;
+
 CREATE INDEX IF NOT EXISTS idx_categories_userid ON "blm-system"."Categories"("UserID");
 CREATE INDEX IF NOT EXISTS idx_backlogentries_userid ON "blm-system"."BacklogEntries"("UserID");
+CREATE INDEX IF NOT EXISTS idx_backlogentries_spaceid ON "blm-system"."BacklogEntries"("SpaceID");
 CREATE INDEX IF NOT EXISTS idx_backlogentries_status ON "blm-system"."BacklogEntries"("Status");
 
 -- set CompletedAt automatically if status is set to 'Completed'

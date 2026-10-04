@@ -1,0 +1,26 @@
+meta {
+  name: Accept Space Invitation
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{backendUrl}}/api/space/invitations/accept
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+script:post-response {
+  if (res.body.space_id) {
+    bru.setEnvVar("spaceId", res.body.space_id);
+  }
+}
+
+docs {
+  Accepts the caller's pending invitation and returns the space.
+  404 when there is no pending invitation.
+}

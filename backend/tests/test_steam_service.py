@@ -1192,3 +1192,48 @@ async def test_import_library_uses_fallbacks_when_budget_deadline_passed(
     assert created[0].steam_app_id == 620
     assert created[0].image_link is None
     assert created[0].main_time is None
+
+
+async def test_sync_playtimes_and_import_updates_the_users_space_playtime(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.repositories import space_entry_member_repo, space_repo
+
+    user = await _make_user(session)
+    other = await user_repo.create_user(
+        session,
+        CreateUserParams(username="steampartner", email="steampartner@example.com", password_hash="h"),
+    )
+    space_id = await space_repo.create_space(session, user.id)
+    await space_repo.add_invited_member(session, space_id, other.id)
+    shared = await backlog_entry_repo.create_backlog_entry(
+        session,
+        CreateBacklogEntryParams(
+            user_id=other.id,
+            space_id=space_id,
+            title="Celeste",
+            genre="Platformer",
+            platform="PC",
+            status="In Progress",
+            owned=True,
+            interest=8,
+            steam_app_id=504230,
+        ),
+    )
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [SteamOwnedGame(appid=504230, name="Celeste", playtime_forever=510)]
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+
+    updated = await steam_service.sync_playtimes_and_import(
+        session, user, "api-key", auto_import=False
+    )
+    [mine] = await space_entry_member_repo.apply_member_data(session, [shared], user.id)
+    [theirs] = await space_entry_member_repo.apply_member_data(session, [shared], other.id)
+
+    assert updated == []
+    assert mine.playtime == Decimal("8.50")
+    assert theirs.playtime is None
+    assert theirs.partner_playtime == Decimal("8.50")
+    assert await backlog_entry_repo.get_backlog_entries_by_user(session, user.id) == []
