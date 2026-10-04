@@ -120,6 +120,7 @@ async def _stream_steam_operation(
     dependencies as soon as the handler *returns the response object*,
     which happens before this generator (and therefore `run`) ever
     executes, not after the stream finishes."""
+
     def encode_result(entries: list[BacklogEntry]) -> str:
         return msgspec.json.encode(
             [BacklogEntryResponse.from_entry(entry) for entry in entries]
@@ -150,9 +151,7 @@ async def _stream_steam_messages[T](
     async def run_operation() -> None:
         try:
             result = await run(on_progress)
-            await queue.put(
-                ServerSentEventMessage(event=_SSE_DONE, data=encode_result(result))
-            )
+            await queue.put(ServerSentEventMessage(event=_SSE_DONE, data=encode_result(result)))
         except ValidationError as error:
             await queue.put(ServerSentEventMessage(event=_SSE_ERROR, data=str(error)))
         except httpx.HTTPError:
@@ -397,7 +396,9 @@ async def preview_steam_library_stream(
                 family_steam_ids=family_steam_ids,
             )
 
-    return ServerSentEvent(_stream_steam_messages(run, lambda items: msgspec.json.encode(items).decode()))
+    return ServerSentEvent(
+        _stream_steam_messages(run, lambda items: msgspec.json.encode(items).decode())
+    )
 
 
 steam_router = Router(

@@ -67,9 +67,7 @@ class _ConflictException(ClientException):
     status_code = HTTP_409_CONFLICT
 
 
-async def _require_space_access(
-    session: AsyncSession, user: User, space_id: int | None
-) -> None:
+async def _require_space_access(session: AsyncSession, user: User, space_id: int | None) -> None:
     """Every scoped handler goes through this first: `space_id` selects
     the shared space instead of the caller's personal backlog, which is
     only allowed for an active member. Anyone else gets the same 404 as

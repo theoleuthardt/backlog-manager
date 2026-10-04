@@ -25,7 +25,9 @@ async def test_proxy_image_streams_igdb_image(
 
     def handler(request: httpx.Request) -> httpx.Response:
         assert str(request.url) == "https://images.igdb.com/igdb/image/upload/t_cover_big/abc.jpg"
-        return httpx.Response(200, content=b"fake-image-bytes", headers={"content-type": "image/jpeg"})
+        return httpx.Response(
+            200, content=b"fake-image-bytes", headers={"content-type": "image/jpeg"}
+        )
 
     _mock_client(handler, monkeypatch)
 
@@ -75,7 +77,9 @@ async def test_proxy_image_streams_steam_achievement_icon(
 
     def handler(request: httpx.Request) -> httpx.Response:
         assert str(request.url) == icon_url
-        return httpx.Response(200, content=b"achievement-icon", headers={"content-type": "image/jpeg"})
+        return httpx.Response(
+            200, content=b"achievement-icon", headers={"content-type": "image/jpeg"}
+        )
 
     _mock_client(handler, monkeypatch)
 
@@ -103,7 +107,9 @@ async def test_proxy_image_streams_steam_achievement_icon_from_akamaihd(
 
     def handler(request: httpx.Request) -> httpx.Response:
         assert str(request.url) == icon_url
-        return httpx.Response(200, content=b"achievement-icon", headers={"content-type": "image/jpeg"})
+        return httpx.Response(
+            200, content=b"achievement-icon", headers={"content-type": "image/jpeg"}
+        )
 
     _mock_client(handler, monkeypatch)
 
@@ -267,9 +273,7 @@ async def test_proxy_image_follows_redirect_from_media_steampowered_to_steamstat
 ) -> None:
     from backlog_manager_backend.app import create_app
 
-    icon_url = (
-        "https://media.steampowered.com/steamcommunity/public/images/apps/620/hash.jpg"
-    )
+    icon_url = "https://media.steampowered.com/steamcommunity/public/images/apps/620/hash.jpg"
     cdn_url = "https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/620/hash.jpg"
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -297,9 +301,7 @@ async def test_proxy_image_rejects_redirect_to_a_non_allowlisted_host(
 
     def handler(request: httpx.Request) -> httpx.Response:
         if str(request.url) == icon_url:
-            return httpx.Response(
-                302, headers={"location": "https://evil.example.com/steal.jpg"}
-            )
+            return httpx.Response(302, headers={"location": "https://evil.example.com/steal.jpg"})
         raise AssertionError("should never follow a redirect to a non-allowlisted host")
 
     _mock_client(handler, monkeypatch)
@@ -316,9 +318,7 @@ async def test_proxy_image_rejects_too_many_redirects(
     from backlog_manager_backend.app import create_app
 
     def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(
-            302, headers={"location": "https://media.steampowered.com/next.jpg"}
-        )
+        return httpx.Response(302, headers={"location": "https://media.steampowered.com/next.jpg"})
 
     _mock_client(handler, monkeypatch)
 

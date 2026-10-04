@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import * as TabsPrimitive from "@radix-ui/react-tabs"
+import * as React from "react";
+import * as TabsPrimitive from "@radix-ui/react-tabs";
 
-import { cn } from "~/lib/utils"
+import { cn } from "~/lib/utils";
 
 function Tabs({
   className,
@@ -15,7 +15,7 @@ function Tabs({
       className={cn("flex flex-col gap-2", className)}
       {...props}
     />
-  )
+  );
 }
 
 function TabsList({
@@ -27,11 +27,11 @@ function TabsList({
       data-slot="tabs-list"
       className={cn(
         "inline-flex h-10 w-fit items-center justify-center rounded-lg bg-black p-1 text-gray-400",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 function TabsTrigger({
@@ -45,12 +45,12 @@ function TabsTrigger({
         "inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md px-4 py-1 text-sm font-medium whitespace-nowrap transition-colors",
         "text-gray-400 hover:text-white",
         "data-[state=active]:bg-white data-[state=active]:text-black",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 disabled:pointer-events-none disabled:opacity-50",
-        className
+        "focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50",
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 function TabsContent({
@@ -63,7 +63,7 @@ function TabsContent({
       className={cn("flex-1 outline-none", className)}
       {...props}
     />
-  )
+  );
 }
 
-export { Tabs, TabsList, TabsTrigger, TabsContent }
+export { Tabs, TabsList, TabsTrigger, TabsContent };

@@ -19,6 +19,7 @@ task backend:dev   # Litestar dev server (uvicorn --reload)
 task db:up         # local Postgres + pgAdmin via compose.yml
 task test          # backend (pytest) + frontend (vitest) suites
 task lint          # frontend (eslint) + backend (ruff)
+task format        # prettier (frontend) + ruff format (backend); task format:check only verifies
 task audit         # known-vulnerability scan of the locked frontend + backend dependencies
 task backend:migration -- "add foo column"   # new Alembic revision
 task backend:migrate                          # alembic upgrade head

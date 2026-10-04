@@ -14,7 +14,9 @@ export function SpaceNavLink({ showLabel = false }: { showLabel?: boolean }) {
   return (
     <Link
       href="/space"
-      aria-label={hasInvitation ? "Shared space (new invitation)" : "Shared space"}
+      aria-label={
+        hasInvitation ? "Shared space (new invitation)" : "Shared space"
+      }
       className={
         showLabel
           ? "flex h-11 items-center gap-3 rounded-md px-3 text-base font-semibold hover:bg-white/10"

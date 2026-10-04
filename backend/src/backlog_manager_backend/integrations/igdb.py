@@ -341,9 +341,7 @@ async def get_companies_on_igdb(
         f"start_date,updated_at,url; where id = {_id_list(company_ids)}; limit 500;"
     )
     try:
-        return await _query_igdb(
-            "companies", body, client_id, access_token, list[IGDBCompany]
-        )
+        return await _query_igdb("companies", body, client_id, access_token, list[IGDBCompany])
     except httpx.HTTPStatusError:
         return []
 

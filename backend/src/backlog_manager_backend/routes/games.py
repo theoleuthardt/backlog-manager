@@ -75,7 +75,9 @@ def _resolve_steamgriddb_api_key(user: User) -> str | None:
     SteamGridDB, don't fail the whole search)."""
     if user.steamgriddb_api_key_encrypted and settings.steam_api_key_encryption_key:
         try:
-            return decrypt(user.steamgriddb_api_key_encrypted, settings.steam_api_key_encryption_key)
+            return decrypt(
+                user.steamgriddb_api_key_encrypted, settings.steam_api_key_encryption_key
+            )
         except (InvalidToken, ValueError) as error:
             raise ServiceUnavailableException(_STEAMGRIDDB_UNAVAILABLE) from error
     return settings.steamgriddb_api_key

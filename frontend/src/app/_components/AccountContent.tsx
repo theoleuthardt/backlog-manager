@@ -377,8 +377,8 @@ export function AccountContent() {
           </Select>
         </div>
         <p className="mt-4 text-sm text-gray-300">
-          Pick a theme from the palette icon in the navbar, or build your own
-          in the{" "}
+          Pick a theme from the palette icon in the navbar, or build your own in
+          the{" "}
           <Link href="/themes" className="underline">
             theme creator
           </Link>

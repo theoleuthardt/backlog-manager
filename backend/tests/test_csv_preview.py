@@ -605,7 +605,12 @@ async def test_build_csv_preview_skips_igdb_lookups_not_needed_for_a_csv_row(
     )
 
     assert calls == [
-        {"limit": 1, "include_genres": False, "include_platforms": False, "include_publisher": False}
+        {
+            "limit": 1,
+            "include_genres": False,
+            "include_platforms": False,
+            "include_publisher": False,
+        }
     ]
 
 
@@ -655,7 +660,10 @@ async def test_build_csv_preview_reports_progress(
     await preview.build_csv_preview(
         session,
         user.id,
-        [{"A": "Celeste", "B": "Platformer", "C": "Owned", "D": ""}, {"A": "Hades", "B": "Roguelike", "C": "Owned", "D": ""}],
+        [
+            {"A": "Celeste", "B": "Platformer", "C": "Owned", "D": ""},
+            {"A": "Hades", "B": "Roguelike", "C": "Owned", "D": ""},
+        ],
         _CONFIG,
         on_progress=on_progress,
     )
@@ -774,7 +782,11 @@ async def test_submit_csv_entries_skips_conflicting_rows_without_failing_the_res
         user.id,
         [
             preview.SubmitCsvEntry(
-                title="Celeste", genre="Platformer", platform=["PC"], status="Not Started", owned=True
+                title="Celeste",
+                genre="Platformer",
+                platform=["PC"],
+                status="Not Started",
+                owned=True,
             ),
             preview.SubmitCsvEntry(
                 title="Hades", genre="Roguelike", platform=["PC"], status="Not Started", owned=True
@@ -806,7 +818,11 @@ async def test_submit_csv_entries_reports_a_generic_reason_for_a_database_error(
         user.id,
         [
             preview.SubmitCsvEntry(
-                title="Celeste", genre="Platformer", platform=["PC"], status="Not Started", owned=True
+                title="Celeste",
+                genre="Platformer",
+                platform=["PC"],
+                status="Not Started",
+                owned=True,
             )
         ],
     )

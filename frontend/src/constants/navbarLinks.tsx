@@ -105,7 +105,7 @@ export const dashboardNavLinks: NavbarLink[] = [
       </Tooltip>
     ),
     mobileComponent: (
-      <ImportCSVButton className="!h-11 w-full !justify-start gap-3 !px-3 text-base font-semibold !bg-transparent hover:!bg-white/10">
+      <ImportCSVButton className="!h-11 w-full !justify-start gap-3 !bg-transparent !px-3 text-base font-semibold hover:!bg-white/10">
         <Image
           src="/csv_import.png"
           alt=""
@@ -135,7 +135,7 @@ export const dashboardNavLinks: NavbarLink[] = [
       </Tooltip>
     ),
     mobileComponent: (
-      <ExportCSVButton className="!h-11 w-full !justify-start gap-3 !px-3 text-base font-semibold !bg-transparent hover:!bg-white/10">
+      <ExportCSVButton className="!h-11 w-full !justify-start gap-3 !bg-transparent !px-3 text-base font-semibold hover:!bg-white/10">
         <Image
           src="/csv_export.png"
           alt=""

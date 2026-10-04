@@ -35,9 +35,7 @@ def _require_valid_cron_secret(provided: str | None) -> None:
     raises=[NotAuthorizedException],
 )
 async def check_prices(
-    x_cron_secret: Annotated[
-        str | None, HeaderParameter(name="X-Cron-Secret", required=False)
-    ],
+    x_cron_secret: Annotated[str | None, HeaderParameter(name="X-Cron-Secret", required=False)],
     db_session: NamedDependency[AsyncSession],
 ) -> dict[str, int]:
     _require_valid_cron_secret(x_cron_secret)

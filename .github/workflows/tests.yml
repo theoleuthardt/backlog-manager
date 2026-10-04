@@ -30,6 +30,10 @@ jobs:
         working-directory: backend
         run: uv run ruff check .
 
+      - name: Check formatting with ruff
+        working-directory: backend
+        run: uv run ruff format --check .
+
       - name: Run pytest
         working-directory: backend
         env:
@@ -63,6 +67,10 @@ jobs:
       - name: Lint and typecheck
         working-directory: frontend
         run: npm run check
+
+      - name: Check formatting
+        working-directory: frontend
+        run: npm run format:check
 
       - name: Run vitest
         working-directory: frontend

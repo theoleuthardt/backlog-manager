@@ -8,7 +8,8 @@ export interface TwoFactorEnrollment {
 
 export async function enrollTwoFactor(): Promise<TwoFactorEnrollment> {
   const { data, error } = await apiClient.POST("/api/auth/2fa/enroll");
-  if (error) throw new Error(apiErrorMessage(error, "Failed to start two-factor setup"));
+  if (error)
+    throw new Error(apiErrorMessage(error, "Failed to start two-factor setup"));
   return { secret: data.secret, otpauthUrl: data.otpauth_url };
 }
 
@@ -16,7 +17,9 @@ function normalizeCode(code: string): string {
   return code.replace(/\s/g, "");
 }
 
-export async function verifyTwoFactorEnrollment(code: string): Promise<string[]> {
+export async function verifyTwoFactorEnrollment(
+  code: string,
+): Promise<string[]> {
   const { data, error } = await apiClient.POST("/api/auth/2fa/verify", {
     body: { code: normalizeCode(code) },
   });
@@ -28,10 +31,16 @@ export async function disableTwoFactor(password: string): Promise<void> {
   const { error } = await apiClient.POST("/api/auth/2fa/disable", {
     body: { password },
   });
-  if (error) throw new Error(apiErrorMessage(error, "Failed to disable two-factor authentication"));
+  if (error)
+    throw new Error(
+      apiErrorMessage(error, "Failed to disable two-factor authentication"),
+    );
 }
 
-export async function verifyTwoFactorLogin(challengeToken: string, code: string): Promise<void> {
+export async function verifyTwoFactorLogin(
+  challengeToken: string,
+  code: string,
+): Promise<void> {
   const { data, error } = await apiClient.POST("/api/auth/2fa/login-verify", {
     body: { challenge_token: challengeToken, code: normalizeCode(code) },
   });

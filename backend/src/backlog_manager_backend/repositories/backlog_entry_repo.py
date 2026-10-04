@@ -80,9 +80,7 @@ async def create_backlog_entry(
     return _to_schema(model)
 
 
-async def get_backlog_entries_by_user(
-    session: AsyncSession, user_id: int
-) -> list[BacklogEntry]:
+async def get_backlog_entries_by_user(session: AsyncSession, user_id: int) -> list[BacklogEntry]:
     """Only the user's personal entries - entries of a shared space they
     belong to are reached through get_backlog_entries_by_space."""
     result = await session.execute(
@@ -93,18 +91,14 @@ async def get_backlog_entries_by_user(
     return [_to_schema(row) for row in result.scalars().all()]
 
 
-async def get_backlog_entries_by_space(
-    session: AsyncSession, space_id: int
-) -> list[BacklogEntry]:
+async def get_backlog_entries_by_space(session: AsyncSession, space_id: int) -> list[BacklogEntry]:
     result = await session.execute(
         select(BacklogEntryModel).where(BacklogEntryModel.space_id == space_id)
     )
     return [_to_schema(row) for row in result.scalars().all()]
 
 
-async def get_backlog_entry_by_id(
-    session: AsyncSession, backlog_entry_id: int
-) -> BacklogEntry:
+async def get_backlog_entry_by_id(session: AsyncSession, backlog_entry_id: int) -> BacklogEntry:
     model = await session.get(BacklogEntryModel, backlog_entry_id)
     if model is None:
         raise NotFoundError("BacklogEntry", backlog_entry_id)
@@ -223,9 +217,7 @@ async def update_backlog_entry(
     return _to_schema(model)
 
 
-async def delete_backlog_entry(
-    session: AsyncSession, backlog_entry_id: int
-) -> BacklogEntry:
+async def delete_backlog_entry(session: AsyncSession, backlog_entry_id: int) -> BacklogEntry:
     model = await session.get(BacklogEntryModel, backlog_entry_id)
     if model is None:
         raise NotFoundError("BacklogEntry", backlog_entry_id)
@@ -247,9 +239,7 @@ async def delete_backlog_entries_by_space(session: AsyncSession, space_id: int) 
     return result.rowcount or 0
 
 
-async def delete_backlog_entries_by_user(
-    session: AsyncSession, user_id: int
-) -> int:
+async def delete_backlog_entries_by_user(session: AsyncSession, user_id: int) -> int:
     """Deletes every personal backlog entry of a user (never those of a
     shared space) in one bulk delete and returns the number of rows
     removed. The category associations go

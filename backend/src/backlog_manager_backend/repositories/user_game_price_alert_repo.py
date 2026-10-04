@@ -50,9 +50,7 @@ async def try_claim_alert(
     return result.first() is not None
 
 
-async def clear_last_alerted_price(
-    session: AsyncSession, user_id: int, steam_app_id: int
-) -> None:
+async def clear_last_alerted_price(session: AsyncSession, user_id: int, steam_app_id: int) -> None:
     model = await session.get(UserGamePriceAlertModel, (user_id, steam_app_id))
     if model is not None:
         await session.delete(model)

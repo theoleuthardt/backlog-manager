@@ -24,7 +24,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "shadcn_components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "shadcn_components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "shadcn_components/ui/tabs";
 import { StarRating } from "shadcn_components/ui/star-rating";
 import { Slider } from "shadcn_components/ui/slider";
 import {
@@ -48,7 +53,10 @@ import { useSpace } from "~/hooks/useSpace";
 import { getEntryDuplicates } from "~/lib/api/backlog";
 import { computeFieldDiffs } from "~/lib/diffFields";
 import { MAX_REVIEW_STARS } from "~/lib/reviewStars";
-import type { BacklogEntryData, CreateBacklogEntryInput } from "~/lib/api/backlog";
+import type {
+  BacklogEntryData,
+  CreateBacklogEntryInput,
+} from "~/lib/api/backlog";
 import { useSteamAppId, useSteamPlaytime } from "~/hooks/useGameSearch";
 import { toast } from "sonner";
 
@@ -97,9 +105,7 @@ export function CreationToolForm() {
     .split(",")
     .map((p) => p.trim())
     .filter(Boolean);
-  const [platform, setPlatform] = useState(
-    platformOptions[0] ?? "",
-  );
+  const [platform, setPlatform] = useState(platformOptions[0] ?? "");
   const [mainStory, setMainStory] = useState(
     Number.isFinite(mainStoryFromUrl) ? String(mainStoryFromUrl) : "0",
   );
@@ -138,9 +144,12 @@ export function CreationToolForm() {
   const [playtimeTouched, setPlaytimeTouched] = useState(false);
   const steamPlaytimeQuery = useSteamPlaytime(resolvedSteamAppId);
   const steamPlaytime = steamPlaytimeQuery.data;
-  const steamPlaytimeHours = steamPlaytime != null ? String(steamPlaytime) : null;
+  const steamPlaytimeHours =
+    steamPlaytime != null ? String(steamPlaytime) : null;
   const effectivePlaytime =
-    playtimeTouched || steamPlaytimeHours === null ? playtime : steamPlaytimeHours;
+    playtimeTouched || steamPlaytimeHours === null
+      ? playtime
+      : steamPlaytimeHours;
 
   const { data: space } = useSpace();
   const activeSpaceId = space?.myStatus === "active" ? space.spaceId : null;
@@ -157,8 +166,14 @@ export function CreationToolForm() {
 
   const buildPayload = (): CreateBacklogEntryInput => ({
     title: title.trim(),
-    genre: genre.split(",").map((g) => g.trim()).filter(Boolean),
-    platform: platform.split(",").map((p) => p.trim()).filter(Boolean),
+    genre: genre
+      .split(",")
+      .map((g) => g.trim())
+      .filter(Boolean),
+    platform: platform
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean),
     status,
     owned,
     interest,
@@ -167,7 +182,10 @@ export function CreationToolForm() {
     imageLink: imageUrl.trim() || undefined,
     description: descriptionFromUrl || undefined,
     trailerLink: trailerUrlFromUrl || undefined,
-    mainTime: Number.parseFloat(mainStory) > 0 ? Number.parseFloat(mainStory) : undefined,
+    mainTime:
+      Number.parseFloat(mainStory) > 0
+        ? Number.parseFloat(mainStory)
+        : undefined,
     mainPlusExtraTime:
       Number.parseFloat(mainStoryWithExtras) > 0
         ? Number.parseFloat(mainStoryWithExtras)
@@ -321,7 +339,7 @@ export function CreationToolForm() {
 
       <form onSubmit={handleSubmit}>
         <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
-          <div className="flex flex-col items-center gap-4 lg:sticky lg:top-24 lg:w-72 lg:self-start lg:shrink-0">
+          <div className="flex flex-col items-center gap-4 lg:sticky lg:top-24 lg:w-72 lg:shrink-0 lg:self-start">
             <GameImage
               src={imageUrl}
               alt={title}
@@ -373,7 +391,7 @@ export function CreationToolForm() {
                 <div className="space-y-4">
                   {isCustomGame && (
                     <section className="rounded-lg border border-gray-700 bg-white/[0.03] p-4">
-                      <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-400">
+                      <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold tracking-wide text-gray-400 uppercase">
                         <Pencil className="h-4 w-4" />
                         Title
                       </h2>
@@ -387,7 +405,7 @@ export function CreationToolForm() {
                   )}
 
                   <section className="rounded-lg border border-gray-700 bg-white/[0.03] p-4">
-                    <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-400">
+                    <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold tracking-wide text-gray-400 uppercase">
                       <Gamepad2 className="h-4 w-4" />
                       Game Info
                     </h2>
@@ -406,7 +424,10 @@ export function CreationToolForm() {
                             </SelectTrigger>
                             <SelectContent>
                               {platformOptions.map((platformOption) => (
-                                <SelectItem key={platformOption} value={platformOption}>
+                                <SelectItem
+                                  key={platformOption}
+                                  value={platformOption}
+                                >
                                   {platformOption}
                                 </SelectItem>
                               ))}
@@ -439,7 +460,7 @@ export function CreationToolForm() {
                   </section>
 
                   <section className="rounded-lg border border-gray-700 bg-white/[0.03] p-4">
-                    <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-400">
+                    <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold tracking-wide text-gray-400 uppercase">
                       <UserRound className="h-4 w-4" />
                       Your Take
                     </h2>
@@ -474,8 +495,10 @@ export function CreationToolForm() {
                           max={10}
                           step={1}
                           value={[interest]}
-                          onValueChange={(values) => setInterest(values[0] ?? 1)}
-                          className="[&_[data-slot=slider-track]]:bg-white/15 [&_[data-slot=slider-range]]:bg-blue-500 [&_[data-slot=slider-thumb]]:border-blue-500 [&_[data-slot=slider-thumb]]:bg-black [&_[data-slot=slider-thumb]]:hover:ring-blue-500/40"
+                          onValueChange={(values) =>
+                            setInterest(values[0] ?? 1)
+                          }
+                          className="[&_[data-slot=slider-range]]:bg-blue-500 [&_[data-slot=slider-thumb]]:border-blue-500 [&_[data-slot=slider-thumb]]:bg-black [&_[data-slot=slider-thumb]]:hover:ring-blue-500/40 [&_[data-slot=slider-track]]:bg-white/15"
                         />
                       </div>
 
@@ -504,9 +527,14 @@ export function CreationToolForm() {
                         <Checkbox
                           id="owned"
                           checked={owned}
-                          onCheckedChange={(checked) => setOwned(checked as boolean)}
+                          onCheckedChange={(checked) =>
+                            setOwned(checked as boolean)
+                          }
                         />
-                        <Label htmlFor="owned" className="cursor-pointer text-sm">
+                        <Label
+                          htmlFor="owned"
+                          className="cursor-pointer text-sm"
+                        >
                           I own this game
                         </Label>
                       </div>
@@ -518,7 +546,7 @@ export function CreationToolForm() {
               <TabsContent value="game-data" className="mt-4">
                 <div className="space-y-4">
                   <section className="rounded-lg border border-gray-700 bg-white/[0.03] p-4">
-                    <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-400">
+                    <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold tracking-wide text-gray-400 uppercase">
                       <Clock className="h-4 w-4" />
                       HowLongToBeat Times
                     </h2>
@@ -558,7 +586,9 @@ export function CreationToolForm() {
                           step="0.1"
                           min="0"
                           value={mainStoryWithExtras}
-                          onChange={(e) => setMainStoryWithExtras(e.target.value)}
+                          onChange={(e) =>
+                            setMainStoryWithExtras(e.target.value)
+                          }
                           disabled={!isCustomGame}
                           placeholder="0"
                           className={`${NO_SPINNER_CLASS} mt-2 border-0 bg-transparent p-0 text-2xl font-bold text-white focus-visible:ring-0 disabled:opacity-70`}
@@ -589,13 +619,14 @@ export function CreationToolForm() {
                     </div>
                     {!isCustomGame && (
                       <p className="mt-3 text-xs text-gray-500">
-                        Times from HowLongToBeat - editable for custom games only.
+                        Times from HowLongToBeat - editable for custom games
+                        only.
                       </p>
                     )}
                   </section>
 
                   <section className="rounded-lg border border-gray-700 bg-white/[0.03] p-4">
-                    <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-400">
+                    <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold tracking-wide text-gray-400 uppercase">
                       <Rocket className="h-4 w-4" />
                       Steam
                     </h2>
@@ -771,7 +802,8 @@ export function CreationToolForm() {
                                 status: duplicatePayload.status,
                                 owned: duplicatePayload.owned,
                                 playtime:
-                                  duplicatePayload.playtime && duplicatePayload.playtime > 0
+                                  duplicatePayload.playtime &&
+                                  duplicatePayload.playtime > 0
                                     ? duplicatePayload.playtime
                                     : undefined,
                                 reviewStars: duplicatePayload.reviewStars,

@@ -251,7 +251,9 @@ async def test_update_own_user_sets_steam_api_key(
     from backlog_manager_backend.app import create_app
     from backlog_manager_backend.routes import user as user_routes
 
-    monkeypatch.setattr(user_routes.settings, "steam_api_key_encryption_key", Fernet.generate_key().decode())
+    monkeypatch.setattr(
+        user_routes.settings, "steam_api_key_encryption_key", Fernet.generate_key().decode()
+    )
 
     app = create_app()
 
@@ -276,7 +278,9 @@ async def test_update_own_user_clears_steam_api_key_with_empty_string(
     from backlog_manager_backend.app import create_app
     from backlog_manager_backend.routes import user as user_routes
 
-    monkeypatch.setattr(user_routes.settings, "steam_api_key_encryption_key", Fernet.generate_key().decode())
+    monkeypatch.setattr(
+        user_routes.settings, "steam_api_key_encryption_key", Fernet.generate_key().decode()
+    )
 
     app = create_app()
 
@@ -284,9 +288,7 @@ async def test_update_own_user_clears_steam_api_key_with_empty_string(
         headers = await create_and_login(client, "clearsteamkey@example.com")
         client.put("/api/user/me", headers=headers, json={"steam_api_key": "my-steam-key"})
 
-        clear_response = client.put(
-            "/api/user/me", headers=headers, json={"steam_api_key": ""}
-        )
+        clear_response = client.put("/api/user/me", headers=headers, json={"steam_api_key": ""})
 
     assert clear_response.status_code == 200
     assert clear_response.json()["has_steam_api_key"] is False
@@ -317,7 +319,9 @@ async def test_update_own_user_returns_503_when_encryption_key_is_malformed(
     from backlog_manager_backend.app import create_app
     from backlog_manager_backend.routes import user as user_routes
 
-    monkeypatch.setattr(user_routes.settings, "steam_api_key_encryption_key", "not-a-valid-fernet-key")
+    monkeypatch.setattr(
+        user_routes.settings, "steam_api_key_encryption_key", "not-a-valid-fernet-key"
+    )
 
     app = create_app()
 
@@ -346,9 +350,7 @@ async def test_update_own_user_trims_steam_api_key_before_storing(
 
     with TestClient(app=app) as client:
         headers = await create_and_login(client, "trimsteamkey@example.com")
-        client.put(
-            "/api/user/me", headers=headers, json={"steam_api_key": "  my-steam-key  "}
-        )
+        client.put("/api/user/me", headers=headers, json={"steam_api_key": "  my-steam-key  "})
 
     async with async_session() as session:
         stored = await user_repo.get_user_by_email(session, "trimsteamkey@example.com")
@@ -584,7 +586,9 @@ async def test_update_own_user_returns_503_when_steamgriddb_encryption_key_is_ma
     from backlog_manager_backend.app import create_app
     from backlog_manager_backend.routes import user as user_routes
 
-    monkeypatch.setattr(user_routes.settings, "steam_api_key_encryption_key", "not-a-valid-fernet-key")
+    monkeypatch.setattr(
+        user_routes.settings, "steam_api_key_encryption_key", "not-a-valid-fernet-key"
+    )
 
     app = create_app()
 
@@ -652,9 +656,7 @@ async def test_update_own_user_can_set_both_steam_and_steamgriddb_keys_independe
     assert body["has_steamgriddb_api_key"] is True
 
 
-async def test_update_own_user_sets_steam_family_ids(
-    postgres_url: str, create_and_login
-) -> None:
+async def test_update_own_user_sets_steam_family_ids(postgres_url: str, create_and_login) -> None:
     from backlog_manager_backend.app import create_app
 
     with TestClient(app=create_app()) as client:
@@ -668,13 +670,8 @@ async def test_update_own_user_sets_steam_family_ids(
         me_response = client.get("/api/user/me", headers=headers)
 
     assert update_response.status_code == 200
-    assert (
-        update_response.json()["steam_family_ids"]
-        == "76561197960287930, 76561198000000001"
-    )
-    assert (
-        me_response.json()["steam_family_ids"] == "76561197960287930, 76561198000000001"
-    )
+    assert update_response.json()["steam_family_ids"] == "76561197960287930, 76561198000000001"
+    assert me_response.json()["steam_family_ids"] == "76561197960287930, 76561198000000001"
 
 
 async def test_update_own_user_clears_steam_family_ids_with_null(
@@ -684,9 +681,7 @@ async def test_update_own_user_clears_steam_family_ids_with_null(
 
     with TestClient(app=create_app()) as client:
         headers = await create_and_login(client, "clearsteamfamilyids@example.com")
-        client.put(
-            "/api/user/me", headers=headers, json={"steam_family_ids": "76561197960287930"}
-        )
+        client.put("/api/user/me", headers=headers, json={"steam_family_ids": "76561197960287930"})
 
         clear_response = client.put(
             "/api/user/me", headers=headers, json={"steam_family_ids": None}

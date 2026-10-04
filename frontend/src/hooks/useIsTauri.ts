@@ -33,7 +33,11 @@ function getMacOSSnapshot(): boolean {
  * layout adjustments must not apply there.
  */
 export function useIsTauriMacOS(): boolean {
-  return useSyncExternalStore(noopSubscribe, getMacOSSnapshot, getServerSnapshot);
+  return useSyncExternalStore(
+    noopSubscribe,
+    getMacOSSnapshot,
+    getServerSnapshot,
+  );
 }
 
 function getAppleSnapshot(): boolean {
@@ -46,5 +50,9 @@ function getAppleSnapshot(): boolean {
  * SSR/prerendering and switches once mounted.
  */
 export function useIsApplePlatform(): boolean {
-  return useSyncExternalStore(noopSubscribe, getAppleSnapshot, getServerSnapshot);
+  return useSyncExternalStore(
+    noopSubscribe,
+    getAppleSnapshot,
+    getServerSnapshot,
+  );
 }

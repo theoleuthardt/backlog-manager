@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Star } from "lucide-react"
+import * as React from "react";
+import { Star } from "lucide-react";
 
-import { cn } from "~/lib/utils"
+import { cn } from "~/lib/utils";
 
 interface StarRatingProps {
-  value: number
-  onValueChange: (value: number) => void
-  disabled?: boolean
-  max?: number
-  className?: string
+  value: number;
+  onValueChange: (value: number) => void;
+  disabled?: boolean;
+  max?: number;
+  className?: string;
 }
 
 function StarRating({
@@ -20,8 +20,8 @@ function StarRating({
   max = 5,
   className,
 }: StarRatingProps) {
-  const [hovered, setHovered] = React.useState<number | null>(null)
-  const filled = hovered ?? value
+  const [hovered, setHovered] = React.useState<number | null>(null);
+  const filled = hovered ?? value;
 
   return (
     <div
@@ -40,7 +40,9 @@ function StarRating({
           onMouseEnter={() => setHovered(star)}
           className={cn(
             "cursor-pointer rounded-sm p-0.5 transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-            filled >= star ? "text-yellow-400" : "text-gray-600 hover:text-yellow-400"
+            filled >= star
+              ? "text-yellow-400"
+              : "text-gray-600 hover:text-yellow-400",
           )}
         >
           <Star
@@ -54,7 +56,7 @@ function StarRating({
         {value > 0 ? `${value} / ${max}` : "Not rated"}
       </span>
     </div>
-  )
+  );
 }
 
-export { StarRating }
+export { StarRating };

@@ -139,8 +139,11 @@ export const EntryCreationDialog = ({
                           ...targetQuery,
                           title: searchResults[selectedIndex].title,
                           imageUrl: searchResults[selectedIndex].imageUrl ?? "",
-                          steamAppId: searchResults[selectedIndex].steamAppId ?? "",
-                          genres: searchResults[selectedIndex].genres?.join(", ") ?? "",
+                          steamAppId:
+                            searchResults[selectedIndex].steamAppId ?? "",
+                          genres:
+                            searchResults[selectedIndex].genres?.join(", ") ??
+                            "",
                           platforms:
                             searchResults[selectedIndex].platforms?.join(
                               ", ",
@@ -148,14 +151,17 @@ export const EntryCreationDialog = ({
                           mainStory: searchResults[selectedIndex].mainStory,
                           mainStoryWithExtras:
                             searchResults[selectedIndex].mainStoryWithExtras,
-                          completionist: searchResults[selectedIndex].completionist,
+                          completionist:
+                            searchResults[selectedIndex].completionist,
                           description:
                             searchResults[selectedIndex].description?.slice(
                               0,
                               500,
                             ) ?? "",
-                          publisher: searchResults[selectedIndex].publisher ?? "",
-                          trailerUrl: searchResults[selectedIndex].trailerUrl ?? "",
+                          publisher:
+                            searchResults[selectedIndex].publisher ?? "",
+                          trailerUrl:
+                            searchResults[selectedIndex].trailerUrl ?? "",
                         },
                       }}
                       className="flex justify-center"

@@ -17,9 +17,7 @@ async def test_get_key_shop_prices_requires_auth(postgres_url: str) -> None:
     assert response.status_code == 401
 
 
-async def test_get_key_shop_prices_rejects_empty_title(
-    postgres_url: str, create_and_login
-) -> None:
+async def test_get_key_shop_prices_rejects_empty_title(postgres_url: str, create_and_login) -> None:
     from backlog_manager_backend.app import create_app
 
     with TestClient(app=create_app()) as client:

@@ -42,10 +42,23 @@ tasks:
       - task: release:test
 
   check:
-    desc: Lint + typecheck the frontend, lint the backend
+    desc: Lint + typecheck + format-check the frontend, lint + format-check the backend
     cmds:
       - task: frontend:check
       - task: backend:lint
+      - task: format:check
+
+  format:
+    desc: Format the frontend (prettier) and backend (ruff format)
+    cmds:
+      - task: frontend:format
+      - task: backend:format
+
+  format:check:
+    desc: Check frontend and backend formatting without changing files
+    cmds:
+      - task: frontend:format:check
+      - task: backend:format:check
 
   db:up:
     desc: Start local Postgres + pgAdmin via compose.yml
@@ -87,6 +100,18 @@ tasks:
     cmds:
       - npm run check
 
+  frontend:format:
+    desc: Format the frontend (prettier)
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run format:write
+
+  frontend:format:check:
+    desc: Check frontend formatting without changing files
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run format:check
+
   frontend:test:
     desc: Run the frontend unit tests (vitest)
     dir: "{{.FRONTEND_DIR}}"
@@ -115,6 +140,18 @@ tasks:
     dir: "{{.BACKEND_DIR}}"
     cmds:
       - uv run ruff check .
+
+  backend:format:
+    desc: Format the backend (ruff format)
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - uv run ruff format .
+
+  backend:format:check:
+    desc: Check backend formatting without changing files
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - uv run ruff format --check .
 
   backend:test:
     desc: Run backend tests (pytest, against a real Postgres via testcontainers)

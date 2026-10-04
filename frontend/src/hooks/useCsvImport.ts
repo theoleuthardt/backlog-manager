@@ -1,7 +1,11 @@
 import { useCallback, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import * as csvApi from "~/lib/api/csv";
-import type { ColumnConfig, CsvImportProgress, SubmitCsvEntry } from "~/lib/api/csv";
+import type {
+  ColumnConfig,
+  CsvImportProgress,
+  SubmitCsvEntry,
+} from "~/lib/api/csv";
 
 export function useCsvHeaders() {
   const [isLoading, setIsLoading] = useState(false);
@@ -62,7 +66,11 @@ export function useCsvSubmitStream() {
       setIsRunning(true);
       setProgress(null);
       try {
-        return await csvApi.submitCsvStream(entries, setProgress, controller.signal);
+        return await csvApi.submitCsvStream(
+          entries,
+          setProgress,
+          controller.signal,
+        );
       } finally {
         await queryClient.invalidateQueries({ queryKey: ["backlog-entries"] });
         abortControllerRef.current = null;

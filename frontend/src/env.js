@@ -30,11 +30,9 @@ export const env = createEnv({
             .refine(
               (url) => {
                 const parsed = new URL(url);
-                const isLoopback = [
-                  "localhost",
-                  "127.0.0.1",
-                  "[::1]",
-                ].includes(parsed.hostname);
+                const isLoopback = ["localhost", "127.0.0.1", "[::1]"].includes(
+                  parsed.hostname,
+                );
                 return parsed.protocol === "https:" || isLoopback;
               },
               {

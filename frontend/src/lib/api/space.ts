@@ -35,13 +35,12 @@ export async function inviteToSpace(username: string): Promise<void> {
   const { error } = await apiClient.POST("/api/space/invitations", {
     body: { username },
   });
-  if (error) throw new Error(apiErrorMessage(error, "Failed to send invitation"));
+  if (error)
+    throw new Error(apiErrorMessage(error, "Failed to send invitation"));
 }
 
 export async function acceptSpaceInvitation(): Promise<SpaceData> {
-  const { data, error } = await apiClient.POST(
-    "/api/space/invitations/accept",
-  );
+  const { data, error } = await apiClient.POST("/api/space/invitations/accept");
   if (error)
     throw new Error(apiErrorMessage(error, "Failed to accept invitation"));
   return toSpaceData(data);

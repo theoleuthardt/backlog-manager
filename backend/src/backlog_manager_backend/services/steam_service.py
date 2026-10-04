@@ -140,10 +140,7 @@ async def _get_steam_app_details(
         *(budget.lookup(lambda app_id=app_id: fetch_one(app_id), None) for app_id in app_ids)
     )
     return {
-        app_id: detail
-        for result in results
-        if result is not None
-        for app_id, detail in [result]
+        app_id: detail for result in results if result is not None for app_id, detail in [result]
     }
 
 
@@ -193,9 +190,7 @@ async def sync_playtimes(
         owned_games = await get_owned_games(user.steam_id, api_key)
 
     owned_by_app_id = {game.appid: game for game in owned_games}
-    normalized_owned_titles = [
-        game_service.normalize_game_title(game.name) for game in owned_games
-    ]
+    normalized_owned_titles = [game_service.normalize_game_title(game.name) for game in owned_games]
     unlinked_title_counts: dict[str, int] = {}
     for normalized in normalized_owned_titles:
         if normalized:
@@ -207,9 +202,7 @@ async def sync_playtimes(
     }
 
     entries = await backlog_entry_repo.get_backlog_entries_by_user(session, user.id)
-    claimed_app_ids = {
-        entry.steam_app_id for entry in entries if entry.steam_app_id is not None
-    }
+    claimed_app_ids = {entry.steam_app_id for entry in entries if entry.steam_app_id is not None}
     unlinked_entry_title_counts: dict[str, int] = {}
     for entry in entries:
         if entry.steam_app_id is None:
@@ -226,12 +219,9 @@ async def sync_playtimes(
         else:
             normalized = game_service.normalize_game_title(entry.title or "")
             owned_game = unlinked_by_title.get(normalized)
-            if (
-                owned_game is not None
-                and (
-                    owned_game.appid in claimed_app_ids
-                    or unlinked_entry_title_counts.get(normalized) != 1
-                )
+            if owned_game is not None and (
+                owned_game.appid in claimed_app_ids
+                or unlinked_entry_title_counts.get(normalized) != 1
             ):
                 owned_game = None
         if owned_game is None:
@@ -435,8 +425,13 @@ async def import_library(
             for game in games_to_create
         )
     )
-    covers = {game.appid: cover for game, (cover, _) in zip(games_to_create, covers_and_times, strict=True)}
-    times = {game.appid: ttt for game, (_, ttt) in zip(games_to_create, covers_and_times, strict=True)}
+    covers = {
+        game.appid: cover
+        for game, (cover, _) in zip(games_to_create, covers_and_times, strict=True)
+    }
+    times = {
+        game.appid: ttt for game, (_, ttt) in zip(games_to_create, covers_and_times, strict=True)
+    }
 
     created: list[BacklogEntry] = []
     total = len(games_to_import)
@@ -628,9 +623,7 @@ async def preview_library(
     budget = _OperationBudget()
     cover_links = await asyncio.gather(
         *(
-            budget.lookup(
-                lambda game=game: _try_get_cover(game.appid, steamgriddb_api_key), None
-            )
+            budget.lookup(lambda game=game: _try_get_cover(game.appid, steamgriddb_api_key), None)
             for game in unlinked_games
         )
     )
@@ -681,9 +674,7 @@ async def preview_wishlist(
     details = await _get_steam_app_details([item.appid for item in items], budget)
     cover_links = await asyncio.gather(
         *(
-            budget.lookup(
-                lambda item=item: _try_get_cover(item.appid, steamgriddb_api_key), None
-            )
+            budget.lookup(lambda item=item: _try_get_cover(item.appid, steamgriddb_api_key), None)
             for item in items
         )
     )

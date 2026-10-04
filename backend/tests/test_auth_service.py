@@ -25,7 +25,9 @@ async def test_create_user_creates_user_with_hashed_password(
 
     user = await auth_service.create_user(
         session,
-        CreateUserRequest(username="newuser", email="newuser@example.com", password="hunter2hunter2"),
+        CreateUserRequest(
+            username="newuser", email="newuser@example.com", password="hunter2hunter2"
+        ),
     )
 
     assert user.name == "newuser"
@@ -42,7 +44,10 @@ async def test_create_user_can_create_an_admin(
     user = await auth_service.create_user(
         session,
         CreateUserRequest(
-            username="newadmin", email="newadmin@example.com", password="hunter2hunter2", is_admin=True
+            username="newadmin",
+            email="newadmin@example.com",
+            password="hunter2hunter2",
+            is_admin=True,
         ),
     )
 
@@ -62,7 +67,9 @@ async def test_create_user_rejects_duplicate_email(
     with pytest.raises(ConflictError):
         await auth_service.create_user(
             session,
-            CreateUserRequest(username="second", email="dupe@example.com", password="hunter2hunter2"),
+            CreateUserRequest(
+                username="second", email="dupe@example.com", password="hunter2hunter2"
+            ),
         )
 
 
@@ -87,7 +94,9 @@ async def test_login_returns_token_for_correct_credentials(
 
     user = await auth_service.create_user(
         session,
-        CreateUserRequest(username="loginuser", email="loginuser@example.com", password="hunter2hunter2"),
+        CreateUserRequest(
+            username="loginuser", email="loginuser@example.com", password="hunter2hunter2"
+        ),
     )
 
     result = await auth_service.login(
@@ -107,7 +116,9 @@ async def test_login_rejects_wrong_password(
 
     await auth_service.create_user(
         session,
-        CreateUserRequest(username="wrongpw", email="wrongpw@example.com", password="hunter2hunter2"),
+        CreateUserRequest(
+            username="wrongpw", email="wrongpw@example.com", password="hunter2hunter2"
+        ),
     )
 
     with pytest.raises(ValidationError):
@@ -270,9 +281,12 @@ async def test_verify_two_factor_enrollment_rejects_a_repeat_call_once_enabled(
             session, user, pyotp.TOTP(enrollment.secret).now()
         )
 
-    assert await backup_code_repo.verify_and_consume_backup_code(
-        session, user.id, first_backup_codes[0]
-    ) is True
+    assert (
+        await backup_code_repo.verify_and_consume_backup_code(
+            session, user.id, first_backup_codes[0]
+        )
+        is True
+    )
 
 
 async def _enroll_and_enable(auth_service: ModuleType, session: AsyncSession, email: str):
@@ -302,9 +316,10 @@ async def test_disable_two_factor_clears_secret_and_backup_codes(
     user = await user_repo.get_user_by_id(session, user.id)
     assert user.totp_enabled is False
     assert user.totp_secret_encrypted is None
-    assert await backup_code_repo.verify_and_consume_backup_code(
-        session, user.id, backup_codes[0]
-    ) is False
+    assert (
+        await backup_code_repo.verify_and_consume_backup_code(session, user.id, backup_codes[0])
+        is False
+    )
 
 
 async def test_disable_two_factor_rejects_wrong_password(
@@ -486,7 +501,9 @@ async def test_create_user_rejects_a_password_above_128_characters(
         )
 
 
-async def _fail_login(auth_service: ModuleType, session: AsyncSession, email: str, times: int) -> None:
+async def _fail_login(
+    auth_service: ModuleType, session: AsyncSession, email: str, times: int
+) -> None:
     from backlog_manager_backend.schemas.auth import LoginParams
 
     for _ in range(times):

@@ -18,7 +18,9 @@ from backlog_manager_backend.schemas.user import CreateUserParams
 async def _make_user(session: AsyncSession) -> object:
     return await user_repo.create_user(
         session,
-        CreateUserParams(username="statusowner", email="statusowner@example.com", password_hash="h"),
+        CreateUserParams(
+            username="statusowner", email="statusowner@example.com", password_hash="h"
+        ),
     )
 
 

@@ -21,9 +21,7 @@ class User(Base):
     steam_family_ids: Mapped[str | None] = mapped_column("SteamFamilyIds")
     igdb_credentials_encrypted: Mapped[str | None] = mapped_column("IgdbCredentialsEncrypted")
     steamgriddb_api_key_encrypted: Mapped[str | None] = mapped_column("SteamGridDbApiKeyEncrypted")
-    discord_webhook_url_encrypted: Mapped[str | None] = mapped_column(
-        "DiscordWebhookUrlEncrypted"
-    )
+    discord_webhook_url_encrypted: Mapped[str | None] = mapped_column("DiscordWebhookUrlEncrypted")
     steam_auto_import_enabled: Mapped[bool] = mapped_column(
         "SteamAutoImportEnabled", server_default=text("false")
     )
@@ -35,17 +33,11 @@ class User(Base):
         "FailedLoginAttempts", server_default=text("0")
     )
     locked_until: Mapped[datetime | None] = mapped_column("LockedUntil")
-    setup_completed: Mapped[bool] = mapped_column(
-        "SetupCompleted", server_default=text("false")
-    )
+    setup_completed: Mapped[bool] = mapped_column("SetupCompleted", server_default=text("false"))
     default_sort: Mapped[str] = mapped_column("DefaultSort", server_default=text("'status'"))
     theme: Mapped[str] = mapped_column("Theme", server_default=text("'dark'"))
     custom_themes: Mapped[list[dict[str, Any]]] = mapped_column(
         "CustomThemes", JSONB, server_default=text("'[]'::jsonb")
     )
-    created_at: Mapped[datetime] = mapped_column(
-        "CreatedAt", server_default=TIMESTAMP_DEFAULT
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        "UpdatedAt", server_default=TIMESTAMP_DEFAULT
-    )
+    created_at: Mapped[datetime] = mapped_column("CreatedAt", server_default=TIMESTAMP_DEFAULT)
+    updated_at: Mapped[datetime] = mapped_column("UpdatedAt", server_default=TIMESTAMP_DEFAULT)

@@ -322,9 +322,7 @@ async def _enrich_search_results(
     preferred over the IGDB cover when configured and a Steam App ID
     could be resolved for the title, since SteamGridDB has far better
     cover-art availability than IGDB."""
-    game_ids = [
-        result.game if result.game is not None else result.id for result in search_results
-    ]
+    game_ids = [result.game if result.game is not None else result.id for result in search_results]
 
     uncached_game_ids = [game_id for game_id in game_ids if game_id not in _game_cache]
     if uncached_game_ids:
@@ -437,9 +435,7 @@ async def _enrich_search_results(
                 logger.error("Failed to fetch companies batch")
 
     time_to_beat_by_game_id: dict[int, tuple[int, float, float, float]] = {}
-    uncached_time_to_beat_ids = [
-        game.id for game in games if game.id not in _time_to_beat_cache
-    ]
+    uncached_time_to_beat_ids = [game.id for game in games if game.id not in _time_to_beat_cache]
     if uncached_time_to_beat_ids:
         try:
             for entry in await get_games_time_to_beat_on_igdb(
@@ -492,8 +488,7 @@ async def _enrich_search_results(
             cover = _cover_cache.get(game.cover) if game.cover else None
             if cover and cover.image_id:
                 image_url = (
-                    "https://images.igdb.com/igdb/image/upload/"
-                    f"t_cover_big/{cover.image_id}.jpg"
+                    f"https://images.igdb.com/igdb/image/upload/t_cover_big/{cover.image_id}.jpg"
                 )
 
             steamgriddb_urls = steamgriddb_covers_by_game_id.get(game.id, [])
@@ -501,7 +496,9 @@ async def _enrich_search_results(
                 image_url = steamgriddb_urls[0]
 
             genres = [
-                _genre_cache[genre_id] for genre_id in (game.genres or []) if genre_id in _genre_cache
+                _genre_cache[genre_id]
+                for genre_id in (game.genres or [])
+                if genre_id in _genre_cache
             ]
             platforms = [
                 _platform_cache[platform_id]
@@ -619,10 +616,7 @@ async def find_steam_app_id(title: str) -> int | None:
     normalized = normalize_game_title(title)
     async with _steam_app_id_lock:
         cached = _steam_app_id_by_title.get(normalized)
-        if (
-            cached is not None
-            and time.monotonic() - cached[1] < _STEAM_APP_ID_CACHE_TTL_SECONDS
-        ):
+        if cached is not None and time.monotonic() - cached[1] < _STEAM_APP_ID_CACHE_TTL_SECONDS:
             return cached[0]
     try:
         items = await search_steam_store_by_title(title)
@@ -630,9 +624,7 @@ async def find_steam_app_id(title: str) -> int | None:
         logger.error("Failed to search Steam store", title=title)
         return None
     app_hits = [item for item in items if item.type == "app" and item.id]
-    matching_hits = [
-        item for item in app_hits if normalize_game_title(item.name) == normalized
-    ]
+    matching_hits = [item for item in app_hits if normalize_game_title(item.name) == normalized]
     app_id = matching_hits[0].id if matching_hits else None
     async with _steam_app_id_lock:
         _remember_steam_app_id(normalized, app_id)

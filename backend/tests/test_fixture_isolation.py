@@ -11,9 +11,7 @@ from litestar.testing import TestClient
 _EMAIL = "fixtureisolation@example.com"
 
 
-async def test_create_and_login_commits_a_real_user(
-    postgres_url: str, create_and_login
-) -> None:
+async def test_create_and_login_commits_a_real_user(postgres_url: str, create_and_login) -> None:
     from backlog_manager_backend.app import create_app
 
     with TestClient(app=create_app()) as client:

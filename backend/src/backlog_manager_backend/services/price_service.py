@@ -122,10 +122,7 @@ async def get_price_info(session: AsyncSession, steam_app_id: int) -> GamePrice:
 
 
 def _format_alert_message(title: str, price: float, store: str, retail_price: float) -> str:
-    return (
-        f"🔥 **{title}** is on sale for ${price:.2f} at {store} "
-        f"(was ${retail_price:.2f})!"
-    )
+    return f"🔥 **{title}** is on sale for ${price:.2f} at {store} (was ${retail_price:.2f})!"
 
 
 def _resolve_discord_webhook_url(user: User) -> str | None:

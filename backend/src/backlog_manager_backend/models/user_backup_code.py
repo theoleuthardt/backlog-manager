@@ -18,6 +18,4 @@ class UserBackupCode(Base):
         ForeignKey("blm-system.Users.UserID", ondelete="CASCADE", onupdate="CASCADE"),
     )
     code_hash: Mapped[str] = mapped_column("CodeHash")
-    created_at: Mapped[datetime] = mapped_column(
-        "CreatedAt", server_default=TIMESTAMP_DEFAULT
-    )
+    created_at: Mapped[datetime] = mapped_column("CreatedAt", server_default=TIMESTAMP_DEFAULT)

@@ -70,7 +70,9 @@ async def _make_entry(
     )
 
 
-def _detail(*, price: str = "9.99", retail_price: str = "19.99", savings: str = "50.0") -> CheapSharkGameDetail:
+def _detail(
+    *, price: str = "9.99", retail_price: str = "19.99", savings: str = "50.0"
+) -> CheapSharkGameDetail:
     return CheapSharkGameDetail(
         info=CheapSharkGameInfo(title="Half-Life 2", steamAppID="220"),
         cheapestPriceEver=CheapSharkPriceEver(price="2.99", date=1234567890),
@@ -94,7 +96,9 @@ async def test_get_price_info_uses_fresh_cache_without_refetching(
         UpsertGamePriceParams(
             steam_app_id=220,
             deals=[
-                GamePriceDeal(store="Steam", icon="", price=9.99, retail_price=19.99, url="https://x")
+                GamePriceDeal(
+                    store="Steam", icon="", price=9.99, retail_price=19.99, url="https://x"
+                )
             ],
             on_sale=True,
             checked_at=datetime.now(UTC).replace(tzinfo=None),
@@ -119,7 +123,9 @@ async def test_get_price_info_refetches_when_stale(
         UpsertGamePriceParams(
             steam_app_id=220,
             deals=[
-                GamePriceDeal(store="Steam", icon="", price=19.99, retail_price=19.99, url="https://x")
+                GamePriceDeal(
+                    store="Steam", icon="", price=19.99, retail_price=19.99, url="https://x"
+                )
             ],
             on_sale=False,
             checked_at=stale_checked_at,

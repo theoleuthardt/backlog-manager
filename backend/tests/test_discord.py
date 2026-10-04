@@ -94,12 +94,13 @@ async def test_send_discord_webhook_message_never_logs_the_webhook_url(
 
 def test_is_valid_discord_webhook_url_accepts_real_webhook_urls() -> None:
     assert is_valid_discord_webhook_url(_WEBHOOK_URL) is True
-    assert is_valid_discord_webhook_url(
-        "https://discordapp.com/api/webhooks/123/token-with-dashes_and_underscores"
-    ) is True
-    assert is_valid_discord_webhook_url(
-        "https://canary.discord.com/api/webhooks/123/token"
-    ) is True
+    assert (
+        is_valid_discord_webhook_url(
+            "https://discordapp.com/api/webhooks/123/token-with-dashes_and_underscores"
+        )
+        is True
+    )
+    assert is_valid_discord_webhook_url("https://canary.discord.com/api/webhooks/123/token") is True
 
 
 def test_is_valid_discord_webhook_url_rejects_non_discord_urls() -> None:

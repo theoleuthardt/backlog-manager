@@ -34,9 +34,7 @@ async def get_game_price(session: AsyncSession, steam_app_id: int) -> GamePrice 
     return _to_schema(model) if model is not None else None
 
 
-async def upsert_game_price(
-    session: AsyncSession, params: UpsertGamePriceParams
-) -> GamePrice:
+async def upsert_game_price(session: AsyncSession, params: UpsertGamePriceParams) -> GamePrice:
     model = await session.get(GamePriceModel, params.steam_app_id)
     if model is None:
         model = GamePriceModel(steam_app_id=params.steam_app_id)

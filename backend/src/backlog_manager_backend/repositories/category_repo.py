@@ -56,9 +56,7 @@ async def get_categories_by_user(session: AsyncSession, user_id: int) -> list[Ca
 
 
 async def get_categories_by_space(session: AsyncSession, space_id: int) -> list[Category]:
-    result = await session.execute(
-        select(CategoryModel).where(CategoryModel.space_id == space_id)
-    )
+    result = await session.execute(select(CategoryModel).where(CategoryModel.space_id == space_id))
     return [_to_schema(row) for row in result.scalars().all()]
 
 

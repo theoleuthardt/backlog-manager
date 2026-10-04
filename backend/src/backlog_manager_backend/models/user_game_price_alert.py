@@ -27,6 +27,4 @@ class UserGamePriceAlert(Base):
     )
     steam_app_id: Mapped[int] = mapped_column("SteamAppId", BigInteger, primary_key=True)
     last_alerted_price: Mapped[Decimal] = mapped_column("LastAlertedPrice")
-    updated_at: Mapped[datetime] = mapped_column(
-        "UpdatedAt", server_default=TIMESTAMP_DEFAULT
-    )
+    updated_at: Mapped[datetime] = mapped_column("UpdatedAt", server_default=TIMESTAMP_DEFAULT)

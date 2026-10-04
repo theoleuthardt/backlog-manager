@@ -407,7 +407,9 @@ async def build_csv_preview(
 
         platform_raw = safe_string(record.get(config.platform_column), "").strip()
         platform_mapping = (
-            normalize_platform(platform_raw) if platform_raw else PlatformMapping(platform=[], owned=True)
+            normalize_platform(platform_raw)
+            if platform_raw
+            else PlatformMapping(platform=[], owned=True)
         )
 
         status_mapping = normalize_status(safe_string(record.get(config.status_column), ""))
@@ -582,9 +584,7 @@ async def submit_csv_entries(
                         ),
                         note=entry.note,
                         review=entry.review,
-                        completed_at=(
-                            entry.completed_at if entry.status == "Completed" else None
-                        ),
+                        completed_at=(entry.completed_at if entry.status == "Completed" else None),
                     ),
                 )
             )

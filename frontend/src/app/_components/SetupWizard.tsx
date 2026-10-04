@@ -84,7 +84,9 @@ export function SetupWizard() {
 
   const handleNext = async () => {
     if (stepIndex === 2 && !igdbClientId.trim() !== !igdbClientSecret.trim()) {
-      toast.error("Enter both the IGDB Client ID and Client Secret, or neither");
+      toast.error(
+        "Enter both the IGDB Client ID and Client Secret, or neither",
+      );
       return;
     }
     const input = stepInput();

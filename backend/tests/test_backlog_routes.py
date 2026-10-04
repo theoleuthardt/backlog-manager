@@ -93,10 +93,7 @@ async def test_create_and_update_entry_description_round_trips(
         )
         assert create_response.status_code == 201
         entry_id = create_response.json()["id"]
-        assert (
-            create_response.json()["description"]
-            == "Help Madeline survive her inner journey."
-        )
+        assert create_response.json()["description"] == "Help Madeline survive her inner journey."
 
         cleared_response = client.put(
             f"/api/backlog/entries/{entry_id}",
@@ -608,9 +605,7 @@ async def test_update_entry_rejects_platform_containing_a_comma(
     assert response.status_code == 400
 
 
-async def test_get_duplicates_returns_matching_entries(
-    postgres_url: str, create_and_login
-) -> None:
+async def test_get_duplicates_returns_matching_entries(postgres_url: str, create_and_login) -> None:
     from backlog_manager_backend.app import create_app
 
     app = create_app()
@@ -643,9 +638,7 @@ async def test_get_duplicates_returns_matching_entries(
     assert duplicates[0]["title"] == "Elden Ring"
 
 
-async def test_get_duplicates_scoped_to_current_user(
-    postgres_url: str, create_and_login
-) -> None:
+async def test_get_duplicates_scoped_to_current_user(postgres_url: str, create_and_login) -> None:
     from backlog_manager_backend.app import create_app
 
     app = create_app()
@@ -677,9 +670,7 @@ async def test_get_duplicates_scoped_to_current_user(
     assert duplicates_response.json() == []
 
 
-async def test_get_duplicates_requires_title(
-    postgres_url: str, create_and_login
-) -> None:
+async def test_get_duplicates_requires_title(postgres_url: str, create_and_login) -> None:
     from backlog_manager_backend.app import create_app
 
     app = create_app()
@@ -695,9 +686,7 @@ async def test_get_duplicates_requires_title(
     assert duplicates_response.status_code == 400
 
 
-async def test_create_category_rejects_invalid_color(
-    postgres_url: str, create_and_login
-) -> None:
+async def test_create_category_rejects_invalid_color(postgres_url: str, create_and_login) -> None:
     from backlog_manager_backend.app import create_app
 
     with TestClient(app=create_app()) as client:
@@ -721,9 +710,7 @@ async def test_create_category_rejects_empty_and_overlong_name(
 
     with TestClient(app=create_app()) as client:
         headers = await create_and_login(client, "badcategoryname@example.com")
-        empty = client.post(
-            "/api/backlog/categories", headers=headers, json={"category_name": ""}
-        )
+        empty = client.post("/api/backlog/categories", headers=headers, json={"category_name": ""})
         too_long = client.post(
             "/api/backlog/categories", headers=headers, json={"category_name": "x" * 101}
         )
@@ -807,9 +794,9 @@ async def test_review_stars_reject_values_outside_zero_to_ten(
         negative_create = client.post(
             "/api/backlog/entries", headers=headers, json={**_ENTRY_BASE, "review_stars": -1}
         )
-        entry_id = client.post(
-            "/api/backlog/entries", headers=headers, json=_ENTRY_BASE
-        ).json()["id"]
+        entry_id = client.post("/api/backlog/entries", headers=headers, json=_ENTRY_BASE).json()[
+            "id"
+        ]
         too_high_update = client.put(
             f"/api/backlog/entries/{entry_id}", headers=headers, json={"review_stars": 11}
         )

@@ -38,9 +38,5 @@ class CustomStatus(Base):
         ForeignKey("blm-system.Spaces.SpaceID", ondelete="CASCADE", onupdate="CASCADE"),
     )
     name: Mapped[str] = mapped_column("Name", String(20))
-    created_at: Mapped[datetime] = mapped_column(
-        "CreatedAt", server_default=TIMESTAMP_DEFAULT
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        "UpdatedAt", server_default=TIMESTAMP_DEFAULT
-    )
+    created_at: Mapped[datetime] = mapped_column("CreatedAt", server_default=TIMESTAMP_DEFAULT)
+    updated_at: Mapped[datetime] = mapped_column("UpdatedAt", server_default=TIMESTAMP_DEFAULT)

@@ -1,7 +1,9 @@
 from litestar.testing import TestClient
 
 
-async def test_create_and_list_custom_statuses_round_trips(postgres_url: str, create_and_login) -> None:
+async def test_create_and_list_custom_statuses_round_trips(
+    postgres_url: str, create_and_login
+) -> None:
     from backlog_manager_backend.app import create_app
 
     app = create_app()
@@ -40,7 +42,9 @@ async def test_list_statuses_only_returns_own_statuses(postgres_url: str, create
     assert list_response.json() == []
 
 
-async def test_update_status_rejects_other_users_status(postgres_url: str, create_and_login) -> None:
+async def test_update_status_rejects_other_users_status(
+    postgres_url: str, create_and_login
+) -> None:
     from backlog_manager_backend.app import create_app
 
     app = create_app()
@@ -80,9 +84,7 @@ async def test_update_and_delete_status(postgres_url: str, create_and_login) -> 
         assert update_response.status_code == 200
         assert update_response.json()["name"] == "Playing in Co-Op"
 
-        delete_response = client.delete(
-            f"/api/backlog/statuses/{created['id']}", headers=headers
-        )
+        delete_response = client.delete(f"/api/backlog/statuses/{created['id']}", headers=headers)
         assert delete_response.status_code == 204
 
         list_response = client.get("/api/backlog/statuses", headers=headers)
@@ -113,7 +115,9 @@ async def test_create_status_validates_name(postgres_url: str, create_and_login)
         assert empty.status_code == 400
 
 
-async def test_create_status_rejects_duplicate_default_status(postgres_url: str, create_and_login) -> None:
+async def test_create_status_rejects_duplicate_default_status(
+    postgres_url: str, create_and_login
+) -> None:
     from backlog_manager_backend.app import create_app
 
     app = create_app()

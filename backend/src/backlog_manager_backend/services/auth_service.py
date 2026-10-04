@@ -114,7 +114,9 @@ async def login(session: AsyncSession, params: LoginParams) -> LoginResult:
         raise ValidationError(_INVALID_CREDENTIALS)
 
     if user.totp_enabled:
-        return LoginResult(requires_2fa=True, challenge_token=create_two_factor_challenge_token(user.id))
+        return LoginResult(
+            requires_2fa=True, challenge_token=create_two_factor_challenge_token(user.id)
+        )
 
     await _reset_failed_logins_if_needed(session, user)
     return LoginResult(access_token=create_access_token(user.id, user.token_version))

@@ -49,7 +49,9 @@ async def test_get_csv_headers_reads_first_row(postgres_url: str, create_and_log
         )
 
     assert response.status_code == 200
-    assert response.json() == {"headers": {"A": "Game", "B": "Genre", "C": "Platform", "D": "Status"}}
+    assert response.json() == {
+        "headers": {"A": "Game", "B": "Genre", "C": "Platform", "D": "Status"}
+    }
 
 
 async def test_preview_csv_stream_reports_progress_then_done(
@@ -235,7 +237,7 @@ async def test_stream_csv_messages_hides_an_unexpected_error_behind_a_generic_me
     client verbatim, unlike a deliberately-raised domain error."""
 
     async def run(on_progress: object) -> list[object]:
-        raise RuntimeError("relation \"BacklogEntries\" column \"Secret\" leaked")
+        raise RuntimeError('relation "BacklogEntries" column "Secret" leaked')
 
     error_text = await _drain_error(run)
     assert "Secret" not in error_text

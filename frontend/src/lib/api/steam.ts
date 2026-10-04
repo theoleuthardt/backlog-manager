@@ -28,9 +28,7 @@ export async function syncSteamPlaytimesStream(
     { parseAs: "stream" },
   );
   if (error)
-    throw new Error(
-      apiErrorMessage(error, "Failed to sync Steam playtimes"),
-    );
+    throw new Error(apiErrorMessage(error, "Failed to sync Steam playtimes"));
   return streamEntries(response, onProgress);
 }
 
@@ -42,9 +40,7 @@ export async function importSteamLibraryStream(
     { parseAs: "stream", body: null },
   );
   if (error)
-    throw new Error(
-      apiErrorMessage(error, "Failed to import Steam library"),
-    );
+    throw new Error(apiErrorMessage(error, "Failed to import Steam library"));
   return streamEntries(response, onProgress);
 }
 
@@ -57,9 +53,7 @@ export async function importSteamLibraryAppIdsStream(
     { parseAs: "stream", body: appIds.map((appid) => ({ appid })) },
   );
   if (error)
-    throw new Error(
-      apiErrorMessage(error, "Failed to import Steam library"),
-    );
+    throw new Error(apiErrorMessage(error, "Failed to import Steam library"));
   return streamEntries(response, onProgress);
 }
 
@@ -93,9 +87,7 @@ export async function previewSteamLibraryStream(
   }));
 }
 
-export async function getSteamWishlistPreview(): Promise<
-  SteamPreviewItem[]
-> {
+export async function getSteamWishlistPreview(): Promise<SteamPreviewItem[]> {
   const { data, error } = await apiClient.GET(
     "/api/user/steam/wishlist/preview",
   );
@@ -123,13 +115,13 @@ export async function importSteamWishlistStream(
     { parseAs: "stream", body: items },
   );
   if (error)
-    throw new Error(
-      apiErrorMessage(error, "Failed to import Steam wishlist"),
-    );
+    throw new Error(apiErrorMessage(error, "Failed to import Steam wishlist"));
   return streamEntries(response, onProgress);
 }
 
-export async function getSteamPlaytime(steamAppId: number): Promise<number | null> {
+export async function getSteamPlaytime(
+  steamAppId: number,
+): Promise<number | null> {
   const { data, error } = await apiClient.GET("/api/user/steam/playtime", {
     params: { query: { steam_app_id: steamAppId } },
   });

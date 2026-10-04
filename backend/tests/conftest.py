@@ -85,7 +85,9 @@ async def session(_seed_schema: None) -> AsyncGenerator[AsyncSession, None]:
 
 
 @pytest.fixture
-async def create_and_login(_seed_schema: None) -> AsyncGenerator[Callable[..., Awaitable[dict[str, str]]], None]:
+async def create_and_login(
+    _seed_schema: None,
+) -> AsyncGenerator[Callable[..., Awaitable[dict[str, str]]], None]:
     """There is no public self-registration endpoint, so route-level
     tests (via a real TestClient hitting the app's own, separately
     committed session) need another way to seed a user: this creates

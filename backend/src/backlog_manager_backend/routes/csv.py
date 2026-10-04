@@ -78,7 +78,9 @@ def _resolve_steamgriddb_api_key(user: User) -> str | None:
     degrades the same way a missing key already does."""
     if user.steamgriddb_api_key_encrypted and settings.steam_api_key_encryption_key:
         try:
-            return decrypt(user.steamgriddb_api_key_encrypted, settings.steam_api_key_encryption_key)
+            return decrypt(
+                user.steamgriddb_api_key_encrypted, settings.steam_api_key_encryption_key
+            )
         except (InvalidToken, ValueError):
             return None
     return settings.steamgriddb_api_key
@@ -172,7 +174,9 @@ async def get_csv_headers(
 
 
 @post("/api/csv/preview/stream", status_code=200, media_type="text/event-stream")
-async def preview_csv_stream(data: MatchCsvRequest, current_user: NamedDependency[User]) -> ServerSentEvent:
+async def preview_csv_stream(
+    data: MatchCsvRequest, current_user: NamedDependency[User]
+) -> ServerSentEvent:
     """SSE preview: parses+matches every row against HowLongToBeat and
     the user's existing backlog without writing anything - mirrors
     routes/steam.py's preview_steam_library_stream. The user confirms
