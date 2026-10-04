@@ -1928,6 +1928,21 @@ export interface operations {
                     };
                 };
             };
+            /** @description Request conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
         };
     };
     ApiBacklogEntriesEntryIdDeleteEntry: {

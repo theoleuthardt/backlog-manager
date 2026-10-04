@@ -500,6 +500,56 @@ async def test_space_entry_cannot_lose_its_steam_app_id(postgres_url: str, creat
     assert response.status_code == 400
 
 
+async def test_updating_to_a_taken_steam_app_id_is_a_conflict(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        owner = await create_and_login(client, "spaceupdupowner@example.com")
+        guest = await create_and_login(client, "spaceupdupguest@example.com")
+        space_id = _make_space(client, owner, guest, "spaceupdupguest")
+        client.post(f"/api/backlog/entries?space_id={space_id}", headers=owner, json=_entry_payload())
+        other = client.post(
+            f"/api/backlog/entries?space_id={space_id}",
+            headers=owner,
+            json=_entry_payload(title="Celeste", steam_app_id=504230),
+        ).json()
+
+        response = client.put(
+            f"/api/backlog/entries/{other['id']}?space_id={space_id}",
+            headers=owner,
+            json={"steam_app_id": 548430},
+        )
+
+    assert response.status_code == 409
+
+
+async def test_space_entry_without_member_data_creates_no_member_row(
+    postgres_url: str, create_and_login
+) -> None:
+    from sqlalchemy import func, select
+
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.db import async_session
+    from backlog_manager_backend.models.space_entry_member_data import SpaceEntryMemberData
+
+    with TestClient(app=create_app()) as client:
+        owner = await create_and_login(client, "spaceemptyowner@example.com")
+        guest = await create_and_login(client, "spaceemptyguest@example.com")
+        space_id = _make_space(client, owner, guest, "spaceemptyguest")
+        entry = client.post(
+            f"/api/backlog/entries?space_id={space_id}", headers=owner, json=_entry_payload()
+        ).json()
+
+        async with async_session() as session:
+            rows = await session.scalar(
+                select(func.count()).where(SpaceEntryMemberData.backlog_entry_id == entry["id"])
+            )
+
+    assert rows == 0
+
+
 async def test_invalid_space_update_does_not_persist_member_data(
     postgres_url: str, create_and_login
 ) -> None:

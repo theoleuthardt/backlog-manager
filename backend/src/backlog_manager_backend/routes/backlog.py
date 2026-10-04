@@ -182,7 +182,9 @@ async def create_entry(
         )
     except ConflictError as error:
         raise _ConflictException("This game is already in that backlog") from error
-    if space_id is not None:
+    if space_id is not None and (
+        data.playtime is not None or review_stars is not None or data.review is not None
+    ):
         await space_entry_member_repo.upsert_member_data(
             db_session,
             entry.backlog_entry_id,
@@ -249,7 +251,10 @@ async def get_entry(
     return (await _present(db_session, [entry], current_user))[0]
 
 
-@put("/api/backlog/entries/{entry_id:int}", raises=[NotFoundException, ValidationException])
+@put(
+    "/api/backlog/entries/{entry_id:int}",
+    raises=[NotFoundException, ValidationException, _ConflictException],
+)
 async def update_entry(
     entry_id: FromPath[int],
     data: UpdateBacklogEntryRequest,
@@ -292,7 +297,10 @@ async def update_entry(
         review=data.review if space_id is None else msgspec.UNSET,
         note=data.note,
     )
-    entry = await backlog_entry_repo.update_backlog_entry(db_session, params)
+    try:
+        entry = await backlog_entry_repo.update_backlog_entry(db_session, params)
+    except ConflictError as error:
+        raise _ConflictException("This game is already in that backlog") from error
     if space_id is not None:
         await space_entry_member_repo.upsert_member_data(
             db_session,

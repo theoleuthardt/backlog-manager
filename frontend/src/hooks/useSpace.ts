@@ -4,8 +4,18 @@ import * as spaceApi from "~/lib/api/space";
 
 const SPACE_KEY = ["space"] as const;
 
+const SPACE_REFETCH_INTERVAL_MS = 30_000;
+
+/**
+ * Polled while the window is visible so an invitation, a decline or the
+ * partner leaving shows up without a manual reload.
+ */
 export function useSpace() {
-  return useQuery({ queryKey: SPACE_KEY, queryFn: spaceApi.getSpace });
+  return useQuery({
+    queryKey: SPACE_KEY,
+    queryFn: spaceApi.getSpace,
+    refetchInterval: SPACE_REFETCH_INTERVAL_MS,
+  });
 }
 
 function useRefreshSpace() {

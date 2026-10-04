@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { ShareToSpaceButton } from "components/ShareToSpaceButton";
+import { useBacklogSpaceId } from "~/app/context/BacklogScopeContext";
 import { CategoryPicker } from "components/CategoryPicker";
 import { CoverPickerDialog } from "components/CoverPickerDialog";
 import { GameImage } from "components/GameImage";
@@ -183,6 +184,7 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const spaceId = useBacklogSpaceId();
   const updateEntryMutation = useUpdateBacklogEntry();
   const deleteEntryMutation = useDeleteBacklogEntry();
 
@@ -385,13 +387,15 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
                 onValueChange={setStatus}
                 className="bg-surface h-9 w-44"
               />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setWrongGameDialogOpen(true)}
-              >
-                Wrong Game
-              </Button>
+              {spaceId === undefined && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setWrongGameDialogOpen(true)}
+                >
+                  Wrong Game
+                </Button>
+              )}
               <GamePriceSection steamAppId={steamAppId} title={title} />
               <div className="flex flex-wrap items-center gap-2 sm:ml-6">
                 <CategoryPicker entryId={props.id} />

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Loader2, LogOut, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "shadcn_components/ui/button";
@@ -13,8 +13,12 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "shadcn_components/ui/alert-dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "shadcn_components/ui/popover";
 import { DashboardContent } from "components/DashboardContent";
 import { DashboardSearch } from "components/DashboardSearch";
 import { Footer } from "components/Footer";
@@ -71,9 +75,29 @@ function InviteForm() {
   );
 }
 
+/**
+ * Unobtrusive space controls: a small button whose hover (or click, on
+ * touch) popover explains how the space works and holds the leave
+ * action, which still asks for confirmation. Only a missing partner or a
+ * pending invitation is shown inline, since those need an action or
+ * explain why the grid is empty.
+ */
 function SpaceHeader({ space }: { space: SpaceData }) {
   const leave = useLeaveSpace();
   const partner = space.members.find((member) => !member.isMe);
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
+
+  const showInfo = () => {
+    clearTimeout(closeTimer.current);
+    setInfoOpen(true);
+  };
+  const hideInfo = () => {
+    closeTimer.current = setTimeout(() => setInfoOpen(false), 150);
+  };
 
   const confirmLeave = async () => {
     try {
@@ -84,52 +108,75 @@ function SpaceHeader({ space }: { space: SpaceData }) {
     }
   };
 
+  const leaveLabel =
+    partner?.status === "invited" ? "Cancel invitation" : "Leave space";
+
   return (
-    <div className="surface-glow bg-surface mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/30 p-4">
-      <div className="flex flex-col gap-1">
-        <h1 className="flex items-center gap-2 text-xl font-bold">
-          <Users className="h-5 w-5" />
-          Shared space
-        </h1>
-        <p className="text-sm text-white/70">
-          {partner === undefined
-            ? "Invite a friend to share a co-op backlog."
-            : partner.status === "invited"
-              ? `Waiting for ${partner.username} to accept your invitation.`
-              : `Shared with ${partner.username}. Status and categories are shared; rating and playtime stay your own.`}
-        </p>
-      </div>
-      <div className="flex flex-wrap items-center gap-3">
-        {partner === undefined && <InviteForm />}
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2"
-              disabled={leave.isPending}
-            >
-              <LogOut className="h-4 w-4" />
-              {partner?.status === "invited" ? "Cancel invitation" : "Leave space"}
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Leave the shared space?</AlertDialogTitle>
-              <AlertDialogDescription>
-                You lose access to its entries. They stay with your partner;
-                once nobody is left in the space they are deleted.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Stay</AlertDialogCancel>
-              <AlertDialogAction onClick={() => void confirmLeave()}>
-                Leave
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
+    <div className="mb-3 flex flex-wrap items-center justify-end gap-3">
+      {partner === undefined && <InviteForm />}
+      {partner?.status === "invited" && (
+        <span className="text-foreground/70 text-sm">
+          Waiting for {partner.username} to accept your invitation.
+        </span>
+      )}
+      <Popover open={infoOpen} onOpenChange={setInfoOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-foreground/60 hover:text-foreground gap-1.5 text-xs"
+            aria-label="Shared space info"
+            onMouseEnter={showInfo}
+            onMouseLeave={hideInfo}
+          >
+            <Users className="h-4 w-4" />
+            {partner?.status === "active" ? partner.username : "Shared space"}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="end"
+          className="flex flex-col gap-3"
+          onMouseEnter={showInfo}
+          onMouseLeave={hideInfo}
+          onOpenAutoFocus={(event) => event.preventDefault()}
+        >
+          <p className="text-foreground/80 text-sm">
+            {partner?.status === "active"
+              ? `Shared with ${partner.username}. Status and categories are shared; rating and playtime stay your own.`
+              : "A shared co-op backlog for two. Status and categories are shared; rating and playtime stay your own."}
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 self-start"
+            disabled={leave.isPending}
+            onClick={() => {
+              setInfoOpen(false);
+              setConfirmOpen(true);
+            }}
+          >
+            <LogOut className="h-4 w-4" />
+            {leaveLabel}
+          </Button>
+        </PopoverContent>
+      </Popover>
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave the shared space?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You lose access to its entries. They stay with your partner;
+              once nobody is left in the space they are deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Stay</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void confirmLeave()}>
+              Leave
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -148,12 +195,12 @@ function InvitationCard({ space }: { space: SpaceData }) {
   };
 
   return (
-    <div className="surface-glow bg-surface mx-auto mt-12 flex max-w-lg flex-col items-center gap-4 rounded-xl border border-white/30 p-8 text-center">
+    <div className="surface-glow bg-surface mx-auto mt-12 flex max-w-lg flex-col items-center gap-4 rounded-xl border border-border p-8 text-center">
       <Users className="h-10 w-10" />
       <h1 className="text-xl font-bold">
         {inviter?.username ?? "Someone"} invited you to a shared space
       </h1>
-      <p className="text-sm text-white/70">
+      <p className="text-sm text-foreground/70">
         A shared backlog for games you play together. Your ratings and
         playtime stay your own.
       </p>
@@ -182,10 +229,10 @@ function InvitationCard({ space }: { space: SpaceData }) {
 
 function NoSpaceCard() {
   return (
-    <div className="surface-glow bg-surface mx-auto mt-12 flex max-w-lg flex-col items-center gap-4 rounded-xl border border-white/30 p-8 text-center">
+    <div className="surface-glow bg-surface mx-auto mt-12 flex max-w-lg flex-col items-center gap-4 rounded-xl border border-border p-8 text-center">
       <Users className="h-10 w-10" />
       <h1 className="text-xl font-bold">Start a shared space</h1>
-      <p className="text-sm text-white/70">
+      <p className="text-sm text-foreground/70">
         Invite a friend by username to keep a co-op backlog together. Status
         and categories are shared, ratings and playtime stay your own, and
         only Steam games can be added.
