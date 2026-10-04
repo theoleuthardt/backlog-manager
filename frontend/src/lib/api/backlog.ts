@@ -40,6 +40,8 @@ export interface BacklogEntryData {
   mainPlusExtraTime?: number;
   completionTime?: number;
   playtime?: number;
+  partnerPlaytime?: number;
+  inSharedSpace?: boolean;
   steamAppId?: number;
   completedAt?: string;
 }
@@ -126,6 +128,8 @@ export function toEntryData(
     mainPlusExtraTime: toNumber(entry.main_plus_extra_time),
     completionTime: toNumber(entry.completion_time),
     playtime: toNumber(entry.playtime),
+    partnerPlaytime: toNumber(entry.partner_playtime),
+    inSharedSpace: entry.in_shared_space ?? false,
     steamAppId: entry.steam_app_id ?? undefined,
     completedAt: entry.completed_at ?? undefined,
   };
@@ -142,8 +146,17 @@ function toCategoryData(
   };
 }
 
-export async function getEntries(): Promise<BacklogEntryData[]> {
-  const { data, error } = await apiClient.GET("/api/backlog/entries");
+/**
+ * Every function below takes an optional `spaceId`: set, it works on
+ * that shared space's entries, categories and statuses instead of the
+ * caller's personal backlog (the backend's `space_id` query param).
+ */
+export async function getEntries(
+  spaceId?: number,
+): Promise<BacklogEntryData[]> {
+  const { data, error } = await apiClient.GET("/api/backlog/entries", {
+    params: { query: { space_id: spaceId } },
+  });
   if (error)
     throw new Error(apiErrorMessage(error, "Failed to load backlog entries"));
   return data.map(toEntryData);
@@ -152,11 +165,14 @@ export async function getEntries(): Promise<BacklogEntryData[]> {
 export async function getEntryDuplicates(
   title: string,
   steamAppId?: number,
+  spaceId?: number,
 ): Promise<BacklogEntryData[]> {
   const { data, error } = await apiClient.GET(
     "/api/backlog/entries/duplicates",
     {
-      params: { query: { title, steam_app_id: steamAppId } },
+      params: {
+        query: { title, steam_app_id: steamAppId, space_id: spaceId },
+      },
     },
   );
   if (error)
@@ -164,11 +180,14 @@ export async function getEntryDuplicates(
   return data.map(toEntryData);
 }
 
-export async function getEntryById(entryId: number): Promise<BacklogEntryData> {
+export async function getEntryById(
+  entryId: number,
+  spaceId?: number,
+): Promise<BacklogEntryData> {
   const { data, error } = await apiClient.GET(
     "/api/backlog/entries/{entry_id}",
     {
-      params: { path: { entry_id: entryId } },
+      params: { path: { entry_id: entryId }, query: { space_id: spaceId } },
     },
   );
   if (error)
@@ -178,9 +197,10 @@ export async function getEntryById(entryId: number): Promise<BacklogEntryData> {
 
 export async function getEntriesByStatus(
   status: string,
+  spaceId?: number,
 ): Promise<BacklogEntryData[]> {
   const { data, error } = await apiClient.GET("/api/backlog/entries", {
-    params: { query: { status } },
+    params: { query: { status, space_id: spaceId } },
   });
   if (error)
     throw new Error(apiErrorMessage(error, "Failed to load backlog entries"));
@@ -189,8 +209,10 @@ export async function getEntriesByStatus(
 
 export async function createEntry(
   input: CreateBacklogEntryInput,
+  spaceId?: number,
 ): Promise<BacklogEntryData> {
   const { data, error } = await apiClient.POST("/api/backlog/entries", {
+    params: { query: { space_id: spaceId } },
     body: {
       title: input.title,
       genre: input.genre,
@@ -219,11 +241,12 @@ export async function createEntry(
 export async function updateEntry(
   entryId: number,
   changes: UpdateBacklogEntryInput,
+  spaceId?: number,
 ): Promise<BacklogEntryData> {
   const { data, error } = await apiClient.PUT(
     "/api/backlog/entries/{entry_id}",
     {
-      params: { path: { entry_id: entryId } },
+      params: { path: { entry_id: entryId }, query: { space_id: spaceId } },
       body: {
         title: changes.title,
         genre: changes.genre,
@@ -250,16 +273,23 @@ export async function updateEntry(
   return toEntryData(data);
 }
 
-export async function deleteEntry(entryId: number): Promise<void> {
+export async function deleteEntry(
+  entryId: number,
+  spaceId?: number,
+): Promise<void> {
   const { error } = await apiClient.DELETE("/api/backlog/entries/{entry_id}", {
-    params: { path: { entry_id: entryId } },
+    params: { path: { entry_id: entryId }, query: { space_id: spaceId } },
   });
   if (error)
     throw new Error(apiErrorMessage(error, "Failed to delete backlog entry"));
 }
 
-export async function getCustomStatuses(): Promise<CustomStatusData[]> {
-  const { data, error } = await apiClient.GET("/api/backlog/statuses");
+export async function getCustomStatuses(
+  spaceId?: number,
+): Promise<CustomStatusData[]> {
+  const { data, error } = await apiClient.GET("/api/backlog/statuses", {
+    params: { query: { space_id: spaceId } },
+  });
   if (error)
     throw new Error(apiErrorMessage(error, "Failed to load custom statuses"));
   return data.map((status) => ({ id: status.id, name: status.name }));
@@ -267,8 +297,10 @@ export async function getCustomStatuses(): Promise<CustomStatusData[]> {
 
 export async function createCustomStatus(
   name: string,
+  spaceId?: number,
 ): Promise<CustomStatusData> {
   const { data, error } = await apiClient.POST("/api/backlog/statuses", {
+    params: { query: { space_id: spaceId } },
     body: { name },
   });
   if (error)
@@ -276,30 +308,39 @@ export async function createCustomStatus(
   return { id: data.id, name: data.name };
 }
 
-export async function deleteCustomStatus(statusId: number): Promise<void> {
+export async function deleteCustomStatus(
+  statusId: number,
+  spaceId?: number,
+): Promise<void> {
   const { error } = await apiClient.DELETE(
     "/api/backlog/statuses/{status_id}",
     {
-      params: { path: { status_id: statusId } },
+      params: { path: { status_id: statusId }, query: { space_id: spaceId } },
     },
   );
   if (error)
     throw new Error(apiErrorMessage(error, "Failed to delete custom status"));
 }
 
-export async function getCategories(): Promise<CategoryData[]> {
-  const { data, error } = await apiClient.GET("/api/backlog/categories");
+export async function getCategories(spaceId?: number): Promise<CategoryData[]> {
+  const { data, error } = await apiClient.GET("/api/backlog/categories", {
+    params: { query: { space_id: spaceId } },
+  });
   if (error)
     throw new Error(apiErrorMessage(error, "Failed to load categories"));
   return data.map(toCategoryData);
 }
 
-export async function createCategory(input: {
-  categoryName: string;
-  color?: string;
-  description?: string;
-}): Promise<CategoryData> {
+export async function createCategory(
+  input: {
+    categoryName: string;
+    color?: string;
+    description?: string;
+  },
+  spaceId?: number,
+): Promise<CategoryData> {
   const { data, error } = await apiClient.POST("/api/backlog/categories", {
+    params: { query: { space_id: spaceId } },
     body: {
       category_name: input.categoryName,
       color: input.color,
@@ -314,11 +355,15 @@ export async function createCategory(input: {
 export async function updateCategory(
   categoryId: number,
   changes: { categoryName?: string; color?: string; description?: string },
+  spaceId?: number,
 ): Promise<CategoryData> {
   const { data, error } = await apiClient.PUT(
     "/api/backlog/categories/{category_id}",
     {
-      params: { path: { category_id: categoryId } },
+      params: {
+        path: { category_id: categoryId },
+        query: { space_id: spaceId },
+      },
       body: {
         category_name: changes.categoryName,
         color: changes.color,
@@ -331,11 +376,17 @@ export async function updateCategory(
   return toCategoryData(data);
 }
 
-export async function deleteCategory(categoryId: number): Promise<void> {
+export async function deleteCategory(
+  categoryId: number,
+  spaceId?: number,
+): Promise<void> {
   const { error } = await apiClient.DELETE(
     "/api/backlog/categories/{category_id}",
     {
-      params: { path: { category_id: categoryId } },
+      params: {
+        path: { category_id: categoryId },
+        query: { space_id: spaceId },
+      },
     },
   );
   if (error)
@@ -344,10 +395,11 @@ export async function deleteCategory(categoryId: number): Promise<void> {
 
 export async function getCategoriesForEntry(
   entryId: number,
+  spaceId?: number,
 ): Promise<CategoryData[]> {
   const { data, error } = await apiClient.GET(
     "/api/backlog/entries/{entry_id}/categories",
-    { params: { path: { entry_id: entryId } } },
+    { params: { path: { entry_id: entryId }, query: { space_id: spaceId } } },
   );
   if (error)
     throw new Error(
@@ -358,10 +410,16 @@ export async function getCategoriesForEntry(
 
 export async function getEntriesForCategory(
   categoryId: number,
+  spaceId?: number,
 ): Promise<BacklogEntryData[]> {
   const { data, error } = await apiClient.GET(
     "/api/backlog/categories/{category_id}/entries",
-    { params: { path: { category_id: categoryId } } },
+    {
+      params: {
+        path: { category_id: categoryId },
+        query: { space_id: spaceId },
+      },
+    },
   );
   if (error)
     throw new Error(
@@ -373,10 +431,16 @@ export async function getEntriesForCategory(
 export async function addCategoryToEntry(
   entryId: number,
   categoryId: number,
+  spaceId?: number,
 ): Promise<void> {
   const { error } = await apiClient.POST(
     "/api/backlog/entries/{entry_id}/categories/{category_id}",
-    { params: { path: { entry_id: entryId, category_id: categoryId } } },
+    {
+      params: {
+        path: { entry_id: entryId, category_id: categoryId },
+        query: { space_id: spaceId },
+      },
+    },
   );
   if (error)
     throw new Error(apiErrorMessage(error, "Failed to add category to entry"));
@@ -385,10 +449,16 @@ export async function addCategoryToEntry(
 export async function removeCategoryFromEntry(
   entryId: number,
   categoryId: number,
+  spaceId?: number,
 ): Promise<void> {
   const { error } = await apiClient.DELETE(
     "/api/backlog/entries/{entry_id}/categories/{category_id}",
-    { params: { path: { entry_id: entryId, category_id: categoryId } } },
+    {
+      params: {
+        path: { entry_id: entryId, category_id: categoryId },
+        query: { space_id: spaceId },
+      },
+    },
   );
   if (error)
     throw new Error(

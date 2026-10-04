@@ -28,6 +28,7 @@ export const BacklogEntry = memo(function BacklogEntry(
               status={props.status}
               playtime={props.playtime}
               mainTime={props.mainTime}
+              inSharedSpace={props.inSharedSpace}
             />
           </motion.div>
         </DialogTrigger>

@@ -478,3 +478,40 @@ async def test_duplicate_check_is_scoped_to_the_space(postgres_url: str, create_
 
     assert [e["title"] for e in in_space] == ["Deep Rock Galactic"]
     assert personal == []
+
+
+async def test_personal_entry_is_flagged_when_the_game_is_also_in_the_space(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        owner = await create_and_login(client, "spaceflagowner@example.com")
+        guest = await create_and_login(client, "spaceflagguest@example.com")
+        space_id = _make_space(client, owner, guest, "spaceflagguest")
+        client.post("/api/backlog/entries", headers=guest, json=_entry_payload())
+        client.post(
+            "/api/backlog/entries",
+            headers=guest,
+            json=_entry_payload(title="Celeste", steam_app_id=504230),
+        )
+        client.post(f"/api/backlog/entries?space_id={space_id}", headers=owner, json=_entry_payload())
+
+        personal = {e["title"]: e for e in client.get("/api/backlog/entries", headers=guest).json()}
+        shared = client.get(f"/api/backlog/entries?space_id={space_id}", headers=guest).json()
+
+    assert personal["Deep Rock Galactic"]["in_shared_space"] is True
+    assert personal["Celeste"]["in_shared_space"] is False
+    assert shared[0]["in_shared_space"] is False
+
+
+async def test_personal_entries_are_never_flagged_without_a_space(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "spaceflagalone@example.com")
+        entry = client.post("/api/backlog/entries", headers=headers, json=_entry_payload()).json()
+
+    assert entry["in_shared_space"] is False

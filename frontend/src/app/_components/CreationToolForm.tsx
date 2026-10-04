@@ -44,6 +44,7 @@ import {
 import { StatusSelect } from "components/StatusSelect";
 import { FieldDiffList } from "components/FieldDiffList";
 import { useCreateBacklogEntry } from "~/hooks/useBacklog";
+import { useSpace } from "~/hooks/useSpace";
 import { getEntryDuplicates } from "~/lib/api/backlog";
 import { computeFieldDiffs } from "~/lib/diffFields";
 import { MAX_REVIEW_STARS } from "~/lib/reviewStars";
@@ -141,7 +142,15 @@ export function CreationToolForm() {
   const effectivePlaytime =
     playtimeTouched || steamPlaytimeHours === null ? playtime : steamPlaytimeHours;
 
-  const createEntryMutation = useCreateBacklogEntry();
+  const { data: space } = useSpace();
+  const activeSpaceId = space?.myStatus === "active" ? space.spaceId : null;
+  const [target, setTarget] = useState<"personal" | "space">(
+    searchParams.get("target") === "space" ? "space" : "personal",
+  );
+  const targetSpaceId =
+    target === "space" && activeSpaceId !== null ? activeSpaceId : undefined;
+
+  const createEntryMutation = useCreateBacklogEntry(targetSpaceId);
   const [duplicates, setDuplicates] = useState<BacklogEntryData[] | null>(null);
   const [duplicatePayload, setDuplicatePayload] =
     useState<CreateBacklogEntryInput | null>(null);
@@ -176,7 +185,10 @@ export function CreationToolForm() {
     await createEntryMutation.mutateAsync(payload);
     setCreateStatus("success");
     toast.success("Entry created successfully!");
-    setTimeout(() => router.push("/dashboard"), 800);
+    setTimeout(
+      () => router.push(targetSpaceId === undefined ? "/dashboard" : "/space"),
+      800,
+    );
   };
 
   const handleAddAnyway = async () => {
@@ -222,12 +234,17 @@ export function CreationToolForm() {
       toast.error("Please select a status");
       return;
     }
+    if (targetSpaceId !== undefined && payload.steamAppId === undefined) {
+      toast.error("Only Steam games can be added to the shared space");
+      return;
+    }
 
     setIsLoading(true);
     try {
       const found = await getEntryDuplicates(
         payload.title,
         payload.steamAppId,
+        targetSpaceId,
       );
       if (found.length > 0) {
         setDuplicates(found);
@@ -660,6 +677,30 @@ export function CreationToolForm() {
             </Tabs>
 
             <div className="mt-6 flex flex-col items-center justify-center gap-2 lg:flex-row lg:justify-end">
+              {activeSpaceId !== null && (
+                <div className="flex w-full items-center gap-2 lg:mr-auto lg:w-auto">
+                  <Label htmlFor="entry-target" className="text-sm">
+                    Add to
+                  </Label>
+                  <Select
+                    value={target}
+                    onValueChange={(value) =>
+                      setTarget(value === "space" ? "space" : "personal")
+                    }
+                  >
+                    <SelectTrigger
+                      id="entry-target"
+                      className="w-full bg-black text-white lg:w-56"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="personal">My backlog</SelectItem>
+                      <SelectItem value="space">Shared space</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <Button
                 type="button"
                 onClick={() => router.push("/dashboard")}

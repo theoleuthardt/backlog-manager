@@ -5829,6 +5829,10 @@
               }
             ]
           },
+          "in_shared_space": {
+            "type": "boolean",
+            "default": false
+          },
           "steam_app_id": {
             "oneOf": [
               {

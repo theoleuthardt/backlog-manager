@@ -12,6 +12,7 @@ import {
   XIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { ShareToSpaceButton } from "components/ShareToSpaceButton";
 import { CategoryPicker } from "components/CategoryPicker";
 import { CoverPickerDialog } from "components/CoverPickerDialog";
 import { GameImage } from "components/GameImage";
@@ -394,6 +395,7 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
               <GamePriceSection steamAppId={steamAppId} title={title} />
               <div className="flex flex-wrap items-center gap-2 sm:ml-6">
                 <CategoryPicker entryId={props.id} />
+                <ShareToSpaceButton entry={props} />
 
                 <Popover
                   open={imagePopoverOpen}
@@ -470,6 +472,11 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
               />
               <span className="text-sm text-white/70">hours</span>
             </div>
+            {props.partnerPlaytime !== undefined && (
+              <span className="text-xs text-white/70">
+                Your partner: {props.partnerPlaytime}h
+              </span>
+            )}
           </StatTile>
 
           <StatTile icon={<Flame className="h-3.5 w-3.5" />} label="Interest">
