@@ -1,5 +1,6 @@
 services:
   db:
+    container_name: blm_db
     image: docker.io/library/postgres:17-alpine
     restart: unless-stopped
     environment:
@@ -16,6 +17,7 @@ services:
       retries: 10
 
   backend:
+    container_name: blm_backend
     image: ${BACKEND_IMAGE:-ghcr.io/theoleuthardt/backlog-manager-backend:latest}
     env_file: .env
     environment:
@@ -37,6 +39,7 @@ services:
     restart: unless-stopped
 
   price-check-cron:
+    container_name: blm_price-check-cron
     image: docker.io/curlimages/curl:latest
     environment:
       PRICE_CHECK_CRON_SECRET: ${PRICE_CHECK_CRON_SECRET}
