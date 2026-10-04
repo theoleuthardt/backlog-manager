@@ -15,7 +15,7 @@ services:
       timeout: 5s
       retries: 10
 
-  migrate:
+  backend:
     image: ${BACKEND_IMAGE:-ghcr.io/theoleuthardt/backlog-manager-backend:latest}
     env_file: .env
     environment:
@@ -23,22 +23,17 @@ services:
     command:
       - sh
       - -c
-      - 'if [ -z "$$(alembic current 2>/dev/null)" ]; then alembic stamp head; fi; alembic upgrade head'
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: "no"
-
-  backend:
-    image: ${BACKEND_IMAGE:-ghcr.io/theoleuthardt/backlog-manager-backend:latest}
-    env_file: .env
-    environment:
-      POSTGRES_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - |
+        set -e
+        python -c "from backlog_manager_backend.config import settings"
+        until alembic current >/dev/null 2>&1; do echo "waiting for the database"; sleep 2; done
+        if [ -z "$$(alembic current 2>/dev/null)" ]; then alembic stamp head; fi
+        alembic upgrade head
+        exec uvicorn backlog_manager_backend.app:app --host 0.0.0.0 --port 8000
     ports:
       - "${BACKEND_BIND_ADDRESS:-0.0.0.0}:${BACKEND_PORT:-8000}:8000"
     depends_on:
-      migrate:
-        condition: service_completed_successfully
+      - db
     restart: unless-stopped
 
   price-check-cron:
