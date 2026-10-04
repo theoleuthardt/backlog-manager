@@ -1,3 +1,11 @@
+const SUPPORTED_NODE_MAJORS = [20, 22];
+const nodeMajor = Number(process.versions.node.split(".")[0]);
+if (!SUPPORTED_NODE_MAJORS.includes(nodeMajor)) {
+  throw new Error(
+    `Node.js ${process.versions.node} is not supported - the build breaks on it with cryptic webpack errors. Use Node ${SUPPORTED_NODE_MAJORS.join(" or ")} (run \`nvm use\` in the repo root).`,
+  );
+}
+
 /**
  * The app now lives in frontend/, but .env files stay at the repo root
  * (compose.yml needs them there for its own variable substitution). Load
@@ -5,7 +13,7 @@
  * loading only checks its own cwd.
  */
 import { config as loadEnv } from "dotenv";
-loadEnv({ path: new URL("../.env", import.meta.url) });
+loadEnv({ path: new URL("../.env", import.meta.url), quiet: true });
 
 /**
  * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially useful

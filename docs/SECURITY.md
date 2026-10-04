@@ -42,3 +42,13 @@ preferable to leaving password guessing per account unbounded.
   PYSEC-2026-1325 (`ecdsa`, pulled in by `python-jose`, no fixed release):
   tokens are signed with HS256, so the ECDSA code path is never reached.
   Revisit if `python-jose` is replaced or the signing algorithm changes.
+  `task frontend:audit` covers production dependencies only (currently clean).
+  `npm audit` on the full tree still reports `braces` (via
+  `eslint-config-next`, ESLint tooling that never ships): every released
+  version is affected and no patched release exists, so nothing can be
+  upgraded - recheck when `braces` publishes a fix.
+- Node: the frontend builds on Node 20.19+ and 22.12+ only. Other versions
+  (e.g. 23.x) fail with cryptic webpack errors, so `engine-strict` makes
+  `npm install` reject them and `next.config.js` aborts early with a clear
+  message. Node 20 reached end of life in April 2026; moving the pin in
+  `.nvmrc`, the Containerfile and the workflows to 22 is the next step.
