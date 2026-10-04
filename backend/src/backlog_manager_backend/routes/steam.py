@@ -90,21 +90,9 @@ def _validate_wishlist_items(items: list[SteamWishlistItem]) -> None:
 async def _stream_steam_operation(
     run: Callable[[sse.ProgressCallback], Awaitable[list[BacklogEntry]]],
 ) -> AsyncIterator[ServerSentEventMessage]:
-    """Bridges a steam_service call (which reports progress via a plain
-    async callback, not a generator, since it also needs to return the
-    final entry list) onto an SSE stream: `run` executes in a background
-    task and pushes progress/done/error messages onto a queue, which
-    this generator drains and yields as they arrive. Draining via a
-    queue (rather than yielding straight from on_progress) lets `run`
-    keep its normal call/return shape instead of needing to become a
-    generator itself.
-
-    `run` must open and close its own db session (e.g. via
-    `async with async_session() as db_session`) rather than taking one
-    as a NamedDependency - Litestar closes a streaming handler's
-    dependencies as soon as the handler *returns the response object*,
-    which happens before this generator (and therefore `run`) ever
-    executes, not after the stream finishes."""
+    """Streams a steam_service call that returns BacklogEntry rows through
+    `sse.stream_operation`, whose docstring covers the session and error
+    handling rules `run` must follow."""
 
     def encode_result(entries: list[BacklogEntry]) -> str:
         return msgspec.json.encode(

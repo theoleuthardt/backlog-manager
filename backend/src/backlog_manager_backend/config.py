@@ -13,7 +13,8 @@ class Settings(BaseSettings):
 
     `totp_encryption_key` (TOTP secrets at rest) and
     `steam_api_key_encryption_key` (per-user Steam API keys) are Fernet keys,
-    i.e. 32 url-safe base64 bytes, not arbitrary strings:
+    i.e. 44-character url-safe base64 strings encoding 32 bytes, not
+    arbitrary strings:
     `python -c "from cryptography.fernet import Fernet;
     print(Fernet.generate_key().decode())"`. They are separate from
     `auth_secret`, which signs JWTs.
