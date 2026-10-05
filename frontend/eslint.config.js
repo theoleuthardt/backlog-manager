@@ -1,11 +1,11 @@
-import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
+import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    ignores: [".next", "src-tauri", "src/lib/api/schema.d.ts"],
+    ignores: ["dist", "src-tauri", "src/lib/api/schema.d.ts"],
   },
-  ...nextCoreWebVitals,
+  reactHooks.configs.flat.recommended,
   {
     files: ["**/*.ts", "**/*.tsx"],
     extends: [

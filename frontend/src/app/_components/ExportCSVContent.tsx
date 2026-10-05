@@ -1,7 +1,6 @@
 "use client";
 import React, { useState } from "react";
 import { Button } from "shadcn_components/ui/button";
-import Image from "next/image";
 import { toast } from "sonner";
 import { getEntries } from "~/lib/api/backlog";
 import type { BacklogEntryData } from "~/lib/api/backlog";
@@ -112,7 +111,7 @@ export const ExportCSVContent = () => {
   return (
     <div className="flex flex-col items-center justify-center gap-8 py-12">
       <div className="flex flex-col items-center gap-4">
-        <Image
+        <img
           src="/csv_export.png"
           alt="export CSV"
           width={64}

@@ -1,5 +1,4 @@
 "use client";
-import Image from "next/image";
 import { EntryCreationDialog } from "~/app/_components/EntryCreationDialog";
 import { ImportCSVButton } from "~/app/_components/ImportCSVButton";
 import { ExportCSVButton } from "~/app/_components/ExportCSVButton";
@@ -16,7 +15,7 @@ export const landingPageNavLinks: NavbarLink[] = [
     id: 1,
     href: "#features",
     content: (
-      <Image
+      <img
         src="/features.png"
         alt="account"
         width={32}
@@ -33,7 +32,7 @@ export const landingPageNavLinks: NavbarLink[] = [
     id: 2,
     href: "#future-updates",
     content: (
-      <Image
+      <img
         src="/updates.png"
         alt="account"
         width={32}
@@ -50,7 +49,7 @@ export const landingPageNavLinks: NavbarLink[] = [
     id: 3,
     href: "/login",
     content: (
-      <Image
+      <img
         src="/account.png"
         alt="account"
         width={32}
@@ -106,7 +105,7 @@ export const dashboardNavLinks: NavbarLink[] = [
     ),
     mobileComponent: (
       <ImportCSVButton className="!h-11 w-full !justify-start gap-3 !bg-transparent !px-3 text-base font-semibold hover:!bg-white/10">
-        <Image
+        <img
           src="/csv_import.png"
           alt=""
           width={32}
@@ -136,7 +135,7 @@ export const dashboardNavLinks: NavbarLink[] = [
     ),
     mobileComponent: (
       <ExportCSVButton className="!h-11 w-full !justify-start gap-3 !bg-transparent !px-3 text-base font-semibold hover:!bg-white/10">
-        <Image
+        <img
           src="/csv_export.png"
           alt=""
           width={32}
@@ -153,7 +152,7 @@ export const dashboardNavLinks: NavbarLink[] = [
     id: 4,
     href: "/steam",
     content: (
-      <Image
+      <img
         src="/steam-icon.png"
         alt="Steam"
         width={32}
@@ -185,7 +184,7 @@ export const dashboardNavLinks: NavbarLink[] = [
     id: 5,
     href: "/account",
     content: (
-      <Image
+      <img
         src="/account.png"
         alt="account"
         width={32}
@@ -201,7 +200,7 @@ export const dashboardNavLinks: NavbarLink[] = [
     id: 6,
     href: "/logout",
     content: (
-      <Image
+      <img
         className="themed-icon scale-125"
         src="/logout.png"
         alt="logout"
@@ -244,7 +243,7 @@ export const spaceNavLinks: NavbarLink[] = [
     id: 2,
     href: "/dashboard",
     content: (
-      <Image
+      <img
         src="/go-back.png"
         alt="go-back"
         width={32}
@@ -260,7 +259,7 @@ export const spaceNavLinks: NavbarLink[] = [
     id: 3,
     href: "/account",
     content: (
-      <Image
+      <img
         src="/account.png"
         alt="account"
         width={32}
@@ -276,7 +275,7 @@ export const spaceNavLinks: NavbarLink[] = [
     id: 4,
     href: "/logout",
     content: (
-      <Image
+      <img
         className="themed-icon scale-125"
         src="/logout.png"
         alt="logout"
@@ -295,7 +294,7 @@ export const creationToolNavLinks: NavbarLink[] = [
     id: 1,
     href: "/dashboard",
     content: (
-      <Image
+      <img
         src="/go-back.png"
         alt="go-back"
         width={32}
@@ -311,7 +310,7 @@ export const creationToolNavLinks: NavbarLink[] = [
     id: 2,
     href: "/account",
     content: (
-      <Image
+      <img
         src="/account.png"
         alt="account"
         width={32}
@@ -327,7 +326,7 @@ export const creationToolNavLinks: NavbarLink[] = [
     id: 3,
     href: "/logout",
     content: (
-      <Image
+      <img
         className="themed-icon scale-125"
         src="/logout.png"
         alt="logout"
@@ -346,7 +345,7 @@ export const accountNavLinks: NavbarLink[] = [
     id: 1,
     href: "/dashboard",
     content: (
-      <Image
+      <img
         src="/go-back.png"
         alt="go-back"
         width={32}
@@ -362,7 +361,7 @@ export const accountNavLinks: NavbarLink[] = [
     id: 2,
     href: "/logout",
     content: (
-      <Image
+      <img
         className="themed-icon scale-125"
         src="/logout.png"
         alt="logout"
@@ -381,7 +380,7 @@ export const steamNavLinks: NavbarLink[] = [
     id: 1,
     href: "/dashboard",
     content: (
-      <Image
+      <img
         src="/go-back.png"
         alt="go-back"
         width={32}
@@ -397,7 +396,7 @@ export const steamNavLinks: NavbarLink[] = [
     id: 2,
     href: "/account",
     content: (
-      <Image
+      <img
         src="/account.png"
         alt="account"
         width={32}
@@ -413,7 +412,7 @@ export const steamNavLinks: NavbarLink[] = [
     id: 3,
     href: "/logout",
     content: (
-      <Image
+      <img
         className="themed-icon scale-125"
         src="/logout.png"
         alt="logout"
@@ -432,7 +431,7 @@ export const importCSVNavLinks: NavbarLink[] = [
     id: 1,
     href: "/dashboard",
     content: (
-      <Image
+      <img
         src="/go-back.png"
         alt="go-back"
         width={32}
@@ -448,7 +447,7 @@ export const importCSVNavLinks: NavbarLink[] = [
     id: 2,
     href: "/account",
     content: (
-      <Image
+      <img
         src="/account.png"
         alt="account"
         width={32}
@@ -464,7 +463,7 @@ export const importCSVNavLinks: NavbarLink[] = [
     id: 3,
     href: "/logout",
     content: (
-      <Image
+      <img
         className="themed-icon scale-125"
         src="/logout.png"
         alt="logout"
@@ -483,7 +482,7 @@ export const exportCSVNavLinks: NavbarLink[] = [
     id: 1,
     href: "/dashboard",
     content: (
-      <Image
+      <img
         src="/go-back.png"
         alt="go-back"
         width={32}
@@ -499,7 +498,7 @@ export const exportCSVNavLinks: NavbarLink[] = [
     id: 2,
     href: "/account",
     content: (
-      <Image
+      <img
         src="/account.png"
         alt="account"
         width={32}
@@ -515,7 +514,7 @@ export const exportCSVNavLinks: NavbarLink[] = [
     id: 3,
     href: "/logout",
     content: (
-      <Image
+      <img
         className="themed-icon scale-125"
         src="/logout.png"
         alt="logout"

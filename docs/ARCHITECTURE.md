@@ -9,11 +9,11 @@ instead — this file is about the shape of the system, not where files live.
 
 ```text
 ┌─────────────────────┐        REST + JWT Bearer        ┌──────────────────────┐
-│  Next.js frontend    │ ──────────────────────────────► │  Litestar backend    │
+│  Vite/React frontend │ ──────────────────────────────► │  Litestar backend    │
 │  (frontend/)         │ ◄────────────────────────────── │  (backend/)          │
-│  - Web build (SSR)   │        openapi-fetch client      │  - Auth (incl. 2FA)  │
+│  - Web build (static)│        openapi-fetch client      │  - Auth (incl. 2FA)  │
 │  - Tauri desktop app │                                   │  - Backlog CRUD      │
-│    (static export)   │                                   │  - CSV import/export │
+│    (same build)      │                                   │  - CSV import/export │
 └──────────────────────┘                                   │  - IGDB/HLTB/Steam/  │
                                                              │    SteamGridDB       │
                                                              └──────────┬───────────┘
@@ -26,11 +26,10 @@ instead — this file is about the shape of the system, not where files live.
 ```
 
 Only the backend is meant to be hosted as a public, always-on service.
-The frontend is never centrally hosted the same way: the plain web build
-(`next build`, `output: "standalone"`) is a normal server-rendered Next.js
-app that would need its own always-on host, which this project doesn't run;
-in practice the frontend instead ships as the [Tauri desktop app](TAURI.md)
-(`TAURI_BUILD=1`, `output: "export"`) — a true static export bundled into a
+The frontend is never centrally hosted the same way: the web build is a
+static single-page app served by nginx from a container image that this
+project doesn't run anywhere; in practice the frontend instead ships as
+the [Tauri desktop app](TAURI.md) — the same static build bundled into a
 native WebView for macOS/Windows/Linux.
 
 ## Why REST + JWT instead of tRPC/NextAuth
@@ -129,14 +128,15 @@ changes in a browser before calling them done).
 
 ## Frontend
 
-Next.js 15+ (App Router). Two build outputs from one codebase:
+Vite + React with React Router (issue #241 replaced Next.js; the pages are
+lazy-loaded and the vendor code is split into cacheable chunks). One static
+build, two ways to ship it:
 
-- **Web build** (`output: "standalone"`) — a normal server-rendered Next.js
-  app, containerized (see the backend's Containerfile-based deployment
-  pattern) — though the frontend itself isn't centrally hosted today.
-- **Tauri desktop app** (`output: "export"`, `TAURI_BUILD=1`) — a static
-  export loaded into a native WebView, shipped for macOS/Windows/Linux. See
-  [`docs/TAURI.md`](TAURI.md) for the full build/signing/CI story.
+- **Web image** — the `dist/` build served by nginx (`frontend/Containerfile`)
+  — though the frontend itself isn't centrally hosted today.
+- **Tauri desktop app** — the same `dist/` loaded into a native WebView,
+  shipped for macOS/Windows/Linux. See [`docs/TAURI.md`](TAURI.md) for the
+  full build/signing/CI story.
 
 Both builds hit the same deployed backend over REST; the only difference is
 how the frontend's own HTML/JS gets to the user's machine. This is why the

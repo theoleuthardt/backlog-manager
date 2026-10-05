@@ -1,4 +1,6 @@
-import { Navbar, Footer, SteamContent } from "components";
+import { Navbar } from "components/Navbar";
+import { Footer } from "components/Footer";
+import { SteamContent } from "components/SteamContent";
 import { steamNavLinks } from "~/constants";
 
 export default function Steam() {

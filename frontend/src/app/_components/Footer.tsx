@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "react-router";
 
 export function Footer() {
   return (
@@ -11,7 +11,7 @@ export function Footer() {
           <p className="text-sm">Icons by </p>
           <Link
             className="ml-1 text-sm font-bold hover:underline"
-            href={"https://icons8.com/"}
+            to={"https://icons8.com/"}
           >
             Icons8
           </Link>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { AuthCard } from "components/AuthCard";
 import { Button } from "~/components/ui/button";
@@ -31,7 +31,7 @@ const WIZARD_INPUT =
 export function SetupWizard() {
   const { user, refreshUser } = useAuth();
   const { theme, customThemes, setTheme } = useTheme();
-  const router = useRouter();
+  const navigate = useNavigate();
 
   const [stepIndex, setStepIndex] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
@@ -96,7 +96,7 @@ export function SetupWizard() {
   const finish = async () => {
     if (!(await save({ setupCompleted: true }))) return;
     await refreshUser();
-    router.replace("/dashboard");
+    void navigate("/dashboard", { replace: true });
   };
 
   const handleThemeChange = (themeId: string) => {

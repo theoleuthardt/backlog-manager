@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
-import Image from "next/image";
-import Link from "next/link";
+import { Link } from "react-router";
+import { pathWithQuery } from "~/lib/pathWithQuery";
 import {
   Dialog,
   DialogHeader,
@@ -9,7 +9,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
-import { GameImage, SearchBar } from "components";
+import { GameImage } from "components/GameImage";
+import { SearchBar } from "components/SearchBar";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
@@ -45,7 +46,7 @@ export const EntryCreationDialog = ({
           variant="outline"
           disabled={false}
         >
-          <Image
+          <img
             src={triggerIcon}
             alt={triggerAlt}
             width={32}
@@ -133,37 +134,31 @@ export const EntryCreationDialog = ({
                   </ul>
                   {selectedIndex !== null && searchResults[selectedIndex] && (
                     <Link
-                      href={{
-                        pathname: "/creation-tool",
-                        query: {
-                          ...targetQuery,
-                          title: searchResults[selectedIndex].title,
-                          imageUrl: searchResults[selectedIndex].imageUrl ?? "",
-                          steamAppId:
-                            searchResults[selectedIndex].steamAppId ?? "",
-                          genres:
-                            searchResults[selectedIndex].genres?.join(", ") ??
-                            "",
-                          platforms:
-                            searchResults[selectedIndex].platforms?.join(
-                              ", ",
-                            ) ?? "",
-                          mainStory: searchResults[selectedIndex].mainStory,
-                          mainStoryWithExtras:
-                            searchResults[selectedIndex].mainStoryWithExtras,
-                          completionist:
-                            searchResults[selectedIndex].completionist,
-                          description:
-                            searchResults[selectedIndex].description?.slice(
-                              0,
-                              500,
-                            ) ?? "",
-                          publisher:
-                            searchResults[selectedIndex].publisher ?? "",
-                          trailerUrl:
-                            searchResults[selectedIndex].trailerUrl ?? "",
-                        },
-                      }}
+                      to={pathWithQuery("/creation-tool", {
+                        ...targetQuery,
+                        title: searchResults[selectedIndex].title,
+                        imageUrl: searchResults[selectedIndex].imageUrl ?? "",
+                        steamAppId:
+                          searchResults[selectedIndex].steamAppId ?? "",
+                        genres:
+                          searchResults[selectedIndex].genres?.join(", ") ?? "",
+                        platforms:
+                          searchResults[selectedIndex].platforms?.join(", ") ??
+                          "",
+                        mainStory: searchResults[selectedIndex].mainStory,
+                        mainStoryWithExtras:
+                          searchResults[selectedIndex].mainStoryWithExtras,
+                        completionist:
+                          searchResults[selectedIndex].completionist,
+                        description:
+                          searchResults[selectedIndex].description?.slice(
+                            0,
+                            500,
+                          ) ?? "",
+                        publisher: searchResults[selectedIndex].publisher ?? "",
+                        trailerUrl:
+                          searchResults[selectedIndex].trailerUrl ?? "",
+                      })}
                       className="flex justify-center"
                     >
                       <Button className="h-[3rem] max-w-md min-w-[13rem] bg-blue-700 px-6 font-bold text-white hover:bg-blue-800">
@@ -178,14 +173,11 @@ export const EntryCreationDialog = ({
                 <div className="flex flex-col items-center gap-3">
                   <div className="text-white">No results found</div>
                   <Link
-                    href={{
-                      pathname: "/creation-tool",
-                      query: {
-                        ...targetQuery,
-                        title: searchQuery,
-                        custom: "1",
-                      },
-                    }}
+                    to={pathWithQuery("/creation-tool", {
+                      ...targetQuery,
+                      title: searchQuery,
+                      custom: "1",
+                    })}
                   >
                     <Button className="h-[3rem] gap-2 bg-blue-700 px-6 font-bold text-white hover:bg-blue-800">
                       Create &quot;{searchQuery}&quot; as custom game

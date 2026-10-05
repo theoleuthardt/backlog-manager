@@ -1,6 +1,5 @@
 "use client";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router";
 import { Palette } from "lucide-react";
 import {
   DropdownMenu,
@@ -28,7 +27,7 @@ const ThemeSwatch = ({ colors }: { colors: ThemeColors }) => (
 );
 
 export const ThemeMenu = () => {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { theme, customThemes, setTheme } = useTheme();
 
@@ -38,7 +37,7 @@ export const ThemeMenu = () => {
         aria-label="Change theme"
         className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md bg-transparent"
       >
-        <Image
+        <img
           src="/theme.png"
           alt="Theme"
           width={32}
@@ -74,7 +73,7 @@ export const ThemeMenu = () => {
         {user && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => router.push("/themes")}>
+            <DropdownMenuItem onSelect={() => void navigate("/themes")}>
               <Palette className="h-4 w-4" />
               Theme creator
             </DropdownMenuItem>

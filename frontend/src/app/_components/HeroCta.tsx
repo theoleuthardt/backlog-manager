@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "react-router";
 import { Button } from "shadcn_components/ui/button";
 import { useAuth } from "~/app/context/AuthContext";
 
@@ -28,7 +28,7 @@ export function HeroCta() {
       variant="outline"
       className="border-black text-black transition-colors duration-300 hover:cursor-pointer hover:border-white hover:bg-transparent hover:text-white"
     >
-      <Link href={href}>{label}</Link>
+      <Link to={href}>{label}</Link>
     </Button>
   );
 }

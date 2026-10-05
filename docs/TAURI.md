@@ -1,25 +1,25 @@
 # Tauri Desktop App
 
-The frontend (`frontend/`) ships as a native desktop app via [Tauri v2](https://v2.tauri.app/), on top of the same Next.js codebase used for the web build. See issue #14 for the background on why Tauri (not Electron/Capacitor/React Native) and why this only became possible after the backend moved to a standalone Litestar service (issue #104).
+The frontend (`frontend/`) ships as a native desktop app via [Tauri v2](https://v2.tauri.app/), on top of the same Vite build the web image uses. See issue #14 for the background on why Tauri (not Electron/Capacitor/React Native) and why this only became possible after the backend moved to a standalone Litestar service (issue #104).
 
 ## How it works
 
-Tauri loads a static export of the frontend (`output: 'export'`) into a native WebView - there is no Next.js server running inside the app, and no separate backend logic embedded in Rust either. The app talks to the same deployed Litestar backend the web build talks to (`NEXT_PUBLIC_API_URL`, baked in at build time), exactly like a browser would - REST + JWT Bearer token in `localStorage`, no cookies, no NextAuth.
+Tauri loads the static Vite build (`frontend/dist`) into a native WebView - there is no web server running inside the app, and no separate backend logic embedded in Rust either. The app talks to the same deployed Litestar backend the web build talks to (`NEXT_PUBLIC_API_URL`, baked in at build time), exactly like a browser would - REST + JWT Bearer token in `localStorage`, no cookies, no NextAuth.
 
 This is why the desktop build needed almost no app-specific code:
-- Auth is already a client-side guard (`RequireAuth.tsx`) checking token/user state, not Next.js middleware (which doesn't run in a static export anyway).
-- Game cover images are proxied through the backend's `GET /api/images/proxy` endpoint (not a Next.js API route - those don't exist in a static export either).
+- Auth is already a client-side guard (`RequireAuth.tsx`) checking token/user state, not server-side middleware (there is no server in a static build).
+- Game cover images are proxied through the backend's `GET /api/images/proxy` endpoint (not a server route - a static build has none).
 - There are no dynamic route segments and no server actions anywhere in the app.
 
 ## Quick start
 
 ```bash
 cd frontend
-npm run tauri:dev     # opens a desktop window against the Next.js dev server
+npm run tauri:dev     # opens a desktop window against the Vite dev server
 npm run tauri:build   # produces installers in src-tauri/target/release/bundle/
 ```
 
-`tauri:dev` starts the regular Next.js dev server (`beforeDevCommand`) and points the window at it (`devUrl`), so you get the same hot-reload as `npm run dev`. `tauri:build` runs `build:tauri` first (a static export, via `TAURI_BUILD=1` switching `next.config.js`'s `output`/`images` settings - see below), then bundles it.
+`tauri:dev` starts the regular Vite dev server (`beforeDevCommand`) and points the window at it (`devUrl`), so you get the same hot-reload as `npm run dev`. `tauri:build` runs `npm run build` first (typecheck + `vite build` into `dist/`), then bundles it. Routing uses the History API (`BrowserRouter`); Tauri serves `index.html` for paths that are not files, so deep links like `/login` resolve.
 
 ## Prerequisites
 
@@ -54,12 +54,12 @@ sudo pacman -S --needed webkit2gtk-4.1 base-devel curl wget file openssl \
 - `npm run tauri:dev` - desktop window against the dev server, hot-reload
 - `npm run tauri:build` - release build + installers for the current platform
 - `npm run tauri:build:debug` - debug build (faster, unoptimized, easier to troubleshoot)
-- `npm run build:tauri` - just the static export step (`out/`), without invoking Tauri at all
+- `npm run build` - just the Vite build step (`dist/`), without invoking Tauri at all
 
 ## Configuration files
 
 - `src-tauri/tauri.conf.json` - app identity, window settings, bundle targets. `app.windows[0].url` is `/login` (not the landing page) per issue #14's requirement that desktop/mobile builds open straight to login.
-- `frontend/next.config.js` - `TAURI_BUILD=1` switches `output` to `"export"` and `images.unoptimized` to `true`; unset, it builds the normal `output: "standalone"` web/container image. Next.js has no CLI flag for an alternate config file, so this env-var branch lives in the one config instead of a second file that would need swapping in and out.
+- `frontend/vite.config.ts` - one build for the Tauri app and the web image. The `.env` files stay at the repo root (`envDir`), and `NEXT_PUBLIC_API_URL` keeps its historic name (an exposed `envPrefix` next to `VITE_`) so the GitHub repository variable and the compose build arg did not have to change.
 - `src-tauri/icons/` - app icons for all bundle targets (including mobile variants, for future Tauri mobile support - not currently wired up).
 
 ## CI

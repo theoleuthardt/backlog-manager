@@ -1,4 +1,7 @@
-import { Navbar, Footer, DashboardContent, DashboardSearch } from "components";
+import { Navbar } from "components/Navbar";
+import { Footer } from "components/Footer";
+import { DashboardContent } from "components/DashboardContent";
+import { DashboardSearch } from "components/DashboardSearch";
 import { DashboardProvider } from "~/app/context/DashboardContext";
 import { dashboardNavLinks } from "~/constants";
 

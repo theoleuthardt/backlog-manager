@@ -18,7 +18,7 @@ tasks:
       - task: backend:install
 
   dev:
-    desc: Run the Next.js and backend dev servers
+    desc: Run the Vite and backend dev servers
     deps:
       - task: frontend:dev
       - task: backend:dev
@@ -77,13 +77,13 @@ tasks:
       - npm install
 
   frontend:dev:
-    desc: Start the Next.js dev server (Turbo)
+    desc: Start the Vite dev server
     dir: "{{.FRONTEND_DIR}}"
     cmds:
       - npm run dev
 
   frontend:build:
-    desc: Build the Next.js app for production
+    desc: Build the Vite app for production
     dir: "{{.FRONTEND_DIR}}"
     cmds:
       - npm run build

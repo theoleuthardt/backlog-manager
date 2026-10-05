@@ -1,15 +1,16 @@
 "use client";
 
 import React, {
+  Suspense,
   createContext,
   useCallback,
   useContext,
   useEffect,
+  lazy,
   useMemo,
   useState,
   useSyncExternalStore,
 } from "react";
-import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import { useAuth } from "~/app/context/AuthContext";
 import { updateCurrentUser } from "~/lib/api/user";
@@ -23,12 +24,10 @@ import {
   type ThemeColors,
 } from "~/lib/themes";
 
-const FreakyBackground = dynamic(
-  () =>
-    import("~/app/_components/FreakyBackground").then(
-      (module) => module.FreakyBackground,
-    ),
-  { ssr: false },
+const FreakyBackground = lazy(() =>
+  import("~/app/_components/FreakyBackground").then((module) => ({
+    default: module.FreakyBackground,
+  })),
 );
 
 interface ThemeSelection {
@@ -253,10 +252,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   return (
     <ThemeContext.Provider value={value}>
       {isHydrated && theme.id === "freaky" && !preview && (
-        <FreakyBackground
-          accent={theme.colors.accent}
-          glow={theme.colors.glow}
-        />
+        <Suspense fallback={null}>
+          <FreakyBackground
+            accent={theme.colors.accent}
+            glow={theme.colors.glow}
+          />
+        </Suspense>
       )}
       {children}
     </ThemeContext.Provider>

@@ -9,6 +9,25 @@
     "Segoe UI Symbol", "Noto Color Emoji";
 }
 
+.route-in {
+  animation: routeIn 0.35s ease-out;
+}
+
+@keyframes routeIn {
+  from {
+    transform: translateY(12px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-in {
+    animation: none;
+  }
+}
+
 .drop-in {
   opacity: 0;
   transform: translateY(100px);

@@ -1,6 +1,7 @@
 "use client";
-import { AchievementProgress, GameImage } from "components/index";
-import { useRouter, useSearchParams } from "next/navigation";
+import { AchievementProgress } from "components/AchievementProgress";
+import { GameImage } from "components/GameImage";
+import { useNavigate, useSearchParams } from "react-router";
 import { useState, useSyncExternalStore } from "react";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -65,8 +66,8 @@ const NO_SPINNER_CLASS =
   "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
 
 export function CreationToolForm() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const isCustomGame = searchParams.get("custom") === "1";
   const titleFromUrl = searchParams.get("title") ?? "";
   const imageUrlFromUrl = searchParams.get("imageUrl") ?? "";
@@ -196,7 +197,8 @@ export function CreationToolForm() {
     setCreateStatus("success");
     toast.success("Entry created successfully!");
     setTimeout(
-      () => router.push(targetSpaceId === undefined ? "/dashboard" : "/space"),
+      () =>
+        void navigate(targetSpaceId === undefined ? "/dashboard" : "/space"),
       800,
     );
   };
@@ -726,7 +728,7 @@ export function CreationToolForm() {
               )}
               <Button
                 type="button"
-                onClick={() => router.push("/dashboard")}
+                onClick={() => void navigate("/dashboard")}
                 disabled={isLoading}
                 className="w-full gap-2 border-2 border-white bg-black px-6 py-5 text-base font-bold text-white hover:bg-white hover:text-black lg:w-auto"
               >
