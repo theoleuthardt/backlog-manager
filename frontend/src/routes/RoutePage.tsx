@@ -1,11 +1,6 @@
 import { useEffect } from "react";
 
-/**
- * Wrapper of every route: sets the document title and plays the short
- * slide-in (`route-in`, see globals.css) the pages had as a Next.js
- * template. Each navigation mounts a fresh route element, so the
- * animation runs once per page change.
- */
+/** Sets the document title and plays the page slide-in (`route-in`, globals.css). */
 export function RoutePage({
   title,
   children,

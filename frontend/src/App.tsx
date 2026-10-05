@@ -26,18 +26,13 @@ const page = (title: string, element: React.ReactNode, guarded = false) => (
   </RoutePage>
 );
 
-/**
- * Providers and the route table. Pages are lazy so the first paint only
- * loads the code of the page being opened; guarded routes check the
- * session client-side (see RequireAuth) because the Bearer token lives in
- * localStorage, not in a cookie a server could inspect.
- */
 export function App() {
   return (
     <BrowserRouter>
       <ApiProvider>
         <AuthProvider>
           <ThemeProvider>
+            <Toaster />
             <Suspense fallback={null}>
               <Routes>
                 <Route path="/" element={page("Backlog-Manager", <Home />)} />
@@ -78,7 +73,6 @@ export function App() {
           </ThemeProvider>
         </AuthProvider>
       </ApiProvider>
-      <Toaster />
       <AppUpdater />
     </BrowserRouter>
   );

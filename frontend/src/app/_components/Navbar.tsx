@@ -1,8 +1,7 @@
 "use client";
 import React, { useState } from "react";
-import { Link } from "react-router";
 import { AnimatePresence, motion } from "motion/react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import type { NavbarLink, NavbarProps } from "~/app/types";
 import { useAuth } from "~/app/context/AuthContext";
 import { useIsTauriMacOS } from "~/hooks/useIsTauri";

@@ -18,7 +18,7 @@
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
     "tauri:build:debug": "tauri build --debug",
-    "preview": "vite build && vite preview"
+    "preview": "npm run build && vite preview"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

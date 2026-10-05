@@ -1,17 +1,13 @@
 import path from "node:path";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig, loadEnv, type Plugin } from "vite";
+import { parseApiUrl } from "./src/lib/apiUrl";
 import { THEME_CACHE_KEY } from "./src/lib/themes";
 
 const src = path.resolve(import.meta.dirname, "src");
+const envDir = path.resolve(import.meta.dirname, "..");
 
-/**
- * Inlines the script that re-applies the theme ThemeProvider cached in
- * localStorage before first paint, so a reload never flashes the default
- * theme. It lives in the HTML (not in the bundle) because it has to run
- * before any module loads.
- */
 const themeBootScript = (): Plugin => ({
   name: "theme-boot-script",
   transformIndexHtml: (html) =>
@@ -21,16 +17,22 @@ const themeBootScript = (): Plugin => ({
     ),
 });
 
-/**
- * The app lives in frontend/ but the .env files stay at the repo root
- * (compose.yml needs them there), hence `envDir`. `NEXT_PUBLIC_` stays an
- * exposed prefix next to `VITE_` so the existing NEXT_PUBLIC_API_URL
- * variable (repo variable, .env files, compose build args) keeps working.
- * One build serves the web image and the Tauri desktop app.
- */
-export default defineConfig({
-  plugins: [react(), tailwindcss(), themeBootScript()],
-  envDir: path.resolve(import.meta.dirname, ".."),
+const validateApiUrl = (mode: string): Plugin => ({
+  name: "validate-api-url",
+  apply: "build",
+  config() {
+    if (mode !== "production") return;
+    const env = loadEnv(mode, envDir, "NEXT_PUBLIC_");
+    const result = parseApiUrl(env.NEXT_PUBLIC_API_URL, true);
+    if (!result.success) {
+      throw new Error(`Invalid NEXT_PUBLIC_API_URL: ${result.message}`);
+    }
+  },
+});
+
+export default defineConfig(({ mode }) => ({
+  plugins: [react(), tailwindcss(), themeBootScript(), validateApiUrl(mode)],
+  envDir,
   envPrefix: ["VITE_", "NEXT_PUBLIC_"],
   resolve: {
     alias: [
@@ -85,4 +87,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));
