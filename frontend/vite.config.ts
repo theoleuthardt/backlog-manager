@@ -2,8 +2,8 @@ import path from "node:path";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, loadEnv, type Plugin } from "vite";
-import { parseApiUrl } from "./src/lib/apiUrl";
-import { THEME_CACHE_KEY } from "./src/lib/themes";
+import { parseApiUrl } from "./src/lib/apiUrl.ts";
+import { THEME_CACHE_KEY } from "./src/lib/themes.ts";
 
 const src = path.resolve(import.meta.dirname, "src");
 const envDir = path.resolve(import.meta.dirname, "..");
