@@ -64,7 +64,7 @@ a:hover { color: #ffd28a; }
 .btn-danger { color: var(--danger); border-color: transparent; }
 .btn-icon { width: 42px; height: 42px; padding: 0; }
 .btn-sm { height: 36px; padding: 0 16px; font-size: 14px; }
-.btn:focus-visible, .field input:focus-visible, .field select:focus-visible, .field textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.btn:focus-visible, .search input:focus-visible, .field input:focus-visible, .field select:focus-visible, .field textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 
 .chip { display: inline-flex; align-items: center; gap: 8px; padding: 7px 16px; border-radius: 999px; background: var(--surface-2); color: var(--text); font: inherit; border: 0; }
 .chip-active { background: var(--text); color: var(--bg); font-weight: 700; }
