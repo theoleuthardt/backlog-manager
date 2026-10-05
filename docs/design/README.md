@@ -13,6 +13,10 @@ The live canvas is private to its owner: <https://claude.ai/artifact/GNWoHDeo9Qc
 
 The `.dc.html` files are Design Component pages. They load `./support.js` and a `<x-dc>` runtime that the canvas provides, so they render only inside the Design canvas (or any tool that supplies that runtime), not when opened directly in a browser. Their markup, inline styles and `shelf.css` are readable on their own and are the reference for spacing, sizes and states.
 
+### Reading the mockups
+
+The artboards are pictures of windows, not working prototypes. Panes and shelf rows are clipped at the window edge (`overflow: hidden`) so a screen fits one frame; in the app the content pane and the inspector scroll vertically and shelf rows scroll horizontally. Form values such as the six theme colours are drawn as a swatch plus hex value; in the app each one is a colour picker. The behaviour is specified in `DESIGN_SYSTEM.md`, not inferred from the mockups.
+
 ### Artboards
 
 Chosen direction, drawn as a desktop app (fixed 1440 x 900 windows, or smaller windows on a desk background):
