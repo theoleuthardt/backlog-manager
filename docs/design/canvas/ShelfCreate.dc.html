@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Creation tool</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./shelf.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="shelf win">
+  <dc-import name="Titlebar" title="New entry" search="no" hint-size="100%,52px"></dc-import>
+  <div class="win-body">
+    <div class="sidebar-col" style="padding: 0;"><dc-import name="SidebarNav" active="add" hint-size="232px,620px"></dc-import></div>
+    <div class="win-main">
+      <div class="toolbar">
+        <span class="chip chip-accent"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 3l10 18H2zM12 10v5"></path></svg>No beat times found - type them in</span>
+        <span class="muted small" style="margin-left: auto;">Add to</span>
+        <div class="seg" role="group" aria-label="Target"><button type="button" aria-pressed="true">My backlog</button><button type="button" aria-pressed="false">Shared space</button></div>
+        <button type="button" class="btn btn-quiet">Cancel</button>
+        <button type="button" class="btn btn-primary">Add game <span class="kbd" style="border-color: rgba(0,0,0,0.3); color: var(--on-accent);">&#8984;&#8629;</span></button>
+      </div>
+      <div class="scroll" style="flex-direction: row; gap: 24px; align-items: flex-start;">
+        <div style="flex: 0 0 190px; display: flex; flex-direction: column; gap: 10px;">
+          <div class="cover" style="background: linear-gradient(160deg, #9a2a42, #2a0a1a); font-size: 20px; padding: 16px;">Hades</div>
+          <button type="button" class="btn">Search again</button>
+          <button type="button" class="btn">Change cover</button>
+        </div>
+
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
+          <section class="group" aria-label="Game info">
+            <div class="group-title">Game info</div>
+            <div class="frow"><div class="fl" style="flex-basis: 130px;">Title</div><div class="fc"><input type="text" value="Hades" aria-label="Title"></div></div>
+            <div class="frow"><div class="fl" style="flex-basis: 130px;">Platform</div><div class="fc"><select aria-label="Platform"><option>PC</option></select></div></div>
+            <div class="frow"><div class="fl" style="flex-basis: 130px;">Genre</div><div class="fc"><input type="text" value="Roguelike, Action" aria-label="Genre"></div></div>
+            <div class="frow"><div class="fl" style="flex-basis: 130px;">Image URL</div><div class="fc"><input type="text" placeholder="https://example.com/cover.jpg" aria-label="Image URL"></div></div>
+          </section>
+          <section class="group" aria-label="Your take">
+            <div class="group-title">Your take</div>
+            <div class="frow"><div class="fl" style="flex-basis: 130px;">Status</div><div class="fc"><select aria-label="Status"><option>Not Started</option></select></div></div>
+            <div class="frow"><div class="fl" style="flex-basis: 130px;">Interest</div><div class="fc" style="gap: 4px;"><sc-for list="{{segments}}" as="s" hint-placeholder-count="10"><span style="flex: 1; height: 8px; border-radius: 4px; background: {{s.fill}};"></span></sc-for><b style="margin-left: 8px;">8</b></div></div>
+            <div class="frow"><div class="fl" style="flex-basis: 130px;">Playtime (h)</div><div class="fc"><input type="number" value="0" aria-label="Playtime"></div></div>
+            <div class="frow"><div class="fl" style="flex-basis: 130px;">I own this game</div><div class="fc" style="justify-content: flex-end;"><span class="switch switch-on" role="switch" aria-checked="true" aria-label="Owned"></span></div></div>
+          </section>
+        </div>
+
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
+          <section class="group" aria-label="HowLongToBeat times">
+            <div class="group-title">HowLongToBeat times</div>
+            <div class="group-desc">Editable for custom games only.</div>
+            <div class="frow"><div class="fl" style="flex-basis: 130px;">Main</div><div class="fc"><input type="number" value="22" aria-label="Main"></div></div>
+            <div class="frow"><div class="fl" style="flex-basis: 130px;">Main + Extra</div><div class="fc"><input type="number" value="48" aria-label="Main plus extra"></div></div>
+            <div class="frow"><div class="fl" style="flex-basis: 130px;">Completionist</div><div class="fc"><input type="number" value="95" aria-label="Completionist"></div></div>
+          </section>
+          <section class="group" aria-label="Review and notes">
+            <div class="group-title">Review &amp; notes</div>
+            <div class="frow"><div class="fl" style="flex-basis: 130px;">Review stars</div><div class="fc" style="color: var(--faint); font-size: 20px; letter-spacing: 3px;">&#9733;&#9733;&#9733;&#9733;&#9734;</div></div>
+            <div class="frow" style="align-items: flex-start;"><div class="fl" style="flex-basis: 130px;">Review</div><div class="fc field"><textarea placeholder="Write your review here..." aria-label="Review"></textarea></div></div>
+            <div class="frow" style="align-items: flex-start;"><div class="fl" style="flex-basis: 130px;">Notes</div><div class="fc field"><textarea placeholder="Add any notes about this game..." aria-label="Notes"></textarea></div></div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+  <dc-import name="StatusBar" left="New entry &middot; not saved yet" hint-size="100%,28px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { segments: Array.from({ length: 10 }, (_, i) => ({ fill: i < 8 ? '#f5a524' : '#23252c' })) };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Add a game</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./shelf.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="shelf win">
+  <dc-import name="Titlebar" title="Library" search="yes" hint-size="100%,52px"></dc-import>
+  <div class="win-body">
+    <div class="sidebar-col" style="padding: 0;"><dc-import name="SidebarNav" active="add" hint-size="232px,620px"></dc-import></div>
+    <div class="win-main"><dc-import name="LibraryPane" hint-size="1208px,820px"></dc-import></div>
+  </div>
+  <dc-import name="StatusBar" left="148 games" hint-size="100%,28px"></dc-import>
+
+  <div class="sheet-scrim">
+    <section class="sheet" aria-label="Add a game" style="width: 680px;">
+      <div class="sheet-head" style="display: flex; flex-direction: column; gap: 12px;">
+        <h1 class="h-page" style="font-size: 20px;">Add a game</h1>
+        <label class="tb-search" style="width: 100%; height: 36px; background: var(--surface-2);">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+          <input type="search" value="hades" aria-label="Type in a game name" style="font-size: 14px;">
+        </label>
+      </div>
+      <div class="sheet-body" style="padding-top: 0;">
+        <div class="table">
+          <div class="thead"><span style="width: 26px;"></span><span class="col-grow">Game</span><span style="width: 150px;">Genre</span><span style="width: 130px; text-align: right;">Time to beat</span></div>
+          <sc-for list="{{results}}" as="r" hint-placeholder-count="4">
+            <div class="trow {{r.cls}}">
+              <span class="thumb" style="background: {{r.cover}};"></span>
+              <div class="col-grow"><div style="font-weight: 700;">{{r.title}}</div><div class="faint small">{{r.platforms}}</div></div>
+              <span class="muted small" style="width: 150px;">{{r.genre}}</span>
+              <span class="muted small" style="width: 130px; text-align: right;">{{r.times}}</span>
+            </div>
+          </sc-for>
+        </div>
+        <span class="muted small">Not the game you meant? <a href="#custom">Create it as a custom game</a></span>
+      </div>
+      <div class="sheet-foot"><button type="button" class="btn btn-quiet">Cancel <span class="kbd">esc</span></button><button type="button" class="btn btn-primary" style="margin-left: auto;">Continue in Creation Tool <span class="kbd" style="border-color: rgba(0,0,0,0.3); color: var(--on-accent);">&#8629;</span></button></div>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const cover = (a, b) => 'linear-gradient(160deg, ' + a + ', ' + b + ')';
+    const results = [
+      { title: 'Hades', platforms: 'PC, Switch, PlayStation', genre: 'Roguelike, Action', times: '22 / 48 / 95 h', cover: cover('#9a2a42', '#2a0a1a'), cls: 'sel' },
+      { title: 'Hades II', platforms: 'PC', genre: 'Roguelike, Action', times: '30 / 55 / 100 h', cover: cover('#6a2a9a', '#1a0a30'), cls: '' },
+      { title: 'Hades: Battle out of Hell', platforms: 'Mobile', genre: 'Action', times: '8 / 12 / 20 h', cover: cover('#c2701a', '#3a1c08'), cls: '' },
+      { title: 'Hades Star', platforms: 'Mobile', genre: 'Strategy', times: '– / – / – h', cover: cover('#2a8a8a', '#0e3a44'), cls: '' }
+    ];
+    return { results };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Entry inspector</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./shelf.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="shelf win">
+  <dc-import name="Titlebar" title="Library" search="yes" hint-size="100%,52px"></dc-import>
+  <div class="win-body">
+    <div class="sidebar-col" style="padding: 0;"><dc-import name="SidebarNav" active="library" hint-size="232px,620px"></dc-import></div>
+
+    <div class="win-main">
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="View"><button type="button" aria-pressed="true">Grid</button><button type="button" aria-pressed="false">List</button></div>
+        <button type="button" class="btn">Sort: Status &#9662;</button>
+        <button type="button" class="btn">Filter</button>
+        <span style="margin-left: auto;" class="muted small">148 games</span>
+        <button type="button" class="btn">Select</button>
+        <button type="button" class="btn btn-primary">+ Add game</button>
+      </div>
+      <div class="scroll">
+        <div class="covers" style="grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));">
+          <sc-for list="{{games}}" as="g" hint-placeholder-count="12">
+            <div><div class="cover {{g.cls}}" style="background: {{g.bg}};">{{g.title}}</div><div class="cover-meta">{{g.meta}}</div></div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <aside class="inspector" aria-label="Entry details">
+      <div style="display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--border);">
+        <span class="small muted" style="font-weight: 600;">Details</span>
+        <span class="small muted" style="margin-left: auto; display: flex; align-items: center; gap: 6px;" role="status"><span class="dot" style="background: var(--success); width: 6px; height: 6px;"></span>All changes saved</span>
+        <button type="button" class="tb-btn" aria-label="Close inspector"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+      </div>
+      <div class="inspector-body">
+        <div style="display: flex; gap: 14px;">
+          <div class="cover" style="flex: 0 0 104px; background: linear-gradient(160deg, #9a2a42, #2a0a1a); font-size: 14px;">Hades</div>
+          <div style="min-width: 0; display: flex; flex-direction: column; gap: 6px; justify-content: center;">
+            <h1 class="h-page" style="font-size: 22px;">Hades</h1>
+            <span class="muted small">Roguelike &middot; Action &middot; PC<br>Supergiant Games</span>
+            <div class="row" style="display: flex; gap: 6px; flex-wrap: wrap;"><span class="chip chip-accent">In Progress</span><span class="chip">Short and sweet</span><span class="chip chip-add">+ Category</span></div>
+          </div>
+        </div>
+
+        <div class="tabs" role="tablist" aria-label="Entry sections">
+          <button type="button" role="tab" aria-selected="true">Overview</button>
+          <button type="button" role="tab" aria-selected="false">Progress</button>
+          <button type="button" role="tab" aria-selected="false">Review</button>
+          <button type="button" role="tab" aria-selected="false">Trailer</button>
+        </div>
+
+        <p class="muted" style="margin: 0; line-height: 1.55;">Defy the god of the dead as you hack and slash out of the Underworld in this rogue-like dungeon crawler from the creators of Bastion and Transistor.</p>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="font-size: 22px; font-weight: 800;">18.4 h</span><span class="muted small">played &middot; synced 2 h ago</span></div>
+          <sc-for list="{{bars}}" as="b" hint-placeholder-count="3">
+            <div>
+              <div style="display: flex; justify-content: space-between; font-size: 12.5px; margin-bottom: 6px;"><span class="muted">{{b.label}}</span><span style="font-weight: 700;">{{b.hours}} h</span></div>
+              <div class="progress"><i style="width: {{b.pct}}; background: {{b.color}};"></i></div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div class="frow" style="padding: 0; min-height: 0; border: 0;"><div class="fl" style="flex: 1;">Owned</div><span class="switch switch-on" role="switch" aria-checked="true" aria-label="Owned"></span></div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-top: 1px solid var(--border);">
+        <button type="button" class="btn btn-danger">Delete</button>
+        <button type="button" class="btn" style="margin-left: auto;">Wrong game?</button>
+        <button type="button" class="btn">Change cover</button>
+      </div>
+    </aside>
+  </div>
+  <dc-import name="StatusBar" left="148 games &middot; 1 selected" hint-size="100%,28px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const cover = (a, b) => 'linear-gradient(160deg, ' + a + ', ' + b + ')';
+    const list = [
+      ['Hades', '#9a2a42', '#2a0a1a', '18 of 22 h'], ['Elden Ring', '#c99a3a', '#3a2a0c', '41 of 60 h'],
+      ['Hollow Knight', '#2a5aa8', '#0a1430', '9 of 27 h'], ['Outer Wilds', '#d2641e', '#2a1006', '6 of 16 h'],
+      ['Celeste', '#2a8a8a', '#0e3a44', '8 h to beat'], ['Portal 2', '#6a7a8a', '#1e2a36', '9 h to beat'],
+      ['Disco Elysium', '#8a4a22', '#2a1408', '24 h to beat'], ['Stardew Valley', '#4a9a34', '#12300c', '53 h to beat'],
+      ['Tunic', '#4a8a6a', '#0e2a1e', '12 h to beat'], ['Inside', '#5a6a74', '#12181c', '4 h to beat'],
+      ['Cuphead', '#c2a21e', '#3a2a06', '8 h to beat'], ['Journey', '#d28a3a', '#3a1c08', '3 h to beat']
+    ];
+    const games = list.map((g, i) => ({ title: g[0], bg: cover(g[1], g[2]), meta: g[3], cls: i === 0 ? 'selected' : '' }));
+    const bars = [
+      { label: 'Main story', hours: '22', pct: '84%', color: '#f5a524' },
+      { label: 'Main + extras', hours: '48', pct: '38%', color: '#60a5fa' },
+      { label: 'Completionist', hours: '95', pct: '19%', color: '#34d399' }
+    ];
+    return { games, bars };
+  }
+}
+</script>
+</body>
+</html>

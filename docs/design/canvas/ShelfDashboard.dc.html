@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Home</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./shelf.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="shelf win">
+  <dc-import name="Titlebar" title="Home" search="yes" hint-size="100%,52px"></dc-import>
+  <div class="win-body">
+    <div class="sidebar-col" style="padding: 0;"><dc-import name="SidebarNav" active="home" hint-size="232px,620px"></dc-import></div>
+    <div class="win-main">
+      <div class="scroll">
+        <section aria-label="Overview" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px;">
+          <sc-for list="{{stats}}" as="s" hint-placeholder-count="4">
+            <div class="group" style="padding: 14px 16px;">
+              <div class="muted small" style="font-weight: 600;">{{s.label}}</div>
+              <div style="font-size: 26px; font-weight: 800; letter-spacing: -0.02em; margin-top: 2px;">{{s.value}} <span class="muted" style="font-size: 13px; font-weight: 600;">{{s.unit}}</span></div>
+            </div>
+          </sc-for>
+        </section>
+
+        <section aria-label="Continue playing" class="group" style="display: flex; gap: 20px; padding: 16px; align-items: stretch; background: linear-gradient(100deg, #2a1810 0%, #15161b 70%);">
+          <div class="cover" style="flex: 0 0 120px; background: linear-gradient(160deg, #c99a3a, #3a2a0c); font-size: 14px;">Elden Ring</div>
+          <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 8px; min-width: 0;">
+            <span class="eyebrow">Continue playing</span>
+            <h1 class="h-page" style="font-size: 30px;">Elden Ring</h1>
+            <p class="muted" style="margin: 0;">41 of 60 h &middot; last played yesterday &middot; 12 achievements to go</p>
+            <div class="progress" style="width: 360px;"><i style="width: 68%;"></i></div>
+          </div>
+          <div style="display: flex; flex-direction: column; justify-content: center; gap: 8px;">
+            <button type="button" class="btn btn-primary">Open details</button>
+            <button type="button" class="btn">Mark as completed</button>
+          </div>
+        </section>
+
+        <section aria-label="Up next">
+          <div class="muted" style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px;"><h2 class="h-section" style="color: var(--text);">Up next</h2><span class="small">Short games first</span><a href="#all" class="small" style="margin-left: auto; font-weight: 600;">See all</a></div>
+          <div class="shelf-row">
+            <sc-for list="{{upNext}}" as="g" hint-placeholder-count="8">
+              <div><div class="cover" style="background: {{g.bg}};">{{g.title}}</div><div class="cover-meta">{{g.main}} h to beat</div></div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section aria-label="Recently completed">
+          <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px;"><h2 class="h-section">Recently completed</h2><a href="#all" class="small" style="margin-left: auto; font-weight: 600;">See all</a></div>
+          <div class="shelf-row">
+            <sc-for list="{{done}}" as="g" hint-placeholder-count="8">
+              <div><div class="cover" style="background: {{g.bg}}; filter: saturate(0.7);">{{g.title}}</div><div class="cover-meta">{{g.stars}}</div></div>
+            </sc-for>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+  <dc-import name="StatusBar" left="148 games &middot; 1,204 h to beat" hint-size="100%,28px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const cover = (a, b) => 'linear-gradient(160deg, ' + a + ', ' + b + ')';
+    const stats = [
+      { label: 'In backlog', value: '148', unit: 'games' },
+      { label: 'Time to beat', value: '1,204', unit: 'h' },
+      { label: 'Playing now', value: '4', unit: 'games' },
+      { label: 'Completed this year', value: '19', unit: 'games' }
+    ];
+    const upNext = [
+      { title: 'Celeste', bg: cover('#2a8a8a', '#0e3a44'), main: 8 },
+      { title: 'Portal 2', bg: cover('#6a7a8a', '#1e2a36'), main: 9 },
+      { title: 'Disco Elysium', bg: cover('#8a4a22', '#2a1408'), main: 24 },
+      { title: 'Stardew Valley', bg: cover('#4a9a34', '#12300c'), main: 53 },
+      { title: 'Hades', bg: cover('#9a2a42', '#2a0a1a'), main: 22 },
+      { title: 'Hollow Knight', bg: cover('#2a5aa8', '#0a1430'), main: 27 },
+      { title: 'Outer Wilds', bg: cover('#d2641e', '#2a1006'), main: 16 }
+    ];
+    const done = [
+      { title: 'Hades II', bg: cover('#6a2a9a', '#1a0a30'), stars: '★★★★★' },
+      { title: 'Tunic', bg: cover('#4a8a6a', '#0e2a1e'), stars: '★★★★☆' },
+      { title: 'Inside', bg: cover('#5a6a74', '#12181c'), stars: '★★★★★' },
+      { title: 'Cuphead', bg: cover('#c2a21e', '#3a2a06'), stars: '★★★★☆' },
+      { title: 'Journey', bg: cover('#d28a3a', '#3a1c08'), stars: '★★★★★' },
+      { title: 'Limbo', bg: cover('#8a8a8a', '#1a1a1a'), stars: '★★★☆☆' },
+      { title: 'Hotline Miami', bg: cover('#d22a7a', '#2a0a1e'), stars: '★★★★☆' }
+    ];
+    return { stats, upNext, done };
+  }
+}
+</script>
+</body>
+</html>

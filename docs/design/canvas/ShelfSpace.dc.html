@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Shared space</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./shelf.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="shelf win">
+  <dc-import name="Titlebar" title="Shared space" search="yes" hint-size="100%,52px"></dc-import>
+  <div class="win-body">
+    <div class="sidebar-col" style="padding: 0;"><dc-import name="SidebarNav" active="space" hint-size="232px,620px"></dc-import></div>
+    <div class="win-main">
+      <div class="toolbar">
+        <div style="display: flex;"><span style="width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-weight: 800; font-size: 11px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--bg);">TH</span><span style="width: 26px; height: 26px; border-radius: 50%; background: var(--info); color: #06121f; font-weight: 800; font-size: 11px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--bg); margin-left: -8px;">AL</span></div>
+        <span style="font-weight: 800;">Co-op backlog</span><span class="muted small">with alex &middot; ratings and playtime stay your own</span>
+        <button type="button" class="btn" style="margin-left: auto;">Space info</button>
+        <button type="button" class="btn btn-danger">Leave</button>
+        <button type="button" class="btn btn-primary">+ Add Steam game</button>
+      </div>
+      <div class="scroll">
+        <div class="group" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--accent-soft);" role="status">
+          <span><strong>jamie</strong> invited you to a shared space.</span>
+          <button type="button" class="btn btn-primary" style="margin-left: auto;">Accept</button><button type="button" class="btn">Decline</button>
+        </div>
+        <section aria-label="In Progress">
+          <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px;"><h2 class="h-section">In Progress</h2><span class="muted small">3</span></div>
+          <div class="covers">
+            <sc-for list="{{games}}" as="g" hint-placeholder-count="5">
+              <div>
+                <div class="cover" style="background: {{g.bg}};">{{g.title}}</div>
+                <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;">
+                  <div style="display: flex; align-items: center; gap: 8px;"><span style="width: 16px; font-size: 11px; font-weight: 800; color: var(--accent);">TH</span><div class="progress" style="flex: 1; height: 4px;"><i style="width: {{g.me}};"></i></div><span class="muted" style="font-size: 11.5px; width: 30px; text-align: right;">{{g.meH}} h</span></div>
+                  <div style="display: flex; align-items: center; gap: 8px;"><span style="width: 16px; font-size: 11px; font-weight: 800; color: var(--info);">AL</span><div class="progress" style="flex: 1; height: 4px;"><i style="width: {{g.partner}}; background: var(--info);"></i></div><span class="muted" style="font-size: 11.5px; width: 30px; text-align: right;">{{g.partnerH}} h</span></div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+  <dc-import name="StatusBar" left="14 shared games" hint-size="100%,28px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const cover = (a, b) => 'linear-gradient(160deg, ' + a + ', ' + b + ')';
+    const games = [
+      { title: 'It Takes Two', bg: cover('#d2641e', '#2a1006'), meH: 12, partnerH: 14, main: 14 },
+      { title: 'Overcooked! 2', bg: cover('#c2a21e', '#3a2a06'), meH: 6, partnerH: 5, main: 12 },
+      { title: 'A Way Out', bg: cover('#4a6a8a', '#10202e'), meH: 4, partnerH: 4, main: 8 },
+      { title: 'Portal 2', bg: cover('#6a7a8a', '#1e2a36'), meH: 9, partnerH: 3, main: 9 },
+      { title: 'Unravel Two', bg: cover('#2a8a8a', '#0e3a44'), meH: 2, partnerH: 2, main: 7 }
+    ].map((g) => ({
+      ...g,
+      me: Math.min(100, Math.round((g.meH / g.main) * 100)) + '%',
+      partner: Math.min(100, Math.round((g.partnerH / g.main) * 100)) + '%'
+    }));
+    return { games };
+  }
+}
+</script>
+</body>
+</html>

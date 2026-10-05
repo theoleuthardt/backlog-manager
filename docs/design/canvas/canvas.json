@@ -1,0 +1,248 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "ArcadeDetail.dc.html": {
+      "expand": "fill",
+      "h": 900,
+      "title": "A \u00b7 Arcade \u00b7 Entry",
+      "w": 1440,
+      "x": 1520,
+      "y": 0
+    },
+    "CleanDashboard.dc.html": {
+      "expand": "fill",
+      "h": 900,
+      "title": "B \u00b7 Clean \u00b7 Dashboard",
+      "w": 1440,
+      "x": 0,
+      "y": 1220
+    },
+    "CleanDetail.dc.html": {
+      "expand": "fill",
+      "h": 900,
+      "title": "B \u00b7 Clean \u00b7 Entry",
+      "w": 1440,
+      "x": 1520,
+      "y": 1220
+    },
+    "Main.dc.html": {
+      "expand": "fill",
+      "h": 900,
+      "title": "A \u00b7 Arcade \u00b7 Dashboard",
+      "w": 1440,
+      "x": 0,
+      "y": 0
+    },
+    "ShelfAccount.dc.html": {
+      "x": 0,
+      "y": 8920,
+      "w": 1440,
+      "h": 900,
+      "title": "Settings window"
+    },
+    "ShelfAdd.dc.html": {
+      "x": 0,
+      "y": 4840,
+      "w": 1440,
+      "h": 900,
+      "title": "Add a game"
+    },
+    "ShelfCreate.dc.html": {
+      "x": 0,
+      "y": 5860,
+      "w": 1440,
+      "h": 900,
+      "title": "Creation tool"
+    },
+    "ShelfDashboard.dc.html": {
+      "x": 0,
+      "y": 2440,
+      "w": 1440,
+      "h": 900,
+      "title": "C \u00b7 Shelf desktop \u00b7 Home"
+    },
+    "ShelfDetail.dc.html": {
+      "x": 1520,
+      "y": 2440,
+      "w": 1440,
+      "h": 900,
+      "title": "C \u00b7 Shelf desktop \u00b7 Entry inspector"
+    },
+    "ShelfExport.dc.html": {
+      "x": 1520,
+      "y": 6880,
+      "w": 1440,
+      "h": 900,
+      "title": "CSV export"
+    },
+    "ShelfImport.dc.html": {
+      "x": 0,
+      "y": 6880,
+      "w": 1440,
+      "h": 900,
+      "title": "CSV import"
+    },
+    "ShelfLibrary.dc.html": {
+      "x": 0,
+      "y": 3820,
+      "w": 1440,
+      "h": 900,
+      "title": "Library \u00b7 filters, selection, context menu"
+    },
+    "ShelfLogin.dc.html": {
+      "x": 1520,
+      "y": 8920,
+      "w": 1440,
+      "h": 900,
+      "title": "Sign in and two-factor"
+    },
+    "ShelfSetup.dc.html": {
+      "x": 0,
+      "y": 9940,
+      "w": 1440,
+      "h": 900,
+      "title": "Setup wizard"
+    },
+    "ShelfSpace.dc.html": {
+      "x": 1520,
+      "y": 7900,
+      "w": 1440,
+      "h": 900,
+      "title": "Shared space"
+    },
+    "ShelfSteam.dc.html": {
+      "x": 1520,
+      "y": 5860,
+      "w": 1440,
+      "h": 900,
+      "title": "Steam sync"
+    },
+    "ShelfThemes.dc.html": {
+      "x": 0,
+      "y": 7900,
+      "w": 1440,
+      "h": 900,
+      "title": "Appearance \u00b7 theme creator"
+    },
+    "ShelfWrongGame.dc.html": {
+      "x": 1520,
+      "y": 4840,
+      "w": 1440,
+      "h": 900,
+      "title": "Wrong game \u00b7 search more"
+    },
+    "SidebarNav.dc.html": {
+      "x": 0,
+      "y": 11300,
+      "w": 232,
+      "h": 620,
+      "title": "Component \u00b7 Sidebar"
+    },
+    "Titlebar.dc.html": {
+      "x": 320,
+      "y": 11300,
+      "w": 1440,
+      "h": 52,
+      "title": "Component \u00b7 Title bar"
+    },
+    "StatusBar.dc.html": {
+      "x": 320,
+      "y": 11440,
+      "w": 1440,
+      "h": 28,
+      "title": "Component \u00b7 Status bar"
+    },
+    "ShelfPalette.dc.html": {
+      "x": 1520,
+      "y": 3820,
+      "w": 1440,
+      "h": 900,
+      "title": "Command palette (\u2318K)"
+    },
+    "LibraryPane.dc.html": {
+      "x": 320,
+      "y": 11560,
+      "w": 1208,
+      "h": 820,
+      "title": "Component \u00b7 Library pane (sheet backdrop)"
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-05T17:45:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "titleA": {
+      "kind": "title1",
+      "maxW": 2960,
+      "text": "A \u00b7 Arcade \u2014 gaming HUD, neon on near-black",
+      "w": 240,
+      "x": 0,
+      "y": -260
+    },
+    "titleAll": {
+      "kind": "title1",
+      "maxW": 2960,
+      "text": "C \u00b7 Shelf desktop \u2014 every screen (tokens and components live in shelf.css)",
+      "w": 240,
+      "x": 0,
+      "y": 3560
+    },
+    "titleB": {
+      "kind": "title1",
+      "maxW": 2960,
+      "text": "B \u00b7 Clean \u2014 quiet, light, content first",
+      "w": 240,
+      "x": 0,
+      "y": 960
+    },
+    "titleC": {
+      "kind": "title1",
+      "maxW": 2960,
+      "text": "C \u00b7 Shelf \u2014 chosen direction, redrawn as a desktop app",
+      "w": 240,
+      "x": 0,
+      "y": 2180
+    },
+    "titleComp": {
+      "x": 0,
+      "y": 11040,
+      "text": "Shared shell components",
+      "kind": "title1",
+      "maxW": 2960,
+      "w": 240
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "ArcadeDetail.dc.html",
+    "CleanDashboard.dc.html",
+    "CleanDetail.dc.html",
+    "ShelfDashboard.dc.html",
+    "ShelfDetail.dc.html",
+    "ShelfLogin.dc.html",
+    "ShelfSetup.dc.html",
+    "ShelfLibrary.dc.html",
+    "ShelfAdd.dc.html",
+    "ShelfWrongGame.dc.html",
+    "ShelfCreate.dc.html",
+    "ShelfSteam.dc.html",
+    "ShelfImport.dc.html",
+    "ShelfExport.dc.html",
+    "ShelfAccount.dc.html",
+    "ShelfThemes.dc.html",
+    "ShelfSpace.dc.html",
+    "SidebarNav.dc.html",
+    "Titlebar.dc.html",
+    "StatusBar.dc.html",
+    "ShelfPalette.dc.html",
+    "LibraryPane.dc.html"
+  ],
+  "pages": [],
+  "title": "Backlog Manager Redesign"
+}

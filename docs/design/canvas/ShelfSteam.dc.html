@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Steam sync</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./shelf.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="shelf win">
+  <dc-import name="Titlebar" title="Steam sync" search="no" hint-size="100%,52px"></dc-import>
+  <div class="win-body">
+    <div class="sidebar-col" style="padding: 0;"><dc-import name="SidebarNav" active="steam" hint-size="232px,620px"></dc-import></div>
+    <div class="win-main">
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="Source"><button type="button" aria-pressed="true">Library</button><button type="button" aria-pressed="false">Wishlist</button></div>
+        <button type="button" class="btn">Reload preview</button>
+        <div class="progress" style="width: 180px; margin-left: 8px;"><i style="width: 100%;"></i></div>
+        <span class="muted small">1,284 of 1,284 checked</span>
+        <span style="margin-left: auto;" class="muted small">Nothing is written until you press Import.</span>
+      </div>
+      <div class="scroll" style="gap: 14px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <h1 class="h-section">24 new games from your library</h1>
+          <button type="button" class="btn btn-quiet">Select none</button>
+          <input type="search" placeholder="Filter list" aria-label="Filter list" style="margin-left: auto; height: 30px; width: 240px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 0 10px; font: inherit; font-size: 13px;">
+        </div>
+        <div class="table">
+          <div class="thead"><span class="checkbox checkbox-on" aria-hidden="true"></span><span style="width: 26px;"></span><span class="col-grow">Game</span><span style="width: 110px;">Steam app</span><span style="width: 120px; text-align: right;">Playtime</span></div>
+          <sc-for list="{{rows}}" as="r" hint-placeholder-count="10">
+            <div class="trow {{r.sel}}">
+              <span class="checkbox {{r.on}}" aria-hidden="true"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>
+              <span class="thumb" style="background: {{r.cover}};"></span>
+              <div class="col-grow" style="font-weight: 700;">{{r.title}}</div>
+              <span class="faint small" style="width: 110px;">{{r.id}}</span>
+              <span class="muted small" style="width: 120px; text-align: right;">{{r.hours}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 12px 24px; border-top: 1px solid var(--border); background: var(--surface-1);">
+        <span class="muted">21 of 24 selected</span>
+        <button type="button" class="btn btn-primary" style="margin-left: auto;">Import 21 games</button>
+      </div>
+    </div>
+  </div>
+  <dc-import name="StatusBar" left="Steam library &middot; preview" sync="Steam synced just now" hint-size="100%,28px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const cover = (a, b) => 'linear-gradient(160deg, ' + a + ', ' + b + ')';
+    const data = [
+      ['Cyberpunk 2077', 1091500, '0 h', '#c2c21e', '#3a3a06', true], ['DOOM Eternal', 782330, '3.2 h', '#9a2a2a', '#2a0a0a', true],
+      ['The Witcher 3: Wild Hunt', 292030, '0 h', '#4a6a8a', '#10202e', true], ['Portal 2', 620, '11 h', '#6a7a8a', '#1e2a36', true],
+      ['Tomb Raider', 203160, '0 h', '#8a6a3a', '#2a1c0c', false], ['Hitman 3', 1659040, '0 h', '#7a2a2a', '#1a0808', false],
+      ['Control', 870780, '6 h', '#2a4a6a', '#0a1420', true], ['Death Stranding', 1190460, '0 h', '#5a6a74', '#12181c', true],
+      ['Ghostrunner', 1139900, '0 h', '#2a8a8a', '#0e3a44', true], ['Alan Wake', 108710, '0 h', '#6a5a2a', '#1c1608', false]
+    ];
+    const rows = data.map((d) => ({ title: d[0], id: d[1], hours: d[2], cover: cover(d[3], d[4]), on: d[5] ? 'checkbox-on' : '', sel: d[5] ? 'sel' : '' }));
+    return { rows };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Library pane</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./shelf.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="shelf" style="width: 1208px; height: 820px; background: #0e0f12; color: #f2f2f3; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; display: flex; flex-direction: column; overflow: hidden;">
+  <div class="toolbar">
+    <div class="seg"><button type="button" aria-pressed="true">Grid</button><button type="button" aria-pressed="false">List</button></div>
+    <button type="button" class="btn">Sort: Status &#9662;</button>
+    <button type="button" class="btn">Filter</button>
+    <span style="margin-left: auto; color: #a3a5ad; font-size: 12.5px;">148 games</span>
+    <button type="button" class="btn">Select</button>
+    <button type="button" class="btn btn-primary">+ Add game</button>
+  </div>
+  <div class="scroll">
+    <div class="covers">
+      <sc-for list="{{games}}" as="g" hint-placeholder-count="12">
+        <div><div class="cover" style="background: {{g.bg}};">{{g.title}}</div><div class="cover-meta">{{g.meta}}</div></div>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1208,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const cover = (a, b) => 'linear-gradient(160deg, ' + a + ', ' + b + ')';
+    const list = [
+      ['Hades', '#9a2a42', '#2a0a1a', '18 of 22 h'], ['Elden Ring', '#c99a3a', '#3a2a0c', '41 of 60 h'],
+      ['Hollow Knight', '#2a5aa8', '#0a1430', '9 of 27 h'], ['Outer Wilds', '#d2641e', '#2a1006', '6 of 16 h'],
+      ['Celeste', '#2a8a8a', '#0e3a44', '8 h to beat'], ['Portal 2', '#6a7a8a', '#1e2a36', '9 h to beat'],
+      ['Disco Elysium', '#8a4a22', '#2a1408', '24 h to beat'], ['Stardew Valley', '#4a9a34', '#12300c', '53 h to beat'],
+      ['Tunic', '#4a8a6a', '#0e2a1e', '12 h to beat'], ['Inside', '#5a6a74', '#12181c', '4 h to beat'],
+      ['Cuphead', '#c2a21e', '#3a2a06', '8 h to beat'], ['Journey', '#d28a3a', '#3a1c08', '3 h to beat'],
+      ['Limbo', '#8a8a8a', '#1a1a1a', '5 h to beat'], ['Hotline Miami', '#d22a7a', '#2a0a1e', '6 h to beat']
+    ];
+    return { games: list.map((g) => ({ title: g[0], bg: cover(g[1], g[2]), meta: g[3] })) };
+  }
+}
+</script>
+</body>
+</html>

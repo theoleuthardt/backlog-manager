@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Setup wizard</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./shelf.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="shelf desk">
+  <div class="win win-sm" style="width: 880px; height: 640px;">
+    <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><span class="tb-title" style="margin-left: 8px;">Welcome to Backlog</span><button type="button" class="btn btn-quiet" style="margin-left: auto;">Skip setup</button></div>
+    <div class="win-body">
+      <nav aria-label="Setup steps" class="sidebar-col stepper-v" style="width: 240px; flex-basis: 240px; padding: 18px 12px; gap: 4px;">
+        <sc-for list="{{steps}}" as="s" hint-placeholder-count="5">
+          <div class="step {{s.cls}}"><span class="step-n">{{s.n}}</span>{{s.name}}</div>
+        </sc-for>
+      </nav>
+      <div class="win-main" style="padding: 30px 36px 0; gap: 20px;">
+        <div>
+          <span class="eyebrow">Optional</span>
+          <h1 class="h-page" style="margin-top: 8px;">Connect Steam</h1>
+          <p class="muted" style="margin: 6px 0 0; max-width: 52ch;">Link Steam to import your library and wishlist and to sync playtimes. You can do this later in the settings.</p>
+        </div>
+        <div class="group">
+          <div class="frow"><div class="fl" style="flex-basis: 130px;">Steam ID<small>17 digits</small></div><div class="fc"><input type="text" placeholder="17-digit SteamID64" aria-label="Steam ID"></div></div>
+          <div class="frow"><div class="fl" style="flex-basis: 130px;">Web API key</div><div class="fc"><input type="password" placeholder="Steam Web API key" aria-label="Steam Web API key"></div></div>
+        </div>
+        <span class="muted small">Don't know your ID? Use <a href="https://steamdb.info/calculator/">SteamDB's SteamID finder</a>. Create a key on <a href="https://steamcommunity.com/dev/apikey">Steam's API key page</a>.</span>
+        <div style="margin-top: auto; display: flex; align-items: center; gap: 8px; padding: 14px 0 18px; border-top: 1px solid var(--border);">
+          <button type="button" class="btn">Back</button>
+          <button type="button" class="btn btn-primary" style="margin-left: auto;">Next</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const names = ['Theme', 'Sorting', 'Steam', 'IGDB', 'Done'];
+    const current = 2;
+    const steps = names.map((name, i) => ({ name, n: i < current ? '✓' : String(i + 1), cls: i < current ? 'done' : i === current ? 'current' : '' }));
+    return { steps };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Library</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./shelf.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="shelf win">
+  <dc-import name="Titlebar" title="Library" search="yes" hint-size="100%,52px"></dc-import>
+  <div class="win-body">
+    <div class="sidebar-col" style="padding: 0;"><dc-import name="SidebarNav" active="library" hint-size="232px,620px"></dc-import></div>
+    <div class="win-main">
+      <div class="toolbar" role="toolbar" aria-label="Selection actions" style="background: var(--accent-soft);">
+        <span style="font-weight: 800; padding-right: 6px;">3 selected</span>
+        <button type="button" class="btn btn-quiet">Select all 100</button>
+        <button type="button" class="btn btn-quiet">Clear</button>
+        <button type="button" class="btn">Set status &#9662;</button>
+        <button type="button" class="btn">Categories &#9662;</button>
+        <button type="button" class="btn btn-danger">Delete</button>
+        <button type="button" class="btn btn-primary" style="margin-left: auto;">Done</button>
+      </div>
+      <div class="scroll">
+        <section aria-label="In Progress">
+          <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px;"><h2 class="h-section">In Progress</h2><span class="muted small">4</span></div>
+          <div class="covers">
+            <sc-for list="{{playing}}" as="g" hint-placeholder-count="4">
+              <div>
+                <div class="cover {{g.cls}}" style="background: {{g.bg}};">
+                  <span class="check {{g.checkCls}}" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>{{g.title}}
+                </div>
+                <div class="progress" style="margin-top: 10px; height: 3px;"><i style="width: {{g.pct}};"></i></div>
+                <div class="cover-meta" style="margin-top: 6px;">{{g.played}} of {{g.main}} h</div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+        <section aria-label="Not Started">
+          <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px;"><h2 class="h-section">Not Started</h2><span class="muted small">96</span></div>
+          <div class="covers">
+            <sc-for list="{{queued}}" as="g" hint-placeholder-count="5">
+              <div>
+                <div class="cover {{g.cls}}" style="background: {{g.bg}};">
+                  <span class="check {{g.checkCls}}" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>{{g.title}}
+                </div>
+                <div class="cover-meta">{{g.main}} h to beat</div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div class="menu" role="menu" aria-label="Game actions" style="position: absolute; left: 640px; top: 470px; z-index: 4;">
+      <div class="menu-label">Portal 2</div>
+      <div class="menu-item" role="menuitem">Open details <span class="kbd">Enter</span></div>
+      <div class="menu-item" role="menuitem">Select</div>
+      <div class="menu-item hover" role="menuitem">Move to status <span style="margin-left: auto;">&#9656;</span></div>
+      <div class="menu-item" role="menuitem">Categories <span style="margin-left: auto;">&#9656;</span></div>
+      <div class="menu-sep"></div>
+      <div class="menu-item" role="menuitem" style="color: var(--danger);">Delete <span class="kbd">&#9003;</span></div>
+    </div>
+    <div class="menu" role="menu" aria-label="Move to status" style="position: absolute; left: 880px; top: 530px; z-index: 4; min-width: 170px;">
+      <div class="menu-item" role="menuitem">Not Started</div>
+      <div class="menu-item" role="menuitem">In Progress</div>
+      <div class="menu-item" role="menuitem">Completed</div>
+      <div class="menu-item" role="menuitem">On Hold</div>
+      <div class="menu-item" role="menuitem">Dropped</div>
+    </div>
+
+    <div class="menu" aria-label="Filter" style="position: absolute; left: 520px; top: 108px; width: 300px; z-index: 3; padding: 14px; display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: center;"><span style="font-weight: 800;">Filter</span><a href="#reset" class="small" style="margin-left: auto; font-weight: 600;">Reset</a></div>
+      <div class="field"><label>Status</label><div style="display: flex; gap: 6px; flex-wrap: wrap;"><span class="chip chip-active">In Progress</span><span class="chip">Not Started</span><span class="chip">Completed</span></div></div>
+      <div class="field"><label>Playtime</label><div class="progress" style="position: relative; margin: 8px 0 2px;"><i style="position: absolute; left: 12%; width: 50%;"></i></div><div class="muted small" style="display: flex; justify-content: space-between;"><span>12 h</span><span>62 h</span></div></div>
+      <div style="display: flex; align-items: center;"><span style="font-weight: 600;">Owned only</span><span class="switch switch-on" style="margin-left: auto;" role="switch" aria-checked="true" aria-label="Owned only"></span></div>
+    </div>
+  </div>
+  <dc-import name="StatusBar" left="3 of 148 games selected" hint-size="100%,28px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const cover = (a, b) => 'linear-gradient(160deg, ' + a + ', ' + b + ')';
+    const mark = (list, on) => list.map((g, i) => ({ ...g, cls: on.includes(i) ? 'selected' : '', checkCls: on.includes(i) ? 'check-on' : '' }));
+    const playing = mark([
+      { title: 'Hades', bg: cover('#9a2a42', '#2a0a1a'), played: 18, main: 22 },
+      { title: 'Elden Ring', bg: cover('#c99a3a', '#3a2a0c'), played: 41, main: 60 },
+      { title: 'Hollow Knight', bg: cover('#2a5aa8', '#0a1430'), played: 9, main: 27 },
+      { title: 'Outer Wilds', bg: cover('#d2641e', '#2a1006'), played: 6, main: 16 }
+    ], [0, 2]).map((g) => ({ ...g, pct: Math.round((g.played / g.main) * 100) + '%' }));
+    const queued = mark([
+      { title: 'Celeste', bg: cover('#2a8a8a', '#0e3a44'), main: 8 },
+      { title: 'Portal 2', bg: cover('#6a7a8a', '#1e2a36'), main: 9 },
+      { title: 'Disco Elysium', bg: cover('#8a4a22', '#2a1408'), main: 24 },
+      { title: 'Stardew Valley', bg: cover('#4a9a34', '#12300c'), main: 53 },
+      { title: 'Tunic', bg: cover('#4a8a6a', '#0e2a1e'), main: 12 }
+    ], [1]);
+    return { playing, queued };
+  }
+}
+</script>
+</body>
+</html>

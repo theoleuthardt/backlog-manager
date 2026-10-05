@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Settings window</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./shelf.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="shelf desk">
+  <div class="win win-sm" style="width: 1000px; height: 740px;">
+    <div class="titlebar" style="gap: 12px;"><div class="lights"><i></i><i></i><i></i></div><span class="tb-title" style="margin-left: 8px;">Settings</span></div>
+    <div class="win-body">
+      <nav aria-label="Settings sections" class="sidebar-col" style="width: 200px; flex-basis: 200px;">
+        <sc-for list="{{tabs}}" as="t" hint-placeholder-count="6">
+          <a href="#{{t.id}}" class="side-item {{t.cls}}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{t.icon}}"></path></svg>{{t.name}}
+          </a>
+        </sc-for>
+      </nav>
+      <div class="win-main" style="padding: 22px 26px; gap: 18px; overflow: hidden;">
+        <div><h1 class="h-page" style="font-size: 22px;">Integrations</h1><p class="muted" style="margin: 4px 0 0;">Connect the services that provide your library, game data and covers.</p></div>
+
+        <section class="group" aria-label="Steam">
+          <div class="group-title">Steam</div>
+          <div class="frow"><div class="fl">Steam ID<small>SteamID64, 17 digits</small></div><div class="fc"><input type="text" value="76561197960287930" aria-label="Steam ID"></div></div>
+          <div class="frow"><div class="fl">Web API key</div><div class="fc"><input type="password" value="••••••••••••••••" aria-label="Steam Web API key"><button type="button" class="btn">Remove</button></div></div>
+          <div class="frow"><div class="fl">Family members<small>Comma-separated SteamID64s</small></div><div class="fc"><input type="text" placeholder="76561197960287930, 76561198000000001" aria-label="Family members"></div></div>
+        </section>
+
+        <section class="group" aria-label="Game data">
+          <div class="group-title">IGDB and SteamGridDB</div>
+          <div class="group-desc">Without your own credentials the server's are used.</div>
+          <div class="frow"><div class="fl">IGDB Client ID</div><div class="fc"><input type="text" aria-label="IGDB Client ID"></div></div>
+          <div class="frow"><div class="fl">IGDB Client Secret</div><div class="fc"><input type="password" aria-label="IGDB Client Secret"></div></div>
+          <div class="frow"><div class="fl">SteamGridDB key<small>Cover art</small></div><div class="fc"><input type="password" aria-label="SteamGridDB API key"></div></div>
+        </section>
+
+        <section class="group" aria-label="Discord">
+          <div class="group-title">Discord price alerts</div>
+          <div class="frow"><div class="fl">Webhook URL<small>Message when a wished game goes on sale</small></div><div class="fc"><input type="text" placeholder="https://discord.com/api/webhooks/..." aria-label="Discord webhook URL"></div></div>
+        </section>
+      </div>
+    </div>
+    <div class="statusbar"><span>Changes in settings save automatically</span><span class="dot" style="background: var(--success); width: 6px; height: 6px; margin-left: auto;"></span><span>Saved</span></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const defs = [
+      ['general', 'General', 'M4 6h16M4 12h16M4 18h16'],
+      ['security', 'Security', 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z'],
+      ['integrations', 'Integrations', 'M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1'],
+      ['backups', 'Backups', 'M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3zM4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7'],
+      ['updates', 'App updates', 'M12 4v12m0 0l-4-4m4 4l4-4M5 20h14'],
+      ['about', 'About', 'M12 8h.01M11 12h1v5h1M12 21a9 9 0 100-18 9 9 0 000 18z']
+    ];
+    return { tabs: defs.map((d) => ({ id: d[0], name: d[1], icon: d[2], cls: d[0] === 'integrations' ? 'active' : '' })) };
+  }
+}
+</script>
+</body>
+</html>
