@@ -1,4 +1,3 @@
-"use client";
 import { AchievementProgress } from "components/AchievementProgress";
 import { GameImage } from "components/GameImage";
 import { useNavigate, useSearchParams } from "react-router";

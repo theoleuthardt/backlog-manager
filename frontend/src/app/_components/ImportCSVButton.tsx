@@ -1,4 +1,3 @@
-"use client";
 import React from "react";
 import { useNavigate } from "react-router";
 import { Button } from "shadcn_components/ui/button";

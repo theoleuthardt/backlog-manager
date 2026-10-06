@@ -1,5 +1,3 @@
-"use client";
-
 import { useIsTauri } from "~/hooks/useIsTauri";
 import { useAppUpdater } from "~/hooks/useAppUpdater";
 import { Button } from "~/components/ui/button";

@@ -1,4 +1,3 @@
-"use client";
 import { ChevronDown, Trash2, X } from "lucide-react";
 import { Button } from "shadcn_components/ui/button";
 import {

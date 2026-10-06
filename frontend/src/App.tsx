@@ -52,15 +52,15 @@ export function App() {
                 />
                 <Route
                   path="/creation-tool"
-                  element={page("Creation Tool", <CreationTool />)}
+                  element={page("Creation Tool", <CreationTool />, true)}
                 />
                 <Route
                   path="/import-csv"
-                  element={page("Import CSV", <ImportCsv />)}
+                  element={page("Import CSV", <ImportCsv />, true)}
                 />
                 <Route
                   path="/export-csv"
-                  element={page("Export CSV", <ExportCsv />)}
+                  element={page("Export CSV", <ExportCsv />, true)}
                 />
                 <Route
                   path="/themes"

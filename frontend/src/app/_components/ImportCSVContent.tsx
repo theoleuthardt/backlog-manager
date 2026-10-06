@@ -1,4 +1,3 @@
-"use client";
 import { memo, useCallback, useRef, useState } from "react";
 import { AlertTriangle, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { toast } from "sonner";

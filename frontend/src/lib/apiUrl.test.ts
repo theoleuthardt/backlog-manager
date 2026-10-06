@@ -40,6 +40,14 @@ describe("parseApiUrl", () => {
     expect(parseApiUrl(url, true).success).toBe(true);
   });
 
+  it.each([
+    "ftp://localhost:8000",
+    "ws://127.0.0.1:8000",
+    "file://localhost/x",
+  ])("rejects the non-http protocol of %s even on a loopback host", (url) => {
+    expect(parseApiUrl(url, true).success).toBe(false);
+  });
+
   it("rejects values that are not URLs", () => {
     expect(parseApiUrl("not a url", false).success).toBe(false);
   });

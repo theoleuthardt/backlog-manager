@@ -1,4 +1,3 @@
-"use client";
 import { useRef, useState } from "react";
 import { Loader2, LogOut, Users } from "lucide-react";
 import { toast } from "sonner";

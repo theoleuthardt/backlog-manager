@@ -1,4 +1,3 @@
-"use client";
 import { MotionConfig, motion } from "motion/react";
 import { UniverseBackground } from "components/UniverseBackground";
 

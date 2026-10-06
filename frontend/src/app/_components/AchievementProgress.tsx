@@ -1,4 +1,3 @@
-"use client";
 import { useState } from "react";
 import { Loader2, Trophy, XIcon } from "lucide-react";
 import { GameImage } from "components/GameImage";

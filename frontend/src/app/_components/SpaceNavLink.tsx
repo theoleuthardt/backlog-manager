@@ -1,4 +1,3 @@
-"use client";
 import { Link } from "react-router";
 import { Users } from "lucide-react";
 import { useSpace } from "~/hooks/useSpace";

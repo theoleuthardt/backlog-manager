@@ -1,4 +1,3 @@
-"use client";
 import { useState } from "react";
 import { DatabaseZap, Loader2 } from "lucide-react";
 import { toast } from "sonner";

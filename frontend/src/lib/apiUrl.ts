@@ -9,7 +9,9 @@ const productionApiUrl = z
     (url) => {
       const parsed = new URL(url);
       return (
-        parsed.protocol === "https:" || LOOPBACK_HOSTS.includes(parsed.hostname)
+        parsed.protocol === "https:" ||
+        (parsed.protocol === "http:" &&
+          LOOPBACK_HOSTS.includes(parsed.hostname))
       );
     },
     {

@@ -1,4 +1,3 @@
-"use client";
 import React, { useState } from "react";
 import { Button } from "shadcn_components/ui/button";
 import { toast } from "sonner";

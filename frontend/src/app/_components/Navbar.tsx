@@ -1,4 +1,3 @@
-"use client";
 import React, { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Link, useNavigate } from "react-router";

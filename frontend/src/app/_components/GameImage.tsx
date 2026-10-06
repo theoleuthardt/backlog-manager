@@ -1,4 +1,3 @@
-"use client";
 import React, { useState } from "react";
 import type { GameImageProps } from "~/app/types";
 import { Spinner } from "~/components/ui/spinner";

@@ -1,5 +1,3 @@
-"use client";
-
 import { Link } from "react-router";
 import { Button } from "shadcn_components/ui/button";
 import { useAuth } from "~/app/context/AuthContext";

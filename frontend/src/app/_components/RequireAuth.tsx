@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { useAuth } from "~/app/context/AuthContext";

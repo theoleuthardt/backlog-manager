@@ -1,4 +1,3 @@
-"use client";
 import * as Dialog from "@radix-ui/react-dialog";
 import { AnimatePresence, motion, useDragControls } from "motion/react";
 

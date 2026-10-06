@@ -1,4 +1,3 @@
-"use client";
 import { Link } from "react-router";
 import { Loader2, Users } from "lucide-react";
 import { toast } from "sonner";

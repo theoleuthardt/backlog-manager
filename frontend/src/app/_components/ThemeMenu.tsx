@@ -1,4 +1,3 @@
-"use client";
 import { useNavigate } from "react-router";
 import { Palette } from "lucide-react";
 import {

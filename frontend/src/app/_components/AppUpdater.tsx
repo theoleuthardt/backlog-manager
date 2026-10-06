@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { useIsTauri } from "~/hooks/useIsTauri";

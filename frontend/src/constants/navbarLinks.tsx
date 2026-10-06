@@ -1,4 +1,3 @@
-"use client";
 import { EntryCreationDialog } from "~/app/_components/EntryCreationDialog";
 import { ImportCSVButton } from "~/app/_components/ImportCSVButton";
 import { ExportCSVButton } from "~/app/_components/ExportCSVButton";

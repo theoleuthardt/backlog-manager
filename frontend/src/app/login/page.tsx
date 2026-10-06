@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router";
 import { AuthCard } from "components/AuthCard";

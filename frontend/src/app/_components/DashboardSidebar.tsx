@@ -1,4 +1,3 @@
-"use client";
 import { ArrowDownAZ, ArrowUpAZ, RotateCcw } from "lucide-react";
 import { Button } from "shadcn_components/ui/button";
 import { Checkbox } from "shadcn_components/ui/checkbox";
