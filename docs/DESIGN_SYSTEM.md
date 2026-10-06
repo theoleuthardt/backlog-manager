@@ -48,12 +48,12 @@ Computed from the six inputs, so a custom theme automatically gets a complete pa
 | `borderSubtle` | mix(`surface`, `foreground`, 8%) | `#1c1c22` |
 | `text2` | mix(`foreground`, `background`, 11%) | `#d9d9dd` |
 | `muted` | mix(`foreground`, `background`, 35%) | `#a3a5ad` |
-| `faint` | mix(`foreground`, `background`, 60%) | `#6a6c75` |
+| `faint` | mix(`foreground`, `background`, 50%) (at least 4.5:1 on `background`) | `#7b7d87` |
 | `accentSoft` | `accent` at 14% opacity | amber at 14% |
 | `glowSoft` | `glow` at 16% opacity | violet at 16% |
 | `onAccent` | black or white, whichever has the higher contrast against `accent` | `#1a1103` |
 
-Semantic colours do not change with the theme (adjusted for contrast on light backgrounds): success `#34d399`, danger `#ff6b81`, info `#60a5fa`.
+Semantic colours follow the theme's lightness so small text keeps 4.5:1 contrast: success `#34d399`, danger `#ff6b81`, info `#60a5fa` on dark themes; success `#047857`, danger `#e11d48`, info `#2f5bff` on light ones.
 
 ### Built-in themes
 
