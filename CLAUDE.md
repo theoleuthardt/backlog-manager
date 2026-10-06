@@ -15,14 +15,14 @@ Users can track games with metadata from HowLongToBeat and IGDB, organize games 
 **Always use `task <name>` (see `Taskfile.yml`, requires [go-task](https://taskfile.dev)) when running commands in this repo, instead of calling `npm run ...` / `uv run ...` / `docker compose ...` directly.** It wraps both the frontend (npm) and backend (uv) toolchains plus the local Postgres compose stack under one unified command surface, so any command run from Claude Code should go through it if a matching task exists. `task` (no args) lists everything available; the most common ones:
 
 ```bash
-task install       # npm install (frontend) + uv sync (backend); needs Node 22.12+ (`nvm use` reads the root .nvmrc)
+task install       # npm install (frontend) + uv sync (backend) + flutter pub get (app); needs Node 22.12+ (`nvm use` reads the root .nvmrc)
 task dev           # Vite dev server
 task backend:dev   # Litestar dev server (uvicorn --reload)
 task db:up         # local Postgres + pgAdmin via compose.yml
-task test          # backend (pytest) + frontend (vitest) suites
-task lint          # frontend (eslint) + backend (ruff)
-task app:dev       # Flutter desktop app (needs Flutter 3.47.6, see docs/FLUTTER.md); task app:lint / app:test / app:format also run inside lint/test/format
-task format        # prettier (frontend) + ruff format (backend); task format:check only verifies
+task test          # backend (pytest) + frontend (vitest) + app (flutter test) suites
+task lint          # frontend (eslint) + backend (ruff) + app (flutter analyze)
+task app:dev       # Flutter desktop app (needs Flutter 3.47.6, see docs/FLUTTER.md)
+task format        # prettier (frontend) + ruff format (backend) + dart format (app); task format:check only verifies
 task audit         # known-vulnerability scan of the locked frontend + backend dependencies
 task backend:migration -- "add foo column"   # new Alembic revision
 task backend:migrate                          # alembic upgrade head
@@ -109,7 +109,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the reasoning behind thes
 Dart/Flutter desktop app, ported from `frontend/`. Setup, running, debugging, goldens and packaging: [`docs/FLUTTER.md`](docs/FLUTTER.md).
 
 - **Commands:** always `task app:*` (`app:install`, `app:dev`, `app:lint`, `app:test`, `app:test:update-goldens`, `app:format`, `app:format:check`, `app:build`, `app:generate-api`), never bare `flutter`/`dart`; `task check` and `task lint` include the app.
-- **Layout:** `lib/design/` (tokens, theme, shell and shared widgets), `lib/api/` (Dio setup, `ApiException`, SSE reader, server URL, generated client in `generated/`), `lib/features/<screen group>/`, `app.dart`; `test/` mirrors `lib/`.
+- **Layout:** `lib/api/` (everything that talks to the backend: Dio setup, error mapping, the SSE reader, the generated client in `generated/`), `lib/design/` (tokens, theme, shell and shared widgets) and `lib/features/<screen group>/` (both still empty placeholders), `app.dart`; `test/` mirrors `lib/`.
 - **State and routing:** Riverpod and `go_router` (added to the project with the first screens, #254). Screens hold UI state only; logic that is not about widgets lives in plain Dart files with unit tests.
 - **Theming:** read colours from the `ShelfTokens` `ThemeExtension` (#252), never hard-coded `Color`s.
 - **Generated API client:** `lib/api/generated/` is committed and never edited by hand. After a backend route change run `task backend:openapi`, then `task app:generate-api`, and commit the diff.

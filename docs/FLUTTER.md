@@ -11,7 +11,8 @@ The desktop client in `app/` is the Flutter port of `frontend/` (epic #247). It 
    - **Linux:** `clang cmake ninja-build pkg-config libgtk-3-dev`.
    - The Android and iOS items in `flutter doctor` can stay red, they are not needed yet.
 3. `task app:install` fetches the packages.
-4. Start a backend (`task db:up`, then `task backend:dev`) or point the app at a running one. A debug build talks to `http://localhost:8000` by default (the server setting from #251; its "Change" action on the sign-in screen comes with #256).
+4. Start a backend (`task db:up`, then `task backend:dev`). The app does not connect to one yet (sign-in comes with #256); a debug build is meant to talk to `http://localhost:8000` by default, through the server setting of #251.
+5. With FVM, run `fvm use` in `app/` and put `app/.fvm/flutter_sdk/bin` first on your `PATH`: the tasks call `flutter` and `dart` from the `PATH`.
 
 ## Commands
 
@@ -66,7 +67,7 @@ A build for another OS cannot be made on this one (Flutter has no cross-compilat
 
 ## Building and packaging locally
 
-`task app:build` makes a release build for the host platform: `app/build/macos/Build/Products/Release/backlog_manager.app`, `app/build/windows/x64/runner/Release/` or `app/build/linux/x64/release/bundle/`. Build with another default server: `task app:build API_URL=https://api.example.com`. Installers (dmg, msi, AppImage, deb, ...) come from the packaging issue (#277) and the release workflow.
+`task app:build` makes a release build for the host platform: `app/build/macos/Build/Products/Release/backlog_manager.app`, `app/build/windows/x64/runner/Release/` or `app/build/linux/x64/release/bundle/`. `API_URL` sets the default server (`task app:build API_URL=https://api.example.com`); it takes effect once the server setting of #251 is in the app, and nothing connects to a backend before the sign-in work of #256. Installers (dmg, msi, AppImage, deb, ...) come from the packaging issue (#277) and the release workflow.
 
 ## Architecture
 
