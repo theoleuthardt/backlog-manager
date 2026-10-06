@@ -3,6 +3,8 @@ version: "3"
 vars:
   FRONTEND_DIR: frontend
   BACKEND_DIR: backend
+  APP_DIR: app
+  APP_PLATFORM: '{{if eq OS "darwin"}}macos{{else}}{{OS}}{{end}}'
 
 tasks:
   default:
@@ -12,10 +14,11 @@ tasks:
     silent: true
 
   install:
-    desc: Install frontend and backend dependencies
+    desc: Install frontend, backend and Flutter app dependencies
     cmds:
       - task: frontend:install
       - task: backend:install
+      - task: app:install
 
   dev:
     desc: Run the Vite and backend dev servers
@@ -33,12 +36,14 @@ tasks:
     cmds:
       - task: frontend:lint
       - task: backend:lint
+      - task: app:lint
 
   test:
     desc: Run the backend and frontend test suites
     cmds:
       - task: backend:test
       - task: frontend:test
+      - task: app:test
       - task: release:test
 
   check:
@@ -46,6 +51,7 @@ tasks:
     cmds:
       - task: frontend:check
       - task: backend:lint
+      - task: app:lint
       - task: format:check
 
   format:
@@ -53,12 +59,14 @@ tasks:
     cmds:
       - task: frontend:format
       - task: backend:format
+      - task: app:format
 
   format:check:
     desc: Check frontend and backend formatting without changing files
     cmds:
       - task: frontend:format:check
       - task: backend:format:check
+      - task: app:format:check
 
   db:up:
     desc: Start local Postgres + pgAdmin via compose.yml
@@ -222,6 +230,48 @@ tasks:
     dir: "{{.FRONTEND_DIR}}"
     cmds:
       - npm run tauri:build:debug
+
+  app:install:
+    desc: Fetch the Flutter app's dependencies (needs Flutter, see docs/FLUTTER.md)
+    dir: "{{.APP_DIR}}"
+    cmds:
+      - flutter pub get
+
+  app:dev:
+    desc: Run the Flutter desktop app on this platform
+    dir: "{{.APP_DIR}}"
+    cmds:
+      - flutter run -d {{.APP_PLATFORM}}
+
+  app:lint:
+    desc: Analyze the Flutter app (flutter analyze)
+    dir: "{{.APP_DIR}}"
+    cmds:
+      - flutter analyze
+
+  app:test:
+    desc: Run the Flutter app's tests
+    dir: "{{.APP_DIR}}"
+    cmds:
+      - flutter test
+
+  app:format:
+    desc: Format the Flutter app (dart format)
+    dir: "{{.APP_DIR}}"
+    cmds:
+      - dart format .
+
+  app:format:check:
+    desc: Check the Flutter app's formatting without changing files
+    dir: "{{.APP_DIR}}"
+    cmds:
+      - dart format --output=none --set-exit-if-changed .
+
+  app:build:
+    desc: Build the Flutter app for this platform
+    dir: "{{.APP_DIR}}"
+    cmds:
+      - flutter build {{.APP_PLATFORM}}
 
   vscode:setup-python:
     desc: Point VS Code/VSCodium's Python tooling at backend/.venv (run once per machine/checkout)
