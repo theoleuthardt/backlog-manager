@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sign in</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./shelf.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="shelf desk {{themeClass}}">
+  <div class="win win-sm" style="width: 440px; height: 560px;">
+    <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div></div>
+    <div style="flex: 1; padding: 36px 40px; display: flex; flex-direction: column; gap: 22px;">
+      <div>
+        <span class="eyebrow">Backlog</span>
+        <h1 class="h-page" style="margin-top: 10px;">Sign in</h1>
+        <p class="muted" style="margin: 6px 0 0;">Welcome back. Your backlog is waiting.</p>
+      </div>
+      <div class="field"><label for="email">Email</label><input id="email" type="email" placeholder="you@example.com"></div>
+      <div class="field"><label for="password">Password</label><input id="password" type="password" placeholder="Your password"></div>
+      <button type="button" class="btn btn-primary" style="height: 38px;">Sign in <span class="kbd" style="border-color: currentColor; color: var(--on-accent); opacity: 0.7;">&#8629;</span></button>
+      <span class="faint small" style="margin-top: auto;">Server: api.example.com &middot; <a href="#server">Change</a></span>
+    </div>
+  </div>
+
+  <div class="win win-sm" style="width: 440px; height: 560px;">
+    <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div></div>
+    <div style="flex: 1; padding: 36px 40px; display: flex; flex-direction: column; gap: 22px;">
+      <div>
+        <span class="eyebrow">Two-factor authentication</span>
+        <h1 class="h-page" style="margin-top: 10px;">Verify it is you</h1>
+        <p class="muted" style="margin: 6px 0 0;">Enter the 6-digit code from your authenticator app, or one of your backup codes.</p>
+      </div>
+      <div class="field"><label for="code">Verification code</label><input id="code" type="text" placeholder="123456" style="height: 46px; font-size: 22px; letter-spacing: 0.4em; text-align: center;"></div>
+      <button type="button" class="btn btn-primary" style="height: 38px;">Verify</button>
+      <button type="button" class="btn btn-quiet">Back to sign in</button>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["oled","light","colorful","freaky"],"default":"oled"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { const themeClass = 'theme-' + (this.props.theme ?? 'oled'); return { themeClass}; }
+}
+</script>
+</body>
+</html>

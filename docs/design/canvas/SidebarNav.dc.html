@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sidebar navigation</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./shelf.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="shelf {{themeClass}}" style="width: 232px; color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif; display: flex; flex-direction: column;">
+  <div class="side-brand">
+    <svg width="26" height="26" viewBox="0 0 32 32" fill="none" aria-hidden="true"><ellipse cx="16" cy="16" rx="14" ry="5.5" transform="rotate(-24 16 16)" style="stroke: var(--glow);" stroke-width="1.6"></ellipse><circle cx="16" cy="16" r="6.5" style="fill: var(--accent);"></circle><circle cx="27" cy="9.5" r="1.8" style="fill: var(--accent-a);"></circle></svg>
+    Backlog
+  </div>
+  <div style="padding: 0 10px; display: flex; flex-direction: column;">
+    <sc-for list="{{items}}" as="it" hint-placeholder-count="12">
+      <div style="display: flex; flex-direction: column;">
+        <div class="side-label" style="display: {{it.labelShow}};">{{it.label}}</div>
+        <a href="#{{it.id}}" class="side-item {{it.cls}}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{it.icon}}"></path></svg>
+          {{it.name}}
+          <span class="side-count">{{it.count}}</span>
+        </a>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"text","default":"oled"},"active":{"editor":"text","default":"library"},"$preview":{"width":232,"height":560}}'>
+class Component extends DCLogic {
+  renderVals() { const themeClass = 'theme-' + (this.props.theme ?? 'oled');
+    const active = this.props.active ?? 'library';
+    const defs = [
+      { section: 'Backlog', id: 'home', name: 'Home', icon: 'M3 11l9-8 9 8M5 10v10h14V10', count: '' },
+      { id: 'library', name: 'Library', icon: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z', count: '148' },
+      { id: 'space', name: 'Shared space', icon: 'M9 11a3 3 0 100-6 3 3 0 000 6zM3 20c0-3 3-5 6-5s6 2 6 5M17 11a2.5 2.5 0 100-5M21 19c0-2-1.5-3.5-4-4', count: '14' },
+      { section: 'Add', id: 'add', name: 'Add game', icon: 'M12 5v14M5 12h14', count: '' },
+      { id: 'steam', name: 'Steam sync', icon: 'M20 12a8 8 0 10-3 6.2M20 4v5h-5', count: '' },
+      { id: 'import', name: 'Import CSV', icon: 'M12 3v12m0 0l-4-4m4 4l4-4M5 21h14', count: '' },
+      { id: 'export', name: 'Export CSV', icon: 'M12 15V3m0 0L8 7m4-4l4 4M5 21h14', count: '' },
+      { section: 'Personalise', id: 'themes', name: 'Appearance', icon: 'M12 3a9 9 0 100 18c1.5 0 2-1 1.5-2s0-2 1.5-2h2a3 3 0 003-3c0-5-4-11-8-11z', count: '' },
+      { id: 'account', name: 'Settings', icon: 'M12 15a3 3 0 100-6 3 3 0 000 6zM19 12l2-1-2-4-2 .5-1.5-1.5L15 4h-4l-.5 2-1.5 1.5L7 7l-2 4 2 1v1l-2 1 2 4 2-.5 1.5 1.5.5 2h4l.5-2 1.5-1.5 2 .5 2-4-2-1z', count: '' }
+    ];
+    const items = defs.map((d) => ({
+      ...d,
+      label: d.section ?? '',
+      labelShow: d.section ? 'block' : 'none',
+      cls: d.id === active ? 'active' : ''
+    }));
+    return { themeClass, items };
+  }
+}
+</script>
+</body>
+</html>

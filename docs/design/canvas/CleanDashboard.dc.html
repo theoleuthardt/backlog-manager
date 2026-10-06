@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Clean dashboard</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2f6bff}a:hover{color:#1d4ed8}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 900px; box-sizing: border-box; background: #fbfbfd; color: #0f1115; font-family: 'Manrope', sans-serif; font-size: 15px; display: flex; flex-wrap: wrap;">
+
+  <nav aria-label="Main" style="flex: 0 0 232px; box-sizing: border-box; padding: 28px 20px; border-right: 1px solid #e7e8ec; display: flex; flex-direction: column; gap: 28px; min-height: 900px;">
+    <div style="display: flex; align-items: center; gap: 10px; padding: 0 8px;">
+      <span style="width: 28px; height: 28px; border-radius: 8px; background: {{accent}}; display: block;"></span>
+      <span style="font-weight: 800; font-size: 17px; letter-spacing: -0.01em;">Backlog</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+      <a href="#" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; background: #eef2ff; color: {{accent}}; font-weight: 600; text-decoration: none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="7" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect><rect x="13" y="13" width="7" height="7" rx="1.5"></rect></svg>Library</a>
+      <a href="#" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; color: #5b6070; font-weight: 500; text-decoration: none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><circle cx="17" cy="10" r="2.5"></circle><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M15 15.5c3 0 6 1.5 6 4.5"></path></svg>Shared space</a>
+      <a href="#" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; color: #5b6070; font-weight: 500; text-decoration: none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 12a8 8 0 10-3 6.2M20 4v5h-5"></path></svg>Steam</a>
+      <a href="#" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; color: #5b6070; font-weight: 500; text-decoration: none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><circle cx="9" cy="10" r="1" fill="currentColor"></circle><circle cx="15" cy="10" r="1" fill="currentColor"></circle><circle cx="12" cy="15" r="1" fill="currentColor"></circle></svg>Themes</a>
+    </div>
+    <div style="margin-top: auto; display: flex; align-items: center; gap: 12px; padding: 8px;">
+      <span style="width: 34px; height: 34px; border-radius: 50%; background: #e7e8ec; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;">TH</span>
+      <div style="line-height: 1.25;"><div style="font-weight: 600;">Theo</div><div style="color: #8a8f9e; font-size: 13px;">Account</div></div>
+    </div>
+  </nav>
+
+  <main style="flex: 999 1 640px; min-width: 0; box-sizing: border-box; padding: 36px 48px 64px; display: flex; flex-direction: column; gap: 32px;">
+    <header style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px;">
+      <div>
+        <h1 style="margin: 0; font-size: 34px; font-weight: 800; letter-spacing: -0.02em;">Library</h1>
+        <p style="margin: 6px 0 0; color: #8a8f9e;">148 games &middot; 1,204 h to beat</p>
+      </div>
+      <label style="margin-left: auto; display: flex; align-items: center; gap: 10px; width: 300px; height: 42px; box-sizing: border-box; padding: 0 14px; background: #ffffff; border: 1px solid #e7e8ec; border-radius: 12px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8a8f9e" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+        <input type="search" placeholder="Search" aria-label="Search" style="flex: 1; border: 0; outline: 0; background: transparent; font: inherit; color: #0f1115;">
+        <span style="font-size: 12px; color: #a4a8b5; border: 1px solid #e7e8ec; border-radius: 6px; padding: 1px 6px;">/</span>
+      </label>
+      <div role="group" aria-label="View" style="display: flex; padding: 3px; background: #eff0f4; border-radius: 12px;">
+        <button type="button" aria-pressed="true" style="height: 36px; padding: 0 14px; border: 0; border-radius: 9px; background: #ffffff; box-shadow: 0 1px 2px rgba(15,17,21,0.08); font: inherit; font-weight: 600; cursor: pointer;">Grid</button>
+        <button type="button" aria-pressed="false" style="height: 36px; padding: 0 14px; border: 0; border-radius: 9px; background: transparent; color: #5b6070; font: inherit; font-weight: 500; cursor: pointer;">List</button>
+      </div>
+    </header>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+      <button type="button" style="height: 36px; padding: 0 14px; background: #0f1115; color: #ffffff; border: 0; border-radius: 999px; font: inherit; font-weight: 600; cursor: pointer;">All</button>
+      <button type="button" style="height: 36px; padding: 0 14px; background: #ffffff; color: #0f1115; border: 1px solid #e7e8ec; border-radius: 999px; font: inherit; font-weight: 500; cursor: pointer;">In Progress</button>
+      <button type="button" style="height: 36px; padding: 0 14px; background: #ffffff; color: #0f1115; border: 1px solid #e7e8ec; border-radius: 999px; font: inherit; font-weight: 500; cursor: pointer;">Not Started</button>
+      <button type="button" style="height: 36px; padding: 0 14px; background: #ffffff; color: #0f1115; border: 1px solid #e7e8ec; border-radius: 999px; font: inherit; font-weight: 500; cursor: pointer;">Completed</button>
+      <span style="margin-left: auto; color: #8a8f9e;">Sorted by status</span>
+    </div>
+
+    <section aria-label="In Progress">
+      <h2 style="margin: 0 0 16px; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #8a8f9e;">In Progress <span style="color: #c3c6d0; margin-left: 6px;">4</span></h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 28px 24px;">
+        <sc-for list="{{playing}}" as="g" hint-placeholder-count="4">
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="position: relative; aspect-ratio: 2 / 3; border-radius: 14px; background: {{g.bg}}; display: flex; align-items: flex-end; padding: 14px; box-sizing: border-box; box-shadow: 0 1px 2px rgba(15,17,21,0.08), 0 8px 24px rgba(15,17,21,0.08);">
+              <span style="font-weight: 800; font-size: 18px; line-height: 1.1; color: #ffffff; letter-spacing: -0.01em;">{{g.title}}</span>
+            </div>
+            <div>
+              <div style="height: 3px; background: #e7e8ec; border-radius: 3px;"><div style="height: 100%; width: {{g.pct}}; background: {{accent}}; border-radius: 3px;"></div></div>
+              <div style="margin-top: 8px; font-size: 13px; color: #8a8f9e;">{{g.played}} of {{g.main}} h</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <section aria-label="Not Started">
+      <h2 style="margin: 0 0 16px; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #8a8f9e;">Not Started <span style="color: #c3c6d0; margin-left: 6px;">96</span></h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 28px 24px;">
+        <sc-for list="{{queued}}" as="g" hint-placeholder-count="4">
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="aspect-ratio: 2 / 3; border-radius: 14px; background: {{g.bg}}; display: flex; align-items: flex-end; padding: 14px; box-sizing: border-box; box-shadow: 0 1px 2px rgba(15,17,21,0.08);">
+              <span style="font-weight: 800; font-size: 18px; line-height: 1.1; color: #ffffff; letter-spacing: -0.01em;">{{g.title}}</span>
+            </div>
+            <div style="font-size: 13px; color: #8a8f9e;">{{g.main}} h to beat</div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#2f6bff","options":["#2f6bff","#0f1115","#10b981","#f43f5e"]},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#2f6bff';
+    const cover = (a, b) => 'linear-gradient(160deg, ' + a + ', ' + b + ')';
+    const playing = [
+      { title: 'Hades', bg: cover('#c0415a', '#5a1a3a'), played: 18, main: 22 },
+      { title: 'Elden Ring', bg: cover('#c99a3a', '#6a4a1a'), played: 41, main: 60 },
+      { title: 'Hollow Knight', bg: cover('#4a7ac8', '#1a2a5a'), played: 9, main: 27 },
+      { title: 'Outer Wilds', bg: cover('#e0793a', '#7a2a1a'), played: 6, main: 16 }
+    ].map((g) => ({ ...g, pct: Math.round((g.played / g.main) * 100) + '%' }));
+    const queued = [
+      { title: 'Celeste', bg: cover('#4aa8a8', '#1a5a6a'), main: 8 },
+      { title: 'Portal 2', bg: cover('#8a9aaa', '#3a4a5a'), main: 9 },
+      { title: 'Disco Elysium', bg: cover('#a8683a', '#4a2a1a'), main: 24 },
+      { title: 'Stardew Valley', bg: cover('#68b24a', '#2a5a1a'), main: 53 }
+    ];
+    return { accent, playing, queued };
+  }
+}
+</script>
+</body>
+</html>

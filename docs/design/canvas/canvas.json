@@ -1,0 +1,270 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "CleanDashboard.dc.html": {
+      "expand": "fill",
+      "h": 900,
+      "title": "B \u00b7 Clean \u00b7 Dashboard",
+      "w": 1440,
+      "x": 0,
+      "y": 1220
+    },
+    "CleanDetail.dc.html": {
+      "expand": "fill",
+      "h": 900,
+      "title": "B \u00b7 Clean \u00b7 Entry",
+      "w": 1440,
+      "x": 1520,
+      "y": 1220
+    },
+    "LibraryPane.dc.html": {
+      "h": 820,
+      "title": "Component \u00b7 Library pane (sheet backdrop)",
+      "w": 1208,
+      "x": 320,
+      "y": 11560
+    },
+    "ShelfAccount.dc.html": {
+      "h": 900,
+      "title": "Settings window",
+      "w": 1440,
+      "x": 0,
+      "y": 8920
+    },
+    "ShelfAdd.dc.html": {
+      "h": 900,
+      "title": "Add a game",
+      "w": 1440,
+      "x": 0,
+      "y": 4840
+    },
+    "ShelfCreate.dc.html": {
+      "h": 900,
+      "title": "Creation tool",
+      "w": 1440,
+      "x": 0,
+      "y": 5860
+    },
+    "ShelfDashboard.dc.html": {
+      "h": 900,
+      "title": "C \u00b7 Shelf OLED desktop \u00b7 Home",
+      "w": 1440,
+      "x": 0,
+      "y": 2440
+    },
+    "ShelfDetail.dc.html": {
+      "h": 900,
+      "title": "C \u00b7 Shelf desktop \u00b7 Entry inspector",
+      "w": 1440,
+      "x": 1520,
+      "y": 2440
+    },
+    "ShelfExport.dc.html": {
+      "h": 900,
+      "title": "CSV export",
+      "w": 1440,
+      "x": 1520,
+      "y": 6880
+    },
+    "ShelfImport.dc.html": {
+      "h": 900,
+      "title": "CSV import",
+      "w": 1440,
+      "x": 0,
+      "y": 6880
+    },
+    "ShelfLibrary.dc.html": {
+      "h": 900,
+      "title": "Library \u00b7 filters, selection, context menu",
+      "w": 1440,
+      "x": 0,
+      "y": 3820
+    },
+    "ShelfLogin.dc.html": {
+      "h": 900,
+      "title": "Sign in and two-factor",
+      "w": 1440,
+      "x": 1520,
+      "y": 8920
+    },
+    "ShelfPalette.dc.html": {
+      "h": 900,
+      "title": "Command palette (\u2318K)",
+      "w": 1440,
+      "x": 1520,
+      "y": 3820
+    },
+    "ShelfSetup.dc.html": {
+      "h": 900,
+      "title": "Setup wizard",
+      "w": 1440,
+      "x": 0,
+      "y": 9940
+    },
+    "ShelfSpace.dc.html": {
+      "h": 900,
+      "title": "Shared space",
+      "w": 1440,
+      "x": 1520,
+      "y": 7900
+    },
+    "ShelfSteam.dc.html": {
+      "h": 900,
+      "title": "Steam sync",
+      "w": 1440,
+      "x": 1520,
+      "y": 5860
+    },
+    "ShelfThemes.dc.html": {
+      "h": 900,
+      "title": "Appearance \u00b7 theme creator",
+      "w": 1440,
+      "x": 0,
+      "y": 7900
+    },
+    "ShelfWrongGame.dc.html": {
+      "h": 900,
+      "title": "Wrong game \u00b7 search more",
+      "w": 1440,
+      "x": 1520,
+      "y": 4840
+    },
+    "SidebarNav.dc.html": {
+      "h": 560,
+      "title": "Component \u00b7 Sidebar",
+      "w": 232,
+      "x": 0,
+      "y": 11300
+    },
+    "StatusBar.dc.html": {
+      "h": 40,
+      "title": "Component \u00b7 Status bar",
+      "w": 1440,
+      "x": 320,
+      "y": 11440
+    },
+    "Titlebar.dc.html": {
+      "h": 52,
+      "title": "Component \u00b7 Title bar",
+      "w": 1440,
+      "x": 320,
+      "y": 11300
+    },
+    "SidebarAccount.dc.html": {
+      "x": 0,
+      "y": 11960,
+      "w": 232,
+      "h": 58,
+      "title": "Component \u00b7 Sidebar account (always at the bottom)"
+    },
+    "ShelfHomeLight.dc.html": {
+      "x": 0,
+      "y": 12800,
+      "w": 1440,
+      "h": 900,
+      "title": "Home \u00b7 Light (cream, indigo)"
+    },
+    "ShelfHomeColorful.dc.html": {
+      "x": 1520,
+      "y": 12800,
+      "w": 1440,
+      "h": 900,
+      "title": "Home \u00b7 Colorful (magenta, cyan)"
+    },
+    "ShelfHomeFreaky.dc.html": {
+      "x": 3040,
+      "y": 12800,
+      "w": 1440,
+      "h": 900,
+      "title": "Home \u00b7 Freaky (green, magenta)"
+    },
+    "ShelfLibraryLight.dc.html": {
+      "x": 0,
+      "y": 13820,
+      "w": 1440,
+      "h": 900,
+      "title": "Library \u00b7 Light"
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-05T17:45:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "titleAll": {
+      "kind": "title1",
+      "maxW": 2960,
+      "text": "C \u00b7 Shelf desktop \u2014 every screen (tokens and components live in shelf.css)",
+      "w": 240,
+      "x": 0,
+      "y": 3560
+    },
+    "titleB": {
+      "kind": "title1",
+      "maxW": 2960,
+      "text": "B \u00b7 Clean \u2014 quiet, light, content first",
+      "w": 240,
+      "x": 0,
+      "y": 960
+    },
+    "titleC": {
+      "kind": "title1",
+      "maxW": 2960,
+      "text": "C \u00b7 Shelf OLED \u2014 chosen direction, a desktop app: black fading into deep blue, blue glow, yellow accents",
+      "w": 240,
+      "x": 0,
+      "y": 2180
+    },
+    "titleComp": {
+      "kind": "title1",
+      "maxW": 2960,
+      "text": "Shared shell components",
+      "w": 240,
+      "x": 0,
+      "y": 11040
+    },
+    "titleThemes": {
+      "kind": "title1",
+      "maxW": 4480,
+      "text": "Every theme gets its own space: same screens, the theme's own colours (switch any artboard with its Theme tweak)",
+      "w": 240,
+      "x": 0,
+      "y": 12540
+    }
+  },
+  "order": [
+    "CleanDashboard.dc.html",
+    "CleanDetail.dc.html",
+    "ShelfDashboard.dc.html",
+    "ShelfDetail.dc.html",
+    "ShelfLogin.dc.html",
+    "ShelfSetup.dc.html",
+    "ShelfLibrary.dc.html",
+    "ShelfAdd.dc.html",
+    "ShelfWrongGame.dc.html",
+    "ShelfCreate.dc.html",
+    "ShelfSteam.dc.html",
+    "ShelfImport.dc.html",
+    "ShelfExport.dc.html",
+    "ShelfAccount.dc.html",
+    "ShelfThemes.dc.html",
+    "ShelfSpace.dc.html",
+    "SidebarNav.dc.html",
+    "Titlebar.dc.html",
+    "StatusBar.dc.html",
+    "ShelfPalette.dc.html",
+    "LibraryPane.dc.html",
+    "SidebarAccount.dc.html",
+    "ShelfHomeLight.dc.html",
+    "ShelfHomeColorful.dc.html",
+    "ShelfHomeFreaky.dc.html",
+    "ShelfLibraryLight.dc.html"
+  ],
+  "pages": [],
+  "title": "Backlog Manager Redesign"
+}

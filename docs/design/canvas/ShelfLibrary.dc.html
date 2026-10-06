@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Library</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./shelf.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="shelf win {{themeClass}}">
+  <dc-import name="Titlebar" theme="{{themeKey}}" title="Library" search="yes" hint-size="100%,52px"></dc-import>
+  <div class="win-body">
+    <div class="sidebar-col"><dc-import name="SidebarNav" theme="{{themeKey}}" active="library" hint-size="232px,560px"></dc-import><div style="margin-top: auto;"><dc-import name="SidebarAccount" theme="{{themeKey}}" hint-size="232px,58px"></dc-import></div></div>
+    <div class="win-main">
+      <div class="toolbar" role="toolbar" aria-label="Selection actions" style="background: var(--accent-soft);">
+        <span style="font-weight: 800; padding-right: 6px;">3 selected</span>
+        <button type="button" class="btn btn-quiet">Select all 100</button>
+        <button type="button" class="btn btn-quiet">Clear</button>
+        <button type="button" class="btn">Set status &#9662;</button>
+        <button type="button" class="btn">Categories &#9662;</button>
+        <button type="button" class="btn btn-danger">Delete</button>
+        <button type="button" class="btn btn-primary" style="margin-left: auto;">Done</button>
+      </div>
+
+      <div class="filterbar" role="group" aria-label="Filters">
+        <span class="muted" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 12.5px; padding-right: 4px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4-2v-4z"></path></svg>Filter</span>
+        <span class="token"><b>Status</b> In Progress<span class="x" aria-label="Remove filter Status"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></span></span>
+        <span class="token"><b>Playtime</b> 12 to 62 h<span class="x" aria-label="Remove filter Playtime"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></span></span>
+        <span class="token"><b>Category</b> Co-op nights<span class="x" aria-label="Remove filter Category"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></span></span>
+        <button type="button" class="token-add open">+ Add filter</button>
+        <span style="margin-left: auto; display: flex; align-items: center; gap: 12px;">
+          <span class="muted small" style="display: inline-flex; align-items: center; gap: 8px;">Owned only <span class="switch switch-on" role="switch" aria-checked="true" aria-label="Owned only" style="transform: scale(0.85);"></span></span>
+          <button type="button" class="btn btn-quiet" style="height: 26px;">Reset</button>
+          <span class="muted small">Sort</span>
+          <button type="button" class="btn" style="height: 26px;">Status &#9662;</button>
+          <div class="seg" role="group" aria-label="View"><button type="button" aria-pressed="true">Grid</button><button type="button" aria-pressed="false">List</button></div>
+        </span>
+      </div>
+
+      <div class="scroll">
+        <section aria-label="In Progress">
+          <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px;"><h2 class="h-section">In Progress</h2><span class="muted small">4</span></div>
+          <div class="covers">
+            <sc-for list="{{playing}}" as="g" hint-placeholder-count="4">
+              <div>
+                <div class="cover {{g.cls}}" style="background: {{g.bg}};">
+                  <span class="check {{g.checkCls}}" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>{{g.title}}
+                </div>
+                <div class="progress" style="margin-top: 10px; height: 3px;"><i style="width: {{g.pct}};"></i></div>
+                <div class="cover-meta" style="margin-top: 6px;">{{g.played}} of {{g.main}} h</div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+        <section aria-label="Not Started">
+          <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px;"><h2 class="h-section">Not Started</h2><span class="muted small">96</span></div>
+          <div class="covers">
+            <sc-for list="{{queued}}" as="g" hint-placeholder-count="5">
+              <div>
+                <div class="cover {{g.cls}}" style="background: {{g.bg}};">
+                  <span class="check {{g.checkCls}}" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>{{g.title}}
+                </div>
+                <div class="cover-meta">{{g.main}} h to beat</div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div class="menu" role="menu" aria-label="Add filter" style="position: absolute; left: 800px; top: 150px; z-index: 4; width: 250px; padding: 6px;">
+      <div style="display: flex; align-items: center; gap: 8px; padding: 4px 8px 8px; border-bottom: 1px solid var(--border); margin-bottom: 4px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color: var(--faint);" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+        <input type="search" placeholder="Filter by..." aria-label="Filter by" style="flex: 1; background: transparent; border: 0; outline: 0; color: var(--text); font: inherit; font-size: 13px;">
+      </div>
+      <sc-for list="{{fields}}" as="f" hint-placeholder-count="8">
+        <div class="menu-item {{f.cls}}" role="menuitem">{{f.name}}<span style="margin-left: auto; opacity: 0.6;">&#9656;</span></div>
+      </sc-for>
+    </div>
+
+    <div class="menu" role="menu" aria-label="Game actions" style="position: absolute; left: 640px; top: 500px; z-index: 4;">
+      <div class="menu-label">Portal 2</div>
+      <div class="menu-item" role="menuitem">Open details <span class="kbd">Enter</span></div>
+      <div class="menu-item" role="menuitem">Select</div>
+      <div class="menu-item hover" role="menuitem">Move to status <span style="margin-left: auto;">&#9656;</span></div>
+      <div class="menu-item" role="menuitem">Categories <span style="margin-left: auto;">&#9656;</span></div>
+      <div class="menu-sep"></div>
+      <div class="menu-item" role="menuitem" style="color: var(--danger);">Delete <span class="kbd">&#9003;</span></div>
+    </div>
+    <div class="menu" role="menu" aria-label="Move to status" style="position: absolute; left: 880px; top: 560px; z-index: 4; min-width: 170px;">
+      <div class="menu-item" role="menuitem">Not Started</div>
+      <div class="menu-item" role="menuitem">In Progress</div>
+      <div class="menu-item" role="menuitem">Completed</div>
+      <div class="menu-item" role="menuitem">On Hold</div>
+      <div class="menu-item" role="menuitem">Dropped</div>
+    </div>
+  </div>
+  <dc-import name="StatusBar" theme="{{themeKey}}" left="3 of 148 games selected &middot; 3 filters" hint-size="100%,28px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["oled","light","colorful","freaky"],"default":"oled"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { const themeKey = this.props.theme ?? 'oled'; const themeClass = 'theme-' + themeKey;
+    const cover = (a, b) => 'linear-gradient(160deg, ' + a + ', ' + b + ')';
+    const mark = (list, on) => list.map((g, i) => ({ ...g, cls: on.includes(i) ? 'selected' : '', checkCls: on.includes(i) ? 'check-on' : '' }));
+    const playing = mark([
+      { title: 'Hades', bg: cover('#9a2a42', '#2a0a1a'), played: 18, main: 22 },
+      { title: 'Elden Ring', bg: cover('#c99a3a', '#3a2a0c'), played: 41, main: 60 },
+      { title: 'Hollow Knight', bg: cover('#2a5aa8', '#0a1430'), played: 9, main: 27 },
+      { title: 'Outer Wilds', bg: cover('#d2641e', '#2a1006'), played: 6, main: 16 }
+    ], [0, 2]).map((g) => ({ ...g, pct: Math.round((g.played / g.main) * 100) + '%' }));
+    const queued = mark([
+      { title: 'Celeste', bg: cover('#2a8a8a', '#0e3a44'), main: 8 },
+      { title: 'Portal 2', bg: cover('#6a7a8a', '#1e2a36'), main: 9 },
+      { title: 'Disco Elysium', bg: cover('#8a4a22', '#2a1408'), main: 24 },
+      { title: 'Stardew Valley', bg: cover('#4a9a34', '#12300c'), main: 53 },
+      { title: 'Tunic', bg: cover('#4a8a6a', '#0e2a1e'), main: 12 }
+    ], [1]);
+    const names = ['Genre', 'Platform', 'Interest', 'Review stars', 'Main story', 'Main + extra', 'Completionist'];
+    const fields = names.map((name, i) => ({ name, cls: i === 0 ? 'hover' : '' }));
+    return { themeClass, themeKey, playing, queued, fields };
+  }
+}
+</script>
+</body>
+</html>
