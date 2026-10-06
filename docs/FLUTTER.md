@@ -35,6 +35,8 @@ The hand-written part is `lib/api/api_client.dart` (`createApiDio`: Bearer token
 
 `lib/api/sse.dart` reads the progress streams of the sync and import endpoints: `openSse(dio, path)` yields typed `SseProgress`, `SseDone` and `SseError` events (ending after the first terminal one, `SseStreamEndedException` if the stream closes without one), and cancelling the subscription closes the connection.
 
+`lib/api/server_url.dart` holds the backend URL logic: `parseServerUrl` (https for any host, http only for loopback, no other protocol), the build-time default (`--dart-define=API_URL=https://api.example.com`, `http://localhost:8000` in debug builds, none in a release build without it), `ServerUrlStore` (remembers the user's choice) and `changeServer` (validates, checks `GET /health`, saves, and calls `onChanged` so the caller signs the user out and clears cached data). The "Change" action on the sign-in screen calls `changeServer` once that screen exists.
+
 `app/pubspec.yaml` overrides `analyzer` to 13.x because the current `build_runner` does not run against `analyzer` 14.5; drop the override once that is fixed upstream.
 
 ## Layout
