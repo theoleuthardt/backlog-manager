@@ -255,6 +255,12 @@ tasks:
     cmds:
       - flutter test
 
+  app:test:update-goldens:
+    desc: Re-record the Flutter app's golden images (review the image diff before committing)
+    dir: "{{.APP_DIR}}"
+    cmds:
+      - flutter test --update-goldens
+
   app:format:
     desc: Format the Flutter app (dart format)
     dir: "{{.APP_DIR}}"

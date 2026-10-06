@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Backlog Manager is a video game backlog manager. The frontend is a React single-page app built with Vite and React Router (originally scaffolded with create-t3-app on Next.js; Next.js, tRPC and NextAuth have since been removed, see issue #241) living in `frontend/`; the backend is a standalone Python/Litestar service living in `backend/` (fully migrated off Next.js/tRPC — see issue #103/#104 for that history). The frontend calls the backend directly over REST with a JWT Bearer token. Only the backend is meant to be hosted as a public, always-on service; the frontend ships as a Tauri desktop app built from the same Vite build (which also produces the web image) rather than being centrally hosted the same way.
 
+A Flutter desktop client in `app/` (macOS, Windows, Linux) is being built as the replacement of `frontend/` (epic #247); `frontend/` keeps shipping unchanged until the cutover. Everything about it: [`docs/FLUTTER.md`](docs/FLUTTER.md).
+
 Users can track games with metadata from HowLongToBeat and IGDB, organize games into categories via drag & drop, connect Steam accounts for playtime sync, and import/export CSV files.
 
 ## Commands
@@ -19,6 +21,7 @@ task backend:dev   # Litestar dev server (uvicorn --reload)
 task db:up         # local Postgres + pgAdmin via compose.yml
 task test          # backend (pytest) + frontend (vitest) suites
 task lint          # frontend (eslint) + backend (ruff)
+task app:dev       # Flutter desktop app (needs Flutter 3.47.6, see docs/FLUTTER.md); task app:lint / app:test / app:format also run inside lint/test/format
 task format        # prettier (frontend) + ruff format (backend); task format:check only verifies
 task audit         # known-vulnerability scan of the locked frontend + backend dependencies
 task backend:migration -- "add foo column"   # new Alembic revision
@@ -101,6 +104,19 @@ uv run ruff check .  # Lint
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the reasoning behind these choices (why REST/JWT replaced tRPC/NextAuth, the per-user-credential-with-server-wide-fallback pattern shared by IGDB/Steam/SteamGridDB, the image proxy's security posture) rather than just the shape of it.
 
+## Flutter client (`app/`)
+
+Dart/Flutter desktop app, ported from `frontend/`. Setup, running, debugging, goldens and packaging: [`docs/FLUTTER.md`](docs/FLUTTER.md).
+
+- **Commands:** always `task app:*` (`app:install`, `app:dev`, `app:lint`, `app:test`, `app:test:update-goldens`, `app:format`, `app:format:check`, `app:build`, `app:generate-api`), never bare `flutter`/`dart`; `task check` and `task lint` include the app.
+- **Layout:** `lib/design/` (tokens, theme, shell and shared widgets), `lib/api/` (Dio setup, `ApiException`, SSE reader, server URL, generated client in `generated/`), `lib/features/<screen group>/`, `app.dart`; `test/` mirrors `lib/`.
+- **State and routing:** Riverpod and `go_router`. Screens hold UI state only; logic that is not about widgets lives in plain Dart files with unit tests.
+- **Theming:** read colours from the `ShelfTokens` `ThemeExtension`, never hard-coded `Color`s.
+- **Generated API client:** `lib/api/generated/` is committed and never edited by hand. After a backend route change run `task backend:openapi`, then `task app:generate-api`, and commit the diff.
+- **Tests:** test first. Logic ports keep every case of the vitest file they come from; reusable components get golden tests; goldens are only re-recorded (`task app:test:update-goldens`) for an intended visual change, with the image diff reviewed.
+- **Comments:** the comment policy below applies unchanged; the allowed documentation form is a `///` doc comment on a public class or function. No `//` narrative comments.
+- **Lints:** `task app:lint` (strict analyzer settings and rules in `app/analysis_options.yaml`) and `task app:format:check` must pass; do not add `// ignore:` to get past a lint.
+
 ## API Testing (Bruno)
 
 The [`bruno/`](bruno/) collection covers every backend route, organized into one folder per route module (`auth/`, `backlog/`, `csv/`, `games/`, `user/`, `admin/`, `space/`, `steam/`, `images/`, `health/`). Run `auth/Login` first — its `script:post-response` stores the access token in the shared `authToken` environment variable that every other authenticated request uses. When adding a new backend route, add a matching `.bru` request in the same change.
@@ -132,7 +148,7 @@ The project enforces strict ESLint rules:
 **Do not write comments that are not real code documentation.** No narrative comments, no "why I did this" asides, no step-by-step play-by-play scattered through function bodies. This applies in every language (Python, TypeScript/TSX, everywhere) and to every file, new or existing.
 
 The ONLY comments allowed:
-- A function/class/module docstring (Python `"""..."""` — including a module docstring at the top of a file, or one attached to a module-level constant that has no enclosing function/class to hold it instead — or the top-of-function/class comment block a file already uses for the same purpose).
+- A function/class/module docstring (Python `"""..."""` and Dart `///` — including a module docstring at the top of a file, or one attached to a module-level constant that has no enclosing function/class to hold it instead — or the top-of-function/class comment block a file already uses for the same purpose).
 - A comment that continues an established convention already present in that exact file (e.g. the file already annotates every module-level cache variable one line above its declaration - matching that is fine; introducing a new one-off comment style is not).
 
 This does not extend to non-code files (YAML/JSON/TOML config) - keep those free of narrative comments too; state configuration intent in the surrounding documentation (README/CLAUDE.md) instead of inline `#` comments in the config file itself.
