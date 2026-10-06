@@ -5,6 +5,8 @@ anyone (human or agent) who wasn't there for the decisions. For the literal
 directory layout and command surface, see the root [`CLAUDE.md`](../CLAUDE.md)
 instead — this file is about the shape of the system, not where files live.
 
+> The desktop client is being rebuilt in Flutter (`app/`, epic #247). It is a second client of the same REST API and replaces `frontend/` at the cutover; its structure is described in [`FLUTTER.md`](FLUTTER.md).
+
 ## System overview
 
 ```text

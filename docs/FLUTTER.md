@@ -11,6 +11,8 @@ The desktop client in `app/` is the Flutter port of `frontend/` (epic #247). It 
    - **Linux:** `clang cmake ninja-build pkg-config libgtk-3-dev`.
    - The Android and iOS items in `flutter doctor` can stay red, they are not needed yet.
 3. `task app:install` fetches the packages.
+4. Start a backend (`task db:up`, then `task backend:dev`). The app does not connect to one yet (sign-in comes with #256); a debug build is meant to talk to `http://localhost:8000` by default, through the server setting of #251.
+5. With FVM, run `fvm use` in `app/` and put `app/.fvm/flutter_sdk/bin` first on your `PATH`: the tasks call `flutter` and `dart` from the `PATH`.
 
 ## Commands
 
@@ -18,7 +20,8 @@ The desktop client in `app/` is the Flutter port of `frontend/` (epic #247). It 
 | --- | --- |
 | `task app:dev` | run the app on the host platform |
 | `task app:lint` | `flutter analyze` (`flutter_lints` plus the stricter rules in `app/analysis_options.yaml`) |
-| `task app:test` | `flutter test` |
+| `task app:test` | `flutter test` (unit, widget and golden tests) |
+| `task app:test:update-goldens` | `flutter test --update-goldens`, re-records the golden images |
 | `task app:format` / `task app:format:check` | `dart format` / check only |
 | `task app:build` | release build for the host platform |
 
@@ -47,4 +50,37 @@ app/
   test/         mirrors lib/; golden tests are added next to the widgets they cover
 ```
 
-The empty `design/`, `api/` and `features/` folders hold a `.gitkeep` until the issues that fill them land.
+The still empty folders (`design/`, `features/`) hold a `.gitkeep` until the issues that fill them land.
+
+## Running and debugging
+
+`task app:dev` runs `flutter run` for the host platform (macOS, Windows or Linux) with hot reload: press `r` in the terminal to reload, `R` to restart, `q` to quit. The terminal prints the URL of the Dart DevTools (widget inspector, profiler, logs). VS Code and the JetBrains IDEs with the Flutter plugin start the same app from their run button and attach the debugger; open `app/` as the project folder.
+
+A build for another OS cannot be made on this one (Flutter has no cross-compilation for desktop), so Windows and Linux will be checked by the CI runners of those systems (#282).
+
+## Tests
+
+- Pure logic (sorting, filtering, grouping, themes, ...) is ported from `frontend/src/lib/` with the existing test cases, one Dart file per TypeScript file, under `test/` mirroring `lib/`.
+- Widgets get widget tests; reusable components of the UI kit also get golden tests (`matchesGoldenFile`) next to them, for the dark and a light theme.
+- Golden images live in `test/**/goldens/` and are committed. After an intended visual change run `task app:test:update-goldens`, look at the changed images in the diff and commit them with the code. Goldens will be recorded on the CI platform (#282); if a golden only differs by anti-aliasing on your machine, do not commit it.
+- A test that expresses the desired behaviour is not weakened to make a run green; change the code.
+
+## Building and packaging locally
+
+`task app:build` makes a release build for the host platform: `app/build/macos/Build/Products/Release/backlog_manager.app`, `app/build/windows/x64/runner/Release/` or `app/build/linux/x64/release/bundle/`. `API_URL` sets the default server (`task app:build API_URL=https://api.example.com`); it takes effect once the server setting of #251 is in the app, and nothing connects to a backend before the sign-in work of #256. Installers (dmg, msi, AppImage, deb, ...) come from the packaging issue (#277) and the release workflow.
+
+## Architecture
+
+The app talks to the backend directly over REST with the JWT as a Bearer token, like the web client, and keeps no database of its own.
+
+```text
+features/*  ──►  providers (Riverpod)  ──►  lib/api (Dio + generated client)  ──►  backend
+   │                                              ▲
+   └──►  design/ (tokens, theme, shared widgets)  └── Bearer interceptor, 401 → sign out
+```
+
+- **State:** Riverpod. A provider per backend resource (entries, categories, statuses, user, space), `AsyncNotifier`s for things that change, query keys carry the backlog scope (personal or space) like the web client's hooks. Screens read providers and hold only UI state.
+- **Routing:** `go_router` with the same route names as the web app; a redirect guards the routes that need a session.
+- **API:** `lib/api/generated/` is the committed output of `task app:generate-api`; hand-written code never edits it. The backend's snake_case JSON is mapped to camelCase fields in the generated models, so screens never see the wire format. Errors become `ApiException` with the message to show.
+- **Design:** widgets read colours and sizes from the `ShelfTokens` theme extension, never hard-coded values, so a theme change repaints everything.
+- **Logic:** anything that is not about widgets (sorting, filtering, validation) is plain Dart in a file of its own with unit tests; screens call it.
