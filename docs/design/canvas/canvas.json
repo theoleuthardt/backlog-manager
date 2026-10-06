@@ -2,14 +2,6 @@
   "v": 3,
   "attachments": {},
   "boards": {
-    "ArcadeDetail.dc.html": {
-      "expand": "fill",
-      "h": 900,
-      "title": "A \u00b7 Arcade \u00b7 Entry",
-      "w": 1440,
-      "x": 1520,
-      "y": 0
-    },
     "CleanDashboard.dc.html": {
       "expand": "fill",
       "h": 900,
@@ -32,14 +24,6 @@
       "w": 1208,
       "x": 320,
       "y": 11560
-    },
-    "Main.dc.html": {
-      "expand": "fill",
-      "h": 900,
-      "title": "A \u00b7 Arcade \u00b7 Dashboard",
-      "w": 1440,
-      "x": 0,
-      "y": 0
     },
     "ShelfAccount.dc.html": {
       "h": 900,
@@ -212,14 +196,6 @@
     "view": "canvas"
   },
   "notes": {
-    "titleA": {
-      "kind": "title1",
-      "maxW": 2960,
-      "text": "A \u00b7 Arcade \u2014 gaming HUD, neon on near-black",
-      "w": 240,
-      "x": 0,
-      "y": -260
-    },
     "titleAll": {
       "kind": "title1",
       "maxW": 2960,
@@ -262,8 +238,6 @@
     }
   },
   "order": [
-    "Main.dc.html",
-    "ArcadeDetail.dc.html",
     "CleanDashboard.dc.html",
     "CleanDetail.dc.html",
     "ShelfDashboard.dc.html",

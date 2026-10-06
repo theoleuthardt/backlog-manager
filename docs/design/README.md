@@ -43,7 +43,7 @@ Shared building blocks, imported by the artboards: `SidebarNav.dc.html` (brand a
 
 Themes: every Shelf artboard has a **Theme** tweak (`oled`, `light`, `colorful`, `freaky`) that switches the colour variables in `shelf.css`. `ShelfHomeLight`, `ShelfHomeColorful`, `ShelfHomeFreaky` and `ShelfLibraryLight` show the Home and Library screens in other themes side by side.
 
-Explored and not chosen (kept for reference): `Main.dc.html` and `ArcadeDetail.dc.html` (A, Arcade: gaming HUD, neon on near-black), `CleanDashboard.dc.html` and `CleanDetail.dc.html` (B, Clean: light and minimal). Their file names predate the others.
+Explored and not chosen (kept for reference): `CleanDashboard.dc.html` and `CleanDetail.dc.html` (B, Clean: light and minimal). Their file names predate the others.
 
 ### Updating
 
