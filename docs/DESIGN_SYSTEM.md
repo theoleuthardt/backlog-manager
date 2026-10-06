@@ -100,8 +100,8 @@ Font: **Plus Jakarta Sans** (weights 400 to 800). Sizes in logical pixels; the b
 
 A space look in the window background and in the accents of nearly every element. It is part of every theme and takes its colours from the theme. On Shelf OLED it is black fading into deep blue with blue glow and stars and yellow accents; on `light` an indigo sky on cream. Content stays crisp: the effects sit behind panels, never inside forms or tables.
 
-- **Sky:** a gradient from the theme's `glow` (10 to 42%) over the top 42% of the window, so black turns into deep blue towards the top.
-- **Nebulae:** four radial clouds: `glow` at 38% top right (900 x 640), a yellow or `accent` one at 11% bottom centre (820 x 460), an azure one on the left edge (760 x 520) and a soft `glow` cloud at the top centre (700 x 360).
+- **Sky:** a gradient from the theme's `glow` (10 to 40%) over the top 42% of the window, so black turns into deep blue towards the top. Shelf OLED keeps it at 20% (and the nebulae at 7 to 22%) so the black stays black.
+- **Nebulae:** four radial clouds: `glow` at 22 to 38% top right (900 x 640), a yellow or `accent` one at 11% bottom centre (820 x 460), an azure one on the left edge (760 x 520) and a soft `glow` cloud at the top centre (700 x 360).
 - **Orbit rings:** thin rings of 300, 420 and 640 px radius around the window's corners, in `glow` or foreground at about 12%.
 - **Stars:** a dense field of 1 to 1.5 px dots in three colours in five staggered tiles from 120 x 110 to 340 x 310 px, two layers of brighter stars with a 7 to 8 px halo, and one layer of gold stars (`accent`-warm) with a halo, so the pattern never visibly repeats.
 - **Glass and gradients:** title bar, sidebar, inspector and status bar are translucent with a blur; groups, tables, sheets, menus, sidebar and inspector carry a faint `glow` gradient from the top edge (the panel gradient), so panels shade from black into blue. The edge lines of the sidebar and inspector fade from `glow` to `border`, the title bar's and toolbar's bottom lines glow in the middle, and the content area has a soft `glow` at its floor.
