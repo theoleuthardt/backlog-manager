@@ -61,6 +61,23 @@ void main() {
       ]);
     });
 
+    test('does not throw for a playtime that is not a finite number', () {
+      final proposed = DiffableFields(
+        genre: baseline.genre,
+        platform: baseline.platform,
+        status: baseline.status,
+        owned: baseline.owned,
+        playtime: double.nan,
+        reviewStars: baseline.reviewStars,
+        note: baseline.note,
+      );
+
+      final diffs = computeFieldDiffs(baseline, proposed);
+
+      expect(diffs.single.field, 'playtime');
+      expect(diffs.single.proposed, 'NaN');
+    });
+
     test('shows a whole number of hours without a decimal part', () {
       final proposed = DiffableFields(
         genre: baseline.genre,

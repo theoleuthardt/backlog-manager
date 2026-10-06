@@ -24,8 +24,15 @@ void main() {
       expect(isHttpUrl('http://'), false);
     });
 
-    test('rejects a scheme without the slashes that start the host', () {
-      expect(isHttpUrl('https:example.com'), false);
+    test('accepts a scheme without the slashes like the WHATWG parser', () {
+      expect(isHttpUrl('https:example.com'), true);
+      expect(isHttpUrl('http:/example.com/game'), true);
+      expect(isHttpUrl('HTTPS://Example.com'), true);
+    });
+
+    test('rejects a scheme followed only by slashes', () {
+      expect(isHttpUrl('https:///'), false);
+      expect(isHttpUrl('https:'), false);
     });
 
     test('rejects relative, protocol-relative and malformed values', () {

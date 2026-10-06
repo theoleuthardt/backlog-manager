@@ -69,7 +69,7 @@ The framework-free logic of `frontend/src/lib/` lives in `app/lib/domain/` with 
 
 `compareText` and `compareBase` (`text_order.dart`) stand in for `String.localeCompare`: letters compare without regard to case and accents (so "Ärger" sorts with "A", like the web client's ICU collation), then an unaccented spelling comes before an accented one and the lower-case before the upper-case one. Only Latin letters are folded, other scripts compare by code unit. `stableSorted` replaces the guaranteed stable `Array.prototype.sort`, because `List.sort` is not stable.
 
-Deliberate differences from the TypeScript code: `isHttpUrl` also rejects an empty host and `https:example.com` (the WHATWG `URL` accepts the latter), `toNumber` returns null for an empty or padded string where `Number('')` is 0 (the API never sends those), and a whole number of hours is shown without a decimal part like the web client does.
+Deliberate difference from the TypeScript code: `toNumber` returns null for an empty or padded string where `Number('')` is 0 (the API never sends those).
 
 ## Layout
 
