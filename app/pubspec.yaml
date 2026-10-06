@@ -9,16 +9,25 @@ environment:
   flutter: 3.47.6
 
 dependencies:
+  dio: ^5.11.1
   flutter:
     sdk: flutter
+  json_annotation: ^4.12.0
+  retrofit: ^4.10.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
   flutter_lints: ^6.0.0
+  swagger_parser: ^1.45.0
+  build_runner: ^2.16.1
+  retrofit_generator: ^10.2.11
+  json_serializable: ^6.14.1
 
 flutter:
 
   uses-material-design: true
+dependency_overrides:
+  analyzer: ">=13.3.0 <14.0.0"
 

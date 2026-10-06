@@ -1,0 +1,11 @@
+swagger_parser:
+  schema_path: ../backend/openapi.json
+  output_directory: lib/api/generated
+  language: dart
+  client_postfix: Client
+  json_serializer: json_serializable
+  put_in_folder: true
+  squash_clients: false
+  export_file: true
+  use_freezed3: false
+  merge_clients: false

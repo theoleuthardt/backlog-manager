@@ -267,6 +267,14 @@ tasks:
     cmds:
       - dart format --output=none --set-exit-if-changed .
 
+  app:generate-api:
+    desc: Regenerate the Dart API client from backend/openapi.json (run backend:openapi first after a route change)
+    dir: "{{.APP_DIR}}"
+    cmds:
+      - dart run swagger_parser
+      - dart run build_runner build --delete-conflicting-outputs
+      - dart format lib/api/generated
+
   app:build:
     desc: Build the Flutter app for this platform
     dir: "{{.APP_DIR}}"
