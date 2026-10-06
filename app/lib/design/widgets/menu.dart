@@ -199,3 +199,31 @@ class _ContextMenuRegionState extends State<ContextMenuRegion> {
     );
   }
 }
+
+/// A popover: arbitrary [content] on the menu surface that opens from a
+/// trigger, for value pickers that are more than a list of items.
+class ShelfPopover extends StatelessWidget {
+  const ShelfPopover({
+    required this.content,
+    required this.builder,
+    this.controller,
+    super.key,
+  });
+
+  final Widget content;
+  final Widget Function(BuildContext context, MenuController controller)
+  builder;
+  final MenuController? controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = Theme.of(context).extension<ShelfTokens>()!;
+
+    return MenuAnchor(
+      controller: controller,
+      style: _menuStyle(tokens),
+      menuChildren: [content],
+      builder: (context, controller, child) => builder(context, controller),
+    );
+  }
+}
