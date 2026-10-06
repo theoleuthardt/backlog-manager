@@ -20,7 +20,8 @@ docs {
   the raw event-stream body once the connection closes, not live
   progress. Emits a `progress` event per owned game considered, then
   a `done` event carrying the unlinked games as
-  {steam_app_id, title, image_link} - read-only, writes nothing to the
+  {steam_app_id, title, image_link, playtime} (playtime in hours, 0 for
+  family-only games) - read-only, writes nothing to the
   DB; the actual import runs through "Import Steam Library (Stream)"
   once the user has confirmed the preview. Family libraries (steam
   family IDs on the account) are merged in.

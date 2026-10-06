@@ -1,5 +1,6 @@
 import json
 from collections.abc import Callable
+from decimal import Decimal
 
 import httpx
 import pytest
@@ -1089,6 +1090,7 @@ async def test_preview_steam_library_stream_lists_unlinked_games(
                 steam_app_id=620,
                 title="Portal 2",
                 image_link="https://cdn2.steamgriddb.com/grid/1.png",
+                playtime=Decimal("2.5"),
             )
         ]
 
@@ -1115,6 +1117,7 @@ async def test_preview_steam_library_stream_lists_unlinked_games(
                 "steam_app_id": 620,
                 "title": "Portal 2",
                 "image_link": "https://cdn2.steamgriddb.com/grid/1.png",
+                "playtime": "2.5",
             }
         ]
     ]

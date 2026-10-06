@@ -82,11 +82,14 @@ class _OperationBudget:
 
 class SteamPreviewItem(msgspec.Struct):
     """One candidate row for the Steam page's preview table - what a
-    library or wishlist sync *would* import, before any DB write."""
+    library or wishlist sync *would* import, before any DB write.
+    `playtime` is in hours (converted like the import does; family-only
+    games report 0); the wishlist preview has none and leaves it empty."""
 
     steam_app_id: int
     title: str
     image_link: str | None = None
+    playtime: Decimal | None = None
 
 
 def _wishlist_cover_url(app_id: int) -> str:
@@ -674,6 +677,7 @@ async def preview_library(
                     steam_app_id=game.appid,
                     title=game.name,
                     image_link=covers.get(game.appid),
+                    playtime=_minutes_to_hours(game.playtime_forever),
                 )
             )
         if on_progress:

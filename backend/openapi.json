@@ -10687,6 +10687,16 @@
                 "type": "null"
               }
             ]
+          },
+          "playtime": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
