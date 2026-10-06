@@ -6,6 +6,13 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+class FailingStore extends ServerUrlStore {
+  FailingStore() : super(defaultUrl: 'https://old.example.com');
+
+  @override
+  Future<bool> write(String url) async => false;
+}
+
 class HealthAdapter implements HttpClientAdapter {
   HealthAdapter({this.status = 200, this.fail = false});
 
@@ -165,6 +172,17 @@ void main() {
       });
     }
 
+    test('writes the scheme and host in lower case', () {
+      expect(
+        parseServerUrl('HTTPS://API.Example.COM/Backlog/'),
+        isA<ServerUrlValid>().having(
+          (r) => r.url,
+          'url',
+          'https://api.example.com/Backlog',
+        ),
+      );
+    });
+
     test('explains why a remote http url is rejected', () {
       final result = parseServerUrl('http://api.example.com');
 
@@ -226,6 +244,18 @@ void main() {
       );
 
       expect(result, contains('reach'));
+    });
+
+    test('does not follow a redirect and treats it as a failure', () async {
+      final adapter = HealthAdapter(status: 302);
+
+      final result = await checkServerHealth(
+        'https://api.example.com',
+        adapter: adapter,
+      );
+
+      expect(adapter.requests.single.followRedirects, isFalse);
+      expect(result, contains('302'));
     });
 
     test('reports an unhealthy server', () async {
@@ -345,6 +375,35 @@ void main() {
       );
 
       expect(await store.read(), 'https://old.example.com');
+    });
+
+    test(
+      'treats the same host in another spelling as the same server',
+      () async {
+        final store = ServerUrlStore(defaultUrl: 'https://api.example.com');
+        var signedOut = 0;
+
+        final error = await changeServer(
+          'https://API.EXAMPLE.COM/',
+          store: store,
+          adapter: HealthAdapter(),
+          onChanged: () async => signedOut++,
+        );
+
+        expect(error, isNull);
+        expect(signedOut, 0);
+      },
+    );
+
+    test('reports a url that could not be saved', () async {
+      final error = await changeServer(
+        'https://mine.example.com',
+        store: FailingStore(),
+        adapter: HealthAdapter(),
+        onChanged: () async {},
+      );
+
+      expect(error, contains('save'));
     });
 
     test('does not sign out when the url did not change', () async {

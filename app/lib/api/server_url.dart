@@ -68,7 +68,7 @@ ServerUrlResult parseServerUrl(String raw) {
       '(localhost is exempt)',
     );
   }
-  return ServerUrlValid(trimmed);
+  return ServerUrlValid(uri.toString());
 }
 
 /// The server a fresh install talks to: the build-time [define], or the local
@@ -85,7 +85,8 @@ final defaultServerUrl = resolveDefaultServerUrl(
   debug: kDebugMode,
 );
 
-/// Asks `GET /health` of [url]; returns a user-facing message when the server
+/// Asks `GET /health` of [url] without following redirects (a redirect to a
+/// page that answers 200 must not count as a healthy server); returns a user-facing message when the server
 /// cannot be used, or null when it is healthy.
 Future<String?> checkServerHealth(
   String url, {
@@ -100,7 +101,7 @@ Future<String?> checkServerHealth(
   );
   if (adapter != null) dio.httpClientAdapter = adapter;
   try {
-    await dio.get<Object?>('/health');
+    await dio.get<Object?>('/health', options: Options(followRedirects: false));
     return null;
   } on DioException catch (error) {
     if (error.response != null) {
@@ -124,9 +125,10 @@ class ServerUrlStore {
     return prefs.getString(_storageKey) ?? defaultUrl;
   }
 
-  Future<void> write(String url) async {
+  /// Whether the platform stored [url].
+  Future<bool> write(String url) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_storageKey, url);
+    return prefs.setString(_storageKey, url);
   }
 }
 
@@ -150,6 +152,8 @@ Future<String?> changeServer(
 
   final previous = await store.read();
   if (previous != url) await onChanged();
-  await store.write(url);
+  if (!await store.write(url)) {
+    return 'Could not save the server address on this device';
+  }
   return null;
 }
