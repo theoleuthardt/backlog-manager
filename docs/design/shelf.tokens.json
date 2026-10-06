@@ -1,0 +1,424 @@
+{
+  "name": "Shelf",
+  "version": 5,
+  "platform": "desktop",
+  "font": {
+    "family": "Plus Jakarta Sans",
+    "fallback": [
+      "system-ui",
+      "sans-serif"
+    ],
+    "weights": {
+      "regular": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700,
+      "extrabold": 800
+    }
+  },
+  "themeModel": {
+    "inputs": [
+      "background",
+      "surface",
+      "foreground",
+      "accent",
+      "border",
+      "glow"
+    ],
+    "derived": {
+      "surface2": "mix(surface, foreground, 3%)",
+      "surface3": "mix(surface, foreground, 6%)",
+      "borderSubtle": "mix(surface, foreground, 8%)",
+      "borderStrong": "border, blended into background (20 to 55%) when it is a loud colour such as white, black or neon, so outlines stay calm",
+      "text": "foreground",
+      "text2": "mix(foreground, background, 11%)",
+      "muted": "mix(foreground, background, 35%)",
+      "faint": "mix(foreground, background, 50%)",
+      "accentSoft": "accent at 14% opacity",
+      "onAccent": "black or white, whichever has the higher WCAG contrast against accent",
+      "glowSoft": "glow at 16% opacity",
+      "panelGradient": "linear-gradient(180deg, glow at 8 to 14% to transparent at 62%) over the panel colour",
+      "sky": "background-to-glow gradient over the top 42% of the window, glow at 10 to 42%"
+    },
+    "semantic": {
+      "success": "#34d399",
+      "danger": "#ff6b81",
+      "info": "#60a5fa",
+      "successOnLight": "#047857"
+    }
+  },
+  "themes": {
+    "shelfOled": {
+      "name": "Shelf OLED (new default)",
+      "background": "#000000",
+      "surface": "#0b0b0e",
+      "foreground": "#f2f2f3",
+      "accent": "#f5a524",
+      "border": "#353a4c",
+      "glow": "#3b82f6"
+    },
+    "dark": {
+      "background": "#000000",
+      "surface": "#0f0f12",
+      "foreground": "#ffffff",
+      "accent": "#2563eb",
+      "border": "#ffffff",
+      "glow": "#3b82f6"
+    },
+    "light": {
+      "background": "#f5f4ef",
+      "surface": "#ffffff",
+      "foreground": "#15151b",
+      "accent": "#4f46e5",
+      "border": "#15151b",
+      "glow": "#818cf8"
+    },
+    "colorful": {
+      "background": "#0b0720",
+      "surface": "#1a1240",
+      "foreground": "#fdf2ff",
+      "accent": "#ff3ea5",
+      "border": "#7c4dff",
+      "glow": "#22d3ee"
+    },
+    "freaky": {
+      "background": "#04040e",
+      "surface": "#0e0e26",
+      "foreground": "#eaffe9",
+      "accent": "#a3ff12",
+      "border": "#00ffd0",
+      "glow": "#ff00e5"
+    }
+  },
+  "type": {
+    "hero": {
+      "size": 30,
+      "lineHeight": 1.1,
+      "weight": 800,
+      "letterSpacing": "-0.02em"
+    },
+    "page": {
+      "size": 26,
+      "lineHeight": 1.1,
+      "weight": 800,
+      "letterSpacing": "-0.02em"
+    },
+    "section": {
+      "size": 16,
+      "lineHeight": 1.25,
+      "weight": 800,
+      "letterSpacing": "-0.01em"
+    },
+    "groupTitle": {
+      "size": 13,
+      "lineHeight": 1.3,
+      "weight": 800
+    },
+    "body": {
+      "size": 14,
+      "lineHeight": 1.4,
+      "weight": 400
+    },
+    "control": {
+      "size": 13,
+      "lineHeight": 1.2,
+      "weight": 600
+    },
+    "label": {
+      "size": 12,
+      "lineHeight": 1.3,
+      "weight": 600
+    },
+    "caption": {
+      "size": 12.5,
+      "lineHeight": 1.3,
+      "weight": 400
+    },
+    "eyebrow": {
+      "size": 11,
+      "lineHeight": 1.2,
+      "weight": 700,
+      "letterSpacing": "0.12em",
+      "uppercase": true
+    },
+    "sidebarLabel": {
+      "size": 11,
+      "lineHeight": 1.2,
+      "weight": 700,
+      "letterSpacing": "0.08em",
+      "uppercase": true
+    },
+    "coverTitle": {
+      "size": 15,
+      "lineHeight": 1.1,
+      "weight": 800
+    }
+  },
+  "space": [
+    4,
+    6,
+    8,
+    10,
+    12,
+    14,
+    16,
+    20,
+    24,
+    32
+  ],
+  "radius": {
+    "control": 8,
+    "card": 12,
+    "panel": 14,
+    "dialog": 16,
+    "window": 12,
+    "chip": 999
+  },
+  "elevation": {
+    "menu": "0 16px 48px rgba(0,0,0,0.8), 0 0 0 1px glow at 10%",
+    "sheet": "0 24px 80px rgba(0,0,0,0.85), 0 0 60px glow at 12%",
+    "window": "0 30px 90px rgba(0,0,0,0.9), 0 0 0 1px glow at 12%",
+    "toast": "0 16px 48px rgba(0,0,0,0.8)",
+    "segmentedThumb": "0 1px 2px rgba(0,0,0,0.6)"
+  },
+  "motion": {
+    "fast": {
+      "ms": 150,
+      "curve": "easeOut",
+      "use": "hover, press, menu open"
+    },
+    "base": {
+      "ms": 250,
+      "curve": "easeOut",
+      "use": "inspector slide, sheet drop (8px)"
+    },
+    "reducedMotion": "respect the platform setting: no slide, no scale"
+  },
+  "layout": {
+    "referenceWindow": {
+      "width": 1440,
+      "height": 900
+    },
+    "titlebar": 52,
+    "toolbar": 48,
+    "statusbar": 28,
+    "sidebar": 232,
+    "inspector": 380,
+    "contentPaddingX": 24,
+    "contentPaddingY": 22,
+    "controlHeight": 32,
+    "inputHeight": 34,
+    "tableRowHeight": 48,
+    "tableHeaderHeight": 34,
+    "coverMinWidth": 150,
+    "coverAspect": "2:3",
+    "coverGap": {
+      "row": 22,
+      "column": 16
+    },
+    "settingsWindow": {
+      "width": 1000,
+      "height": 740,
+      "sidebar": 200
+    },
+    "setupWindow": {
+      "width": 880,
+      "height": 640,
+      "stepper": 240
+    },
+    "signInWindow": {
+      "width": 440,
+      "height": 560
+    },
+    "sheetWidths": {
+      "compact": 520,
+      "default": 640,
+      "wide": 680
+    },
+    "touchTargetMin": 32,
+    "sidebarBrand": 52,
+    "sidebarAccount": 58,
+    "filterbar": 44,
+    "tokenHeight": 26,
+    "stepHeight": 36
+  },
+  "focus": {
+    "outline": "2px solid accent",
+    "offset": 2
+  },
+  "selection": {
+    "outline": "3px solid accent",
+    "offset": 3,
+    "checkSize": 22
+  },
+  "windowChrome": {
+    "macos": "traffic lights top left, 12px, 8px apart, inside the 52px title bar",
+    "windows": "native caption buttons top right; the title bar content shifts left",
+    "linux": "client-side decorations with the same caption buttons as Windows"
+  },
+  "atmosphere": {
+    "note": "Every theme has the atmosphere, in its own colours. A theme's stars, nebulae and sky are derived from its six colours unless listed below.",
+    "derivation": {
+      "starA": "foreground at 80%",
+      "starB": "accent at 55%",
+      "starC": "glow at 70%",
+      "starHot": "foreground at 98%",
+      "starHalo": "glow at 24%",
+      "nebula1": "glow at 30%, 900 x 640 at 96% -12%",
+      "nebula2": "accent at 12%, 820 x 460 at 62% 118%",
+      "nebula3": "mix(glow, accent) at 16%, 760 x 520 at -8% 48%",
+      "starGold": "accent (warmed) at 95%, 2 px with a 9 px halo, 520 x 420 tile",
+      "nebula4": "glow at 16%, 700 x 360 at 40% 6%",
+      "orbitRings": "rings of 300, 420 and 640 px radius at the window corners, glow or foreground at 11 to 13%"
+    },
+    "stars": [
+      {
+        "size": 1,
+        "tile": [
+          120,
+          110
+        ],
+        "layer": "small a"
+      },
+      {
+        "size": 1,
+        "tile": [
+          150,
+          130
+        ],
+        "layer": "small b"
+      },
+      {
+        "size": 1,
+        "tile": [
+          190,
+          170
+        ],
+        "layer": "small c"
+      },
+      {
+        "size": 1.5,
+        "tile": [
+          270,
+          230
+        ],
+        "layer": "small b"
+      },
+      {
+        "size": 1,
+        "tile": [
+          340,
+          310
+        ],
+        "layer": "small c"
+      },
+      {
+        "size": 2,
+        "tile": [
+          310,
+          260
+        ],
+        "layer": "bright with an 8 px halo"
+      },
+      {
+        "size": 1.5,
+        "tile": [
+          430,
+          380
+        ],
+        "layer": "bright with a 7 px halo"
+      }
+    ],
+    "builtIn": {
+      "shelfOled": {
+        "feel": "black fading into deep blue, blue glow and stars, yellow accents",
+        "stars": [
+          "white 80%",
+          "ice blue 55%",
+          "blue 80%",
+          "gold 95%"
+        ],
+        "nebulae": [
+          "blue 22%",
+          "yellow 7%",
+          "azure 11%",
+          "blue 8%"
+        ],
+        "sky": "deep blue at 20%"
+      },
+      "light": {
+        "feel": "cream with an indigo sky, a warm glow and a few rose stars",
+        "stars": [
+          "indigo 70%",
+          "rose 55%",
+          "navy 55%",
+          "amber 90%"
+        ],
+        "nebulae": [
+          "indigo 24%",
+          "orange 16%",
+          "rose 11%",
+          "lavender 16%"
+        ],
+        "sky": "indigo at 10%"
+      },
+      "colorful": {
+        "feel": "violet night with cyan and magenta clouds",
+        "stars": [
+          "white 85%",
+          "pink 65%",
+          "cyan 70%",
+          "gold 95%"
+        ],
+        "nebulae": [
+          "cyan 28%",
+          "magenta 20%",
+          "violet 30%",
+          "violet 18%"
+        ],
+        "sky": "violet at 40%"
+      },
+      "freaky": {
+        "feel": "dark navy with magenta, lime and cyan glow",
+        "stars": [
+          "mint white 85%",
+          "lime 65%",
+          "cyan 70%",
+          "yellow 95%"
+        ],
+        "nebulae": [
+          "magenta 28%",
+          "lime 14%",
+          "cyan 18%",
+          "magenta 14%"
+        ],
+        "sky": "plum at 40%"
+      }
+    },
+    "glass": {
+      "titlebar": "background at 42% + blur 14, bottom line fades to glow in the middle",
+      "sidebar": "background at 52% + blur 10, edge line fades from glow to border",
+      "inspector": "same as the sidebar",
+      "statusbar": "background at 42%",
+      "panels": "surface at 62% + blur 8, plus the panel gradient (groups, tables, sheets, menus, sidebar, inspector)"
+    },
+    "glows": {
+      "primaryButton": "linear-gradient(135deg, accentA, accentB) + 0 0 22px accent at 30 to 45%",
+      "progress": "linear-gradient(90deg, accentA, accentB) + 0 0 10px accent glow",
+      "cover": "0 14px 34px -14px glow at 35 to 55%",
+      "selectedCover": "0 0 28px accent glow",
+      "switchOn": "0 0 12px accent glow",
+      "avatar": "gradient of accentA and accentB + 0 0 14px accent glow",
+      "window": "inset 0 0 160px -70px glow at 16%",
+      "statusDot": "0 0 8px success",
+      "blueAccents": "hover states use glow: button border and tint, sidebar item, table row (2 px left line), token border, cover ring, search focus ring",
+      "toolbarLine": "bottom line of the toolbar fades from border to glow in the middle",
+      "contentFloor": "radial glow at the bottom edge of the content area"
+    },
+    "details": [
+      "four-point star before section headings",
+      "orbit rings and satellites on the home card",
+      "planet-with-ring brand mark in the sidebar"
+    ]
+  }
+}

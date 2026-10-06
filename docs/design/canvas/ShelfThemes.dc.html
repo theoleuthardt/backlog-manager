@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Appearance</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./shelf.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="shelf win {{themeClass}}">
+  <dc-import name="Titlebar" theme="{{themeKey}}" title="Appearance" search="no" hint-size="100%,52px"></dc-import>
+  <div class="win-body">
+    <div class="sidebar-col"><dc-import name="SidebarNav" theme="{{themeKey}}" active="themes" hint-size="232px,560px"></dc-import><div style="margin-top: auto;"><dc-import name="SidebarAccount" theme="{{themeKey}}" hint-size="232px,58px"></dc-import></div></div>
+    <div class="win-main">
+      <div class="toolbar">
+        <span class="muted small">Changes preview live across the whole app.</span>
+        <button type="button" class="btn btn-quiet" style="margin-left: auto;">Reset</button>
+        <button type="button" class="btn btn-primary">Save theme</button>
+      </div>
+      <div class="scroll" style="flex-direction: row; gap: 20px; align-items: flex-start;">
+        <aside style="flex: 0 0 250px; display: flex; flex-direction: column; gap: 6px;" aria-label="Themes">
+          <div class="side-label" style="padding-left: 4px;">Built-in</div>
+          <sc-for list="{{themes}}" as="t" hint-placeholder-count="5">
+            <div class="side-item {{t.cls}}" style="height: 44px; gap: 12px;">
+              <span style="width: 34px; height: 26px; border-radius: 6px; background: {{t.bg}}; border: 1px solid {{t.border}}; display: flex; align-items: flex-end; justify-content: flex-end; padding: 3px;"><span style="width: 12px; height: 6px; border-radius: 3px; background: {{t.accent}};"></span></span>
+              <span style="color: var(--text);">{{t.name}}</span>
+              <span class="chip chip-accent" style="margin-left: auto; display: {{t.badge}};">active</span>
+            </div>
+          </sc-for>
+          <div class="side-label" style="padding-left: 4px;">Your themes</div>
+          <div class="muted small" style="padding: 0 4px;">No custom themes yet.</div>
+        </aside>
+
+        <section class="group" aria-label="New theme" style="flex: 0 0 360px;">
+          <div class="group-title">New theme</div>
+          <div class="frow"><div class="fl" style="flex-basis: 110px;">Name</div><div class="fc"><input type="text" placeholder="e.g. Neon Night" aria-label="Theme name"></div></div>
+          <div class="frow"><div class="fl" style="flex-basis: 110px;">Start from</div><div class="fc"><select aria-label="Start from"><option>Shelf OLED</option></select></div></div>
+          <sc-for list="{{colors}}" as="c" hint-placeholder-count="6">
+            <div class="frow"><div class="fl" style="flex-basis: 110px;">{{c.label}}</div><div class="fc"><span style="width: 24px; height: 24px; border-radius: 6px; background: {{c.value}}; border: 1px solid var(--border-strong);"></span><span style="font-family: ui-monospace, monospace; font-size: 13px;">{{c.value}}</span></div></div>
+          </sc-for>
+        </section>
+
+        <section aria-label="Live preview" style="flex: 1; min-width: 0; border-radius: 12px; background: radial-gradient(420px 260px at 90% 0%, var(--neb-1), transparent 70%), radial-gradient(360px 220px at 0% 100%, var(--neb-3), transparent 70%), var(--bg); border: 1px solid var(--border-strong); overflow: hidden;">
+          <div style="display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--surface-1);"><span class="lights"><i></i><i></i><i></i></span><span class="small muted" style="margin-left: 8px;">Preview</span></div>
+          <div style="padding: 16px; display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: flex; gap: 6px;"><span class="chip chip-active">Library</span><span class="chip">Space</span><span class="chip chip-accent">In Progress</span></div>
+            <div class="covers" style="grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;">
+              <div class="cover" style="background: linear-gradient(160deg, #9a2a42, #2a0a1a);">Hades</div>
+              <div class="cover" style="background: linear-gradient(160deg, #2a5aa8, #0a1430);">Hollow Knight</div>
+              <div class="cover" style="background: linear-gradient(160deg, #4a9a34, #12300c);">Stardew Valley</div>
+            </div>
+            <div style="display: flex; gap: 8px;"><button type="button" class="btn btn-primary">Primary</button><button type="button" class="btn">Secondary</button></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+  <dc-import name="StatusBar" theme="{{themeKey}}" left="Theme: Shelf OLED" hint-size="100%,28px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["oled","light","colorful","freaky"],"default":"oled"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { const themeKey = this.props.theme ?? 'oled'; const themeClass = 'theme-' + themeKey;
+    const themes = [
+      { name: 'Shelf OLED', bg: '#000000', accent: '#f5a524', border: '#353a4c', active: true },
+      { name: 'Light', bg: '#f5f4ef', accent: '#4f46e5', border: '#15151b', active: false },
+      { name: 'Colorful', bg: '#0b0720', accent: '#ff3ea5', border: '#7c4dff', active: false },
+      { name: 'Freaky', bg: '#04040e', accent: '#a3ff12', border: '#00ffd0', active: false },
+      { name: 'Classic dark', bg: '#000000', accent: '#2563eb', border: '#ffffff', active: false }
+    ].map((t) => ({ ...t, cls: t.active ? 'active' : '', badge: t.active ? 'inline-flex' : 'none' }));
+    const colors = [
+      { label: 'Background', value: '#000000' }, { label: 'Surface', value: '#0B0B0E' },
+      { label: 'Text', value: '#F2F2F3' }, { label: 'Accent', value: '#F5A524' },
+      { label: 'Border', value: '#353A4C' }, { label: 'Glow', value: '#3B82F6' }
+    ];
+    return { themeClass, themeKey, themes, colors };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Wrong game</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./shelf.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="shelf win {{themeClass}}">
+  <dc-import name="Titlebar" theme="{{themeKey}}" title="Library" search="yes" hint-size="100%,52px"></dc-import>
+  <div class="win-body">
+    <div class="sidebar-col"><dc-import name="SidebarNav" theme="{{themeKey}}" active="library" hint-size="232px,560px"></dc-import><div style="margin-top: auto;"><dc-import name="SidebarAccount" theme="{{themeKey}}" hint-size="232px,58px"></dc-import></div></div>
+    <div class="win-main"><dc-import name="LibraryPane" theme="{{themeKey}}" hint-size="1208px,820px"></dc-import></div>
+  </div>
+  <dc-import name="StatusBar" theme="{{themeKey}}" left="148 games" hint-size="100%,28px"></dc-import>
+
+  <div class="sheet-scrim">
+    <section class="sheet" aria-label="Find the right game" style="width: 640px;">
+      <div class="sheet-head" style="display: flex; flex-direction: column; gap: 12px;">
+        <h1 class="h-page" style="font-size: 20px;">Find the right game</h1>
+        <label class="tb-search" style="width: 100%; height: 36px; background: var(--surface-2);">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+          <input type="search" value="Overcooked: All you can eat" aria-label="Search game" style="font-size: 14px;">
+        </label>
+      </div>
+      <div class="sheet-body" style="padding-top: 0;">
+        <div class="table">
+          <sc-for list="{{results}}" as="r" hint-placeholder-count="3">
+            <div class="trow {{r.cls}}">
+              <span class="thumb" style="background: {{r.cover}};"></span>
+              <div class="col-grow"><div style="font-weight: 700;">{{r.title}}</div><div class="faint small">Main {{r.a}} h &middot; +Extra {{r.b}} h &middot; Completionist {{r.c}} h</div></div>
+              <span class="chip chip-accent" style="display: {{r.badge}};">Found by deeper search</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span class="muted small" style="flex: 1;">Searching deeper also tries other spellings and bundles.</span>
+          <button type="button" class="btn">Can't find your game? Search more</button>
+        </div>
+      </div>
+      <div class="sheet-foot"><button type="button" class="btn btn-quiet">Cancel <span class="kbd">esc</span></button><button type="button" class="btn btn-primary" style="margin-left: auto;">Use this game</button></div>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["oled","light","colorful","freaky"],"default":"oled"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { const themeKey = this.props.theme ?? 'oled'; const themeClass = 'theme-' + themeKey;
+    const cover = (a, b) => 'linear-gradient(160deg, ' + a + ', ' + b + ')';
+    const results = [
+      { title: 'Overcooked! All You Can Eat', a: 12, b: 20, c: 40, cover: cover('#d2641e', '#3a1c08'), badge: 'inline-flex', cls: 'sel' },
+      { title: 'Overcooked! 2', a: 9, b: 14, c: 30, cover: cover('#c2a21e', '#3a2a06'), badge: 'none', cls: '' },
+      { title: 'Overcooked!', a: 8, b: 12, c: 25, cover: cover('#9a2a42', '#2a0a1a'), badge: 'none', cls: '' }
+    ];
+    return { themeClass, themeKey, results };
+  }
+}
+</script>
+</body>
+</html>

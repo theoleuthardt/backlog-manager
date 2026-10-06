@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Titlebar</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./shelf.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="shelf titlebar {{themeClass}}" style="width: 100%; height: 52px; color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif; display: flex; align-items: center; gap: 12px; padding: 0 16px 0 20px;">
+  <div class="lights"><i></i><i></i><i></i></div>
+  <button type="button" class="tb-btn" aria-label="Toggle sidebar"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"></rect><path d="M9 4v16"></path></svg></button>
+  <button type="button" class="tb-btn" aria-label="Back"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></button>
+  <button type="button" class="tb-btn" aria-label="Forward" style="opacity: 0.4;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg></button>
+  <span class="tb-title">{{title}}</span>
+  <label class="tb-search" style="margin-left: auto; display: {{searchShow}};">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+    <input type="search" placeholder="Search or run a command" aria-label="Search or run a command">
+    <span class="kbd">&#8984;K</span>
+  </label>
+  <span style="flex: 1; display: {{spacerShow}};"></span>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"text","default":"oled"},"title":{"editor":"text","default":"Library"},"search":{"editor":"text","default":"yes"},"$preview":{"width":1440,"height":52}}'>
+class Component extends DCLogic {
+  renderVals() { const themeClass = 'theme-' + (this.props.theme ?? 'oled');
+    const search = (this.props.search ?? 'yes') !== 'no';
+    return { themeClass,
+      title: this.props.title ?? 'Library',
+      searchShow: search ? 'flex' : 'none',
+      spacerShow: search ? 'none' : 'block'
+    };
+  }
+}
+</script>
+</body>
+</html>

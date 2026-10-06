@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Arcade entry</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow+Semi+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#22e5ff}a:hover{color:#ffffff}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 900px; box-sizing: border-box; background: #0a0612; background-image: linear-gradient(rgba(255,45,149,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,45,149,0.05) 1px, transparent 1px); background-size: 48px 48px; color: #f4efff; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 16px; padding: 40px; display: flex; align-items: center; justify-content: center;">
+  <div style="width: 100%; max-width: 1200px; background: #0d0818; border: 2px solid {{accent}}; box-shadow: 0 0 40px rgba(255,45,149,0.3); clip-path: polygon(24px 0, 100% 0, 100% calc(100% - 24px), calc(100% - 24px) 100%, 0 100%, 0 24px);">
+
+    <div style="display: flex; align-items: center; gap: 16px; padding: 16px 28px; border-bottom: 1px solid #2a1d45;">
+      <span style="font-family: 'Chakra Petch', sans-serif; letter-spacing: 0.18em; font-size: 13px; color: #8d7bb0;">ENTRY //</span>
+      <span style="font-family: 'Chakra Petch', sans-serif; letter-spacing: 0.18em; font-size: 13px; color: {{accent}};">HADES</span>
+      <span style="margin-left: auto; display: flex; align-items: center; gap: 8px; color: #8cff5a; font-size: 14px;" role="status"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>All changes saved</span>
+      <button type="button" aria-label="Close" style="width: 36px; height: 36px; background: #140d22; border: 1px solid #2a1d45; color: #f4efff; cursor: pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 36px; padding: 32px 28px;">
+      <div style="flex: 0 0 300px; display: flex; flex-direction: column; gap: 16px;">
+        <div style="aspect-ratio: 2 / 3; background: linear-gradient(160deg, #7a1a2e, #1a0a1a); border: 2px solid #22e5ff; box-shadow: 0 0 28px rgba(34,229,255,0.35); display: flex; align-items: flex-end; padding: 20px; box-sizing: border-box; clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px);">
+          <span style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 34px; line-height: 1;">Hades</span>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" style="flex: 1; height: 44px; background: #140d22; border: 1px solid #2a1d45; color: #f4efff; font: inherit; cursor: pointer;">Change cover</button>
+          <button type="button" style="flex: 1; height: 44px; background: #140d22; border: 1px solid #2a1d45; color: #f4efff; font: inherit; cursor: pointer;">Wrong game?</button>
+        </div>
+      </div>
+
+      <div style="flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 24px;">
+        <div>
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+            <h1 style="margin: 0; font-family: 'Chakra Petch', sans-serif; font-size: 48px; letter-spacing: 0.02em;">Hades</h1>
+            <span style="padding: 4px 14px; background: #22e5ff; color: #0a0612; font-family: 'Chakra Petch', sans-serif; font-weight: 700; letter-spacing: 0.12em; font-size: 13px;">IN PROGRESS</span>
+          </div>
+          <div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px;">
+            <span style="padding: 4px 12px; border: 1px solid #2a1d45;">Roguelike</span>
+            <span style="padding: 4px 12px; border: 1px solid #2a1d45;">Action</span>
+            <span style="padding: 4px 12px; border: 1px solid #2a1d45;">PC</span>
+            <span style="padding: 4px 12px; border: 1px solid #ffd23d; color: #ffd23d;">Short and sweet</span>
+            <button type="button" style="padding: 4px 12px; background: transparent; border: 1px dashed #8d7bb0; color: #b9aad6; font: inherit; cursor: pointer;">+ Category</button>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px;">
+          <sc-for list="{{tiles}}" as="t" hint-placeholder-count="4">
+            <div style="background: #140d22; border: 1px solid #2a1d45; padding: 14px 16px;">
+              <div style="font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.2em; color: #8d7bb0;">{{t.label}}</div>
+              <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 30px; margin-top: 4px;">{{t.value}}<span style="font-size: 16px; color: #8d7bb0; margin-left: 4px;">h</span></div>
+              <div style="margin-top: 10px; height: 5px; background: #241a3a;"><div style="height: 100%; width: {{t.pct}}; background: {{t.color}}; box-shadow: 0 0 10px {{t.color}};"></div></div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div role="tablist" aria-label="Entry sections" style="display: flex; gap: 4px; border-bottom: 1px solid #2a1d45;">
+          <button type="button" role="tab" aria-selected="true" style="padding: 10px 20px; background: #140d22; border: 1px solid {{accent}}; border-bottom: 0; color: {{accent}}; font-family: 'Chakra Petch', sans-serif; letter-spacing: 0.14em; cursor: pointer;">OVERVIEW</button>
+          <button type="button" role="tab" aria-selected="false" style="padding: 10px 20px; background: transparent; border: 0; color: #8d7bb0; font-family: 'Chakra Petch', sans-serif; letter-spacing: 0.14em; cursor: pointer;">PROGRESS</button>
+          <button type="button" role="tab" aria-selected="false" style="padding: 10px 20px; background: transparent; border: 0; color: #8d7bb0; font-family: 'Chakra Petch', sans-serif; letter-spacing: 0.14em; cursor: pointer;">REVIEW</button>
+          <button type="button" role="tab" aria-selected="false" style="padding: 10px 20px; background: transparent; border: 0; color: #8d7bb0; font-family: 'Chakra Petch', sans-serif; letter-spacing: 0.14em; cursor: pointer;">TRAILER</button>
+        </div>
+
+        <p style="margin: 0; max-width: 62ch; line-height: 1.55; color: #cfc3e8;">Defy the god of the dead as you hack and slash out of the Underworld in this rogue-like dungeon crawler from the creators of Bastion and Transistor.</p>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 24px;">
+          <div style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 8px;">
+            <span style="font-size: 13px; letter-spacing: 0.14em; color: #8d7bb0;">INTEREST</span>
+            <div style="display: flex; gap: 5px;">
+              <sc-for list="{{segments}}" as="s" hint-placeholder-count="10">
+                <span style="flex: 1; height: 14px; background: {{s.fill}}; box-shadow: {{s.glow}};"></span>
+              </sc-for>
+            </div>
+          </div>
+          <div style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 8px;">
+            <span style="font-size: 13px; letter-spacing: 0.14em; color: #8d7bb0;">PLAYTIME (STEAM)</span>
+            <div style="padding: 10px 14px; background: #140d22; border: 1px solid #2a1d45;">18.4 h &middot; synced 2 hours ago</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 12px; padding: 16px 28px; border-top: 1px solid #2a1d45; background: #0a0612;">
+      <button type="button" style="height: 44px; padding: 0 20px; background: transparent; border: 1px solid #ff4d4d; color: #ff4d4d; font: inherit; font-weight: 600; cursor: pointer;">Delete</button>
+      <span style="margin-left: auto; color: #8d7bb0; font-size: 14px;">Changes save automatically</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#ff2d95","options":["#ff2d95","#22e5ff","#8cff5a","#ffd23d"]},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#ff2d95';
+    const tiles = [
+      { label: 'PLAYTIME', value: '18.4', pct: '84%', color: accent },
+      { label: 'MAIN STORY', value: '22', pct: '100%', color: '#22e5ff' },
+      { label: '+ EXTRAS', value: '48', pct: '38%', color: '#ffd23d' },
+      { label: '100%', value: '95', pct: '19%', color: '#8cff5a' }
+    ];
+    const segments = Array.from({ length: 10 }, (_, i) => ({
+      fill: i < 8 ? accent : '#241a3a',
+      glow: i < 8 ? '0 0 10px ' + accent + '88' : 'none'
+    }));
+    return { accent, tiles, segments };
+  }
+}
+</script>
+</body>
+</html>
