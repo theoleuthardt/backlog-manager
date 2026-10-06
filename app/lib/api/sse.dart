@@ -37,6 +37,17 @@ class SseStreamEndedException implements Exception {
   String toString() => 'SSE stream ended without a result';
 }
 
+/// A message of the stream carried a payload that is not what the backend
+/// documents (invalid JSON, missing or non-integer progress counts).
+class SseFormatException implements Exception {
+  const SseFormatException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => 'SseFormatException: $message';
+}
+
 final _boundary = RegExp(r'\r\n\r\n|\n\n');
 final _lineBreak = RegExp(r'\r\n|\n');
 
@@ -51,16 +62,22 @@ SseEvent? _decode(String raw) {
     }
   }
   final data = dataLines.join('\n');
-  switch (event) {
-    case 'progress':
-      final json = jsonDecode(data) as Map<String, dynamic>;
-      return SseProgress(json['processed'] as int, json['total'] as int);
-    case 'done':
-      return SseDone(jsonDecode(data));
-    case 'error':
-      return SseError(data);
-    default:
-      return null;
+  try {
+    switch (event) {
+      case 'progress':
+        final json = jsonDecode(data) as Map<String, dynamic>;
+        return SseProgress(json['processed'] as int, json['total'] as int);
+      case 'done':
+        return SseDone(jsonDecode(data));
+      case 'error':
+        return SseError(data);
+      default:
+        return null;
+    }
+  } on FormatException catch (error) {
+    throw SseFormatException(error.message);
+  } on TypeError {
+    throw SseFormatException('unexpected $event payload');
   }
 }
 
@@ -74,7 +91,8 @@ String _fieldValue(String line, String prefix) {
 ///
 /// Raw text is accumulated un-normalized, because a chunk boundary can land
 /// inside a separator (`\r\n\r` then `\n`). Throws [SseStreamEndedException]
-/// when the bytes end before a terminal event.
+/// when the bytes end before a terminal event and [SseFormatException] for a
+/// malformed payload.
 Stream<SseEvent> parseSseEvents(Stream<List<int>> bytes) async* {
   var buffer = '';
   await for (final text in utf8.decoder.bind(bytes)) {

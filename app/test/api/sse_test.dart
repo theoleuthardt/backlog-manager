@@ -20,10 +20,11 @@ Stream<List<int>> chunked(String text, int size) async* {
 }
 
 class StreamAdapter implements HttpClientAdapter {
-  StreamAdapter(this.body, {this.status = 200});
+  StreamAdapter(this.body, {this.status = 200, this.delay});
 
   final Stream<List<int>> body;
   final int status;
+  final Future<void>? delay;
   Future<void>? cancelFuture;
   RequestOptions? request;
 
@@ -35,6 +36,7 @@ class StreamAdapter implements HttpClientAdapter {
   ) async {
     request = options;
     this.cancelFuture = cancelFuture;
+    await delay;
     return ResponseBody(
       body.map(Uint8List.fromList),
       status,
@@ -158,6 +160,20 @@ void main() {
       );
     });
 
+    for (final payload in [
+      'event: progress\ndata: not json\n\n',
+      'event: progress\ndata: {"processed":"1","total":2}\n\n',
+      'event: progress\ndata: {"total":2}\n\n',
+      'event: progress\ndata: [1]\n\n',
+      'event: done\ndata: {broken\n\n',
+    ]) {
+      test('rejects the malformed payload ${jsonEncode(payload)}', () async {
+        final stream = parseSseEvents(Stream.value(utf8.encode(payload)));
+
+        await expectLater(stream.toList(), throwsA(isA<SseFormatException>()));
+      });
+    }
+
     test('ignores comments and unknown events', () async {
       final events = await parseSseEvents(
         Stream.value(
@@ -209,6 +225,27 @@ void main() {
       expect(closed, isTrue);
       await controller.close();
     });
+
+    test(
+      'cancelling before the response arrives cancels the request',
+      () async {
+        final gate = Completer<void>();
+        final adapter = StreamAdapter(const Stream.empty(), delay: gate.future);
+        final dio = Dio(BaseOptions(baseUrl: 'http://api.test'))
+          ..httpClientAdapter = adapter;
+
+        final subscription = openSse(dio, '/stream').listen((_) {});
+        await Future<void>.delayed(Duration.zero);
+        var closed = false;
+        unawaited(adapter.cancelFuture!.then((_) => closed = true));
+
+        await subscription.cancel();
+        gate.complete();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(closed, isTrue);
+      },
+    );
 
     test('surfaces a failed request as a DioException', () async {
       final adapter = StreamAdapter(
