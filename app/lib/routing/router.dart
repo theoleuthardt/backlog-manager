@@ -1,6 +1,7 @@
 import 'package:backlog_manager/features/auth/loading_page.dart';
 import 'package:backlog_manager/features/auth/sign_in_page.dart';
 import 'package:backlog_manager/features/gallery/gallery_routes.dart';
+import 'package:backlog_manager/features/setup/setup_page.dart';
 import 'package:backlog_manager/routing/guard.dart';
 import 'package:backlog_manager/routing/history.dart';
 import 'package:backlog_manager/routing/pages.dart';
@@ -79,13 +80,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       _fullWindow(AppRoutes.signIn, const SignInPage(key: Key('page-sign-in'))),
-      _fullWindow(
-        AppRoutes.setup,
-        PlaceholderPage(
-          key: const Key('page-setup'),
-          title: pageTitle(AppRoutes.setup),
-        ),
-      ),
+      _fullWindow(AppRoutes.setup, const SetupPage(key: Key('page-setup'))),
       _fullWindow(
         AppRoutes.loading,
         const LoadingPage(key: Key('page-loading')),
