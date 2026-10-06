@@ -18,6 +18,14 @@ Dio createApiDio({
   HttpClientAdapter? adapter,
 }) {
   const sentTokenKey = 'sentToken';
+  Future<bool> isStillCurrent(Object? sentToken) async {
+    try {
+      return sentToken == await readToken();
+    } on Object {
+      return false;
+    }
+  }
+
   final dio = Dio(BaseOptions(baseUrl: baseUrl));
   if (adapter != null) dio.httpClientAdapter = adapter;
   dio.interceptors.add(
