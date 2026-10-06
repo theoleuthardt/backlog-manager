@@ -109,7 +109,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the reasoning behind thes
 Dart/Flutter desktop app, ported from `frontend/`. Setup, running, debugging, goldens and packaging: [`docs/FLUTTER.md`](docs/FLUTTER.md).
 
 - **Commands:** always `task app:*` (`app:install`, `app:dev`, `app:lint`, `app:test`, `app:test:update-goldens`, `app:format`, `app:format:check`, `app:build`, `app:generate-api`), never bare `flutter`/`dart`; `task check` and `task lint` include the app.
-- **Layout:** `lib/api/` (everything that talks to the backend: Dio setup, error mapping, the SSE reader, the generated client in `generated/`), `lib/design/` (tokens, theme, shell and shared widgets) and `lib/features/<screen group>/` (both still empty placeholders), `app.dart`; `test/` mirrors `lib/`.
+- **Layout:** `lib/api/` (everything that talks to the backend: Dio setup, error mapping, the SSE reader, the server URL setting, the generated client in `generated/`), `lib/design/` (tokens, theme, shell and shared widgets) and `lib/features/<screen group>/` (both still empty placeholders), `app.dart`; `test/` mirrors `lib/`.
 - **State and routing:** Riverpod and `go_router` (added to the project with the first screens, #254). Screens hold UI state only; logic that is not about widgets lives in plain Dart files with unit tests.
 - **Theming:** read colours from the `ShelfTokens` `ThemeExtension` (#252), never hard-coded `Color`s.
 - **Generated API client:** `lib/api/generated/` is committed and never edited by hand. After a backend route change run `task backend:openapi`, then `task app:generate-api`, and commit the diff.
