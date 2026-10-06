@@ -210,3 +210,36 @@ async def test_sync_never_overwrites_a_publisher_the_user_set(
 
     assert updated.publisher == "My Own Label"
     assert updated.genre == "Platformer"
+
+
+async def test_sync_marks_a_game_without_a_publisher_as_looked_up(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    await _make_entry(session, user.id, genre="Platformer", description="Already described")
+
+    async def fake_search(title: str, *args: object, **kwargs: object) -> list[EnrichedResult]:
+        return [_match(publisher=None)]
+
+    monkeypatch.setattr(game_service, "search", fake_search)
+
+    [updated] = await igdb_sync_service.sync_igdb_data(session, user, ("cid", "secret"))
+
+    assert updated.publisher == ""
+    assert await igdb_sync_service.count_entries_needing_sync(session, user.id) == 0
+
+
+async def test_sync_cuts_an_oversized_publisher_to_the_column_length(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    await _make_entry(session, user.id, genre="Platformer", description="Already described")
+
+    async def fake_search(title: str, *args: object, **kwargs: object) -> list[EnrichedResult]:
+        return [_match(publisher="p" * 300)]
+
+    monkeypatch.setattr(game_service, "search", fake_search)
+
+    [updated] = await igdb_sync_service.sync_igdb_data(session, user, ("cid", "secret"))
+
+    assert updated.publisher == "p" * 255
