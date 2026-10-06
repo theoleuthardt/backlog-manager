@@ -8,6 +8,9 @@ import 'package:backlog_manager/auth/token_store.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// The HTTP adapter the health check of a new server uses; tests replace it.
+final serverHealthAdapterProvider = Provider<HttpClientAdapter?>((ref) => null);
+
 final serverUrlStoreProvider = Provider<ServerUrlStore>(
   (ref) => ServerUrlStore(defaultUrl: defaultServerUrl),
 );
@@ -25,3 +28,8 @@ final apiDioProvider = FutureProvider<Dio>((ref) async {
         unawaited(ref.read(authControllerProvider.notifier).sessionExpired()),
   );
 });
+
+/// The server the app talks to, or null when none is set yet.
+final serverUrlProvider = FutureProvider<String?>(
+  (ref) => ref.watch(serverUrlStoreProvider).read(),
+);

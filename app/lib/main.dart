@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:backlog_manager/app.dart';
+import 'package:backlog_manager/auth/auth_controller.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
@@ -18,5 +21,12 @@ Future<void> main() async {
       await windowManager.focus();
     },
   );
-  runApp(const ProviderScope(child: BacklogManagerApp()));
+  final container = ProviderContainer();
+  unawaited(container.read(authControllerProvider.notifier).restore());
+  runApp(
+    UncontrolledProviderScope(
+      container: container,
+      child: const BacklogManagerApp(),
+    ),
+  );
 }

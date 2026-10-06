@@ -71,6 +71,7 @@ Future<Harness> pumpApp(
   String? location,
   TargetPlatform platform = TargetPlatform.macOS,
   Size size = const Size(1440, 900),
+  bool settle = true,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -92,7 +93,12 @@ Future<Harness> pumpApp(
       child: const BacklogManagerApp(),
     ),
   );
-  await tester.pumpAndSettle();
+  if (settle) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump();
+    await tester.pump();
+  }
   final harness = Harness(tester, controls);
   if (location != null) await harness.go(location);
   return harness;
@@ -381,7 +387,7 @@ void main() {
     testWidgets('shows a loading state while the session is checked', (
       tester,
     ) async {
-      await pumpApp(tester, session: const SessionLoading());
+      await pumpApp(tester, session: const SessionLoading(), settle: false);
 
       expect(find.byKey(const Key('page-loading')), findsOneWidget);
       expect(find.byKey(const Key('sidebar')), findsNothing);
