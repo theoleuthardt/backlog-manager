@@ -8832,7 +8832,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "maxLength": 255
           },
           "main_time": {
             "oneOf": [
@@ -11077,7 +11078,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "maxLength": 255
           },
           "main_time": {
             "oneOf": [

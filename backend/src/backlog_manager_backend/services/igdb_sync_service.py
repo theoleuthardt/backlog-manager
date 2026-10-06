@@ -8,7 +8,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.integrations.types import EnrichedResult
 from backlog_manager_backend.repositories import backlog_entry_repo
-from backlog_manager_backend.schemas.backlog_entry import BacklogEntry, UpdateBacklogEntryParams
+from backlog_manager_backend.schemas.backlog_entry import (
+    MAX_PUBLISHER_LENGTH,
+    BacklogEntry,
+    UpdateBacklogEntryParams,
+)
 from backlog_manager_backend.schemas.user import User
 from backlog_manager_backend.services import game_service
 from backlog_manager_backend.services.steam_service import ProgressCallback
@@ -17,6 +21,9 @@ _LOOKUP_CONCURRENCY = 4
 
 
 def _missing_igdb_data(entry: BacklogEntry) -> bool:
+    """A publisher of None means "never looked up"; a lookup that found a
+    game without a publisher stores an empty string, so such entries stop
+    counting as pending."""
     return not entry.genre.strip() or entry.description is None or entry.publisher is None
 
 
@@ -46,8 +53,8 @@ def _build_update(entry: BacklogEntry, match: EnrichedResult | None) -> UpdateBa
             changes["description"] = match.description
         if entry.trailer_link is None and match.trailer_url:
             changes["trailer_link"] = match.trailer_url
-        if entry.publisher is None and match.publisher:
-            changes["publisher"] = match.publisher
+        if entry.publisher is None:
+            changes["publisher"] = (match.publisher or "")[:MAX_PUBLISHER_LENGTH]
         times = game_service.igdb_times(match)
         no_times_yet = (
             entry.main_time is None

@@ -849,3 +849,36 @@ async def test_entry_publisher_is_created_updated_and_cleared(
         "Celeste": None,
         "Hades": None,
     }
+
+
+async def test_entry_publisher_longer_than_the_column_is_rejected(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "longpublisher@example.com")
+        base = {
+            "title": "Celeste",
+            "genre": ["Platformer"],
+            "platform": ["PC"],
+            "status": "Not Started",
+            "owned": True,
+            "interest": 5,
+        }
+        created = client.post("/api/backlog/entries", headers=headers, json=base)
+        entry_id = created.json()["id"]
+
+        too_long_on_create = client.post(
+            "/api/backlog/entries", headers=headers, json={**base, "publisher": "x" * 256}
+        )
+        too_long_on_update = client.put(
+            f"/api/backlog/entries/{entry_id}", headers=headers, json={"publisher": "x" * 256}
+        )
+        at_the_limit = client.put(
+            f"/api/backlog/entries/{entry_id}", headers=headers, json={"publisher": "x" * 255}
+        )
+
+    assert too_long_on_create.status_code == 400
+    assert too_long_on_update.status_code == 400
+    assert at_the_limit.status_code == 200

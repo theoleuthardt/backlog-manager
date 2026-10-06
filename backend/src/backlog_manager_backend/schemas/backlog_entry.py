@@ -8,6 +8,8 @@ from backlog_manager_backend.schemas.types import YouTubeWatchUrl
 
 MAX_REVIEW_STARS = 10
 ReviewStars = Annotated[float, msgspec.Meta(ge=0, le=MAX_REVIEW_STARS)]
+MAX_PUBLISHER_LENGTH = 255
+Publisher = Annotated[str, msgspec.Meta(max_length=MAX_PUBLISHER_LENGTH)]
 
 
 class BacklogEntry(msgspec.Struct):
@@ -194,7 +196,7 @@ class CreateBacklogEntryRequest(msgspec.Struct):
     image_link: str | None = None
     description: str | None = None
     trailer_link: YouTubeWatchUrl | None = None
-    publisher: str | None = None
+    publisher: Publisher | None = None
     main_time: Decimal | None = None
     main_plus_extra_time: Decimal | None = None
     completion_time: Decimal | None = None
@@ -220,7 +222,7 @@ class UpdateBacklogEntryRequest(msgspec.Struct):
     image_link: str | None | msgspec.UnsetType = msgspec.UNSET
     description: str | None | msgspec.UnsetType = msgspec.UNSET
     trailer_link: YouTubeWatchUrl | None | msgspec.UnsetType = msgspec.UNSET
-    publisher: str | None | msgspec.UnsetType = msgspec.UNSET
+    publisher: Publisher | None | msgspec.UnsetType = msgspec.UNSET
     main_time: Decimal | None | msgspec.UnsetType = msgspec.UNSET
     main_plus_extra_time: Decimal | None | msgspec.UnsetType = msgspec.UNSET
     completion_time: Decimal | None | msgspec.UnsetType = msgspec.UNSET

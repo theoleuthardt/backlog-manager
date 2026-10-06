@@ -28,5 +28,6 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    """Downgrade schema."""
+    """Downgrade schema. Dropping the column deliberately discards the stored publishers;
+    they are filled again by the next IGDB sync after an upgrade."""
     op.drop_column("BacklogEntries", "Publisher", schema="blm-system")
