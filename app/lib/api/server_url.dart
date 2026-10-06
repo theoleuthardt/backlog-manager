@@ -29,7 +29,10 @@ class ServerUrlInvalid extends ServerUrlResult {
 
 /// Validates a backend base URL: `https` for any host, `http` only for
 /// loopback hosts (otherwise the Bearer token travels in cleartext), no other
-/// protocol, no query or fragment. Surrounding whitespace and trailing slashes are dropped.
+/// protocol, no query, fragment or credentials, a port from 1 to 65535 and an
+/// ASCII host name (`Uri` does not convert an internationalised name to
+/// punycode, so such an address could never connect). Surrounding whitespace
+/// and trailing slashes are dropped.
 ServerUrlResult parseServerUrl(String raw) {
   final trimmed = raw.trim().replaceAll(RegExp(r'/+$'), '');
   final uri = Uri.tryParse(trimmed);
@@ -42,6 +45,20 @@ ServerUrlResult parseServerUrl(String raw) {
     return const ServerUrlInvalid(
       'The server address must not contain a query or a fragment',
     );
+  }
+  if (uri.userInfo.isNotEmpty) {
+    return const ServerUrlInvalid(
+      'The server address must not contain a user name or password',
+    );
+  }
+  if (uri.host.contains('%') || uri.host.codeUnits.any((unit) => unit > 0x7f)) {
+    return const ServerUrlInvalid(
+      'Write the host name in its ASCII form (punycode), for example '
+      'xn--exmple-cua.com',
+    );
+  }
+  if (uri.hasPort && (uri.port < 1 || uri.port > 65535)) {
+    return const ServerUrlInvalid('The port must be between 1 and 65535');
   }
   final loopback = _loopbackHosts.contains(uri.host);
   final allowed = uri.scheme == 'https' || (uri.scheme == 'http' && loopback);

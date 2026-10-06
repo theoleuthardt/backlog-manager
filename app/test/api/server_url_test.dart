@@ -120,6 +120,51 @@ void main() {
       });
     }
 
+    for (final url in [
+      'https://api.example.com:99999',
+      'https://api.example.com:0',
+      'https://api.example.com:65536',
+      'http://localhost:70000',
+    ]) {
+      test('rejects the out-of-range port of $url', () {
+        expect(parseServerUrl(url), isA<ServerUrlInvalid>());
+      });
+    }
+
+    for (final url in [
+      'https://api.example.com:1',
+      'https://api.example.com:65535',
+      'http://localhost:8000',
+    ]) {
+      test('accepts the port of $url', () {
+        expect(parseServerUrl(url), isA<ServerUrlValid>());
+      });
+    }
+
+    test('rejects a non-ASCII host and asks for the punycode form', () {
+      final result = parseServerUrl('https://exämple.com');
+
+      expect(result, isA<ServerUrlInvalid>());
+      expect((result as ServerUrlInvalid).message, contains('ASCII'));
+    });
+
+    test('accepts a host that is already written in punycode', () {
+      expect(
+        parseServerUrl('https://xn--exmple-cua.com'),
+        isA<ServerUrlValid>(),
+      );
+    });
+
+    for (final url in [
+      'https://user:pass@api.example.com',
+      'https://api.example.com:@8000',
+      'https://token@api.example.com',
+    ]) {
+      test('rejects credentials in $url', () {
+        expect(parseServerUrl(url), isA<ServerUrlInvalid>());
+      });
+    }
+
     test('explains why a remote http url is rejected', () {
       final result = parseServerUrl('http://api.example.com');
 
