@@ -13,7 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>body{margin:0}</style>
 </helmet>
-<div class="shelf" style="width: 1208px; height: 820px; color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; display: flex; flex-direction: column; overflow: hidden;">
+<div class="shelf {{themeClass}}" style="width: 1208px; height: 820px; color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; display: flex; flex-direction: column; overflow: hidden;">
   <div class="toolbar">
         <span style="font-weight: 800;">Library</span><span class="muted small">148 games</span>
         <button type="button" class="btn" style="margin-left: auto;">Select</button>
@@ -37,9 +37,9 @@
   </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1208,"height":820}}'>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"text","default":"oled"},"$preview":{"width":1208,"height":820}}'>
 class Component extends DCLogic {
-  renderVals() {
+  renderVals() { const themeClass = 'theme-' + (this.props.theme ?? 'oled');
     const cover = (a, b) => 'linear-gradient(160deg, ' + a + ', ' + b + ')';
     const list = [
       ['Hades', '#9a2a42', '#2a0a1a', '18 of 22 h'], ['Elden Ring', '#c99a3a', '#3a2a0c', '41 of 60 h'],
@@ -50,7 +50,7 @@ class Component extends DCLogic {
       ['Cuphead', '#c2a21e', '#3a2a06', '8 h to beat'], ['Journey', '#d28a3a', '#3a1c08', '3 h to beat'],
       ['Limbo', '#8a8a8a', '#1a1a1a', '5 h to beat'], ['Hotline Miami', '#d22a7a', '#2a0a1e', '6 h to beat']
     ];
-    return { games: list.map((g) => ({ title: g[0], bg: cover(g[1], g[2]), meta: g[3] })) };
+    return { themeClass, games: list.map((g) => ({ title: g[0], bg: cover(g[1], g[2]), meta: g[3] })) };
   }
 }
 </script>

@@ -1,6 +1,6 @@
 {
   "name": "Shelf",
-  "version": 4,
+  "version": 5,
   "platform": "desktop",
   "font": {
     "family": "Plus Jakarta Sans",
@@ -29,14 +29,16 @@
       "surface2": "mix(surface, foreground, 3%)",
       "surface3": "mix(surface, foreground, 6%)",
       "borderSubtle": "mix(surface, foreground, 8%)",
-      "borderStrong": "border",
+      "borderStrong": "border, blended into background (20 to 55%) when it is a loud colour such as white, black or neon, so outlines stay calm",
       "text": "foreground",
       "text2": "mix(foreground, background, 11%)",
       "muted": "mix(foreground, background, 35%)",
       "faint": "mix(foreground, background, 50%)",
       "accentSoft": "accent at 14% opacity",
       "onAccent": "black or white, whichever has the higher WCAG contrast against accent",
-      "glowSoft": "glow at 16% opacity"
+      "glowSoft": "glow at 16% opacity",
+      "panelGradient": "linear-gradient(180deg, glow at 8 to 14% to transparent at 62%) over the panel colour",
+      "sky": "background-to-glow gradient over the top 42% of the window, glow at 10 to 42%"
     },
     "semantic": {
       "success": "#34d399",
@@ -52,8 +54,8 @@
       "surface": "#0b0b0e",
       "foreground": "#f2f2f3",
       "accent": "#f5a524",
-      "border": "#34343c",
-      "glow": "#7c5cff"
+      "border": "#353a4c",
+      "glow": "#3b82f6"
     },
     "dark": {
       "background": "#000000",
@@ -64,12 +66,12 @@
       "glow": "#3b82f6"
     },
     "light": {
-      "background": "#f7f8fd",
+      "background": "#f5f4ef",
       "surface": "#ffffff",
-      "foreground": "#12152b",
-      "accent": "#2f5bff",
-      "border": "#c3cae3",
-      "glow": "#ff4d6d"
+      "foreground": "#15151b",
+      "accent": "#4f46e5",
+      "border": "#15151b",
+      "glow": "#818cf8"
     },
     "colorful": {
       "background": "#0b0720",
@@ -255,7 +257,7 @@
     "linux": "client-side decorations with the same caption buttons as Windows"
   },
   "atmosphere": {
-    "note": "Every theme has the atmosphere, in its own colours. A theme's stars and nebulae are derived from its six colours unless listed below.",
+    "note": "Every theme has the atmosphere, in its own colours. A theme's stars, nebulae and sky are derived from its six colours unless listed below.",
     "derivation": {
       "starA": "foreground at 80%",
       "starB": "accent at 55%",
@@ -264,7 +266,10 @@
       "starHalo": "glow at 24%",
       "nebula1": "glow at 30%, 900 x 640 at 96% -12%",
       "nebula2": "accent at 12%, 820 x 460 at 62% 118%",
-      "nebula3": "mix(glow, accent) at 16%, 760 x 520 at -8% 48%"
+      "nebula3": "mix(glow, accent) at 16%, 760 x 520 at -8% 48%",
+      "starGold": "accent (warmed) at 95%, 2 px with a 9 px halo, 520 x 420 tile",
+      "nebula4": "glow at 16%, 700 x 360 at 40% 6%",
+      "orbitRings": "rings of 300, 420 and 640 px radius at the window corners, glow or foreground at 11 to 13%"
     },
     "stars": [
       {
@@ -326,52 +331,68 @@
     ],
     "builtIn": {
       "shelfOled": {
+        "feel": "black fading into deep blue, blue glow and stars, yellow accents",
         "stars": [
           "white 80%",
-          "white 50%",
-          "blue-white 70%"
+          "ice blue 55%",
+          "blue 80%",
+          "gold 95%"
         ],
         "nebulae": [
-          "violet 32%",
-          "amber 12%",
+          "blue 38%",
+          "yellow 11%",
+          "azure 20%",
           "blue 16%"
-        ]
+        ],
+        "sky": "deep blue at 42%"
       },
       "light": {
+        "feel": "cream with an indigo sky, a warm glow and a few rose stars",
         "stars": [
-          "blue 70%",
-          "red 60%",
-          "navy 55%"
+          "indigo 70%",
+          "rose 55%",
+          "navy 55%",
+          "amber 90%"
         ],
         "nebulae": [
-          "blue 22%",
-          "red 16%",
-          "red 14%"
-        ]
+          "indigo 24%",
+          "orange 16%",
+          "rose 11%",
+          "lavender 16%"
+        ],
+        "sky": "indigo at 10%"
       },
       "colorful": {
+        "feel": "violet night with cyan and magenta clouds",
         "stars": [
           "white 85%",
           "pink 65%",
-          "cyan 70%"
+          "cyan 70%",
+          "gold 95%"
         ],
         "nebulae": [
           "cyan 28%",
           "magenta 20%",
-          "violet 30%"
-        ]
+          "violet 30%",
+          "violet 18%"
+        ],
+        "sky": "violet at 40%"
       },
       "freaky": {
+        "feel": "dark navy with magenta, lime and cyan glow",
         "stars": [
           "mint white 85%",
           "lime 65%",
-          "cyan 70%"
+          "cyan 70%",
+          "yellow 95%"
         ],
         "nebulae": [
           "magenta 28%",
           "lime 14%",
-          "cyan 18%"
-        ]
+          "cyan 18%",
+          "magenta 14%"
+        ],
+        "sky": "plum at 40%"
       }
     },
     "glass": {
@@ -379,7 +400,7 @@
       "sidebar": "background at 52% + blur 10, edge line fades from glow to border",
       "inspector": "same as the sidebar",
       "statusbar": "background at 42%",
-      "panels": "surface at 62% + blur 8 (groups and tables)"
+      "panels": "surface at 62% + blur 8, plus the panel gradient (groups, tables, sheets, menus, sidebar, inspector)"
     },
     "glows": {
       "primaryButton": "linear-gradient(135deg, accentA, accentB) + 0 0 22px accent at 30 to 45%",
@@ -389,7 +410,10 @@
       "switchOn": "0 0 12px accent glow",
       "avatar": "gradient of accentA and accentB + 0 0 14px accent glow",
       "window": "inset 0 0 160px -70px glow at 16%",
-      "statusDot": "0 0 8px success"
+      "statusDot": "0 0 8px success",
+      "blueAccents": "hover states use glow: button border and tint, sidebar item, table row (2 px left line), token border, cover ring, search focus ring",
+      "toolbarLine": "bottom line of the toolbar fades from border to glow in the middle",
+      "contentFloor": "radial glow at the bottom edge of the content area"
     },
     "details": [
       "four-point star before section headings",

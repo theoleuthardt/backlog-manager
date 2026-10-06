@@ -64,7 +64,7 @@
     },
     "ShelfDashboard.dc.html": {
       "h": 900,
-      "title": "C \u00b7 Shelf desktop \u00b7 Home",
+      "title": "C \u00b7 Shelf OLED desktop \u00b7 Home",
       "w": 1440,
       "x": 0,
       "y": 2440
@@ -179,7 +179,7 @@
       "y": 12800,
       "w": 1440,
       "h": 900,
-      "title": "Home \u00b7 Light (white, blue, red)"
+      "title": "Home \u00b7 Light (cream, indigo)"
     },
     "ShelfHomeColorful.dc.html": {
       "x": 1520,
@@ -239,7 +239,7 @@
     "titleC": {
       "kind": "title1",
       "maxW": 2960,
-      "text": "C \u00b7 Shelf OLED \u2014 chosen direction, a desktop app on true black with a hint of space",
+      "text": "C \u00b7 Shelf OLED \u2014 chosen direction, a desktop app: black fading into deep blue, blue glow, yellow accents",
       "w": 240,
       "x": 0,
       "y": 2180
@@ -255,7 +255,7 @@
     "titleThemes": {
       "kind": "title1",
       "maxW": 4480,
-      "text": "Every theme gets its own space: same screens, other colours (switch any artboard with its Theme tweak)",
+      "text": "Every theme gets its own space: same screens, the theme's own colours (switch any artboard with its Theme tweak)",
       "w": 240,
       "x": 0,
       "y": 12540

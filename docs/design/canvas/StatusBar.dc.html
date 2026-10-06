@@ -13,16 +13,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>body{margin:0}</style>
 </helmet>
-<div class="shelf statusbar" style="width: 100%; height: 28px; color: var(--muted); font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; display: flex; align-items: center; gap: 16px; padding: 0 14px;">
+<div class="shelf statusbar {{themeClass}}" style="width: 100%; height: 28px; color: var(--muted); font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; display: flex; align-items: center; gap: 16px; padding: 0 14px;">
   <span>{{left}}</span>
   <span style="margin-left: auto; display: flex; align-items: center; gap: 6px;"><span class="dot" style="background: var(--success); width: 6px; height: 6px;"></span>{{sync}}</span>
   <span class="faint">v0.9.0</span>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"left":{"editor":"text","default":"148 games"},"sync":{"editor":"text","default":"Steam synced 2 min ago"},"$preview":{"width":1440,"height":28}}'>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"text","default":"oled"},"left":{"editor":"text","default":"148 games"},"sync":{"editor":"text","default":"Steam synced 2 min ago"},"$preview":{"width":1440,"height":28}}'>
 class Component extends DCLogic {
-  renderVals() {
-    return {
+  renderVals() { const themeClass = 'theme-' + (this.props.theme ?? 'oled');
+    return { themeClass,
       left: this.props.left ?? '148 games',
       sync: this.props.sync ?? 'Steam synced 2 min ago'
     };

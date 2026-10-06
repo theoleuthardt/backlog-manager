@@ -20,7 +20,7 @@ This document is the spec a second client (the planned Flutter client, issue #24
 6. **Keyboard first.** Cmd/Ctrl+K opens a command palette, `/` focuses search, context menus show their shortcuts.
 7. **Changes save themselves.** Entry edits and settings autosave; destructive actions ask first.
 8. **Themeable from six colours.** Users keep the six-colour theme model; every other colour is derived.
-9. **A bit of space in every theme.** OLED black by default, a starfield, nebula clouds and glowing accents. Every theme has the same atmosphere in its own colours (light: white with blue and red). It stays behind the content and never competes with the covers.
+9. **A bit of space in every theme.** OLED black fading into deep blue by default, with stars, nebula clouds, blue glow and yellow accents. Every theme has the same atmosphere in its own colours. It stays behind the content and never competes with the covers.
 
 ## Theme model and tokens
 
@@ -35,7 +35,7 @@ A theme is six hex colours, unchanged from the current app (`frontend/src/lib/th
 | `foreground` | Primary text, active chip, icons |
 | `accent` | Primary buttons, progress, selection ring, focus ring, active tab underline, hover row in menus |
 | `border` | Strong outlines: secondary button border, dashed "add" chips, menu border |
-| `glow` | Nebula tint of the window background, the sidebar's active item, cover shadows and the home card; Shelf OLED uses violet `#7c5cff` |
+| `glow` | The sky: nebula tint of the window background, hover states, edge lines, cover shadows and the home card; Shelf OLED uses blue `#3b82f6` |
 
 ### Derived colours
 
@@ -45,7 +45,8 @@ Computed from the six inputs, so a custom theme automatically gets a complete pa
 |---|---|---|
 | `surface2` | mix(`surface`, `foreground`, 3%) | `#121216` |
 | `surface3` | mix(`surface`, `foreground`, 6%) | `#1a1a20` |
-| `borderSubtle` | mix(`surface`, `foreground`, 8%) | `#1c1c22` |
+| `borderSubtle` | mix(`surface`, `foreground`, 8%) | `#1b1d28` |
+| `borderStrong` | `border`, blended into `background` when it is loud (white, black, neon) | `#353a4c` |
 | `text2` | mix(`foreground`, `background`, 11%) | `#d9d9dd` |
 | `muted` | mix(`foreground`, `background`, 35%) | `#a3a5ad` |
 | `faint` | mix(`foreground`, `background`, 50%) (at least 4.5:1 on `background`) | `#7b7d87` |
@@ -53,17 +54,17 @@ Computed from the six inputs, so a custom theme automatically gets a complete pa
 | `glowSoft` | `glow` at 16% opacity | violet at 16% |
 | `onAccent` | black or white, whichever has the higher contrast against `accent` | `#1a1103` |
 
-Semantic colours follow the theme's lightness so small text keeps 4.5:1 contrast: success `#34d399`, danger `#ff6b81`, info `#60a5fa` on dark themes; success `#047857`, danger `#e11d48`, info `#2f5bff` on light ones.
+Semantic colours follow the theme's lightness so small text keeps 4.5:1 contrast: success `#34d399`, danger `#ff6b81`, info `#60a5fa` on dark themes; success `#047857`, danger `#e11d48`, info `#4f46e5` on light ones.
 
 ### Built-in themes
 
-The four built-in themes keep their ids. `light` gets a new palette (white, blue, red) so the atmosphere reads on a light background; `colorful`, `freaky` and `dark` keep their six colours. **Shelf OLED** is new and becomes the default; the former default `dark` (black with a blue accent) stays selectable.
+The four built-in themes keep their ids and their six colours; only the atmosphere is new. A loud `border` (white on `dark`, near-black on `light`, neon on `freaky`) is blended into the background for outlines, see `borderStrong` above. **Shelf OLED** is new and becomes the default; the former default `dark` (black with a blue accent) stays selectable.
 
 | Theme | background | surface | foreground | accent | border | glow |
 |---|---|---|---|---|---|---|
-| `shelfOled` (new default) | `#000000` | `#0b0b0e` | `#f2f2f3` | `#f5a524` | `#34343c` | `#7c5cff` |
+| `shelfOled` (new default) | `#000000` | `#0b0b0e` | `#f2f2f3` | `#f5a524` | `#353a4c` | `#3b82f6` |
 | `dark` | `#000000` | `#0f0f12` | `#ffffff` | `#2563eb` | `#ffffff` | `#3b82f6` |
-| `light` (recoloured) | `#f7f8fd` | `#ffffff` | `#12152b` | `#2f5bff` | `#c3cae3` | `#ff4d6d` |
+| `light` | `#f5f4ef` | `#ffffff` | `#15151b` | `#4f46e5` | `#15151b` | `#818cf8` |
 | `colorful` | `#0b0720` | `#1a1240` | `#fdf2ff` | `#ff3ea5` | `#7c4dff` | `#22d3ee` |
 | `freaky` | `#04040e` | `#0e0e26` | `#eaffe9` | `#a3ff12` | `#00ffd0` | `#ff00e5` |
 
@@ -97,14 +98,17 @@ Font: **Plus Jakarta Sans** (weights 400 to 800). Sizes in logical pixels; the b
 
 ### Atmosphere
 
-A space look in the window background and a few glowing accents. It is part of every theme and takes its colours from the theme, so a light theme gets blue and red stars on white, a dark one white and violet. Content stays crisp: the effects sit behind panels and never inside forms or tables.
+A space look in the window background and in the accents of nearly every element. It is part of every theme and takes its colours from the theme. On Shelf OLED it is black fading into deep blue with blue glow and stars and yellow accents; on `light` an indigo sky on cream. Content stays crisp: the effects sit behind panels, never inside forms or tables.
 
-- **Nebulae:** three radial clouds painted behind the content: `glow` at 30% top right (900 x 640), `accent` at 12% bottom centre (820 x 460), and a mix of both at 16% on the left edge (760 x 520).
-- **Stars:** a dense field of 1 to 1.5 px dots in three colours (`starA` foreground, `starB` accent, `starC` glow) in five staggered tiles from 120 x 110 to 340 x 310 px, plus two layers of brighter 1.5 to 2 px stars with a soft 7 to 8 px halo, so the pattern never visibly repeats.
-- **Glass:** title bar, sidebar, inspector and status bar are translucent (42 to 52% of `background`) with a blur so the sky shows through; groups and tables are `surface` at 62% with a blur. The edge lines of the sidebar and inspector fade from `glow` to `border`, and the title bar's bottom line glows in the middle.
-- **Glows:** primary buttons use an accent gradient with a soft glow; progress bars use the same gradient with a glow; covers cast a `glow`-coloured shadow; selected covers, the active switch, the avatar and the status dot glow; the active sidebar item has a `glow` gradient and a 2 px accent bar; the window has a faint inner `glow`.
+- **Sky:** a gradient from the theme's `glow` (10 to 42%) over the top 42% of the window, so black turns into deep blue towards the top.
+- **Nebulae:** four radial clouds: `glow` at 38% top right (900 x 640), a yellow or `accent` one at 11% bottom centre (820 x 460), an azure one on the left edge (760 x 520) and a soft `glow` cloud at the top centre (700 x 360).
+- **Orbit rings:** thin rings of 300, 420 and 640 px radius around the window's corners, in `glow` or foreground at about 12%.
+- **Stars:** a dense field of 1 to 1.5 px dots in three colours in five staggered tiles from 120 x 110 to 340 x 310 px, two layers of brighter stars with a 7 to 8 px halo, and one layer of gold stars (`accent`-warm) with a halo, so the pattern never visibly repeats.
+- **Glass and gradients:** title bar, sidebar, inspector and status bar are translucent with a blur; groups, tables, sheets, menus, sidebar and inspector carry a faint `glow` gradient from the top edge (the panel gradient), so panels shade from black into blue. The edge lines of the sidebar and inspector fade from `glow` to `border`, the title bar's and toolbar's bottom lines glow in the middle, and the content area has a soft `glow` at its floor.
+- **Blue accents:** `glow` marks hover and focus everywhere: secondary button border and tint, sidebar item hover, table row hover (2 px left line), token border, cover ring and the search focus ring. `accent` (yellow on Shelf OLED) stays the colour of action, progress and selection.
+- **Glows:** primary buttons and progress bars use an accent gradient with a glow; covers cast a `glow`-coloured shadow; selected covers, the active switch, the avatar (with a `glow` ring) and the status dot glow; the active sidebar item has a `glow` gradient and a 2 px accent bar; the window has a faint inner `glow`.
 - **Details:** a four-point star before section headings, orbit rings with small glowing satellites on the home card, and a planet-with-ring brand mark in the sidebar.
-- **Derivation:** custom themes derive the atmosphere from their six colours (see `atmosphere.derivation` in the tokens file). The four built-ins override it with tuned values: Shelf OLED violet, amber and blue; light blue and red; colorful cyan, magenta and violet; freaky magenta, lime and cyan.
+- **Derivation:** custom themes derive all of it from their six colours (see `atmosphere.derivation` in the tokens file). The four built-ins override it with tuned values.
 - **Motion:** nothing animates, so reduced motion needs no change. Keep the effects out of tables and forms, and cap the blur on slower machines.
 
 ### Layout

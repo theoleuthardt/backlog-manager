@@ -13,7 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>body{margin:0}</style>
 </helmet>
-<div class="shelf" style="width: 232px; color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif; display: flex; flex-direction: column;">
+<div class="shelf {{themeClass}}" style="width: 232px; color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif; display: flex; flex-direction: column;">
   <div class="side-brand">
     <svg width="26" height="26" viewBox="0 0 32 32" fill="none" aria-hidden="true"><ellipse cx="16" cy="16" rx="14" ry="5.5" transform="rotate(-24 16 16)" style="stroke: var(--glow);" stroke-width="1.6"></ellipse><circle cx="16" cy="16" r="6.5" style="fill: var(--accent);"></circle><circle cx="27" cy="9.5" r="1.8" style="fill: var(--accent-a);"></circle></svg>
     Backlog
@@ -32,9 +32,9 @@
   </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"active":{"editor":"text","default":"library"},"$preview":{"width":232,"height":560}}'>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"text","default":"oled"},"active":{"editor":"text","default":"library"},"$preview":{"width":232,"height":560}}'>
 class Component extends DCLogic {
-  renderVals() {
+  renderVals() { const themeClass = 'theme-' + (this.props.theme ?? 'oled');
     const active = this.props.active ?? 'library';
     const defs = [
       { section: 'Backlog', id: 'home', name: 'Home', icon: 'M3 11l9-8 9 8M5 10v10h14V10', count: '' },
@@ -53,7 +53,7 @@ class Component extends DCLogic {
       labelShow: d.section ? 'block' : 'none',
       cls: d.id === active ? 'active' : ''
     }));
-    return { items };
+    return { themeClass, items };
   }
 }
 </script>
