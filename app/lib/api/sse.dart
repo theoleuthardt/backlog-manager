@@ -1,0 +1,127 @@
+import 'dart:convert';
+
+import 'package:dio/dio.dart';
+
+/// One decoded message of a backend progress stream.
+sealed class SseEvent {
+  const SseEvent();
+}
+
+/// A `progress` message: [processed] of [total] items are done.
+class SseProgress extends SseEvent {
+  const SseProgress(this.processed, this.total);
+
+  final int processed;
+  final int total;
+}
+
+/// The terminal `done` message; [data] is its decoded JSON payload.
+class SseDone extends SseEvent {
+  const SseDone(this.data);
+
+  final Object? data;
+}
+
+/// The terminal `error` message with the backend's user-facing text.
+class SseError extends SseEvent {
+  const SseError(this.message);
+
+  final String message;
+}
+
+/// The stream closed before the backend sent `done` or `error`.
+class SseStreamEndedException implements Exception {
+  const SseStreamEndedException();
+
+  @override
+  String toString() => 'SSE stream ended without a result';
+}
+
+final _boundary = RegExp(r'\r\n\r\n|\n\n');
+final _lineBreak = RegExp(r'\r\n|\n');
+
+SseEvent? _decode(String raw) {
+  String? event;
+  final dataLines = <String>[];
+  for (final line in raw.split(_lineBreak)) {
+    if (line.startsWith('event:')) {
+      event = _fieldValue(line, 'event:');
+    } else if (line.startsWith('data:')) {
+      dataLines.add(_fieldValue(line, 'data:'));
+    }
+  }
+  final data = dataLines.join('\n');
+  switch (event) {
+    case 'progress':
+      final json = jsonDecode(data) as Map<String, dynamic>;
+      return SseProgress(json['processed'] as int, json['total'] as int);
+    case 'done':
+      return SseDone(jsonDecode(data));
+    case 'error':
+      return SseError(data);
+    default:
+      return null;
+  }
+}
+
+String _fieldValue(String line, String prefix) {
+  final value = line.substring(prefix.length);
+  return value.startsWith(' ') ? value.substring(1) : value;
+}
+
+/// Decodes a backend SSE byte stream into typed events and ends after the
+/// first `done` or `error`.
+///
+/// Raw text is accumulated un-normalized, because a chunk boundary can land
+/// inside a separator (`\r\n\r` then `\n`). Throws [SseStreamEndedException]
+/// when the bytes end before a terminal event.
+Stream<SseEvent> parseSseEvents(Stream<List<int>> bytes) async* {
+  var buffer = '';
+  await for (final text in utf8.decoder.bind(bytes)) {
+    buffer += text;
+    var match = _boundary.firstMatch(buffer);
+    while (match != null) {
+      final raw = buffer.substring(0, match.start);
+      buffer = buffer.substring(match.end);
+      final event = raw.isEmpty ? null : _decode(raw);
+      if (event != null) {
+        yield event;
+        if (event is! SseProgress) return;
+      }
+      match = _boundary.firstMatch(buffer);
+    }
+  }
+  throw const SseStreamEndedException();
+}
+
+/// Opens a streaming endpoint through [dio] (so the Bearer token and the 401
+/// rule of `createApiDio` apply) and yields its events.
+///
+/// The `EventSource` of a browser cannot send an Authorization header, so the
+/// stream is read manually. Cancelling the subscription cancels the request
+/// and closes the connection; the backend then stops its background task.
+Stream<SseEvent> openSse(
+  Dio dio,
+  String path, {
+  String method = 'POST',
+  Object? data,
+  Map<String, Object?>? queryParameters,
+}) async* {
+  final cancelToken = CancelToken();
+  try {
+    final response = await dio.request<ResponseBody>(
+      path,
+      data: data,
+      queryParameters: queryParameters,
+      cancelToken: cancelToken,
+      options: Options(
+        method: method,
+        responseType: ResponseType.stream,
+        headers: {'Accept': 'text/event-stream'},
+      ),
+    );
+    yield* parseSseEvents(response.data!.stream);
+  } finally {
+    if (!cancelToken.isCancelled) cancelToken.cancel();
+  }
+}
