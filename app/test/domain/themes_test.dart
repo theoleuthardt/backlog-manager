@@ -57,6 +57,26 @@ void main() {
     });
   });
 
+  group('malformed colours', () {
+    test('fall back to white text on the accent without throwing', () {
+      expect(onAccentColor('not a colour'), '#ffffff');
+      expect(onAccentColor('#fff'), '#ffffff');
+    });
+
+    test('keep the icons as they are without throwing', () {
+      const broken = ThemeColors(
+        background: '#000000',
+        surface: '#000000',
+        foreground: 'oops',
+        accent: '#000000',
+        border: '#000000',
+        glow: '#000000',
+      );
+
+      expect(iconsNeedInversion(broken), isFalse);
+    });
+  });
+
   group('iconsNeedInversion', () {
     test('inverts the white icon set when the foreground colour is dark', () {
       expect(iconsNeedInversion(resolveTheme('light', []).colors), isTrue);

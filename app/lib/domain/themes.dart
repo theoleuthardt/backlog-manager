@@ -143,7 +143,10 @@ ResolvedTheme resolveTheme(String themeId, List<CustomTheme> customThemes) {
   return resolveTheme(defaultThemeId, const []);
 }
 
+/// WCAG relative luminance of a `#rrggbb` colour, NaN for anything else so
+/// every comparison with it is false (white text, icons left as they are).
 double _relativeLuminance(String hex) {
+  if (!isHexColor(hex)) return double.nan;
   double channel(int offset) {
     final value = int.parse(hex.substring(offset, offset + 2), radix: 16) / 255;
     return value <= 0.03928
