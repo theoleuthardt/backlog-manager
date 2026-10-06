@@ -113,6 +113,62 @@ void main() {
       expect(events, [isA<SseProgress>(), isA<SseDone>()]);
     });
 
+    test('accepts CR line endings', () async {
+      final events = await parseSseEvents(
+        Stream.value(
+          utf8.encode(
+            'event: progress\rdata: {"processed":1,"total":2}\r\revent: done\rdata: 1\r\r',
+          ),
+        ),
+      ).toList();
+
+      expect(events, [isA<SseProgress>(), isA<SseDone>()]);
+    });
+
+    test('accepts mixed line endings', () async {
+      final events = await parseSseEvents(
+        Stream.value(
+          utf8.encode(
+            'event: progress\r\ndata: {"processed":1,"total":2}\n\r'
+            'event: done\ndata: 1\r\n\n',
+          ),
+        ),
+      ).toList();
+
+      expect(events, [isA<SseProgress>(), isA<SseDone>()]);
+    });
+
+    test('keeps a CR and the LF after it together across chunks', () async {
+      final events = await parseSseEvents(
+        Stream.fromIterable([
+          utf8.encode('event: progress\rdata: {"processed":1,"total":2}\r'),
+          utf8.encode('\n\r\nevent: done\rdata: 1\r'),
+          utf8.encode('\r'),
+        ]),
+      ).toList();
+
+      expect(events, [isA<SseProgress>(), isA<SseDone>()]);
+    });
+
+    test('completes a message whose final CR ends the stream', () async {
+      final events = await parseSseEvents(
+        Stream.value(utf8.encode('event: done\ndata: 1\n\r')),
+      ).toList();
+
+      expect(events, [isA<SseDone>()]);
+    });
+
+    test('handles every chunk size for CR separated streams', () async {
+      const text =
+          'event: progress\rdata: {"processed":1,"total":2}\r\r'
+          'event: done\rdata: 1\r\r';
+      for (final size in [1, 2, 3, 5, 9]) {
+        final events = await parseSseEvents(chunked(text, size)).toList();
+
+        expect(events, hasLength(2), reason: 'chunk size $size');
+      }
+    });
+
     test('keeps multi-byte characters that are split across chunks', () async {
       final bytes = utf8.encode('event: error\ndata: Überlauf für 日本\n\n');
       final events = await parseSseEvents(

@@ -49,8 +49,9 @@ class SseFormatException implements Exception {
   String toString() => 'SseFormatException: $message';
 }
 
-final _boundary = RegExp(r'\r\n\r\n|\n\n');
-final _lineBreak = RegExp(r'\r\n|\n');
+const _terminator = r'(?:\r\n|\n|\r(?!\n|$))';
+final _boundary = RegExp('$_terminator$_terminator');
+final _lineBreak = RegExp(r'\r\n|\n|\r');
 
 SseEvent? _decode(String raw) {
   String? event;
@@ -87,27 +88,49 @@ String _fieldValue(String line, String prefix) {
   return value.startsWith(' ') ? value.substring(1) : value;
 }
 
+(List<String>, String) _splitMessages(String buffer) {
+  final messages = <String>[];
+  var match = _boundary.firstMatch(buffer);
+  while (match != null) {
+    final raw = buffer.substring(0, match.start);
+    if (raw.isNotEmpty) messages.add(raw);
+    buffer = buffer.substring(match.end);
+    match = _boundary.firstMatch(buffer);
+  }
+  return (messages, buffer);
+}
+
+Iterable<SseEvent> _decodeAll(List<String> messages) sync* {
+  for (final raw in messages) {
+    final event = _decode(raw);
+    if (event != null) yield event;
+  }
+}
+
 /// Decodes a backend SSE byte stream into typed events and ends after the
 /// first `done` or `error`.
 ///
-/// Raw text is accumulated un-normalized, because a chunk boundary can land
-/// inside a separator (`\r\n\r` then `\n`). Throws [SseStreamEndedException]
-/// when the bytes end before a terminal event and [SseFormatException] for a
-/// malformed payload.
+/// Lines end with CRLF, LF or CR, also mixed. Raw text is accumulated
+/// un-normalized, because a chunk boundary can land inside a separator
+/// (`\r\n\r` then `\n`); for that reason a CR at the very end of the buffer is
+/// not a line end yet, it may be the first half of a CRLF, and counts as one
+/// once the stream closes. Throws [SseStreamEndedException] when the bytes end
+/// before a terminal event and [SseFormatException] for a malformed payload.
 Stream<SseEvent> parseSseEvents(Stream<List<int>> bytes) async* {
   var buffer = '';
   await for (final text in utf8.decoder.bind(bytes)) {
     buffer += text;
-    var match = _boundary.firstMatch(buffer);
-    while (match != null) {
-      final raw = buffer.substring(0, match.start);
-      buffer = buffer.substring(match.end);
-      final event = raw.isEmpty ? null : _decode(raw);
-      if (event != null) {
-        yield event;
-        if (event is! SseProgress) return;
-      }
-      match = _boundary.firstMatch(buffer);
+    final (messages, rest) = _splitMessages(buffer);
+    buffer = rest;
+    for (final event in _decodeAll(messages)) {
+      yield event;
+      if (event is! SseProgress) return;
+    }
+  }
+  if (buffer.endsWith('\r')) {
+    for (final event in _decodeAll(_splitMessages('$buffer\n').$1)) {
+      yield event;
+      if (event is! SseProgress) return;
     }
   }
   throw const SseStreamEndedException();
