@@ -57,7 +57,7 @@ The framework-free logic of `frontend/src/lib/` lives in `app/lib/domain/` with 
 | `splitList.ts` | `split_list.dart` | |
 | `trailer.ts` | `trailer.dart` | |
 | `backups.ts` | `backups.dart` | |
-| `setupWizard.ts` | `setup_wizard.dart` | |
+| `setupWizard.ts` | `routing/guard.dart` | `guardRedirect` also covers sign-in and the loading state, with the same cases for the wizard |
 | `safeUrl.ts` | `safe_url.dart` | |
 | `largeBacklog.test.ts` | `test/domain/large_backlog_test.dart` | same 10k entries and 3 s budget |
 | `apiUrl.ts` | `lib/api/server_url.dart` | ported in #251 |
