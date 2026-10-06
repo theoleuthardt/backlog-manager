@@ -91,7 +91,7 @@ Font: **Plus Jakarta Sans** (weights 400 to 800). Sizes in logical pixels; the b
 
 - **Spacing:** 4, 6, 8, 10, 12, 14, 16, 20, 24, 32. Content padding is 24 horizontally and 22 vertically; dividers are 1 px `borderSubtle`.
 - **Radii:** control 8, card (cover) 12, panel and group 14, dialog and sheet 16, window 12, chip full pill. Only chips are pills.
-- **Elevation:** only floating layers cast a shadow: menus, sheets, windows on the desktop, the segmented control's selected thumb. Panes and groups are flat.
+- **Elevation:** only floating layers cast a shadow: menus, sheets, toasts, windows on the desktop, the segmented control's selected thumb. Menus, sheets and desktop windows add a faint `glow` ring or halo (see `elevation` in the tokens file). Panes and groups are flat.
 - **Motion:** 150 ms for hover, press and menus, 250 ms for the inspector sliding in and sheets dropping 8 px from the title bar. Ease-out everywhere. With reduced motion enabled there is no slide.
 - **Focus and selection:** keyboard focus is a 2 px accent outline with a 2 px offset. A selected cover gets a 3 px accent outline with a 3 px offset and, in selection mode, a 22 px check circle.
 
@@ -99,7 +99,7 @@ Font: **Plus Jakarta Sans** (weights 400 to 800). Sizes in logical pixels; the b
 
 A restrained space look on top of the OLED black. It lives in the window background and in a few glowing accents; content stays crisp.
 
-- **Starfield:** three tiled layers of 1 to 1.5 px dots (white 60% and 40%, blue-white 50%) at tile sizes 190, 270 and 340 px, so the pattern never visibly repeats.
+- **Starfield:** three tiled layers of 1 to 1.5 px dots (white 60% and 40%, blue-white 50%) in tiles of 190 x 170, 270 x 230 and 340 x 310 px, so the pattern never visibly repeats.
 - **Nebula:** a `glow` radial gradient (17%, 760 x 520) in the top right and a faint `accent` one (7%, 620 x 420) in the bottom left.
 - **Glass:** the title bar (55% black with a 14 px blur), sidebar (78%), inspector (82%) and status bar (60%) are translucent so the background shows through, never behind dense forms at lower opacity.
 - **Glows:** primary buttons use an amber gradient (`#ffbb45` to `#f58a1f`) with a soft glow; progress bars use an amber to orange gradient with a glow; covers cast a `glow`-coloured shadow; selected covers, the active switch and the status dot glow; the active sidebar item has a `glow` gradient and a 2 px accent bar.
@@ -119,7 +119,7 @@ Reference window 1440 x 900. All sizes are logical pixels.
 | Content | fills the rest, scrolls vertically, 24 px padding |
 | Inspector | 380 wide on the right, `surface`, left divider; closes with its button or Esc |
 | Status bar | 28 high; counts on the left, sync state and version on the right |
-| Controls | 32 high (inputs 34), table rows 48, table header 34, sidebar items 32 |
+| Controls | 32 high (inputs 34), table rows 48, table header 34, sidebar items 32, setup stepper steps 36 |
 | Covers | 2:3, at least 150 wide (140 beside the inspector), gap 22 / 16 |
 
 ## Window shell

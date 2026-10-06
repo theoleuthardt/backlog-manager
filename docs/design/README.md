@@ -39,7 +39,7 @@ Chosen direction, drawn as a desktop app (fixed 1440 x 900 windows, or smaller w
 | `ShelfLogin.dc.html` | Sign-in and two-factor windows |
 | `ShelfSetup.dc.html` | Setup wizard window |
 
-Shared building blocks, imported by the artboards: `SidebarNav.dc.html` (brand and navigation), `SidebarAccount.dc.html` (the account row that sits at the bottom of every sidebar), `Titlebar.dc.html`, `StatusBar.dc.html`, `LibraryPane.dc.html` (the library behind sheets).
+Shared building blocks, imported by the artboards: `SidebarNav.dc.html` (brand and navigation), `SidebarAccount.dc.html` (the account row that sits at the bottom of every sidebar; the Settings window draws the same row inline at the bottom of its tab list instead of importing the component), `Titlebar.dc.html`, `StatusBar.dc.html`, `LibraryPane.dc.html` (the library behind sheets).
 
 Explored and not chosen (kept for reference): `Main.dc.html` and `ArcadeDetail.dc.html` (A, Arcade: gaming HUD, neon on near-black), `CleanDashboard.dc.html` and `CleanDetail.dc.html` (B, Clean: light and minimal). Their file names predate the others.
 
