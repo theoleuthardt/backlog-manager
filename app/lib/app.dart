@@ -1,21 +1,23 @@
-import 'package:backlog_manager/design/shelf_theme.dart';
-import 'package:backlog_manager/design/shelf_tokens.dart';
-import 'package:backlog_manager/domain/themes.dart';
+import 'package:backlog_manager/design/theme_provider.dart';
+import 'package:backlog_manager/routing/router.dart';
+import 'package:backlog_manager/shell/shell_shortcuts.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Root widget of the desktop client; the router and providers land here.
-class BacklogManagerApp extends StatelessWidget {
+/// Root widget of the desktop client: the router, the theme and the keyboard
+/// shortcuts of the window.
+class BacklogManagerApp extends ConsumerWidget {
   const BacklogManagerApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
+  Widget build(BuildContext context, WidgetRef ref) {
+    return MaterialApp.router(
       title: 'Backlog Manager',
       debugShowCheckedModeBanner: false,
-      theme: buildShelfTheme(
-        ShelfTokens.forTheme(resolveTheme(defaultThemeId, const [])),
-      ),
-      home: const Scaffold(body: Center(child: Text('Backlog Manager'))),
+      theme: ref.watch(shelfThemeProvider),
+      routerConfig: ref.watch(routerProvider),
+      builder: (context, child) =>
+          ShellShortcuts(child: child ?? const SizedBox.shrink()),
     );
   }
 }

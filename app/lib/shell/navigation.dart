@@ -106,3 +106,20 @@ const navigationSections = [
     ],
   ),
 ];
+
+const _pageTitles = {
+  AppRoutes.creationTool: 'Creation tool',
+  AppRoutes.setup: 'Setup',
+  AppRoutes.signIn: 'Sign in',
+  AppRoutes.loading: 'Loading',
+};
+
+/// The title shown in the title bar for the page at [location].
+String pageTitle(String location) {
+  for (final section in navigationSections) {
+    for (final item in section.items) {
+      if (item.isActiveFor(location)) return item.label;
+    }
+  }
+  return _pageTitles[location] ?? 'Backlog Manager';
+}

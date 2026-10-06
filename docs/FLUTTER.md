@@ -127,3 +127,20 @@ features/*  ──►  providers (Riverpod)  ──►  lib/api (Dio + generated
 - The font is Plus Jakarta Sans, bundled in `app/assets/fonts/` (five static weights, SIL Open Font License, `OFL.txt`), so the app looks the same offline.
 - Text colours (`foreground`, `text2`, `muted`, `faint`) reach 4.5:1 on the background in every built-in theme and the status colours reach it on the surface; tests in `test/design/` pin that. The light theme's `danger` on its cream background is 4.27:1, just below, which is why the status colours are checked against the surface they are used on.
 - The derived colours of a custom theme follow the written formulas, the built-ins use their tuned values; the test compares both with the documented Shelf OLED table.
+
+## Window shell and routing
+
+`lib/shell/` is the frame of the main window: `AppShell` puts the title bar, the sidebar, the main pane with an inspector slot and the status bar over the atmosphere. Pages come from `go_router` (`lib/routing/router.dart`):
+
+| Route | Window |
+| --- | --- |
+| `/` Home, `/library`, `/steam`, `/import`, `/export`, `/creation-tool`, `/appearance`, `/space` | main window with the sidebar (`ShellRoute`) |
+| `/settings`, `/sign-in`, `/setup`, `/loading` | full-window pages: the same title bar and atmosphere, no sidebar |
+
+- **Route guard** (`routing/guard.dart`, `guardRedirect`): while the session is checked everything shows `/loading`, signed-out users go to `/sign-in`, users with an unfinished setup are funnelled into `/setup`, finished users are sent from sign-in, the wizard and the loading page to `/`. It replaces the web client's `setupRedirect`. The app opens at sign-in. The session itself (`routing/session.dart`) is only state until the sign-in feature fills it.
+- **Secondary windows:** Settings, the wizard and sign-in are full-window routes with the same chrome, not second native windows. A second window needs a second Flutter engine per window (`desktop_multi_window`), which is not worth it before these screens exist; the decision can be revisited with the settings window issue.
+- **Platform chrome:** `window_manager` hides the native title bar (`main.dart`). macOS keeps its traffic lights at the left of the title bar; Windows and Linux get minimise, maximise and close buttons on the right. The title bar is the drag region and a double click maximises. `WindowControls` is the seam the tests replace.
+- **Back and forward** (`routing/history.dart`) keep their own history of visited pages, because `go_router` cannot walk one.
+- **Shortcuts** (`shell/shell_shortcuts.dart`): `/` focuses the search field (not while typing), Cmd+K (macOS) or Ctrl+K opens the command palette flag (`paletteOpenProvider`, the palette itself is a later issue) and Esc closes the palette and then the inspector. Esc uses its own intent because the framework's `DismissIntent` is answered by other widgets first.
+- **Screens fill the shell** through providers: `shellStatusProvider` (counts and sync state in the status bar), `shellInspectorProvider` (the inspector slot), `navigationCountsProvider` (numbers next to sidebar items) and `addGameRequestProvider` ("Add game" in the sidebar).
+- The account row's menu switches the theme (`themeIdProvider`, not stored yet, that is the appearance issue) and logs out.
