@@ -49,6 +49,11 @@ class SseFormatException implements Exception {
   String toString() => 'SseFormatException: $message';
 }
 
+/// Largest pending message (bytes of text without a separator) that
+/// [parseSseEvents] buffers before it gives up, so a peer or proxy that never
+/// sends a blank line cannot grow the buffer without bound.
+const maxSseMessageLength = 1024 * 1024;
+
 const _terminator = r'(?:\r\n|\n|\r(?!\n|$))';
 final _boundary = RegExp('$_terminator$_terminator');
 final _lineBreak = RegExp(r'\r\n|\n|\r');
@@ -115,13 +120,19 @@ Iterable<SseEvent> _decodeAll(List<String> messages) sync* {
 /// (`\r\n\r` then `\n`); for that reason a CR at the very end of the buffer is
 /// not a line end yet, it may be the first half of a CRLF, and counts as one
 /// once the stream closes. Throws [SseStreamEndedException] when the bytes end
-/// before a terminal event and [SseFormatException] for a malformed payload.
+/// before a terminal event and [SseFormatException] for a malformed payload or
+/// a pending message larger than [maxSseMessageLength].
 Stream<SseEvent> parseSseEvents(Stream<List<int>> bytes) async* {
   var buffer = '';
   await for (final text in utf8.decoder.bind(bytes)) {
     buffer += text;
     final (messages, rest) = _splitMessages(buffer);
     buffer = rest;
+    if (buffer.length > maxSseMessageLength) {
+      throw const SseFormatException(
+        'a message is larger than the allowed size',
+      );
+    }
     for (final event in _decodeAll(messages)) {
       yield event;
       if (event is! SseProgress) return;

@@ -169,6 +169,32 @@ void main() {
       }
     });
 
+    test('rejects a message that grows past the size limit', () async {
+      final endless = Stream<List<int>>.fromIterable([
+        utf8.encode('event: progress\n'),
+        for (var i = 0; i < 200; i++) utf8.encode('data: ${'x' * 10000}\n'),
+      ]);
+
+      await expectLater(
+        parseSseEvents(endless).toList(),
+        throwsA(
+          isA<SseFormatException>().having(
+            (e) => e.message,
+            'message',
+            isNot(contains('xxxx')),
+          ),
+        ),
+      );
+    });
+
+    test('accepts a large message below the size limit', () async {
+      final big = 'event: done\ndata: "${'x' * 500000}"\n\n';
+
+      final events = await parseSseEvents(chunked(big, 65536)).toList();
+
+      expect(events.single, isA<SseDone>());
+    });
+
     test('keeps multi-byte characters that are split across chunks', () async {
       final bytes = utf8.encode('event: error\ndata: Überlauf für 日本\n\n');
       final events = await parseSseEvents(
