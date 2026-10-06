@@ -144,3 +144,24 @@ features/*  ──►  providers (Riverpod)  ──►  lib/api (Dio + generated
 - **Shortcuts** (`shell/shell_shortcuts.dart`): `/` focuses the search field (not while typing), Cmd+K (macOS) or Ctrl+K opens the command palette flag (`paletteOpenProvider`, the palette itself is a later issue) and Esc closes the palette and then the inspector. Esc uses its own intent because the framework's `DismissIntent` is answered by other widgets first.
 - **Screens fill the shell** through providers: `shellStatusProvider` (counts and sync state in the status bar), `shellInspectorProvider` (the inspector slot), `navigationCountsProvider` (numbers next to sidebar items) and `addGameRequestProvider` ("Add game" in the sidebar).
 - The account row's menu switches the theme (`themeIdProvider`, not stored yet, that is the appearance issue) and logs out.
+
+## UI kit
+
+`lib/design/widgets/` holds the components of the design catalogue; every one reads its colours from `ShelfTokens` and its text from `ShelfTextStyles`. A debug build has them all on one page at `/gallery` (`features/gallery/`, not registered in release builds).
+
+| File | Components |
+| --- | --- |
+| `pressable.dart` | `ShelfPressable`: hover, press, 2 px accent focus ring with 2 px offset, Enter and Space, pointer cursor, button semantics; the base of everything clickable |
+| `buttons.dart` | `ShelfButton` (primary, secondary, quiet, danger, with icon, disabled at 40%), `ShelfIconButton` |
+| `chips.dart` | `ShelfChip` (neutral, active, accent, info, ok, add with a dashed border; clickable, removable) |
+| `segmented.dart`, `tabs.dart` | `ShelfSegmented`, `ShelfTabs` |
+| `fields.dart`, `select.dart` | `ShelfField`, `ShelfFormGroup` with `ShelfFormRow`, `ShelfSelect` |
+| `toggles.dart`, `progress.dart` | `ShelfSwitch`, `ShelfCheckbox` (mixed state), `ShelfProgressBar`, `InterestSegments`, `StarRating` |
+| `cover.dart` | `ShelfCover` (2:3, title fallback in a colour from the title, progress, meta, selected ring, check circle), `ShelfCoverGrid`, `ShelfRow`, `proxiedImageUrl` |
+| `table.dart` | `ShelfDataTable` (header, rows, hover, selected, checkbox column), `ShelfListRow` |
+| `menu.dart` | `ShelfMenuAnchor`, `ContextMenuRegion` (right click), `ShelfPopover`; items with icon, shortcut hint, check, danger, submenus and dividers on top of `MenuAnchor` |
+| `sheet.dart`, `toast.dart`, `stepper.dart` | `ShelfSheet` with `ShelfSheetFooter` and `showShelfSheet`, `ShelfToast` with `showShelfToast`, `ShelfStepper` |
+
+- **Covers and images:** `ShelfCover` takes an `ImageProvider`; the screens build it from `proxiedImageUrl(serverUrl, imageLink)` with `CachedNetworkImageProvider` (memory and disk cache), so the app only talks to the image proxy of its own server. A picture that fails to load falls back to the title.
+- **Menus:** `MenuAnchor` closes on Esc only while the focus is inside it, so a menu opened with the mouse closes with a click outside.
+- **Goldens:** each component group has goldens in Shelf OLED and light under `test/design/widgets/goldens/`. The test renderer draws text in a block font and shadows as hard shapes, which keeps the images identical on every platform; they show layout, colour and state, not typography. Re-record with `task app:test:update-goldens` after an intended change and look at the images.
