@@ -60,6 +60,18 @@ class ResolvedTheme {
 
 const builtinThemes = [
   BuiltinTheme(
+    id: 'shelfOled',
+    name: 'Shelf OLED',
+    colors: ThemeColors(
+      background: '#000000',
+      surface: '#0b0b0e',
+      foreground: '#f2f2f3',
+      accent: '#f5a524',
+      border: '#353a4c',
+      glow: '#3b82f6',
+    ),
+  ),
+  BuiltinTheme(
     id: 'dark',
     name: 'Dark',
     colors: ThemeColors(
@@ -109,7 +121,7 @@ const builtinThemes = [
   ),
 ];
 
-const defaultThemeId = 'dark';
+const defaultThemeId = 'shelfOled';
 
 final _hexColor = RegExp(r'^#[0-9a-fA-F]{6}$');
 
@@ -140,30 +152,6 @@ ResolvedTheme resolveTheme(String themeId, List<CustomTheme> customThemes) {
   }
   return resolveTheme(defaultThemeId, const []);
 }
-
-/// WCAG relative luminance of a `#rrggbb` colour, NaN for anything else so
-/// every comparison with it is false (white text, icons left as they are).
-double _relativeLuminance(String hex) {
-  if (!isHexColor(hex)) return double.nan;
-  double channel(int offset) {
-    final value = int.parse(hex.substring(offset, offset + 2), radix: 16) / 255;
-    return value <= 0.03928
-        ? value / 12.92
-        : pow((value + 0.055) / 1.055, 2.4).toDouble();
-  }
-
-  return 0.2126 * channel(1) + 0.7152 * channel(3) + 0.0722 * channel(5);
-}
-
-/// Black or white, whichever has the higher WCAG contrast against [accent]
-/// (the two contrast equally at a relative luminance of about 0.179);
-/// accent-filled buttons and badges use it as their text colour.
-String onAccentColor(String accent) =>
-    _relativeLuminance(accent) > 0.179 ? '#000000' : '#ffffff';
-
-/// Whether the white icon set must be inverted to stay visible on [colors].
-bool iconsNeedInversion(ThemeColors colors) =>
-    _relativeLuminance(colors.foreground) < 0.5;
 
 /// A fresh `custom-xxxxxxxx` id that is not in [takenIds].
 String newCustomThemeId(List<String> takenIds, {Random? random}) {

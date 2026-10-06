@@ -49,7 +49,7 @@ The framework-free logic of `frontend/src/lib/` lives in `app/lib/domain/` with 
 | `filterEntries.ts` | `filter_entries.dart` | ranges are `(min, max)?` records; `emptyFilters` replaces `EMPTY_FILTERS` |
 | `groupEntries.ts` | `group_entries.dart` | |
 | `categories.ts` | `categories.dart` | |
-| `themes.ts` | `themes.dart` | colours only; `themeCssVariables` has no equivalent (the `ShelfTokens` theme replaces it), `onAccentColor` and `iconsNeedInversion` are kept |
+| `themes.ts` | `themes.dart` | colours only; `themeCssVariables`, `onAccentColor` and the icon filter have no equivalent, `ShelfTokens` (`lib/design/`) replaces them; `shelfOled` is the added built-in and the default |
 | `reviewStars.ts` | - | a single constant (`MAX_REVIEW_STARS = 10`), added where the star control is built |
 | `statusStyle.ts` | `status_style.dart` | |
 | `entryChanges.ts` | `entry_changes.dart` | `EntryFormChanges.isEmpty` replaces comparing with `{}` |
@@ -119,3 +119,11 @@ features/*  ──►  providers (Riverpod)  ──►  lib/api (Dio + generated
 - **API:** `lib/api/generated/` is the committed output of `task app:generate-api`; hand-written code never edits it. The backend's snake_case JSON is mapped to camelCase fields in the generated models, so screens never see the wire format. Errors become `ApiException` with the message to show.
 - **Design:** widgets read colours and sizes from the `ShelfTokens` theme extension, never hard-coded values, so a theme change repaints everything.
 - **Logic:** anything that is not about widgets (sorting, filtering, validation) is plain Dart in a file of its own with unit tests; screens call it.
+
+## Theme and design tokens
+
+`lib/design/` turns the six colours of a theme into the whole Shelf palette. `ShelfTokens.forTheme(resolvedTheme)` returns the hand-tuned token set of a built-in theme that has one (`shelfOled`, `light`, `colorful`, `freaky`; `builtin_tokens.dart`, taken from `docs/design/canvas/shelf.css`) and derives the set of every other theme, including `dark` and custom themes, with `ShelfTokens.fromColors` and the formulas of `docs/DESIGN_SYSTEM.md`. `buildShelfTheme(tokens)` creates the `ThemeData` with the tokens and `ShelfTextStyles` as extensions, so widgets use `Theme.of(context).extension<ShelfTokens>()!`.
+
+- The font is Plus Jakarta Sans, bundled in `app/assets/fonts/` (five static weights, SIL Open Font License, `OFL.txt`), so the app looks the same offline.
+- Text colours (`foreground`, `text2`, `muted`, `faint`) reach 4.5:1 on the background in every built-in theme and the status colours reach it on the surface; tests in `test/design/` pin that. The light theme's `danger` on its cream background is 4.27:1, just below, which is why the status colours are checked against the surface they are used on.
+- The derived colours of a custom theme follow the written formulas, the built-ins use their tuned values; the test compares both with the documented Shelf OLED table.
