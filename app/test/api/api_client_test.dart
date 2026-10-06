@@ -121,6 +121,36 @@ void main() {
       },
     );
 
+    test(
+      'still throws the original error when reading the token fails',
+      () async {
+        var reads = 0;
+        var logouts = 0;
+        final server = FakeServer(
+          (_) => (status: 401, body: {'detail': 'Not authenticated'}),
+        );
+        final dio = createApiDio(
+          baseUrl: 'http://api.test',
+          readToken: () =>
+              ++reads == 1 ? 'token' : throw StateError('keychain'),
+          onUnauthorized: () => logouts++,
+          adapter: server,
+        );
+
+        await expectLater(
+          RestClient(dio).fallback.apiBacklogEntriesListEntries(),
+          throwsA(
+            isA<DioException>().having(
+              (e) => e.response?.statusCode,
+              'status',
+              401,
+            ),
+          ),
+        );
+        expect(logouts, 0);
+      },
+    );
+
     test('does not call onUnauthorized for other errors', () async {
       var logouts = 0;
       final server = FakeServer((_) => (status: 500, body: {'detail': 'boom'}));
