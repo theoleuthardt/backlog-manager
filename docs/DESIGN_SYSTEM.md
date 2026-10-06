@@ -20,6 +20,7 @@ This document is the spec a second client (the planned Flutter client, issue #24
 6. **Keyboard first.** Cmd/Ctrl+K opens a command palette, `/` focuses search, context menus show their shortcuts.
 7. **Changes save themselves.** Entry edits and settings autosave; destructive actions ask first.
 8. **Themeable from six colours.** Users keep the six-colour theme model; every other colour is derived.
+9. **True black, a hint of space.** OLED black, a faint starfield and a violet nebula glow in the corners, accents that glow. The atmosphere stays in the background and never competes with the covers.
 
 ## Theme model and tokens
 
@@ -34,32 +35,33 @@ A theme is six hex colours, unchanged from the current app (`frontend/src/lib/th
 | `foreground` | Primary text, active chip, icons |
 | `accent` | Primary buttons, progress, selection ring, focus ring, active tab underline, hover row in menus |
 | `border` | Strong outlines: secondary button border, dashed "add" chips, menu border |
-| `glow` | Tint of the home "continue playing" card and focus accents; defaults to `accent` |
+| `glow` | Nebula tint of the window background, the sidebar's active item, cover shadows and the home card; Shelf OLED uses violet `#7c5cff` |
 
 ### Derived colours
 
 Computed from the six inputs, so a custom theme automatically gets a complete palette:
 
-| Token | Formula | Shelf Dark value |
+| Token | Formula | Shelf OLED value |
 |---|---|---|
-| `surface2` | mix(`surface`, `foreground`, 3%) | `#1b1c22` |
-| `surface3` | mix(`surface`, `foreground`, 6%) | `#23252c` |
-| `borderSubtle` | `surface3` | `#23252c` |
+| `surface2` | mix(`surface`, `foreground`, 3%) | `#121216` |
+| `surface3` | mix(`surface`, `foreground`, 6%) | `#1a1a20` |
+| `borderSubtle` | mix(`surface`, `foreground`, 8%) | `#1c1c22` |
 | `text2` | mix(`foreground`, `background`, 11%) | `#d9d9dd` |
 | `muted` | mix(`foreground`, `background`, 35%) | `#a3a5ad` |
 | `faint` | mix(`foreground`, `background`, 60%) | `#6a6c75` |
 | `accentSoft` | `accent` at 14% opacity | amber at 14% |
+| `glowSoft` | `glow` at 16% opacity | violet at 16% |
 | `onAccent` | black or white, whichever has the higher contrast against `accent` | `#1a1103` |
 
 Semantic colours do not change with the theme (adjusted for contrast on light backgrounds): success `#34d399`, danger `#ff6b81`, info `#60a5fa`.
 
 ### Built-in themes
 
-The four built-in themes keep their ids and colours. **Shelf Dark** is new and becomes the default; the former default `dark` (black with a blue accent) stays selectable.
+The four built-in themes keep their ids and colours. **Shelf OLED** is new and becomes the default; the former default `dark` (black with a blue accent) stays selectable.
 
 | Theme | background | surface | foreground | accent | border | glow |
 |---|---|---|---|---|---|---|
-| `shelfDark` (new default) | `#0e0f12` | `#15161b` | `#f2f2f3` | `#f5a524` | `#3a3c45` | `#f5a524` |
+| `shelfOled` (new default) | `#000000` | `#0b0b0e` | `#f2f2f3` | `#f5a524` | `#34343c` | `#7c5cff` |
 | `dark` | `#000000` | `#0f0f12` | `#ffffff` | `#2563eb` | `#ffffff` | `#3b82f6` |
 | `light` | `#f5f4ef` | `#ffffff` | `#15151b` | `#4f46e5` | `#15151b` | `#818cf8` |
 | `colorful` | `#0b0720` | `#1a1240` | `#fdf2ff` | `#ff3ea5` | `#7c4dff` | `#22d3ee` |
@@ -93,6 +95,17 @@ Font: **Plus Jakarta Sans** (weights 400 to 800). Sizes in logical pixels; the b
 - **Motion:** 150 ms for hover, press and menus, 250 ms for the inspector sliding in and sheets dropping 8 px from the title bar. Ease-out everywhere. With reduced motion enabled there is no slide.
 - **Focus and selection:** keyboard focus is a 2 px accent outline with a 2 px offset. A selected cover gets a 3 px accent outline with a 3 px offset and, in selection mode, a 22 px check circle.
 
+### Atmosphere
+
+A restrained space look on top of the OLED black. It lives in the window background and in a few glowing accents; content stays crisp.
+
+- **Starfield:** three tiled layers of 1 to 1.5 px dots (white 60% and 40%, blue-white 50%) at tile sizes 190, 270 and 340 px, so the pattern never visibly repeats.
+- **Nebula:** a `glow` radial gradient (17%, 760 x 520) in the top right and a faint `accent` one (7%, 620 x 420) in the bottom left.
+- **Glass:** the title bar (55% black with a 14 px blur), sidebar (78%), inspector (82%) and status bar (60%) are translucent so the background shows through, never behind dense forms at lower opacity.
+- **Glows:** primary buttons use an amber gradient (`#ffbb45` to `#f58a1f`) with a soft glow; progress bars use an amber to orange gradient with a glow; covers cast a `glow`-coloured shadow; selected covers, the active switch and the status dot glow; the active sidebar item has a `glow` gradient and a 2 px accent bar.
+- **Details:** a four-point star before section headings, orbit rings with small satellites on the home card, and a planet-with-ring brand mark in the sidebar.
+- **Rules:** light themes switch the atmosphere off; reduced motion needs no change because nothing animates; keep the effects out of tables and forms.
+
 ### Layout
 
 Reference window 1440 x 900. All sizes are logical pixels.
@@ -100,8 +113,9 @@ Reference window 1440 x 900. All sizes are logical pixels.
 | Part | Size |
 |---|---|
 | Title bar | 52 high; window controls, sidebar toggle, back and forward, title, search field (340 wide, shows the Cmd/Ctrl+K hint) |
-| Sidebar | 232 wide, `surface`, right divider; account row pinned at the bottom |
-| Toolbar | 48 high under the title bar; turns into a contextual bar (accent-tinted) while a selection is active |
+| Sidebar | 232 wide, translucent `surface`, right divider; brand mark on top, navigation, and the account row (avatar, name, email, switcher) pinned to the very bottom on every window that has a sidebar |
+| Toolbar | 48 high under the title bar: title and count on the left, primary actions on the right; turns into a contextual bar (accent-tinted) while a selection is active |
+| Filter bar | 44 high under the toolbar on list screens: filter tokens on the left, owned-only switch, reset, sort and view toggle on the right |
 | Content | fills the rest, scrolls vertically, 24 px padding |
 | Inspector | 380 wide on the right, `surface`, left divider; closes with its button or Esc |
 | Status bar | 28 high; counts on the left, sync state and version on the right |
@@ -123,7 +137,8 @@ Each component lists its parts and states. The "Flutter" column is a suggestion,
 | Component | Anatomy and states | Flutter |
 |---|---|---|
 | **Title bar** | Window controls, toggle, back/forward, title, search field with Cmd/Ctrl+K hint | `window_manager` for the frame; custom row |
-| **Sidebar** | Section labels, items 32 high with icon, label and optional count; active item on `surface3`; account row at the bottom | custom `ListView` |
+| **Sidebar** | Brand mark, section labels, items 32 high with icon, label and optional count; active item with a `glow` gradient and a 2 px accent bar | custom `ListView` |
+| **Account row** | 58 high, divider above, always the last element of the sidebar: gradient avatar, name, email, switcher button | custom row |
 | **Toolbar** | Left: view and sort controls; right: counts and primary actions. Selection variant: tinted bar with the count and bulk actions | custom row |
 | **Button** | Radius 8, 32 high. Primary (accent fill, `onAccent` text), secondary (strong border), quiet (no border, muted text), danger (danger text), icon (32 square). Hover lifts to `surface2`; focus ring; disabled 40% | `FilledButton`/`OutlinedButton`/`TextButton` themed |
 | **Chip** | Pill, 24 high. Neutral, active (`foreground` fill), accent (`accentSoft`), ok (success tint), add (dashed border) | `Chip` |
@@ -137,7 +152,8 @@ Each component lists its parts and states. The "Flutter" column is a suggestion,
 | **Data table** | Header row (uppercase caption), 48 high rows with checkbox, thumbnail, title, columns, trailing chip or button; hover and selected (`accentSoft`) rows | `DataTable` or custom rows |
 | **Inspector** | Header with status ("All changes saved") and close, body with cover and title, tabs, description, beat-time bars, owned switch; footer with Delete, Wrong game, Change cover | custom pane in a `Row` |
 | **Context menu** | `surface2`, radius 10, 1 px strong border, items 30 high, hovered item filled with accent, shortcut hints on the right, separators, danger item last, submenus | `MenuAnchor` / `ContextMenuRegion` |
-| **Popover** | Same surface as a menu, anchored under its toolbar button (filter) | `MenuAnchor` with custom children |
+| **Filter bar** | 44 high strip: filter icon, one token per active filter (field in muted, value, remove x), a dashed "+ Add filter" token, right-aligned owned-only switch, reset, sort button and grid/list toggle | custom row |
+| **Add-filter menu** | Menu anchored under "+ Add filter": search field "Filter by...", list of fields (genre, platform, interest, review stars, play and beat times), each opening a value picker | `MenuAnchor` with custom children |
 | **Command palette** | Sheet 640 wide: input with Esc hint, sections "Games" and "Actions", highlighted row, shortcuts | `showDialog` with a list |
 | **Sheet** | `surface`, radius 16, strong border, shadow; head, body, footer on `surface2` | `Dialog` |
 | **Stepper (vertical)** | Numbered steps; done = success circle with a check, current = accent, upcoming = faint | custom |
@@ -148,6 +164,7 @@ Each component lists its parts and states. The "Flutter" column is a suggestion,
 
 - **Open an entry:** a click selects a cover and opens the inspector on the right; the list stays visible. The window owns this one inspector, so an entry that moves to another group (after a category or status change) stays open. Enter on a focused cover does the same.
 - **Autosave:** edits in the inspector and in settings save about 800 ms after the last change; the header shows "Saving..." then "All changes saved". A failed save shows "Not saved" and a toast; pending changes are saved on close.
+- **Filtering:** every active filter is a token in the filter bar; click its x to remove it, click its text to edit it. "+ Add filter" opens a searchable field menu, then a value picker. Filters combine with AND; "Reset" clears all. The status bar shows how many filters are active.
 - **Selection mode:** the "Select" button, or "Select" in the context menu, turns covers into checkable cards and replaces the toolbar with a contextual bar (count, select all, clear, set status, categories, delete, done). Deleting is always confirmed.
 - **Context menu (right click):** open details, select, move to status (submenu), categories (checkable submenu that stays open), delete.
 - **Command palette:** Cmd/Ctrl+K searches games and runs actions (add game, sync Steam, sync IGDB, open settings). Arrow keys move, Enter runs, Esc closes.
@@ -165,7 +182,7 @@ Routes are the current web routes; the Flutter client can use the same names. Ev
 | Sign-in | window | Email and password, then the two-factor code | Two small windows, fields | `POST /api/auth/login`, `POST /api/auth/2fa/login-verify` |
 | Setup wizard | window | First run: theme, default sort, Steam, IGDB, done | Vertical stepper, form group | `PUT /api/user/me` |
 | Home | main window | Continue playing card, up next and recently completed shelves | Stat tiles, hero card, shelf rows | `GET /api/backlog/entries` |
-| Library | main window | All games grouped by status or category; filters, selection, context menu, drag and drop | Toolbar, cover grid, filter popover, contextual bar | `GET/PUT/DELETE /api/backlog/entries*`, `/categories*`, `/statuses*`, `POST /api/igdb-sync/stream`, `POST /api/user/steam/sync/stream` |
+| Library | main window | All games grouped by status or category; filters, selection, context menu, drag and drop | Toolbar, filter bar, cover grid, contextual bar | `GET/PUT/DELETE /api/backlog/entries*`, `/categories*`, `/statuses*`, `POST /api/igdb-sync/stream`, `POST /api/user/steam/sync/stream` |
 | Entry inspector | right pane of the library | Cover, status, categories, times, review, trailer, delete | Inspector, tabs, bars, switch | `PUT/DELETE /api/backlog/entries/{id}`, `GET /api/user/steam/achievements`, `GET /api/games/{steam_app_id}/price`, `GET /api/games/key-shop-prices` |
 | Command palette | sheet | Search games, run actions | Sheet, list | local data plus the actions' endpoints |
 | Add a game | sheet | Search IGDB, continue in the creation tool | Sheet, data table | `GET /api/games/enriched-search`, `GET /api/games/steam-app-id` |
@@ -211,6 +228,7 @@ class ShelfTokens extends ThemeExtension<ShelfTokens> {
 - Main window: a `Column` of title bar, a `Row` of sidebar and an `Expanded` main pane (toolbar plus content, optional inspector), and the status bar. Collapsing the sidebar animates its width with the base duration.
 - Secondary windows (Settings, setup, sign-in): either a second native window (`desktop_multi_window`) or full-size routes with the same window chrome; decide in the spike.
 - Shortcuts: `CallbackShortcuts` or `Shortcuts` + `Actions` for the palette, search, new game and settings.
+- Atmosphere: paint the starfield with a `CustomPainter` (fixed random seed so it does not flicker on resize), the nebula with two `RadialGradient`s, and the glass title bar with `BackdropFilter`; make the blur optional because it can be slow on some Linux setups.
 
 ### Suggested layout of the client
 

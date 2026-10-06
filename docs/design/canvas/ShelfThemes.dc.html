@@ -16,7 +16,7 @@
 <div class="shelf win">
   <dc-import name="Titlebar" title="Appearance" search="no" hint-size="100%,52px"></dc-import>
   <div class="win-body">
-    <div class="sidebar-col" style="padding: 0;"><dc-import name="SidebarNav" active="themes" hint-size="232px,620px"></dc-import></div>
+    <div class="sidebar-col"><dc-import name="SidebarNav" active="themes" hint-size="232px,560px"></dc-import><div style="margin-top: auto;"><dc-import name="SidebarAccount" hint-size="232px,58px"></dc-import></div></div>
     <div class="win-main">
       <div class="toolbar">
         <span class="muted small">Changes preview live across the whole app.</span>
@@ -40,13 +40,13 @@
         <section class="group" aria-label="New theme" style="flex: 0 0 360px;">
           <div class="group-title">New theme</div>
           <div class="frow"><div class="fl" style="flex-basis: 110px;">Name</div><div class="fc"><input type="text" placeholder="e.g. Neon Night" aria-label="Theme name"></div></div>
-          <div class="frow"><div class="fl" style="flex-basis: 110px;">Start from</div><div class="fc"><select aria-label="Start from"><option>Shelf Dark</option></select></div></div>
+          <div class="frow"><div class="fl" style="flex-basis: 110px;">Start from</div><div class="fc"><select aria-label="Start from"><option>Shelf OLED</option></select></div></div>
           <sc-for list="{{colors}}" as="c" hint-placeholder-count="6">
             <div class="frow"><div class="fl" style="flex-basis: 110px;">{{c.label}}</div><div class="fc"><span style="width: 24px; height: 24px; border-radius: 6px; background: {{c.value}}; border: 1px solid var(--border-strong);"></span><span style="font-family: ui-monospace, monospace; font-size: 13px;">{{c.value}}</span></div></div>
           </sc-for>
         </section>
 
-        <section aria-label="Live preview" style="flex: 1; min-width: 0; border-radius: 12px; background: #0e0f12; border: 1px solid var(--border-strong); overflow: hidden;">
+        <section aria-label="Live preview" style="flex: 1; min-width: 0; border-radius: 12px; background: radial-gradient(420px 260px at 90% 0%, rgba(124,92,255,0.2), transparent 70%), #000; border: 1px solid var(--border-strong); overflow: hidden;">
           <div style="display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid #23252c; background: #15161b;"><span class="lights"><i></i><i></i><i></i></span><span class="small muted" style="margin-left: 8px;">Preview</span></div>
           <div style="padding: 16px; display: flex; flex-direction: column; gap: 14px;">
             <div style="display: flex; gap: 6px;"><span class="chip chip-active">Library</span><span class="chip">Space</span><span class="chip chip-accent">In Progress</span></div>
@@ -61,23 +61,23 @@
       </div>
     </div>
   </div>
-  <dc-import name="StatusBar" left="Theme: Shelf Dark" hint-size="100%,28px"></dc-import>
+  <dc-import name="StatusBar" left="Theme: Shelf OLED" hint-size="100%,28px"></dc-import>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
 class Component extends DCLogic {
   renderVals() {
     const themes = [
-      { name: 'Shelf Dark', bg: '#0e0f12', accent: '#f5a524', border: '#3a3c45', active: true },
+      { name: 'Shelf OLED', bg: '#000000', accent: '#f5a524', border: '#34343c', active: true },
       { name: 'Dark', bg: '#000000', accent: '#2563eb', border: '#ffffff', active: false },
       { name: 'Light', bg: '#f5f4ef', accent: '#4f46e5', border: '#15151b', active: false },
       { name: 'Colorful', bg: '#0b0720', accent: '#ff3ea5', border: '#7c4dff', active: false },
       { name: 'Freaky', bg: '#04040e', accent: '#a3ff12', border: '#00ffd0', active: false }
     ].map((t) => ({ ...t, cls: t.active ? 'active' : '', badge: t.active ? 'inline-flex' : 'none' }));
     const colors = [
-      { label: 'Background', value: '#0E0F12' }, { label: 'Surface', value: '#15161B' },
+      { label: 'Background', value: '#000000' }, { label: 'Surface', value: '#0B0B0E' },
       { label: 'Text', value: '#F2F2F3' }, { label: 'Accent', value: '#F5A524' },
-      { label: 'Border', value: '#3A3C45' }, { label: 'Glow', value: '#F5A524' }
+      { label: 'Border', value: '#34343C' }, { label: 'Glow', value: '#7C5CFF' }
     ];
     return { themes, colors };
   }

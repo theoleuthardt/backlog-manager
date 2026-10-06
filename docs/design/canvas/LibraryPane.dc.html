@@ -13,15 +13,21 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>body{margin:0}</style>
 </helmet>
-<div class="shelf" style="width: 1208px; height: 820px; background: #0e0f12; color: #f2f2f3; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; display: flex; flex-direction: column; overflow: hidden;">
+<div class="shelf" style="width: 1208px; height: 820px; color: #f2f2f3; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; display: flex; flex-direction: column; overflow: hidden;">
   <div class="toolbar">
-    <div class="seg"><button type="button" aria-pressed="true">Grid</button><button type="button" aria-pressed="false">List</button></div>
-    <button type="button" class="btn">Sort: Status &#9662;</button>
-    <button type="button" class="btn">Filter</button>
-    <span style="margin-left: auto; color: #a3a5ad; font-size: 12.5px;">148 games</span>
-    <button type="button" class="btn">Select</button>
-    <button type="button" class="btn btn-primary">+ Add game</button>
-  </div>
+        <span style="font-weight: 800;">Library</span><span class="muted small">148 games</span>
+        <button type="button" class="btn" style="margin-left: auto;">Select</button>
+        <button type="button" class="btn btn-primary">+ Add game</button>
+      </div>
+      <div class="filterbar" role="group" aria-label="Filters">
+        <span class="muted" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 12.5px; padding-right: 4px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4-2v-4z"></path></svg>Filter</span>
+        <span class="token"><b>Status</b> In Progress<span class="x" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></span></span>
+        <button type="button" class="token-add">+ Add filter</button>
+        <span style="margin-left: auto; display: flex; align-items: center; gap: 12px;">
+          <span class="muted small">Sort</span><button type="button" class="btn" style="height: 26px;">Status &#9662;</button>
+          <div class="seg" role="group" aria-label="View"><button type="button" aria-pressed="true">Grid</button><button type="button" aria-pressed="false">List</button></div>
+        </span>
+      </div>
   <div class="scroll">
     <div class="covers">
       <sc-for list="{{games}}" as="g" hint-placeholder-count="12">

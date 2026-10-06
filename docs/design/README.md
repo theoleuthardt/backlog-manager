@@ -25,7 +25,7 @@ Chosen direction, drawn as a desktop app (fixed 1440 x 900 windows, or smaller w
 |---|---|
 | `ShelfDashboard.dc.html` | Home: continue playing, shelves |
 | `ShelfDetail.dc.html` | Library with the entry inspector open |
-| `ShelfLibrary.dc.html` | Library: filter popover, selection mode, context menu with submenu |
+| `ShelfLibrary.dc.html` | Library: filter bar with tokens and the add-filter menu, selection mode, context menu with submenu |
 | `ShelfPalette.dc.html` | Command palette (Cmd/Ctrl+K) |
 | `ShelfAdd.dc.html` | Add a game (sheet) |
 | `ShelfWrongGame.dc.html` | Find the right game, "search more" (sheet) |
@@ -39,7 +39,7 @@ Chosen direction, drawn as a desktop app (fixed 1440 x 900 windows, or smaller w
 | `ShelfLogin.dc.html` | Sign-in and two-factor windows |
 | `ShelfSetup.dc.html` | Setup wizard window |
 
-Shared building blocks, imported by the artboards: `SidebarNav.dc.html`, `Titlebar.dc.html`, `StatusBar.dc.html`, `LibraryPane.dc.html` (the library behind sheets).
+Shared building blocks, imported by the artboards: `SidebarNav.dc.html` (brand and navigation), `SidebarAccount.dc.html` (the account row that sits at the bottom of every sidebar), `Titlebar.dc.html`, `StatusBar.dc.html`, `LibraryPane.dc.html` (the library behind sheets).
 
 Explored and not chosen (kept for reference): `Main.dc.html` and `ArcadeDetail.dc.html` (A, Arcade: gaming HUD, neon on near-black), `CleanDashboard.dc.html` and `CleanDetail.dc.html` (B, Clean: light and minimal). Their file names predate the others.
 

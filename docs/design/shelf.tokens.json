@@ -1,25 +1,42 @@
 {
   "name": "Shelf",
-  "version": 2,
+  "version": 3,
   "platform": "desktop",
   "font": {
     "family": "Plus Jakarta Sans",
-    "fallback": ["system-ui", "sans-serif"],
-    "weights": { "regular": 400, "medium": 500, "semibold": 600, "bold": 700, "extrabold": 800 }
+    "fallback": [
+      "system-ui",
+      "sans-serif"
+    ],
+    "weights": {
+      "regular": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700,
+      "extrabold": 800
+    }
   },
   "themeModel": {
-    "inputs": ["background", "surface", "foreground", "accent", "border", "glow"],
+    "inputs": [
+      "background",
+      "surface",
+      "foreground",
+      "accent",
+      "border",
+      "glow"
+    ],
     "derived": {
       "surface2": "mix(surface, foreground, 3%)",
       "surface3": "mix(surface, foreground, 6%)",
-      "borderSubtle": "surface3",
+      "borderSubtle": "mix(surface, foreground, 8%)",
       "borderStrong": "border",
       "text": "foreground",
       "text2": "mix(foreground, background, 11%)",
       "muted": "mix(foreground, background, 35%)",
       "faint": "mix(foreground, background, 60%)",
       "accentSoft": "accent at 14% opacity",
-      "onAccent": "black or white, whichever has the higher WCAG contrast against accent"
+      "onAccent": "black or white, whichever has the higher WCAG contrast against accent",
+      "glowSoft": "glow at 16% opacity"
     },
     "semantic": {
       "success": "#34d399",
@@ -28,35 +45,132 @@
     }
   },
   "themes": {
-    "shelfDark": {
-      "name": "Shelf Dark (new default)",
-      "background": "#0e0f12",
-      "surface": "#15161b",
+    "shelfOled": {
+      "name": "Shelf OLED (new default)",
+      "background": "#000000",
+      "surface": "#0b0b0e",
       "foreground": "#f2f2f3",
       "accent": "#f5a524",
-      "border": "#3a3c45",
-      "glow": "#f5a524"
+      "border": "#34343c",
+      "glow": "#7c5cff"
     },
-    "dark": { "background": "#000000", "surface": "#0f0f12", "foreground": "#ffffff", "accent": "#2563eb", "border": "#ffffff", "glow": "#3b82f6" },
-    "light": { "background": "#f5f4ef", "surface": "#ffffff", "foreground": "#15151b", "accent": "#4f46e5", "border": "#15151b", "glow": "#818cf8" },
-    "colorful": { "background": "#0b0720", "surface": "#1a1240", "foreground": "#fdf2ff", "accent": "#ff3ea5", "border": "#7c4dff", "glow": "#22d3ee" },
-    "freaky": { "background": "#04040e", "surface": "#0e0e26", "foreground": "#eaffe9", "accent": "#a3ff12", "border": "#00ffd0", "glow": "#ff00e5" }
+    "dark": {
+      "background": "#000000",
+      "surface": "#0f0f12",
+      "foreground": "#ffffff",
+      "accent": "#2563eb",
+      "border": "#ffffff",
+      "glow": "#3b82f6"
+    },
+    "light": {
+      "background": "#f5f4ef",
+      "surface": "#ffffff",
+      "foreground": "#15151b",
+      "accent": "#4f46e5",
+      "border": "#15151b",
+      "glow": "#818cf8"
+    },
+    "colorful": {
+      "background": "#0b0720",
+      "surface": "#1a1240",
+      "foreground": "#fdf2ff",
+      "accent": "#ff3ea5",
+      "border": "#7c4dff",
+      "glow": "#22d3ee"
+    },
+    "freaky": {
+      "background": "#04040e",
+      "surface": "#0e0e26",
+      "foreground": "#eaffe9",
+      "accent": "#a3ff12",
+      "border": "#00ffd0",
+      "glow": "#ff00e5"
+    }
   },
   "type": {
-    "hero": { "size": 30, "lineHeight": 1.1, "weight": 800, "letterSpacing": "-0.02em" },
-    "page": { "size": 26, "lineHeight": 1.1, "weight": 800, "letterSpacing": "-0.02em" },
-    "section": { "size": 16, "lineHeight": 1.25, "weight": 800, "letterSpacing": "-0.01em" },
-    "groupTitle": { "size": 13, "lineHeight": 1.3, "weight": 800 },
-    "body": { "size": 14, "lineHeight": 1.4, "weight": 400 },
-    "control": { "size": 13, "lineHeight": 1.2, "weight": 600 },
-    "label": { "size": 12, "lineHeight": 1.3, "weight": 600 },
-    "caption": { "size": 12.5, "lineHeight": 1.3, "weight": 400 },
-    "eyebrow": { "size": 11, "lineHeight": 1.2, "weight": 700, "letterSpacing": "0.12em", "uppercase": true },
-    "sidebarLabel": { "size": 11, "lineHeight": 1.2, "weight": 700, "letterSpacing": "0.08em", "uppercase": true },
-    "coverTitle": { "size": 15, "lineHeight": 1.1, "weight": 800 }
+    "hero": {
+      "size": 30,
+      "lineHeight": 1.1,
+      "weight": 800,
+      "letterSpacing": "-0.02em"
+    },
+    "page": {
+      "size": 26,
+      "lineHeight": 1.1,
+      "weight": 800,
+      "letterSpacing": "-0.02em"
+    },
+    "section": {
+      "size": 16,
+      "lineHeight": 1.25,
+      "weight": 800,
+      "letterSpacing": "-0.01em"
+    },
+    "groupTitle": {
+      "size": 13,
+      "lineHeight": 1.3,
+      "weight": 800
+    },
+    "body": {
+      "size": 14,
+      "lineHeight": 1.4,
+      "weight": 400
+    },
+    "control": {
+      "size": 13,
+      "lineHeight": 1.2,
+      "weight": 600
+    },
+    "label": {
+      "size": 12,
+      "lineHeight": 1.3,
+      "weight": 600
+    },
+    "caption": {
+      "size": 12.5,
+      "lineHeight": 1.3,
+      "weight": 400
+    },
+    "eyebrow": {
+      "size": 11,
+      "lineHeight": 1.2,
+      "weight": 700,
+      "letterSpacing": "0.12em",
+      "uppercase": true
+    },
+    "sidebarLabel": {
+      "size": 11,
+      "lineHeight": 1.2,
+      "weight": 700,
+      "letterSpacing": "0.08em",
+      "uppercase": true
+    },
+    "coverTitle": {
+      "size": 15,
+      "lineHeight": 1.1,
+      "weight": 800
+    }
   },
-  "space": [4, 6, 8, 10, 12, 14, 16, 20, 24, 32],
-  "radius": { "control": 8, "card": 12, "panel": 14, "dialog": 16, "window": 12, "chip": 999 },
+  "space": [
+    4,
+    6,
+    8,
+    10,
+    12,
+    14,
+    16,
+    20,
+    24,
+    32
+  ],
+  "radius": {
+    "control": 8,
+    "card": 12,
+    "panel": 14,
+    "dialog": 16,
+    "window": 12,
+    "chip": 999
+  },
   "elevation": {
     "menu": "0 16px 48px rgba(0,0,0,0.55)",
     "sheet": "0 24px 80px rgba(0,0,0,0.6)",
@@ -64,12 +178,23 @@
     "segmentedThumb": "0 1px 2px rgba(0,0,0,0.4)"
   },
   "motion": {
-    "fast": { "ms": 150, "curve": "easeOut", "use": "hover, press, menu open" },
-    "base": { "ms": 250, "curve": "easeOut", "use": "inspector slide, sheet drop (8px)" },
+    "fast": {
+      "ms": 150,
+      "curve": "easeOut",
+      "use": "hover, press, menu open"
+    },
+    "base": {
+      "ms": 250,
+      "curve": "easeOut",
+      "use": "inspector slide, sheet drop (8px)"
+    },
     "reducedMotion": "respect the platform setting: no slide, no scale"
   },
   "layout": {
-    "referenceWindow": { "width": 1440, "height": 900 },
+    "referenceWindow": {
+      "width": 1440,
+      "height": 900
+    },
     "titlebar": 52,
     "toolbar": 48,
     "statusbar": 28,
@@ -84,18 +209,115 @@
     "tableHeaderHeight": 34,
     "coverMinWidth": 150,
     "coverAspect": "2:3",
-    "coverGap": { "row": 22, "column": 16 },
-    "settingsWindow": { "width": 1000, "height": 740, "sidebar": 200 },
-    "setupWindow": { "width": 880, "height": 640, "stepper": 240 },
-    "signInWindow": { "width": 440, "height": 560 },
-    "sheetWidths": { "compact": 520, "default": 640, "wide": 680 },
-    "touchTargetMin": 32
+    "coverGap": {
+      "row": 22,
+      "column": 16
+    },
+    "settingsWindow": {
+      "width": 1000,
+      "height": 740,
+      "sidebar": 200
+    },
+    "setupWindow": {
+      "width": 880,
+      "height": 640,
+      "stepper": 240
+    },
+    "signInWindow": {
+      "width": 440,
+      "height": 560
+    },
+    "sheetWidths": {
+      "compact": 520,
+      "default": 640,
+      "wide": 680
+    },
+    "touchTargetMin": 32,
+    "sidebarBrand": 52,
+    "sidebarAccount": 58,
+    "filterbar": 44,
+    "tokenHeight": 26
   },
-  "focus": { "outline": "2px solid accent", "offset": 2 },
-  "selection": { "outline": "3px solid accent", "offset": 3, "checkSize": 22 },
+  "focus": {
+    "outline": "2px solid accent",
+    "offset": 2
+  },
+  "selection": {
+    "outline": "3px solid accent",
+    "offset": 3,
+    "checkSize": 22
+  },
   "windowChrome": {
     "macos": "traffic lights top left, 12px, 8px apart, inside the 52px title bar",
     "windows": "native caption buttons top right; the title bar content shifts left",
     "linux": "client-side decorations with the same caption buttons as Windows"
+  },
+  "atmosphere": {
+    "note": "Background only. Active when the theme background is darker than 8% lightness; light themes switch it off.",
+    "stars": [
+      {
+        "size": 1,
+        "tile": [
+          190,
+          170
+        ],
+        "color": "rgba(255,255,255,0.6)"
+      },
+      {
+        "size": 1.5,
+        "tile": [
+          270,
+          230
+        ],
+        "color": "rgba(255,255,255,0.4)"
+      },
+      {
+        "size": 1,
+        "tile": [
+          340,
+          310
+        ],
+        "color": "rgba(170,190,255,0.5)"
+      }
+    ],
+    "nebula": [
+      {
+        "color": "glow",
+        "opacity": 0.17,
+        "size": [
+          760,
+          520
+        ],
+        "at": "92% -8%"
+      },
+      {
+        "color": "accent",
+        "opacity": 0.07,
+        "size": [
+          620,
+          420
+        ],
+        "at": "-6% 108%"
+      }
+    ],
+    "glass": {
+      "titlebar": "rgba(0,0,0,0.55) + blur 14",
+      "sidebar": "rgba(8,8,11,0.78)",
+      "inspector": "rgba(8,8,11,0.82)",
+      "statusbar": "rgba(0,0,0,0.6)"
+    },
+    "glows": {
+      "primaryButton": "linear-gradient(135deg, #ffbb45, #f58a1f) + 0 0 22px accent at 30%",
+      "progress": "linear-gradient(90deg, #f5a524, #ff7a3d) + 0 0 10px accent at 45%",
+      "cover": "0 14px 34px -16px glow at 50%",
+      "selectedCover": "0 0 28px accent at 40%",
+      "switchOn": "0 0 12px accent at 40%",
+      "statusDot": "0 0 8px success"
+    },
+    "details": [
+      "four-point star before section headings",
+      "orbit rings and satellites on the home card",
+      "planet-with-ring brand mark in the sidebar"
+    ]
   }
 }
