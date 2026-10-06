@@ -54,6 +54,26 @@ void main() {
       expect(sorted.map((c) => c.name), ['Backlog night', 'Co-op', 'story']);
     });
 
+    test('sorts accented names with their base letter', () {
+      final sorted = sortCategoriesByName([
+        category(1, 'zombies'),
+        category(2, 'éco-op'),
+        category(3, 'Backlog night'),
+      ]);
+
+      expect(sorted.map((c) => c.name), ['Backlog night', 'éco-op', 'zombies']);
+    });
+
+    test('keeps the input order of names that only differ in case', () {
+      final sorted = sortCategoriesByName([
+        category(1, 'Co-op'),
+        category(2, 'co-op'),
+        category(3, 'CO-OP'),
+      ]);
+
+      expect(sorted.map((c) => c.id), [1, 2, 3]);
+    });
+
     test('does not mutate the input', () {
       final input = [category(1, 'b'), category(2, 'a')];
 

@@ -83,7 +83,7 @@ int _compareKeys(Object a, Object b) {
 /// predictable.
 List<BacklogEntry> sortEntries(List<BacklogEntry> entries, SortConfig config) {
   final sign = config.direction == SortDirection.asc ? 1 : -1;
-  return [...entries]..sort((a, b) {
+  return stableSorted(entries, (a, b) {
     final keyA = _keyFor(a, config);
     final keyB = _keyFor(b, config);
     if (keyA == null && keyB != null) return 1;

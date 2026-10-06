@@ -209,6 +209,34 @@ void main() {
       expect(titles(sorted), ['InA', 'InZ', 'Loose']);
     });
 
+    test('keeps the input order of entries that tie completely', () {
+      final entries = [
+        for (var id = 0; id < 100; id++) entry(id: id, title: 'Same title'),
+      ];
+
+      final sorted = sortEntries(
+        entries,
+        config(SortOption.status, SortDirection.asc),
+      );
+
+      expect(sorted.map((e) => e.id), List.generate(100, (id) => id));
+    });
+
+    test('sorts umlauts with their base letter', () {
+      final entries = [
+        entry(id: 1, title: 'Zelda'),
+        entry(id: 2, title: 'Ärger im Paradies'),
+        entry(id: 3, title: 'Anno'),
+      ];
+
+      final sorted = sortEntries(
+        entries,
+        config(SortOption.status, SortDirection.asc),
+      );
+
+      expect(titles(sorted), ['Anno', 'Ärger im Paradies', 'Zelda']);
+    });
+
     test('does not mutate the input list', () {
       final entries = [
         entry(id: 1, title: 'B', interest: 1),

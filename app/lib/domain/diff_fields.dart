@@ -61,7 +61,12 @@ class DiffableFields {
   }
 }
 
-String _formatNumber(num? value) => value == null ? '' : value.toString();
+String _formatNumber(num? value) {
+  if (value == null) return '';
+  return value == value.truncate()
+      ? value.truncate().toString()
+      : value.toString();
+}
 
 String _yesNo(bool value) => value ? 'Yes' : 'No';
 

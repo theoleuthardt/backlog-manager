@@ -62,10 +62,14 @@ The framework-free logic of `frontend/src/lib/` lives in `app/lib/domain/` with 
 | `largeBacklog.test.ts` | `test/domain/large_backlog_test.dart` | same 10k entries and 3 s budget |
 | `apiUrl.ts` | `lib/api/server_url.dart` | ported in #251 |
 | `api/backlog.ts` (`toEntryData`, `toNumber`, ...) | `lib/api/mappers.dart` | the generated models already carry camelCase fields; the mappers turn them into the app models in `domain/models.dart` |
+| `utils.ts`, `buttonStyles.ts` | - | CSS class helpers of the web client |
+| `api/auth.ts`, `csv.ts`, `games.ts`, `user.ts`, `twoFactor.ts`, `space.ts`, `steam.ts`, `igdbSync.ts`, `backups.ts` | `lib/api/generated/` | replaced by the generated client; the streaming calls use the SSE reader (#250) |
 | `pathWithQuery.ts` | - | web routing helper, `go_router` builds locations itself |
 | `appUpdate.ts` | - | Tauri updater, replaced by the update issues (#278, #279) |
 
-`compareText` (`text_order.dart`) stands in for `String.localeCompare`: letters compare case-insensitively, a tie puts the lower-case spelling first. It does not fold accents.
+`compareText` and `compareBase` (`text_order.dart`) stand in for `String.localeCompare`: letters compare without regard to case and accents (so "Ärger" sorts with "A", like the web client's ICU collation), then an unaccented spelling comes before an accented one and the lower-case before the upper-case one. Only Latin letters are folded, other scripts compare by code unit. `stableSorted` replaces the guaranteed stable `Array.prototype.sort`, because `List.sort` is not stable.
+
+Deliberate differences from the TypeScript code: `isHttpUrl` also rejects an empty host and `https:example.com` (the WHATWG `URL` accepts the latter), `toNumber` returns null for an empty or padded string where `Number('')` is 0 (the API never sends those), and a whole number of hours is shown without a decimal part like the web client does.
 
 ## Layout
 

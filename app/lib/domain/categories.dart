@@ -1,4 +1,5 @@
 import 'package:backlog_manager/domain/models.dart';
+import 'package:backlog_manager/domain/text_order.dart';
 
 const categoryNameMaxLength = 100;
 
@@ -32,8 +33,8 @@ String categoryNameError(String name, List<String> otherNames) {
   return '';
 }
 
-/// A new list of the categories ordered alphabetically by name, ignoring case.
+/// A new list of the categories ordered alphabetically by name, ignoring case
+/// and accents; names that only differ in those keep their input order.
 List<Category> sortCategoriesByName(List<Category> categories) {
-  return [...categories]
-    ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+  return stableSorted(categories, (a, b) => compareBase(a.name, b.name));
 }

@@ -110,8 +110,6 @@ const builtinThemes = [
 ];
 
 const defaultThemeId = 'dark';
-const maxCustomThemes = 10;
-const themeNameMaxLength = 30;
 
 final _hexColor = RegExp(r'^#[0-9a-fA-F]{6}$');
 

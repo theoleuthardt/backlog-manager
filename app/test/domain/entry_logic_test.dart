@@ -3,6 +3,21 @@ import 'package:backlog_manager/domain/entry_changes.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+Map<String, Object?> changedFields(EntryFormChanges changes) {
+  return {
+    'imageLink': changes.imageLink,
+    'genre': changes.genre,
+    'platform': changes.platform,
+    'status': changes.status,
+    'owned': changes.owned,
+    'interest': changes.interest,
+    'playtime': changes.playtime,
+    'reviewStars': changes.reviewStars,
+    'review': changes.review,
+    'note': changes.note,
+  }..removeWhere((_, value) => value == null);
+}
+
 void main() {
   group('computeFieldDiffs', () {
     const baseline = DiffableFields(
@@ -42,6 +57,26 @@ void main() {
           field: 'genre',
           existing: 'Platformer',
           proposed: 'Platformer, Metroidvania',
+        ),
+      ]);
+    });
+
+    test('shows a whole number of hours without a decimal part', () {
+      final proposed = DiffableFields(
+        genre: baseline.genre,
+        platform: baseline.platform,
+        status: baseline.status,
+        owned: baseline.owned,
+        playtime: 12.0,
+        reviewStars: baseline.reviewStars,
+        note: baseline.note,
+      );
+
+      expect(computeFieldDiffs(baseline, proposed), [
+        const FieldDiffEntry(
+          field: 'playtime',
+          existing: '12.5',
+          proposed: '12',
         ),
       ]);
     });
@@ -116,10 +151,7 @@ void main() {
         entry,
       );
 
-      expect(changes.status, 'Completed');
-      expect(changes.note, 'great');
-      expect(changes.genre, isNull);
-      expect(changes.owned, isNull);
+      expect(changedFields(changes), {'status': 'Completed', 'note': 'great'});
     });
 
     test('splits genre and platform lists', () {
@@ -128,8 +160,10 @@ void main() {
         entry,
       );
 
-      expect(changes.genre, ['RPG', 'Action']);
-      expect(changes.platform, ['PC', 'Switch']);
+      expect(changedFields(changes), {
+        'genre': ['RPG', 'Action'],
+        'platform': ['PC', 'Switch'],
+      });
     });
 
     test('ignores an unset playtime', () {

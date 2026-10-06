@@ -19,6 +19,15 @@ void main() {
       expect(isHttpUrl('vbscript:msgbox(1)'), false);
     });
 
+    test('rejects a url without a host', () {
+      expect(isHttpUrl('https://'), false);
+      expect(isHttpUrl('http://'), false);
+    });
+
+    test('rejects a scheme without the slashes that start the host', () {
+      expect(isHttpUrl('https:example.com'), false);
+    });
+
     test('rejects relative, protocol-relative and malformed values', () {
       expect(isHttpUrl('/redirect?dealID=abc'), false);
       expect(isHttpUrl('//example.com'), false);
