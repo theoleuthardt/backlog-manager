@@ -1,0 +1,59 @@
+// coverage:ignore-file
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, unused_import, invalid_annotation_target, unnecessary_import
+
+// Clients
+export 'fallback/fallback_client.dart';
+// Data classes
+export 'models/achievement_info.dart';
+export 'models/achievement_progress.dart';
+export 'models/backlog_entry_response.dart';
+export 'models/backup_summary.dart';
+export 'models/category_response.dart';
+export 'models/create_backlog_entry_request.dart';
+export 'models/create_category_request.dart';
+export 'models/create_custom_status_request.dart';
+export 'models/create_user_request.dart';
+export 'models/csv_headers_request.dart';
+export 'models/csv_headers_response.dart';
+export 'models/custom_status_response.dart';
+export 'models/custom_theme.dart';
+export 'models/enriched_result.dart';
+export 'models/game_price.dart';
+export 'models/game_price_deal.dart';
+export 'models/igdb_cover.dart';
+export 'models/igdb_game_data.dart';
+export 'models/igdb_game_time_to_beat.dart';
+export 'models/igdb_genre.dart';
+export 'models/igdb_platform.dart';
+export 'models/igdb_search_result.dart';
+export 'models/invite_to_space_request.dart';
+export 'models/key_shop_offer.dart';
+export 'models/login_params.dart';
+export 'models/login_result.dart';
+export 'models/match_csv_request.dart';
+export 'models/public_user.dart';
+export 'models/public_username.dart';
+export 'models/rename_backup_request.dart';
+export 'models/restore_result.dart';
+export 'models/space_member_response.dart';
+export 'models/space_response.dart';
+export 'models/steam_grid_db_search_result.dart';
+export 'models/steam_preview_item.dart';
+export 'models/steam_wishlist_item.dart';
+export 'models/submit_csv_entry.dart';
+export 'models/token_response.dart';
+export 'models/two_factor_disable_params.dart';
+export 'models/two_factor_enroll_response.dart';
+export 'models/two_factor_login_verify_params.dart';
+export 'models/two_factor_verify_enrollment_params.dart';
+export 'models/two_factor_verify_enrollment_response.dart';
+export 'models/update_backlog_entry_request.dart';
+export 'models/update_category_request.dart';
+export 'models/update_custom_status_request.dart';
+export 'models/update_own_user_request.dart';
+export 'models/update_user_admin_request.dart';
+export 'models/update_own_user_request_default_sort.dart';
+export 'models/update_user_admin_request_default_sort.dart';
+// Root client
+export 'rest_client.dart';
