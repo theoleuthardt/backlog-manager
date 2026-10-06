@@ -1,6 +1,4 @@
-"use client";
 import { memo, useCallback, useRef, useState } from "react";
-import Image from "next/image";
 import { AlertTriangle, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "shadcn_components/ui/button";
@@ -462,7 +460,7 @@ export const ImportCSVContent = () => {
   return (
     <div className="flex flex-col items-center gap-8 py-12">
       <div className="flex flex-col items-center gap-4">
-        <Image
+        <img
           src="/csv_import.png"
           alt="import CSV"
           width={64}

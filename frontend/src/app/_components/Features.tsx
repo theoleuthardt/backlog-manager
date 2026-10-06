@@ -1,7 +1,5 @@
-"use client";
 import React from "react";
 import { ScrollSection } from "components/ScrollSection";
-import Image from "next/image";
 
 export const Features = () => {
   return (
@@ -20,7 +18,7 @@ export const Features = () => {
               className="rounded-xl border-2 border-white bg-transparent p-8 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
             >
               <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-transparent">
-                <Image
+                <img
                   src="/backlog.png"
                   alt="backlog"
                   width={64}
@@ -41,7 +39,7 @@ export const Features = () => {
               className="rounded-xl border-2 border-white bg-transparent p-8 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
             >
               <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-transparent">
-                <Image
+                <img
                   src="/filter.png"
                   alt="filter"
                   width={64}
@@ -63,7 +61,7 @@ export const Features = () => {
               className="rounded-xl border-2 border-white bg-transparent p-8 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
             >
               <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-transparent">
-                <Image
+                <img
                   src="/csv_import.png"
                   alt="csv_import"
                   width={64}

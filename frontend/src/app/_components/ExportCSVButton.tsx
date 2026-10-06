@@ -1,8 +1,6 @@
-"use client";
 import React from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router";
 import { Button } from "shadcn_components/ui/button";
-import Image from "next/image";
 import type { ExportCSVButtonProps } from "~/app/types";
 
 export const ExportCSVButton = ({
@@ -12,10 +10,10 @@ export const ExportCSVButton = ({
   children,
   iconOnly = false,
 }: ExportCSVButtonProps) => {
-  const router = useRouter();
+  const navigate = useNavigate();
 
   const handleButtonClick = () => {
-    router.push("/export-csv");
+    void navigate("/export-csv");
   };
 
   return (
@@ -27,7 +25,7 @@ export const ExportCSVButton = ({
       onClick={handleButtonClick}
     >
       {iconOnly ? (
-        <Image
+        <img
           src="/csv_export.png"
           alt="export CSV"
           width={32}

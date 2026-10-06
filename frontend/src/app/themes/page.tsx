@@ -1,4 +1,6 @@
-import { Navbar, Footer, ThemeCreator } from "components";
+import { Navbar } from "components/Navbar";
+import { Footer } from "components/Footer";
+import { ThemeCreator } from "components/ThemeCreator";
 import { accountNavLinks } from "~/constants";
 
 export default function Themes() {

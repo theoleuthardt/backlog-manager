@@ -1,5 +1,3 @@
-"use client";
-
 import {
   CircleCheckIcon,
   InfoIcon,
@@ -7,15 +5,15 @@ import {
   OctagonXIcon,
   TriangleAlertIcon,
 } from "lucide-react";
-import { useTheme } from "next-themes";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
+import { useTheme } from "~/app/context/ThemeContext";
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme();
+  const { theme } = useTheme();
 
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme={theme.id === "light" ? "light" : "dark"}
       className="toaster group"
       icons={{
         success: <CircleCheckIcon className="size-4" />,

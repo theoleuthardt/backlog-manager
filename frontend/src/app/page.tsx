@@ -1,10 +1,8 @@
-import {
-  Navbar,
-  Footer,
-  Features,
-  UniverseBackground,
-  HeroCta,
-} from "components";
+import { Navbar } from "components/Navbar";
+import { Footer } from "components/Footer";
+import { Features } from "components/Features";
+import { UniverseBackground } from "components/UniverseBackground";
+import { HeroCta } from "components/HeroCta";
 import { landingPageNavLinks } from "~/constants";
 
 export default function Home() {

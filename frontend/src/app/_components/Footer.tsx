@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 export function Footer() {
   return (
     <footer className="white mt-4 justify-center bg-transparent px-8 py-4 text-white shadow">
@@ -9,12 +7,14 @@ export function Footer() {
         </p>
         <div className="flex flex-row">
           <p className="text-sm">Icons by </p>
-          <Link
+          <a
             className="ml-1 text-sm font-bold hover:underline"
-            href={"https://icons8.com/"}
+            href="https://icons8.com/"
+            target="_blank"
+            rel="noopener noreferrer"
           >
             Icons8
-          </Link>
+          </a>
         </div>
       </div>
     </footer>

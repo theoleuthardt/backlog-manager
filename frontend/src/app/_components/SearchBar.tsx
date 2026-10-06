@@ -1,7 +1,5 @@
-"use client";
 import React, { useState } from "react";
 import { Input } from "~/components/ui/input";
-import Image from "next/image";
 import { X } from "lucide-react";
 import { useDebounce } from "~/hooks/useDebounce";
 import type { SearchBarProps } from "~/app/types";
@@ -38,7 +36,7 @@ export const SearchBar = ({ ref, ...props }: SearchBarWithDebounceProps) => {
     <div className={`relative mb-4 w-full max-w-sm ${props.className}`}>
       {props.useIcon && (
         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-          <Image
+          <img
             src="/search.png"
             alt="Search"
             width={20}

@@ -1,4 +1,3 @@
-"use client";
 import { useEffect, useRef } from "react";
 import { SearchBar } from "components/SearchBar";
 import { useDashboard } from "~/app/context/DashboardContext";

@@ -1,4 +1,3 @@
 src/lib/api/schema.d.ts
-.next
-out
+dist
 src-tauri/target

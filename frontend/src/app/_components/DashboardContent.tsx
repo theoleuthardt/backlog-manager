@@ -1,5 +1,4 @@
-"use client";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { Suspense, lazy, useCallback, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   DndContext,
@@ -42,7 +41,6 @@ import {
 } from "components/DashboardSidebar";
 import { DraggableEntry } from "components/DraggableEntry";
 import { DragPreview } from "components/DragPreview";
-import { EntryDetail } from "components/EntryDetail";
 import { GroupSection } from "components/GroupSection";
 import { IgdbSyncButton } from "components/IgdbSyncButton";
 import { SteamSyncButton } from "components/SteamSyncButton";
@@ -84,6 +82,12 @@ import {
   type SortDirection,
   type SortOption,
 } from "~/lib/sortEntries";
+
+const EntryDetail = lazy(() =>
+  import("components/EntryDetail").then((module) => ({
+    default: module.EntryDetail,
+  })),
+);
 
 function ceilMax(
   entries: readonly BacklogEntryData[],
@@ -797,7 +801,11 @@ export const DashboardContent = ({
             if (!open) setOpenEntryId(null);
           }}
         >
-          {openEntry && <EntryDetail key={openEntry.id} {...openEntry} />}
+          {openEntry && (
+            <Suspense fallback={null}>
+              <EntryDetail key={openEntry.id} {...openEntry} />
+            </Suspense>
+          )}
         </Dialog>
 
         <AlertDialog

@@ -1,4 +1,3 @@
-"use client";
 import { memo } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { BacklogEntry } from "components/BacklogEntry";

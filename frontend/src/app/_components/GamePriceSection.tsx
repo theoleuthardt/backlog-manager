@@ -1,6 +1,4 @@
-"use client";
 import { useState } from "react";
-import Image from "next/image";
 import {
   ExternalLink,
   Flame,
@@ -55,7 +53,7 @@ function StoreIcon({
     return <div className="h-5 w-5 shrink-0 rounded bg-white/10" />;
   }
   return (
-    <Image
+    <img
       src={
         local
           ? iconUrl
@@ -64,7 +62,6 @@ function StoreIcon({
       alt={alt}
       width={20}
       height={20}
-      unoptimized
       className="h-5 w-5 shrink-0 rounded object-contain"
       onError={() => setHasError(true)}
     />

@@ -1,7 +1,5 @@
-"use client";
-
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router";
 import { AuthCard } from "components/AuthCard";
 import { Button } from "shadcn_components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -27,7 +25,7 @@ const FormError = ({ message }: { message: string | null }) =>
 
 export default function LoginPage() {
   const { user, login, completeTwoFactorLogin, logout, isLoading } = useAuth();
-  const router = useRouter();
+  const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -45,7 +43,7 @@ export default function LoginPage() {
       if (outcome.status === "requires_2fa") {
         setChallengeToken(outcome.challengeToken);
       } else {
-        router.push("/dashboard");
+        void navigate("/dashboard");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
@@ -61,7 +59,7 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       await completeTwoFactorLogin(challengeToken, code);
-      router.push("/dashboard");
+      void navigate("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Invalid two-factor code");
     } finally {
@@ -96,7 +94,7 @@ export default function LoginPage() {
             size="lg"
             variant="outline"
             className={APP_BUTTON}
-            onClick={() => router.push("/dashboard")}
+            onClick={() => void navigate("/dashboard")}
           >
             Go to Dashboard
           </Button>

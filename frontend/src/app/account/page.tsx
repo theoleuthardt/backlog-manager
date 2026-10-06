@@ -1,4 +1,6 @@
-import { Navbar, Footer, AccountContent } from "components";
+import { Navbar } from "components/Navbar";
+import { Footer } from "components/Footer";
+import { AccountContent } from "components/AccountContent";
 import { accountNavLinks } from "~/constants";
 
 export default function Account() {

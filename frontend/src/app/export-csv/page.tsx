@@ -1,4 +1,6 @@
-import { Navbar, Footer, ExportCSVContent } from "components";
+import { Navbar } from "components/Navbar";
+import { Footer } from "components/Footer";
+import { ExportCSVContent } from "components/ExportCSVContent";
 import { exportCSVNavLinks } from "~/constants";
 
 export default function ExportCSV() {

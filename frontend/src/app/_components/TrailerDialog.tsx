@@ -1,4 +1,3 @@
-"use client";
 import { Play } from "lucide-react";
 import {
   Dialog,

@@ -1,4 +1,3 @@
-"use client";
 import { useState } from "react";
 import { Images, Loader2, XIcon } from "lucide-react";
 import { Button } from "shadcn_components/ui/button";

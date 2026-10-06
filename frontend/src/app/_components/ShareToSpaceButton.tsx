@@ -1,5 +1,4 @@
-"use client";
-import Link from "next/link";
+import { Link } from "react-router";
 import { Loader2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "shadcn_components/ui/button";
@@ -26,7 +25,7 @@ export function ShareToSpaceButton({ entry }: { entry: BacklogEntryProps }) {
   if (entry.inSharedSpace) {
     return (
       <Button variant="outline" size="sm" className="gap-2" asChild>
-        <Link href="/space">
+        <Link to="/space">
           <Users className="h-4 w-4" />
           In shared space
         </Link>

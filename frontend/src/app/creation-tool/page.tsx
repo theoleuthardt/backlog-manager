@@ -1,5 +1,7 @@
 import { Suspense } from "react";
-import { Navbar, Footer, CreationToolForm } from "components";
+import { Navbar } from "components/Navbar";
+import { Footer } from "components/Footer";
+import { CreationToolForm } from "components/CreationToolForm";
 import { creationToolNavLinks } from "~/constants";
 
 export default function CreationTool() {

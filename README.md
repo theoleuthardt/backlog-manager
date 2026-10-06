@@ -1,6 +1,6 @@
 # Backlog Manager 🎮📒
 
-A backlog manager to manage and organize games, with a Python/Litestar backend API and a Next.js frontend distributed as a Tauri desktop app.
+A backlog manager to manage and organize games, with a Python/Litestar backend API and a React/Vite frontend distributed as a Tauri desktop app.
 This is a private project of mine and still work in progress. 
 
 ## Overview 
@@ -57,7 +57,7 @@ these once before your first `task install`:
 
 | Tool | Why |
 | ---- | --- |
-| [Node.js 22](https://nodejs.org) (or [nvm](https://github.com/nvm-sh/nvm)) | runs the Next.js frontend |
+| [Node.js 22](https://nodejs.org) (or [nvm](https://github.com/nvm-sh/nvm)) | runs the Vite frontend |
 | [uv](https://docs.astral.sh/uv/) | Python backend dependency and tool management |
 | [go-task](https://taskfile.dev) | unified command surface for every repo command |
 | [Podman](https://podman.io/) + a Compose provider | local Postgres stack (`podman-compose`, e.g. `brew install podman-compose` on macOS — `podman compose` delegates to whichever provider is on your `PATH`) |
@@ -68,7 +68,7 @@ these once before your first `task install`:
 ```bash
 task install   # npm install (frontend) + uv sync (backend)
 task db:up     # start local Postgres + pgAdmin
-task dev       # Next.js dev server
+task dev       # Vite dev server
 ```
 
 See `Taskfile.yml` (`task --list`) for the full command surface,

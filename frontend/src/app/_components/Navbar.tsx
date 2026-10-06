@@ -1,16 +1,13 @@
-"use client";
 import React, { useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
 import { AnimatePresence, motion } from "motion/react";
-import { useRouter } from "next/navigation";
+import { Link, useNavigate } from "react-router";
 import type { NavbarLink, NavbarProps } from "~/app/types";
 import { useAuth } from "~/app/context/AuthContext";
 import { useIsTauriMacOS } from "~/hooks/useIsTauri";
 import { ThemeMenu } from "./ThemeMenu";
 
 export function Navbar(props: NavbarProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { logout } = useAuth();
   const isTauriMacOS = useIsTauriMacOS();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -29,13 +26,13 @@ export function Navbar(props: NavbarProps) {
 
       case "logout":
         logout();
-        router.push("/login");
+        void navigate("/login");
         break;
 
       case "navigate":
       default:
         if (link.href != null) {
-          router.push(link.href);
+          void navigate(link.href);
         }
         break;
     }
@@ -49,12 +46,12 @@ export function Navbar(props: NavbarProps) {
       <div
         className={`flex items-center space-x-2 ${isTauriMacOS ? "ml-16" : ""}`}
       >
-        <Link href={"/"}>
+        <Link to={"/"}>
           <motion.div
             whileHover={{ scale: 1.08, rotate: -4 }}
             whileTap={{ scale: 0.95 }}
           >
-            <Image
+            <img
               src="/logo_mana.png"
               alt="Backlog-Manager"
               width={64}
@@ -63,7 +60,7 @@ export function Navbar(props: NavbarProps) {
             />
           </motion.div>
         </Link>
-        <Link href={"/"}>
+        <Link to={"/"}>
           <span className="hidden text-xl font-bold md:block">
             Backlog-Manager
           </span>
@@ -122,7 +119,7 @@ export function Navbar(props: NavbarProps) {
                     (link.mobileComponent ?? link.component)
                   ) : (
                     <Link
-                      href={link.href ?? "#"}
+                      to={link.href ?? "#"}
                       onClick={(e) => {
                         handleClick(e, link);
                         setIsMenuOpen(false);
@@ -166,7 +163,7 @@ export function Navbar(props: NavbarProps) {
           return (
             <Link
               key={link.id}
-              href={link.href ?? "#"}
+              to={link.href ?? "#"}
               onClick={(e) => handleClick(e, link)}
               className="bg-transparent"
             >

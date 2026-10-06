@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Backlog Manager is a video game backlog manager. The frontend is a Next.js app (originally scaffolded with create-t3-app; tRPC and NextAuth have since been removed) living in `frontend/`; the backend is a standalone Python/Litestar service living in `backend/` (fully migrated off Next.js/tRPC — see issue #103/#104 for that history). The frontend calls the backend directly over REST with a JWT Bearer token. Only the backend is meant to be hosted as a public, always-on service; the frontend ships as a Tauri desktop app built from the Next.js codebase rather than being centrally hosted the same way.
+Backlog Manager is a video game backlog manager. The frontend is a React single-page app built with Vite and React Router (originally scaffolded with create-t3-app on Next.js; Next.js, tRPC and NextAuth have since been removed, see issue #241) living in `frontend/`; the backend is a standalone Python/Litestar service living in `backend/` (fully migrated off Next.js/tRPC — see issue #103/#104 for that history). The frontend calls the backend directly over REST with a JWT Bearer token. Only the backend is meant to be hosted as a public, always-on service; the frontend ships as a Tauri desktop app built from the same Vite build (which also produces the web image) rather than being centrally hosted the same way.
 
 Users can track games with metadata from HowLongToBeat and IGDB, organize games into categories via drag & drop, connect Steam accounts for playtime sync, and import/export CSV files.
 
@@ -14,7 +14,7 @@ Users can track games with metadata from HowLongToBeat and IGDB, organize games 
 
 ```bash
 task install       # npm install (frontend) + uv sync (backend); needs Node 22.12+ (`nvm use` reads the root .nvmrc)
-task dev           # Next.js dev server
+task dev           # Vite dev server
 task backend:dev   # Litestar dev server (uvicorn --reload)
 task db:up         # local Postgres + pgAdmin via compose.yml
 task test          # backend (pytest) + frontend (vitest) suites
@@ -25,17 +25,15 @@ task backend:migration -- "add foo column"   # new Alembic revision
 task backend:migrate                          # alembic upgrade head
 ```
 
-The commands below document the underlying toolchain the tasks wrap — they are not an opt-out from the `task` rule. Where no task exists (`dev:webpack`, `preview`, `start`, `lint:fix`, `format:check`, `format:write`), running them directly is the allowed exception. `npm run typecheck` is likewise task-less, but it is only a focused re-check while iterating — it never replaces the mandatory `task check` (step 4 below). Root `package.json` only has convenience scripts delegating to `frontend/` (`--prefix frontend`) - run `npm install --prefix frontend` once first, or `cd frontend` and use these directly:
+The commands below document the underlying toolchain the tasks wrap — they are not an opt-out from the `task` rule. Where no task exists (`preview`, `lint:fix`, `format:check`, `format:write`), running them directly is the allowed exception. `npm run typecheck` is likewise task-less, but it is only a focused re-check while iterating — it never replaces the mandatory `task check` (step 4 below). Root `package.json` only has convenience scripts delegating to `frontend/` (`--prefix frontend`) - run `npm install --prefix frontend` once first, or `cd frontend` and use these directly:
 
 ```bash
 # Development
-npm run dev          # Start dev server with Turbo (port 3000)
-npm run dev:webpack  # Start dev server with Webpack
+npm run dev          # Start the Vite dev server (port 3000)
 
 # Build & Production
-npm run build        # Build for production
-npm run preview      # Build and start production server
-npm run start        # Start production server
+npm run build        # Typecheck and build for production (dist/)
+npm run preview      # Build and serve the production build locally
 
 # Code Quality
 npm run check        # Run lint + typecheck
@@ -63,7 +61,7 @@ uv run ruff check .  # Lint
 
 ## Architecture
 
-**Frontend stack:** Next.js 15+ with App Router, calling the backend directly over REST via a typed `openapi-fetch` client generated from the backend's OpenAPI schema, JWT Bearer token in `localStorage` for auth (no NextAuth), Tailwind CSS + shadcn/ui components. Lives entirely in `frontend/`. Distributed as a Tauri desktop app (static export) rather than centrally hosted; the app updates itself via the Tauri updater plugin from GitHub Releases (signing key, `latest.json` and pinned plugin versions: see `docs/TAURI.md`).
+**Frontend stack:** Vite + React 19 with React Router (BrowserRouter, lazy routes, guards in `RequireAuth`), calling the backend directly over REST via a typed `openapi-fetch` client generated from the backend's OpenAPI schema, JWT Bearer token in `localStorage` for auth (no NextAuth), Tailwind CSS + shadcn/ui components. Lives entirely in `frontend/`. Distributed as a Tauri desktop app (the static `dist/` build) rather than centrally hosted; the app updates itself via the Tauri updater plugin from GitHub Releases (signing key, `latest.json` and pinned plugin versions: see `docs/TAURI.md`).
 
 **Backend stack:** Python/Litestar, uv-managed, SQLAlchemy 2.0 async + asyncpg, full REST API (backlog CRUD, auth incl. TOTP 2FA, CSV import/export, IGDB/HowLongToBeat integrations). Lives entirely in `backend/`. This is the only piece of the app meant to be hosted as a public, always-on service. See issue #104 for the migration history off Next.js/tRPC.
 
@@ -342,4 +340,3 @@ gh pr create --title "feat: implement feature" --body "Closes #42"
 coderabbit review --agent --base main
 ```
 
-Next.js's own agent-rules notice now lives in `frontend/AGENTS.md` (with `frontend/CLAUDE.md` pointing to it) since that's where `next dev` resolves it from after the move to `frontend/`.

@@ -1,5 +1,3 @@
-"use client";
-
 import React, { createContext, useContext } from "react";
 
 const BacklogScopeContext = createContext<number | undefined>(undefined);

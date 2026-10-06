@@ -1,5 +1,3 @@
-"use client";
-import Image from "next/image";
 import { MotionConfig, motion } from "motion/react";
 import { UniverseBackground } from "components/UniverseBackground";
 
@@ -22,12 +20,11 @@ export const AuthCard = ({ title, description, children }: AuthCardProps) => (
             className="text-foreground flex items-center gap-3 text-3xl font-bold"
             style={{ textShadow: "0 0 18px var(--t-glow)" }}
           >
-            <Image
+            <img
               src="/logo_mana.png"
               alt=""
               width={56}
               height={56}
-              unoptimized
               className="themed-icon h-14 w-14"
               style={{ filter: "drop-shadow(0 0 10px var(--t-glow))" }}
             />

@@ -1,5 +1,4 @@
-"use client";
-import Link from "next/link";
+import { Link } from "react-router";
 import { Users } from "lucide-react";
 import { useSpace } from "~/hooks/useSpace";
 
@@ -13,7 +12,7 @@ export function SpaceNavLink({ showLabel = false }: { showLabel?: boolean }) {
 
   return (
     <Link
-      href="/space"
+      to="/space"
       aria-label={
         hasInvitation ? "Shared space (new invitation)" : "Shared space"
       }

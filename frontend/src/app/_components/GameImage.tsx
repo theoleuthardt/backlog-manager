@@ -1,5 +1,3 @@
-"use client";
-import Image from "next/image";
 import React, { useState } from "react";
 import type { GameImageProps } from "~/app/types";
 import { Spinner } from "~/components/ui/spinner";
@@ -38,16 +36,14 @@ export function GameImage(props: GameImageProps) {
           <Spinner className="h-8 w-8 text-white" />
         </div>
       )}
-      <Image
+      <img
         src={imageSrc}
         alt={props.alt || "Game cover"}
-        fill
-        unoptimized
         loading="lazy"
         decoding="async"
         onError={handleError}
         onLoad={handleLoadingComplete}
-        className={`pointer-events-none object-cover ${props.className ?? ""}`}
+        className={`pointer-events-none absolute inset-0 h-full w-full object-cover ${props.className ?? ""}`}
       />
     </div>
   );

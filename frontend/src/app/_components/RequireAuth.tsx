@@ -1,7 +1,5 @@
-"use client";
-
 import { useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useNavigate, useLocation } from "react-router";
 import { useAuth } from "~/app/context/AuthContext";
 import { setupRedirect } from "~/lib/setupWizard";
 
@@ -15,18 +13,18 @@ import { setupRedirect } from "~/lib/setupWizard";
  */
 export function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
-  const router = useRouter();
-  const pathname = usePathname();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
   const redirectTo = user ? setupRedirect(user, pathname) : null;
 
   useEffect(() => {
     if (isLoading) return;
     if (!user) {
-      router.replace("/login");
+      void navigate("/login", { replace: true });
     } else if (redirectTo) {
-      router.replace(redirectTo);
+      void navigate(redirectTo, { replace: true });
     }
-  }, [isLoading, user, redirectTo, router]);
+  }, [isLoading, user, redirectTo, navigate]);
 
   if (isLoading || !user || redirectTo) {
     return (
