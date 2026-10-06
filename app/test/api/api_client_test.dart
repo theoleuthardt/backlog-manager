@@ -96,6 +96,31 @@ void main() {
       expect(logouts, 1);
     });
 
+    test(
+      'ignores a 401 for a token that is no longer the session token',
+      () async {
+        var logouts = 0;
+        var current = 'old';
+        late final Dio dio;
+        final server = FakeServer((_) {
+          current = 'new';
+          return (status: 401, body: {'detail': 'Not authenticated'});
+        });
+        dio = createApiDio(
+          baseUrl: 'http://api.test',
+          readToken: () => current,
+          onUnauthorized: () => logouts++,
+          adapter: server,
+        );
+
+        await expectLater(
+          RestClient(dio).fallback.apiBacklogEntriesListEntries(),
+          throwsA(isA<DioException>()),
+        );
+        expect(logouts, 0);
+      },
+    );
+
     test('does not call onUnauthorized for other errors', () async {
       var logouts = 0;
       final server = FakeServer((_) => (status: 500, body: {'detail': 'boom'}));
