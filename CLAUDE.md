@@ -114,7 +114,7 @@ Dart/Flutter desktop app, ported from `frontend/`. Setup, running, debugging, go
 - **Theming:** read colours from the `ShelfTokens` `ThemeExtension`, never hard-coded `Color`s.
 - **Generated API client:** `lib/api/generated/` is committed and never edited by hand. After a backend route change run `task backend:openapi`, then `task app:generate-api`, and commit the diff.
 - **Tests:** test first. Logic ports keep every case of the vitest file they come from; reusable components get golden tests; goldens are only re-recorded (`task app:test:update-goldens`) for an intended visual change, with the image diff reviewed.
-- **Comments:** the comment policy below applies unchanged; the allowed documentation form is a `///` doc comment on a public class or function. No `//` narrative comments.
+- **Comments:** the comment policy below applies unchanged; the allowed forms are the same, written as `///`: a doc comment on a class, function or module-level constant, or a library doc comment at the top of a file. No `//` narrative comments.
 - **Lints:** `task app:lint` (strict analyzer settings and rules in `app/analysis_options.yaml`) and `task app:format:check` must pass; do not add `// ignore:` to get past a lint.
 
 ## API Testing (Bruno)
