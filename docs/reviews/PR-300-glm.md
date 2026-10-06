@@ -1,0 +1,41 @@
+# Review of PR #300: feat(backend): API additions for the Flutter client
+
+- Reviewer: GLM
+- Branch: `293-backend-flutter-additions`, commit reviewed: 83b47eb (PR is closed/parked and lands with the Flutter cutover, #287 — the review focuses on migration safety, backward compatibility with the current web client, backup/restore integrity, and the API contract)
+- Issue: #293
+- Checks run: `task backend:lint` (pass), `task backend:test` (pass, 808 tests, ~143 s, with the Podman testcontainers environment), `task frontend:test` (pass, 135 tests) — all in the branch's worktree at commit 83b47eb. Migration chain, `postgres/backlogmanagerdb-init.sql`, backup snapshot/restore coverage, and the OpenAPI/`schema.d.ts`/Dart-client regeneration were verified by inspection.
+
+## Summary
+
+The PR adds three additive backend changes for the Flutter client: an optional `playtime` (hours) on `SteamPreviewItem` for the library preview, a nullable `Publisher` column on backlog entries (model, schemas, repository, backup snapshot/restore, init SQL, Alembic migration, IGDB sync fill), and `shelfOled` as the default theme for new accounts (schemas, model, init SQL, migration that changes only the server default). Migration safety and backup integrity are done right: both Alembic revisions are pure `ALTER`/`server_default` changes on the existing chain, the init SQL a fresh database is stamped with carries both changes, `publisher` is in `backup_repo.py`'s `_ENTRY_FIELDS` with restore covered by a test, and existing users' stored themes are untouched. Backward compatibility with the web client is verified, including a new `themes.test.ts` case pinning that the web resolver falls back to its own default for the unknown `shelfOled` id. The one real gap is on the client side of the publisher feature: no client ever sends a publisher, the issue's scope items that would change that are unimplemented, and the PR body's wording suggests otherwise.
+
+## Findings
+
+### No client sends the publisher; the issue's client-side scope items are unimplemented and the PR body overstates coverage (minor, confirmed)
+- Location: `frontend/src/app/_components/CreationToolForm.tsx:165` (`buildPayload`), `frontend/src/app/_components/EntryDetail.tsx:211-231` (`handleWrongGameSelected`)
+- Problem: Issue #293 scope says "the creation tool sends the publisher it already receives from the game search … the wrong-game replacement and the CSV preview carry it when the match has one". The CSV-preview deviation is documented in the PR body, but the other two are simply not implemented: the web creation tool's `buildPayload()` omits `publisher` even though the game-search result carries it (it is read for display at `CreationToolForm.tsx:74` and `:357-361`), and the wrong-game replacement's update payload omits it even though `GameSearchResult` includes `publisher`. The PR body's claim "The wrong-game replacement already goes through the update route, which accepts `publisher`" is misleading — route acceptance without a sender means the value never flows. In practice the only writer today is the IGDB sync, so the publisher column is effectively sync-populated only.
+- Evidence: both payload builders read and shown above contain no `publisher` key (`grep -n "publisher" frontend/src/app/_components/CreationToolForm.tsx frontend/src/app/_components/EntryDetail.tsx` finds only the display read and the search-result type, not the payloads); the PR body's deviations list covers the CSV preview but not these two.
+- Suggested fix: Since the PR is parked until the cutover, either implement the two web senders before it lands (they are the issue's explicit scope), or add them to the deviations list and reword the wrong-game sentence to "the update route accepts `publisher`, so the Flutter client (#264) can send it" so the reviewer/merger knows the web client never exercises the write path.
+
+### Wishlist preview Bruno doc not updated for the new `playtime` field (nit, confirmed)
+- Location: `bruno/steam/Preview Steam Wishlist.bru:18`
+- Problem: The docs block still describes the preview shape as `{steam_app_id, title, image_link}`. `SteamPreviewItem.playtime` is a plain `msgspec.Struct` field with a `None` default (`steam_service.py:83-91`), so the wishlist response now also carries `"playtime": null` — the doc's shape no longer matches the response. The library preview's `.bru` was updated; the wishlist one was missed. The issue's acceptance criteria say "the Bruno collection … updated in the same PR".
+- Evidence: struct definition above; `test_steam_service.py:928` pins `preview[0].playtime is None` for the wishlist; the wishlist `.bru` docs block lists only the three old fields.
+- Suggested fix: change the doc line to `{steam_app_id, title, image_link, playtime}` with a note that the wishlist preview always reports `playtime: null`.
+
+## Checked and fine
+
+- **Migrations:** chain `f4c9a1d7e3b8 → a7d2c9e4b1f6 → b3e8f1a5d9c2` verified; `a7d2c9e4b1f6` adds a nullable `Publisher` `VARCHAR(255)` to `BacklogEntries` in schema `blm-system` and its downgrade drops the column (data loss on downgrade is documented in the revision — acceptable for an additive parked feature); `b3e8f1a5d9c2` changes only the `server_default` of `Users.Theme` to `shelfOled` (downgrade back to `dark`), so existing users' stored values are untouched — exactly what the issue asked
+- **Init SQL:** `postgres/backlogmanagerdb-init.sql` carries both changes (`"Publisher" VARCHAR(255)` on the entries table, `"Theme" … DEFAULT 'shelfOled'`), so a fresh database stamped at head matches migrated ones
+- **Backups:** `publisher` is in `_ENTRY_FIELDS` (`backup_repo.py:34`) with snapshot and restore going through the same generic `getattr` loop as every other entry field; `test_backup_service` pins that a restore keeps the publisher; restore-only-from-server-stored-snapshots is unchanged
+- **IGDB sync fill:** `_missing_igdb_data` now also targets entries with `publisher is None`; `_build_update` sets `publisher` only when the entry's is `None` (never overwrites a user value); an empty string from IGDB means "asked, none exists" and stops the re-lookup pending state; values are truncated to `MAX_PUBLISHER_LENGTH` (255). Tests cover fill, never-overwrite, `""`-stops-pending, and truncation
+- **Steam preview playtime:** `SteamPreviewItem.playtime` is `Decimal | None`; the library preview converts `playtime_forever` through the same `_minutes_to_hours` helper as the import (0.01 quantize, `ROUND_HALF_UP`), family-only games report `0`, the wishlist leaves it `null`; the SSE `done` event test pins `playtime "2.5"`; `test_steam_service.py:1057` pins the hours conversion `[Decimal("2.08"), Decimal("0.00")]`. The web client ignores the new field (additive)
+- **Theme default:** new accounts get `shelfOled` in both schema places and the model/column default; `test_user_routes` pins it; the new `frontend/src/lib/themes.test.ts` case pins that the web resolver falls back to its own default for the unknown id — the backward-compatibility check the issue asked for
+- **Validation at boundaries:** `Publisher` is `Annotated[str, msgspec.Meta(max_length=255)]` on the create/update requests (255/256 boundary returns 400, tested); the response exposes the DB-backed value; nothing trusts IGDB input beyond the truncation
+- **Contract consistency:** `backend/openapi.json`, `frontend/src/lib/api/schema.d.ts` and the Dart generated client under `app/lib/api/generated/` all regenerated consistently (publisher `maxLength` 255, playtime `oneOf string/null`, theme default `shelfOled`)
+- **Design cleanup:** "last played yesterday" removed from `docs/design/canvas/ShelfDashboard.dc.html`; `DESIGN_SYSTEM.md` had no mention (verified)
+- CLAUDE.md compliance: no narrative comments, tests-first throughout (each behavior has its pinning test), no unrelated refactors riding along
+
+## Open questions
+
+- Are the two web-side publisher senders (creation tool, wrong-game replacement) deliberately deferred to the Flutter cutover screens (#264/#268)? If yes, the deviations list should say so — as written, the PR claims coverage it does not have (finding 1).
