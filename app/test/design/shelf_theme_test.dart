@@ -163,6 +163,17 @@ void main() {
       expect(thumb, tokens.accent);
     });
 
+    test('tooltips are small surface3 cards with a strong border', () {
+      final tooltip = theme.tooltipTheme;
+      final decoration = tooltip.decoration! as BoxDecoration;
+
+      expect(decoration.color, tokens.surface3);
+      expect(decoration.borderRadius, BorderRadius.circular(6));
+      expect((decoration.border! as Border).top.color, tokens.borderStrong);
+      expect(tooltip.textStyle!.color, tokens.foreground);
+      expect(tooltip.waitDuration, const Duration(milliseconds: 500));
+    });
+
     test('the selected tab is underlined in the accent', () {
       expect(theme.tabBarTheme.indicatorColor, tokens.accent);
       expect(theme.tabBarTheme.labelColor, tokens.foreground);

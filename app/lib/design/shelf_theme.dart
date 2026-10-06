@@ -113,6 +113,16 @@ ThemeData buildShelfTheme(ShelfTokens tokens) {
       unselectedLabelStyle: text.control,
       dividerColor: tokens.borderSubtle,
     ),
+    tooltipTheme: TooltipThemeData(
+      waitDuration: const Duration(milliseconds: 500),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      textStyle: text.label.copyWith(color: tokens.foreground),
+      decoration: BoxDecoration(
+        color: tokens.surface3,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: tokens.borderStrong),
+      ),
+    ),
     menuTheme: MenuThemeData(
       style: MenuStyle(
         backgroundColor: WidgetStatePropertyAll(tokens.surface2),

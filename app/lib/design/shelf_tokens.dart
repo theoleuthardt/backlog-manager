@@ -34,6 +34,8 @@ class ShelfTokens extends ThemeExtension<ShelfTokens> {
     required this.success,
     required this.danger,
     required this.info,
+    required this.shadow,
+    required this.scrim,
     required this.sky,
     required this.starA,
     required this.starB,
@@ -84,6 +86,12 @@ class ShelfTokens extends ThemeExtension<ShelfTokens> {
       success: light ? const Color(0xFF047857) : const Color(0xFF34D399),
       danger: light ? const Color(0xFFE11D48) : const Color(0xFFFF6B81),
       info: light ? const Color(0xFF4F46E5) : const Color(0xFF60A5FA),
+      shadow: light
+          ? atOpacity(foreground, 0.25)
+          : atOpacity(const Color(0xFF000000), 0.85),
+      scrim: light
+          ? atOpacity(foreground, 0.35)
+          : atOpacity(const Color(0xFF000000), 0.6),
       sky: atOpacity(glow, 0.24),
       starA: atOpacity(foreground, 0.8),
       starB: atOpacity(accent, 0.55),
@@ -127,6 +135,8 @@ class ShelfTokens extends ThemeExtension<ShelfTokens> {
   final Color success;
   final Color danger;
   final Color info;
+  final Color shadow;
+  final Color scrim;
   final Color sky;
   final Color starA;
   final Color starB;
@@ -201,6 +211,8 @@ class ShelfTokens extends ThemeExtension<ShelfTokens> {
     Color? success,
     Color? danger,
     Color? info,
+    Color? shadow,
+    Color? scrim,
     Color? sky,
     Color? starA,
     Color? starB,
@@ -237,6 +249,8 @@ class ShelfTokens extends ThemeExtension<ShelfTokens> {
       success: success ?? this.success,
       danger: danger ?? this.danger,
       info: info ?? this.info,
+      shadow: shadow ?? this.shadow,
+      scrim: scrim ?? this.scrim,
       sky: sky ?? this.sky,
       starA: starA ?? this.starA,
       starB: starB ?? this.starB,
@@ -279,6 +293,8 @@ class ShelfTokens extends ThemeExtension<ShelfTokens> {
       success: blend(success, other.success),
       danger: blend(danger, other.danger),
       info: blend(info, other.info),
+      shadow: blend(shadow, other.shadow),
+      scrim: blend(scrim, other.scrim),
       sky: blend(sky, other.sky),
       starA: blend(starA, other.starA),
       starB: blend(starB, other.starB),

@@ -39,7 +39,7 @@ MenuStyle _menuStyle(ShelfTokens tokens) {
   return MenuStyle(
     backgroundColor: WidgetStatePropertyAll(tokens.surface2),
     surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
-    shadowColor: const WidgetStatePropertyAll(Color(0xCC000000)),
+    shadowColor: WidgetStatePropertyAll(tokens.shadow),
     elevation: const WidgetStatePropertyAll(16),
     padding: const WidgetStatePropertyAll(EdgeInsets.all(4)),
     shape: WidgetStatePropertyAll(
