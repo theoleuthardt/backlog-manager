@@ -13,7 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>body{margin:0}</style>
 </helmet>
-<div class="shelf win">
+<div class="shelf win {{themeClass}}">
   <dc-import name="Titlebar" title="Shared space" search="yes" hint-size="100%,52px"></dc-import>
   <div class="win-body">
     <div class="sidebar-col"><dc-import name="SidebarNav" active="space" hint-size="232px,560px"></dc-import><div style="margin-top: auto;"><dc-import name="SidebarAccount" hint-size="232px,58px"></dc-import></div></div>
@@ -50,9 +50,9 @@
   <dc-import name="StatusBar" left="14 shared games" hint-size="100%,28px"></dc-import>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["oled","light","colorful","freaky"],"default":"oled"},"$preview":{"width":1440,"height":900}}'>
 class Component extends DCLogic {
-  renderVals() {
+  renderVals() { const themeClass = 'theme-' + (this.props.theme ?? 'oled');
     const cover = (a, b) => 'linear-gradient(160deg, ' + a + ', ' + b + ')';
     const games = [
       { title: 'It Takes Two', bg: cover('#d2641e', '#2a1006'), meH: 12, partnerH: 14, main: 14 },
@@ -65,7 +65,7 @@ class Component extends DCLogic {
       me: Math.min(100, Math.round((g.meH / g.main) * 100)) + '%',
       partner: Math.min(100, Math.round((g.partnerH / g.main) * 100)) + '%'
     }));
-    return { games };
+    return { themeClass, games };
   }
 }
 </script>

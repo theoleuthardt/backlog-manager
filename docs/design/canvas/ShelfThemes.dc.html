@@ -13,7 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>body{margin:0}</style>
 </helmet>
-<div class="shelf win">
+<div class="shelf win {{themeClass}}">
   <dc-import name="Titlebar" title="Appearance" search="no" hint-size="100%,52px"></dc-import>
   <div class="win-body">
     <div class="sidebar-col"><dc-import name="SidebarNav" active="themes" hint-size="232px,560px"></dc-import><div style="margin-top: auto;"><dc-import name="SidebarAccount" hint-size="232px,58px"></dc-import></div></div>
@@ -46,8 +46,8 @@
           </sc-for>
         </section>
 
-        <section aria-label="Live preview" style="flex: 1; min-width: 0; border-radius: 12px; background: radial-gradient(420px 260px at 90% 0%, rgba(124,92,255,0.2), transparent 70%), #000; border: 1px solid var(--border-strong); overflow: hidden;">
-          <div style="display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid #23252c; background: #15161b;"><span class="lights"><i></i><i></i><i></i></span><span class="small muted" style="margin-left: 8px;">Preview</span></div>
+        <section aria-label="Live preview" style="flex: 1; min-width: 0; border-radius: 12px; background: radial-gradient(420px 260px at 90% 0%, var(--neb-1), transparent 70%), radial-gradient(360px 220px at 0% 100%, var(--neb-3), transparent 70%), var(--bg); border: 1px solid var(--border-strong); overflow: hidden;">
+          <div style="display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--surface-1);"><span class="lights"><i></i><i></i><i></i></span><span class="small muted" style="margin-left: 8px;">Preview</span></div>
           <div style="padding: 16px; display: flex; flex-direction: column; gap: 14px;">
             <div style="display: flex; gap: 6px;"><span class="chip chip-active">Library</span><span class="chip">Space</span><span class="chip chip-accent">In Progress</span></div>
             <div class="covers" style="grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;">
@@ -64,22 +64,22 @@
   <dc-import name="StatusBar" left="Theme: Shelf OLED" hint-size="100%,28px"></dc-import>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["oled","light","colorful","freaky"],"default":"oled"},"$preview":{"width":1440,"height":900}}'>
 class Component extends DCLogic {
-  renderVals() {
+  renderVals() { const themeClass = 'theme-' + (this.props.theme ?? 'oled');
     const themes = [
       { name: 'Shelf OLED', bg: '#000000', accent: '#f5a524', border: '#34343c', active: true },
-      { name: 'Dark', bg: '#000000', accent: '#2563eb', border: '#ffffff', active: false },
-      { name: 'Light', bg: '#f5f4ef', accent: '#4f46e5', border: '#15151b', active: false },
+      { name: 'Shelf Light', bg: '#f7f8fd', accent: '#2f5bff', border: '#c3cae3', active: false },
       { name: 'Colorful', bg: '#0b0720', accent: '#ff3ea5', border: '#7c4dff', active: false },
-      { name: 'Freaky', bg: '#04040e', accent: '#a3ff12', border: '#00ffd0', active: false }
+      { name: 'Freaky', bg: '#04040e', accent: '#a3ff12', border: '#00ffd0', active: false },
+      { name: 'Classic dark', bg: '#000000', accent: '#2563eb', border: '#ffffff', active: false }
     ].map((t) => ({ ...t, cls: t.active ? 'active' : '', badge: t.active ? 'inline-flex' : 'none' }));
     const colors = [
       { label: 'Background', value: '#000000' }, { label: 'Surface', value: '#0B0B0E' },
       { label: 'Text', value: '#F2F2F3' }, { label: 'Accent', value: '#F5A524' },
       { label: 'Border', value: '#34343C' }, { label: 'Glow', value: '#7C5CFF' }
     ];
-    return { themes, colors };
+    return { themeClass, themes, colors };
   }
 }
 </script>

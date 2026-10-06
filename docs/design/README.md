@@ -41,6 +41,8 @@ Chosen direction, drawn as a desktop app (fixed 1440 x 900 windows, or smaller w
 
 Shared building blocks, imported by the artboards: `SidebarNav.dc.html` (brand and navigation), `SidebarAccount.dc.html` (the account row that sits at the bottom of every sidebar; the Settings window draws the same row inline at the bottom of its tab list instead of importing the component), `Titlebar.dc.html`, `StatusBar.dc.html`, `LibraryPane.dc.html` (the library behind sheets).
 
+Themes: every Shelf artboard has a **Theme** tweak (`oled`, `light`, `colorful`, `freaky`) that switches the colour variables in `shelf.css`. `ShelfHomeLight`, `ShelfHomeColorful`, `ShelfHomeFreaky` and `ShelfLibraryLight` show the Home and Library screens in other themes side by side.
+
 Explored and not chosen (kept for reference): `Main.dc.html` and `ArcadeDetail.dc.html` (A, Arcade: gaming HUD, neon on near-black), `CleanDashboard.dc.html` and `CleanDetail.dc.html` (B, Clean: light and minimal). Their file names predate the others.
 
 ### Updating

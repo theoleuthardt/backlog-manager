@@ -13,7 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>body{margin:0}</style>
 </helmet>
-<div class="shelf desk">
+<div class="shelf desk {{themeClass}}">
   <div class="win win-sm" style="width: 880px; height: 640px;">
     <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><span class="tb-title" style="margin-left: 8px;">Welcome to Backlog</span><button type="button" class="btn btn-quiet" style="margin-left: auto;">Skip setup</button></div>
     <div class="win-body">
@@ -42,13 +42,13 @@
   </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["oled","light","colorful","freaky"],"default":"oled"},"$preview":{"width":1440,"height":900}}'>
 class Component extends DCLogic {
-  renderVals() {
+  renderVals() { const themeClass = 'theme-' + (this.props.theme ?? 'oled');
     const names = ['Theme', 'Sorting', 'Steam', 'IGDB', 'Done'];
     const current = 2;
     const steps = names.map((name, i) => ({ name, n: i < current ? '✓' : String(i + 1), cls: i < current ? 'done' : i === current ? 'current' : '' }));
-    return { steps };
+    return { themeClass, steps };
   }
 }
 </script>

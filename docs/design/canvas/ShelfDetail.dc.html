@@ -13,7 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>body{margin:0}</style>
 </helmet>
-<div class="shelf win">
+<div class="shelf win {{themeClass}}">
   <dc-import name="Titlebar" title="Library" search="yes" hint-size="100%,52px"></dc-import>
   <div class="win-body">
     <div class="sidebar-col"><dc-import name="SidebarNav" active="library" hint-size="232px,560px"></dc-import><div style="margin-top: auto;"><dc-import name="SidebarAccount" hint-size="232px,58px"></dc-import></div></div>
@@ -89,9 +89,9 @@
   <dc-import name="StatusBar" left="148 games &middot; 1 selected" hint-size="100%,28px"></dc-import>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["oled","light","colorful","freaky"],"default":"oled"},"$preview":{"width":1440,"height":900}}'>
 class Component extends DCLogic {
-  renderVals() {
+  renderVals() { const themeClass = 'theme-' + (this.props.theme ?? 'oled');
     const cover = (a, b) => 'linear-gradient(160deg, ' + a + ', ' + b + ')';
     const list = [
       ['Hades', '#9a2a42', '#2a0a1a', '18 of 22 h'], ['Elden Ring', '#c99a3a', '#3a2a0c', '41 of 60 h'],
@@ -103,11 +103,11 @@ class Component extends DCLogic {
     ];
     const games = list.map((g, i) => ({ title: g[0], bg: cover(g[1], g[2]), meta: g[3], cls: i === 0 ? 'selected' : '' }));
     const bars = [
-      { label: 'Main story', hours: '22', pct: '84%', color: '#f5a524' },
-      { label: 'Main + extras', hours: '48', pct: '38%', color: '#60a5fa' },
-      { label: 'Completionist', hours: '95', pct: '19%', color: '#34d399' }
+      { label: 'Main story', hours: '22', pct: '84%', color: 'var(--accent)' },
+      { label: 'Main + extras', hours: '48', pct: '38%', color: 'var(--info)' },
+      { label: 'Completionist', hours: '95', pct: '19%', color: 'var(--success)' }
     ];
-    return { games, bars };
+    return { themeClass, games, bars };
   }
 }
 </script>

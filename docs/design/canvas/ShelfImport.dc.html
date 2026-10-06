@@ -13,7 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>body{margin:0}</style>
 </helmet>
-<div class="shelf win">
+<div class="shelf win {{themeClass}}">
   <dc-import name="Titlebar" title="Import CSV" search="no" hint-size="100%,52px"></dc-import>
   <div class="win-body">
     <div class="sidebar-col"><dc-import name="SidebarNav" active="import" hint-size="232px,560px"></dc-import><div style="margin-top: auto;"><dc-import name="SidebarAccount" hint-size="232px,58px"></dc-import></div></div>
@@ -54,9 +54,9 @@
   <dc-import name="StatusBar" left="Import preview &middot; nothing written yet" hint-size="100%,28px"></dc-import>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["oled","light","colorful","freaky"],"default":"oled"},"$preview":{"width":1440,"height":900}}'>
 class Component extends DCLogic {
-  renderVals() {
+  renderVals() { const themeClass = 'theme-' + (this.props.theme ?? 'oled');
     const cover = (a, b) => 'linear-gradient(160deg, ' + a + ', ' + b + ')';
     const mapping = [
       { label: 'Title', value: 'Game' }, { label: 'Genre', value: 'Genre' }, { label: 'Platform', value: 'Platform' },
@@ -71,7 +71,7 @@ class Component extends DCLogic {
       { title: 'A Way Out', meta: 'Adventure · PC · Completed', chip: 'No cover', chipCls: '', action: 'Cover', cover: cover('#4a6a8a', '#10202e') },
       { title: 'Overcooked: All you can eat', meta: 'Party · PC · Not Started', chip: 'Check match', chipCls: 'chip-accent', action: 'Wrong game', cover: cover('#c2a21e', '#3a2a06') }
     ];
-    return { mapping, rows };
+    return { themeClass, mapping, rows };
   }
 }
 </script>

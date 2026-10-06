@@ -13,7 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>body{margin:0}</style>
 </helmet>
-<div class="shelf win">
+<div class="shelf win {{themeClass}}">
   <dc-import name="Titlebar" title="Home" search="yes" hint-size="100%,52px"></dc-import>
   <div class="win-body">
     <div class="sidebar-col"><dc-import name="SidebarNav" active="home" hint-size="232px,560px"></dc-import><div style="margin-top: auto;"><dc-import name="SidebarAccount" hint-size="232px,58px"></dc-import></div></div>
@@ -28,12 +28,12 @@
           </sc-for>
         </section>
 
-        <section aria-label="Continue playing" class="group" style="display: flex; gap: 20px; padding: 16px; align-items: stretch; position: relative; overflow: hidden; background: radial-gradient(520px 240px at 88% 50%, rgba(124,92,255,0.28), transparent 70%), radial-gradient(360px 200px at 8% 100%, rgba(245,165,36,0.12), transparent 70%), #07070a;">
+        <section aria-label="Continue playing" class="group" style="display: flex; gap: 20px; padding: 16px; align-items: stretch; position: relative; overflow: hidden; background: radial-gradient(520px 240px at 88% 50%, var(--neb-1), transparent 70%), radial-gradient(360px 200px at 8% 100%, var(--neb-2), transparent 70%), var(--surface-1);">
           <span class="orbit" aria-hidden="true" style="width: 300px; height: 300px; right: 40px; top: -60px;"></span>
           <span class="orbit" aria-hidden="true" style="width: 520px; height: 520px; right: -70px; top: -170px;"></span>
-          <span class="orbit" aria-hidden="true" style="width: 760px; height: 760px; right: -190px; top: -290px; border-color: rgba(255,255,255,0.04);"></span>
-          <span class="planet" aria-hidden="true" style="width: 16px; height: 16px; right: 142px; top: 78px; background: #ffd28a; box-shadow: 0 0 18px 4px rgba(245,165,36,0.6);"></span>
-          <span class="planet" aria-hidden="true" style="width: 9px; height: 9px; right: 380px; top: 128px; background: #b9a8ff; box-shadow: 0 0 14px 3px rgba(124,92,255,0.7);"></span>
+          <span class="orbit" aria-hidden="true" style="width: 760px; height: 760px; right: -190px; top: -290px; opacity: 0.55;"></span>
+          <span class="planet planet-a" aria-hidden="true" style="width: 16px; height: 16px; right: 142px; top: 78px;"></span>
+          <span class="planet planet-b" aria-hidden="true" style="width: 9px; height: 9px; right: 380px; top: 128px;"></span>
           <div class="cover" style="position: relative; flex: 0 0 120px; background: linear-gradient(160deg, #c99a3a, #3a2a0c); font-size: 14px;">Elden Ring</div>
           <div style="position: relative; flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 8px; min-width: 0;">
             <span class="eyebrow">Continue playing</span>
@@ -70,9 +70,9 @@
   <dc-import name="StatusBar" left="148 games &middot; 1,204 h to beat" hint-size="100%,28px"></dc-import>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["oled","light","colorful","freaky"],"default":"oled"},"$preview":{"width":1440,"height":900}}'>
 class Component extends DCLogic {
-  renderVals() {
+  renderVals() { const themeClass = 'theme-' + (this.props.theme ?? 'oled');
     const cover = (a, b) => 'linear-gradient(160deg, ' + a + ', ' + b + ')';
     const stats = [
       { label: 'In backlog', value: '148', unit: 'games' },
@@ -98,7 +98,7 @@ class Component extends DCLogic {
       { title: 'Limbo', bg: cover('#8a8a8a', '#1a1a1a'), stars: '★★★☆☆' },
       { title: 'Hotline Miami', bg: cover('#d22a7a', '#2a0a1e'), stars: '★★★★☆' }
     ];
-    return { stats, upNext, done };
+    return { themeClass, stats, upNext, done };
   }
 }
 </script>

@@ -13,7 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>body{margin:0}</style>
 </helmet>
-<div class="shelf desk">
+<div class="shelf desk {{themeClass}}">
   <div class="win win-sm" style="width: 1000px; height: 740px;">
     <div class="titlebar" style="gap: 12px;"><div class="lights"><i></i><i></i><i></i></div><span class="tb-title" style="margin-left: 8px;">Settings</span></div>
     <div class="win-body">
@@ -23,7 +23,7 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{t.icon}}"></path></svg>{{t.name}}
           </a>
         </sc-for>
-        <div class="account-row" style="margin: auto -10px 0;"><span class="avatar">TH</span><div style="line-height: 1.2; min-width: 0;"><div style="font-weight: 700; font-size: 13px;">Theo</div><div style="font-size: 12px; color: #6a6c75;">theo@example.com</div></div></div>
+        <div class="account-row" style="margin: auto -10px 0;"><span class="avatar">TH</span><div style="line-height: 1.2; min-width: 0;"><div style="font-weight: 700; font-size: 13px;">Theo</div><div style="font-size: 12px; color: var(--faint);">theo@example.com</div></div></div>
       </nav>
       <div class="win-main" style="padding: 22px 26px; gap: 18px; overflow: hidden;">
         <div><h1 class="h-page" style="font-size: 22px;">Integrations</h1><p class="muted" style="margin: 4px 0 0;">Connect the services that provide your library, game data and covers.</p></div>
@@ -53,9 +53,9 @@
   </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["oled","light","colorful","freaky"],"default":"oled"},"$preview":{"width":1440,"height":900}}'>
 class Component extends DCLogic {
-  renderVals() {
+  renderVals() { const themeClass = 'theme-' + (this.props.theme ?? 'oled');
     const defs = [
       ['general', 'General', 'M4 6h16M4 12h16M4 18h16'],
       ['security', 'Security', 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z'],
@@ -64,7 +64,7 @@ class Component extends DCLogic {
       ['updates', 'App updates', 'M12 4v12m0 0l-4-4m4 4l4-4M5 20h14'],
       ['about', 'About', 'M12 8h.01M11 12h1v5h1M12 21a9 9 0 100-18 9 9 0 000 18z']
     ];
-    return { tabs: defs.map((d) => ({ id: d[0], name: d[1], icon: d[2], cls: d[0] === 'integrations' ? 'active' : '' })) };
+    return { themeClass, tabs: defs.map((d) => ({ id: d[0], name: d[1], icon: d[2], cls: d[0] === 'integrations' ? 'active' : '' })) };
   }
 }
 </script>

@@ -1,6 +1,6 @@
 {
   "name": "Shelf",
-  "version": 3,
+  "version": 4,
   "platform": "desktop",
   "font": {
     "family": "Plus Jakarta Sans",
@@ -63,12 +63,12 @@
       "glow": "#3b82f6"
     },
     "light": {
-      "background": "#f5f4ef",
+      "background": "#f7f8fd",
       "surface": "#ffffff",
-      "foreground": "#15151b",
-      "accent": "#4f46e5",
-      "border": "#15151b",
-      "glow": "#818cf8"
+      "foreground": "#12152b",
+      "accent": "#2f5bff",
+      "border": "#c3cae3",
+      "glow": "#ff4d6d"
     },
     "colorful": {
       "background": "#0b0720",
@@ -254,15 +254,41 @@
     "linux": "client-side decorations with the same caption buttons as Windows"
   },
   "atmosphere": {
-    "note": "Background only. Active when the theme background is darker than 8% lightness; light themes switch it off.",
+    "note": "Every theme has the atmosphere, in its own colours. A theme's stars and nebulae are derived from its six colours unless listed below.",
+    "derivation": {
+      "starA": "foreground at 80%",
+      "starB": "accent at 55%",
+      "starC": "glow at 70%",
+      "starHot": "foreground at 98%",
+      "starHalo": "glow at 24%",
+      "nebula1": "glow at 30%, 900 x 640 at 96% -12%",
+      "nebula2": "accent at 12%, 820 x 460 at 62% 118%",
+      "nebula3": "mix(glow, accent) at 16%, 760 x 520 at -8% 48%"
+    },
     "stars": [
+      {
+        "size": 1,
+        "tile": [
+          120,
+          110
+        ],
+        "layer": "small a"
+      },
+      {
+        "size": 1,
+        "tile": [
+          150,
+          130
+        ],
+        "layer": "small b"
+      },
       {
         "size": 1,
         "tile": [
           190,
           170
         ],
-        "color": "rgba(255,255,255,0.6)"
+        "layer": "small c"
       },
       {
         "size": 1.5,
@@ -270,7 +296,7 @@
           270,
           230
         ],
-        "color": "rgba(255,255,255,0.4)"
+        "layer": "small b"
       },
       {
         "size": 1,
@@ -278,41 +304,90 @@
           340,
           310
         ],
-        "color": "rgba(170,190,255,0.5)"
-      }
-    ],
-    "nebula": [
-      {
-        "color": "glow",
-        "opacity": 0.17,
-        "size": [
-          760,
-          520
-        ],
-        "at": "92% -8%"
+        "layer": "small c"
       },
       {
-        "color": "accent",
-        "opacity": 0.07,
-        "size": [
-          620,
-          420
+        "size": 2,
+        "tile": [
+          310,
+          260
         ],
-        "at": "-6% 108%"
+        "layer": "bright with an 8 px halo"
+      },
+      {
+        "size": 1.5,
+        "tile": [
+          430,
+          380
+        ],
+        "layer": "bright with a 7 px halo"
       }
     ],
+    "builtIn": {
+      "shelfOled": {
+        "stars": [
+          "white 80%",
+          "white 50%",
+          "blue-white 70%"
+        ],
+        "nebulae": [
+          "violet 32%",
+          "amber 12%",
+          "blue 16%"
+        ]
+      },
+      "light": {
+        "stars": [
+          "blue 70%",
+          "red 60%",
+          "navy 55%"
+        ],
+        "nebulae": [
+          "blue 22%",
+          "red 16%",
+          "red 14%"
+        ]
+      },
+      "colorful": {
+        "stars": [
+          "white 85%",
+          "pink 65%",
+          "cyan 70%"
+        ],
+        "nebulae": [
+          "cyan 28%",
+          "magenta 20%",
+          "violet 30%"
+        ]
+      },
+      "freaky": {
+        "stars": [
+          "mint white 85%",
+          "lime 65%",
+          "cyan 70%"
+        ],
+        "nebulae": [
+          "magenta 28%",
+          "lime 14%",
+          "cyan 18%"
+        ]
+      }
+    },
     "glass": {
-      "titlebar": "rgba(0,0,0,0.55) + blur 14",
-      "sidebar": "rgba(8,8,11,0.78)",
-      "inspector": "rgba(8,8,11,0.82)",
-      "statusbar": "rgba(0,0,0,0.6)"
+      "titlebar": "background at 42% + blur 14, bottom line fades to glow in the middle",
+      "sidebar": "background at 52% + blur 10, edge line fades from glow to border",
+      "inspector": "same as the sidebar",
+      "statusbar": "background at 42%",
+      "panels": "surface at 62% + blur 8 (groups and tables)"
     },
     "glows": {
-      "primaryButton": "linear-gradient(135deg, #ffbb45, #f58a1f) + 0 0 22px accent at 30%",
-      "progress": "linear-gradient(90deg, #f5a524, #ff7a3d) + 0 0 10px accent at 45%",
-      "cover": "0 14px 34px -16px glow at 50%",
-      "selectedCover": "0 0 28px accent at 40%",
-      "switchOn": "0 0 12px accent at 40%",
+      "primaryButton": "linear-gradient(135deg, accentA, accentB) + 0 0 22px accent at 30 to 45%",
+      "progress": "linear-gradient(90deg, accentA, accentB) + 0 0 10px accent glow",
+      "cover": "0 14px 34px -14px glow at 35 to 55%",
+      "selectedCover": "0 0 28px accent glow",
+      "switchOn": "0 0 12px accent glow",
+      "avatar": "gradient of accentA and accentB + 0 0 14px accent glow",
+      "window": "inset 0 0 160px -70px glow at 16%",
       "statusDot": "0 0 8px success"
     },
     "details": [

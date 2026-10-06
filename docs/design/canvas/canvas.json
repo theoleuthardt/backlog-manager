@@ -173,6 +173,34 @@
       "w": 232,
       "h": 58,
       "title": "Component \u00b7 Sidebar account (always at the bottom)"
+    },
+    "ShelfHomeLight.dc.html": {
+      "x": 0,
+      "y": 12800,
+      "w": 1440,
+      "h": 900,
+      "title": "Home \u00b7 Light (white, blue, red)"
+    },
+    "ShelfHomeColorful.dc.html": {
+      "x": 1520,
+      "y": 12800,
+      "w": 1440,
+      "h": 900,
+      "title": "Home \u00b7 Colorful (magenta, cyan)"
+    },
+    "ShelfHomeFreaky.dc.html": {
+      "x": 3040,
+      "y": 12800,
+      "w": 1440,
+      "h": 900,
+      "title": "Home \u00b7 Freaky (green, magenta)"
+    },
+    "ShelfLibraryLight.dc.html": {
+      "x": 0,
+      "y": 13820,
+      "w": 1440,
+      "h": 900,
+      "title": "Library \u00b7 Light"
     }
   },
   "createdOnFiles": {
@@ -223,6 +251,14 @@
       "w": 240,
       "x": 0,
       "y": 11040
+    },
+    "titleThemes": {
+      "kind": "title1",
+      "maxW": 4480,
+      "text": "Every theme gets its own space: same screens, other colours (switch any artboard with its Theme tweak)",
+      "w": 240,
+      "x": 0,
+      "y": 12540
     }
   },
   "order": [
@@ -249,7 +285,11 @@
     "StatusBar.dc.html",
     "ShelfPalette.dc.html",
     "LibraryPane.dc.html",
-    "SidebarAccount.dc.html"
+    "SidebarAccount.dc.html",
+    "ShelfHomeLight.dc.html",
+    "ShelfHomeColorful.dc.html",
+    "ShelfHomeFreaky.dc.html",
+    "ShelfLibraryLight.dc.html"
   ],
   "pages": [],
   "title": "Backlog Manager Redesign"

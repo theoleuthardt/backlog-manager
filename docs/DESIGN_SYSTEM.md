@@ -20,7 +20,7 @@ This document is the spec a second client (the planned Flutter client, issue #24
 6. **Keyboard first.** Cmd/Ctrl+K opens a command palette, `/` focuses search, context menus show their shortcuts.
 7. **Changes save themselves.** Entry edits and settings autosave; destructive actions ask first.
 8. **Themeable from six colours.** Users keep the six-colour theme model; every other colour is derived.
-9. **True black, a hint of space.** OLED black, a faint starfield and a violet nebula glow in the corners, accents that glow. The atmosphere stays in the background and never competes with the covers.
+9. **A bit of space in every theme.** OLED black by default, a starfield, nebula clouds and glowing accents. Every theme has the same atmosphere in its own colours (light: white with blue and red). It stays behind the content and never competes with the covers.
 
 ## Theme model and tokens
 
@@ -57,13 +57,13 @@ Semantic colours do not change with the theme (adjusted for contrast on light ba
 
 ### Built-in themes
 
-The four built-in themes keep their ids and colours. **Shelf OLED** is new and becomes the default; the former default `dark` (black with a blue accent) stays selectable.
+The four built-in themes keep their ids. `light` gets a new palette (white, blue, red) so the atmosphere reads on a light background; `colorful`, `freaky` and `dark` keep their six colours. **Shelf OLED** is new and becomes the default; the former default `dark` (black with a blue accent) stays selectable.
 
 | Theme | background | surface | foreground | accent | border | glow |
 |---|---|---|---|---|---|---|
 | `shelfOled` (new default) | `#000000` | `#0b0b0e` | `#f2f2f3` | `#f5a524` | `#34343c` | `#7c5cff` |
 | `dark` | `#000000` | `#0f0f12` | `#ffffff` | `#2563eb` | `#ffffff` | `#3b82f6` |
-| `light` | `#f5f4ef` | `#ffffff` | `#15151b` | `#4f46e5` | `#15151b` | `#818cf8` |
+| `light` (recoloured) | `#f7f8fd` | `#ffffff` | `#12152b` | `#2f5bff` | `#c3cae3` | `#ff4d6d` |
 | `colorful` | `#0b0720` | `#1a1240` | `#fdf2ff` | `#ff3ea5` | `#7c4dff` | `#22d3ee` |
 | `freaky` | `#04040e` | `#0e0e26` | `#eaffe9` | `#a3ff12` | `#00ffd0` | `#ff00e5` |
 
@@ -97,14 +97,15 @@ Font: **Plus Jakarta Sans** (weights 400 to 800). Sizes in logical pixels; the b
 
 ### Atmosphere
 
-A restrained space look on top of the OLED black. It lives in the window background and in a few glowing accents; content stays crisp.
+A space look in the window background and a few glowing accents. It is part of every theme and takes its colours from the theme, so a light theme gets blue and red stars on white, a dark one white and violet. Content stays crisp: the effects sit behind panels and never inside forms or tables.
 
-- **Starfield:** three tiled layers of 1 to 1.5 px dots (white 60% and 40%, blue-white 50%) in tiles of 190 x 170, 270 x 230 and 340 x 310 px, so the pattern never visibly repeats.
-- **Nebula:** a `glow` radial gradient (17%, 760 x 520) in the top right and a faint `accent` one (7%, 620 x 420) in the bottom left.
-- **Glass:** the title bar (55% black with a 14 px blur), sidebar (78%), inspector (82%) and status bar (60%) are translucent so the background shows through, never behind dense forms at lower opacity.
-- **Glows:** primary buttons use an amber gradient (`#ffbb45` to `#f58a1f`) with a soft glow; progress bars use an amber to orange gradient with a glow; covers cast a `glow`-coloured shadow; selected covers, the active switch and the status dot glow; the active sidebar item has a `glow` gradient and a 2 px accent bar.
-- **Details:** a four-point star before section headings, orbit rings with small satellites on the home card, and a planet-with-ring brand mark in the sidebar.
-- **Rules:** light themes switch the atmosphere off; reduced motion needs no change because nothing animates; keep the effects out of tables and forms.
+- **Nebulae:** three radial clouds painted behind the content: `glow` at 30% top right (900 x 640), `accent` at 12% bottom centre (820 x 460), and a mix of both at 16% on the left edge (760 x 520).
+- **Stars:** a dense field of 1 to 1.5 px dots in three colours (`starA` foreground, `starB` accent, `starC` glow) in five staggered tiles from 120 x 110 to 340 x 310 px, plus two layers of brighter 1.5 to 2 px stars with a soft 7 to 8 px halo, so the pattern never visibly repeats.
+- **Glass:** title bar, sidebar, inspector and status bar are translucent (42 to 52% of `background`) with a blur so the sky shows through; groups and tables are `surface` at 62% with a blur. The edge lines of the sidebar and inspector fade from `glow` to `border`, and the title bar's bottom line glows in the middle.
+- **Glows:** primary buttons use an accent gradient with a soft glow; progress bars use the same gradient with a glow; covers cast a `glow`-coloured shadow; selected covers, the active switch, the avatar and the status dot glow; the active sidebar item has a `glow` gradient and a 2 px accent bar; the window has a faint inner `glow`.
+- **Details:** a four-point star before section headings, orbit rings with small glowing satellites on the home card, and a planet-with-ring brand mark in the sidebar.
+- **Derivation:** custom themes derive the atmosphere from their six colours (see `atmosphere.derivation` in the tokens file). The four built-ins override it with tuned values: Shelf OLED violet, amber and blue; light blue and red; colorful cyan, magenta and violet; freaky magenta, lime and cyan.
+- **Motion:** nothing animates, so reduced motion needs no change. Keep the effects out of tables and forms, and cap the blur on slower machines.
 
 ### Layout
 
@@ -228,7 +229,7 @@ class ShelfTokens extends ThemeExtension<ShelfTokens> {
 - Main window: a `Column` of title bar, a `Row` of sidebar and an `Expanded` main pane (toolbar plus content, optional inspector), and the status bar. Collapsing the sidebar animates its width with the base duration.
 - Secondary windows (Settings, setup, sign-in): either a second native window (`desktop_multi_window`) or full-size routes with the same window chrome; decide in the spike.
 - Shortcuts: `CallbackShortcuts` or `Shortcuts` + `Actions` for the palette, search, new game and settings.
-- Atmosphere: paint the starfield with a `CustomPainter` (fixed random seed so it does not flicker on resize), the nebula with two `RadialGradient`s, and the glass title bar with `BackdropFilter`; make the blur optional because it can be slow on some Linux setups.
+- Atmosphere: paint the starfield with a `CustomPainter` (fixed random seed so it does not flicker on resize; colours from `ShelfTokens`), the three nebulae with `RadialGradient`s, and the glass bars with `BackdropFilter`; make the blur optional because it can be slow on some Linux setups. All atmosphere colours live in `ShelfTokens`, so a theme change repaints it.
 
 ### Suggested layout of the client
 
