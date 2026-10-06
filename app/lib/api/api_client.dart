@@ -39,12 +39,9 @@ Dio createApiDio({
         handler.next(options);
       },
       onError: (error, handler) async {
-        if (error.response?.statusCode == 401) {
-          try {
-            if (error.requestOptions.extra[sentTokenKey] == await readToken()) {
-              onUnauthorized();
-            }
-          } on Object {}
+        if (error.response?.statusCode == 401 &&
+            await isStillCurrent(error.requestOptions.extra[sentTokenKey])) {
+          onUnauthorized();
         }
         handler.next(error);
       },
