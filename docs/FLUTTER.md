@@ -39,6 +39,38 @@ The hand-written part is `lib/api/api_client.dart` (`createApiDio`: Bearer token
 
 `app/pubspec.yaml` overrides `analyzer` to 13.x because the current `build_runner` does not run against `analyzer` 14.5; drop the override once that is fixed upstream.
 
+## Logic ported from the web client
+
+The framework-free logic of `frontend/src/lib/` lives in `app/lib/domain/` with its tests in `app/test/domain/`; every vitest case that applies has a Dart equivalent. Function names and signatures stay recognisable so both implementations can be compared.
+
+| TypeScript (`frontend/src/lib/`) | Dart (`app/lib/domain/`) | Notes |
+| --- | --- | --- |
+| `sortEntries.ts` | `sort_entries.dart` | `SortOption` is an enum with `.value` (the stored id); `parseSortOption` replaces `isSortOption` |
+| `filterEntries.ts` | `filter_entries.dart` | ranges are `(min, max)?` records; `emptyFilters` replaces `EMPTY_FILTERS` |
+| `groupEntries.ts` | `group_entries.dart` | |
+| `categories.ts` | `categories.dart` | |
+| `themes.ts` | `themes.dart` | colours only; `themeCssVariables` has no equivalent (the `ShelfTokens` theme replaces it), `onAccentColor` and `iconsNeedInversion` are kept |
+| `reviewStars.ts` | - | a single constant (`MAX_REVIEW_STARS = 10`), added where the star control is built |
+| `statusStyle.ts` | `status_style.dart` | |
+| `entryChanges.ts` | `entry_changes.dart` | `EntryFormChanges.isEmpty` replaces comparing with `{}` |
+| `diffFields.ts` | `diff_fields.dart` | |
+| `splitList.ts` | `split_list.dart` | |
+| `trailer.ts` | `trailer.dart` | |
+| `backups.ts` | `backups.dart` | |
+| `setupWizard.ts` | `setup_wizard.dart` | |
+| `safeUrl.ts` | `safe_url.dart` | |
+| `largeBacklog.test.ts` | `test/domain/large_backlog_test.dart` | same 10k entries and 3 s budget |
+| `apiUrl.ts` | `lib/api/server_url.dart` | ported in #251 |
+| `api/backlog.ts` (`toEntryData`, `toNumber`, ...) | `lib/api/mappers.dart` | the generated models already carry camelCase fields; the mappers turn them into the app models in `domain/models.dart` |
+| `utils.ts`, `buttonStyles.ts` | - | CSS class helpers of the web client |
+| `api/auth.ts`, `csv.ts`, `games.ts`, `user.ts`, `twoFactor.ts`, `space.ts`, `steam.ts`, `igdbSync.ts`, `backups.ts` | `lib/api/generated/` | replaced by the generated client; the streaming calls use the SSE reader (#250) |
+| `pathWithQuery.ts` | - | web routing helper, `go_router` builds locations itself |
+| `appUpdate.ts` | - | Tauri updater, replaced by the update issues (#278, #279) |
+
+`compareText` and `compareBase` (`text_order.dart`) stand in for `String.localeCompare`: letters compare without regard to case and accents (so "Ärger" sorts with "A", like the web client's ICU collation), then an unaccented spelling comes before an accented one and the lower-case before the upper-case one. Only Latin letters are folded, other scripts compare by code unit. `stableSorted` replaces the guaranteed stable `Array.prototype.sort`, because `List.sort` is not stable.
+
+Deliberate difference from the TypeScript code: `toNumber` returns null for an empty or padded string where `Number('')` is 0 (the API never sends those).
+
 ## Layout
 
 ```text
@@ -47,6 +79,7 @@ app/
     design/     tokens, theme, shell and shared widgets
     api/        client generated from backend/openapi.json
     features/   one folder per screen group
+    domain/     pure logic and models, ported from frontend/src/lib/
     app.dart    root widget (router and providers)
     main.dart
   test/         mirrors lib/; golden tests are added next to the widgets they cover
