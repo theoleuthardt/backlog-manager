@@ -26,6 +26,7 @@ class BacklogEntry(msgspec.Struct):
     image_link: str | None = None
     description: str | None = None
     trailer_link: str | None = None
+    publisher: str | None = None
     main_time: Decimal | None = None
     main_plus_extra_time: Decimal | None = None
     completion_time: Decimal | None = None
@@ -61,6 +62,7 @@ class CreateBacklogEntryParams(msgspec.Struct):
     image_link: str | None = None
     description: str | None = None
     trailer_link: str | None = None
+    publisher: str | None = None
     main_time: Decimal | None = None
     main_plus_extra_time: Decimal | None = None
     completion_time: Decimal | None = None
@@ -91,6 +93,7 @@ class UpdateBacklogEntryParams(msgspec.Struct):
     image_link: str | None | msgspec.UnsetType = msgspec.UNSET
     description: str | None | msgspec.UnsetType = msgspec.UNSET
     trailer_link: str | None | msgspec.UnsetType = msgspec.UNSET
+    publisher: str | None | msgspec.UnsetType = msgspec.UNSET
     main_time: Decimal | None | msgspec.UnsetType = msgspec.UNSET
     main_plus_extra_time: Decimal | None | msgspec.UnsetType = msgspec.UNSET
     completion_time: Decimal | None | msgspec.UnsetType = msgspec.UNSET
@@ -139,6 +142,7 @@ class BacklogEntryResponse(msgspec.Struct):
     image_link: str | None = None
     description: str | None = None
     trailer_link: str | None = None
+    publisher: str | None = None
     main_time: Decimal | None = None
     main_plus_extra_time: Decimal | None = None
     completion_time: Decimal | None = None
@@ -167,6 +171,7 @@ class BacklogEntryResponse(msgspec.Struct):
             image_link=entry.image_link,
             description=entry.description,
             trailer_link=entry.trailer_link,
+            publisher=entry.publisher,
             main_time=entry.main_time,
             main_plus_extra_time=entry.main_plus_extra_time,
             completion_time=entry.completion_time,
@@ -192,6 +197,7 @@ class CreateBacklogEntryRequest(msgspec.Struct):
     image_link: str | None = None
     description: str | None = None
     trailer_link: YouTubeWatchUrl | None = None
+    publisher: str | None = None
     main_time: Decimal | None = None
     main_plus_extra_time: Decimal | None = None
     completion_time: Decimal | None = None
@@ -217,6 +223,7 @@ class UpdateBacklogEntryRequest(msgspec.Struct):
     image_link: str | None | msgspec.UnsetType = msgspec.UNSET
     description: str | None | msgspec.UnsetType = msgspec.UNSET
     trailer_link: YouTubeWatchUrl | None | msgspec.UnsetType = msgspec.UNSET
+    publisher: str | None | msgspec.UnsetType = msgspec.UNSET
     main_time: Decimal | None | msgspec.UnsetType = msgspec.UNSET
     main_plus_extra_time: Decimal | None | msgspec.UnsetType = msgspec.UNSET
     completion_time: Decimal | None | msgspec.UnsetType = msgspec.UNSET

@@ -51,6 +51,7 @@ async def _make_entry(session: AsyncSession, user_id: int, title: str, **overrid
             steam_app_id=overrides.get("steam_app_id"),
             note=overrides.get("note"),
             playtime=overrides.get("playtime"),
+            publisher=overrides.get("publisher"),
         ),
     )
 
@@ -236,6 +237,21 @@ async def test_restore_keeps_timestamps_and_review_fields(
     )
     assert after.completed_at == before.completed_at
     assert after.created_at == before.created_at
+
+
+async def test_restore_keeps_the_publisher(
+    backup_service: ModuleType, session: AsyncSession
+) -> None:
+    user = await _make_user(session, "restorepublisher")
+    entry = await _make_entry(session, user.id, "Hades", publisher="Supergiant Games")
+    backup = await backup_service.create_manual_backup(session, user.id)
+    await backlog_entry_repo.delete_backlog_entries_by_user(session, user.id)
+
+    await backup_service.restore_backup(session, user.id, backup.id)
+
+    [restored] = await backlog_entry_repo.get_backlog_entries_by_user(session, user.id)
+    assert entry.publisher == "Supergiant Games"
+    assert restored.publisher == "Supergiant Games"
 
 
 async def test_restore_first_takes_a_safety_backup_that_undoes_the_restore(

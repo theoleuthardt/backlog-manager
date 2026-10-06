@@ -9127,6 +9127,16 @@
               }
             ]
           },
+          "publisher": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "main_time": {
             "oneOf": [
               {
@@ -9405,6 +9415,16 @@
               }
             ],
             "pattern": "^https://www\\.youtube\\.com/watch\\?v=[A-Za-z0-9_-]{11}$"
+          },
+          "publisher": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "main_time": {
             "oneOf": [
@@ -11123,7 +11143,7 @@
           },
           "theme": {
             "type": "string",
-            "default": "dark"
+            "default": "shelfOled"
           },
           "custom_themes": {
             "items": {
@@ -11771,6 +11791,16 @@
               }
             ],
             "pattern": "^https://www\\.youtube\\.com/watch\\?v=[A-Za-z0-9_-]{11}$"
+          },
+          "publisher": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "main_time": {
             "oneOf": [

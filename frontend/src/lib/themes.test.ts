@@ -40,6 +40,10 @@ describe("resolveTheme", () => {
     expect(resolveTheme("deleted-theme", []).id).toBe(DEFAULT_THEME_ID);
   });
 
+  it("falls back to the default theme for a theme id only newer clients know", () => {
+    expect(resolveTheme("shelfOled", []).id).toBe(DEFAULT_THEME_ID);
+  });
+
   it("ships light, dark, colorful and freaky as built-in themes", () => {
     expect(BUILTIN_THEMES.map((theme) => theme.id)).toEqual([
       "dark",

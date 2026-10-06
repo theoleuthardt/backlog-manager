@@ -802,7 +802,7 @@ async def test_new_user_has_default_dashboard_preferences(
 
     body = response.json()
     assert body["default_sort"] == "status"
-    assert body["theme"] == "dark"
+    assert body["theme"] == "shelfOled"
     assert body["custom_themes"] == []
 
 

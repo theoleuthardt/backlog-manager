@@ -57,7 +57,7 @@ class User(msgspec.Struct):
     locked_until: datetime | None = None
     setup_completed: bool = False
     default_sort: str = "status"
-    theme: str = "dark"
+    theme: str = "shelfOled"
     custom_themes: list[CustomTheme] = msgspec.field(default_factory=list)
     avatar_updated_at: datetime | None = None
 
@@ -124,7 +124,7 @@ class PublicUser(msgspec.Struct):
     steam_family_ids: str | None = None
     setup_completed: bool = False
     default_sort: str = "status"
-    theme: str = "dark"
+    theme: str = "shelfOled"
     custom_themes: list[CustomTheme] = msgspec.field(default_factory=list)
     avatar_updated_at: datetime | None = None
 
