@@ -804,3 +804,48 @@ async def test_review_stars_reject_values_outside_zero_to_ten(
     assert too_high_create.status_code == 400
     assert negative_create.status_code == 400
     assert too_high_update.status_code == 400
+
+
+async def test_entry_publisher_is_created_updated_and_cleared(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "publisher@example.com")
+        base = {
+            "title": "Celeste",
+            "genre": ["Platformer"],
+            "platform": ["PC"],
+            "status": "Not Started",
+            "owned": True,
+            "interest": 5,
+        }
+
+        without = client.post("/api/backlog/entries", headers=headers, json=base)
+        created = client.post(
+            "/api/backlog/entries",
+            headers=headers,
+            json={**base, "title": "Hades", "publisher": "Supergiant Games"},
+        )
+        entry_id = created.json()["id"]
+        kept = client.put(
+            f"/api/backlog/entries/{entry_id}", headers=headers, json={"status": "Completed"}
+        )
+        changed = client.put(
+            f"/api/backlog/entries/{entry_id}", headers=headers, json={"publisher": "Annapurna"}
+        )
+        cleared = client.put(
+            f"/api/backlog/entries/{entry_id}", headers=headers, json={"publisher": None}
+        )
+        listed = client.get("/api/backlog/entries", headers=headers).json()
+
+    assert without.json()["publisher"] is None
+    assert created.json()["publisher"] == "Supergiant Games"
+    assert kept.json()["publisher"] == "Supergiant Games"
+    assert changed.json()["publisher"] == "Annapurna"
+    assert cleared.json()["publisher"] is None
+    assert {entry["title"]: entry["publisher"] for entry in listed} == {
+        "Celeste": None,
+        "Hades": None,
+    }

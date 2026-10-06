@@ -29,6 +29,7 @@ class BackupEntry(msgspec.Struct):
     image_link: str | None = None
     description: str | None = None
     trailer_link: str | None = None
+    publisher: str | None = None
     main_time: Decimal | None = None
     main_plus_extra_time: Decimal | None = None
     completion_time: Decimal | None = None

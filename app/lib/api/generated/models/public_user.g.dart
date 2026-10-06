@@ -21,7 +21,7 @@ PublicUser _$PublicUserFromJson(Map<String, dynamic> json) => PublicUser(
   steamAutoImportEnabled: json['steam_auto_import_enabled'] as bool? ?? false,
   setupCompleted: json['setup_completed'] as bool? ?? false,
   defaultSort: json['default_sort'] as String? ?? 'status',
-  theme: json['theme'] as String? ?? 'dark',
+  theme: json['theme'] as String? ?? 'shelfOled',
   steamId: json['steam_id'] as String?,
   steamFamilyIds: json['steam_family_ids'] as String?,
   customThemes: (json['custom_themes'] as List<dynamic>?)

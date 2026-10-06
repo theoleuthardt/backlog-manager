@@ -53,7 +53,7 @@ async def test_pending_count_lists_entries_missing_igdb_data(
         client.post(
             "/api/backlog/entries",
             headers=headers,
-            json=_entry_body("Complete", genre=["RPG"], description="Done"),
+            json=_entry_body("Complete", genre=["RPG"], description="Done", publisher="Label"),
         )
 
         response = client.get("/api/igdb-sync/pending-count", headers=headers)

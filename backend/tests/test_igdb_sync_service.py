@@ -47,6 +47,7 @@ def _match(**overrides: object) -> EnrichedResult:
         "completionist": 30.0,
         "description": "Climb a mountain",
         "trailer_url": "https://www.youtube.com/watch?v=trailer0001",
+        "publisher": "Maddy Makes Games",
     }
     fields.update(overrides)
     return EnrichedResult(**fields)
@@ -87,6 +88,7 @@ async def test_sync_never_overwrites_existing_values(
         user.id,
         genre="Indie",
         description="My own words",
+        publisher="My Label",
         trailer_link="https://www.youtube.com/watch?v=mine0000001",
         main_time=Decimal("1.0"),
     )
@@ -117,7 +119,13 @@ async def test_sync_cleans_titles_without_an_igdb_lookup_when_nothing_else_is_mi
 ) -> None:
     user = await _make_user(session)
     await _make_entry(
-        session, user.id, title="Hades®", genre="Roguelike", description="Escape", steam_app_id=1
+        session,
+        user.id,
+        title="Hades®",
+        genre="Roguelike",
+        description="Escape",
+        publisher="P",
+        steam_app_id=1,
     )
 
     [updated] = await igdb_sync_service.sync_igdb_data(session, user, ("cid", "secret"))
@@ -146,7 +154,7 @@ async def test_sync_reports_progress_for_every_candidate(
     user = await _make_user(session)
     await _make_entry(session, user.id, title="One")
     await _make_entry(session, user.id, title="Two")
-    await _make_entry(session, user.id, title="Done", genre="X", description="Y")
+    await _make_entry(session, user.id, title="Done", genre="X", description="Y", publisher="P")
     progress: list[tuple[int, int]] = []
 
     async def on_progress(processed: int, total: int) -> None:
@@ -164,8 +172,41 @@ async def test_count_matches_the_entries_the_sync_would_handle(
 ) -> None:
     user = await _make_user(session)
     await _make_entry(session, user.id, title="Needs data")
-    await _make_entry(session, user.id, title="Done", genre="X", description="Y")
-    await _make_entry(session, user.id, title="Dirty™", genre="X", description="Y", steam_app_id=7)
-    await _make_entry(session, user.id, title="Manual™", genre="X", description="Y")
+    await _make_entry(session, user.id, title="Done", genre="X", description="Y", publisher="P")
+    await _make_entry(
+        session, user.id, title="Dirty™", genre="X", description="Y", publisher="P", steam_app_id=7
+    )
+    await _make_entry(session, user.id, title="Manual™", genre="X", description="Y", publisher="P")
 
     assert await igdb_sync_service.count_entries_needing_sync(session, user.id) == 2
+
+
+async def test_sync_fills_a_missing_publisher(
+    session: AsyncSession, searched: list[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    await _make_entry(session, user.id, genre="Platformer", description="Already described")
+    requested: dict[str, object] = {}
+
+    async def fake_search(title: str, *args: object, **kwargs: object) -> list[EnrichedResult]:
+        requested.update(kwargs)
+        return [_match()]
+
+    monkeypatch.setattr(game_service, "search", fake_search)
+
+    [updated] = await igdb_sync_service.sync_igdb_data(session, user, ("cid", "secret"))
+
+    assert requested["include_publisher"] is True
+    assert updated.publisher == "Maddy Makes Games"
+
+
+async def test_sync_never_overwrites_a_publisher_the_user_set(
+    session: AsyncSession, searched: list[str]
+) -> None:
+    user = await _make_user(session)
+    await _make_entry(session, user.id, publisher="My Own Label")
+
+    [updated] = await igdb_sync_service.sync_igdb_data(session, user, ("cid", "secret"))
+
+    assert updated.publisher == "My Own Label"
+    assert updated.genre == "Platformer"

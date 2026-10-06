@@ -12,6 +12,7 @@ class SteamPreviewItem {
     required this.steamAppId,
     required this.title,
     this.imageLink,
+    this.playtime,
   });
 
   factory SteamPreviewItem.fromJson(Map<String, Object?> json) =>
@@ -22,6 +23,7 @@ class SteamPreviewItem {
   final String title;
   @JsonKey(name: 'image_link')
   final String? imageLink;
+  final String? playtime;
 
   Map<String, Object?> toJson() => _$SteamPreviewItemToJson(this);
 }

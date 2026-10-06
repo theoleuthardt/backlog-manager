@@ -35,7 +35,7 @@ class User(Base):
     locked_until: Mapped[datetime | None] = mapped_column("LockedUntil")
     setup_completed: Mapped[bool] = mapped_column("SetupCompleted", server_default=text("false"))
     default_sort: Mapped[str] = mapped_column("DefaultSort", server_default=text("'status'"))
-    theme: Mapped[str] = mapped_column("Theme", server_default=text("'dark'"))
+    theme: Mapped[str] = mapped_column("Theme", server_default=text("'shelfOled'"))
     custom_themes: Mapped[list[dict[str, Any]]] = mapped_column(
         "CustomThemes", JSONB, server_default=text("'[]'::jsonb")
     )

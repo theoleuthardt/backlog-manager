@@ -31,6 +31,7 @@ _ENTRY_FIELDS = [
     "image_link",
     "description",
     "trailer_link",
+    "publisher",
     "main_time",
     "main_plus_extra_time",
     "completion_time",

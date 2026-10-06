@@ -32,6 +32,7 @@ def _to_schema(model: BacklogEntryModel) -> BacklogEntry:
         image_link=model.image_link,
         description=model.description,
         trailer_link=model.trailer_link,
+        publisher=model.publisher,
         main_time=model.main_time,
         main_plus_extra_time=model.main_plus_extra_time,
         completion_time=model.completion_time,
@@ -60,6 +61,7 @@ async def create_backlog_entry(
         image_link=params.image_link,
         description=params.description,
         trailer_link=params.trailer_link,
+        publisher=params.publisher,
         main_time=params.main_time,
         main_plus_extra_time=params.main_plus_extra_time,
         completion_time=params.completion_time,
@@ -190,6 +192,8 @@ async def update_backlog_entry(
         model.description = params.description
     if params.trailer_link is not msgspec.UNSET:
         model.trailer_link = params.trailer_link
+    if params.publisher is not msgspec.UNSET:
+        model.publisher = params.publisher
     if params.main_time is not msgspec.UNSET:
         model.main_time = params.main_time
     if params.main_plus_extra_time is not msgspec.UNSET:

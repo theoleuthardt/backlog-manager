@@ -17,7 +17,7 @@ _LOOKUP_CONCURRENCY = 4
 
 
 def _missing_igdb_data(entry: BacklogEntry) -> bool:
-    return not entry.genre.strip() or entry.description is None
+    return not entry.genre.strip() or entry.description is None or entry.publisher is None
 
 
 def _has_dirty_steam_title(entry: BacklogEntry) -> bool:
@@ -46,6 +46,8 @@ def _build_update(entry: BacklogEntry, match: EnrichedResult | None) -> UpdateBa
             changes["description"] = match.description
         if entry.trailer_link is None and match.trailer_url:
             changes["trailer_link"] = match.trailer_url
+        if entry.publisher is None and match.publisher:
+            changes["publisher"] = match.publisher
         times = game_service.igdb_times(match)
         no_times_yet = (
             entry.main_time is None
@@ -71,7 +73,7 @@ async def sync_igdb_data(
     on_progress: ProgressCallback | None = None,
 ) -> list[BacklogEntry]:
     """Looks up the top IGDB match for every personal entry that lacks a
-    genre or description (or carries trademark symbols in its title) and
+    genre, description or publisher (or carries trademark symbols in its title) and
     fills in what is missing, returning the entries that changed.
     Lookups run concurrently (bounded by _LOOKUP_CONCURRENCY) and report
     progress as each finishes; the DB writes that follow are serial,
@@ -91,7 +93,9 @@ async def sync_igdb_data(
         if _missing_igdb_data(entry):
             async with semaphore:
                 match = await game_service.find_igdb_match(
-                    game_service.clean_game_title(entry.title), igdb_credentials
+                    game_service.clean_game_title(entry.title),
+                    igdb_credentials,
+                    include_publisher=True,
                 )
         processed += 1
         if on_progress:

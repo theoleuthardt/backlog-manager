@@ -23,6 +23,7 @@ class BacklogEntryResponse {
     this.imageLink,
     this.description,
     this.trailerLink,
+    this.publisher,
     this.mainTime,
     this.mainPlusExtraTime,
     this.completionTime,
@@ -56,6 +57,7 @@ class BacklogEntryResponse {
   final String? description;
   @JsonKey(name: 'trailer_link')
   final String? trailerLink;
+  final String? publisher;
   @JsonKey(name: 'main_time')
   final String? mainTime;
   @JsonKey(name: 'main_plus_extra_time')

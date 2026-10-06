@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS "blm-system"."Users"(
     "LockedUntil" TIMESTAMP,
     "SetupCompleted" BOOLEAN NOT NULL DEFAULT FALSE,
     "DefaultSort" VARCHAR(20) NOT NULL DEFAULT 'status',
-    "Theme" VARCHAR(50) NOT NULL DEFAULT 'dark',
+    "Theme" VARCHAR(50) NOT NULL DEFAULT 'shelfOled',
     "CustomThemes" JSONB NOT NULL DEFAULT '[]'::jsonb,
     "CreatedAt" TIMESTAMP NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP),
     "UpdatedAt" TIMESTAMP NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP)
@@ -85,6 +85,7 @@ CREATE TABLE IF NOT EXISTS "blm-system"."BacklogEntries" (
     "ImageLink"      TEXT,
     "Description"    TEXT,
     "TrailerLink"    TEXT,
+    "Publisher"      VARCHAR(255),
     "MainTime"       NUMERIC(10,2),
     "MainPlusExtraTime" NUMERIC(10,2),
     "CompletionTime" NUMERIC(10,2),

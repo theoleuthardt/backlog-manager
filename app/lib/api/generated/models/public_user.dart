@@ -25,7 +25,7 @@ class PublicUser {
     this.steamAutoImportEnabled = false,
     this.setupCompleted = false,
     this.defaultSort = 'status',
-    this.theme = 'dark',
+    this.theme = 'shelfOled',
     this.steamId,
     this.steamFamilyIds,
     this.customThemes,

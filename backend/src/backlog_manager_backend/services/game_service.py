@@ -616,12 +616,13 @@ async def search(
 
 
 async def find_igdb_match(
-    title: str, igdb_credentials: tuple[str, str] | None
+    title: str, igdb_credentials: tuple[str, str] | None, include_publisher: bool = False
 ) -> EnrichedResult | None:
     """Best-effort IGDB lookup of the top match for one already-cleaned
     title, for imports and the retroactive IGDB sync. SteamGridDB is
-    skipped (Steam's own cover is preferred), as are platforms and
-    publisher, which an entry doesn't carry from here. No credentials,
+    skipped (Steam's own cover is preferred), as are platforms, and the
+    publisher unless `include_publisher` asks for it (the retroactive
+    IGDB sync does; imports don't need the extra company lookups). No credentials,
     an IGDB outage and a title without a hit all resolve to None so the
     caller keeps working with what it has."""
     if igdb_credentials is None:
@@ -635,7 +636,7 @@ async def find_igdb_match(
             None,
             limit=1,
             include_platforms=False,
-            include_publisher=False,
+            include_publisher=include_publisher,
         )
     except (httpx.HTTPError, RuntimeError):
         return None
