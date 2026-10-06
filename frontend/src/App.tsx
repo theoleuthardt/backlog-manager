@@ -1,7 +1,7 @@
 import { Suspense, lazy } from "react";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { RequireAuth } from "components/RequireAuth";
-import { AppUpdater } from "~/app/_components/AppUpdater";
+import { AppUpdater } from "components/AppUpdater";
 import { AuthProvider } from "~/app/context/AuthContext";
 import { ThemeProvider } from "~/app/context/ThemeContext";
 import { ApiProvider } from "~/lib/api/provider";

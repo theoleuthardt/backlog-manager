@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-/** Sets the document title and plays the page slide-in (`route-in`, globals.css). */
+/** Sets the document title for its route. */
 export function RoutePage({
   title,
   children,

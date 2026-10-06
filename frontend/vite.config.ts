@@ -17,11 +17,10 @@ const themeBootScript = (): Plugin => ({
     ),
 });
 
-const validateApiUrl = (mode: string): Plugin => ({
+const validateApiUrl = (): Plugin => ({
   name: "validate-api-url",
   apply: "build",
-  config() {
-    if (mode !== "production") return;
+  config(_config, { mode }) {
     const env = loadEnv(mode, envDir, "NEXT_PUBLIC_");
     const result = parseApiUrl(env.NEXT_PUBLIC_API_URL, true);
     if (!result.success) {
@@ -30,8 +29,8 @@ const validateApiUrl = (mode: string): Plugin => ({
   },
 });
 
-export default defineConfig(({ mode }) => ({
-  plugins: [react(), tailwindcss(), themeBootScript(), validateApiUrl(mode)],
+export default defineConfig({
+  plugins: [react(), tailwindcss(), themeBootScript(), validateApiUrl()],
   envDir,
   envPrefix: ["VITE_", "NEXT_PUBLIC_"],
   resolve: {
@@ -87,4 +86,4 @@ export default defineConfig(({ mode }) => ({
       },
     },
   },
-}));
+});
