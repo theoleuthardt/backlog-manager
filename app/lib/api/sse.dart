@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
@@ -117,29 +118,62 @@ Stream<SseEvent> parseSseEvents(Stream<List<int>> bytes) async* {
 ///
 /// The `EventSource` of a browser cannot send an Authorization header, so the
 /// stream is read manually. Cancelling the subscription cancels the request
-/// and closes the connection; the backend then stops its background task.
+/// at once, also while the connection is still being opened, and closes the
+/// connection; the backend then stops its background task. The error Dio
+/// raises for the cancelled body stream is swallowed, it is the expected
+/// outcome of the cancel.
 Stream<SseEvent> openSse(
   Dio dio,
   String path, {
   String method = 'POST',
   Object? data,
   Map<String, Object?>? queryParameters,
-}) async* {
+}) {
   final cancelToken = CancelToken();
-  try {
-    final response = await dio.request<ResponseBody>(
-      path,
-      data: data,
-      queryParameters: queryParameters,
-      cancelToken: cancelToken,
-      options: Options(
-        method: method,
-        responseType: ResponseType.stream,
-        headers: {'Accept': 'text/event-stream'},
-      ),
-    );
-    yield* parseSseEvents(response.data!.stream);
-  } finally {
-    if (!cancelToken.isCancelled) cancelToken.cancel();
+  StreamSubscription<SseEvent>? events;
+  late final StreamController<SseEvent> controller;
+
+  Future<void> connect() async {
+    try {
+      final response = await dio.request<ResponseBody>(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        cancelToken: cancelToken,
+        options: Options(
+          method: method,
+          responseType: ResponseType.stream,
+          headers: {'Accept': 'text/event-stream'},
+        ),
+      );
+      events = parseSseEvents(response.data!.stream).listen(
+        controller.add,
+        onError: (Object error, StackTrace stackTrace) {
+          if (!cancelToken.isCancelled) controller.addError(error, stackTrace);
+        },
+        onDone: controller.close,
+      );
+      if (controller.isPaused) events!.pause();
+    } on Object catch (error, stackTrace) {
+      if (cancelToken.isCancelled) return;
+      controller.addError(error, stackTrace);
+      await controller.close();
+    }
   }
+
+  controller = StreamController<SseEvent>(
+    onListen: connect,
+    onPause: () => events?.pause(),
+    onResume: () => events?.resume(),
+    onCancel: () async {
+      final stopped = events?.cancel();
+      if (!cancelToken.isCancelled) cancelToken.cancel();
+      try {
+        await stopped;
+      } on DioException {
+        return;
+      }
+    },
+  );
+  return controller.stream;
 }
