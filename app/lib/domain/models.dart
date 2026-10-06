@@ -64,3 +64,32 @@ class Category {
   final String color;
   final String? description;
 }
+
+/// A status the user defined on top of the five default ones.
+class CustomStatus {
+  const CustomStatus({required this.id, required this.name});
+
+  final int id;
+  final String name;
+}
+
+class SpaceMember {
+  const SpaceMember({
+    required this.username,
+    required this.status,
+    required this.isMe,
+  });
+
+  final String username;
+  final String status;
+  final bool isMe;
+}
+
+/// The shared space of the signed-in user, if any.
+class Space {
+  const Space({this.spaceId, this.myStatus, this.members = const []});
+
+  final int? spaceId;
+  final String? myStatus;
+  final List<SpaceMember> members;
+}
