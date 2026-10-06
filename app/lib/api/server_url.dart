@@ -29,13 +29,18 @@ class ServerUrlInvalid extends ServerUrlResult {
 
 /// Validates a backend base URL: `https` for any host, `http` only for
 /// loopback hosts (otherwise the Bearer token travels in cleartext), no other
-/// protocol. Surrounding whitespace and trailing slashes are dropped.
+/// protocol, no query or fragment. Surrounding whitespace and trailing slashes are dropped.
 ServerUrlResult parseServerUrl(String raw) {
   final trimmed = raw.trim().replaceAll(RegExp(r'/+$'), '');
   final uri = Uri.tryParse(trimmed);
   if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
     return const ServerUrlInvalid(
       'Enter a full server address, for example https://api.example.com',
+    );
+  }
+  if (uri.hasQuery || uri.hasFragment) {
+    return const ServerUrlInvalid(
+      'The server address must not contain a query or a fragment',
     );
   }
   final loopback = _loopbackHosts.contains(uri.host);
@@ -110,7 +115,8 @@ class ServerUrlStore {
 
 /// Points the app at another backend. Validates [raw], checks that the server
 /// answers `/health` and only then saves it. When the server really changed,
-/// [onChanged] runs so the caller can sign the user out and clear cached data.
+/// [onChanged] runs first (and must finish) so the caller can sign the user
+/// out and clear cached data; if it throws, the old server stays saved.
 /// Returns a user-facing error message, or null on success.
 Future<String?> changeServer(
   String raw, {
@@ -126,7 +132,7 @@ Future<String?> changeServer(
   if (unhealthy != null) return unhealthy;
 
   final previous = await store.read();
-  await store.write(url);
   if (previous != url) await onChanged();
+  await store.write(url);
   return null;
 }

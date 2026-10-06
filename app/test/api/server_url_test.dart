@@ -110,6 +110,16 @@ void main() {
       );
     });
 
+    for (final url in [
+      'https://api.example.com?x=1',
+      'https://api.example.com/#top',
+      'https://api.example.com/path?token=abc',
+    ]) {
+      test('rejects a query or fragment in $url', () {
+        expect(parseServerUrl(url), isA<ServerUrlInvalid>());
+      });
+    }
+
     test('explains why a remote http url is rejected', () {
       final result = parseServerUrl('http://api.example.com');
 
@@ -260,6 +270,37 @@ void main() {
         expect(signedOut, 0);
       },
     );
+
+    test('finishes the clean-up before the new url is saved', () async {
+      final store = ServerUrlStore(defaultUrl: 'https://old.example.com');
+      String? savedWhileCleaning;
+
+      await changeServer(
+        'https://mine.example.com',
+        store: store,
+        adapter: HealthAdapter(),
+        onChanged: () async => savedWhileCleaning = await store.read(),
+      );
+
+      expect(savedWhileCleaning, 'https://old.example.com');
+      expect(await store.read(), 'https://mine.example.com');
+    });
+
+    test('keeps the old server when the clean-up fails', () async {
+      final store = ServerUrlStore(defaultUrl: 'https://old.example.com');
+
+      await expectLater(
+        changeServer(
+          'https://mine.example.com',
+          store: store,
+          adapter: HealthAdapter(),
+          onChanged: () async => throw StateError('sign-out failed'),
+        ),
+        throwsStateError,
+      );
+
+      expect(await store.read(), 'https://old.example.com');
+    });
 
     test('does not sign out when the url did not change', () async {
       final store = ServerUrlStore(defaultUrl: 'https://mine.example.com');
