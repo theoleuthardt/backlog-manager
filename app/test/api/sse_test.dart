@@ -235,7 +235,9 @@ void main() {
           ..httpClientAdapter = adapter;
 
         final subscription = openSse(dio, '/stream').listen((_) {});
-        await Future<void>.delayed(Duration.zero);
+        while (adapter.cancelFuture == null) {
+          await Future<void>.delayed(const Duration(milliseconds: 1));
+        }
         var closed = false;
         unawaited(adapter.cancelFuture!.then((_) => closed = true));
 
