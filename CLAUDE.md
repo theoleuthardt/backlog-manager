@@ -110,8 +110,8 @@ Dart/Flutter desktop app, ported from `frontend/`. Setup, running, debugging, go
 
 - **Commands:** always `task app:*` (`app:install`, `app:dev`, `app:lint`, `app:test`, `app:test:update-goldens`, `app:format`, `app:format:check`, `app:build`, `app:generate-api`), never bare `flutter`/`dart`; `task check` and `task lint` include the app.
 - **Layout:** `lib/design/` (tokens, theme, shell and shared widgets), `lib/api/` (Dio setup, `ApiException`, SSE reader, server URL, generated client in `generated/`), `lib/features/<screen group>/`, `app.dart`; `test/` mirrors `lib/`.
-- **State and routing:** Riverpod and `go_router`. Screens hold UI state only; logic that is not about widgets lives in plain Dart files with unit tests.
-- **Theming:** read colours from the `ShelfTokens` `ThemeExtension`, never hard-coded `Color`s.
+- **State and routing:** Riverpod and `go_router` (added to the project with the first screens, #254). Screens hold UI state only; logic that is not about widgets lives in plain Dart files with unit tests.
+- **Theming:** read colours from the `ShelfTokens` `ThemeExtension` (#252), never hard-coded `Color`s.
 - **Generated API client:** `lib/api/generated/` is committed and never edited by hand. After a backend route change run `task backend:openapi`, then `task app:generate-api`, and commit the diff.
 - **Tests:** test first. Logic ports keep every case of the vitest file they come from; reusable components get golden tests; goldens are only re-recorded (`task app:test:update-goldens`) for an intended visual change, with the image diff reviewed.
 - **Comments:** the comment policy below applies unchanged; the allowed forms are the same, written as `///`: a doc comment on a class, function or module-level constant, or a library doc comment at the top of a file. No `//` narrative comments.

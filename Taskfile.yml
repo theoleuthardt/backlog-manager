@@ -282,10 +282,10 @@ tasks:
       - dart format lib/api/generated
 
   app:build:
-    desc: Build the Flutter app for this platform
+    desc: 'Build the Flutter app for this platform; default server: task app:build API_URL=https://api.example.com'
     dir: "{{.APP_DIR}}"
     cmds:
-      - flutter build {{.APP_PLATFORM}}
+      - flutter build {{.APP_PLATFORM}}{{if .API_URL}} --dart-define=API_URL={{.API_URL}}{{end}}
 
   vscode:setup-python:
     desc: Point VS Code/VSCodium's Python tooling at backend/.venv (run once per machine/checkout)
