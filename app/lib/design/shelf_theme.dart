@@ -80,6 +80,9 @@ ThemeData buildShelfTheme(ShelfTokens tokens) {
     ),
     inputDecorationTheme: InputDecorationTheme(
       isDense: true,
+      filled: true,
+      fillColor: tokens.surface2,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
       constraints: const BoxConstraints(minHeight: ShelfHeight.input),
       hintStyle: text.body.copyWith(color: tokens.faint),
       enabledBorder: inputBorder(tokens.borderSubtle),
