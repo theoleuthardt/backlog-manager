@@ -70,11 +70,11 @@ class ShelfSegmented<T> extends StatelessWidget {
             color: selected ? tokens.surface3 : null,
             borderRadius: BorderRadius.circular(6),
             boxShadow: selected
-                ? const [
+                ? [
                     BoxShadow(
-                      color: Color(0x99000000),
+                      color: tokens.shadow,
                       blurRadius: 2,
-                      offset: Offset(0, 1),
+                      offset: const Offset(0, 1),
                     ),
                   ]
                 : null,

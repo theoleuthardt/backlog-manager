@@ -235,6 +235,25 @@ void main() {
       },
     );
 
+    test('runs at most eight requests of a bulk action at a time', () async {
+      await load();
+      var running = 0;
+      var peak = 0;
+      api.onDelete = (id) async {
+        running++;
+        peak = running > peak ? running : peak;
+        await Future<void>.delayed(Duration.zero);
+        running--;
+      };
+
+      final result = await notifier().deleteMany([
+        for (var id = 1; id <= 20; id++) id,
+      ]);
+
+      expect(result.succeeded.length, 20);
+      expect(peak, 8);
+    });
+
     test('deletes many entries with one request per entry', () async {
       await load();
       api.onDelete = (id) async {

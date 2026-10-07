@@ -41,6 +41,12 @@ class ShelfField extends StatelessWidget {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final text = Theme.of(context).extension<ShelfTextStyles>()!;
     final note = error ?? hint;
+    final dangerBorder = error == null
+        ? null
+        : OutlineInputBorder(
+            borderRadius: BorderRadius.circular(ShelfRadius.control),
+            borderSide: BorderSide(color: tokens.danger),
+          );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -58,16 +64,12 @@ class ShelfField extends StatelessWidget {
             enabled: enabled,
             autofocus: autofocus,
             keyboardType: keyboardType,
-            style: text.body.copyWith(fontSize: 13),
+            style: text.fieldText,
             textAlignVertical: TextAlignVertical.center,
             decoration: InputDecoration(
               hintText: hintText,
-              enabledBorder: error == null
-                  ? null
-                  : OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(ShelfRadius.control),
-                      borderSide: BorderSide(color: tokens.danger),
-                    ),
+              enabledBorder: dangerBorder,
+              focusedBorder: dangerBorder,
             ),
           ),
         ),

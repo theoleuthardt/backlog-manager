@@ -1,5 +1,6 @@
 import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/auth/auth_api.dart';
+import 'package:backlog_manager/auth/auth_controller.dart';
 import 'package:backlog_manager/auth/token_store.dart';
 import 'package:backlog_manager/auth/user_api.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
@@ -69,6 +70,15 @@ void main() {
     expect(setupSteps, ['Theme', 'Sorting', 'Steam', 'IGDB', 'Done']);
     expect(state().defaultSort, 'status');
     expect(state().isLastStep, isFalse);
+  });
+
+  test('forgets the wizard values when the session changes', () {
+    controller().setDefaultSort('rating');
+    expect(state().defaultSort, 'rating');
+
+    container.read(sessionGenerationProvider.notifier).bump();
+
+    expect(state().defaultSort, 'status');
   });
 
   group('next', () {
@@ -249,6 +259,15 @@ void main() {
         ) as SessionSignedIn).user.setupCompleted,
         isTrue,
       );
+    });
+
+    test('reports a failed refresh of the user instead of throwing', () async {
+      auth.onCurrentUser = () async => throw const ApiException('Offline');
+
+      await controller().finish();
+
+      expect(users.updates.single.setupCompleted, isTrue);
+      expect(state().error, 'Offline');
     });
 
     test('stays on the wizard with an error when the save fails', () async {

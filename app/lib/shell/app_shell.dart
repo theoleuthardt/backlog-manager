@@ -1,6 +1,7 @@
 import 'package:backlog_manager/design/atmosphere.dart';
 import 'package:backlog_manager/design/glass.dart';
 import 'package:backlog_manager/design/glow.dart';
+import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:backlog_manager/shell/sidebar.dart';
 import 'package:backlog_manager/shell/status_bar.dart';
@@ -92,7 +93,10 @@ class FullWindowFrame extends StatelessWidget {
       child: AtmosphereBackground(
         child: Column(
           children: [
-            TitleBar(location: location, minimal: true),
+            TitleBar(
+              location: location,
+              minimal: location != AppRoutes.settings,
+            ),
             Expanded(child: child),
           ],
         ),

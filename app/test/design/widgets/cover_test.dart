@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:backlog_manager/design/color_math.dart';
 import 'package:backlog_manager/design/glow.dart';
 import 'package:backlog_manager/design/widgets/cover.dart';
 import 'package:backlog_manager/design/widgets/progress.dart';
@@ -112,6 +113,17 @@ void main() {
         expect(other.colors, isNot(first.colors));
       },
     );
+
+    testWidgets('reads the title in the readable colour of its gradient', (
+      tester,
+    ) async {
+      await pumpThemed(tester, const ShelfCover(title: 'Hades'), width: 150);
+      final gradient = fallbackOf(tester).gradient! as LinearGradient;
+
+      final title = tester.widget<Text>(find.text('Hades'));
+
+      expect(title.style!.color, onColorFor(gradient.colors.first));
+    });
 
     testWidgets('shows the picture instead of the title when there is art', (
       tester,

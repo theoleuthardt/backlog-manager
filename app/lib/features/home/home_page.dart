@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:backlog_manager/api/api_providers.dart';
+import 'package:backlog_manager/auth/auth_controller.dart';
 import 'package:backlog_manager/data/backlog_api.dart';
 import 'package:backlog_manager/data/backlog_providers.dart';
 import 'package:backlog_manager/data/entry_image.dart';
@@ -29,6 +30,7 @@ final achievementsToGoProvider = FutureProvider.family<int?, int>((
   ref,
   steamAppId,
 ) async {
+  ref.watch(sessionGenerationProvider);
   try {
     final progress = await ref
         .watch(backlogApiProvider)
@@ -148,7 +150,11 @@ class _Content extends ConsumerWidget {
           _StatTiles(stats: stats),
           if (playing != null) ...[
             const SizedBox(height: 22),
-            _Hero(entry: playing, serverUrl: serverUrl),
+            _Hero(
+              key: ValueKey(playing.id),
+              entry: playing,
+              serverUrl: serverUrl,
+            ),
           ],
           if (next.isNotEmpty)
             _Shelf(
@@ -270,7 +276,7 @@ class _StatTile extends StatelessWidget {
 }
 
 class _Hero extends ConsumerStatefulWidget {
-  const _Hero({required this.entry, required this.serverUrl});
+  const _Hero({required this.entry, required this.serverUrl, super.key});
 
   final BacklogEntry entry;
   final String? serverUrl;

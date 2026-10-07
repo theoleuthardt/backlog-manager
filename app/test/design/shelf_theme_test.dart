@@ -1,3 +1,4 @@
+import 'package:backlog_manager/design/color_math.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_theme.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
@@ -36,6 +37,23 @@ void main() {
       expect(scheme.error, tokens.danger);
       expect(scheme.outline, tokens.borderStrong);
       expect(scheme.outlineVariant, tokens.borderSubtle);
+    });
+
+    test('keeps text on secondary and error at 4.5:1 in every built-in', () {
+      for (final theme in builtinThemes) {
+        final scheme = themeOf(theme.id).colorScheme;
+
+        expect(
+          contrastRatio(scheme.onSecondary, scheme.secondary),
+          greaterThanOrEqualTo(4.5),
+          reason: '${theme.id} onSecondary',
+        );
+        expect(
+          contrastRatio(scheme.onError, scheme.error),
+          greaterThanOrEqualTo(4.5),
+          reason: '${theme.id} onError',
+        );
+      }
     });
 
     test('uses the window background for scaffolds', () {
@@ -89,6 +107,19 @@ void main() {
       expect(styles.coverTitle.fontSize, 15);
       expect(styles.coverTitle.height, 1.1);
       expect(styles.page.letterSpacing, closeTo(26 * -0.02, 0.001));
+    });
+
+    test('has styles for the shell: brand, nav item, title, search, hint', () {
+      final styles = themeOf('shelfOled').extension<ShelfTextStyles>()!;
+
+      expect(styles.brand.fontSize, 15);
+      expect(styles.brand.fontWeight, FontWeight.w800);
+      expect(styles.navItem.fontSize, 13.5);
+      expect(styles.windowTitle.fontSize, 14);
+      expect(styles.windowTitle.fontWeight, FontWeight.w700);
+      expect(styles.fieldText.fontSize, 13);
+      expect(styles.keyHint.fontSize, 11);
+      expect(styles.keyHint.color, tokensOf('shelfOled').faint);
     });
 
     test('colours the scale with the tokens', () {

@@ -254,6 +254,74 @@ void main() {
     });
   });
 
+  group('keyboard and assistive technology', () {
+    Future<void> focusFirst(WidgetTester tester, Key key) async {
+      Focus.of(tester.element(find.byKey(key))).requestFocus();
+      await tester.pump();
+    }
+
+    testWidgets('arrow keys step the star rating and stop at the ends', (
+      tester,
+    ) async {
+      final values = <int>[];
+      await pumpThemed(tester, StarRating(value: 10, onChanged: values.add));
+      await focusFirst(tester, const Key('star-1'));
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+
+      expect(values, [9]);
+    });
+
+    testWidgets('arrow keys step the interest segments and stop at zero', (
+      tester,
+    ) async {
+      final values = <int>[];
+      await pumpThemed(
+        tester,
+        InterestSegments(value: 0, onChanged: values.add),
+      );
+      await focusFirst(tester, const Key('interest-1'));
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+
+      expect(values, [1]);
+    });
+
+    testWidgets('the star rating is one control with increase and decrease', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      final values = <int>[];
+      await pumpThemed(tester, StarRating(value: 4, onChanged: values.add));
+
+      tester.semantics.increase(find.semantics.byLabel(RegExp('Review')));
+      tester.semantics.decrease(find.semantics.byLabel(RegExp('Review')));
+
+      expect(values, [5, 3]);
+      handle.dispose();
+    });
+
+    testWidgets(
+      'the interest segments are one control with increase/decrease',
+      (tester) async {
+        final handle = tester.ensureSemantics();
+        final values = <int>[];
+        await pumpThemed(
+          tester,
+          InterestSegments(value: 6, onChanged: values.add),
+        );
+
+        tester.semantics.increase(find.semantics.byLabel(RegExp('Interest')));
+        tester.semantics.decrease(find.semantics.byLabel(RegExp('Interest')));
+
+        expect(values, [7, 5]);
+        handle.dispose();
+      },
+    );
+  });
+
   goldenInBothThemes(
     'toggles_progress',
     () => Column(

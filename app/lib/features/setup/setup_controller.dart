@@ -63,7 +63,10 @@ class SetupState {
 /// setup as completed.
 class SetupController extends Notifier<SetupState> {
   @override
-  SetupState build() => const SetupState();
+  SetupState build() {
+    ref.watch(sessionGenerationProvider);
+    return const SetupState();
+  }
 
   void setDefaultSort(String value) =>
       state = state.copyWith(defaultSort: value);
@@ -97,7 +100,16 @@ class SetupController extends Notifier<SetupState> {
   Future<void> finish() async {
     if (state.saving) return;
     if (!await _save(const UserUpdate(setupCompleted: true))) return;
-    await ref.read(authControllerProvider.notifier).refreshUser();
+    try {
+      await ref.read(authControllerProvider.notifier).refreshUser();
+    } on Object catch (error) {
+      state = state.copyWith(
+        error: ApiException.from(
+          error,
+          'Could not refresh your account',
+        ).message,
+      );
+    }
   }
 
   Future<void> skip() => finish();

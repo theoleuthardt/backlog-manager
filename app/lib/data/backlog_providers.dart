@@ -101,13 +101,16 @@ class EntriesNotifier extends AsyncNotifier<List<BacklogEntry>> {
   ) async {
     final succeeded = <int>[];
     final failed = <int>[];
-    await Future.wait([
-      for (final id in ids)
-        action(id).then<void>(
-          (_) => succeeded.add(id),
-          onError: (Object _) => failed.add(id),
-        ),
-    ]);
+    for (var start = 0; start < ids.length; start += _bulkBatchSize) {
+      final batch = ids.skip(start).take(_bulkBatchSize);
+      await Future.wait([
+        for (final id in batch)
+          action(id).then<void>(
+            (_) => succeeded.add(id),
+            onError: (Object _) => failed.add(id),
+          ),
+      ]);
+    }
     await refresh();
     succeeded.sort();
     failed.sort();
@@ -123,6 +126,9 @@ class EntriesNotifier extends AsyncNotifier<List<BacklogEntry>> {
     ]);
   }
 }
+
+/// How many requests of a bulk action run at the same time.
+const _bulkBatchSize = 8;
 
 final entriesProvider =
     AsyncNotifierProvider.family<EntriesNotifier, List<BacklogEntry>, int?>(
