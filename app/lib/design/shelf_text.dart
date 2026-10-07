@@ -38,6 +38,11 @@ class ShelfTextStyles extends ThemeExtension<ShelfTextStyles> {
     required this.eyebrow,
     required this.sidebarLabel,
     required this.coverTitle,
+    required this.brand,
+    required this.navItem,
+    required this.windowTitle,
+    required this.searchInput,
+    required this.keyHint,
   });
 
   factory ShelfTextStyles.fromTokens(ShelfTokens tokens) {
@@ -53,6 +58,11 @@ class ShelfTextStyles extends ThemeExtension<ShelfTextStyles> {
       eyebrow: _style(tokens.accent, 11, 1.2, 700, 0.12),
       sidebarLabel: _style(tokens.faint, 11, 1.2, 700, 0.08),
       coverTitle: _style(tokens.foreground, 15, 1.1, 800),
+      brand: _style(tokens.foreground, 15, 1.2, 800, -0.01),
+      navItem: _style(tokens.foreground, 13.5, 1.2, 600),
+      windowTitle: _style(tokens.foreground, 14, 1.2, 700),
+      searchInput: _style(tokens.foreground, 13, 1.3, 400),
+      keyHint: _style(tokens.faint, 11, 1.2, 600),
     );
   }
 
@@ -67,6 +77,11 @@ class ShelfTextStyles extends ThemeExtension<ShelfTextStyles> {
   final TextStyle eyebrow;
   final TextStyle sidebarLabel;
   final TextStyle coverTitle;
+  final TextStyle brand;
+  final TextStyle navItem;
+  final TextStyle windowTitle;
+  final TextStyle searchInput;
+  final TextStyle keyHint;
 
   @override
   ShelfTextStyles copyWith({
@@ -81,6 +96,11 @@ class ShelfTextStyles extends ThemeExtension<ShelfTextStyles> {
     TextStyle? eyebrow,
     TextStyle? sidebarLabel,
     TextStyle? coverTitle,
+    TextStyle? brand,
+    TextStyle? navItem,
+    TextStyle? windowTitle,
+    TextStyle? searchInput,
+    TextStyle? keyHint,
   }) {
     return ShelfTextStyles(
       hero: hero ?? this.hero,
@@ -94,6 +114,11 @@ class ShelfTextStyles extends ThemeExtension<ShelfTextStyles> {
       eyebrow: eyebrow ?? this.eyebrow,
       sidebarLabel: sidebarLabel ?? this.sidebarLabel,
       coverTitle: coverTitle ?? this.coverTitle,
+      brand: brand ?? this.brand,
+      navItem: navItem ?? this.navItem,
+      windowTitle: windowTitle ?? this.windowTitle,
+      searchInput: searchInput ?? this.searchInput,
+      keyHint: keyHint ?? this.keyHint,
     );
   }
 
@@ -113,6 +138,11 @@ class ShelfTextStyles extends ThemeExtension<ShelfTextStyles> {
       eyebrow: blend(eyebrow, other.eyebrow),
       sidebarLabel: blend(sidebarLabel, other.sidebarLabel),
       coverTitle: blend(coverTitle, other.coverTitle),
+      brand: blend(brand, other.brand),
+      navItem: blend(navItem, other.navItem),
+      windowTitle: blend(windowTitle, other.windowTitle),
+      searchInput: blend(searchInput, other.searchInput),
+      keyHint: blend(keyHint, other.keyHint),
     );
   }
 }

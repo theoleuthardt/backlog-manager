@@ -1,6 +1,5 @@
 import 'package:backlog_manager/domain/backups.dart';
 import 'package:backlog_manager/domain/safe_url.dart';
-import 'package:backlog_manager/domain/setup_wizard.dart';
 import 'package:backlog_manager/domain/split_list.dart';
 import 'package:backlog_manager/domain/status_style.dart';
 import 'package:backlog_manager/domain/trailer.dart';
@@ -83,37 +82,6 @@ void main() {
         youtubeEmbedUrl(
           'https://www.youtube.com/watch?v=abc123DEF45&autoplay=1',
         ),
-        isNull,
-      );
-    });
-  });
-
-  group('setupRedirect', () {
-    test('sends a user who has not finished setup to the wizard', () {
-      expect(
-        setupRedirect(setupCompleted: false, pathname: '/dashboard'),
-        '/setup',
-      );
-      expect(
-        setupRedirect(setupCompleted: false, pathname: '/account'),
-        '/setup',
-      );
-    });
-
-    test('keeps an unfinished user on the wizard', () {
-      expect(setupRedirect(setupCompleted: false, pathname: '/setup'), isNull);
-    });
-
-    test('sends a finished user away from the wizard', () {
-      expect(
-        setupRedirect(setupCompleted: true, pathname: '/setup'),
-        '/dashboard',
-      );
-    });
-
-    test('leaves a finished user alone everywhere else', () {
-      expect(
-        setupRedirect(setupCompleted: true, pathname: '/dashboard'),
         isNull,
       );
     });

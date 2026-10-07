@@ -109,6 +109,19 @@ void main() {
       expect(styles.page.letterSpacing, closeTo(26 * -0.02, 0.001));
     });
 
+    test('has styles for the shell: brand, nav item, title, search, hint', () {
+      final styles = themeOf('shelfOled').extension<ShelfTextStyles>()!;
+
+      expect(styles.brand.fontSize, 15);
+      expect(styles.brand.fontWeight, FontWeight.w800);
+      expect(styles.navItem.fontSize, 13.5);
+      expect(styles.windowTitle.fontSize, 14);
+      expect(styles.windowTitle.fontWeight, FontWeight.w700);
+      expect(styles.searchInput.fontSize, 13);
+      expect(styles.keyHint.fontSize, 11);
+      expect(styles.keyHint.color, tokensOf('shelfOled').faint);
+    });
+
     test('colours the scale with the tokens', () {
       final tokens = tokensOf('light');
       final styles = themeOf('light').extension<ShelfTextStyles>()!;
