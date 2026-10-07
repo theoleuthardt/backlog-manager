@@ -184,6 +184,8 @@ class ShelfTokens extends ThemeExtension<ShelfTokens> {
     nebula3,
     nebula4,
     orbit,
+    shadow,
+    scrim,
   ];
 
   @override

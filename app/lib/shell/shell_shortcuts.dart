@@ -14,9 +14,15 @@ class OpenPaletteIntent extends Intent {
 
 /// Esc: closes the topmost layer of the window, the palette first and then
 /// the inspector. The framework's own `DismissIntent` is not used, other
-/// widgets answer to it first.
+/// widgets answer to it first. It stays disabled while the focus is in a
+/// dialog or sheet, so Esc closes that one and leaves the inspector alone.
 class CloseTopLayerIntent extends Intent {
   const CloseTopLayerIntent();
+}
+
+bool _focusInPopupRoute() {
+  final context = FocusManager.instance.primaryFocus?.context;
+  return context != null && ModalRoute.of(context) is PopupRoute;
 }
 
 bool _typingInTextField() {
@@ -55,8 +61,9 @@ class ShellShortcuts extends ConsumerWidget {
           ),
           CloseTopLayerIntent: _Action<CloseTopLayerIntent>(
             enabled: () =>
-                ref.read(paletteOpenProvider) ||
-                ref.read(shellInspectorProvider) != null,
+                !_focusInPopupRoute() &&
+                (ref.read(paletteOpenProvider) ||
+                    ref.read(shellInspectorProvider) != null),
             run: () {
               if (ref.read(paletteOpenProvider)) {
                 ref.read(paletteOpenProvider.notifier).close();

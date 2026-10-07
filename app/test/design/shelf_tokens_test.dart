@@ -351,6 +351,14 @@ void main() {
         tokens == tokens.copyWith(orbit: const Color(0xFF123456)),
         isFalse,
       );
+      expect(
+        tokens == tokens.copyWith(shadow: const Color(0xFF123456)),
+        isFalse,
+      );
+      expect(
+        tokens == tokens.copyWith(scrim: const Color(0xFF123456)),
+        isFalse,
+      );
       expect(tokens == Object(), isFalse);
     });
   });

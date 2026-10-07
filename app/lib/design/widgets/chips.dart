@@ -38,10 +38,13 @@ class ShelfChip extends StatelessWidget {
             Text(label, style: text.label.copyWith(color: foreground)),
             if (onRemove != null) ...[
               const SizedBox(width: 4),
-              GestureDetector(
+              ShelfPressable(
                 key: const Key('chip-remove'),
-                onTap: onRemove,
-                child: Icon(Icons.close, size: 14, color: tokens.faint),
+                onPressed: onRemove,
+                borderRadius: 7,
+                semanticLabel: 'Remove $label',
+                builder: (context, state) =>
+                    Icon(Icons.close, size: 14, color: tokens.faint),
               ),
             ],
           ],
@@ -77,7 +80,7 @@ class ShelfChip extends StatelessWidget {
     if (onPressed == null) return chip(null);
     return ShelfPressable(
       onPressed: onPressed,
-      semanticLabel: label,
+      semanticLabel: onRemove == null ? label : null,
       borderRadius: 12,
       builder: (context, state) => chip(state),
     );

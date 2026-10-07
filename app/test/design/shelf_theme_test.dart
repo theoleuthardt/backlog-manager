@@ -117,7 +117,7 @@ void main() {
       expect(styles.navItem.fontSize, 13.5);
       expect(styles.windowTitle.fontSize, 14);
       expect(styles.windowTitle.fontWeight, FontWeight.w700);
-      expect(styles.searchInput.fontSize, 13);
+      expect(styles.fieldText.fontSize, 13);
       expect(styles.keyHint.fontSize, 11);
       expect(styles.keyHint.color, tokensOf('shelfOled').faint);
     });

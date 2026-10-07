@@ -219,7 +219,7 @@ class _SearchField extends ConsumerWidget {
       child: TextField(
         key: const Key('search-field'),
         focusNode: ref.watch(searchFocusNodeProvider),
-        style: text.searchInput,
+        style: text.fieldText,
         decoration: InputDecoration(
           hintText: 'Search your games',
           prefixIcon: Icon(Icons.search, size: 16, color: tokens.faint),

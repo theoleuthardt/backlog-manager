@@ -153,8 +153,9 @@ class ShelfDataTable<T> extends StatelessWidget {
                 Expanded(
                   flex: column.flex,
                   child: DefaultTextStyle.merge(
-                    style: Theme.of(context).textTheme.bodyMedium!
-                        .copyWith(fontSize: 13, color: tokens.foreground),
+                    style: Theme.of(context)
+                        .extension<ShelfTextStyles>()!
+                        .fieldText,
                     overflow: TextOverflow.ellipsis,
                     child: column.cell(context, row),
                   ),

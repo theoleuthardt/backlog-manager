@@ -38,7 +38,13 @@ class Sidebar extends ConsumerWidget {
           alignment: Alignment.centerLeft,
           minWidth: _sidebarWidth,
           maxWidth: _sidebarWidth,
-          child: _SidebarContent(location: location),
+          child: ExcludeFocus(
+            excluding: collapsed,
+            child: ExcludeSemantics(
+              excluding: collapsed,
+              child: _SidebarContent(location: location),
+            ),
+          ),
         ),
       ),
     );
