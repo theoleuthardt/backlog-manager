@@ -48,6 +48,34 @@ class BacklogEntry {
   final bool inSharedSpace;
   final int? steamAppId;
   final DateTime? completedAt;
+
+  /// This entry in another status.
+  BacklogEntry withStatus(String newStatus) {
+    return BacklogEntry(
+      id: id,
+      title: title,
+      imageLink: imageLink,
+      imageAlt: imageAlt,
+      genre: genre,
+      platform: platform,
+      status: newStatus,
+      owned: owned,
+      interest: interest,
+      reviewStars: reviewStars,
+      review: review,
+      note: note,
+      description: description,
+      trailerLink: trailerLink,
+      mainTime: mainTime,
+      mainPlusExtraTime: mainPlusExtraTime,
+      completionTime: completionTime,
+      playtime: playtime,
+      partnerPlaytime: partnerPlaytime,
+      inSharedSpace: inSharedSpace,
+      steamAppId: steamAppId,
+      completedAt: completedAt,
+    );
+  }
 }
 
 /// A user-defined category entries can be assigned to.
