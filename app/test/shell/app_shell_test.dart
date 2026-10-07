@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:backlog_manager/app.dart';
+import 'package:backlog_manager/auth/token_store.dart';
 import 'package:backlog_manager/design/shelf_theme.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
@@ -18,6 +19,8 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../auth/fakes.dart';
 
 const finished = SessionSignedIn(
   SessionUser(name: 'Theo', email: 'theo@example.com', setupCompleted: true),
@@ -49,10 +52,11 @@ class RecordingWindowControls implements WindowControls {
 }
 
 class Harness {
-  Harness(this.tester, this.controls);
+  Harness(this.tester, this.controls, this.tokens);
 
   final WidgetTester tester;
   final RecordingWindowControls controls;
+  final MemoryTokenStore tokens;
 
   ProviderContainer get container =>
       ProviderScope.containerOf(tester.element(find.byType(MaterialApp)));
@@ -80,6 +84,7 @@ Future<Harness> pumpApp(
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   final controls = RecordingWindowControls();
+  final tokens = MemoryTokenStore('jwt');
 
   await tester.pumpWidget(
     ProviderScope(
@@ -91,6 +96,7 @@ Future<Harness> pumpApp(
               .copyWith(platform: platform);
         }),
         windowControlsProvider.overrideWithValue(controls),
+        tokenStoreProvider.overrideWithValue(tokens),
         appVersionProvider.overrideWith((ref) async => 'v0.9.0'),
       ],
       child: const BacklogManagerApp(),
@@ -102,7 +108,7 @@ Future<Harness> pumpApp(
     await tester.pump();
     await tester.pump();
   }
-  final harness = Harness(tester, controls);
+  final harness = Harness(tester, controls, tokens);
   if (location != null) await harness.go(location);
   return harness;
 }
@@ -388,6 +394,7 @@ void main() {
 
       expect(app.location, AppRoutes.signIn);
       expect(find.byKey(const Key('sidebar')), findsNothing);
+      expect(app.tokens.token, isNull);
     });
 
     testWidgets('switches the theme at runtime from the switcher', (

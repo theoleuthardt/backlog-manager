@@ -20,6 +20,7 @@ dependencies:
   package_info_plus: ^10.2.2
   retrofit: ^4.10.0
   shared_preferences: ^2.5.6
+  url_launcher: ^6.3.3
   window_manager: ^0.5.2
 
 dev_dependencies:

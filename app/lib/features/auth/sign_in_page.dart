@@ -239,6 +239,7 @@ class _ServerSheetState extends ConsumerState<_ServerSheet> {
   }
 
   Future<void> _save() async {
+    if (_busy || _address.text.trim().isEmpty) return;
     setState(() {
       _busy = true;
       _error = null;
