@@ -55,6 +55,24 @@ void main() {
     });
   });
 
+  group('onColorFor', () {
+    test('picks black on a light colour and white on a dark one', () {
+      expect(onColorFor(const Color(0xFFA3FF12)), const Color(0xFF000000));
+      expect(onColorFor(const Color(0xFF1D2B8F)), const Color(0xFFFFFFFF));
+    });
+
+    test('always reaches 4.5:1 against the colour it is chosen for', () {
+      for (var value = 0; value <= 255; value += 5) {
+        final background = Color.fromARGB(255, value, 255 - value, value ~/ 2);
+
+        expect(
+          contrastRatio(onColorFor(background), background),
+          greaterThanOrEqualTo(4.5),
+        );
+      }
+    });
+  });
+
   group('contrastRatio', () {
     test('is 21 for black on white and 1 for the same colour', () {
       expect(

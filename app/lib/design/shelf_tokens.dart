@@ -74,9 +74,7 @@ class ShelfTokens extends ThemeExtension<ShelfTokens> {
       accentA: mix(accent, const Color(0xFFFFFFFF), 0.2),
       accentB: mix(accent, const Color(0xFF000000), 0.12),
       accentGlow: atOpacity(accent, 0.4),
-      onAccent: accent.computeLuminance() > 0.179
-          ? const Color(0xFF000000)
-          : const Color(0xFFFFFFFF),
+      onAccent: onColorFor(accent),
       borderSubtle: mix(surface, foreground, 0.08),
       borderStrong: _calmBorder(border, background),
       glow: glow,

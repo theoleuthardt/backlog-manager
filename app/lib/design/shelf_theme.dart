@@ -1,3 +1,4 @@
+import 'package:backlog_manager/design/color_math.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
@@ -24,9 +25,9 @@ ThemeData buildShelfTheme(ShelfTokens tokens) {
     primary: tokens.accent,
     onPrimary: tokens.onAccent,
     secondary: tokens.glow,
-    onSecondary: tokens.foreground,
+    onSecondary: onColorFor(tokens.glow),
     error: tokens.danger,
-    onError: tokens.background,
+    onError: onColorFor(tokens.danger),
     surface: tokens.surface,
     onSurface: tokens.foreground,
     onSurfaceVariant: tokens.muted,
