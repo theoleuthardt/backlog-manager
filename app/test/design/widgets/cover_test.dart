@@ -43,6 +43,24 @@ void main() {
   });
 
   group('ShelfCover', () {
+    testWidgets('draws an overlay over the art', (tester) async {
+      await pumpThemed(
+        tester,
+        const SizedBox(
+          width: 150,
+          child: ShelfCover(title: 'Hades', overlay: Text('Overlay')),
+        ),
+      );
+
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('cover-art')),
+          matching: find.text('Overlay'),
+        ),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('is 2:3 with the card radius', (tester) async {
       await pumpThemed(tester, const ShelfCover(title: 'Hades'), width: 150);
 
@@ -268,6 +286,38 @@ void main() {
       expect(tester.getTopLeft(find.text('Game 3')).dy, firstRow);
       expect(tester.getTopLeft(find.text('Game 4')).dy, greaterThan(firstRow));
     });
+  });
+
+  group('the sliver grid', () {
+    testWidgets(
+      'lays the covers out like the grid and builds only the visible ones',
+      (tester) async {
+        await pumpThemed(
+          tester,
+          SizedBox(
+            width: 800,
+            height: 600,
+            child: CustomScrollView(
+              slivers: [
+                ShelfCoverSliverGrid(
+                  itemCount: 400,
+                  itemBuilder: (context, index) =>
+                      ShelfCover(title: 'Game $index'),
+                ),
+              ],
+            ),
+          ),
+        );
+
+        final firstRow = tester.getTopLeft(find.text('Game 0')).dy;
+        expect(tester.getTopLeft(find.text('Game 3')).dy, firstRow);
+        expect(
+          tester.getTopLeft(find.text('Game 4')).dy,
+          greaterThan(firstRow),
+        );
+        expect(find.byType(ShelfCover).evaluate().length, lessThan(40));
+      },
+    );
   });
 
   group('the shelf row', () {
