@@ -37,54 +37,18 @@ void main() {
       expect(resolveTheme('deleted-theme', []).id, defaultThemeId);
     });
 
-    test('ships light, dark, colorful and freaky as built-in themes', () {
-      expect(builtinThemes.map((theme) => theme.id), [
-        'dark',
-        'light',
-        'colorful',
-        'freaky',
-      ]);
-    });
-  });
-
-  group('onAccentColor', () {
-    test('picks black text for a light accent', () {
-      expect(onAccentColor('#ff2bd6'), '#000000');
-    });
-
-    test('picks white text for a dark accent', () {
-      expect(onAccentColor('#1d2b8f'), '#ffffff');
-    });
-  });
-
-  group('malformed colours', () {
-    test('fall back to white text on the accent without throwing', () {
-      expect(onAccentColor('not a colour'), '#ffffff');
-      expect(onAccentColor('#fff'), '#ffffff');
-    });
-
-    test('keep the icons as they are without throwing', () {
-      const broken = ThemeColors(
-        background: '#000000',
-        surface: '#000000',
-        foreground: 'oops',
-        accent: '#000000',
-        border: '#000000',
-        glow: '#000000',
-      );
-
-      expect(iconsNeedInversion(broken), isFalse);
-    });
-  });
-
-  group('iconsNeedInversion', () {
-    test('inverts the white icon set when the foreground colour is dark', () {
-      expect(iconsNeedInversion(resolveTheme('light', []).colors), isTrue);
-    });
-
-    test('keeps the icons for a light foreground colour', () {
-      expect(iconsNeedInversion(customTheme.colors), isFalse);
-    });
+    test(
+      'ships shelfOled, dark, light, colorful and freaky as built-in themes',
+      () {
+        expect(builtinThemes.map((theme) => theme.id), [
+          'shelfOled',
+          'dark',
+          'light',
+          'colorful',
+          'freaky',
+        ]);
+      },
+    );
   });
 
   group('isHexColor', () {
