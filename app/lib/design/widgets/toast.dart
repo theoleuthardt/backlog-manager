@@ -29,11 +29,11 @@ class ShelfToast extends StatelessWidget {
         color: tokens.surface2,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: tokens.borderStrong),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0xCC000000),
+            color: tokens.shadow,
             blurRadius: 48,
-            offset: Offset(0, 16),
+            offset: const Offset(0, 16),
           ),
         ],
       ),

@@ -102,6 +102,19 @@ void main() {
       expect(pressed, 1);
       expect(removed, 1);
     });
+
+    testWidgets('labels the remove button for assistive technology', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await pumpThemed(
+        tester,
+        ShelfChip(label: 'Genre', onPressed: () {}, onRemove: () {}),
+      );
+
+      expect(find.bySemanticsLabel('Remove Genre'), findsOneWidget);
+      handle.dispose();
+    });
   });
 
   group('ShelfSegmented', () {

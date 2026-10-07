@@ -26,7 +26,6 @@ class TitleBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final text = Theme.of(context).extension<ShelfTextStyles>()!;
     final isMac = Theme.of(context).platform == TargetPlatform.macOS;
     final controls = ref.watch(windowControlsProvider);
@@ -98,11 +97,7 @@ class TitleBar extends ConsumerWidget {
                         child: Text(
                           pageTitle(location),
                           key: const Key('title-bar-title'),
-                          style: text.control.copyWith(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: tokens.foreground,
-                          ),
+                          style: text.windowTitle,
                         ),
                       ),
                       const Spacer(),
@@ -224,7 +219,7 @@ class _SearchField extends ConsumerWidget {
       child: TextField(
         key: const Key('search-field'),
         focusNode: ref.watch(searchFocusNodeProvider),
-        style: text.body.copyWith(fontSize: 13),
+        style: text.fieldText,
         decoration: InputDecoration(
           hintText: 'Search your games',
           prefixIcon: Icon(Icons.search, size: 16, color: tokens.faint),
@@ -244,13 +239,7 @@ class _SearchField extends ConsumerWidget {
                     horizontal: 6,
                     vertical: 1,
                   ),
-                  child: Text(
-                    isMac ? '⌘K' : 'Ctrl K',
-                    style: text.label.copyWith(
-                      fontSize: 11,
-                      color: tokens.faint,
-                    ),
-                  ),
+                  child: Text(isMac ? '⌘K' : 'Ctrl K', style: text.keyHint),
                 ),
               ),
             ),

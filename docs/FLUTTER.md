@@ -76,16 +76,16 @@ Deliberate difference from the TypeScript code: `toNumber` returns null for an e
 ```text
 app/
   lib/
-    design/     tokens, theme, shell and shared widgets
+    design/     tokens, theme, atmosphere and the shared widgets
+    shell/      window shell: title bar, sidebar, status bar, shortcuts
+    routing/    router, route table, session guard, navigation history
     api/        client generated from backend/openapi.json
-    features/   one folder per screen group
+    features/   one folder per screen group (so far the debug gallery)
     domain/     pure logic and models, ported from frontend/src/lib/
     app.dart    root widget (router and providers)
     main.dart
   test/         mirrors lib/; golden tests are added next to the widgets they cover
 ```
-
-The still empty folders (`design/`, `features/`) hold a `.gitkeep` until the issues that fill them land.
 
 ## Running and debugging
 

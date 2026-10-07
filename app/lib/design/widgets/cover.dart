@@ -222,7 +222,7 @@ class _CheckCircle extends StatelessWidget {
       key: const Key('cover-check'),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: checked ? tokens.accent : const Color(0x99000000),
+        color: checked ? tokens.accent : tokens.scrim,
         border: Border.all(
           color: checked ? tokens.accent : tokens.foreground,
           width: 1.5,

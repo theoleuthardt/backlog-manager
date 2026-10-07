@@ -227,6 +227,22 @@ void main() {
       expect(flow().busy, isFalse);
     });
 
+    test('discards a code answer that arrives after starting over', () async {
+      final pending = Completer<String>();
+      api.onVerify = (challenge, code) => pending.future;
+      api.onCurrentUser = () async => theo;
+
+      final verify = controllerOf(container).verify('123456');
+      await Future<void>.delayed(Duration.zero);
+      controllerOf(container).startOver();
+      pending.complete('jwt');
+      await verify;
+
+      expect(session(), isNot(isA<SessionSignedIn>()));
+      expect(store.token, isNull);
+      expect(flow().step, LoginStep.password);
+    });
+
     test('starts over with the password form', () {
       controllerOf(container).startOver();
 
