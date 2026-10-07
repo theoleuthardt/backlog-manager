@@ -1,6 +1,7 @@
 import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/api/api_providers.dart';
 import 'package:backlog_manager/api/generated/export.dart';
+import 'package:backlog_manager/auth/session_user_mapper.dart';
 import 'package:backlog_manager/routing/session.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -70,11 +71,7 @@ class ApiAuthApi implements AuthApi {
   @override
   Future<SessionUser> currentUser() async {
     final user = await (await _client()).apiUserMeGetOwnUser();
-    return SessionUser(
-      name: user.name,
-      email: user.email,
-      setupCompleted: user.setupCompleted,
-    );
+    return sessionUserFrom(user);
   }
 }
 
