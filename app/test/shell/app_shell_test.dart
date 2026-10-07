@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:backlog_manager/app.dart';
 import 'package:backlog_manager/design/shelf_theme.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
+import 'package:backlog_manager/design/widgets/sheet.dart';
 import 'package:backlog_manager/domain/themes.dart';
 import 'package:backlog_manager/routing/router.dart';
 import 'package:backlog_manager/routing/routes.dart';
@@ -201,6 +204,40 @@ void main() {
       await tester.tap(find.byKey(const Key('sidebar-toggle')));
       await tester.pumpAndSettle();
       expect(tester.getSize(find.byKey(const Key('sidebar'))).width, 232);
+    });
+
+    testWidgets('hides a collapsed sidebar from focus and screen readers', (
+      tester,
+    ) async {
+      await pumpApp(tester);
+      bool excludedFromFocus() => tester
+          .widget<ExcludeFocus>(
+            find
+                .descendant(
+                  of: find.byKey(const Key('sidebar')),
+                  matching: find.byType(ExcludeFocus),
+                )
+                .first,
+          )
+          .excluding;
+      bool excludedFromSemantics() => tester
+          .widget<ExcludeSemantics>(
+            find
+                .descendant(
+                  of: find.byKey(const Key('sidebar')),
+                  matching: find.byType(ExcludeSemantics),
+                )
+                .first,
+          )
+          .excluding;
+      expect(excludedFromFocus(), isFalse);
+      expect(excludedFromSemantics(), isFalse);
+
+      await tester.tap(find.byKey(const Key('sidebar-toggle')));
+      await tester.pumpAndSettle();
+
+      expect(excludedFromFocus(), isTrue);
+      expect(excludedFromSemantics(), isTrue);
     });
 
     testWidgets('shows the inspector in its slot only while one is set', (
@@ -483,6 +520,32 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('inspector')), findsNothing);
+    });
+  });
+
+  group('Esc with a sheet open', () {
+    testWidgets('closes the sheet and leaves the inspector visible', (
+      tester,
+    ) async {
+      final app = await pumpApp(tester);
+      app.container
+          .read(shellInspectorProvider.notifier)
+          .show(const Text('Details'));
+      await tester.pumpAndSettle();
+      unawaited(
+        showShelfSheet<void>(
+          tester.element(find.byKey(const Key('main-content'))),
+          builder: (context) => const Text('Sheet body'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Sheet body'), findsOneWidget);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Sheet body'), findsNothing);
+      expect(find.byKey(const Key('inspector')), findsOneWidget);
     });
   });
 

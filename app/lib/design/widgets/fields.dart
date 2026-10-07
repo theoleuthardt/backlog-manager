@@ -58,7 +58,7 @@ class ShelfField extends StatelessWidget {
             enabled: enabled,
             autofocus: autofocus,
             keyboardType: keyboardType,
-            style: text.body.copyWith(fontSize: 13),
+            style: text.fieldText,
             textAlignVertical: TextAlignVertical.center,
             decoration: InputDecoration(
               hintText: hintText,

@@ -211,6 +211,24 @@ void main() {
       );
     });
 
+    test('derives a palette from malformed colours without throwing', () {
+      final tokens = ShelfTokens.fromColors(
+        colors(
+          background: 'oops',
+          surface: '#fff',
+          foreground: 'not a colour',
+          accent: '#12345g',
+          border: '',
+          glow: 'blue',
+        ),
+      );
+
+      expect(
+        tokens.onAccent,
+        isIn([const Color(0xFF000000), const Color(0xFFFFFFFF)]),
+      );
+    });
+
     test('uses the semantic colours of the lightness of the theme', () {
       final light = ShelfTokens.fromColors(
         colors(
@@ -315,6 +333,34 @@ void main() {
         );
       });
     }
+  });
+
+  group('equality', () {
+    test('an instance equals itself and a token set with the same colours', () {
+      final tokens = tokensOf('shelfOled');
+
+      expect(tokens == tokens, isTrue);
+      expect(tokens, tokens.copyWith());
+      expect(tokens.hashCode, tokens.copyWith().hashCode);
+    });
+
+    test('differs when a single colour differs', () {
+      final tokens = tokensOf('shelfOled');
+
+      expect(
+        tokens == tokens.copyWith(orbit: const Color(0xFF123456)),
+        isFalse,
+      );
+      expect(
+        tokens == tokens.copyWith(shadow: const Color(0xFF123456)),
+        isFalse,
+      );
+      expect(
+        tokens == tokens.copyWith(scrim: const Color(0xFF123456)),
+        isFalse,
+      );
+      expect(tokens == Object(), isFalse);
+    });
   });
 
   group('copyWith and lerp', () {

@@ -39,7 +39,13 @@ class Sidebar extends ConsumerWidget {
           alignment: Alignment.centerLeft,
           minWidth: _sidebarWidth,
           maxWidth: _sidebarWidth,
-          child: _SidebarContent(location: location),
+          child: ExcludeFocus(
+            excluding: collapsed,
+            child: ExcludeSemantics(
+              excluding: collapsed,
+              child: _SidebarContent(location: location),
+            ),
+          ),
         ),
       ),
     );
@@ -119,11 +125,7 @@ class _Brand extends StatelessWidget {
           const SizedBox(width: 10),
           Text(
             'Backlog',
-            style: Theme.of(context).textTheme.titleMedium!.copyWith(
-              fontSize: 15,
-              letterSpacing: -0.15,
-              color: tokens.foreground,
-            ),
+            style: Theme.of(context).extension<ShelfTextStyles>()!.brand,
           ),
         ],
       ),
@@ -190,8 +192,10 @@ class _NavItem extends ConsumerWidget {
                 child: Text(
                   item.label,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelLarge!
-                      .copyWith(fontSize: 13.5, color: color),
+                  style: Theme.of(context)
+                      .extension<ShelfTextStyles>()!
+                      .navItem
+                      .copyWith(color: color),
                 ),
               ),
               if (count != null)
