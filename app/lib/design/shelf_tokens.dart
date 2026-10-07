@@ -297,9 +297,12 @@ class ShelfTokens extends ThemeExtension<ShelfTokens> {
 
   @override
   bool operator ==(Object other) {
+    if (identical(this, other)) return true;
     if (other is! ShelfTokens) return false;
-    for (var i = 0; i < _colors.length; i++) {
-      if (_colors[i] != other._colors[i]) return false;
+    final mine = _colors;
+    final theirs = other._colors;
+    for (var i = 0; i < mine.length; i++) {
+      if (mine[i] != theirs[i]) return false;
     }
     return true;
   }
