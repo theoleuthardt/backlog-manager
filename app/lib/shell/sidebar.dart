@@ -1,3 +1,4 @@
+import 'package:backlog_manager/design/brand_mark.dart';
 import 'package:backlog_manager/design/glass.dart';
 import 'package:backlog_manager/design/glow.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
@@ -115,15 +116,11 @@ class _Brand extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = Theme.of(context).extension<ShelfTokens>()!;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 6),
       child: Row(
         children: [
-          CustomPaint(
-            size: const Size(26, 26),
-            painter: _PlanetPainter(tokens),
-          ),
+          const BrandMark(),
           const SizedBox(width: 10),
           Text(
             'Backlog',
@@ -133,39 +130,6 @@ class _Brand extends StatelessWidget {
       ),
     );
   }
-}
-
-/// The planet with a ring and a small moon that marks the app.
-class _PlanetPainter extends CustomPainter {
-  const _PlanetPainter(this.tokens);
-
-  final ShelfTokens tokens;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final scale = size.width / 32;
-    canvas
-      ..save()
-      ..scale(scale)
-      ..save()
-      ..translate(16, 16)
-      ..rotate(-24 * 3.1415926535 / 180)
-      ..drawOval(
-        Rect.fromCenter(center: Offset.zero, width: 28, height: 11),
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.6
-          ..color = tokens.glow,
-      )
-      ..restore()
-      ..drawCircle(const Offset(16, 16), 6.5, Paint()..color = tokens.accent)
-      ..drawCircle(const Offset(27, 9.5), 1.8, Paint()..color = tokens.accentA)
-      ..restore();
-  }
-
-  @override
-  bool shouldRepaint(_PlanetPainter oldDelegate) =>
-      oldDelegate.tokens != tokens;
 }
 
 class _SectionLabel extends StatelessWidget {

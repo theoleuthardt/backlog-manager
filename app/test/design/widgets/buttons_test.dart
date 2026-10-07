@@ -126,6 +126,27 @@ void main() {
       expect(tester.widget<Opacity>(find.byType(Opacity).first).opacity, 0.4);
     });
 
+    testWidgets('shows a spinner and ignores taps while it is busy', (
+      tester,
+    ) async {
+      var taps = 0;
+      await tester.pumpWidget(
+        themed(
+          'shelfOled',
+          ShelfButton(
+            label: 'Logging in...',
+            busy: true,
+            onPressed: () => taps++,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      await tester.tap(find.text('Logging in...'));
+      expect(taps, 0);
+    });
+
     testWidgets('calls onPressed when tapped', (tester) async {
       var taps = 0;
       await pumpThemed(

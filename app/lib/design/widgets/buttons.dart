@@ -17,6 +17,7 @@ class ShelfButton extends StatelessWidget {
     required this.onPressed,
     this.kind = ShelfButtonKind.secondary,
     this.icon,
+    this.busy = false,
     super.key,
   });
 
@@ -25,15 +26,19 @@ class ShelfButton extends StatelessWidget {
   final ShelfButtonKind kind;
   final IconData? icon;
 
+  /// Shows a spinner before the label and ignores taps; the button keeps its
+  /// full colour, unlike a disabled one.
+  final bool busy;
+
   @override
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final text = Theme.of(context).extension<ShelfTextStyles>()!;
 
     return Opacity(
-      opacity: onPressed == null ? 0.4 : 1,
+      opacity: onPressed == null && !busy ? 0.4 : 1,
       child: ShelfPressable(
-        onPressed: onPressed,
+        onPressed: busy ? _ignore : onPressed,
         semanticLabel: label,
         builder: (context, state) {
           final color = _labelColor(tokens, state);
@@ -48,7 +53,17 @@ class ShelfButton extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    if (icon != null) ...[
+                    if (busy) ...[
+                      SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: color,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ] else if (icon != null) ...[
                       Icon(icon, size: 16, color: color),
                       const SizedBox(width: 6),
                     ],
@@ -62,6 +77,8 @@ class ShelfButton extends StatelessWidget {
       ),
     );
   }
+
+  static void _ignore() {}
 
   Color _labelColor(ShelfTokens tokens, ShelfInteraction state) {
     return switch (kind) {

@@ -165,3 +165,13 @@ features/*  ──►  providers (Riverpod)  ──►  lib/api (Dio + generated
 - **Covers and images:** `ShelfCover` takes an `ImageProvider`; the screens build it from `proxiedImageUrl(serverUrl, imageLink)` with `CachedNetworkImageProvider` (memory and disk cache), so the app only talks to the image proxy of its own server. A picture that fails to load falls back to the title.
 - **Menus:** `MenuAnchor` closes on Esc only while the focus is inside it, so a menu opened with the mouse closes with a click outside.
 - **Goldens:** each component group has goldens in Shelf OLED and light under `test/design/widgets/goldens/`. The test renderer draws text in a block font and shadows as hard shapes, which keeps the images identical on every platform; they show layout, colour and state, not typography. Re-record with `task app:test:update-goldens` after an intended change and look at the images.
+
+## Sign-in and session
+
+`lib/auth/` holds the session of the app, `features/auth/` its two pages.
+
+- **Token:** `TokenStore` keeps the access token in the OS secure store (`flutter_secure_storage`: Keychain, Credential Manager, libsecret). On macOS the legacy keychain is used because the data protection keychain needs a signed app with a keychain access group, which comes with the signing issue (#280).
+- **State machine:** `AuthController` (`auth_controller.dart`) restores the session at start (`restore`, called from `main.dart`), signs in with a password and, for an account with two-factor, with a 6-digit or backup code (whitespace is removed), signs out and ends an expired session. `LoginFlow` is what the sign-in page shows (step, challenge, busy, error banner); the session itself stays in `SessionNotifier`, which the route guard reads.
+- **Revocation and stale answers:** a 401 from any request calls `sessionExpired` (the Dio interceptor of `createApiDio`), which signs out and shows "Your session has ended". Every request remembers the `sessionGenerationProvider` value it started in and is dropped when the user signed out in the meantime, so a slow answer cannot bring the old session back. The generation grows on every sign-in and sign-out; providers that hold the data of a user have to watch it, so nothing of the previous user survives into the next session.
+- **Server:** the sign-in page shows the server in use and "Change" opens a sheet that validates the address, asks `GET /health` and signs the user out when the server really changed (`changeServer` of `api/server_url.dart`); `apiDioProvider` is created again for the new server.
+- **Not ported on purpose:** the web client's "already signed in" state with "Go to Dashboard" and "Sign out": the route guard sends a signed-in user from sign-in to Home, so that state cannot occur.

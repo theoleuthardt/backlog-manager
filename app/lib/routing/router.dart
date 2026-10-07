@@ -1,3 +1,5 @@
+import 'package:backlog_manager/features/auth/loading_page.dart';
+import 'package:backlog_manager/features/auth/sign_in_page.dart';
 import 'package:backlog_manager/features/gallery/gallery_routes.dart';
 import 'package:backlog_manager/routing/guard.dart';
 import 'package:backlog_manager/routing/history.dart';
@@ -30,14 +32,11 @@ GoRoute _page(String path, Widget Function(String title) page) {
   );
 }
 
-GoRoute _fullWindow(String path, Key pageKey) {
+GoRoute _fullWindow(String path, Widget page) {
   return GoRoute(
     path: path,
     pageBuilder: (context, state) => NoTransitionPage(
-      child: FullWindowFrame(
-        location: path,
-        child: PlaceholderPage(key: pageKey, title: pageTitle(path)),
-      ),
+      child: FullWindowFrame(location: path, child: page),
     ),
   );
 }
@@ -72,10 +71,25 @@ final routerProvider = Provider<GoRouter>((ref) {
           ...galleryRoutes(enabled: kDebugMode),
         ],
       ),
-      _fullWindow(AppRoutes.settings, const Key('page-settings')),
-      _fullWindow(AppRoutes.signIn, const Key('page-sign-in')),
-      _fullWindow(AppRoutes.setup, const Key('page-setup')),
-      _fullWindow(AppRoutes.loading, const Key('page-loading')),
+      _fullWindow(
+        AppRoutes.settings,
+        PlaceholderPage(
+          key: const Key('page-settings'),
+          title: pageTitle(AppRoutes.settings),
+        ),
+      ),
+      _fullWindow(AppRoutes.signIn, const SignInPage(key: Key('page-sign-in'))),
+      _fullWindow(
+        AppRoutes.setup,
+        PlaceholderPage(
+          key: const Key('page-setup'),
+          title: pageTitle(AppRoutes.setup),
+        ),
+      ),
+      _fullWindow(
+        AppRoutes.loading,
+        const LoadingPage(key: Key('page-loading')),
+      ),
     ],
   );
 
