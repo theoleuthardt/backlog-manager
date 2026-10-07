@@ -85,7 +85,7 @@ app/
   test/         mirrors lib/; golden tests are added next to the widgets they cover
 ```
 
-The still empty folders (`design/`, `features/`) hold a `.gitkeep` until the issues that fill them land.
+The still empty folder (`features/`) holds a `.gitkeep` until the issues that fill it land.
 
 ## Running and debugging
 
