@@ -1,6 +1,7 @@
 import 'package:backlog_manager/features/auth/loading_page.dart';
 import 'package:backlog_manager/features/auth/sign_in_page.dart';
 import 'package:backlog_manager/features/gallery/gallery_routes.dart';
+import 'package:backlog_manager/features/home/home_page.dart';
 import 'package:backlog_manager/features/setup/setup_page.dart';
 import 'package:backlog_manager/routing/guard.dart';
 import 'package:backlog_manager/routing/history.dart';
@@ -68,7 +69,12 @@ final routerProvider = Provider<GoRouter>((ref) {
             AppShell(location: state.uri.path, child: child),
         routes: [
           for (final path in _mainPages)
-            _page(path, (title) => PlaceholderPage(title: title)),
+            _page(
+              path,
+              (title) => path == AppRoutes.home
+                  ? const HomePage()
+                  : PlaceholderPage(title: title),
+            ),
           ...galleryRoutes(enabled: kDebugMode),
         ],
       ),

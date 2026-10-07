@@ -182,3 +182,9 @@ features/*  ──►  providers (Riverpod)  ──►  lib/api (Dio + generated
 
 - **Partial updates:** `PUT /api/user/me` reads an explicit `null` as "clear this field" and leaves omitted fields alone. The generated request classes send every field, nulls included, so one saved setting would wipe the others. Use `UserUpdate` (`auth/user_api.dart`), which only sends the fields that are set, for every partial update of the user, and do the same for the entry updates (`PUT /api/backlog/entries/{id}`). Clearing a field will need an explicit way to send a `null`, to be added with the first screen that needs it (the settings).
 - **Links:** `LinkText` writes links inside a paragraph; `urlOpenerProvider` opens them in the system browser and is replaced in tests.
+
+## Entries and Home
+
+`data/backlog_api.dart` wraps the backlog routes (`BacklogApi`, faked in tests) and `data/backlog_providers.dart` holds the state: `entriesProvider(spaceId)` is an `AsyncNotifier` per backlog scope (null is the personal one), dropped when the session generation changes. `moveToStatus` changes the list at once, restores only that entry when the request fails and returns the error message, so the caller decides how to show it. Partial updates go through the map-based `EntryUpdate`.
+
+`features/home/` is the Home screen: four stat tiles, the "Continue playing" hero card (the game in progress with the most playtime, achievements still locked for Steam games, "Open details" and "Mark as completed"), and the shelves "Up next" and "Recently completed" with "See all". The "See all" and cover links open `/library?status=...` and `/library?entry=...`; the library screen reads these parameters. The Home screen reports the number of games to the status bar.

@@ -42,11 +42,8 @@ class FakeBacklogApi implements BacklogApi {
   ) async {
     calls.add('update $entryId ${update.toJson()}');
     await onUpdate?.call(entryId, update);
-    final old = stored[entryId]!;
-    final entry = BacklogEntry(
-      id: old.id,
-      title: old.title,
-      status: update.status ?? old.status,
+    final entry = stored[entryId]!.withStatus(
+      update.status ?? stored[entryId]!.status,
     );
     stored[entryId] = entry;
     return entry;
