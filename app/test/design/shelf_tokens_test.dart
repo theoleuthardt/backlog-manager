@@ -291,6 +291,26 @@ void main() {
     }
   });
 
+  group('equality', () {
+    test('an instance equals itself and a token set with the same colours', () {
+      final tokens = tokensOf('shelfOled');
+
+      expect(tokens == tokens, isTrue);
+      expect(tokens, tokens.copyWith());
+      expect(tokens.hashCode, tokens.copyWith().hashCode);
+    });
+
+    test('differs when a single colour differs', () {
+      final tokens = tokensOf('shelfOled');
+
+      expect(
+        tokens == tokens.copyWith(orbit: const Color(0xFF123456)),
+        isFalse,
+      );
+      expect(tokens == Object(), isFalse);
+    });
+  });
+
   group('copyWith and lerp', () {
     final a = tokensOf('shelfOled');
     final b = tokensOf('light');
