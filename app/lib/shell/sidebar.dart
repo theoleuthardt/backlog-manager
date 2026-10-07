@@ -116,7 +116,6 @@ class _Brand extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = Theme.of(context).extension<ShelfTokens>()!;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 6),
       child: Row(
