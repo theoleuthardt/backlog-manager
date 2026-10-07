@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/app.dart';
+import 'package:backlog_manager/auth/auth_controller.dart';
 import 'package:backlog_manager/data/backlog_api.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
 import 'package:backlog_manager/domain/models.dart';
@@ -173,6 +174,18 @@ void main() {
         expect(api.calls, contains('achievements 1245620'));
       },
     );
+
+    testWidgets('asks for the achievements again in the next session', (
+      tester,
+    ) async {
+      final api = FakeBacklogApi(entries: backlog);
+      final container = await pumpHome(tester, api);
+
+      container.read(sessionGenerationProvider.notifier).bump();
+      await tester.pumpAndSettle();
+
+      expect(api.calls.where((c) => c == 'achievements 1245620').length, 2);
+    });
 
     testWidgets('leaves out the achievements for a game without Steam', (
       tester,

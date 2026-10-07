@@ -592,6 +592,16 @@ void main() {
       expect(enabled('nav-forward'), isFalse);
     });
 
+    testWidgets('lead back from the settings window', (tester) async {
+      final app = await pumpApp(tester);
+      await app.go(AppRoutes.settings);
+
+      await tester.tap(find.byKey(const Key('nav-back')));
+      await tester.pumpAndSettle();
+
+      expect(app.location, AppRoutes.home);
+    });
+
     testWidgets('forget the forward pages after a new visit', (tester) async {
       final app = await pumpApp(tester);
       await app.go(AppRoutes.library);
