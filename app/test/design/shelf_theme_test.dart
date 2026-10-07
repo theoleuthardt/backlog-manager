@@ -1,3 +1,4 @@
+import 'package:backlog_manager/design/color_math.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_theme.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
@@ -36,6 +37,23 @@ void main() {
       expect(scheme.error, tokens.danger);
       expect(scheme.outline, tokens.borderStrong);
       expect(scheme.outlineVariant, tokens.borderSubtle);
+    });
+
+    test('keeps text on secondary and error at 4.5:1 in every built-in', () {
+      for (final theme in builtinThemes) {
+        final scheme = themeOf(theme.id).colorScheme;
+
+        expect(
+          contrastRatio(scheme.onSecondary, scheme.secondary),
+          greaterThanOrEqualTo(4.5),
+          reason: '${theme.id} onSecondary',
+        );
+        expect(
+          contrastRatio(scheme.onError, scheme.error),
+          greaterThanOrEqualTo(4.5),
+          reason: '${theme.id} onError',
+        );
+      }
     });
 
     test('uses the window background for scaffolds', () {

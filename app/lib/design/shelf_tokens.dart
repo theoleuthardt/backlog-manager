@@ -74,9 +74,7 @@ class ShelfTokens extends ThemeExtension<ShelfTokens> {
       accentA: mix(accent, const Color(0xFFFFFFFF), 0.2),
       accentB: mix(accent, const Color(0xFF000000), 0.12),
       accentGlow: atOpacity(accent, 0.4),
-      onAccent: accent.computeLuminance() > 0.179
-          ? const Color(0xFF000000)
-          : const Color(0xFFFFFFFF),
+      onAccent: onColorFor(accent),
       borderSubtle: mix(surface, foreground, 0.08),
       borderStrong: _calmBorder(border, background),
       glow: glow,
@@ -297,9 +295,12 @@ class ShelfTokens extends ThemeExtension<ShelfTokens> {
 
   @override
   bool operator ==(Object other) {
+    if (identical(this, other)) return true;
     if (other is! ShelfTokens) return false;
-    for (var i = 0; i < _colors.length; i++) {
-      if (_colors[i] != other._colors[i]) return false;
+    final mine = _colors;
+    final theirs = other._colors;
+    for (var i = 0; i < mine.length; i++) {
+      if (mine[i] != theirs[i]) return false;
     }
     return true;
   }
