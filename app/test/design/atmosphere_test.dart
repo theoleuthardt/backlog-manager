@@ -152,7 +152,7 @@ void main() {
 
   group('goldens of the background', () {
     for (final id in ['shelfOled', 'light', 'colorful', 'freaky']) {
-      testWidgets('is drawn in $id', (tester) async {
+      testWidgets('is drawn in $id', tags: 'golden', (tester) async {
         tester.view.physicalSize = const Size(960, 600);
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.reset);

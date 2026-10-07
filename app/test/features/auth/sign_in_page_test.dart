@@ -372,7 +372,9 @@ void main() {
 
   for (final themeId in ['shelfOled', 'light']) {
     for (final step in ['password', 'two-factor']) {
-      testWidgets('golden: the $step step in $themeId', (tester) async {
+      testWidgets('golden: the $step step in $themeId', tags: 'golden', (
+        tester,
+      ) async {
         final app = await pumpSignIn(tester);
         app.container.read(themeIdProvider.notifier).select(themeId);
         app.api.onLogin = (email, password) async => step == 'password'

@@ -234,7 +234,7 @@ void main() {
   });
 
   for (final themeId in ['shelfOled', 'light']) {
-    testWidgets('golden: menu in $themeId', (tester) async {
+    testWidgets('golden: menu in $themeId', tags: 'golden', (tester) async {
       tester.view.physicalSize = const Size(420, 300);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
