@@ -1,3 +1,4 @@
+import 'package:backlog_manager/features/gallery/gallery_routes.dart';
 import 'package:backlog_manager/routing/guard.dart';
 import 'package:backlog_manager/routing/history.dart';
 import 'package:backlog_manager/routing/pages.dart';
@@ -5,6 +6,7 @@ import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/routing/session.dart';
 import 'package:backlog_manager/shell/app_shell.dart';
 import 'package:backlog_manager/shell/navigation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -67,6 +69,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           for (final path in _mainPages)
             _page(path, (title) => PlaceholderPage(title: title)),
+          ...galleryRoutes(enabled: kDebugMode),
         ],
       ),
       _fullWindow(AppRoutes.settings, const Key('page-settings')),

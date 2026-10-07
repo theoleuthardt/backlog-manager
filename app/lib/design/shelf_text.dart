@@ -41,7 +41,7 @@ class ShelfTextStyles extends ThemeExtension<ShelfTextStyles> {
     required this.brand,
     required this.navItem,
     required this.windowTitle,
-    required this.searchInput,
+    required this.fieldText,
     required this.keyHint,
   });
 
@@ -61,7 +61,7 @@ class ShelfTextStyles extends ThemeExtension<ShelfTextStyles> {
       brand: _style(tokens.foreground, 15, 1.2, 800, -0.01),
       navItem: _style(tokens.foreground, 13.5, 1.2, 600),
       windowTitle: _style(tokens.foreground, 14, 1.2, 700),
-      searchInput: _style(tokens.foreground, 13, 1.3, 400),
+      fieldText: _style(tokens.foreground, 13, 1.3, 400),
       keyHint: _style(tokens.faint, 11, 1.2, 600),
     );
   }
@@ -80,7 +80,7 @@ class ShelfTextStyles extends ThemeExtension<ShelfTextStyles> {
   final TextStyle brand;
   final TextStyle navItem;
   final TextStyle windowTitle;
-  final TextStyle searchInput;
+  final TextStyle fieldText;
   final TextStyle keyHint;
 
   @override
@@ -99,7 +99,7 @@ class ShelfTextStyles extends ThemeExtension<ShelfTextStyles> {
     TextStyle? brand,
     TextStyle? navItem,
     TextStyle? windowTitle,
-    TextStyle? searchInput,
+    TextStyle? fieldText,
     TextStyle? keyHint,
   }) {
     return ShelfTextStyles(
@@ -117,7 +117,7 @@ class ShelfTextStyles extends ThemeExtension<ShelfTextStyles> {
       brand: brand ?? this.brand,
       navItem: navItem ?? this.navItem,
       windowTitle: windowTitle ?? this.windowTitle,
-      searchInput: searchInput ?? this.searchInput,
+      fieldText: fieldText ?? this.fieldText,
       keyHint: keyHint ?? this.keyHint,
     );
   }
@@ -141,7 +141,7 @@ class ShelfTextStyles extends ThemeExtension<ShelfTextStyles> {
       brand: blend(brand, other.brand),
       navItem: blend(navItem, other.navItem),
       windowTitle: blend(windowTitle, other.windowTitle),
-      searchInput: blend(searchInput, other.searchInput),
+      fieldText: blend(fieldText, other.fieldText),
       keyHint: blend(keyHint, other.keyHint),
     );
   }

@@ -117,7 +117,7 @@ void main() {
       expect(styles.navItem.fontSize, 13.5);
       expect(styles.windowTitle.fontSize, 14);
       expect(styles.windowTitle.fontWeight, FontWeight.w700);
-      expect(styles.searchInput.fontSize, 13);
+      expect(styles.fieldText.fontSize, 13);
       expect(styles.keyHint.fontSize, 11);
       expect(styles.keyHint.color, tokensOf('shelfOled').faint);
     });
@@ -192,6 +192,17 @@ void main() {
       });
 
       expect(thumb, tokens.accent);
+    });
+
+    test('tooltips are small surface3 cards with a strong border', () {
+      final tooltip = theme.tooltipTheme;
+      final decoration = tooltip.decoration! as BoxDecoration;
+
+      expect(decoration.color, tokens.surface3);
+      expect(decoration.borderRadius, BorderRadius.circular(6));
+      expect((decoration.border! as Border).top.color, tokens.borderStrong);
+      expect(tooltip.textStyle!.color, tokens.foreground);
+      expect(tooltip.waitDuration, const Duration(milliseconds: 500));
     });
 
     test('the selected tab is underlined in the accent', () {

@@ -13,4 +13,7 @@ abstract final class AppRoutes {
   static const setup = '/setup';
   static const signIn = '/sign-in';
   static const loading = '/loading';
+
+  /// The development gallery of the UI kit, debug builds only.
+  static const gallery = '/gallery';
 }

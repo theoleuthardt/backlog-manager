@@ -64,6 +64,13 @@ void main() {
       expect(tokens.accentGlow, const Color.fromRGBO(245, 165, 36, 0.4));
     });
 
+    test('has the shadow and the scrim of the design', () {
+      expect(tokens.shadow, const Color.fromRGBO(0, 0, 0, 0.85));
+      expect(tokens.scrim, const Color.fromRGBO(0, 0, 4, 0.6));
+      expect(tokensOf('light').shadow, const Color.fromRGBO(21, 21, 27, 0.25));
+      expect(tokensOf('light').scrim, const Color.fromRGBO(21, 21, 27, 0.35));
+    });
+
     test('has the semantic colours of a dark theme', () {
       expect(tokens.success, const Color(0xFF34D399));
       expect(tokens.danger, const Color(0xFFFF6B81));
@@ -136,6 +143,24 @@ void main() {
       );
       expect(derived.accentGlow.toARGB32() & 0xFFFFFF, 0xF5A524);
       expect(derived.accentGlow.a, closeTo(0.4, 0.01));
+    });
+
+    test('derives a heavy black shadow for dark themes and a light one for light themes', () {
+      expect(derived.shadow.toARGB32() & 0xFFFFFF, 0x000000);
+      expect(derived.shadow.a, closeTo(0.85, 0.01));
+      expect(derived.scrim.a, closeTo(0.6, 0.01));
+
+      final light = ShelfTokens.fromColors(
+        colors(
+          background: '#f5f4ef',
+          surface: '#ffffff',
+          foreground: '#15151b',
+          border: '#c9c7bb',
+        ),
+      );
+      expect(light.shadow.toARGB32() & 0xFFFFFF, 0x15151B);
+      expect(light.shadow.a, closeTo(0.25, 0.01));
+      expect(light.scrim.a, closeTo(0.35, 0.01));
     });
 
     test('keeps a calm border as it is', () {
@@ -324,6 +349,14 @@ void main() {
 
       expect(
         tokens == tokens.copyWith(orbit: const Color(0xFF123456)),
+        isFalse,
+      );
+      expect(
+        tokens == tokens.copyWith(shadow: const Color(0xFF123456)),
+        isFalse,
+      );
+      expect(
+        tokens == tokens.copyWith(scrim: const Color(0xFF123456)),
         isFalse,
       );
       expect(tokens == Object(), isFalse);
