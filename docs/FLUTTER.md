@@ -8,7 +8,7 @@ The desktop client in `app/` is the Flutter port of `frontend/` (epic #247). It 
 2. Install the toolchain of your platform and check it with `flutter doctor`:
    - **macOS:** full Xcode (not only the Command Line Tools) and CocoaPods (`brew install cocoapods`), then `sudo xcodebuild -runFirstLaunch`.
    - **Windows:** Visual Studio with the "Desktop development with C++" workload.
-   - **Linux:** `clang cmake ninja-build pkg-config libgtk-3-dev`.
+   - **Linux:** `clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev`; the token store (`flutter_secure_storage`) needs a Secret Service such as gnome-keyring at runtime.
    - The Android and iOS items in `flutter doctor` can stay red, they are not needed yet.
 3. `task app:install` fetches the packages.
 4. Start a backend (`task db:up`, then `task backend:dev`). A debug build talks to `http://localhost:8000` by default; the sign-in screen can change the server (`lib/api/server_url.dart`).

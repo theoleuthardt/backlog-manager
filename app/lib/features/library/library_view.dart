@@ -1,3 +1,4 @@
+import 'package:backlog_manager/auth/auth_controller.dart';
 import 'package:backlog_manager/domain/sort_entries.dart';
 import 'package:backlog_manager/routing/session.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -50,6 +51,7 @@ class LibraryViewState {
 class LibraryViewNotifier extends Notifier<LibraryViewState> {
   @override
   LibraryViewState build() {
+    ref.watch(sessionGenerationProvider);
     final session = ref.read(sessionProvider);
     final stored = session is SessionSignedIn
         ? parseSortOption(session.user.defaultSort)

@@ -1,3 +1,4 @@
+import 'package:backlog_manager/auth/auth_controller.dart';
 import 'package:backlog_manager/domain/sort_entries.dart';
 import 'package:backlog_manager/features/library/library_view.dart';
 import 'package:backlog_manager/routing/session.dart';
@@ -36,6 +37,20 @@ void main() {
       expect(view.sortBy, SortOption.playtime);
       expect(view.direction, SortDirection.desc);
       expect(view.layout, LibraryLayout.grid);
+    });
+
+    test('starts again from the account after the session changes', () {
+      final container = containerFor('playtime');
+      container.read(libraryViewProvider.notifier)
+        ..setSort(SortOption.genre)
+        ..toggleCollapsed('status:Playing');
+      expect(container.read(libraryViewProvider).sortBy, SortOption.genre);
+
+      container.read(sessionGenerationProvider.notifier).bump();
+
+      final view = container.read(libraryViewProvider);
+      expect(view.sortBy, SortOption.playtime);
+      expect(view.collapsed, isEmpty);
     });
 
     test('falls back to status for an unknown identifier', () {
