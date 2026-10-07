@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:backlog_manager/auth/auth_controller.dart';
 import 'package:backlog_manager/design/brand_mark.dart';
 import 'package:backlog_manager/design/glass.dart';
 import 'package:backlog_manager/design/glow.dart';
@@ -243,7 +246,7 @@ class _AccountRow extends ConsumerWidget {
       offset: const Offset(0, -8),
       onSelected: (value) {
         if (value == 'logout') {
-          ref.read(sessionProvider.notifier).signOut();
+          unawaited(ref.read(authControllerProvider.notifier).signOut());
         } else {
           ref.read(themeIdProvider.notifier).select(value);
         }

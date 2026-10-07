@@ -63,7 +63,10 @@ class SetupState {
 /// setup as completed.
 class SetupController extends Notifier<SetupState> {
   @override
-  SetupState build() => const SetupState();
+  SetupState build() {
+    ref.watch(sessionGenerationProvider);
+    return const SetupState();
+  }
 
   void setDefaultSort(String value) =>
       state = state.copyWith(defaultSort: value);
