@@ -21,7 +21,7 @@ Future<void> main() async {
       await windowManager.focus();
     },
   );
-  final container = ProviderContainer();
+  final container = ProviderContainer(retry: (retryCount, error) => null);
   unawaited(container.read(authControllerProvider.notifier).restore());
   runApp(
     UncontrolledProviderScope(

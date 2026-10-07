@@ -261,6 +261,15 @@ void main() {
       );
     });
 
+    test('reports a failed refresh of the user instead of throwing', () async {
+      auth.onCurrentUser = () async => throw const ApiException('Offline');
+
+      await controller().finish();
+
+      expect(users.updates.single.setupCompleted, isTrue);
+      expect(state().error, 'Offline');
+    });
+
     test('stays on the wizard with an error when the save fails', () async {
       users.onUpdate = (_) async =>
           throw const ApiException('Server unavailable');
