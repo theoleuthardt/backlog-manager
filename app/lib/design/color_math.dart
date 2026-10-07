@@ -39,3 +39,12 @@ double contrastRatio(Color a, Color b) {
   final darker = first > second ? second : first;
   return (lighter + 0.05) / (darker + 0.05);
 }
+
+/// Black or white, whichever has the higher WCAG contrast against
+/// [background]; the two contrast equally at a relative luminance of about
+/// 0.179, and the better of them always reaches 4.5:1.
+Color onColorFor(Color background) {
+  return background.computeLuminance() > 0.179
+      ? const Color(0xFF000000)
+      : const Color(0xFFFFFFFF);
+}

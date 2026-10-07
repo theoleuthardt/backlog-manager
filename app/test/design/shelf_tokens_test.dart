@@ -58,6 +58,12 @@ void main() {
       expect(tokens.glowSoft, const Color.fromRGBO(59, 130, 246, 0.13));
     });
 
+    test('has the accent gradient and glow of the design', () {
+      expect(tokens.accentA, const Color(0xFFFFBB45));
+      expect(tokens.accentB, const Color(0xFFF58A1F));
+      expect(tokens.accentGlow, const Color.fromRGBO(245, 165, 36, 0.4));
+    });
+
     test('has the semantic colours of a dark theme', () {
       expect(tokens.success, const Color(0xFF34D399));
       expect(tokens.danger, const Color(0xFFFF6B81));
@@ -117,6 +123,19 @@ void main() {
       expect(derived.accentSoft.a, closeTo(0.14, 0.01));
       expect(derived.glowSoft.a, closeTo(0.16, 0.01));
       expect(derived.accentSoft.toARGB32() & 0xFFFFFF, 0xF5A524);
+    });
+
+    test('derives a lighter and a darker accent for gradients', () {
+      expect(
+        derived.accentA.computeLuminance(),
+        greaterThan(derived.accent.computeLuminance()),
+      );
+      expect(
+        derived.accentB.computeLuminance(),
+        lessThan(derived.accent.computeLuminance()),
+      );
+      expect(derived.accentGlow.toARGB32() & 0xFFFFFF, 0xF5A524);
+      expect(derived.accentGlow.a, closeTo(0.4, 0.01));
     });
 
     test('keeps a calm border as it is', () {

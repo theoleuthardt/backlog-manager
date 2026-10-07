@@ -23,6 +23,9 @@ class ShelfTokens extends ThemeExtension<ShelfTokens> {
     required this.faint,
     required this.accent,
     required this.accentSoft,
+    required this.accentA,
+    required this.accentB,
+    required this.accentGlow,
     required this.onAccent,
     required this.borderSubtle,
     required this.borderStrong,
@@ -68,9 +71,10 @@ class ShelfTokens extends ThemeExtension<ShelfTokens> {
       faint: mix(foreground, background, 0.50),
       accent: accent,
       accentSoft: atOpacity(accent, 0.14),
-      onAccent: accent.computeLuminance() > 0.179
-          ? const Color(0xFF000000)
-          : const Color(0xFFFFFFFF),
+      accentA: mix(accent, const Color(0xFFFFFFFF), 0.2),
+      accentB: mix(accent, const Color(0xFF000000), 0.12),
+      accentGlow: atOpacity(accent, 0.4),
+      onAccent: onColorFor(accent),
       borderSubtle: mix(surface, foreground, 0.08),
       borderStrong: _calmBorder(border, background),
       glow: glow,
@@ -110,6 +114,9 @@ class ShelfTokens extends ThemeExtension<ShelfTokens> {
   final Color faint;
   final Color accent;
   final Color accentSoft;
+  final Color accentA;
+  final Color accentB;
+  final Color accentGlow;
   final Color onAccent;
   final Color borderSubtle;
   final Color borderStrong;
@@ -143,6 +150,9 @@ class ShelfTokens extends ThemeExtension<ShelfTokens> {
     faint,
     accent,
     accentSoft,
+    accentA,
+    accentB,
+    accentGlow,
     onAccent,
     borderSubtle,
     borderStrong,
@@ -178,6 +188,9 @@ class ShelfTokens extends ThemeExtension<ShelfTokens> {
     Color? faint,
     Color? accent,
     Color? accentSoft,
+    Color? accentA,
+    Color? accentB,
+    Color? accentGlow,
     Color? onAccent,
     Color? borderSubtle,
     Color? borderStrong,
@@ -211,6 +224,9 @@ class ShelfTokens extends ThemeExtension<ShelfTokens> {
       faint: faint ?? this.faint,
       accent: accent ?? this.accent,
       accentSoft: accentSoft ?? this.accentSoft,
+      accentA: accentA ?? this.accentA,
+      accentB: accentB ?? this.accentB,
+      accentGlow: accentGlow ?? this.accentGlow,
       onAccent: onAccent ?? this.onAccent,
       borderSubtle: borderSubtle ?? this.borderSubtle,
       borderStrong: borderStrong ?? this.borderStrong,
@@ -250,6 +266,9 @@ class ShelfTokens extends ThemeExtension<ShelfTokens> {
       faint: blend(faint, other.faint),
       accent: blend(accent, other.accent),
       accentSoft: blend(accentSoft, other.accentSoft),
+      accentA: blend(accentA, other.accentA),
+      accentB: blend(accentB, other.accentB),
+      accentGlow: blend(accentGlow, other.accentGlow),
       onAccent: blend(onAccent, other.onAccent),
       borderSubtle: blend(borderSubtle, other.borderSubtle),
       borderStrong: blend(borderStrong, other.borderStrong),
