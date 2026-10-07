@@ -56,6 +56,23 @@ void main() {
       );
     });
 
+    testWidgets('keeps the danger border while the field has focus', (
+      tester,
+    ) async {
+      await pumpThemed(
+        tester,
+        const ShelfField(label: 'Title', error: 'Required', autofocus: true),
+      );
+      await tester.pump();
+
+      final decoration = tester
+          .widget<TextField>(find.byType(TextField))
+          .decoration!;
+      final focused = decoration.focusedBorder! as OutlineInputBorder;
+
+      expect(focused.borderSide.color, tokens.danger);
+    });
+
     testWidgets('shows an error instead of the hint in the danger colour', (
       tester,
     ) async {

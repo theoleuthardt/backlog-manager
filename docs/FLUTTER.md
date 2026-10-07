@@ -11,7 +11,7 @@ The desktop client in `app/` is the Flutter port of `frontend/` (epic #247). It 
    - **Linux:** `clang cmake ninja-build pkg-config libgtk-3-dev`.
    - The Android and iOS items in `flutter doctor` can stay red, they are not needed yet.
 3. `task app:install` fetches the packages.
-4. Start a backend (`task db:up`, then `task backend:dev`). The app does not connect to one yet (sign-in comes with #256); a debug build is meant to talk to `http://localhost:8000` by default, through the server setting of #251.
+4. Start a backend (`task db:up`, then `task backend:dev`). A debug build talks to `http://localhost:8000` by default; the sign-in screen can change the server (`lib/api/server_url.dart`).
 5. With FVM, run `fvm use` in `app/` and put `app/.fvm/flutter_sdk/bin` first on your `PATH`: the tasks call `flutter` and `dart` from the `PATH`.
 
 ## Commands
@@ -35,7 +35,7 @@ The hand-written part is `lib/api/api_client.dart` (`createApiDio`: Bearer token
 
 `lib/api/sse.dart` reads the progress streams of the sync and import endpoints: `openSse(dio, path)` yields typed `SseProgress`, `SseDone` and `SseError` events (ending after the first terminal one, `SseStreamEndedException` if the stream closes without one), and cancelling the subscription closes the connection.
 
-`lib/api/server_url.dart` holds the backend URL logic: `parseServerUrl` (https for any host, http only for loopback, no other protocol), the build-time default (`--dart-define=API_URL=https://api.example.com`, `http://localhost:8000` in debug builds, none in a release build without it), `ServerUrlStore` (remembers the user's choice) and `changeServer` (validates, checks `GET /health`, saves, and calls `onChanged` so the caller signs the user out and clears cached data). The "Change" action on the sign-in screen calls `changeServer` once that screen exists.
+`lib/api/server_url.dart` holds the backend URL logic: `parseServerUrl` (https for any host, http only for loopback, no other protocol), the build-time default (`--dart-define=API_URL=https://api.example.com`, `http://localhost:8000` in debug builds, none in a release build without it), `ServerUrlStore` (remembers the user's choice) and `changeServer` (validates, checks `GET /health`, saves, and calls `onChanged` so the caller signs the user out and clears cached data). The "Change" action on the sign-in screen calls `changeServer`.
 
 `app/pubspec.yaml` overrides `analyzer` to 13.x because the current `build_runner` does not run against `analyzer` 14.5; drop the override once that is fixed upstream.
 
@@ -76,16 +76,18 @@ Deliberate difference from the TypeScript code: `toNumber` returns null for an e
 ```text
 app/
   lib/
-    design/     tokens, theme, shell and shared widgets
+    design/     tokens, theme, atmosphere and the shared widgets
+    shell/      window shell: title bar, sidebar, status bar, shortcuts
+    routing/    router, route table, session guard, navigation history
+    auth/       token store, auth API, sign-in state machine
+    platform/   native hooks such as opening a URL
     api/        client generated from backend/openapi.json
-    features/   one folder per screen group
+    features/   one folder per screen group (auth, setup and the debug gallery)
     domain/     pure logic and models, ported from frontend/src/lib/
     app.dart    root widget (router and providers)
     main.dart
   test/         mirrors lib/; golden tests are added next to the widgets they cover
 ```
-
-The still empty folders (`design/`, `features/`) hold a `.gitkeep` until the issues that fill them land.
 
 ## Running and debugging
 
@@ -102,7 +104,7 @@ A build for another OS cannot be made on this one (Flutter has no cross-compilat
 
 ## Building and packaging locally
 
-`task app:build` makes a release build for the host platform: `app/build/macos/Build/Products/Release/backlog_manager.app`, `app/build/windows/x64/runner/Release/` or `app/build/linux/x64/release/bundle/`. `API_URL` sets the default server (`task app:build API_URL=https://api.example.com`); it takes effect once the server setting of #251 is in the app, and nothing connects to a backend before the sign-in work of #256. Installers (dmg, msi, AppImage, deb, ...) come from the packaging issue (#277) and the release workflow.
+`task app:build` makes a release build for the host platform: `app/build/macos/Build/Products/Release/backlog_manager.app`, `app/build/windows/x64/runner/Release/` or `app/build/linux/x64/release/bundle/`. `API_URL` sets the default server (`task app:build API_URL=https://api.example.com`) and the user can change it on the sign-in screen. Installers (dmg, msi, AppImage, deb, ...) come from the packaging issue (#277) and the release workflow.
 
 ## Architecture
 
@@ -137,7 +139,7 @@ features/*  ──►  providers (Riverpod)  ──►  lib/api (Dio + generated
 | `/` Home, `/library`, `/steam`, `/import`, `/export`, `/creation-tool`, `/appearance`, `/space` | main window with the sidebar (`ShellRoute`) |
 | `/settings`, `/sign-in`, `/setup`, `/loading` | full-window pages: the same title bar and atmosphere, no sidebar |
 
-- **Route guard** (`routing/guard.dart`, `guardRedirect`): while the session is checked everything shows `/loading`, signed-out users go to `/sign-in`, users with an unfinished setup are funnelled into `/setup`, finished users are sent from sign-in, the wizard and the loading page to `/`. It replaces the web client's `setupRedirect`. The app opens at sign-in. The session itself (`routing/session.dart`) is only state until the sign-in feature fills it.
+- **Route guard** (`routing/guard.dart`, `guardRedirect`): while the session is checked everything shows `/loading`, signed-out users go to `/sign-in`, users with an unfinished setup are funnelled into `/setup`, finished users are sent from sign-in, the wizard and the loading page to `/`. It replaces the web client's `setupRedirect`. The app opens at sign-in. The session itself (`routing/session.dart`) is state that `AuthController` fills.
 - **Secondary windows:** Settings, the wizard and sign-in are full-window routes with the same chrome, not second native windows. A second window needs a second Flutter engine per window (`desktop_multi_window`), which is not worth it before these screens exist; the decision can be revisited with the settings window issue.
 - **Platform chrome:** `window_manager` hides the native title bar (`main.dart`). macOS keeps its traffic lights at the left of the title bar; Windows and Linux get minimise, maximise and close buttons on the right. The title bar is the drag region and a double click maximises. `WindowControls` is the seam the tests replace.
 - **Back and forward** (`routing/history.dart`) keep their own history of visited pages, because `go_router` cannot walk one.

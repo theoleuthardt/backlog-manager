@@ -1,7 +1,11 @@
 import 'dart:ui';
 
-/// The colour of a `#rrggbb` string.
+import 'package:backlog_manager/domain/themes.dart';
+
+/// The colour of a `#rrggbb` string; anything else is a neutral grey, so a
+/// malformed colour of a custom theme never throws while the theme is built.
 Color colorFromHex(String hex) {
+  if (!isHexColor(hex)) return const Color(0xFF808080);
   return Color(0xFF000000 | int.parse(hex.substring(1), radix: 16));
 }
 
@@ -34,4 +38,13 @@ double contrastRatio(Color a, Color b) {
   final lighter = first > second ? first : second;
   final darker = first > second ? second : first;
   return (lighter + 0.05) / (darker + 0.05);
+}
+
+/// Black or white, whichever has the higher WCAG contrast against
+/// [background]; the two contrast equally at a relative luminance of about
+/// 0.179, and the better of them always reaches 4.5:1.
+Color onColorFor(Color background) {
+  return background.computeLuminance() > 0.179
+      ? const Color(0xFF000000)
+      : const Color(0xFFFFFFFF);
 }

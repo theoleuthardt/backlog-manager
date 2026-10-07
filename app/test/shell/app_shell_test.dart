@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:backlog_manager/app.dart';
+import 'package:backlog_manager/auth/token_store.dart';
 import 'package:backlog_manager/design/shelf_theme.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
+import 'package:backlog_manager/design/widgets/sheet.dart';
 import 'package:backlog_manager/domain/themes.dart';
 import 'package:backlog_manager/routing/router.dart';
 import 'package:backlog_manager/routing/routes.dart';
@@ -15,6 +19,8 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../auth/fakes.dart';
 
 const finished = SessionSignedIn(
   SessionUser(name: 'Theo', email: 'theo@example.com', setupCompleted: true),
@@ -46,10 +52,11 @@ class RecordingWindowControls implements WindowControls {
 }
 
 class Harness {
-  Harness(this.tester, this.controls);
+  Harness(this.tester, this.controls, this.tokens);
 
   final WidgetTester tester;
   final RecordingWindowControls controls;
+  final MemoryTokenStore tokens;
 
   ProviderContainer get container =>
       ProviderScope.containerOf(tester.element(find.byType(MaterialApp)));
@@ -77,6 +84,7 @@ Future<Harness> pumpApp(
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   final controls = RecordingWindowControls();
+  final tokens = MemoryTokenStore('jwt');
 
   await tester.pumpWidget(
     ProviderScope(
@@ -88,6 +96,7 @@ Future<Harness> pumpApp(
               .copyWith(platform: platform);
         }),
         windowControlsProvider.overrideWithValue(controls),
+        tokenStoreProvider.overrideWithValue(tokens),
         appVersionProvider.overrideWith((ref) async => 'v0.9.0'),
       ],
       child: const BacklogManagerApp(),
@@ -99,7 +108,7 @@ Future<Harness> pumpApp(
     await tester.pump();
     await tester.pump();
   }
-  final harness = Harness(tester, controls);
+  final harness = Harness(tester, controls, tokens);
   if (location != null) await harness.go(location);
   return harness;
 }
@@ -201,6 +210,40 @@ void main() {
       await tester.tap(find.byKey(const Key('sidebar-toggle')));
       await tester.pumpAndSettle();
       expect(tester.getSize(find.byKey(const Key('sidebar'))).width, 232);
+    });
+
+    testWidgets('hides a collapsed sidebar from focus and screen readers', (
+      tester,
+    ) async {
+      await pumpApp(tester);
+      bool excludedFromFocus() => tester
+          .widget<ExcludeFocus>(
+            find
+                .descendant(
+                  of: find.byKey(const Key('sidebar')),
+                  matching: find.byType(ExcludeFocus),
+                )
+                .first,
+          )
+          .excluding;
+      bool excludedFromSemantics() => tester
+          .widget<ExcludeSemantics>(
+            find
+                .descendant(
+                  of: find.byKey(const Key('sidebar')),
+                  matching: find.byType(ExcludeSemantics),
+                )
+                .first,
+          )
+          .excluding;
+      expect(excludedFromFocus(), isFalse);
+      expect(excludedFromSemantics(), isFalse);
+
+      await tester.tap(find.byKey(const Key('sidebar-toggle')));
+      await tester.pumpAndSettle();
+
+      expect(excludedFromFocus(), isTrue);
+      expect(excludedFromSemantics(), isTrue);
     });
 
     testWidgets('shows the inspector in its slot only while one is set', (
@@ -351,6 +394,7 @@ void main() {
 
       expect(app.location, AppRoutes.signIn);
       expect(find.byKey(const Key('sidebar')), findsNothing);
+      expect(app.tokens.token, isNull);
     });
 
     testWidgets('switches the theme at runtime from the switcher', (
@@ -483,6 +527,32 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('inspector')), findsNothing);
+    });
+  });
+
+  group('Esc with a sheet open', () {
+    testWidgets('closes the sheet and leaves the inspector visible', (
+      tester,
+    ) async {
+      final app = await pumpApp(tester);
+      app.container
+          .read(shellInspectorProvider.notifier)
+          .show(const Text('Details'));
+      await tester.pumpAndSettle();
+      unawaited(
+        showShelfSheet<void>(
+          tester.element(find.byKey(const Key('main-content'))),
+          builder: (context) => const Text('Sheet body'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Sheet body'), findsOneWidget);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Sheet body'), findsNothing);
+      expect(find.byKey(const Key('inspector')), findsOneWidget);
     });
   });
 

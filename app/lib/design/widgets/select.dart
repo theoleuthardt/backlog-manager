@@ -74,8 +74,7 @@ class ShelfSelect<T> extends StatelessWidget {
                         child: Text(
                           chosen?.label ?? hintText ?? '',
                           overflow: TextOverflow.ellipsis,
-                          style: text.body.copyWith(
-                            fontSize: 13,
+                          style: text.fieldText.copyWith(
                             color: chosen == null
                                 ? tokens.faint
                                 : tokens.foreground,

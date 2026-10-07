@@ -127,8 +127,12 @@ class AuthController extends Notifier<LoginFlow> {
     }
   }
 
-  /// Goes back from the two-factor step to the password form.
-  void startOver() => state = const LoginFlow();
+  /// Goes back from the two-factor step to the password form; a code answer
+  /// that is still on its way is discarded.
+  void startOver() {
+    ref.read(sessionGenerationProvider.notifier).bump();
+    state = const LoginFlow();
+  }
 
   Future<void> signOut() async {
     ref.read(sessionGenerationProvider.notifier).bump();

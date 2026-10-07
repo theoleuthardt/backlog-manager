@@ -334,6 +334,20 @@ void main() {
       },
     );
 
+    testWidgets('ignores a submit of an empty address', (tester) async {
+      await pumpSignIn(tester);
+
+      await tester.tap(find.text('Change'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('server-url-field')), '  ');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('server-url-field')), findsOneWidget);
+      expect(find.text('Server: api.example.com'), findsOneWidget);
+      expect(find.textContaining('must'), findsNothing);
+    });
+
     testWidgets('saves a valid, reachable server and shows it', (tester) async {
       final app = await pumpSignIn(tester);
 

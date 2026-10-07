@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:backlog_manager/design/color_math.dart';
 import 'package:backlog_manager/design/glow.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
@@ -181,6 +182,7 @@ class _Fallback extends StatelessWidget {
       0,
       (sum, unit) => (sum * 31 + unit) % 360,
     );
+    final start = HSLColor.fromAHSL(1, hue.toDouble(), 0.45, 0.34).toColor();
 
     return DecoratedBox(
       key: const Key('cover-fallback'),
@@ -189,7 +191,7 @@ class _Fallback extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            HSLColor.fromAHSL(1, hue.toDouble(), 0.45, 0.34).toColor(),
+            start,
             HSLColor.fromAHSL(1, hue.toDouble(), 0.5, 0.12).toColor(),
           ],
         ),
@@ -202,7 +204,7 @@ class _Fallback extends StatelessWidget {
             title,
             maxLines: 4,
             overflow: TextOverflow.ellipsis,
-            style: text.coverTitle.copyWith(color: Colors.white),
+            style: text.coverTitle.copyWith(color: onColorFor(start)),
           ),
         ),
       ),
@@ -222,7 +224,7 @@ class _CheckCircle extends StatelessWidget {
       key: const Key('cover-check'),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: checked ? tokens.accent : const Color(0x99000000),
+        color: checked ? tokens.accent : tokens.scrim,
         border: Border.all(
           color: checked ? tokens.accent : tokens.foreground,
           width: 1.5,

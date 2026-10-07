@@ -156,10 +156,7 @@ class ShelfSheetFooter extends StatelessWidget {
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-            child: Text(
-              'Esc',
-              style: text.label.copyWith(fontSize: 11, color: tokens.faint),
-            ),
+            child: Text('Esc', style: text.keyHint),
           ),
         ),
         const Spacer(),

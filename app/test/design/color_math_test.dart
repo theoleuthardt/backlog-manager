@@ -10,6 +10,15 @@ void main() {
       expect(colorFromHex('#000000'), const Color(0xFF000000));
     });
 
+    test('read anything that is not #rrggbb as neutral grey', () {
+      const grey = Color(0xFF808080);
+
+      expect(colorFromHex('not a colour'), grey);
+      expect(colorFromHex('#fff'), grey);
+      expect(colorFromHex('#12345g'), grey);
+      expect(colorFromHex(''), grey);
+    });
+
     test('write a colour back as lower-case #rrggbb', () {
       expect(hexOf(const Color(0xFFF5A524)), '#f5a524');
       expect(hexOf(const Color(0xFF000000)), '#000000');
@@ -43,6 +52,24 @@ void main() {
 
       expect(result.toARGB32() & 0x00FFFFFF, 0xF5A524);
       expect(result.a, closeTo(0.14, 0.01));
+    });
+  });
+
+  group('onColorFor', () {
+    test('picks black on a light colour and white on a dark one', () {
+      expect(onColorFor(const Color(0xFFA3FF12)), const Color(0xFF000000));
+      expect(onColorFor(const Color(0xFF1D2B8F)), const Color(0xFFFFFFFF));
+    });
+
+    test('always reaches 4.5:1 against the colour it is chosen for', () {
+      for (var value = 0; value <= 255; value += 5) {
+        final background = Color.fromARGB(255, value, 255 - value, value ~/ 2);
+
+        expect(
+          contrastRatio(onColorFor(background), background),
+          greaterThanOrEqualTo(4.5),
+        );
+      }
     });
   });
 
