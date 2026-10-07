@@ -186,6 +186,24 @@ void main() {
       );
     });
 
+    test('derives a palette from malformed colours without throwing', () {
+      final tokens = ShelfTokens.fromColors(
+        colors(
+          background: 'oops',
+          surface: '#fff',
+          foreground: 'not a colour',
+          accent: '#12345g',
+          border: '',
+          glow: 'blue',
+        ),
+      );
+
+      expect(
+        tokens.onAccent,
+        isIn([const Color(0xFF000000), const Color(0xFFFFFFFF)]),
+      );
+    });
+
     test('uses the semantic colours of the lightness of the theme', () {
       final light = ShelfTokens.fromColors(
         colors(
