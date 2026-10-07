@@ -10,6 +10,15 @@ void main() {
       expect(colorFromHex('#000000'), const Color(0xFF000000));
     });
 
+    test('read anything that is not #rrggbb as neutral grey', () {
+      const grey = Color(0xFF808080);
+
+      expect(colorFromHex('not a colour'), grey);
+      expect(colorFromHex('#fff'), grey);
+      expect(colorFromHex('#12345g'), grey);
+      expect(colorFromHex(''), grey);
+    });
+
     test('write a colour back as lower-case #rrggbb', () {
       expect(hexOf(const Color(0xFFF5A524)), '#f5a524');
       expect(hexOf(const Color(0xFF000000)), '#000000');

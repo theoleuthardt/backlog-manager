@@ -1,7 +1,11 @@
 import 'dart:ui';
 
-/// The colour of a `#rrggbb` string.
+import 'package:backlog_manager/domain/themes.dart';
+
+/// The colour of a `#rrggbb` string; anything else is a neutral grey, so a
+/// malformed colour of a custom theme never throws while the theme is built.
 Color colorFromHex(String hex) {
+  if (!isHexColor(hex)) return const Color(0xFF808080);
   return Color(0xFF000000 | int.parse(hex.substring(1), radix: 16));
 }
 
