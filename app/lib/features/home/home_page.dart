@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 
-import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/api/api_providers.dart';
 import 'package:backlog_manager/auth/auth_controller.dart';
 import 'package:backlog_manager/data/backlog_api.dart';
@@ -13,8 +12,10 @@ import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/design/widgets/cover.dart';
 import 'package:backlog_manager/design/widgets/progress.dart';
 import 'package:backlog_manager/design/widgets/toast.dart';
+import 'package:backlog_manager/domain/format.dart';
 import 'package:backlog_manager/domain/home_logic.dart';
 import 'package:backlog_manager/domain/models.dart';
+import 'package:backlog_manager/features/common/entries_gate.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:flutter/material.dart';
@@ -39,23 +40,6 @@ final achievementsToGoProvider = FutureProvider.family<int?, int>((
     return null;
   }
 });
-
-String _hours(double value) {
-  final rounded = value.roundToDouble() == value
-      ? value.toInt().toString()
-      : value.toStringAsFixed(1);
-  return rounded;
-}
-
-String _thousands(int value) {
-  final digits = value.toString();
-  final buffer = StringBuffer();
-  for (var i = 0; i < digits.length; i++) {
-    if (i > 0 && (digits.length - i) % 3 == 0) buffer.write(',');
-    buffer.write(digits[i]);
-  }
-  return buffer.toString();
-}
 
 String _library(Map<String, String> query) =>
     Uri(path: AppRoutes.library, queryParameters: query).toString();
@@ -98,40 +82,9 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     return KeyedSubtree(
       key: const Key('page-home'),
-      child: entries.when(
-        skipLoadingOnRefresh: true,
-        loading: () => const _Message(text: 'Loading your backlog...'),
-        error: (error, _) => _Message(
-          text: ApiException.from(error, 'Could not load your backlog').message,
-          action: ShelfButton(
-            label: 'Try again',
-            onPressed: () => ref.invalidate(entriesProvider(null)),
-          ),
-        ),
-        data: (list) =>
+      child: EntriesGate(
+        builder: (context, list) =>
             list.isEmpty ? const _EmptyBacklog() : _Content(entries: list),
-      ),
-    );
-  }
-}
-
-class _Message extends StatelessWidget {
-  const _Message({required this.text, this.action});
-
-  final String text;
-  final Widget? action;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = Theme.of(context).extension<ShelfTokens>()!;
-    final style = Theme.of(context).extension<ShelfTextStyles>()!;
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(text, style: style.body.copyWith(color: tokens.text2)),
-          if (action != null) ...[const SizedBox(height: 14), action!],
-        ],
       ),
     );
   }
@@ -213,7 +166,7 @@ class _Content extends ConsumerWidget {
               serverUrl: serverUrl,
               meta: (entry) => entry.mainTime == null
                   ? null
-                  : '${_hours(entry.mainTime!)} h to beat',
+                  : '${formatHours(entry.mainTime!)} h to beat',
             ),
           if (done.isNotEmpty)
             _Shelf(
@@ -245,7 +198,7 @@ class _StatTiles extends StatelessWidget {
         Expanded(
           child: _StatTile(
             label: 'In backlog',
-            value: _thousands(stats.inBacklog),
+            value: formatCount(stats.inBacklog),
             unit: 'games',
           ),
         ),
@@ -253,7 +206,7 @@ class _StatTiles extends StatelessWidget {
         Expanded(
           child: _StatTile(
             label: 'Time to beat',
-            value: _thousands(stats.timeToBeat.round()),
+            value: formatCount(stats.timeToBeat.round()),
             unit: 'h',
           ),
         ),
@@ -261,7 +214,7 @@ class _StatTiles extends StatelessWidget {
         Expanded(
           child: _StatTile(
             label: 'Playing now',
-            value: _thousands(stats.playingNow),
+            value: formatCount(stats.playingNow),
             unit: 'games',
           ),
         ),
@@ -269,7 +222,7 @@ class _StatTiles extends StatelessWidget {
         Expanded(
           child: _StatTile(
             label: 'Completed this year',
-            value: _thousands(stats.completedThisYear),
+            value: formatCount(stats.completedThisYear),
             unit: 'games',
           ),
         ),
@@ -359,8 +312,8 @@ class _HeroState extends ConsumerState<_Hero> {
 
     final parts = [
       toBeat == null
-          ? '${_hours(played)} h played'
-          : '${_hours(played)} of ${_hours(toBeat)} h',
+          ? '${formatHours(played)} h played'
+          : '${formatHours(played)} of ${formatHours(toBeat)} h',
       if (toGo != null && toGo > 0)
         '$toGo ${toGo == 1 ? 'achievement' : 'achievements'} to go',
     ];

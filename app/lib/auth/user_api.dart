@@ -1,5 +1,6 @@
 import 'package:backlog_manager/api/api_providers.dart';
 import 'package:backlog_manager/api/generated/export.dart';
+import 'package:backlog_manager/auth/session_user_mapper.dart';
 import 'package:backlog_manager/routing/session.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -57,12 +58,7 @@ class ApiUserApi implements UserApi {
       '/api/user/me',
       data: update.toJson(),
     );
-    final user = PublicUser.fromJson(response.data!);
-    return SessionUser(
-      name: user.name,
-      email: user.email,
-      setupCompleted: user.setupCompleted,
-    );
+    return sessionUserFrom(PublicUser.fromJson(response.data!));
   }
 }
 

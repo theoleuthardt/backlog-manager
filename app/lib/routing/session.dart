@@ -6,11 +6,17 @@ class SessionUser {
     required this.name,
     required this.email,
     required this.setupCompleted,
+    this.defaultSort = 'status',
+    this.hasSteamId = false,
   });
 
   final String name;
   final String email;
   final bool setupCompleted;
+
+  /// The identifier of the sort option the library starts with.
+  final String defaultSort;
+  final bool hasSteamId;
 }
 
 sealed class SessionState {

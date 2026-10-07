@@ -658,7 +658,7 @@ void main() {
       app.container
           .read(shellStatusProvider.notifier)
           .update(counts: '148 games', sync: 'Steam synced 2 min ago');
-      await app.go(AppRoutes.library);
+      await app.go(AppRoutes.steam);
 
       await expectLater(
         find.byType(MaterialApp),

@@ -29,6 +29,7 @@ class ShelfCover extends StatelessWidget {
     this.image,
     this.progress,
     this.meta,
+    this.overlay,
     this.selected = false,
     this.selectionMode = false,
     this.onTap,
@@ -40,6 +41,10 @@ class ShelfCover extends StatelessWidget {
   final ImageProvider? image;
   final double? progress;
   final String? meta;
+
+  /// Drawn over the art, for example badges in the corners; it should lay
+  /// itself out with [Positioned].
+  final Widget? overlay;
   final bool selected;
   final bool selectionMode;
   final VoidCallback? onTap;
@@ -80,6 +85,7 @@ class ShelfCover extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (overlay != null) Positioned.fill(child: overlay!),
                 if (selected)
                   Positioned(
                     left: -6,
@@ -309,6 +315,32 @@ class ShelfCoverGrid extends StatelessWidget {
       gridDelegate: _CoverGridDelegate(extraHeight),
       itemCount: itemCount,
       itemBuilder: itemBuilder,
+    );
+  }
+}
+
+/// The grid of [ShelfCoverGrid] as a sliver, for screens that put several
+/// grids and headers into one scroll view.
+class ShelfCoverSliverGrid extends StatelessWidget {
+  const ShelfCoverSliverGrid({
+    required this.itemCount,
+    required this.itemBuilder,
+    this.extraHeight = 0,
+    super.key,
+  });
+
+  final int itemCount;
+  final NullableIndexedWidgetBuilder itemBuilder;
+  final double extraHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverGrid(
+      gridDelegate: _CoverGridDelegate(extraHeight),
+      delegate: SliverChildBuilderDelegate(
+        (context, index) => itemBuilder(context, index),
+        childCount: itemCount,
+      ),
     );
   }
 }
