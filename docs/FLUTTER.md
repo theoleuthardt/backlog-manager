@@ -91,7 +91,7 @@ app/
 
 ## Checks on pull requests
 
-`.github/workflows/app.yml` runs when `app/` or `backend/openapi.json` changes: formatting, `flutter analyze`, a check that `lib/api/generated/` matches `backend/openapi.json` (the commands of `task app:generate-api`, then `git diff --exit-code`), all tests without the goldens, and a Linux release build. The golden tests run in a separate job that does not block the merge and uploads the diff images of a failure as the `golden-failures` artifact.
+`.github/workflows/app.yml` runs when `app/` or `backend/openapi.json` changes: formatting, `flutter analyze`, a check that `lib/api/generated/` matches `backend/openapi.json` (the commands of `task app:generate-api`, then `git diff --exit-code`), all tests without the goldens, and a Linux release build. The golden tests run in a job of their own that uploads the diff images of a failure as the `golden-failures` artifact. The golden images are recorded on Linux, the platform of the CI runner; on macOS or Windows the text edges differ by a few pixels, so run `flutter test --exclude-tags golden` there and re-record with `task app:test:update-goldens` on Linux (or take the images from the `golden-failures` artifact).
 
 If `flutter test` hangs or prints "The Dart compiler exited unexpectedly" on a small machine, run it with `--concurrency=2`: several test files compiling at once can crash the compiler.
 
@@ -105,7 +105,7 @@ A build for another OS cannot be made on this one (Flutter has no cross-compilat
 
 - Pure logic (sorting, filtering, grouping, themes, ...) is ported from `frontend/src/lib/` with the existing test cases, one Dart file per TypeScript file, under `test/` mirroring `lib/`.
 - Widgets get widget tests; reusable components of the UI kit also get golden tests (`matchesGoldenFile`) next to them, for the dark and a light theme.
-- Golden images live in `test/**/goldens/` and are committed. After an intended visual change run `task app:test:update-goldens`, look at the changed images in the diff and commit them with the code. Golden tests carry the tag `golden` (`dart_test.yaml`), so `flutter test --exclude-tags golden` skips them and `flutter test --tags golden` runs only them. If a golden only differs by anti-aliasing on your machine, do not commit it.
+- Golden images live in `test/**/goldens/` and are committed. After an intended visual change run `task app:test:update-goldens`, look at the changed images in the diff and commit them with the code. Golden tests carry the tag `golden` (`dart_test.yaml`), so `flutter test --exclude-tags golden` skips them and `flutter test --tags golden` runs only them. Golden images are recorded on Linux (see "Checks on pull requests"); do not commit images recorded on another platform.
 - A test that expresses the desired behaviour is not weakened to make a run green; change the code.
 
 ## Building and packaging locally
