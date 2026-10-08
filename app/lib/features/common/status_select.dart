@@ -208,8 +208,8 @@ class _AddStatusSheetState extends ConsumerState<_AddStatusSheet> {
           .create(_name.text.trim());
       widget.onCreated(created.name);
       if (!mounted) return;
-      Navigator.of(context).pop();
       showShelfToast(context, 'Status "${created.name}" created');
+      Navigator.of(context).pop();
     } on Object catch (error) {
       if (!mounted) return;
       setState(() => _busy = false);

@@ -91,6 +91,87 @@ class FakeBacklogApi implements BacklogApi {
     return categoryList;
   }
 
+  int _nextCategoryId = 100;
+  Future<void> Function(String name)? onCreateCategory;
+  Future<void> Function(int categoryId)? onUpdateCategory;
+  Future<void> Function(int entryId, int categoryId, bool assigned)?
+  onSetEntryCategory;
+
+  @override
+  Future<Category> createCategory(
+    String name,
+    String color,
+    int? spaceId,
+  ) async {
+    calls.add('create-category $name $color ${spaceId ?? 'personal'}');
+    await onCreateCategory?.call(name);
+    final created = Category(id: _nextCategoryId++, name: name, color: color);
+    categoryList = [...categoryList, created];
+    return created;
+  }
+
+  @override
+  Future<Category> updateCategory(
+    int categoryId,
+    int? spaceId, {
+    String? name,
+    String? color,
+  }) async {
+    calls.add(
+      'update-category $categoryId ${name ?? '-'} ${color ?? '-'} '
+      '${spaceId ?? 'personal'}',
+    );
+    await onUpdateCategory?.call(categoryId);
+    final old = categoryList.firstWhere((c) => c.id == categoryId);
+    final updated = Category(
+      id: categoryId,
+      name: name ?? old.name,
+      color: color ?? old.color,
+    );
+    categoryList = [
+      for (final c in categoryList) c.id == categoryId ? updated : c,
+    ];
+    return updated;
+  }
+
+  @override
+  Future<void> deleteCategory(int categoryId, int? spaceId) async {
+    calls.add('delete-category $categoryId ${spaceId ?? 'personal'}');
+    categoryList = [
+      for (final c in categoryList)
+        if (c.id != categoryId) c,
+    ];
+    entriesByCategory = {
+      for (final item in entriesByCategory.entries)
+        if (item.key != categoryId) item.key: item.value,
+    };
+  }
+
+  @override
+  Future<void> setEntryCategory(
+    int entryId,
+    int categoryId,
+    int? spaceId, {
+    required bool assigned,
+  }) async {
+    calls.add(
+      '${assigned ? 'add' : 'remove'}-category $entryId $categoryId '
+      '${spaceId ?? 'personal'}',
+    );
+    await onSetEntryCategory?.call(entryId, categoryId, assigned);
+    final entry = stored[entryId] ?? BacklogEntry(id: entryId, title: 'Game');
+    final current = entriesByCategory[categoryId] ?? const [];
+    entriesByCategory = {
+      ...entriesByCategory,
+      categoryId: assigned
+          ? [...current.where((e) => e.id != entryId), entry]
+          : [
+              for (final e in current)
+                if (e.id != entryId) e,
+            ],
+    };
+  }
+
   @override
   Future<List<BacklogEntry>> entriesOfCategory(
     int categoryId,

@@ -39,26 +39,31 @@ class ShelfToast extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              message,
-              style: text.control.copyWith(color: tokens.foreground),
-            ),
-            if (actionLabel != null) ...[
-              const SizedBox(width: 16),
-              ShelfPressable(
-                onPressed: onAction,
-                semanticLabel: actionLabel,
-                borderRadius: 6,
-                builder: (context, state) => Text(
-                  actionLabel!,
-                  style: text.control.copyWith(color: tokens.accent),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  message,
+                  style: text.control.copyWith(color: tokens.foreground),
                 ),
               ),
+              if (actionLabel != null) ...[
+                const SizedBox(width: 16),
+                ShelfPressable(
+                  onPressed: onAction,
+                  semanticLabel: actionLabel,
+                  borderRadius: 6,
+                  builder: (context, state) => Text(
+                    actionLabel!,
+                    style: text.control.copyWith(color: tokens.accent),
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

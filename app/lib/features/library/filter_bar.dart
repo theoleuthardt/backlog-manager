@@ -485,6 +485,7 @@ class _RangePickerState extends ConsumerState<_RangePicker> {
   void _setFromText(double bound) {
     final low = double.tryParse(_lowText.text.trim()) ?? _low;
     final high = double.tryParse(_highText.text.trim()) ?? _high;
+    if (low == _low && high == _high) return;
     final clampedLow = low.clamp(0, bound).toDouble();
     final clampedHigh = high.clamp(clampedLow, bound).toDouble();
     setState(() {

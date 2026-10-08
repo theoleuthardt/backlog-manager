@@ -73,6 +73,26 @@ abstract interface class BacklogApi {
 
   Future<List<Category>> categories(int? spaceId);
 
+  Future<Category> createCategory(String name, String color, int? spaceId);
+
+  /// Changes the given fields of a category; fields left null stay as they
+  /// are.
+  Future<Category> updateCategory(
+    int categoryId,
+    int? spaceId, {
+    String? name,
+    String? color,
+  });
+
+  Future<void> deleteCategory(int categoryId, int? spaceId);
+
+  Future<void> setEntryCategory(
+    int entryId,
+    int categoryId,
+    int? spaceId, {
+    required bool assigned,
+  });
+
   Future<List<BacklogEntry>> entriesOfCategory(int categoryId, int? spaceId);
 
   Future<wire.AchievementProgress> achievements(int steamAppId);
@@ -160,6 +180,67 @@ class ApiBacklogApi implements BacklogApi {
     final categories = await (await _client())
         .apiBacklogCategoriesListCategories(spaceId: spaceId);
     return categories.map(categoryFromResponse).toList();
+  }
+
+  @override
+  Future<Category> createCategory(
+    String name,
+    String color,
+    int? spaceId,
+  ) async {
+    final created = await (await _client()).apiBacklogCategoriesCreateCategory(
+      body: wire.CreateCategoryRequest(categoryName: name, color: color),
+      spaceId: spaceId,
+    );
+    return categoryFromResponse(created);
+  }
+
+  @override
+  Future<Category> updateCategory(
+    int categoryId,
+    int? spaceId, {
+    String? name,
+    String? color,
+  }) async {
+    final response = await (await _dio()).put<Map<String, dynamic>>(
+      '/api/backlog/categories/$categoryId',
+      data: {'category_name': ?name, 'color': ?color},
+      queryParameters: {'space_id': ?spaceId},
+    );
+    return categoryFromResponse(wire.CategoryResponse.fromJson(response.data!));
+  }
+
+  @override
+  Future<void> deleteCategory(int categoryId, int? spaceId) async {
+    await (await _client()).apiBacklogCategoriesCategoryIdDeleteCategory(
+      categoryId: categoryId,
+      spaceId: spaceId,
+    );
+  }
+
+  @override
+  Future<void> setEntryCategory(
+    int entryId,
+    int categoryId,
+    int? spaceId, {
+    required bool assigned,
+  }) async {
+    final client = await _client();
+    if (assigned) {
+      await client
+          .apiBacklogEntriesEntryIdCategoriesCategoryIdAddCategoryToEntry(
+            entryId: entryId,
+            categoryId: categoryId,
+            spaceId: spaceId,
+          );
+    } else {
+      await client
+          .apiBacklogEntriesEntryIdCategoriesCategoryIdRemoveCategoryFromEntry(
+            entryId: entryId,
+            categoryId: categoryId,
+            spaceId: spaceId,
+          );
+    }
   }
 
   @override

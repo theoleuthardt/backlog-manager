@@ -170,6 +170,58 @@ final customStatusActionsProvider = Provider.family<CustomStatusActions, int?>(
   CustomStatusActions.new,
 );
 
+/// Creates, changes, deletes and assigns the categories of one backlog; the
+/// categories and the map from entries to categories are read again after
+/// every change, so the library, the filters and the sorting follow.
+class CategoryActions {
+  CategoryActions(this._ref, this._spaceId);
+
+  final Ref _ref;
+  final int? _spaceId;
+
+  BacklogApi get _api => _ref.read(backlogApiProvider);
+
+  void _changed() {
+    _ref
+      ..invalidate(categoriesProvider(_spaceId))
+      ..invalidate(entryCategoriesProvider(_spaceId));
+  }
+
+  Future<Category> create(String name, String color) async {
+    final created = await _api.createCategory(name, color, _spaceId);
+    _changed();
+    return created;
+  }
+
+  Future<void> update(int categoryId, {String? name, String? color}) async {
+    await _api.updateCategory(categoryId, _spaceId, name: name, color: color);
+    _changed();
+  }
+
+  Future<void> delete(int categoryId) async {
+    await _api.deleteCategory(categoryId, _spaceId);
+    _changed();
+  }
+
+  Future<void> setAssigned(
+    int entryId,
+    int categoryId, {
+    required bool assigned,
+  }) async {
+    await _api.setEntryCategory(
+      entryId,
+      categoryId,
+      _spaceId,
+      assigned: assigned,
+    );
+    _changed();
+  }
+}
+
+final categoryActionsProvider = Provider.family<CategoryActions, int?>(
+  CategoryActions.new,
+);
+
 /// Every category of a backlog.
 final categoriesProvider = FutureProvider.family<List<Category>, int?>((
   ref,

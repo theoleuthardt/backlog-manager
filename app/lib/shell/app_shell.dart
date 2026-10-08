@@ -11,16 +11,34 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// The main window: title bar, then the sidebar and the main pane with the
 /// inspector slot on its right, then the status bar, all over the atmosphere.
-/// The [child] is the page of the current route.
-class AppShell extends ConsumerWidget {
+/// The [child] is the page of the current route. The counts of the status bar
+/// belong to a page, so they are cleared when the route changes and the new
+/// page reports its own.
+class AppShell extends ConsumerStatefulWidget {
   const AppShell({required this.location, required this.child, super.key});
 
   final String location;
   final Widget child;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends ConsumerState<AppShell> {
+  @override
+  void didUpdateWidget(AppShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.location != widget.location) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) ref.read(shellStatusProvider.notifier).clear();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final inspector = ref.watch(shellInspectorProvider);
+    final location = widget.location;
 
     return Material(
       type: MaterialType.transparency,
@@ -35,7 +53,7 @@ class AppShell extends ConsumerWidget {
                   Expanded(
                     child: SizedBox.expand(
                       key: const Key('main-content'),
-                      child: child,
+                      child: widget.child,
                     ),
                   ),
                   if (inspector != null) _InspectorSlot(child: inspector),

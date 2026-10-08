@@ -178,6 +178,82 @@ void main() {
       expect(server.requests.single.path, '/api/backlog/statuses/7');
     });
 
+    test('creates a category with its colour', () async {
+      final server = FakeServer(
+        (_) => (
+          status: 201,
+          body: {
+            'id': 8,
+            'name': 'Co-op nights',
+            'color': '#4ade80',
+            'description': null,
+          },
+        ),
+      );
+
+      final created = await apiFor(server)
+          .createCategory('Co-op nights', '#4ade80', 2);
+
+      expect(created.id, 8);
+      expect(created.color, '#4ade80');
+      final request = server.requests.single;
+      expect(request.method, 'POST');
+      expect(request.path, '/api/backlog/categories');
+      expect(request.queryParameters, {'space_id': 2});
+      expect(request.data, {
+        'category_name': 'Co-op nights',
+        'color': '#4ade80',
+        'description': 'No description',
+      });
+    });
+
+    test('updates only the fields that are given', () async {
+      final server = FakeServer(
+        (_) => (
+          status: 200,
+          body: {
+            'id': 8,
+            'name': 'Renamed',
+            'color': '#4ade80',
+            'description': null,
+          },
+        ),
+      );
+
+      final renamed = await apiFor(server)
+          .updateCategory(8, null, name: 'Renamed');
+      await apiFor(server).updateCategory(8, null, color: '#f87171');
+
+      expect(renamed.name, 'Renamed');
+      expect(server.requests.first.method, 'PUT');
+      expect(server.requests.first.path, '/api/backlog/categories/8');
+      expect(server.requests.first.data, {'category_name': 'Renamed'});
+      expect(server.requests.last.data, {'color': '#f87171'});
+    });
+
+    test('deletes a category', () async {
+      final server = FakeServer((_) => (status: 204, body: null));
+
+      await apiFor(server).deleteCategory(8, null);
+
+      expect(server.requests.single.method, 'DELETE');
+      expect(server.requests.single.path, '/api/backlog/categories/8');
+    });
+
+    test('adds and removes a category of an entry', () async {
+      final server = FakeServer((_) => (status: 204, body: null));
+      final api = apiFor(server);
+
+      await api.setEntryCategory(5, 8, null, assigned: true);
+      await api.setEntryCategory(5, 8, 3, assigned: false);
+
+      expect(server.requests.first.method, 'POST');
+      expect(server.requests.first.path, '/api/backlog/entries/5/categories/8');
+      expect(server.requests.last.method, 'DELETE');
+      expect(server.requests.last.path, '/api/backlog/entries/5/categories/8');
+      expect(server.requests.last.queryParameters, {'space_id': 3});
+    });
+
     test('lists the entries of a category', () async {
       final server = FakeServer((_) => (status: 200, body: [entryJson(9)]));
 
