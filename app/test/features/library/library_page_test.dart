@@ -375,6 +375,8 @@ void main() {
           400,
           scrollable: find.byType(Scrollable).last,
         );
+        await tester.drag(find.byType(Scrollable).last, const Offset(0, -100));
+        await tester.pumpAndSettle();
         await tester.tap(find.text(label));
         await tester.pumpAndSettle();
       }

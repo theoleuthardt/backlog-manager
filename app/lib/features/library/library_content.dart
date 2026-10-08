@@ -1,17 +1,11 @@
 import 'package:backlog_manager/data/backlog_providers.dart';
+import 'package:backlog_manager/data/filter_providers.dart';
+import 'package:backlog_manager/domain/filter_entries.dart';
 import 'package:backlog_manager/domain/library_groups.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/domain/sort_entries.dart';
 import 'package:backlog_manager/features/library/library_view.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-const builtInStatuses = [
-  'Not Started',
-  'In Progress',
-  'Completed',
-  'On Hold',
-  'Dropped',
-];
 
 /// What the library shows: the sections plus the numbers of the toolbar.
 class LibraryContent {
@@ -32,7 +26,8 @@ class LibraryContent {
 
 /// The library sections for the personal backlog, or null while the entries
 /// are not loaded. The statuses are the built-in ones, the custom ones and any
-/// status only entries carry, in that order. Only the sort option and its
+/// status only entries carry, in that order; the filters of the filter bar
+/// and the search text narrow the entries. Only the sort option and its
 /// direction are watched from the view, so folding a group away or paging does
 /// not sort the entries again.
 final libraryContentProvider = Provider<LibraryContent?>((ref) {
@@ -41,19 +36,21 @@ final libraryContentProvider = Provider<LibraryContent?>((ref) {
   final (sortBy, direction) = ref.watch(
     libraryViewProvider.select((view) => (view.sortBy, view.direction)),
   );
-  final custom = ref.watch(customStatusesProvider(null)).value ?? const [];
-  final statusOrder = <String>{
-    ...builtInStatuses,
-    for (final status in custom) status.name,
-    for (final entry in entries) entry.status,
-  }.toList();
+  final filters = ref.watch(effectiveFiltersProvider);
+  final statusOrder = ref.watch(
+    filterOptionsProvider.select((options) => options.statuses),
+  );
 
+  var categoriesByEntry = const <int, List<Category>>{};
+  if (sortBy == SortOption.category || filters.categories.isNotEmpty) {
+    categoriesByEntry =
+        ref.watch(entryCategoriesProvider(null)).value ?? const {};
+  }
   Map<int, String>? firstCategory;
   var categoryNames = const <String>[];
   if (sortBy == SortOption.category) {
-    final byEntry = ref.watch(entryCategoriesProvider(null)).value ?? const {};
     firstCategory = {
-      for (final item in byEntry.entries)
+      for (final item in categoriesByEntry.entries)
         if (item.value.isNotEmpty) item.key: item.value.first.name,
     };
     final categories =
@@ -61,23 +58,28 @@ final libraryContentProvider = Provider<LibraryContent?>((ref) {
     categoryNames = [for (final category in categories) category.name];
   }
 
+  final visible = filterEntries(entries, filters, {
+    for (final item in categoriesByEntry.entries)
+      item.key: [for (final category in item.value) category.name],
+  });
   var hours = 0.0;
   for (final entry in entries) {
     hours += entry.mainTime ?? 0;
   }
   return LibraryContent(
     groups: buildLibraryGroups(
-      entries: entries,
+      entries: visible,
       config: SortConfig(
         sortBy: sortBy,
         direction: direction,
         statusOrder: statusOrder,
         categoryByEntryId: firstCategory,
       ),
+      statusFilter: filters.statuses.toSet(),
       categoryNames: categoryNames,
     ),
     total: entries.length,
-    shown: entries.length,
+    shown: visible.length,
     hoursToBeat: hours,
   );
 });
