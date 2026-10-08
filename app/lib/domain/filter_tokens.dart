@@ -96,7 +96,8 @@ String _number(num value) {
   return value == value.truncate() ? value.truncate().toString() : '$value';
 }
 
-NumericRange _rangeOf(EntryFilters filters, FilterField field) {
+/// The range of [field] in [filters], or null when the filter is not active.
+NumericRange rangeValue(EntryFilters filters, FilterField field) {
   return switch (field) {
     FilterField.interest => filters.interest,
     FilterField.reviewStars => filters.reviewStars,
@@ -108,7 +109,8 @@ NumericRange _rangeOf(EntryFilters filters, FilterField field) {
   };
 }
 
-List<String> _listOf(EntryFilters filters, FilterField field) {
+/// The selected values of the list field [field] in [filters].
+List<String> listValues(EntryFilters filters, FilterField field) {
   return switch (field) {
     FilterField.platform => filters.platforms,
     FilterField.genre => filters.genres,
@@ -118,21 +120,13 @@ List<String> _listOf(EntryFilters filters, FilterField field) {
   };
 }
 
-/// The value of [field] in [filters]: the selected values of a list filter or
-/// the range of a range filter; empty when the filter is not active.
-List<String> listValues(EntryFilters filters, FilterField field) =>
-    _listOf(filters, field);
-
-NumericRange rangeValue(EntryFilters filters, FilterField field) =>
-    _rangeOf(filters, field);
-
 /// The active filters of [filters], one token each, in the order of the
 /// fields.
 List<FilterToken> filterTokens(EntryFilters filters) {
   final tokens = <FilterToken>[];
   for (final field in FilterField.values) {
     if (field.isRange) {
-      final range = _rangeOf(filters, field);
+      final range = rangeValue(filters, field);
       if (range != null) {
         final (low, high) = range;
         tokens.add(
@@ -143,7 +137,7 @@ List<FilterToken> filterTokens(EntryFilters filters) {
         );
       }
     } else {
-      final values = _listOf(filters, field);
+      final values = listValues(filters, field);
       if (values.isNotEmpty) tokens.add(FilterToken(field, values.join(', ')));
     }
   }
