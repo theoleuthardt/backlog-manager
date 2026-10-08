@@ -436,7 +436,9 @@ void main() {
   });
 
   for (final themeId in ['shelfOled', 'light']) {
-    testWidgets('golden: the library in $themeId', (tester) async {
+    testWidgets('golden: the library in $themeId', tags: 'golden', (
+      tester,
+    ) async {
       final container = await pumpLibrary(
         tester,
         FakeBacklogApi(entries: backlog),

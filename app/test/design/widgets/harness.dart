@@ -43,7 +43,7 @@ void goldenInBothThemes(
   double? width,
 }) {
   for (final themeId in ['shelfOled', 'light']) {
-    testWidgets('golden: $name in $themeId', (tester) async {
+    testWidgets('golden: $name in $themeId', tags: 'golden', (tester) async {
       tester.view.physicalSize = size;
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);

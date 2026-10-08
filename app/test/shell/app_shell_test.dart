@@ -649,7 +649,9 @@ void main() {
   });
 
   group('golden of the main window', () {
-    testWidgets('matches the layout of the Home window', (tester) async {
+    testWidgets('matches the layout of the Home window', tags: 'golden', (
+      tester,
+    ) async {
       final app = await pumpApp(tester);
       app.container.read(navigationCountsProvider.notifier).set({
         'library': 148,

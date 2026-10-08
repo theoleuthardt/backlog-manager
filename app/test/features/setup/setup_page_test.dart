@@ -289,7 +289,9 @@ void main() {
   });
 
   for (final themeId in ['shelfOled', 'light']) {
-    testWidgets('golden: the Steam step in $themeId', (tester) async {
+    testWidgets('golden: the Steam step in $themeId', tags: 'golden', (
+      tester,
+    ) async {
       final app = await pumpSetup(tester);
       app.container.read(themeIdProvider.notifier).select(themeId);
       await tester.pumpAndSettle();
