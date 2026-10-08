@@ -48,6 +48,16 @@ void main() {
       expect(api.calls, contains('delete-status 1 personal'));
     });
 
+    test('never reuse the id of a deleted status', () async {
+      final actions = container.read(customStatusActionsProvider(null));
+
+      final first = await actions.create('Wishlist');
+      await actions.delete(first.id);
+      final second = await actions.create('Parked');
+
+      expect(second.id, isNot(first.id));
+    });
+
     test('work on the custom statuses of a shared space', () async {
       await container.read(customStatusActionsProvider(4)).create('Co-op');
 

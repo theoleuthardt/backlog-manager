@@ -62,6 +62,7 @@ class FakeBacklogApi implements BacklogApi {
     return statusList;
   }
 
+  int _nextStatusId = 50;
   Future<void> Function(String name)? onCreateStatus;
   Future<void> Function(int statusId)? onDeleteStatus;
 
@@ -69,7 +70,7 @@ class FakeBacklogApi implements BacklogApi {
   Future<CustomStatus> createCustomStatus(String name, int? spaceId) async {
     calls.add('create-status $name ${spaceId ?? 'personal'}');
     await onCreateStatus?.call(name);
-    final created = CustomStatus(id: statusList.length + 50, name: name);
+    final created = CustomStatus(id: _nextStatusId++, name: name);
     statusList = [...statusList, created];
     return created;
   }
