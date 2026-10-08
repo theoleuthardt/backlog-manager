@@ -653,6 +653,7 @@ void main() {
       tester,
     ) async {
       final app = await pumpApp(tester);
+      await app.go(AppRoutes.steam);
       app.container.read(navigationCountsProvider.notifier).set({
         'library': 148,
         'space': 12,
@@ -660,7 +661,7 @@ void main() {
       app.container
           .read(shellStatusProvider.notifier)
           .update(counts: '148 games', sync: 'Steam synced 2 min ago');
-      await app.go(AppRoutes.steam);
+      await tester.pumpAndSettle();
 
       await expectLater(
         find.byType(MaterialApp),
