@@ -50,46 +50,74 @@ class ShelfSelect<T> extends StatelessWidget {
                 onSelected: () => onChanged(option.value),
               ),
           ],
-          builder: (context, controller) => ShelfPressable(
+          builder: (context, controller) => ShelfSelectTrigger(
+            text: chosen?.label ?? hintText ?? '',
+            placeholder: chosen == null,
+            semanticLabel: label,
             onPressed: () =>
                 controller.isOpen ? controller.close() : controller.open(),
-            semanticLabel: label,
-            builder: (context, state) => SizedBox(
-              key: const Key('select-trigger'),
-              height: ShelfHeight.input,
-              child: DecoratedBox(
-                key: const Key('select-surface'),
-                decoration: BoxDecoration(
-                  color: tokens.surface2,
-                  borderRadius: BorderRadius.circular(ShelfRadius.control),
-                  border: Border.all(
-                    color: state.hovered ? tokens.glow : tokens.borderSubtle,
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          chosen?.label ?? hintText ?? '',
-                          overflow: TextOverflow.ellipsis,
-                          style: text.fieldText.copyWith(
-                            color: chosen == null
-                                ? tokens.faint
-                                : tokens.foreground,
-                          ),
-                        ),
-                      ),
-                      Icon(Icons.expand_more, size: 18, color: tokens.faint),
-                    ],
-                  ),
-                ),
-              ),
-            ),
           ),
         ),
       ],
+    );
+  }
+}
+
+/// The closed state of a drop-down: a 34 px field on `surface2` with the
+/// current [text] and a chevron. A [placeholder] text is drawn faint.
+class ShelfSelectTrigger extends StatelessWidget {
+  const ShelfSelectTrigger({
+    required this.text,
+    required this.onPressed,
+    this.placeholder = false,
+    this.semanticLabel,
+    super.key,
+  });
+
+  final String text;
+  final bool placeholder;
+  final String? semanticLabel;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = Theme.of(context).extension<ShelfTokens>()!;
+    final style = Theme.of(context).extension<ShelfTextStyles>()!;
+
+    return ShelfPressable(
+      onPressed: onPressed,
+      semanticLabel: semanticLabel,
+      builder: (context, state) => SizedBox(
+        key: const Key('select-trigger'),
+        height: ShelfHeight.input,
+        child: DecoratedBox(
+          key: const Key('select-surface'),
+          decoration: BoxDecoration(
+            color: tokens.surface2,
+            borderRadius: BorderRadius.circular(ShelfRadius.control),
+            border: Border.all(
+              color: state.hovered ? tokens.glow : tokens.borderSubtle,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    text,
+                    overflow: TextOverflow.ellipsis,
+                    style: style.fieldText.copyWith(
+                      color: placeholder ? tokens.faint : tokens.foreground,
+                    ),
+                  ),
+                ),
+                Icon(Icons.expand_more, size: 18, color: tokens.faint),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

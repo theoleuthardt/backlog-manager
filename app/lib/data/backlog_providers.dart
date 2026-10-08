@@ -144,6 +144,32 @@ final customStatusesProvider = FutureProvider.family<List<CustomStatus>, int?>((
   return ref.watch(backlogApiProvider).customStatuses(spaceId);
 });
 
+/// Creates and deletes the custom statuses of one backlog; the list of the
+/// statuses is read again afterwards.
+class CustomStatusActions {
+  CustomStatusActions(this._ref, this._spaceId);
+
+  final Ref _ref;
+  final int? _spaceId;
+
+  Future<CustomStatus> create(String name) async {
+    final created = await _ref
+        .read(backlogApiProvider)
+        .createCustomStatus(name, _spaceId);
+    _ref.invalidate(customStatusesProvider(_spaceId));
+    return created;
+  }
+
+  Future<void> delete(int statusId) async {
+    await _ref.read(backlogApiProvider).deleteCustomStatus(statusId, _spaceId);
+    _ref.invalidate(customStatusesProvider(_spaceId));
+  }
+}
+
+final customStatusActionsProvider = Provider.family<CustomStatusActions, int?>(
+  CustomStatusActions.new,
+);
+
 /// Every category of a backlog.
 final categoriesProvider = FutureProvider.family<List<Category>, int?>((
   ref,
