@@ -433,6 +433,30 @@ void main() {
     });
   });
 
+  group('leaving the library', () {
+    testWidgets('clears the counts of the status bar', (tester) async {
+      final container = await pumpLibrary(tester, backlog());
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('status-bar')),
+          matching: find.text('4 of 4 games'),
+        ),
+        findsOneWidget,
+      );
+
+      container.read(routerProvider).go(AppRoutes.steam);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('status-bar')),
+          matching: find.textContaining('games'),
+        ),
+        findsNothing,
+      );
+    });
+  });
+
   group('across the session', () {
     testWidgets('filters survive leaving the library and coming back', (
       tester,

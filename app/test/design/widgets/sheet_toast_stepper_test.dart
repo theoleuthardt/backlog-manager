@@ -228,6 +228,24 @@ void main() {
     });
   });
 
+  group('a long ShelfToast', () {
+    testWidgets('wraps its message instead of overflowing', (tester) async {
+      tester.view.physicalSize = const Size(1200, 600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await pumpThemed(
+        tester,
+        ShelfToast(message: List.filled(40, 'category').join(' ')),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(
+        tester.getSize(find.byKey(const Key('toast-surface'))).width,
+        lessThanOrEqualTo(520 + 28),
+      );
+    });
+  });
+
   group('showShelfToast', () {
     Widget opener(void Function(BuildContext) show) {
       return Builder(
