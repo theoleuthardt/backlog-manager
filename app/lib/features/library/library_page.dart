@@ -1,14 +1,18 @@
 import 'dart:math' as math;
 
 import 'package:backlog_manager/api/api_providers.dart';
+import 'package:backlog_manager/data/backlog_providers.dart';
 import 'package:backlog_manager/data/entry_image.dart';
 import 'package:backlog_manager/data/filter_providers.dart';
+import 'package:backlog_manager/data/selection_providers.dart';
 import 'package:backlog_manager/design/color_math.dart';
+import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/design/widgets/chips.dart';
 import 'package:backlog_manager/design/widgets/cover.dart';
+import 'package:backlog_manager/design/widgets/menu.dart';
 import 'package:backlog_manager/domain/format.dart';
 import 'package:backlog_manager/domain/library_groups.dart';
 import 'package:backlog_manager/domain/models.dart';
@@ -16,11 +20,14 @@ import 'package:backlog_manager/domain/sort_entries.dart';
 import 'package:backlog_manager/domain/status_style.dart';
 import 'package:backlog_manager/features/common/entries_gate.dart';
 import 'package:backlog_manager/features/library/filter_bar.dart';
+import 'package:backlog_manager/features/library/library_actions.dart';
 import 'package:backlog_manager/features/library/library_content.dart';
 import 'package:backlog_manager/features/library/library_view.dart';
+import 'package:backlog_manager/features/library/selection_bar.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -95,29 +102,39 @@ class _LibraryState extends ConsumerState<_Library> {
     final content = ref.watch(libraryContentProvider);
     if (content == null) return const SizedBox.shrink();
     final active = ref.watch(activeFilterCountProvider);
+    final selection = ref.watch(selectionProvider);
     _report(
-      '${content.shown} of ${content.total} games'
-      '${active == 0 ? '' : ' · $active ${active == 1 ? 'filter' : 'filters'}'}',
+      selection.active
+          ? '${selection.ids.length} of ${content.shown} games selected'
+                '${active == 0 ? '' : ' · $active ${active == 1 ? 'filter' : 'filters'}'}'
+          : '${content.shown} of ${content.total} games'
+                '${active == 0 ? '' : ' · $active ${active == 1 ? 'filter' : 'filters'}'}',
     );
     final layout = ref.watch(libraryViewProvider.select((v) => v.layout));
     final serverUrl = ref.watch(serverUrlProvider).value;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _Toolbar(content: content),
-        const FilterBar(gutter: _gutter),
-        Expanded(
-          child: CustomScrollView(
-            slivers: [
-              const SliverPadding(padding: EdgeInsets.only(top: 6)),
-              for (final group in content.groups)
-                ..._groupSlivers(group, layout, serverUrl),
-              const SliverPadding(padding: EdgeInsets.only(bottom: 36)),
-            ],
+    return LibraryActionsScope(
+      actions: LibraryActions(context, ref),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (selection.active)
+            const SelectionBar(gutter: _gutter)
+          else
+            _Toolbar(content: content),
+          const FilterBar(gutter: _gutter),
+          Expanded(
+            child: CustomScrollView(
+              slivers: [
+                const SliverPadding(padding: EdgeInsets.only(top: 6)),
+                for (final group in content.groups)
+                  ..._groupSlivers(group, layout, serverUrl),
+                const SliverPadding(padding: EdgeInsets.only(bottom: 36)),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -156,6 +173,12 @@ class _Toolbar extends ConsumerWidget {
           Text(
             '${formatCount(content.hoursToBeat.round())} h to beat',
             style: muted,
+          ),
+          ShelfButton(
+            key: const Key('select-toggle'),
+            label: 'Select',
+            icon: Icons.checklist,
+            onPressed: ref.read(selectionProvider.notifier).begin,
           ),
           ShelfButton(
             label: 'Add game',
@@ -267,10 +290,17 @@ class _GroupBody extends ConsumerWidget {
             sliver: ShelfCoverSliverGrid(
               extraHeight: 36,
               itemCount: shownCount,
-              itemBuilder: (context, index) => _Tile(
+              itemBuilder: (context, index) => _EntryTarget(
+                key: ValueKey('tile-${group.entries[index].id}'),
                 entry: group.entries[index],
-                serverUrl: serverUrl,
-                showStatus: showStatus,
+                builder: (context, selected, selecting, onTap) => _Tile(
+                  entry: group.entries[index],
+                  serverUrl: serverUrl,
+                  showStatus: showStatus,
+                  selected: selected,
+                  selecting: selecting,
+                  onTap: onTap,
+                ),
               ),
             ),
           )
@@ -278,8 +308,16 @@ class _GroupBody extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: _gutter),
             sliver: SliverList.builder(
               itemCount: shownCount,
-              itemBuilder: (context, index) =>
-                  _Row(entry: group.entries[index]),
+              itemBuilder: (context, index) => _EntryTarget(
+                key: ValueKey('row-${group.entries[index].id}'),
+                entry: group.entries[index],
+                builder: (context, selected, selecting, onTap) => _Row(
+                  entry: group.entries[index],
+                  selected: selected,
+                  selecting: selecting,
+                  onTap: onTap,
+                ),
+              ),
             ),
           );
 
@@ -323,17 +361,26 @@ class _Tile extends StatelessWidget {
     required this.entry,
     required this.serverUrl,
     required this.showStatus,
+    required this.selected,
+    required this.selecting,
+    required this.onTap,
   });
 
   final BacklogEntry entry;
   final String? serverUrl;
   final bool showStatus;
+  final bool selected;
+  final bool selecting;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final toBeat = entry.mainTime;
     return ShelfCover(
       title: entry.title,
+      selected: selected,
+      selectionMode: selecting,
+      onTap: onTap,
       image: entryImage(serverUrl, entry.imageLink),
       meta: _playtimeLabel(entry),
       progress: toBeat == null || toBeat <= 0
@@ -410,55 +457,260 @@ class _SharedBadge extends StatelessWidget {
 }
 
 class _Row extends StatelessWidget {
-  const _Row({required this.entry});
+  const _Row({
+    required this.entry,
+    required this.selected,
+    required this.selecting,
+    required this.onTap,
+  });
 
   final BacklogEntry entry;
+  final bool selected;
+  final bool selecting;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
-    return DecoratedBox(
-      key: Key('library-row-${entry.id}'),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: tokens.borderSubtle)),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: DecoratedBox(
+        key: Key('library-row-${entry.id}'),
+        decoration: BoxDecoration(
+          color: selected ? tokens.accentSoft : null,
+          border: Border(bottom: BorderSide(color: tokens.borderSubtle)),
+        ),
+        child: SizedBox(
+          height: 44,
+          child: Row(
+            children: [
+              if (selecting) ...[
+                Icon(
+                  selected ? Icons.check_circle : Icons.radio_button_unchecked,
+                  key: const Key('row-check'),
+                  size: 18,
+                  color: selected ? tokens.accent : tokens.muted,
+                ),
+                const SizedBox(width: 12),
+              ],
+              Expanded(
+                flex: 3,
+                child: Text(
+                  entry.title,
+                  style: style.body,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: ShelfChip(label: entry.status),
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: Text(
+                  entry.genre.firstOrNull ?? '',
+                  style: style.caption.copyWith(color: tokens.muted),
+                ),
+              ),
+              SizedBox(
+                width: 110,
+                child: Text(
+                  _playtimeLabel(entry) ?? '',
+                  textAlign: TextAlign.right,
+                  style: style.caption.copyWith(color: tokens.text2),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      child: SizedBox(
-        height: 44,
-        child: Row(
-          children: [
-            Expanded(
-              flex: 3,
-              child: Text(
-                entry.title,
-                style: style.body,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+    );
+  }
+}
+
+/// What every game of the library can do: a click opens it, or toggles it
+/// while selecting; a right click opens the context menu; Enter or Space
+/// activates it, Backspace or Delete asks to delete it and the arrow keys move
+/// the focus to the neighbouring game.
+class _EntryTarget extends ConsumerStatefulWidget {
+  const _EntryTarget({required this.entry, required this.builder, super.key});
+
+  final BacklogEntry entry;
+  final Widget Function(
+    BuildContext context,
+    bool selected,
+    bool selecting,
+    VoidCallback onTap,
+  )
+  builder;
+
+  @override
+  ConsumerState<_EntryTarget> createState() => _EntryTargetState();
+}
+
+class _EntryTargetState extends ConsumerState<_EntryTarget> {
+  bool _focused = false;
+
+  BacklogEntry get _entry => widget.entry;
+
+  void _activate() {
+    if (ref.read(selectionProvider).active) {
+      ref.read(selectionProvider.notifier).toggle(_entry.id);
+    } else {
+      LibraryActionsScope.of(context).openDetails(_entry.id);
+    }
+  }
+
+  void _requestDelete() {
+    final selection = ref.read(selectionProvider);
+    final entries = ref.read(entriesProvider(null)).value ?? const [];
+    final targets =
+        selection.ids.length > 1 && selection.ids.contains(_entry.id)
+        ? [
+            for (final entry in entries)
+              if (selection.ids.contains(entry.id)) entry,
+          ]
+        : [_entry];
+    LibraryActionsScope.of(context).deleteEntries(targets);
+  }
+
+  KeyEventResult _onKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.space) {
+      _activate();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.backspace ||
+        key == LogicalKeyboardKey.delete) {
+      _requestDelete();
+      return KeyEventResult.handled;
+    }
+    final direction = switch (key) {
+      LogicalKeyboardKey.arrowLeft => TraversalDirection.left,
+      LogicalKeyboardKey.arrowRight => TraversalDirection.right,
+      LogicalKeyboardKey.arrowUp => TraversalDirection.up,
+      LogicalKeyboardKey.arrowDown => TraversalDirection.down,
+      _ => null,
+    };
+    if (direction != null && node.focusInDirection(direction)) {
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  List<ShelfMenuEntry> _menu(
+    LibraryActions actions,
+    List<String> statuses,
+    List<Category> categories,
+    Set<int> assigned,
+  ) {
+    final selection = ref.read(selectionProvider);
+    return [
+      ShelfMenuLabel(_entry.title),
+      const ShelfMenuDivider(),
+      ShelfMenuItem(
+        label: 'Open details',
+        icon: Icons.open_in_new,
+        shortcut: 'Enter',
+        onSelected: () => actions.openDetails(_entry.id),
+      ),
+      ShelfMenuItem(
+        label: 'Select',
+        icon: Icons.checklist,
+        onSelected: () {
+          final notifier = ref.read(selectionProvider.notifier);
+          if (!selection.active) {
+            notifier.start(_entry.id);
+          } else if (!selection.ids.contains(_entry.id)) {
+            notifier.toggle(_entry.id);
+          }
+        },
+      ),
+      ShelfMenuItem(
+        label: 'Move to status',
+        icon: Icons.swap_horiz,
+        submenu: [
+          for (final status in statuses)
+            ShelfMenuItem(
+              label: status,
+              onSelected: status == _entry.status
+                  ? null
+                  : () => actions.moveEntry(_entry, status),
             ),
-            Expanded(
-              flex: 2,
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: ShelfChip(label: entry.status),
+        ],
+      ),
+      if (categories.isEmpty)
+        const ShelfMenuItem(label: 'Categories', icon: Icons.sell_outlined)
+      else
+        ShelfMenuItem(
+          label: 'Categories',
+          icon: Icons.sell_outlined,
+          submenu: [
+            for (final category in categories)
+              ShelfMenuItem(
+                label: category.name,
+                checked: assigned.contains(category.id),
+                keepOpen: true,
+                onSelected: () => actions.setCategory(
+                  _entry.id,
+                  category.id,
+                  assigned: !assigned.contains(category.id),
+                ),
               ),
-            ),
-            Expanded(
-              flex: 2,
-              child: Text(
-                entry.genre.firstOrNull ?? '',
-                style: style.caption.copyWith(color: tokens.muted),
-              ),
-            ),
-            SizedBox(
-              width: 110,
-              child: Text(
-                _playtimeLabel(entry) ?? '',
-                textAlign: TextAlign.right,
-                style: style.caption.copyWith(color: tokens.text2),
-              ),
-            ),
           ],
+        ),
+      const ShelfMenuDivider(),
+      ShelfMenuItem(
+        label: 'Delete',
+        icon: Icons.delete_outline,
+        danger: true,
+        shortcut: 'Backspace',
+        onSelected: _requestDelete,
+      ),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = Theme.of(context).extension<ShelfTokens>()!;
+    final (selecting, selected) = ref.watch(
+      selectionProvider.select(
+        (state) => (state.active, state.ids.contains(_entry.id)),
+      ),
+    );
+    final statuses = ref.watch(
+      filterOptionsProvider.select((options) => options.statuses),
+    );
+    final categories =
+        ref.watch(categoriesProvider(null)).value ?? const <Category>[];
+    final assigned = {
+      for (final category
+          in ref.watch(entryCategoriesProvider(null)).value?[_entry.id] ??
+              const <Category>[])
+        category.id,
+    };
+    final actions = LibraryActionsScope.of(context);
+
+    return Focus(
+      onFocusChange: (focused) => setState(() => _focused = focused),
+      onKeyEvent: _onKey,
+      child: ContextMenuRegion(
+        key: Key('library-tile-${_entry.id}'),
+        entries: _menu(actions, statuses, categories, assigned),
+        child: DecoratedBox(
+          position: DecorationPosition.foreground,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(ShelfRadius.card),
+            border: _focused ? Border.all(color: tokens.glow, width: 2) : null,
+          ),
+          child: widget.builder(context, selected, selecting, _activate),
         ),
       ),
     );

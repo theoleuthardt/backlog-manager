@@ -99,22 +99,9 @@ class EntriesNotifier extends AsyncNotifier<List<BacklogEntry>> {
     List<int> ids,
     Future<Object?> Function(int id) action,
   ) async {
-    final succeeded = <int>[];
-    final failed = <int>[];
-    for (var start = 0; start < ids.length; start += _bulkBatchSize) {
-      final batch = ids.skip(start).take(_bulkBatchSize);
-      await Future.wait([
-        for (final id in batch)
-          action(id).then<void>(
-            (_) => succeeded.add(id),
-            onError: (Object _) => failed.add(id),
-          ),
-      ]);
-    }
+    final result = await runBulk(ids, action);
     await refresh();
-    succeeded.sort();
-    failed.sort();
-    return BulkResult(succeeded: succeeded, failed: failed);
+    return result;
   }
 
   void _setStatus(int entryId, String status) {
@@ -129,6 +116,29 @@ class EntriesNotifier extends AsyncNotifier<List<BacklogEntry>> {
 
 /// How many requests of a bulk action run at the same time.
 const _bulkBatchSize = 8;
+
+/// Runs [action] for every id, at most eight at a time, and reports which
+/// ones worked.
+Future<BulkResult> runBulk(
+  List<int> ids,
+  Future<Object?> Function(int id) action,
+) async {
+  final succeeded = <int>[];
+  final failed = <int>[];
+  for (var start = 0; start < ids.length; start += _bulkBatchSize) {
+    final batch = ids.skip(start).take(_bulkBatchSize);
+    await Future.wait([
+      for (final id in batch)
+        action(id).then<void>(
+          (_) => succeeded.add(id),
+          onError: (Object _) => failed.add(id),
+        ),
+    ]);
+  }
+  succeeded.sort();
+  failed.sort();
+  return BulkResult(succeeded: succeeded, failed: failed);
+}
 
 final entriesProvider =
     AsyncNotifierProvider.family<EntriesNotifier, List<BacklogEntry>, int?>(
@@ -201,6 +211,22 @@ class CategoryActions {
   Future<void> delete(int categoryId) async {
     await _api.deleteCategory(categoryId, _spaceId);
     _changed();
+  }
+
+  /// Adds or removes [categoryId] for every game, one request per game; the
+  /// lists are read again once at the end.
+  Future<BulkResult> setAssignedMany(
+    List<int> entryIds,
+    int categoryId, {
+    required bool assigned,
+  }) async {
+    final result = await runBulk(
+      entryIds,
+      (id) =>
+          _api.setEntryCategory(id, categoryId, _spaceId, assigned: assigned),
+    );
+    _changed();
+    return result;
   }
 
   Future<void> setAssigned(

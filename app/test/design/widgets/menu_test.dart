@@ -17,6 +17,28 @@ Widget menuButton(List<ShelfMenuEntry> entries) {
 void main() {
   final tokens = tokensOf('shelfOled');
 
+  group('ShelfMenuLabel', () {
+    testWidgets('shows a muted heading above the items', (tester) async {
+      await pumpThemed(
+        tester,
+        menuButton([
+          const ShelfMenuLabel('Portal 2'),
+          ShelfMenuItem(label: 'Open details', onSelected: () {}),
+        ]),
+      );
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      final label = tester.widget<Text>(find.text('Portal 2'));
+      expect(label.style!.color, tokens.muted);
+      expect(
+        tester.getTopLeft(find.text('Portal 2')).dy,
+        lessThan(tester.getTopLeft(find.text('Open details')).dy),
+      );
+    });
+  });
+
   group('ShelfMenuAnchor', () {
     testWidgets('opens its items from the trigger and closes after a choice', (
       tester,
