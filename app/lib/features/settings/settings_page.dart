@@ -14,6 +14,7 @@ import 'package:backlog_manager/design/widgets/toast.dart';
 import 'package:backlog_manager/design/widgets/toggles.dart';
 import 'package:backlog_manager/domain/sort_entries.dart';
 import 'package:backlog_manager/features/common/debouncer.dart';
+import 'package:backlog_manager/features/settings/security_tab.dart';
 import 'package:backlog_manager/features/settings/settings_controller.dart';
 import 'package:backlog_manager/features/settings/settings_widgets.dart';
 import 'package:backlog_manager/platform/url_opener.dart';
@@ -24,10 +25,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// The tabs of the settings window. Security, Backups and App updates join
-/// them with their own features.
+/// The tabs of the settings window. Backups and App updates join them with
+/// their own features.
 enum SettingsTab {
   general('general', 'General', Icons.tune),
+  security('security', 'Security', Icons.shield_outlined),
   integrations('integrations', 'Integrations', Icons.link),
   about('about', 'About', Icons.info_outline);
 
@@ -105,6 +107,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           constraints: const BoxConstraints(maxWidth: 720),
                           child: switch (_tab) {
                             SettingsTab.general => _GeneralTab(user: user),
+                            SettingsTab.security => SecurityTab(user: user),
                             SettingsTab.integrations => _IntegrationsTab(
                               user: user,
                             ),

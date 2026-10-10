@@ -68,6 +68,15 @@ void main() {
     expect(plain.hasDiscordWebhookUrl, isFalse);
   });
 
+  test('knows whether two-factor authentication is on', () {
+    expect(
+      sessionUserFrom(user(extra: {'is_two_factor_enabled': true}))
+          .isTwoFactorEnabled,
+      isTrue,
+    );
+    expect(sessionUserFrom(user()).isTwoFactorEnabled, isFalse);
+  });
+
   test('carries the family IDs and the wishlist sync settings', () {
     final mapped = sessionUserFrom(
       user(

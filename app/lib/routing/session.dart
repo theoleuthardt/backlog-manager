@@ -15,6 +15,7 @@ class SessionUser {
     this.hasDiscordWebhookUrl = false,
     this.steamWishlistAutoSync = false,
     this.steamWishlistImportedAt,
+    this.isTwoFactorEnabled = false,
   });
 
   final String name;
@@ -38,6 +39,7 @@ class SessionUser {
   /// The automatic wishlist sync, which needs the first wishlist import.
   final bool steamWishlistAutoSync;
   final DateTime? steamWishlistImportedAt;
+  final bool isTwoFactorEnabled;
 
   bool get hasSteamId => steamId.isNotEmpty;
 }
