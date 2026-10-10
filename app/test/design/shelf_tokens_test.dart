@@ -52,7 +52,7 @@ void main() {
       expect(tokens.borderSubtle, const Color(0xFF1B1D28));
       expect(tokens.text2, const Color(0xFFD9D9DD));
       expect(tokens.muted, const Color(0xFFA3A5AD));
-      expect(tokens.faint, const Color(0xFF7B7D87));
+      expect(tokens.faint, const Color(0xFF80828C));
       expect(tokens.onAccent, const Color(0xFF1A1103));
       expect(tokens.accentSoft, const Color.fromRGBO(245, 165, 36, 0.14));
       expect(tokens.glowSoft, const Color.fromRGBO(59, 130, 246, 0.13));
@@ -123,7 +123,7 @@ void main() {
 
       expect(derived.text2, mix(foreground, background, 0.11));
       expect(derived.muted, mix(foreground, background, 0.35));
-      expect(derived.faint, mix(foreground, background, 0.50));
+      expect(derived.faint, mix(foreground, background, 0.45));
     });
 
     test('sets accentSoft to 14% and glowSoft to 16% opacity', () {

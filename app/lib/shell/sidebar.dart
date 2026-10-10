@@ -130,9 +130,12 @@ class _Brand extends StatelessWidget {
         children: [
           const BrandMark(),
           const SizedBox(width: 10),
-          Text(
-            'Backlog',
-            style: Theme.of(context).extension<ShelfTextStyles>()!.brand,
+          Expanded(
+            child: Text(
+              'Backlog',
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).extension<ShelfTextStyles>()!.brand,
+            ),
           ),
         ],
       ),

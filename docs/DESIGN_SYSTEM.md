@@ -49,7 +49,7 @@ Computed from the six inputs, so a custom theme automatically gets a complete pa
 | `borderStrong` | `border`, blended into `background` when it is loud (white, black, neon) | `#353a4c` |
 | `text2` | mix(`foreground`, `background`, 11%) | `#d9d9dd` |
 | `muted` | mix(`foreground`, `background`, 35%) | `#a3a5ad` |
-| `faint` | mix(`foreground`, `background`, 50%) (at least 4.5:1 on `background`) | `#7b7d87` |
+| `faint` | mix(`foreground`, `background`, 45%) (at least 4.5:1 on `background` and all three surfaces in the built-in themes, checked by `test/design/contrast_test.dart`; custom themes are the user's colours and are not enforced) | `#80828c` |
 | `accentSoft` | `accent` at 14% opacity | amber at 14% |
 | `glowSoft` | `glow` at 16% opacity | violet at 16% |
 | `onAccent` | black or white, whichever has the higher contrast against `accent` | `#1a1103` |

@@ -3,6 +3,7 @@ import 'package:backlog_manager/data/game_info_providers.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
+import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/design/widgets/search_input.dart';
 import 'package:backlog_manager/design/widgets/sheet.dart';
 import 'package:backlog_manager/design/widgets/table.dart';
@@ -216,18 +217,15 @@ class _AddGameSheetState extends ConsumerState<AddGameSheet> {
                 'Not the game you meant? ',
                 style: style.caption.copyWith(color: tokens.muted),
               ),
-              GestureDetector(
+              ShelfPressable(
                 key: const Key('add-custom'),
-                behavior: HitTestBehavior.opaque,
-                onTap: _custom,
-                child: MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: Text(
-                    'Create it as a custom game',
-                    style: style.caption.copyWith(
-                      color: tokens.accent,
-                      decoration: TextDecoration.underline,
-                    ),
+                semanticLabel: 'Create it as a custom game',
+                onPressed: _custom,
+                builder: (context, state) => Text(
+                  'Create it as a custom game',
+                  style: style.caption.copyWith(
+                    color: tokens.accent,
+                    decoration: TextDecoration.underline,
                   ),
                 ),
               ),

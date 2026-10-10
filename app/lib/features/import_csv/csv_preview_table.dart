@@ -7,6 +7,7 @@ import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/design/widgets/chips.dart';
+import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/domain/csv_import.dart';
 import 'package:backlog_manager/features/add_game/cover_picker_sheet.dart';
 import 'package:backlog_manager/features/add_game/wrong_game_sheet.dart';
@@ -122,10 +123,11 @@ class _CsvRowTileState extends ConsumerState<CsvRowTile> {
           children: [
             Row(
               children: [
-                GestureDetector(
+                ShelfPressable(
                   key: Key('import-cover-${row.rowIndex}'),
-                  onTap: () => unawaited(_action(row, RowAction.cover)),
-                  child: ClipRRect(
+                  semanticLabel: 'Choose cover for ${row.title}',
+                  onPressed: () => unawaited(_action(row, RowAction.cover)),
+                  builder: (context, state) => ClipRRect(
                     borderRadius: BorderRadius.circular(4),
                     child: SizedBox(
                       width: 34,
@@ -138,13 +140,13 @@ class _CsvRowTileState extends ConsumerState<CsvRowTile> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: GestureDetector(
+                  child: ShelfPressable(
                     key: Key('import-edit-${row.rowIndex}'),
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => unawaited(
+                    semanticLabel: 'Edit ${row.title}',
+                    onPressed: () => unawaited(
                       showCsvRowSheet(context, rowIndex: row.rowIndex),
                     ),
-                    child: Column(
+                    builder: (context, state) => Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
@@ -275,11 +277,13 @@ class _Duplicates extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        GestureDetector(
+        ShelfPressable(
           key: Key('import-duplicates-${row.rowIndex}'),
-          behavior: HitTestBehavior.opaque,
-          onTap: onToggle,
-          child: Row(
+          semanticLabel:
+              'Already in your backlog (${row.duplicates.length}), '
+              '${open ? 'expanded' : 'collapsed'}',
+          onPressed: onToggle,
+          builder: (context, state) => Row(
             children: [
               Icon(Icons.warning_amber, size: 14, color: tokens.accent),
               const SizedBox(width: 6),
