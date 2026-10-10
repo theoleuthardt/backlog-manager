@@ -201,7 +201,7 @@ features/*  ──►  providers (Riverpod)  ──►  lib/api (Dio + generated
 
 `features/library/` is the library screen. `domain/library_groups.dart` builds the sections for every sort option (status groups include empty ones and the custom statuses, category groups append categories without games, a status filter limits the status groups); `library_content.dart` feeds it from the entries and watches only the sort option and its direction, so folding a group or paging does not sort again; `library_view.dart` holds the view state (sort, layout, collapsed groups per sort and group, 60-cover pages). The page is one `CustomScrollView` with a header sliver and a grid or list sliver per group, so a library of thousands of games only builds what is on screen. The account's default sort and whether a Steam ID is set come with the session user (`auth/session_user_mapper.dart`).
 
-The IGDB and Steam sync buttons of the toolbar arrive with their features (#268, #269), the filter bar with #261, the selection mode with #262 and drag and drop with #263; collapsed groups are kept in memory for the session.
+The IGDB and Steam sync buttons of the toolbar arrive with their features (#268, #269), the filter bar with #261, the selection mode with #262; collapsed groups are kept in memory for the session.
 
 ### Filter bar
 
@@ -233,3 +233,10 @@ Categories group games independently of their status. `CategoryActions` (`catego
 - Keyboard: Enter or Space activates a focused game (opens it, or toggles it while selecting), Backspace or Delete asks to delete it (the whole selection when the game is part of one), the arrow keys move the focus to the neighbouring game.
 - `LibraryActions` (`features/library/library_actions.dart`) is created by the library page and handed down with `LibraryActionsScope`: a game that moves to another status group is built again, so its own context and ref cannot be used for a toast or an Undo that comes later.
 
+### Drag and drop
+
+In the status sort a game can be dragged onto another status group, in the category sort onto a category group (`features/library/entry_drag.dart`, pure logic in `domain/drag_drop.dart`). A mouse or stylus starts the drag after 8 px, a finger after a 250 ms hold (`_EntryDragRecognizer`), so a click still opens the game and touch scrolling keeps working. There is one drag per page, run by `LibraryDrag`: it finds the group under the pointer from the group headers that are on screen (`groupIndexAt`), so the whole group, its gaps and its empty body take the drop, highlights it (`dragProvider`) and scrolls while the pointer is within 72 px of the top or bottom edge (`edgeScrollVelocity`).
+
+- Status sort: dropping on the group the game is in does nothing; otherwise the status changes and the toast "Moved <title> to <status>" offers Undo.
+- Category sort: the target category is added and the first category removed (`categoryMove`); dropping on the first category does nothing, "Uncategorized" is no drop target and empty categories stay visible and take a drop. An empty group shows a dashed hint while a game is dragged.
+- Dragging is off in every other sort option and in selection mode, where a click toggles a game and a drag would only get in the way.

@@ -1,6 +1,9 @@
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/domain/sort_entries.dart';
 
+/// The group of the games that have no category.
+const uncategorizedLabel = 'Uncategorized';
+
 class StatusGroup {
   const StatusGroup({required this.status, required this.entries});
 
@@ -55,7 +58,7 @@ String groupLabelFor(
     case SortOption.status:
       return entry.status;
     case SortOption.category:
-      return categoryByEntryId?[entry.id] ?? 'Uncategorized';
+      return categoryByEntryId?[entry.id] ?? uncategorizedLabel;
     case SortOption.genre:
       return entry.genre.firstOrNull ?? 'No genre';
     case SortOption.platform:
