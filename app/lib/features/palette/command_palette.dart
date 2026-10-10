@@ -33,6 +33,7 @@ class PaletteHost extends ConsumerStatefulWidget {
 
 class _PaletteHostState extends ConsumerState<PaletteHost> {
   bool _showing = false;
+  bool _addOpen = false;
 
   @override
   void initState() {
@@ -59,7 +60,9 @@ class _PaletteHostState extends ConsumerState<PaletteHost> {
   @override
   Widget build(BuildContext context) {
     ref.listen(addGameRequestProvider, (_, _) {
-      showAddGameSheet(context);
+      if (_addOpen) return;
+      _addOpen = true;
+      showAddGameSheet(context).whenComplete(() => _addOpen = false);
     });
     ref.listen(paletteOpenProvider, (_, open) {
       if (open) {

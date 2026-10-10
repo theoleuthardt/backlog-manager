@@ -93,7 +93,23 @@ class _CoverPickerSheetState extends ConsumerState<CoverPickerSheet> {
     final covers = _covers;
 
     final Widget body;
-    if (_term.isNotEmpty && matches.isNotEmpty) {
+    if (_term.isNotEmpty && (search?.isLoading ?? false)) {
+      body = const SheetNote(
+        'Searching...',
+        busy: true,
+        noteKey: Key('cover-searching'),
+      );
+    } else if (_term.isNotEmpty && (search?.hasError ?? false)) {
+      body = SheetNote(
+        ApiException.from(search!.error!, 'SteamGridDB search failed').message,
+        noteKey: const Key('cover-search-error'),
+      );
+    } else if (_term.isNotEmpty && matches.isEmpty) {
+      body = SheetNote(
+        'No game found for "$_term".',
+        noteKey: const Key('cover-no-match'),
+      );
+    } else if (_term.isNotEmpty) {
       body = Column(
         key: const Key('cover-matches'),
         crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -73,6 +73,7 @@ class _AddGameSheetState extends ConsumerState<AddGameSheet> {
   }
 
   void _continue() {
+    if (_settling) return;
     final chosen = _selected ?? _results.firstOrNull;
     if (chosen == null) return;
     _go(creationToolLocation(chosen, inSpace: widget.inSpace));

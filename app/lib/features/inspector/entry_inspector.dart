@@ -281,6 +281,7 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
       initialQuery: _stored.title,
     );
     if (result == null || !mounted) return;
+    _autosave.flush();
     final update = EntryUpdate.wrongGame(wrongGameChanges(result));
     try {
       await _entries.updateEntry(_stored.id, update);

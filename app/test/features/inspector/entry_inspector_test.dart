@@ -578,6 +578,46 @@ void main() {
       await tester.pump(const Duration(seconds: 6));
     });
 
+    testWidgets('saves a pending edit before it replaces the game', (
+      tester,
+    ) async {
+      final games = FakeGamesApi();
+      games.onSearch = (term, deep) async => [
+        const GameSearchResult(
+          id: 9,
+          title: 'Hades II',
+          genres: [],
+          platforms: [],
+          mainStory: 1,
+          mainStoryWithExtras: 1,
+          completionist: 1,
+        ),
+      ];
+      final app = await openInspector(
+        tester,
+        overrides: [gamesApiProvider.overrideWithValue(games)],
+      );
+
+      await tester.enterText(find.byKey(const Key('inspector-playtime')), '50');
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.tap(find.byKey(const Key('inspector-wrong-game')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byType(WrongGameSheet),
+          matching: find.text('Hades II'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('wrong-use')));
+      await tester.pumpAndSettle();
+
+      final saves = app.api.calls.where((c) => c.startsWith('update 1'));
+      expect(saves.first, 'update 1 {playtime: 50.0}');
+      expect(saves.last, contains('title: Hades II'));
+      await tester.pump(const Duration(seconds: 6));
+    });
+
     testWidgets('a failed wrong-game update shows a toast', (tester) async {
       final games = FakeGamesApi();
       games.onSearch = (term, deep) async => [

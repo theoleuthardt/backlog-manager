@@ -6,6 +6,7 @@ import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/features/add_game/add_game_sheet.dart';
 import 'package:backlog_manager/routing/router.dart';
 import 'package:backlog_manager/routing/routes.dart';
+import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -199,6 +200,34 @@ void main() {
     await settleSearch(tester);
 
     expect(find.text('IGDB is down'), findsOneWidget);
+  });
+
+  testWidgets('asking twice opens one sheet', (tester) async {
+    final (container, _) = await openSheet(tester);
+
+    container.read(addGameRequestProvider.notifier).request();
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AddGameSheet), findsOneWidget);
+  });
+
+  testWidgets('Enter does nothing while the search is still settling', (
+    tester,
+  ) async {
+    final (container, _) = await openSheet(
+      tester,
+      setUp: (g) => g.onSearch = (term, deep) async => [found(1, 'Hades')],
+    );
+    await typeSearch(tester, 'hades');
+    await settleSearch(tester);
+    await tester.enterText(find.byType(TextField).last, 'hades ii');
+    await tester.pump();
+
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AddGameSheet), findsOneWidget);
+    expect(location(container).path, isNot(AppRoutes.creationTool));
   });
 
   testWidgets('Esc closes the sheet', (tester) async {

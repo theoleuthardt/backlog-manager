@@ -19,6 +19,7 @@ Future<(FakeGamesApi, Picked)> openPicker(
   WidgetTester tester, {
   int? steamAppId = 620,
   String query = 'Portal 2',
+  bool settle = true,
   void Function(FakeGamesApi games)? setUp,
 }) async {
   final games = FakeGamesApi();
@@ -40,7 +41,12 @@ Future<(FakeGamesApi, Picked)> openPicker(
         ..closed = true;
     }),
   );
-  await tester.pumpAndSettle();
+  if (settle) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump();
+    await tester.pump();
+  }
   return (games, picked);
 }
 
@@ -147,6 +153,39 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Cover option'));
     await tester.pumpAndSettle();
     expect(picked.url, 'https://cdn.example/portal.png');
+  });
+
+  testWidgets('says so when the search finds no game', (tester) async {
+    await openPicker(tester, steamAppId: null);
+
+    expect(find.byKey(const Key('cover-no-match')), findsOneWidget);
+    expect(find.text('No game found for "Portal 2".'), findsOneWidget);
+  });
+
+  testWidgets('shows the error of a failed search', (tester) async {
+    await openPicker(
+      tester,
+      steamAppId: null,
+      setUp: (g) =>
+          g.onGridSearch = (term) async =>
+              throw const ApiException('SteamGridDB search is down'),
+    );
+
+    expect(find.text('SteamGridDB search is down'), findsOneWidget);
+  });
+
+  testWidgets('shows that the search is running', (tester) async {
+    final pending = Completer<List<SteamGridDbMatch>>();
+    await openPicker(
+      tester,
+      steamAppId: null,
+      settle: false,
+      setUp: (g) => g.onGridSearch = (term) => pending.future,
+    );
+
+    expect(find.byKey(const Key('cover-searching')), findsOneWidget);
+    pending.complete(const []);
+    await tester.pumpAndSettle();
   });
 
   testWidgets('a search for another title waits 300 ms', (tester) async {
