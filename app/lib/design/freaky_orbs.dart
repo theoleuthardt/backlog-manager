@@ -9,6 +9,9 @@ import 'package:flutter/scheduler.dart';
 /// Drifting, pulsing neon orbs for the Freaky theme, tinted with the accent
 /// and the glow colour of the theme and added onto what is behind them. It
 /// paints on every frame and takes no part in layout or in hit testing.
+/// One frame of a 60 Hz screen in microseconds.
+const _frameMicroseconds = 1000000 / 60;
+
 class FreakyOrbs extends StatefulWidget {
   const FreakyOrbs({this.random, super.key});
 
@@ -22,21 +25,24 @@ class FreakyOrbs extends StatefulWidget {
 class _FreakyOrbsState extends State<FreakyOrbs>
     with SingleTickerProviderStateMixin {
   late final Ticker _ticker;
-  final _frame = ValueNotifier<int>(0);
+  final _frame = ValueNotifier<double>(0);
+  Duration _last = Duration.zero;
   List<Orb>? _orbs;
   Size2 _size = const Size2(0, 0);
 
   @override
   void initState() {
     super.initState();
-    _ticker = createTicker((_) {
+    _ticker = createTicker((elapsed) {
+      final frames = (elapsed - _last).inMicroseconds / _frameMicroseconds;
+      _last = elapsed;
       final orbs = _orbs;
       if (orbs != null) {
         for (final orb in orbs) {
-          orb.step(_size);
+          orb.step(_size, frames: frames);
         }
       }
-      _frame.value++;
+      _frame.value += frames;
     })..start();
   }
 
@@ -55,8 +61,14 @@ class _FreakyOrbsState extends State<FreakyOrbs>
         child: RepaintBoundary(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              _size = Size2(constraints.maxWidth, constraints.maxHeight);
-              _orbs ??= createOrbs(_size, widget.random ?? Random());
+              final size = Size2(constraints.maxWidth, constraints.maxHeight);
+              final orbs = _orbs;
+              if (orbs == null) {
+                _orbs = createOrbs(size, widget.random ?? Random());
+              } else {
+                respreadOrbs(orbs, _size, size);
+              }
+              _size = size;
               return CustomPaint(
                 key: const Key('freaky-orbs'),
                 painter: _OrbPainter(
@@ -84,7 +96,7 @@ class _OrbPainter extends CustomPainter {
   }) : super(repaint: frame);
 
   final List<Orb> orbs;
-  final ValueNotifier<int> frame;
+  final ValueNotifier<double> frame;
   final Color accent;
   final Color glow;
 

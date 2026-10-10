@@ -242,23 +242,36 @@ void main() {
       expect(find.byKey(const Key('freaky-orbs')), findsNothing);
     });
 
-    testWidgets('keep moving frame after frame without taking part in input', (
-      tester,
-    ) async {
+    testWidgets('keep moving frame after frame', (tester) async {
       await tester.pumpWidget(
-        host(
-          'freaky',
-          const Size(400, 300),
-          freakyActive: true,
-          child: const SizedBox.expand(key: Key('content')),
-        ),
+        host('freaky', const Size(400, 300), freakyActive: true),
       );
 
       await tester.pump(const Duration(milliseconds: 16));
       await tester.pump(const Duration(milliseconds: 16));
 
       expect(tester.takeException(), isNull);
-      expect(find.byKey(const Key('content')), findsOneWidget);
+    });
+
+    testWidgets('let taps through to what is above them', (tester) async {
+      var taps = 0;
+      await tester.pumpWidget(
+        host(
+          'freaky',
+          const Size(400, 300),
+          freakyActive: true,
+          child: GestureDetector(
+            key: const Key('content'),
+            behavior: HitTestBehavior.opaque,
+            onTap: () => taps++,
+            child: const SizedBox.expand(),
+          ),
+        ),
+      );
+
+      await tester.tap(find.byKey(const Key('content')));
+
+      expect(taps, 1);
     });
 
     testWidgets('golden: the orbs over the Freaky atmosphere', tags: 'golden', (

@@ -91,10 +91,63 @@ void main() {
     });
   });
 
+  group('Orb.step over time', () {
+    Orb orbAt(double speedX) => Orb(
+      x: 10,
+      y: 10,
+      radius: 50,
+      speedX: speedX,
+      speedY: 0,
+      phase: 0,
+      useGlow: true,
+    );
+
+    test('moves twice as far in two frames', () {
+      final orb = orbAt(0.5)..step(const Size2(100, 100), frames: 2);
+
+      expect(orb.x, 11);
+    });
+
+    test('moves half as far in half a frame', () {
+      final orb = orbAt(0.5)..step(const Size2(100, 100), frames: 0.5);
+
+      expect(orb.x, 10.25);
+    });
+  });
+
+  group('respreadOrbs', () {
+    Orb orbAt(double x, double y) => Orb(
+      x: x,
+      y: y,
+      radius: 40,
+      speedX: 0,
+      speedY: 0,
+      phase: 0,
+      useGlow: true,
+    );
+
+    test('keeps the orbs in the same place of a window that grows', () {
+      final orbs = [orbAt(50, 100)];
+
+      respreadOrbs(orbs, const Size2(100, 200), const Size2(300, 400));
+
+      expect(orbs.single.x, 150);
+      expect(orbs.single.y, 200);
+    });
+
+    test('does nothing for a window that had no size', () {
+      final orbs = [orbAt(5, 5)];
+
+      respreadOrbs(orbs, const Size2(0, 0), const Size2(300, 400));
+
+      expect(orbs.single.x, 5);
+    });
+  });
+
   group('pulse', () {
     test('stays between 50 and 100 percent of the radius', () {
       for (var frame = 0; frame < 500; frame++) {
-        final value = orbPulse(frame, 1.3);
+        final value = orbPulse(frame.toDouble(), 1.3);
         expect(value, inInclusiveRange(0.5, 1.0));
       }
     });
