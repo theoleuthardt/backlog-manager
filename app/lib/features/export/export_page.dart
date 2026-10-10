@@ -65,6 +65,8 @@ class _ExportPanelState extends ConsumerState<ExportPanel> {
       _toast('No backlog entries found to export');
       return;
     }
+    final saver = ref.read(fileSaverProvider);
+    final includeReviews = _includeReviews;
     setState(() {
       _exporting = true;
       _processed = 0;
@@ -77,21 +79,21 @@ class _ExportPanelState extends ConsumerState<ExportPanel> {
             ? start + _chunk
             : entries.length;
         parts.add(
-          buildCsv(
-            entries.sublist(start, end),
-            includeReviews: _includeReviews,
-          ),
+          buildCsv(entries.sublist(start, end), includeReviews: includeReviews),
         );
         if (mounted) setState(() => _processed = end);
         await Future<void>.delayed(Duration.zero);
       }
-      final saved = await ref
-          .read(fileSaverProvider)
-          .save(
-            suggestedName: exportFileName(DateTime.now()),
-            bytes: utf8.encode(parts.join('\n')),
-          );
-      if (saved) _toast('Successfully exported ${entries.length} entries!');
+      final saved = await saver.save(
+        suggestedName: exportFileName(DateTime.now()),
+        bytes: utf8.encode(parts.join('\n')),
+      );
+      if (saved) {
+        _toast(
+          'Successfully exported ${entries.length} '
+          '${entries.length == 1 ? 'entry' : 'entries'}!',
+        );
+      }
     } on Object catch (error) {
       _toast(ApiException.from(error, 'Failed to export entries').message);
     } finally {
@@ -175,7 +177,9 @@ class _ExportPanelState extends ConsumerState<ExportPanel> {
                   key: const Key('export-reviews'),
                   value: _includeReviews,
                   label: 'Include reviews and notes',
-                  onChanged: (value) => setState(() => _includeReviews = value),
+                  onChanged: _exporting
+                      ? null
+                      : (value) => setState(() => _includeReviews = value),
                 ),
               ),
             ],

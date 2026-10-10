@@ -107,7 +107,7 @@ void main() {
     final csv = utf8.decode(saver.saved.single.$2);
     expect(csv, contains('Celeste'));
     expect(csv, isNot(contains('Hades')));
-    expect(find.text('Successfully exported 1 entries!'), findsOneWidget);
+    expect(find.text('Successfully exported 1 entry!'), findsOneWidget);
     await dismissToast(tester);
   });
 
