@@ -450,8 +450,12 @@ class _IntegrationsTabState extends ConsumerState<_IntegrationsTab> {
 
   @override
   void dispose() {
-    _steamIdDebounce.flush();
-    _familyDebounce.flush();
+    final steamId = _steamIdDebounce;
+    final family = _familyDebounce;
+    scheduleMicrotask(() {
+      steamId.flush();
+      family.flush();
+    });
     for (final controller in [
       _steamId,
       _family,
