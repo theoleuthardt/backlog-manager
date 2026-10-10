@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:backlog_manager/api/api_providers.dart';
 import 'package:backlog_manager/api/generated/export.dart' as wire;
 import 'package:backlog_manager/api/mappers.dart';
@@ -135,6 +137,18 @@ abstract interface class BacklogApi {
   Future<List<BacklogEntry>> entriesOfCategory(int categoryId, int? spaceId);
 
   Future<wire.AchievementProgress> achievements(int steamAppId);
+
+  /// The entries that look like a new one with this title or Steam App ID
+  /// (`GET /api/backlog/entries/duplicates`).
+  Future<List<BacklogEntry>> duplicates(
+    String title,
+    int? steamAppId,
+    int? spaceId,
+  );
+
+  /// The hours the signed-in Steam account has played of a game, or null
+  /// (`GET /api/user/steam/playtime`).
+  Future<double?> steamPlaytime(int steamAppId);
 }
 
 class ApiBacklogApi implements BacklogApi {
@@ -293,6 +307,35 @@ class ApiBacklogApi implements BacklogApi {
           spaceId: spaceId,
         );
     return entries.map(entryFromResponse).toList();
+  }
+
+  @override
+  Future<List<BacklogEntry>> duplicates(
+    String title,
+    int? steamAppId,
+    int? spaceId,
+  ) async {
+    final entries = await (await _client())
+        .apiBacklogEntriesDuplicatesGetEntryDuplicates(
+          title: title,
+          steamAppId: steamAppId,
+          spaceId: spaceId,
+        );
+    return entries.map(entryFromResponse).toList();
+  }
+
+  @override
+  Future<double?> steamPlaytime(int steamAppId) async {
+    final raw = await (await _client()).apiUserSteamPlaytimeGetSteamPlaytime(
+      steamAppId: steamAppId,
+    );
+    if (raw == null) return null;
+    try {
+      final hours = jsonDecode(raw);
+      return hours is num ? hours.toDouble() : toNumber(hours as String?);
+    } on FormatException {
+      return toNumber(raw);
+    }
   }
 
   @override

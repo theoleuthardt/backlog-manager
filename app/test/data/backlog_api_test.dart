@@ -333,5 +333,40 @@ void main() {
       expect((progress.unlocked, progress.total), (3, 15));
       expect(server.requests.single.queryParameters, {'steam_app_id': 1145360});
     });
+
+    test('asks for the duplicates of a title and a Steam App ID', () async {
+      final server = FakeServer((_) => (status: 200, body: [entryJson(4)]));
+
+      final found = await apiFor(server).duplicates('Hades', 1145360, null);
+
+      expect(found.map((e) => e.id), [4]);
+      expect(server.requests.single.path, '/api/backlog/entries/duplicates');
+      expect(server.requests.single.queryParameters, {
+        'title': 'Hades',
+        'steam_app_id': 1145360,
+      });
+    });
+
+    test('reads the Steam playtime as hours', () async {
+      final server = FakeServer((_) => (status: 200, body: '12.5'));
+
+      final hours = await apiFor(server).steamPlaytime(620);
+
+      expect(hours, 12.5);
+      expect(server.requests.single.path, '/api/user/steam/playtime');
+      expect(server.requests.single.queryParameters, {'steam_app_id': 620});
+    });
+
+    test('reads a Steam playtime that came as a plain number', () async {
+      final server = FakeServer((_) => (status: 200, body: 3));
+
+      expect(await apiFor(server).steamPlaytime(620), 3);
+    });
+
+    test('reads no Steam playtime when the account has none', () async {
+      final server = FakeServer((_) => (status: 200, body: null));
+
+      expect(await apiFor(server).steamPlaytime(620), isNull);
+    });
   });
 }
