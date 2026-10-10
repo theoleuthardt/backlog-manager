@@ -81,7 +81,12 @@ class PriceListing {
   /// The discount of a key shop offer, when it is positive.
   final int? discountPct;
 
-  double get priceInEuro => price * (_eurPerUnit[currency] ?? 1);
+  /// The price in euro; infinite for a currency without a known rate, so such
+  /// an offer sorts after the others.
+  double get priceInEuro {
+    final rate = _eurPerUnit[currency];
+    return rate == null ? double.infinity : price * rate;
+  }
 }
 
 /// The cheapest CheapShark deal of a game that is on sale.

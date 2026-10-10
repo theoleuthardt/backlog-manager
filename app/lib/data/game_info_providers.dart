@@ -31,16 +31,20 @@ final gamePriceProvider = FutureProvider.autoDispose.family<PriceInfo, int>((
   ref,
   steamAppId,
 ) async {
-  final price = await ref.watch(gamesApiProvider).price(steamAppId);
-  _cacheFor(ref, ref.read(priceCacheTtlProvider));
+  final api = ref.watch(gamesApiProvider);
+  final ttl = ref.read(priceCacheTtlProvider);
+  final price = await api.price(steamAppId);
+  if (ref.mounted) _cacheFor(ref, ttl);
   return price;
 });
 
 /// The key shop offers for a title, cached for an hour.
 final keyShopPricesProvider = FutureProvider.autoDispose
     .family<List<KeyShopOffer>, String>((ref, title) async {
-      final offers = await ref.watch(gamesApiProvider).keyShopPrices(title);
-      _cacheFor(ref, ref.read(priceCacheTtlProvider));
+      final api = ref.watch(gamesApiProvider);
+      final ttl = ref.read(priceCacheTtlProvider);
+      final offers = await api.keyShopPrices(title);
+      if (ref.mounted) _cacheFor(ref, ttl);
       return offers;
     });
 
@@ -49,9 +53,9 @@ final keyShopPricesProvider = FutureProvider.autoDispose
 final achievementsProvider = FutureProvider.autoDispose
     .family<GameAchievements, int>((ref, steamAppId) async {
       ref.watch(sessionGenerationProvider);
-      final progress = await ref
-          .watch(backlogApiProvider)
-          .achievements(steamAppId);
-      _cacheFor(ref, ref.read(achievementsCacheTtlProvider));
+      final api = ref.watch(backlogApiProvider);
+      final ttl = ref.read(achievementsCacheTtlProvider);
+      final progress = await api.achievements(steamAppId);
+      if (ref.mounted) _cacheFor(ref, ttl);
       return achievementsFromResponse(progress);
     });

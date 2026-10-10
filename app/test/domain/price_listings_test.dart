@@ -57,6 +57,14 @@ void main() {
       expect(listings.first.priceInEuro, closeTo(9, 0.0001));
     });
 
+    test('sorts an offer in an unknown currency after the known ones', () {
+      final listings = buildListings(info([deal('Steam', 100)]), [
+        offer('Odd', 1, currency: 'GBP'),
+      ]);
+
+      expect(listings.map((l) => l.store), ['Steam', 'Odd']);
+    });
+
     test('knows the currency of each source', () {
       final listings = buildListings(info([deal('Steam', 10)]), [
         offer('RoyalCDKeys', 12),
