@@ -9,6 +9,7 @@ import 'package:backlog_manager/features/library/library_page.dart';
 import 'package:backlog_manager/features/settings/settings_page.dart';
 import 'package:backlog_manager/features/setup/setup_page.dart';
 import 'package:backlog_manager/features/space/space_page.dart';
+import 'package:backlog_manager/features/steam/steam_page.dart';
 import 'package:backlog_manager/routing/current_path.dart';
 import 'package:backlog_manager/routing/guard.dart';
 import 'package:backlog_manager/routing/history.dart';
@@ -105,6 +106,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                 AppRoutes.export => const ExportPage(),
                 AppRoutes.import => const ImportCsvPage(),
                 AppRoutes.space => const SpacePage(),
+                AppRoutes.steam => const SteamPage(),
                 AppRoutes.creationTool => CreationToolPage(
                   key: ValueKey(state.uri.toString()),
                   query: state.uri.queryParameters,

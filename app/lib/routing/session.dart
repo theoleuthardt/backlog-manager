@@ -79,3 +79,9 @@ class SessionNotifier extends Notifier<SessionState> {
 final sessionProvider = NotifierProvider<SessionNotifier, SessionState>(
   SessionNotifier.new,
 );
+
+/// The signed-in user, or null when nobody is signed in.
+final sessionUserProvider = Provider<SessionUser?>((ref) {
+  final session = ref.watch(sessionProvider);
+  return session is SessionSignedIn ? session.user : null;
+});
