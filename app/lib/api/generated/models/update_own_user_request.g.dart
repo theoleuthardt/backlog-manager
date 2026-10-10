@@ -19,6 +19,7 @@ UpdateOwnUserRequest _$UpdateOwnUserRequestFromJson(
   steamgriddbApiKey: json['steamgriddb_api_key'] as String?,
   discordWebhookUrl: json['discord_webhook_url'] as String?,
   steamAutoImportEnabled: json['steam_auto_import_enabled'] as bool?,
+  steamWishlistAutoSync: json['steam_wishlist_auto_sync'] as bool?,
   steamFamilyIds: json['steam_family_ids'] as String?,
   setupCompleted: json['setup_completed'] as bool?,
   defaultSort: json['default_sort'] == null
@@ -45,6 +46,7 @@ Map<String, dynamic> _$UpdateOwnUserRequestToJson(
   'steamgriddb_api_key': instance.steamgriddbApiKey,
   'discord_webhook_url': instance.discordWebhookUrl,
   'steam_auto_import_enabled': instance.steamAutoImportEnabled,
+  'steam_wishlist_auto_sync': instance.steamWishlistAutoSync,
   'steam_family_ids': instance.steamFamilyIds,
   'setup_completed': instance.setupCompleted,
   'default_sort':

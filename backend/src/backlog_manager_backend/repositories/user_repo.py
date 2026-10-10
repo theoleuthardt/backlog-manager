@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backlog_manager_backend.errors import NotFoundError, ValidationError, handle_database_error
 from backlog_manager_backend.models.user import User as UserModel
 from backlog_manager_backend.repositories import space_repo
+from backlog_manager_backend.schemas.steam_wishlist_sync import SteamWishlistSyncReport
 from backlog_manager_backend.schemas.user import (
     CreateUserParams,
     CustomTheme,
@@ -56,6 +57,12 @@ def _to_schema(model: UserModel) -> User:
         discord_webhook_url_encrypted=model.discord_webhook_url_encrypted,
         steam_auto_import_enabled=model.steam_auto_import_enabled,
         steam_wishlist_imported_at=model.steam_wishlist_imported_at,
+        steam_wishlist_auto_sync=model.steam_wishlist_auto_sync,
+        steam_wishlist_sync_report=(
+            msgspec.convert(model.steam_wishlist_sync_report, SteamWishlistSyncReport)
+            if model.steam_wishlist_sync_report is not None
+            else None
+        ),
         steam_family_ids=model.steam_family_ids,
         token_version=model.token_version,
         failed_login_attempts=model.failed_login_attempts,
@@ -136,6 +143,14 @@ async def update_user(session: AsyncSession, params: UpdateUserParams) -> User:
         model.discord_webhook_url_encrypted = params.discord_webhook_url_encrypted
     if params.steam_auto_import_enabled is not msgspec.UNSET:
         model.steam_auto_import_enabled = params.steam_auto_import_enabled
+    if params.steam_wishlist_auto_sync is not msgspec.UNSET:
+        model.steam_wishlist_auto_sync = params.steam_wishlist_auto_sync
+    if params.steam_wishlist_sync_report is not msgspec.UNSET:
+        model.steam_wishlist_sync_report = (
+            msgspec.to_builtins(params.steam_wishlist_sync_report)
+            if params.steam_wishlist_sync_report is not None
+            else None
+        )
     if params.steam_family_ids is not msgspec.UNSET:
         model.steam_family_ids = params.steam_family_ids
     if params.setup_completed is not msgspec.UNSET:

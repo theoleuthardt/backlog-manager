@@ -1,0 +1,26 @@
+meta {
+  name: Dismiss Wishlist Sync Report
+  type: http
+  seq: 12
+}
+
+delete {
+  url: {{backendUrl}}/api/user/steam/wishlist/sync-report?updated_at=2026-10-10T12:00:00Z
+  body: none
+  auth: bearer
+}
+
+params:query {
+  updated_at: 2026-10-10T12:00:00Z
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Clears the wishlist sync report, called once the user has seen the diff
+  after signing in. updated_at must be the updated_at of the report as the
+  client loaded it; if the hourly sync stored newer changes meanwhile, the
+  report is kept. Run auth/Login first.
+}

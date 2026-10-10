@@ -1,0 +1,22 @@
+meta {
+  name: Get Wishlist Sync Report
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{backendUrl}}/api/user/steam/wishlist/sync-report
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  What the automatic wishlist sync added and removed since the report was
+  last dismissed: {"since", "added": [...], "removed": [...]}, each item
+  with steam_app_id, title and image_link. Empty lists when nothing
+  changed. Run auth/Login first.
+}

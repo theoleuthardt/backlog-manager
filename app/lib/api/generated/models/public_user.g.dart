@@ -19,6 +19,7 @@ PublicUser _$PublicUserFromJson(Map<String, dynamic> json) => PublicUser(
   hasSteamgriddbApiKey: json['has_steamgriddb_api_key'] as bool? ?? false,
   hasDiscordWebhookUrl: json['has_discord_webhook_url'] as bool? ?? false,
   steamAutoImportEnabled: json['steam_auto_import_enabled'] as bool? ?? false,
+  steamWishlistAutoSync: json['steam_wishlist_auto_sync'] as bool? ?? false,
   setupCompleted: json['setup_completed'] as bool? ?? false,
   defaultSort: json['default_sort'] as String? ?? 'status',
   theme: json['theme'] as String? ?? 'dark',
@@ -49,6 +50,7 @@ Map<String, dynamic> _$PublicUserToJson(PublicUser instance) =>
       'steam_auto_import_enabled': instance.steamAutoImportEnabled,
       'steam_wishlist_imported_at': instance.steamWishlistImportedAt
           ?.toIso8601String(),
+      'steam_wishlist_auto_sync': instance.steamWishlistAutoSync,
       'steam_family_ids': instance.steamFamilyIds,
       'setup_completed': instance.setupCompleted,
       'default_sort': instance.defaultSort,

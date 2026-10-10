@@ -8380,6 +8380,305 @@
           }
         ]
       }
+    },
+    "/api/steam/wishlist/auto-sync": {
+      "post": {
+        "summary": "RunWishlistAutoSync",
+        "operationId": "ApiSteamWishlistAutoSyncRunWishlistAutoSync",
+        "parameters": [
+          {
+            "name": "X-Cron-Secret",
+            "in": "header",
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required": false,
+            "deprecated": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {
+              "Strict-Transport-Security": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncSummary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No permission -- see authorization schemes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Authorized Exception",
+                  "examples": [
+                    {
+                      "status_code": 401,
+                      "detail": "Unauthorized",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request syntax or unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Validation Exception",
+                  "examples": [
+                    {
+                      "status_code": 400,
+                      "detail": "Bad Request",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "CronSecret": []
+          }
+        ]
+      }
+    },
+    "/api/user/steam/wishlist/sync-report": {
+      "get": {
+        "summary": "GetWishlistSyncReport",
+        "operationId": "ApiUserSteamWishlistSyncReportGetWishlistSyncReport",
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {
+              "Strict-Transport-Security": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SteamWishlistSyncReport"
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "DismissWishlistSyncReport",
+        "operationId": "ApiUserSteamWishlistSyncReportDismissWishlistSyncReport",
+        "parameters": [
+          {
+            "name": "updated_at",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": true,
+            "deprecated": false,
+            "allowEmptyValue": false,
+            "allowReserved": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {
+              "Strict-Transport-Security": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request syntax or unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Validation Exception",
+                  "examples": [
+                    {
+                      "status_code": 400,
+                      "detail": "Bad Request",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -10507,6 +10806,10 @@
               }
             ]
           },
+          "steam_wishlist_auto_sync": {
+            "type": "boolean",
+            "default": false
+          },
           "steam_family_ids": {
             "oneOf": [
               {
@@ -10707,6 +11010,32 @@
         ],
         "title": "SteamPreviewItem"
       },
+      "SteamWishlistChange": {
+        "properties": {
+          "steam_app_id": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "image_link": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "steam_app_id",
+          "title"
+        ],
+        "title": "SteamWishlistChange"
+      },
       "SteamWishlistItem": {
         "properties": {
           "appid": {
@@ -10726,6 +11055,47 @@
           "appid"
         ],
         "title": "SteamWishlistItem"
+      },
+      "SteamWishlistSyncReport": {
+        "properties": {
+          "since": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updated_at": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "added": {
+            "items": {
+              "$ref": "#/components/schemas/SteamWishlistChange"
+            },
+            "type": "array"
+          },
+          "removed": {
+            "items": {
+              "$ref": "#/components/schemas/SteamWishlistChange"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object",
+        "required": [],
+        "title": "SteamWishlistSyncReport"
       },
       "SubmitCsvEntry": {
         "properties": {
@@ -10870,6 +11240,29 @@
           "title"
         ],
         "title": "SubmitCsvEntry"
+      },
+      "SyncSummary": {
+        "properties": {
+          "users": {
+            "type": "integer",
+            "default": 0
+          },
+          "added": {
+            "type": "integer",
+            "default": 0
+          },
+          "removed": {
+            "type": "integer",
+            "default": 0
+          },
+          "failed": {
+            "type": "integer",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [],
+        "title": "SyncSummary"
       },
       "TokenResponse": {
         "properties": {
@@ -11272,6 +11665,13 @@
               }
             ]
           },
+          "steam_wishlist_auto_sync": {
+            "oneOf": [
+              {
+                "type": "boolean"
+              }
+            ]
+          },
           "steam_family_ids": {
             "oneOf": [
               {
@@ -11414,6 +11814,13 @@
             ]
           },
           "steam_auto_import_enabled": {
+            "oneOf": [
+              {
+                "type": "boolean"
+              }
+            ]
+          },
+          "steam_wishlist_auto_sync": {
             "oneOf": [
               {
                 "type": "boolean"

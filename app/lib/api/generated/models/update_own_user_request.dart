@@ -22,6 +22,7 @@ class UpdateOwnUserRequest {
     this.steamgriddbApiKey,
     this.discordWebhookUrl,
     this.steamAutoImportEnabled,
+    this.steamWishlistAutoSync,
     this.steamFamilyIds,
     this.setupCompleted,
     this.defaultSort,
@@ -49,6 +50,8 @@ class UpdateOwnUserRequest {
   final String? discordWebhookUrl;
   @JsonKey(name: 'steam_auto_import_enabled')
   final bool? steamAutoImportEnabled;
+  @JsonKey(name: 'steam_wishlist_auto_sync')
+  final bool? steamWishlistAutoSync;
   @JsonKey(name: 'steam_family_ids')
   final String? steamFamilyIds;
   @JsonKey(name: 'setup_completed')

@@ -3,6 +3,7 @@ from typing import Annotated, Literal
 
 import msgspec
 
+from backlog_manager_backend.schemas.steam_wishlist_sync import SteamWishlistSyncReport
 from backlog_manager_backend.schemas.types import HexColor
 
 SortOption = Literal[
@@ -48,6 +49,8 @@ class User(msgspec.Struct):
     discord_webhook_url_encrypted: str | None = None
     steam_auto_import_enabled: bool = False
     steam_wishlist_imported_at: datetime | None = None
+    steam_wishlist_auto_sync: bool = False
+    steam_wishlist_sync_report: SteamWishlistSyncReport | None = None
     steam_family_ids: str | None = None
     token_version: int = 0
     failed_login_attempts: int = 0
@@ -87,6 +90,8 @@ class UpdateUserParams(msgspec.Struct):
     steamgriddb_api_key_encrypted: str | None | msgspec.UnsetType = msgspec.UNSET
     discord_webhook_url_encrypted: str | None | msgspec.UnsetType = msgspec.UNSET
     steam_auto_import_enabled: bool | msgspec.UnsetType = msgspec.UNSET
+    steam_wishlist_auto_sync: bool | msgspec.UnsetType = msgspec.UNSET
+    steam_wishlist_sync_report: SteamWishlistSyncReport | None | msgspec.UnsetType = msgspec.UNSET
     steam_family_ids: str | None | msgspec.UnsetType = msgspec.UNSET
     is_admin: bool | msgspec.UnsetType = msgspec.UNSET
     totp_secret_encrypted: str | None | msgspec.UnsetType = msgspec.UNSET
@@ -114,6 +119,7 @@ class PublicUser(msgspec.Struct):
     has_discord_webhook_url: bool = False
     steam_auto_import_enabled: bool = False
     steam_wishlist_imported_at: datetime | None = None
+    steam_wishlist_auto_sync: bool = False
     steam_family_ids: str | None = None
     setup_completed: bool = False
     default_sort: str = "status"
@@ -137,6 +143,7 @@ class PublicUser(msgspec.Struct):
             has_discord_webhook_url=bool(user.discord_webhook_url_encrypted),
             steam_auto_import_enabled=user.steam_auto_import_enabled,
             steam_wishlist_imported_at=user.steam_wishlist_imported_at,
+            steam_wishlist_auto_sync=user.steam_wishlist_auto_sync,
             steam_family_ids=user.steam_family_ids,
             setup_completed=user.setup_completed,
             default_sort=user.default_sort,
@@ -177,6 +184,7 @@ class UpdateOwnUserRequest(msgspec.Struct):
     steamgriddb_api_key: str | None | msgspec.UnsetType = msgspec.UNSET
     discord_webhook_url: str | None | msgspec.UnsetType = msgspec.UNSET
     steam_auto_import_enabled: bool | msgspec.UnsetType = msgspec.UNSET
+    steam_wishlist_auto_sync: bool | msgspec.UnsetType = msgspec.UNSET
     steam_family_ids: str | None | msgspec.UnsetType = msgspec.UNSET
     setup_completed: bool | msgspec.UnsetType = msgspec.UNSET
     default_sort: SortOption | msgspec.UnsetType = msgspec.UNSET
@@ -198,6 +206,7 @@ class UpdateUserAdminRequest(msgspec.Struct):
     steamgriddb_api_key: str | None | msgspec.UnsetType = msgspec.UNSET
     discord_webhook_url: str | None | msgspec.UnsetType = msgspec.UNSET
     steam_auto_import_enabled: bool | msgspec.UnsetType = msgspec.UNSET
+    steam_wishlist_auto_sync: bool | msgspec.UnsetType = msgspec.UNSET
     steam_family_ids: str | None | msgspec.UnsetType = msgspec.UNSET
     setup_completed: bool | msgspec.UnsetType = msgspec.UNSET
     default_sort: SortOption | msgspec.UnsetType = msgspec.UNSET

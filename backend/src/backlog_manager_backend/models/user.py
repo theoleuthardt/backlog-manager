@@ -26,6 +26,12 @@ class User(Base):
         "SteamAutoImportEnabled", server_default=text("false")
     )
     steam_wishlist_imported_at: Mapped[datetime | None] = mapped_column("SteamWishlistImportedAt")
+    steam_wishlist_auto_sync: Mapped[bool] = mapped_column(
+        "SteamWishlistAutoSync", server_default=text("false")
+    )
+    steam_wishlist_sync_report: Mapped[dict[str, Any] | None] = mapped_column(
+        "SteamWishlistSyncReport", JSONB
+    )
     is_admin: Mapped[bool] = mapped_column("IsAdmin", server_default=text("false"))
     totp_secret_encrypted: Mapped[str | None] = mapped_column("TotpSecretEncrypted")
     totp_enabled: Mapped[bool] = mapped_column("TotpEnabled", server_default=text("false"))

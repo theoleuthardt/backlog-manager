@@ -37,7 +37,9 @@ import '../models/space_response.dart';
 import '../models/steam_grid_db_search_result.dart';
 import '../models/steam_preview_item.dart';
 import '../models/steam_wishlist_item.dart';
+import '../models/steam_wishlist_sync_report.dart';
 import '../models/submit_csv_entry.dart';
+import '../models/sync_summary.dart';
 import '../models/token_response.dart';
 import '../models/two_factor_disable_params.dart';
 import '../models/two_factor_enroll_response.dart';
@@ -489,5 +491,22 @@ abstract class FallbackClient {
   @POST('/api/prices/check')
   Future<Map<String, int>> apiPricesCheckCheckPrices({
     @Header('X-Cron-Secret') String? xCronSecret,
+  });
+
+  /// RunWishlistAutoSync
+  @POST('/api/steam/wishlist/auto-sync')
+  Future<SyncSummary> apiSteamWishlistAutoSyncRunWishlistAutoSync({
+    @Header('X-Cron-Secret') String? xCronSecret,
+  });
+
+  /// GetWishlistSyncReport
+  @GET('/api/user/steam/wishlist/sync-report')
+  Future<SteamWishlistSyncReport>
+  apiUserSteamWishlistSyncReportGetWishlistSyncReport();
+
+  /// DismissWishlistSyncReport
+  @DELETE('/api/user/steam/wishlist/sync-report')
+  Future<void> apiUserSteamWishlistSyncReportDismissWishlistSyncReport({
+    @Query('updated_at') required DateTime updatedAt,
   });
 }

@@ -1,5 +1,6 @@
 import 'package:backlog_manager/api/generated/export.dart';
 import 'package:backlog_manager/domain/models.dart';
+import 'package:backlog_manager/domain/wishlist_sync_report.dart';
 
 /// Parses the backend's decimal strings (playtime, HowLongToBeat times);
 /// anything that is not a finite number is treated as missing.
@@ -61,5 +62,21 @@ Space spaceFromResponse(SpaceResponse space) {
           isMe: member.isMe,
         ),
     ],
+  );
+}
+
+WishlistSyncReport wishlistSyncReportFromResponse(
+  SteamWishlistSyncReport report,
+) {
+  WishlistChange change(SteamWishlistChange change) => WishlistChange(
+    steamAppId: change.steamAppId,
+    title: change.title,
+    imageLink: change.imageLink,
+  );
+  return WishlistSyncReport(
+    since: report.since,
+    updatedAt: report.updatedAt,
+    added: (report.added ?? const []).map(change).toList(),
+    removed: (report.removed ?? const []).map(change).toList(),
   );
 }

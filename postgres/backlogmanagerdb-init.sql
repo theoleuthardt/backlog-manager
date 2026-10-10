@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS "blm-system"."Users"(
     "DiscordWebhookUrlEncrypted" TEXT,
     "SteamAutoImportEnabled" BOOLEAN NOT NULL DEFAULT FALSE,
     "SteamWishlistImportedAt" TIMESTAMP,
+    "SteamWishlistAutoSync" BOOLEAN NOT NULL DEFAULT FALSE,
+    "SteamWishlistSyncReport" JSONB,
     "IsAdmin" BOOLEAN NOT NULL DEFAULT FALSE,
     "TotpSecretEncrypted" TEXT,
     "TotpEnabled" BOOLEAN NOT NULL DEFAULT FALSE,

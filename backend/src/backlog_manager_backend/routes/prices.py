@@ -21,7 +21,7 @@ from backlog_manager_backend.services import price_service
 CRON_SECRET_SECURITY_REQUIREMENT = [{"CronSecret": []}]
 
 
-def _require_valid_cron_secret(provided: str | None) -> None:
+def require_valid_cron_secret(provided: str | None) -> None:
     if not settings.price_check_cron_secret or not provided:
         raise NotAuthorizedException("Missing or unconfigured cron secret")
     if not secrets.compare_digest(provided.encode(), settings.price_check_cron_secret.encode()):
@@ -38,7 +38,7 @@ async def check_prices(
     x_cron_secret: Annotated[str | None, HeaderParameter(name="X-Cron-Secret", required=False)],
     db_session: NamedDependency[AsyncSession],
 ) -> dict[str, int]:
-    _require_valid_cron_secret(x_cron_secret)
+    require_valid_cron_secret(x_cron_secret)
     alerts_sent = await price_service.check_prices_and_alert(db_session)
     return {"alerts_sent": alerts_sent}
 
