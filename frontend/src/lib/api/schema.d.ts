@@ -1453,6 +1453,7 @@ export interface components {
         /** SteamWishlistSyncReport */
         SteamWishlistSyncReport: {
             since?: string | null;
+            updated_at?: string | null;
             added?: components["schemas"]["SteamWishlistChange"][];
             removed?: components["schemas"]["SteamWishlistChange"][];
         };
@@ -4901,7 +4902,9 @@ export interface operations {
     };
     ApiUserSteamWishlistSyncReportDismissWishlistSyncReport: {
         parameters: {
-            query?: never;
+            query: {
+                updated_at: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -4918,6 +4921,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
             };
         };
     };

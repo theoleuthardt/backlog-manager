@@ -1,4 +1,5 @@
 from collections.abc import Awaitable, Callable
+from datetime import UTC, datetime
 
 import pytest
 from litestar.testing import TestClient
@@ -57,7 +58,7 @@ async def test_sync_report_is_empty_until_the_sync_changed_something(
         response = client.get("/api/user/steam/wishlist/sync-report", headers=headers)
 
     assert response.status_code == 200
-    assert response.json() == {"since": None, "added": [], "removed": []}
+    assert response.json() == {"since": None, "updated_at": None, "added": [], "removed": []}
 
 
 async def test_sync_report_can_be_read_and_dismissed(
@@ -77,6 +78,7 @@ async def test_sync_report_can_be_read_and_dismissed(
                 UpdateUserParams(
                     user_id=me["id"],
                     steam_wishlist_sync_report=SteamWishlistSyncReport(
+                        updated_at=datetime(2026, 10, 10, 12, 0, tzinfo=UTC),
                         added=[SteamWishlistChange(steam_app_id=620, title="Portal 2")],
                         removed=[SteamWishlistChange(steam_app_id=10, title="Counter-Strike")],
                     ),
@@ -84,7 +86,11 @@ async def test_sync_report_can_be_read_and_dismissed(
             )
 
         report = client.get("/api/user/steam/wishlist/sync-report", headers=headers).json()
-        dismissed = client.delete("/api/user/steam/wishlist/sync-report", headers=headers)
+        dismissed = client.delete(
+            "/api/user/steam/wishlist/sync-report",
+            headers=headers,
+            params={"updated_at": report["updated_at"]},
+        )
         after = client.get("/api/user/steam/wishlist/sync-report", headers=headers).json()
 
     assert [c["title"] for c in report["added"]] == ["Portal 2"]
@@ -106,3 +112,36 @@ async def test_the_auto_sync_setting_is_saved_on_the_account(
 
     assert before["steam_wishlist_auto_sync"] is False
     assert after["steam_wishlist_auto_sync"] is True
+
+
+async def test_dismissing_a_stale_report_keeps_the_newer_changes(
+    create_and_login: Callable[..., Awaitable[dict[str, str]]], postgres_url: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.db import async_session
+    from backlog_manager_backend.repositories import user_repo
+    from backlog_manager_backend.schemas.user import UpdateUserParams
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "stalereport@example.com")
+        me = client.get("/api/user/me", headers=headers).json()
+        async with async_session() as session:
+            await user_repo.update_user(
+                session,
+                UpdateUserParams(
+                    user_id=me["id"],
+                    steam_wishlist_sync_report=SteamWishlistSyncReport(
+                        updated_at=datetime(2026, 10, 10, 13, 0, tzinfo=UTC),
+                        added=[SteamWishlistChange(steam_app_id=620, title="Portal 2")],
+                    ),
+                ),
+            )
+
+        client.delete(
+            "/api/user/steam/wishlist/sync-report",
+            headers=headers,
+            params={"updated_at": "2026-10-10T12:00:00Z"},
+        )
+        after = client.get("/api/user/steam/wishlist/sync-report", headers=headers).json()
+
+    assert [c["title"] for c in after["added"]] == ["Portal 2"]

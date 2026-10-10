@@ -18,7 +18,7 @@ class FakeWishlistSyncApi implements WishlistSyncApi {
   Future<WishlistSyncReport> report() async => current;
 
   @override
-  Future<void> dismiss() async {
+  Future<void> dismiss(DateTime updatedAt) async {
     dismissed++;
     current = const WishlistSyncReport();
   }
@@ -42,6 +42,7 @@ Future<void> pump(WidgetTester tester, WishlistSyncApi api) async {
 void main() {
   final changed = WishlistSyncReport(
     since: DateTime.utc(2026, 10, 9),
+    updatedAt: DateTime.utc(2026, 10, 10),
     added: const [WishlistChange(steamAppId: 620, title: 'Portal 2')],
     removed: const [WishlistChange(steamAppId: 10, title: 'Counter-Strike')],
   );

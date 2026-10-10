@@ -59,6 +59,16 @@ def test_merge_report_cancels_an_add_followed_by_a_removal() -> None:
     assert second is None
 
 
+def test_merge_report_stamps_every_change_with_its_time() -> None:
+    first = steam_wishlist_sync_service.merge_report(None, [_change(1)], [], NOW)
+    later = datetime(2026, 10, 11, tzinfo=UTC)
+
+    second = steam_wishlist_sync_service.merge_report(first, [_change(2)], [], later)
+
+    assert first.updated_at == NOW
+    assert second.updated_at == later
+
+
 def test_merge_report_ignores_nothing_to_report() -> None:
     assert steam_wishlist_sync_service.merge_report(None, [], [], NOW) is None
     existing = SteamWishlistSyncReport(since=NOW, added=[_change(1)])
@@ -300,3 +310,54 @@ async def test_sync_all_goes_on_after_a_user_fails(
     summary = await steam_wishlist_sync_service.sync_all(session)
 
     assert (summary.users, summary.failed, summary.added) == (1, 1, 1)
+
+
+async def test_dismiss_clears_the_report_the_user_has_seen(session: AsyncSession) -> None:
+    user = await _user(session)
+    report = steam_wishlist_sync_service.merge_report(None, [_change(1)], [], NOW)
+    user = await user_repo.update_user(
+        session, UpdateUserParams(user_id=user.id, steam_wishlist_sync_report=report)
+    )
+
+    cleared = await steam_wishlist_sync_service.dismiss_report(session, user, NOW)
+
+    assert cleared is True
+    assert (await user_repo.get_user_by_id(session, user.id)).steam_wishlist_sync_report is None
+
+
+async def test_dismiss_keeps_changes_that_arrived_after_the_user_loaded_the_report(
+    session: AsyncSession,
+) -> None:
+    user = await _user(session)
+    seen = steam_wishlist_sync_service.merge_report(None, [_change(1)], [], NOW)
+    newer = steam_wishlist_sync_service.merge_report(
+        seen, [_change(2)], [], datetime(2026, 10, 10, 13, tzinfo=UTC)
+    )
+    user = await user_repo.update_user(
+        session, UpdateUserParams(user_id=user.id, steam_wishlist_sync_report=newer)
+    )
+
+    cleared = await steam_wishlist_sync_service.dismiss_report(session, user, NOW)
+
+    assert cleared is False
+    kept = (await user_repo.get_user_by_id(session, user.id)).steam_wishlist_sync_report
+    assert [c.steam_app_id for c in kept.added] == [1, 2]
+
+
+async def test_sync_skips_the_repair_for_an_unreadable_wishlist(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _user(session)
+    _wishlist(monkeypatch)
+    repaired = False
+
+    async def fake_repair(*args: object, **kwargs: object) -> list[object]:
+        nonlocal repaired
+        repaired = True
+        return []
+
+    monkeypatch.setattr(steam_service, "repair_steam_titles", fake_repair)
+
+    await steam_wishlist_sync_service.sync_user(session, user)
+
+    assert repaired is False

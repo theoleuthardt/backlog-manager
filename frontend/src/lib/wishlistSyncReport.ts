@@ -8,6 +8,7 @@ export interface WishlistChange {
 
 export interface WishlistSyncReport {
   since?: string;
+  updatedAt?: string;
   added: WishlistChange[];
   removed: WishlistChange[];
 }

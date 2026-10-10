@@ -2160,9 +2160,13 @@ class _FallbackClient implements FallbackClient {
   }
 
   @override
-  Future<void> apiUserSteamWishlistSyncReportDismissWishlistSyncReport() async {
+  Future<void> apiUserSteamWishlistSyncReportDismissWishlistSyncReport({
+    required DateTime updatedAt,
+  }) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{
+      r'updated_at': updatedAt.toIso8601String(),
+    };
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
     final _options = _setStreamType<void>(

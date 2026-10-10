@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "shadcn_components/ui/button";
 import {
@@ -35,9 +35,11 @@ export const WishlistSyncDialog = () => {
     queryFn: getWishlistSyncReport,
     staleTime: Infinity,
   });
+  const queryClient = useQueryClient();
   const dismiss = useMutation({
     mutationFn: dismissWishlistSyncReport,
     onError: (error) => toast.error(error.message),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: REPORT_KEY }),
   });
 
   if (!report || !hasWishlistChanges(report)) return null;
@@ -45,7 +47,7 @@ export const WishlistSyncDialog = () => {
   const handleOpenChange = (open: boolean) => {
     if (open || closed) return;
     setClosed(true);
-    dismiss.mutate();
+    if (report.updatedAt) dismiss.mutate(report.updatedAt);
   };
 
   return (

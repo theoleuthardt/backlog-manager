@@ -179,14 +179,18 @@ export async function getWishlistSyncReport(): Promise<WishlistSyncReport> {
     throw new Error(apiErrorMessage(error, "Failed to load the wishlist sync"));
   return {
     since: data.since ?? undefined,
+    updatedAt: data.updated_at ?? undefined,
     added: toWishlistChanges(data.added),
     removed: toWishlistChanges(data.removed),
   };
 }
 
-export async function dismissWishlistSyncReport(): Promise<void> {
+export async function dismissWishlistSyncReport(
+  updatedAt: string,
+): Promise<void> {
   const { error } = await apiClient.DELETE(
     "/api/user/steam/wishlist/sync-report",
+    { params: { query: { updated_at: updatedAt } } },
   );
   if (error)
     throw new Error(

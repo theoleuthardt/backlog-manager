@@ -35,7 +35,8 @@ class _WishlistSyncPromptState extends ConsumerState<WishlistSyncPrompt> {
         builder: (context) => WishlistSyncSheet(report: report),
       );
       try {
-        await api.dismiss();
+        final updatedAt = report.updatedAt;
+        if (updatedAt != null) await api.dismiss(updatedAt);
       } on Object {
         return;
       }

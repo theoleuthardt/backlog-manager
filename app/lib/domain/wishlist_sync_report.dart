@@ -40,11 +40,16 @@ const _months = [
 class WishlistSyncReport {
   const WishlistSyncReport({
     this.since,
+    this.updatedAt,
     this.added = const [],
     this.removed = const [],
   });
 
   final DateTime? since;
+
+  /// The time of the latest change; sent back when the report is dismissed so
+  /// that changes which arrived meanwhile are kept.
+  final DateTime? updatedAt;
   final List<WishlistChange> added;
   final List<WishlistChange> removed;
 

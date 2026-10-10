@@ -48,6 +48,8 @@ def merge_report(
     it was reported removed (or the other way round) cancels out, so the
     report only holds the net difference since the user last looked.
     Returns None while nothing is left to report."""
+    if not added and not removed:
+        return report
     current_added = list(report.added) if report else []
     current_removed = list(report.removed) if report else []
     for change in added:
@@ -63,7 +65,9 @@ def merge_report(
     if not current_added and not current_removed:
         return None
     since = report.since if report and report.since else now
-    return SteamWishlistSyncReport(since=since, added=current_added, removed=current_removed)
+    return SteamWishlistSyncReport(
+        since=since, updated_at=now, added=current_added, removed=current_removed
+    )
 
 
 async def sync_user(
@@ -80,13 +84,13 @@ async def sync_user(
     if not user.steam_id:
         return SyncResult()
     wishlist = await steam_service.get_wishlist(user.steam_id)
+    if not wishlist:
+        return SyncResult()
 
     await steam_service.repair_steam_titles(session, user, steamgriddb_api_key, igdb_credentials)
 
     entries = await backlog_entry_repo.get_backlog_entries_by_user(session, user.id)
     tracked = [entry for entry in entries if entry.steam_wishlist_import]
-    if not wishlist:
-        return SyncResult()
 
     wishlist_ids = {item.appid for item in wishlist}
     existing_ids = {entry.steam_app_id for entry in entries if entry.steam_app_id is not None}
@@ -143,6 +147,22 @@ async def sync_user(
             ),
         )
     return SyncResult(added=len(added), removed=len(removed))
+
+
+async def dismiss_report(session: AsyncSession, user: User, seen_updated_at: datetime) -> bool:
+    """Clears the user's report if it is still the one the client displayed
+    (`seen_updated_at` is the report's `updated_at` when it was loaded).
+    Changes the hourly sync stored in the meantime keep the report, so the
+    user sees them with the next load. Returns whether it was cleared."""
+    report = user.steam_wishlist_sync_report
+    if report is None:
+        return True
+    if report.updated_at != seen_updated_at:
+        return False
+    await user_repo.update_user(
+        session, UpdateUserParams(user_id=user.id, steam_wishlist_sync_report=None)
+    )
+    return True
 
 
 async def sync_all(

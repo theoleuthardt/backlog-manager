@@ -506,5 +506,7 @@ abstract class FallbackClient {
 
   /// DismissWishlistSyncReport
   @DELETE('/api/user/steam/wishlist/sync-report')
-  Future<void> apiUserSteamWishlistSyncReportDismissWishlistSyncReport();
+  Future<void> apiUserSteamWishlistSyncReportDismissWishlistSyncReport({
+    @Query('updated_at') required DateTime updatedAt,
+  });
 }

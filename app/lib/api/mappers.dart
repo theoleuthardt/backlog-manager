@@ -75,6 +75,7 @@ WishlistSyncReport wishlistSyncReportFromResponse(
   );
   return WishlistSyncReport(
     since: report.since,
+    updatedAt: report.updatedAt,
     added: (report.added ?? const []).map(change).toList(),
     removed: (report.removed ?? const []).map(change).toList(),
   );

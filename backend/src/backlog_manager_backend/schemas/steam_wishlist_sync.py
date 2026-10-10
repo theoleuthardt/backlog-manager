@@ -14,8 +14,11 @@ class SteamWishlistChange(msgspec.Struct):
 
 class SteamWishlistSyncReport(msgspec.Struct):
     """What the automatic wishlist sync changed since the user last
-    dismissed the report: `since` is the time of the first change."""
+    dismissed the report: `since` is the time of the first change and
+    `updated_at` the time of the latest one, which a client sends back when
+    it dismisses the report so changes that arrived meanwhile survive."""
 
     since: datetime | None = None
+    updated_at: datetime | None = None
     added: list[SteamWishlistChange] = msgspec.field(default_factory=list)
     removed: list[SteamWishlistChange] = msgspec.field(default_factory=list)

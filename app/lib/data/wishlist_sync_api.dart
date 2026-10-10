@@ -10,8 +10,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 abstract interface class WishlistSyncApi {
   Future<WishlistSyncReport> report();
 
-  /// Clears the report on the server once the user has seen it.
-  Future<void> dismiss();
+  /// Clears the report on the server once the user has seen it; [updatedAt]
+  /// is the report's `updatedAt` as it was shown.
+  Future<void> dismiss(DateTime updatedAt);
 }
 
 class ApiWishlistSyncApi implements WishlistSyncApi {
@@ -30,9 +31,11 @@ class ApiWishlistSyncApi implements WishlistSyncApi {
   }
 
   @override
-  Future<void> dismiss() async {
+  Future<void> dismiss(DateTime updatedAt) async {
     await (await _client())
-        .apiUserSteamWishlistSyncReportDismissWishlistSyncReport();
+        .apiUserSteamWishlistSyncReportDismissWishlistSyncReport(
+          updatedAt: updatedAt,
+        );
   }
 }
 
