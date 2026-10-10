@@ -80,7 +80,7 @@ class SteamController extends Notifier<SteamState> {
 
   void setSource(SteamSource source) {
     if (state.busy || source == state.source) return;
-    state = SteamState(source: source);
+    state = SteamState(source: source, query: state.query);
   }
 
   void setQuery(String query) => state = state.copyWith(query: query);
@@ -157,7 +157,7 @@ class SteamController extends Notifier<SteamState> {
     }
   }
 
-  SteamNotice? _idle(String message) {
+  SteamNotice _idle(String message) {
     if (ref.mounted) {
       state = state.copyWith(phase: SteamPhase.idle, clearProgress: true);
     }
@@ -191,7 +191,7 @@ class SteamController extends Notifier<SteamState> {
       final created = (data! as List<dynamic>).length;
       if (!ref.mounted) return const [];
       ref.invalidate(entriesProvider(null));
-      state = SteamState(source: source, query: state.query);
+      state = SteamState(source: SteamSource.library, query: state.query);
       if (source == SteamSource.wishlist) {
         await ref.read(authControllerProvider.notifier).refreshUser();
       }
@@ -203,10 +203,10 @@ class SteamController extends Notifier<SteamState> {
         if (skipped != null) SteamNotice(skipped, warning: true),
       ];
     } on SseCancelled {
-      return [?_idle('Import cancelled')];
+      return [_idle('Import cancelled')];
     } on Object catch (error) {
       return [
-        ?_idle(
+        _idle(
           ApiException.from(
             error,
             source == SteamSource.library

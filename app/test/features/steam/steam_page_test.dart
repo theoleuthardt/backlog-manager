@@ -478,8 +478,31 @@ void main() {
         findsOneWidget,
       );
       expect(find.byKey(const Key('steam-wishlist-imported')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('steam-load')));
+      await tester.pump();
+      expect(opened.steam.calls.last, 'library-preview');
       expect(find.byKey(const Key('segmented-track')), findsNothing);
       await dismissToast(tester);
+    });
+
+    testWidgets('the filter text survives a source switch', (tester) async {
+      final opened = await open(tester);
+      opened.steam.wishlist = const [SteamRow(steamAppId: 10, title: 'Hades')];
+      await loadLibrary(tester, opened);
+      await tester.enterText(find.byType(TextField).last, 'doom');
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(const Key('segmented-track')),
+          matching: find.text('Wishlist'),
+        ),
+      );
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('steam-load')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No games match the filter.'), findsOneWidget);
     });
 
     testWidgets('after the first import it shows the date, not the option', (
