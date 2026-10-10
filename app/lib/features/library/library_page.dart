@@ -2,23 +2,24 @@ import 'dart:math' as math;
 
 import 'package:backlog_manager/api/api_providers.dart';
 import 'package:backlog_manager/data/entry_image.dart';
+import 'package:backlog_manager/data/filter_providers.dart';
 import 'package:backlog_manager/design/color_math.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/design/widgets/chips.dart';
 import 'package:backlog_manager/design/widgets/cover.dart';
-import 'package:backlog_manager/design/widgets/menu.dart';
-import 'package:backlog_manager/design/widgets/segmented.dart';
 import 'package:backlog_manager/domain/format.dart';
 import 'package:backlog_manager/domain/library_groups.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/domain/sort_entries.dart';
 import 'package:backlog_manager/domain/status_style.dart';
 import 'package:backlog_manager/features/common/entries_gate.dart';
+import 'package:backlog_manager/features/library/filter_bar.dart';
 import 'package:backlog_manager/features/library/library_content.dart';
 import 'package:backlog_manager/features/library/library_view.dart';
 import 'package:backlog_manager/routing/routes.dart';
+import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -70,13 +71,34 @@ class _EmptyLibrary extends StatelessWidget {
   }
 }
 
-class _Library extends ConsumerWidget {
+class _Library extends ConsumerStatefulWidget {
   const _Library();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_Library> createState() => _LibraryState();
+}
+
+class _LibraryState extends ConsumerState<_Library> {
+  String? _reportedCount;
+
+  void _report(String counts) {
+    if (counts == _reportedCount) return;
+    _reportedCount = counts;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(shellStatusProvider.notifier).update(counts: counts);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final content = ref.watch(libraryContentProvider);
     if (content == null) return const SizedBox.shrink();
+    final active = ref.watch(activeFilterCountProvider);
+    _report(
+      '${content.shown} of ${content.total} games'
+      '${active == 0 ? '' : ' · $active ${active == 1 ? 'filter' : 'filters'}'}',
+    );
     final layout = ref.watch(libraryViewProvider.select((v) => v.layout));
     final serverUrl = ref.watch(serverUrlProvider).value;
 
@@ -84,6 +106,7 @@ class _Library extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _Toolbar(content: content),
+        const FilterBar(gutter: _gutter),
         Expanded(
           child: CustomScrollView(
             slivers: [
@@ -119,8 +142,6 @@ class _Toolbar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
-    final view = ref.watch(libraryViewProvider);
-    final notifier = ref.read(libraryViewProvider.notifier);
     final muted = style.caption.copyWith(color: tokens.muted);
 
     return Padding(
@@ -135,36 +156,6 @@ class _Toolbar extends ConsumerWidget {
           Text(
             '${formatCount(content.hoursToBeat.round())} h to beat',
             style: muted,
-          ),
-          ShelfSegmented<LibraryLayout>(
-            segments: const [
-              ShelfSegment(value: LibraryLayout.grid, label: 'Grid'),
-              ShelfSegment(value: LibraryLayout.list, label: 'List'),
-            ],
-            value: view.layout,
-            onChanged: notifier.setLayout,
-          ),
-          ShelfMenuAnchor(
-            entries: [
-              for (final option in SortOption.values)
-                ShelfMenuItem(
-                  label: option.label,
-                  checked: option == view.sortBy,
-                  onSelected: () => notifier.setSort(option),
-                ),
-            ],
-            builder: (context, controller) => ShelfButton(
-              label: 'Sort: ${view.sortBy.label}',
-              onPressed: () =>
-                  controller.isOpen ? controller.close() : controller.open(),
-            ),
-          ),
-          ShelfIconButton(
-            icon: view.direction == SortDirection.asc
-                ? Icons.arrow_upward
-                : Icons.arrow_downward,
-            tooltip: 'Sort direction',
-            onPressed: notifier.toggleDirection,
           ),
           ShelfButton(
             label: 'Add game',

@@ -1,3 +1,4 @@
+import 'package:backlog_manager/data/filter_providers.dart';
 import 'package:backlog_manager/design/glass.dart';
 import 'package:backlog_manager/design/glow.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
@@ -204,20 +205,40 @@ class _CaptionButton extends StatelessWidget {
   }
 }
 
-class _SearchField extends ConsumerWidget {
+class _SearchField extends ConsumerStatefulWidget {
   const _SearchField();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_SearchField> createState() => _SearchFieldState();
+}
+
+class _SearchFieldState extends ConsumerState<_SearchField> {
+  late final TextEditingController _controller = TextEditingController(
+    text: ref.read(filtersProvider).search,
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final text = Theme.of(context).extension<ShelfTextStyles>()!;
     final isMac = Theme.of(context).platform == TargetPlatform.macOS;
+    ref.listen(filtersProvider.select((filters) => filters.search), (_, next) {
+      if (_controller.text != next) _controller.text = next;
+    });
 
     return SizedBox(
       width: 340,
       height: 30,
       child: TextField(
         key: const Key('search-field'),
+        controller: _controller,
+        onChanged: ref.read(filtersProvider.notifier).setSearch,
         focusNode: ref.watch(searchFocusNodeProvider),
         style: text.fieldText,
         decoration: InputDecoration(

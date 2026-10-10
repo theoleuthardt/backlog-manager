@@ -35,6 +35,40 @@ class EntryFilters {
   final NumericRange mainPlusExtraTime;
   final NumericRange completionTime;
 
+  /// These filters with the given fields replaced; a range is cleared by
+  /// passing null.
+  EntryFilters copyWith({
+    String? search,
+    List<String>? platforms,
+    List<String>? genres,
+    List<String>? statuses,
+    List<String>? categories,
+    bool? ownedOnly,
+    Object? interest = _keep,
+    Object? reviewStars = _keep,
+    Object? playtime = _keep,
+    Object? mainTime = _keep,
+    Object? mainPlusExtraTime = _keep,
+    Object? completionTime = _keep,
+  }) {
+    NumericRange range(Object? value, NumericRange current) =>
+        identical(value, _keep) ? current : value as NumericRange;
+    return EntryFilters(
+      search: search ?? this.search,
+      platforms: platforms ?? this.platforms,
+      genres: genres ?? this.genres,
+      statuses: statuses ?? this.statuses,
+      categories: categories ?? this.categories,
+      ownedOnly: ownedOnly ?? this.ownedOnly,
+      interest: range(interest, this.interest),
+      reviewStars: range(reviewStars, this.reviewStars),
+      playtime: range(playtime, this.playtime),
+      mainTime: range(mainTime, this.mainTime),
+      mainPlusExtraTime: range(mainPlusExtraTime, this.mainPlusExtraTime),
+      completionTime: range(completionTime, this.completionTime),
+    );
+  }
+
   List<(NumericRange, num?)> _rangesFor(BacklogEntry entry) => [
     (interest, entry.interest),
     (reviewStars, entry.reviewStars == 0 ? null : entry.reviewStars),
@@ -44,6 +78,8 @@ class EntryFilters {
     (completionTime, entry.completionTime),
   ];
 }
+
+const _keep = Object();
 
 const emptyFilters = EntryFilters();
 
