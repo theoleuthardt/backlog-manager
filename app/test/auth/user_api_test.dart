@@ -46,6 +46,44 @@ void main() {
       );
     });
 
+    test('carries the other settings with the names of the backend', () {
+      expect(
+        const UserUpdate(
+          steamFamilyIds: '1, 2',
+          steamgriddbApiKey: 'grid',
+          discordWebhookUrl: 'https://discord.com/api/webhooks/1/x',
+          steamWishlistAutoSync: true,
+        ).toJson(),
+        {
+          'steam_family_ids': '1, 2',
+          'steamgriddb_api_key': 'grid',
+          'discord_webhook_url': 'https://discord.com/api/webhooks/1/x',
+          'steam_wishlist_auto_sync': true,
+        },
+      );
+    });
+
+    test('an empty text is sent, which removes a saved secret', () {
+      expect(
+        const UserUpdate(
+          steamApiKey: '',
+          igdbClientId: '',
+          igdbClientSecret: '',
+          steamgriddbApiKey: '',
+          discordWebhookUrl: '',
+          steamFamilyIds: '',
+        ).toJson(),
+        {
+          'steam_api_key': '',
+          'igdb_client_id': '',
+          'igdb_client_secret': '',
+          'steamgriddb_api_key': '',
+          'discord_webhook_url': '',
+          'steam_family_ids': '',
+        },
+      );
+    });
+
     test('is empty when nothing was set', () {
       expect(const UserUpdate().isEmpty, isTrue);
       expect(const UserUpdate(setupCompleted: false).isEmpty, isFalse);

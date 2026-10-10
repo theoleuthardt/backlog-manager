@@ -18,6 +18,10 @@ class UserUpdate {
     this.steamApiKey,
     this.igdbClientId,
     this.igdbClientSecret,
+    this.steamFamilyIds,
+    this.steamgriddbApiKey,
+    this.discordWebhookUrl,
+    this.steamWishlistAutoSync,
     this.setupCompleted,
   });
 
@@ -27,6 +31,10 @@ class UserUpdate {
   final String? steamApiKey;
   final String? igdbClientId;
   final String? igdbClientSecret;
+  final String? steamFamilyIds;
+  final String? steamgriddbApiKey;
+  final String? discordWebhookUrl;
+  final bool? steamWishlistAutoSync;
   final bool? setupCompleted;
 
   Map<String, Object?> toJson() => {
@@ -36,6 +44,10 @@ class UserUpdate {
     'steam_api_key': ?steamApiKey,
     'igdb_client_id': ?igdbClientId,
     'igdb_client_secret': ?igdbClientSecret,
+    'steam_family_ids': ?steamFamilyIds,
+    'steamgriddb_api_key': ?steamgriddbApiKey,
+    'discord_webhook_url': ?discordWebhookUrl,
+    'steam_wishlist_auto_sync': ?steamWishlistAutoSync,
     'setup_completed': ?setupCompleted,
   };
 

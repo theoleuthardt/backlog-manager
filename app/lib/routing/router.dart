@@ -4,6 +4,7 @@ import 'package:backlog_manager/features/creation/creation_tool_page.dart';
 import 'package:backlog_manager/features/gallery/gallery_routes.dart';
 import 'package:backlog_manager/features/home/home_page.dart';
 import 'package:backlog_manager/features/library/library_page.dart';
+import 'package:backlog_manager/features/settings/settings_page.dart';
 import 'package:backlog_manager/features/setup/setup_page.dart';
 import 'package:backlog_manager/routing/guard.dart';
 import 'package:backlog_manager/routing/history.dart';
@@ -92,11 +93,16 @@ final routerProvider = Provider<GoRouter>((ref) {
           ...galleryRoutes(enabled: kDebugMode),
         ],
       ),
-      _fullWindow(
-        AppRoutes.settings,
-        PlaceholderPage(
-          key: const Key('page-settings'),
-          title: pageTitle(AppRoutes.settings),
+      GoRoute(
+        path: AppRoutes.settings,
+        pageBuilder: (context, state) => NoTransitionPage(
+          child: FullWindowFrame(
+            location: AppRoutes.settings,
+            child: SettingsPage(
+              key: ValueKey(state.uri.queryParameters['tab']),
+              initialTab: state.uri.queryParameters['tab'],
+            ),
+          ),
         ),
       ),
       _fullWindow(AppRoutes.signIn, const SignInPage(key: Key('page-sign-in'))),

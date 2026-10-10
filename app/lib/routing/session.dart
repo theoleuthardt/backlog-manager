@@ -7,7 +7,14 @@ class SessionUser {
     required this.email,
     required this.setupCompleted,
     this.defaultSort = 'status',
-    this.hasSteamId = false,
+    this.steamId = '',
+    this.steamFamilyIds = '',
+    this.hasSteamApiKey = false,
+    this.hasIgdbCredentials = false,
+    this.hasSteamgriddbApiKey = false,
+    this.hasDiscordWebhookUrl = false,
+    this.steamWishlistAutoSync = false,
+    this.steamWishlistImportedAt,
   });
 
   final String name;
@@ -16,7 +23,23 @@ class SessionUser {
 
   /// The identifier of the sort option the library starts with.
   final String defaultSort;
-  final bool hasSteamId;
+
+  /// The SteamID64 of the account, empty when none is linked.
+  final String steamId;
+  final String steamFamilyIds;
+
+  /// Whether the user saved their own key or credentials. The secrets
+  /// themselves never leave the server.
+  final bool hasSteamApiKey;
+  final bool hasIgdbCredentials;
+  final bool hasSteamgriddbApiKey;
+  final bool hasDiscordWebhookUrl;
+
+  /// The automatic wishlist sync, which needs the first wishlist import.
+  final bool steamWishlistAutoSync;
+  final DateTime? steamWishlistImportedAt;
+
+  bool get hasSteamId => steamId.isNotEmpty;
 }
 
 sealed class SessionState {
