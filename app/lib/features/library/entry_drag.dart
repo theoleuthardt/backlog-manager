@@ -210,6 +210,7 @@ class LibraryDrag {
 
   void start(int entryId) {
     ref.read(dragProvider.notifier).begin(entryId);
+    _timer?.cancel();
     _timer = Timer.periodic(_scrollTick, (_) => _scrollTowardsEdge());
   }
 

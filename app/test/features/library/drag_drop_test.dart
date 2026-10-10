@@ -176,6 +176,28 @@ void main() {
       await tester.pump(const Duration(seconds: 6));
     });
 
+    testWidgets('says so when the category was added but not removed', (
+      tester,
+    ) async {
+      final api = categorized()
+        ..onSetEntryCategory = (entryId, categoryId, assigned) async {
+          if (!assigned) throw Exception('offline');
+        };
+      await pumpLibrary(tester, api, defaultSort: 'category');
+
+      await dragTo(
+        tester,
+        const ValueKey('tile-1'),
+        find.byKey(const Key('group-category:Indie')),
+      );
+
+      expect(
+        find.text('Added to Indie but could not remove RPG'),
+        findsOneWidget,
+      );
+      await tester.pump(const Duration(seconds: 6));
+    });
+
     testWidgets('does nothing on the category the game is already in', (
       tester,
     ) async {

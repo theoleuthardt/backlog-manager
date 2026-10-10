@@ -89,18 +89,24 @@ class LibraryActions {
     final move = categoryMove(assigned: assigned, target: target);
     if (move == null) return;
     final actions = _ref.read(categoryActionsProvider(null));
+    final add = move.add;
+    final remove = move.remove;
+    var added = false;
     try {
-      final add = move.add;
       if (add != null) {
         await actions.setAssigned(entry.id, add.id, assigned: true);
+        added = true;
       }
-      final remove = move.remove;
       if (remove != null) {
         await actions.setAssigned(entry.id, remove.id, assigned: false);
       }
       _toast('Moved "${entry.title}" to ${target.name}');
     } on Object catch (error) {
-      _toast(ApiException.from(error, 'Failed to change category').message);
+      _toast(
+        added && remove != null
+            ? 'Added to ${target.name} but could not remove ${remove.name}'
+            : ApiException.from(error, 'Failed to change category').message,
+      );
     }
   }
 
