@@ -1,3 +1,5 @@
+import 'package:backlog_manager/domain/safe_url.dart';
+
 /// One CheapShark deal, in US dollars.
 class PriceDeal {
   const PriceDeal({
@@ -113,15 +115,6 @@ const _keyShopIcons = {
   'RoyalCDKeys': 'assets/royalcdkeys-icon.png',
   'PremiumCDKeys': 'assets/premiumcdkeys-icon.png',
 };
-
-/// Whether [value] is an http or https address: the only links the app
-/// opens.
-bool isHttpUrl(String value) {
-  final uri = Uri.tryParse(value);
-  return uri != null &&
-      uri.hasAuthority &&
-      (uri.scheme == 'http' || uri.scheme == 'https');
-}
 
 /// "$9.50" or "€12.00"; an unknown currency is written as its code.
 String formatMoney(String currency, double amount) {

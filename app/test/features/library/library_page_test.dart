@@ -11,6 +11,7 @@ import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/routing/session.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../data/fakes.dart';
@@ -85,6 +86,7 @@ Future<ProviderContainer> pumpLibrary(
   String defaultSort = 'status',
   bool settle = true,
   double height = 2400,
+  List<Override> overrides = const [],
 }) async {
   tester.view.physicalSize = Size(1440, height);
   tester.view.devicePixelRatio = 1;
@@ -95,6 +97,7 @@ Future<ProviderContainer> pumpLibrary(
       overrides: [
         sessionProvider.overrideWith(() => SignedIn(defaultSort)),
         backlogApiProvider.overrideWithValue(api),
+        ...overrides,
       ],
       child: const BacklogManagerApp(),
     ),

@@ -45,11 +45,36 @@ class FakeBacklogApi implements BacklogApi {
   ) async {
     calls.add('update $entryId ${update.toJson()}');
     await onUpdate?.call(entryId, update);
-    final entry = stored[entryId]!.withStatus(
-      update.status ?? stored[entryId]!.status,
-    );
+    final entry = _applied(stored[entryId]!, update);
     stored[entryId] = entry;
     return entry;
+  }
+
+  BacklogEntry _applied(BacklogEntry entry, EntryUpdate update) {
+    return BacklogEntry(
+      id: entry.id,
+      title: entry.title,
+      imageLink: update.imageLink ?? entry.imageLink,
+      imageAlt: entry.imageAlt,
+      genre: update.genre ?? entry.genre,
+      platform: update.platform ?? entry.platform,
+      status: update.status ?? entry.status,
+      owned: update.owned ?? entry.owned,
+      interest: update.interest ?? entry.interest,
+      reviewStars: update.reviewStars ?? entry.reviewStars,
+      review: update.review ?? entry.review,
+      note: update.note ?? entry.note,
+      description: entry.description,
+      trailerLink: entry.trailerLink,
+      mainTime: entry.mainTime,
+      mainPlusExtraTime: entry.mainPlusExtraTime,
+      completionTime: entry.completionTime,
+      playtime: update.playtime ?? entry.playtime,
+      partnerPlaytime: entry.partnerPlaytime,
+      inSharedSpace: entry.inSharedSpace,
+      steamAppId: entry.steamAppId,
+      completedAt: entry.completedAt,
+    );
   }
 
   @override

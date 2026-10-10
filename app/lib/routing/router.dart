@@ -66,8 +66,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         guardRedirect(ref.read(sessionProvider), state.uri.path),
     routes: [
       ShellRoute(
-        builder: (context, state, child) =>
-            AppShell(location: state.uri.path, child: child),
+        builder: (context, state, child) => AppShell(
+          location: state.uri.path,
+          entryId: int.tryParse(state.uri.queryParameters['entry'] ?? ''),
+          child: child,
+        ),
         routes: [
           for (final path in _mainPages)
             _page(

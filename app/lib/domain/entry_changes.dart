@@ -29,22 +29,28 @@ class EntryForm {
   final String note;
 
   EntryForm copyWith({
+    String? imageLink,
     String? genre,
     String? platform,
     String? status,
+    bool? owned,
+    int? interest,
+    int? reviewStars,
+    String? review,
     String? note,
+    double? playtime,
     bool clearPlaytime = false,
   }) {
     return EntryForm(
-      imageLink: imageLink,
-      playtime: clearPlaytime ? null : playtime,
+      imageLink: imageLink ?? this.imageLink,
+      playtime: clearPlaytime ? null : playtime ?? this.playtime,
       genre: genre ?? this.genre,
       platform: platform ?? this.platform,
       status: status ?? this.status,
-      owned: owned,
-      interest: interest,
-      reviewStars: reviewStars,
-      review: review,
+      owned: owned ?? this.owned,
+      interest: interest ?? this.interest,
+      reviewStars: reviewStars ?? this.reviewStars,
+      review: review ?? this.review,
       note: note ?? this.note,
     );
   }

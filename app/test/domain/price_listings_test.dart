@@ -172,12 +172,4 @@ void main() {
       expect(banner.discountPercent, 0);
     });
   });
-
-  test('isHttpUrl accepts only http and https', () {
-    expect(isHttpUrl('https://a.example'), isTrue);
-    expect(isHttpUrl('http://a.example'), isTrue);
-    expect(isHttpUrl('javascript:alert(1)'), isFalse);
-    expect(isHttpUrl('/relative'), isFalse);
-    expect(isHttpUrl(''), isFalse);
-  });
 }
