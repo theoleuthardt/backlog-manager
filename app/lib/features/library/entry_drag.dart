@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:backlog_manager/data/backlog_providers.dart';
+import 'package:backlog_manager/data/backlog_scope.dart';
 import 'package:backlog_manager/data/drag_providers.dart';
 import 'package:backlog_manager/domain/drag_drop.dart';
 import 'package:backlog_manager/domain/library_groups.dart';
@@ -274,7 +275,8 @@ class LibraryDrag {
       return;
     }
     final categories =
-        ref.read(categoriesProvider(null)).value ?? const <Category>[];
+        ref.read(categoriesProvider(ref.read(backlogScopeProvider))).value ??
+        const <Category>[];
     final target = categories
         .where((category) => category.name == group.label)
         .firstOrNull;

@@ -30,6 +30,7 @@ class ShelfCover extends StatelessWidget {
     this.progress,
     this.meta,
     this.overlay,
+    this.footer,
     this.selected = false,
     this.selectionMode = false,
     this.onTap,
@@ -45,6 +46,10 @@ class ShelfCover extends StatelessWidget {
   /// Drawn over the art, for example badges in the corners; it should lay
   /// itself out with [Positioned].
   final Widget? overlay;
+
+  /// Replaces [progress] and [meta] below the cover, for example one bar per
+  /// member of a shared space.
+  final Widget? footer;
   final bool selected;
   final bool selectionMode;
   final VoidCallback? onTap;
@@ -118,20 +123,25 @@ class ShelfCover extends StatelessWidget {
               ],
             ),
           ),
-          if (progress != null) ...[
-            const SizedBox(height: 8),
-            ShelfProgressBar(value: progress!, height: 3),
-          ],
-          if (meta != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Text(
-                meta!,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: text.caption.copyWith(color: tokens.muted),
+          if (footer != null) ...[
+            const SizedBox(height: 10),
+            footer!,
+          ] else ...[
+            if (progress != null) ...[
+              const SizedBox(height: 8),
+              ShelfProgressBar(value: progress!, height: 3),
+            ],
+            if (meta != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  meta!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: text.caption.copyWith(color: tokens.muted),
+                ),
               ),
-            ),
+          ],
         ],
       ),
     );

@@ -1,4 +1,5 @@
 import 'package:backlog_manager/data/backlog_providers.dart';
+import 'package:backlog_manager/data/backlog_scope.dart';
 import 'package:backlog_manager/data/filter_providers.dart';
 import 'package:backlog_manager/domain/filter_entries.dart';
 import 'package:backlog_manager/domain/library_groups.dart';
@@ -31,7 +32,9 @@ class LibraryContent {
 /// direction are watched from the view, so folding a group away or paging does
 /// not sort the entries again.
 final libraryContentProvider = Provider<LibraryContent?>((ref) {
-  final entries = ref.watch(entriesProvider(null)).value;
+  final entries = ref
+      .watch(entriesProvider(ref.watch(backlogScopeProvider)))
+      .value;
   if (entries == null) return null;
   final (sortBy, direction) = ref.watch(
     libraryViewProvider.select((view) => (view.sortBy, view.direction)),
@@ -44,7 +47,10 @@ final libraryContentProvider = Provider<LibraryContent?>((ref) {
   var categoriesByEntry = const <int, List<Category>>{};
   if (sortBy == SortOption.category || filters.categories.isNotEmpty) {
     categoriesByEntry =
-        ref.watch(entryCategoriesProvider(null)).value ?? const {};
+        ref
+            .watch(entryCategoriesProvider(ref.watch(backlogScopeProvider)))
+            .value ??
+        const {};
   }
   Map<int, String>? firstCategory;
   var categoryNames = const <String>[];
@@ -54,7 +60,8 @@ final libraryContentProvider = Provider<LibraryContent?>((ref) {
         if (item.value.isNotEmpty) item.key: item.value.first.name,
     };
     final categories =
-        ref.watch(categoriesProvider(null)).value ?? <Category>[];
+        ref.watch(categoriesProvider(ref.watch(backlogScopeProvider))).value ??
+        <Category>[];
     categoryNames = [for (final category in categories) category.name];
   }
 

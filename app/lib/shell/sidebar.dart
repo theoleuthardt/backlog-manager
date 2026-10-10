@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:backlog_manager/auth/auth_controller.dart';
+import 'package:backlog_manager/data/space_api.dart';
 import 'package:backlog_manager/design/brand_mark.dart';
 import 'package:backlog_manager/design/glass.dart';
 import 'package:backlog_manager/design/glow.dart';
@@ -200,6 +201,18 @@ class _NavItem extends ConsumerWidget {
                       .copyWith(color: color),
                 ),
               ),
+              if (item.id == 'space' && ref.watch(hasSpaceInvitationProvider))
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: DecoratedBox(
+                    key: const Key('nav-space-invitation'),
+                    decoration: BoxDecoration(
+                      color: tokens.accent,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const SizedBox(width: 8, height: 8),
+                  ),
+                ),
               if (count != null)
                 Padding(
                   padding: const EdgeInsets.only(right: 10),

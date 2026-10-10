@@ -7,6 +7,7 @@ import 'package:backlog_manager/data/backlog_api.dart';
 import 'package:backlog_manager/data/backlog_providers.dart';
 import 'package:backlog_manager/data/entry_image.dart';
 import 'package:backlog_manager/data/game_info_providers.dart';
+import 'package:backlog_manager/data/space_api.dart';
 import 'package:backlog_manager/design/color_math.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
@@ -68,6 +69,7 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
   int _reviewStars = 0;
   bool _playtimeTouched = false;
   String? _steamAppIdTyped;
+  bool? _toSpaceTyped;
   _CreateState _state = _CreateState.idle;
   Timer? _leave;
 
@@ -122,6 +124,15 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
     super.dispose();
   }
 
+  int? get _activeSpaceId => ref.read(activeSpaceIdProvider);
+
+  bool get _toSpace =>
+      _activeSpaceId != null && (_toSpaceTyped ?? _prefill.targetsSpace);
+
+  int? get _targetSpaceId => _toSpace ? _activeSpaceId : null;
+
+  String get _backTo => _toSpace ? AppRoutes.space : AppRoutes.library;
+
   bool get _lookupApplies => !_prefill.custom && _prefill.title.isNotEmpty;
 
   AsyncValue<int?> get _lookup => _lookupApplies
@@ -173,17 +184,19 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
       return;
     }
     final input = _input;
-    final problem = validateCreation(input);
+    final problem = validateCreation(input, toSpace: _toSpace);
     if (problem != null) {
       _toast(problem);
       return;
     }
     final entry = buildNewEntry(input, _prefill);
+    final spaceId = _targetSpaceId;
+    final backTo = _backTo;
     setState(() => _state = _CreateState.creating);
     try {
       final existing = await ref
           .read(backlogApiProvider)
-          .duplicates(entry.title, entry.steamAppId, null);
+          .duplicates(entry.title, entry.steamAppId, spaceId);
       if (existing.isNotEmpty) {
         if (!mounted) return;
         setState(() => _state = _CreateState.idle);
@@ -196,14 +209,14 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
         setState(() => _state = _CreateState.creating);
       }
       await ref
-          .read(entriesProvider(null).notifier)
+          .read(entriesProvider(spaceId).notifier)
           .createEntry(createRequestFrom(entry));
       if (!mounted) return;
       setState(() => _state = _CreateState.created);
       _toast('Entry created successfully!');
       _leave?.cancel();
       _leave = Timer(const Duration(milliseconds: 800), () {
-        if (mounted) context.go(AppRoutes.library);
+        if (mounted) context.go(backTo);
       });
     } on Object catch (error) {
       if (!mounted) return;
@@ -229,7 +242,7 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
   }
 
   void _searchAgain() {
-    context.go(AppRoutes.library);
+    context.go(_backTo);
     ref.read(addGameRequestProvider.notifier).request();
   }
 
@@ -245,6 +258,7 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
     final isMac = Theme.of(context).platform == TargetPlatform.macOS;
+    ref.watch(activeSpaceIdProvider);
     final lookup = _lookup;
     final lookingUp = _lookupApplies && lookup.isLoading;
     final steamHours = _steamHours;
@@ -345,7 +359,7 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
             kind: ShelfButtonKind.quiet,
             onPressed: _state == _CreateState.creating
                 ? null
-                : () => context.go(AppRoutes.library),
+                : () => context.go(_backTo),
           ),
           const SizedBox(width: 8),
           ShelfButton(
@@ -503,6 +517,35 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
         ShelfFormGroup(
           title: 'Game info',
           rows: [
+            if (_activeSpaceId != null)
+              _row(
+                'Add to',
+                SizedBox(
+                  width: 220,
+                  child: ShelfMenuAnchor(
+                    entries: [
+                      ShelfMenuItem(
+                        label: 'My backlog',
+                        checked: !_toSpace,
+                        onSelected: () => setState(() => _toSpaceTyped = false),
+                      ),
+                      ShelfMenuItem(
+                        label: 'Shared space',
+                        checked: _toSpace,
+                        onSelected: () => setState(() => _toSpaceTyped = true),
+                      ),
+                    ],
+                    builder: (context, controller) => ShelfSelectTrigger(
+                      key: const Key('creation-target'),
+                      text: _toSpace ? 'Shared space' : 'My backlog',
+                      semanticLabel: 'Add to',
+                      onPressed: () => controller.isOpen
+                          ? controller.close()
+                          : controller.open(),
+                    ),
+                  ),
+                ),
+              ),
             _row(
               'Title',
               _field(
@@ -540,6 +583,7 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
               SizedBox(
                 width: 220,
                 child: StatusSelect(
+                  spaceId: _targetSpaceId,
                   value: _status,
                   onChanged: (status) => setState(() => _status = status),
                 ),

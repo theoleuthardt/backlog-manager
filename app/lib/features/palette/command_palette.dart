@@ -1,5 +1,6 @@
 import 'package:backlog_manager/api/api_providers.dart';
 import 'package:backlog_manager/data/backlog_providers.dart';
+import 'package:backlog_manager/data/backlog_scope.dart';
 import 'package:backlog_manager/data/entry_image.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
@@ -64,7 +65,10 @@ class _PaletteHostState extends ConsumerState<PaletteHost> {
     ref.listen(addGameRequestProvider, (_, _) {
       if (_addOpen) return;
       _addOpen = true;
-      showAddGameSheet(context).whenComplete(() => _addOpen = false);
+      showAddGameSheet(
+        context,
+        inSpace: ref.read(backlogScopeProvider) != null,
+      ).whenComplete(() => _addOpen = false);
     });
     ref.listen(igdbSyncRequestProvider, (_, _) {
       if (_syncOpen) return;
