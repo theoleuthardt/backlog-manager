@@ -1,6 +1,8 @@
 import asyncio
+import re
 import time
 from collections.abc import Awaitable, Callable, Sequence
+from datetime import timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
 import httpx
@@ -16,6 +18,7 @@ from backlog_manager_backend.integrations.steam import (
     get_app_details,
     get_owned_games,
     get_player_achievements,
+    get_store_items,
     get_wishlist,
 )
 from backlog_manager_backend.integrations.types import (
@@ -30,6 +33,8 @@ from backlog_manager_backend.repositories import (
     backlog_entry_repo,
     space_entry_member_repo,
     space_repo,
+    steam_app_cache_repo,
+    user_repo,
 )
 from backlog_manager_backend.schemas.backlog_entry import (
     BacklogEntry,
@@ -51,6 +56,7 @@ _STEAM_NOT_LINKED = "Steam account is not linked"
 _WISHLIST_IMPORTED_STATUS = "Not Owned"
 _WISHLIST_COVER_URL = "https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/capsule_sm_120.jpg"
 _LOOKUP_CONCURRENCY = 4
+_APP_NAME_MAX_AGE = timedelta(days=30)
 _OPERATION_DEADLINE_SECONDS = 600.0
 IMPORT_MAX_ITEMS = 2000
 
@@ -60,9 +66,10 @@ class _OperationBudget:
     semaphore bounding concurrent external lookups plus a wall-clock
     deadline after which no new lookup is started. Once exhausted, the
     affected lookups degrade to their fallbacks (None cover, no
-    beat-times, generic "Steam App <id>" title) instead of raising, so an
+    beat-times, no name - the item is then left out) instead of raising, so an
     oversized or very slow import still completes with DB writes
-    serialized rather than failing partway."""
+    serialized rather than failing partway. The waits between retries and
+    between batches of a lookup count against the same deadline."""
 
     def __init__(self) -> None:
         self.semaphore = asyncio.Semaphore(_LOOKUP_CONCURRENCY)
@@ -104,12 +111,12 @@ def _validate_candidate_count(games: Sequence[SteamOwnedGame]) -> None:
         raise ValidationError(f"Steam import is limited to {IMPORT_MAX_ITEMS} items")
 
 
-def _wishlist_title(detail: SteamAppDetails | None, app_id: int) -> str:
-    """The cleaned store name for a wishlist item, or the generic
-    "Steam App <id>" when the store lookup returned nothing."""
+def _wishlist_title(detail: SteamAppDetails | None) -> str | None:
+    """The cleaned store name for a wishlist item, or None when the store
+    lookups returned nothing."""
     if detail and detail.name:
         return game_service.clean_game_title(detail.name)
-    return f"Steam App {app_id}"
+    return None
 
 
 def _dedupe_app_ids(items: list[SteamWishlistItem]) -> list[int]:
@@ -125,31 +132,56 @@ def _dedupe_app_ids(items: list[SteamWishlistItem]) -> list[int]:
 async def _get_steam_app_details(
     app_ids: list[int], budget: _OperationBudget | None = None
 ) -> dict[int, SteamAppDetails]:
-    """Name and header image for each appid via the store appdetails
-    API (one request per app), since GetWishlist returns bare appids
-    with no names and the old reverse lookup against the full app
-    catalogue died with ISteamApps/GetAppList. Best-effort per item: an
-    appid that fails to resolve (or is skipped once the operation's
-    lookup budget is spent) is simply absent from the result rather
-    than raising, so one unlistable item can't fail the whole wishlist
-    preview. Concurrent (bounded by the budget's semaphore) rather than
-    serial so a large wishlist doesn't pay one request latency per
-    item - see issue #184."""
+    """Name and header image for each appid. GetWishlist returns bare
+    appids with no names and the old reverse lookup against the full app
+    catalogue died with ISteamApps/GetAppList, so they come from the
+    store: first the store browse API for the whole list in a few batch
+    requests (it has no request limit that a wishlist runs into), then
+    the appdetails page for each app the batch did not resolve (one
+    request per app, retried when rate-limited).
+
+    Best-effort: an appid that no lookup resolves (or that is skipped
+    once the operation's lookup budget is spent) is simply absent from
+    the result rather than raising, so one unlistable item can't fail the
+    whole wishlist preview. The lookups are concurrent (bounded by the
+    budget's semaphore) - see issue #184."""
     if not app_ids:
         return {}
+    if budget is None:
+        budget = _OperationBudget()
+
+    batch = await budget.lookup(lambda: get_store_items(app_ids), None)
+    details = dict(batch or {})
 
     async def fetch_one(app_id: int) -> tuple[int, SteamAppDetails] | None:
         detail = await get_app_details(app_id)
-        return (app_id, detail) if detail is not None else None
+        return (app_id, detail) if detail is not None and detail.name else None
 
-    if budget is None:
-        budget = _OperationBudget()
+    missing = [app_id for app_id in app_ids if app_id not in details]
     results = await asyncio.gather(
-        *(budget.lookup(lambda app_id=app_id: fetch_one(app_id), None) for app_id in app_ids)
+        *(budget.lookup(lambda app_id=app_id: fetch_one(app_id), None) for app_id in missing)
     )
-    return {
-        app_id: detail for result in results if result is not None for app_id, detail in [result]
-    }
+    details.update(result for result in results if result is not None)
+    return details
+
+
+async def _resolve_app_details(
+    session: AsyncSession, app_ids: list[int], budget: _OperationBudget | None = None
+) -> dict[int, SteamAppDetails]:
+    """_get_steam_app_details with the names resolved before taken from the
+    database: only the apps not stored yet (or stored longer than
+    _APP_NAME_MAX_AGE ago) are asked of the store, and what the store
+    answers is stored for the next time, for every user. The store limits
+    how many lookups it answers, so a wishlist import or the hourly
+    wishlist sync of a list that was named before costs no store request
+    at all. An app the store cannot name is not stored, it is asked again
+    next time."""
+    unique_ids = list(dict.fromkeys(app_ids))
+    stored = await steam_app_cache_repo.get_fresh(session, unique_ids, _APP_NAME_MAX_AGE)
+    missing = [app_id for app_id in unique_ids if app_id not in stored]
+    fetched = await _get_steam_app_details(missing, budget) if missing else {}
+    await steam_app_cache_repo.upsert_many(session, fetched)
+    return {**stored, **fetched}
 
 
 _ACHIEVEMENT_SCHEMA_CACHE_MAX_SIZE = 500
@@ -707,7 +739,7 @@ async def preview_wishlist(
     ]
 
     budget = _OperationBudget()
-    details = await _get_steam_app_details([item.appid for item in items], budget)
+    details = await _resolve_app_details(session, [item.appid for item in items], budget)
     cover_links = await asyncio.gather(
         *(
             budget.lookup(lambda item=item: _try_get_cover(item.appid, steamgriddb_api_key), None)
@@ -718,6 +750,10 @@ async def preview_wishlist(
     preview: list[SteamPreviewItem] = []
     for item, cover_link in zip(items, cover_links, strict=True):
         detail = details.get(item.appid)
+        title = _wishlist_title(detail)
+        if title is None:
+            logger.warning("Steam wishlist item has no store name", steam_app_id=item.appid)
+            continue
         image_link = cover_link
         if image_link is None:
             image_link = (detail.header_image if detail else None) or _wishlist_cover_url(
@@ -726,7 +762,7 @@ async def preview_wishlist(
         preview.append(
             SteamPreviewItem(
                 steam_app_id=item.appid,
-                title=_wishlist_title(detail, item.appid),
+                title=title,
                 image_link=image_link,
             )
         )
@@ -759,7 +795,7 @@ async def import_wishlist(
 
     budget = _OperationBudget()
     unique_app_ids = _dedupe_app_ids(items)
-    details = await _get_steam_app_details(unique_app_ids, budget)
+    details = await _resolve_app_details(session, unique_app_ids, budget)
     cover_links = dict(
         zip(
             unique_app_ids,
@@ -783,7 +819,7 @@ async def import_wishlist(
                 *(
                     budget.lookup(
                         lambda app_id=app_id: game_service.find_igdb_match(
-                            _wishlist_title(details.get(app_id), app_id), igdb_credentials
+                            _wishlist_title(details.get(app_id)) or "", igdb_credentials
                         ),
                         None,
                     )
@@ -795,10 +831,18 @@ async def import_wishlist(
     )
 
     created: list[BacklogEntry] = []
+    skipped = 0
     imported_app_ids: set[int] = set()
     total = len(items)
     for processed, item in enumerate(items, start=1):
         if item.appid in imported_app_ids:
+            if on_progress:
+                await on_progress(processed, total)
+            continue
+        title = _wishlist_title(details.get(item.appid))
+        if title is None:
+            skipped += 1
+            logger.warning("Steam wishlist item has no store name", steam_app_id=item.appid)
             if on_progress:
                 await on_progress(processed, total)
             continue
@@ -816,7 +860,7 @@ async def import_wishlist(
                     session,
                     CreateBacklogEntryParams(
                         user_id=user.id,
-                        title=_wishlist_title(detail, item.appid),
+                        title=title,
                         genre=", ".join(match.genres) if match else "",
                         description=match.description if match else None,
                         trailer_link=match.trailer_url if match else None,
@@ -828,6 +872,7 @@ async def import_wishlist(
                         owned=False,
                         interest=_IMPORTED_INTEREST,
                         steam_app_id=item.appid,
+                        steam_wishlist_import=True,
                         image_link=image_link,
                     ),
                 )
@@ -846,4 +891,115 @@ async def import_wishlist(
         finally:
             if on_progress:
                 await on_progress(processed, total)
+    if items and skipped == 0:
+        await user_repo.mark_steam_wishlist_imported(session, user.id)
     return created
+
+
+class TitleRepair(msgspec.Struct):
+    """One entry the title repair looked at: `new_title` is None when the
+    store could not name the app (the entry stays as it is)."""
+
+    entry_id: int
+    steam_app_id: int
+    old_title: str
+    new_title: str | None
+
+
+_UNNAMED_TITLE = re.compile(r"^(Steam App )?\d+$")
+
+
+async def repair_steam_titles(
+    session: AsyncSession,
+    user: User,
+    steamgriddb_api_key: str | None = None,
+    igdb_credentials: tuple[str, str] | None = None,
+    dry_run: bool = False,
+) -> list[TitleRepair]:
+    """Gives the real game name, IGDB data and a cover to every entry of the
+    user that is linked to a Steam app but still carries the app id as its
+    title ("620" or the generic "Steam App 620") - what a wishlist import
+    produced when the store lookup failed. Only those entries are touched;
+    they all came from the wishlist import, so they are marked as wishlist
+    imports and the user as having imported the wishlist. An app the store
+    cannot name leaves its entry as it is and is reported with no new title.
+    With dry_run nothing is written."""
+    entries = await backlog_entry_repo.get_backlog_entries_by_user(session, user.id)
+    unnamed = [
+        (entry, entry.steam_app_id)
+        for entry in entries
+        if entry.steam_app_id is not None and _UNNAMED_TITLE.match(entry.title.strip())
+    ]
+    if not unnamed:
+        return []
+
+    budget = _OperationBudget()
+    app_ids = sorted({app_id for _, app_id in unnamed})
+    details = await _resolve_app_details(session, app_ids, budget)
+    named_app_ids = [app_id for app_id in app_ids if (d := details.get(app_id)) and d.name]
+    cover_links = dict(
+        zip(
+            named_app_ids,
+            await asyncio.gather(
+                *(
+                    budget.lookup(
+                        lambda app_id=app_id: _try_get_cover(app_id, steamgriddb_api_key), None
+                    )
+                    for app_id in named_app_ids
+                )
+            ),
+            strict=True,
+        )
+    )
+    matches = dict(
+        zip(
+            named_app_ids,
+            await asyncio.gather(
+                *(
+                    budget.lookup(
+                        lambda app_id=app_id: game_service.find_igdb_match(
+                            _wishlist_title(details.get(app_id)) or "", igdb_credentials
+                        ),
+                        None,
+                    )
+                    for app_id in named_app_ids
+                )
+            ),
+            strict=True,
+        )
+    )
+
+    repairs: list[TitleRepair] = []
+    repaired_any = False
+    for entry, app_id in unnamed:
+        detail = details.get(app_id)
+        title = _wishlist_title(detail)
+        repairs.append(TitleRepair(entry.backlog_entry_id, app_id, entry.title, title))
+        if title is None or detail is None:
+            continue
+        if dry_run:
+            continue
+        match = matches.get(app_id)
+        times = game_service.igdb_times(match)
+        await backlog_entry_repo.update_backlog_entry(
+            session,
+            UpdateBacklogEntryParams(
+                backlog_entry_id=entry.backlog_entry_id,
+                title=title,
+                genre=", ".join(match.genres) if match else entry.genre,
+                description=match.description if match else entry.description,
+                trailer_link=match.trailer_url if match else entry.trailer_link,
+                main_time=times[0] if times else entry.main_time,
+                main_plus_extra_time=times[1] if times else entry.main_plus_extra_time,
+                completion_time=times[2] if times else entry.completion_time,
+                image_link=cover_links.get(app_id)
+                or detail.header_image
+                or entry.image_link
+                or _wishlist_cover_url(app_id),
+                steam_wishlist_import=True,
+            ),
+        )
+        repaired_any = True
+    if repaired_any:
+        await user_repo.mark_steam_wishlist_imported(session, user.id)
+    return repairs

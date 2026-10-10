@@ -1048,7 +1048,9 @@ async def test_operation_budget_bounds_concurrent_lookups(
     async def fake_get_steam_app_details(
         app_ids: list[int], budget: object = None
     ) -> dict[int, SteamAppDetails]:
-        return {}
+        return {
+            app_id: SteamAppDetails(name=f"Game {app_id}", header_image=None) for app_id in app_ids
+        }
 
     async def tracking_cover(app_id: int, key: str | None) -> str | None:
         nonlocal in_flight, peak_in_flight
@@ -1124,7 +1126,9 @@ async def test_import_wishlist_uses_capsule_cover_when_budget_skips_lookup(
     async def fake_get_steam_app_details(
         app_ids: list[int], budget: object = None
     ) -> dict[int, SteamAppDetails]:
-        return {}
+        return {
+            app_id: SteamAppDetails(name=f"Game {app_id}", header_image=None) for app_id in app_ids
+        }
 
     async def unreachable_cover(app_id: int, key: str | None) -> str | None:
         raise AssertionError("cover lookup must not run once the budget is spent")
@@ -1489,3 +1493,464 @@ async def test_import_wishlist_enriches_entries_with_igdb_data(
     assert entry.genre == "RPG"
     assert entry.description == "Monster hunter"
     assert entry.main_time == Decimal("25.0")
+
+
+async def test_app_details_come_from_one_batch_request(monkeypatch: pytest.MonkeyPatch) -> None:
+    batches: list[list[int]] = []
+
+    async def fake_get_store_items(app_ids: list[int]) -> dict[int, SteamAppDetails]:
+        batches.append(list(app_ids))
+        return {
+            620: SteamAppDetails(name="Portal 2", header_image="https://example.com/p2.jpg"),
+            504230: SteamAppDetails(name="Celeste", header_image=None),
+        }
+
+    async def forbidden_get_app_details(app_id: int) -> SteamAppDetails | None:
+        raise AssertionError("the store page must not be asked for apps the batch resolved")
+
+    monkeypatch.setattr(steam_service, "get_store_items", fake_get_store_items)
+    monkeypatch.setattr(steam_service, "get_app_details", forbidden_get_app_details)
+
+    details = await steam_service._get_steam_app_details([620, 504230])
+
+    assert batches == [[620, 504230]]
+    assert details[620].name == "Portal 2"
+    assert details[504230].name == "Celeste"
+
+
+async def test_app_details_ask_the_store_page_for_apps_the_batch_missed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def fake_get_store_items(app_ids: list[int]) -> dict[int, SteamAppDetails]:
+        return {620: SteamAppDetails(name="Portal 2", header_image=None)}
+
+    asked: list[int] = []
+
+    async def fake_get_app_details(app_id: int) -> SteamAppDetails | None:
+        asked.append(app_id)
+        return SteamAppDetails(name="Old Game", header_image=None) if app_id == 10 else None
+
+    monkeypatch.setattr(steam_service, "get_store_items", fake_get_store_items)
+    monkeypatch.setattr(steam_service, "get_app_details", fake_get_app_details)
+
+    details = await steam_service._get_steam_app_details([620, 10, 11])
+
+    assert sorted(asked) == [10, 11]
+    assert set(details) == {620, 10}
+    assert details[10].name == "Old Game"
+
+
+async def test_app_details_fall_back_to_the_store_page_when_the_batch_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def failing_get_store_items(app_ids: list[int]) -> dict[int, SteamAppDetails]:
+        raise httpx.ConnectTimeout("timed out")
+
+    async def fake_get_app_details(app_id: int) -> SteamAppDetails | None:
+        return SteamAppDetails(name=f"Game {app_id}", header_image=None)
+
+    monkeypatch.setattr(steam_service, "get_store_items", failing_get_store_items)
+    monkeypatch.setattr(steam_service, "get_app_details", fake_get_app_details)
+
+    details = await steam_service._get_steam_app_details([1, 2])
+
+    assert {app_id: detail.name for app_id, detail in details.items()} == {
+        1: "Game 1",
+        2: "Game 2",
+    }
+
+
+async def test_app_details_skip_an_app_when_every_lookup_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def failing_get_store_items(app_ids: list[int]) -> dict[int, SteamAppDetails]:
+        raise httpx.ConnectTimeout("timed out")
+
+    async def failing_get_app_details(app_id: int) -> SteamAppDetails | None:
+        raise httpx.ConnectTimeout("timed out")
+
+    monkeypatch.setattr(steam_service, "get_store_items", failing_get_store_items)
+    monkeypatch.setattr(steam_service, "get_app_details", failing_get_app_details)
+
+    assert await steam_service._get_steam_app_details([1, 2]) == {}
+
+
+async def test_import_wishlist_marks_the_entries_and_the_user_as_imported(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    assert user.steam_wishlist_imported_at is None
+
+    async def fake_get_steam_app_details(
+        app_ids: list[int], budget: object = None
+    ) -> dict[int, SteamAppDetails]:
+        return {620: SteamAppDetails(name="Portal 2", header_image=None)}
+
+    async def no_cover(app_id: int, key: str | None) -> str | None:
+        return None
+
+    monkeypatch.setattr(steam_service, "_get_steam_app_details", fake_get_steam_app_details)
+    monkeypatch.setattr(steam_service, "_try_get_cover", no_cover)
+
+    [entry] = await steam_service.import_wishlist(session, user, [SteamWishlistItem(appid=620)])
+
+    assert entry.steam_wishlist_import is True
+    refreshed = await user_repo.get_user_by_id(session, user.id)
+    assert refreshed.steam_wishlist_imported_at is not None
+
+
+async def test_import_wishlist_keeps_the_date_of_the_first_import(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_get_steam_app_details(
+        app_ids: list[int], budget: object = None
+    ) -> dict[int, SteamAppDetails]:
+        return {
+            app_id: SteamAppDetails(name=f"Game {app_id}", header_image=None) for app_id in app_ids
+        }
+
+    async def no_cover(app_id: int, key: str | None) -> str | None:
+        return None
+
+    monkeypatch.setattr(steam_service, "_get_steam_app_details", fake_get_steam_app_details)
+    monkeypatch.setattr(steam_service, "_try_get_cover", no_cover)
+
+    await steam_service.import_wishlist(session, user, [SteamWishlistItem(appid=1)])
+    first = (await user_repo.get_user_by_id(session, user.id)).steam_wishlist_imported_at
+    await asyncio.sleep(0.01)
+    await steam_service.import_wishlist(session, user, [SteamWishlistItem(appid=2)])
+
+    assert (await user_repo.get_user_by_id(session, user.id)).steam_wishlist_imported_at == first
+
+
+async def test_games_imported_from_the_library_are_not_marked_as_wishlist_imports(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    entry = await _make_entry(session, user.id, steam_app_id=504230)
+
+    assert entry.steam_wishlist_import is False
+
+
+async def _make_broken_entry(
+    session: AsyncSession, user_id: int, app_id: int, title: str
+) -> object:
+    return await backlog_entry_repo.create_backlog_entry(
+        session,
+        CreateBacklogEntryParams(
+            user_id=user_id,
+            title=title,
+            genre="",
+            platform="PC",
+            status="Not Owned",
+            owned=False,
+            interest=5,
+            steam_app_id=app_id,
+            image_link=None,
+        ),
+    )
+
+
+async def test_repair_steam_titles_names_entries_that_carry_their_app_id(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    numeric = await _make_broken_entry(session, user.id, 620, "620")
+    generic = await _make_broken_entry(session, user.id, 504230, "Steam App 504230")
+    healthy = await _make_entry(session, user.id, title="Hades", steam_app_id=1145360)
+
+    async def fake_get_steam_app_details(
+        app_ids: list[int], budget: object = None
+    ) -> dict[int, SteamAppDetails]:
+        assert sorted(app_ids) == [620, 504230]
+        return {
+            620: SteamAppDetails(name="Portal™ 2", header_image="https://example.com/p2.jpg"),
+            504230: SteamAppDetails(name="Celeste", header_image=None),
+        }
+
+    async def fake_cover(app_id: int, key: str | None) -> str | None:
+        return "https://example.com/grid.jpg" if app_id == 504230 else None
+
+    async def fake_search(title: str, *args: object, **kwargs: object) -> list[EnrichedResult]:
+        return [_igdb_result(genres=["Puzzle"], description="Think with portals")]
+
+    monkeypatch.setattr(steam_service, "_get_steam_app_details", fake_get_steam_app_details)
+    monkeypatch.setattr(steam_service, "_try_get_cover", fake_cover)
+    monkeypatch.setattr(steam_service.game_service, "search", fake_search)
+
+    repairs = await steam_service.repair_steam_titles(
+        session, user, igdb_credentials=("cid", "secret")
+    )
+
+    assert {(r.steam_app_id, r.old_title, r.new_title) for r in repairs} == {
+        (620, "620", "Portal 2"),
+        (504230, "Steam App 504230", "Celeste"),
+    }
+    entries = {
+        entry.steam_app_id: entry
+        for entry in await backlog_entry_repo.get_backlog_entries_by_user(session, user.id)
+    }
+    assert entries[620].title == "Portal 2"
+    assert entries[620].genre == "Puzzle"
+    assert entries[620].description == "Think with portals"
+    assert entries[620].image_link == "https://example.com/p2.jpg"
+    assert entries[504230].image_link == "https://example.com/grid.jpg"
+    assert entries[620].steam_wishlist_import is True
+    assert entries[1145360].title == "Hades"
+    assert entries[1145360].steam_wishlist_import is False
+    assert numeric.backlog_entry_id == entries[620].backlog_entry_id
+    assert generic.backlog_entry_id == entries[504230].backlog_entry_id
+    assert healthy.backlog_entry_id == entries[1145360].backlog_entry_id
+    refreshed = await user_repo.get_user_by_id(session, user.id)
+    assert refreshed.steam_wishlist_imported_at is not None
+
+
+async def test_repair_steam_titles_leaves_entries_the_store_cannot_name(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    await _make_broken_entry(session, user.id, 999, "999")
+
+    async def fake_get_steam_app_details(
+        app_ids: list[int], budget: object = None
+    ) -> dict[int, SteamAppDetails]:
+        return {}
+
+    monkeypatch.setattr(steam_service, "_get_steam_app_details", fake_get_steam_app_details)
+
+    repairs = await steam_service.repair_steam_titles(session, user)
+
+    assert [(r.steam_app_id, r.new_title) for r in repairs] == [(999, None)]
+    [entry] = await backlog_entry_repo.get_backlog_entries_by_user(session, user.id)
+    assert entry.title == "999"
+
+
+async def test_repair_steam_titles_dry_run_only_reports(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    await _make_broken_entry(session, user.id, 620, "620")
+
+    async def fake_get_steam_app_details(
+        app_ids: list[int], budget: object = None
+    ) -> dict[int, SteamAppDetails]:
+        return {620: SteamAppDetails(name="Portal 2", header_image=None)}
+
+    monkeypatch.setattr(steam_service, "_get_steam_app_details", fake_get_steam_app_details)
+
+    repairs = await steam_service.repair_steam_titles(session, user, dry_run=True)
+
+    assert [(r.old_title, r.new_title) for r in repairs] == [("620", "Portal 2")]
+    [entry] = await backlog_entry_repo.get_backlog_entries_by_user(session, user.id)
+    assert entry.title == "620"
+    assert entry.steam_wishlist_import is False
+    assert (await user_repo.get_user_by_id(session, user.id)).steam_wishlist_imported_at is None
+
+
+async def test_repair_steam_titles_does_nothing_without_broken_entries(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    await _make_entry(session, user.id, title="Hades", steam_app_id=1145360)
+
+    async def forbidden(app_ids: list[int], budget: object = None) -> dict[int, SteamAppDetails]:
+        raise AssertionError("nothing to look up")
+
+    monkeypatch.setattr(steam_service, "_get_steam_app_details", forbidden)
+
+    assert await steam_service.repair_steam_titles(session, user) == []
+
+
+async def test_preview_wishlist_leaves_out_games_the_store_cannot_name(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_get_wishlist(steam_id: str) -> list[SteamWishlistItem]:
+        return [SteamWishlistItem(appid=620), SteamWishlistItem(appid=999)]
+
+    async def fake_get_steam_app_details(
+        app_ids: list[int], budget: object = None
+    ) -> dict[int, SteamAppDetails]:
+        return {620: SteamAppDetails(name="Portal 2", header_image=None)}
+
+    async def no_cover(app_id: int, key: str | None) -> str | None:
+        return None
+
+    monkeypatch.setattr(steam_service, "get_wishlist", fake_get_wishlist)
+    monkeypatch.setattr(steam_service, "_get_steam_app_details", fake_get_steam_app_details)
+    monkeypatch.setattr(steam_service, "_try_get_cover", no_cover)
+
+    preview = await steam_service.preview_wishlist(session, user)
+
+    assert [(item.steam_app_id, item.title) for item in preview] == [(620, "Portal 2")]
+
+
+async def test_import_wishlist_skips_games_without_a_name_instead_of_using_the_app_id(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_get_steam_app_details(
+        app_ids: list[int], budget: object = None
+    ) -> dict[int, SteamAppDetails]:
+        return {620: SteamAppDetails(name="Portal 2", header_image=None)}
+
+    async def no_cover(app_id: int, key: str | None) -> str | None:
+        return None
+
+    monkeypatch.setattr(steam_service, "_get_steam_app_details", fake_get_steam_app_details)
+    monkeypatch.setattr(steam_service, "_try_get_cover", no_cover)
+
+    created = await steam_service.import_wishlist(
+        session, user, [SteamWishlistItem(appid=620), SteamWishlistItem(appid=999)]
+    )
+
+    assert [entry.title for entry in created] == ["Portal 2"]
+    titles = [
+        e.title for e in await backlog_entry_repo.get_backlog_entries_by_user(session, user.id)
+    ]
+    assert titles == ["Portal 2"]
+
+
+async def test_import_wishlist_stays_open_for_a_retry_when_a_game_was_skipped(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_get_steam_app_details(
+        app_ids: list[int], budget: object = None
+    ) -> dict[int, SteamAppDetails]:
+        return {620: SteamAppDetails(name="Portal 2", header_image=None)}
+
+    async def no_cover(app_id: int, key: str | None) -> str | None:
+        return None
+
+    monkeypatch.setattr(steam_service, "_get_steam_app_details", fake_get_steam_app_details)
+    monkeypatch.setattr(steam_service, "_try_get_cover", no_cover)
+
+    await steam_service.import_wishlist(
+        session, user, [SteamWishlistItem(appid=620), SteamWishlistItem(appid=999)]
+    )
+
+    assert (await user_repo.get_user_by_id(session, user.id)).steam_wishlist_imported_at is None
+
+
+async def test_the_retry_after_a_skipped_game_imports_it_and_marks_the_import(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+    names: dict[int, SteamAppDetails] = {620: SteamAppDetails(name="Portal 2", header_image=None)}
+
+    async def fake_get_steam_app_details(
+        app_ids: list[int], budget: object = None
+    ) -> dict[int, SteamAppDetails]:
+        return {app_id: names[app_id] for app_id in app_ids if app_id in names}
+
+    async def no_cover(app_id: int, key: str | None) -> str | None:
+        return None
+
+    monkeypatch.setattr(steam_service, "_get_steam_app_details", fake_get_steam_app_details)
+    monkeypatch.setattr(steam_service, "_try_get_cover", no_cover)
+    items = [SteamWishlistItem(appid=620), SteamWishlistItem(appid=999)]
+    await steam_service.import_wishlist(session, user, items)
+
+    names[999] = SteamAppDetails(name="Hades", header_image=None)
+    created = await steam_service.import_wishlist(session, user, items)
+
+    assert [entry.title for entry in created] == ["Hades"]
+    assert (await user_repo.get_user_by_id(session, user.id)).steam_wishlist_imported_at is not None
+
+
+async def test_names_that_were_resolved_before_are_not_looked_up_again(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.repositories import steam_app_cache_repo
+
+    await steam_app_cache_repo.upsert_many(session, {620: SteamAppDetails(name="Portal 2")})
+    asked: list[list[int]] = []
+
+    async def fake_get_steam_app_details(
+        app_ids: list[int], budget: object = None
+    ) -> dict[int, SteamAppDetails]:
+        asked.append(list(app_ids))
+        return {app_id: SteamAppDetails(name=f"Game {app_id}") for app_id in app_ids}
+
+    monkeypatch.setattr(steam_service, "_get_steam_app_details", fake_get_steam_app_details)
+
+    details = await steam_service._resolve_app_details(session, [620, 10, 10])
+
+    assert asked == [[10]]
+    assert details[620].name == "Portal 2"
+    assert details[10].name == "Game 10"
+
+
+async def test_resolved_names_are_stored_for_the_next_lookup(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls = 0
+
+    async def fake_get_steam_app_details(
+        app_ids: list[int], budget: object = None
+    ) -> dict[int, SteamAppDetails]:
+        nonlocal calls
+        calls += 1
+        return {
+            app_id: SteamAppDetails(name=f"Game {app_id}") for app_id in app_ids if app_id != 99
+        }
+
+    monkeypatch.setattr(steam_service, "_get_steam_app_details", fake_get_steam_app_details)
+
+    await steam_service._resolve_app_details(session, [10, 99])
+    again = await steam_service._resolve_app_details(session, [10, 99])
+
+    assert calls == 2
+    assert set(again) == {10}
+
+
+async def test_nothing_is_asked_when_every_name_is_stored(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backlog_manager_backend.repositories import steam_app_cache_repo
+
+    await steam_app_cache_repo.upsert_many(session, {620: SteamAppDetails(name="Portal 2")})
+
+    async def forbidden(app_ids: list[int], budget: object = None) -> dict[int, SteamAppDetails]:
+        raise AssertionError("every name is stored")
+
+    monkeypatch.setattr(steam_service, "_get_steam_app_details", forbidden)
+
+    assert (await steam_service._resolve_app_details(session, [620]))[620].name == "Portal 2"
+
+
+async def test_a_second_users_wishlist_import_reuses_the_stored_names(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    asked: list[list[int]] = []
+
+    async def fake_get_steam_app_details(
+        app_ids: list[int], budget: object = None
+    ) -> dict[int, SteamAppDetails]:
+        asked.append(list(app_ids))
+        return {app_id: SteamAppDetails(name=f"Game {app_id}") for app_id in app_ids}
+
+    async def no_cover(app_id: int, key: str | None) -> str | None:
+        return None
+
+    monkeypatch.setattr(steam_service, "_get_steam_app_details", fake_get_steam_app_details)
+    monkeypatch.setattr(steam_service, "_try_get_cover", no_cover)
+    first = await _make_user(session)
+    second = await user_repo.create_user(
+        session,
+        CreateUserParams(
+            username="second", email="second@example.com", password_hash="h", steam_id="2"
+        ),
+    )
+
+    await steam_service.import_wishlist(session, first, [SteamWishlistItem(appid=620)])
+    created = await steam_service.import_wishlist(session, second, [SteamWishlistItem(appid=620)])
+
+    assert asked == [[620]]
+    assert [entry.title for entry in created] == ["Game 620"]

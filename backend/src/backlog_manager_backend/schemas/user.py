@@ -47,6 +47,7 @@ class User(msgspec.Struct):
     steamgriddb_api_key_encrypted: str | None = None
     discord_webhook_url_encrypted: str | None = None
     steam_auto_import_enabled: bool = False
+    steam_wishlist_imported_at: datetime | None = None
     steam_family_ids: str | None = None
     token_version: int = 0
     failed_login_attempts: int = 0
@@ -112,6 +113,7 @@ class PublicUser(msgspec.Struct):
     has_steamgriddb_api_key: bool = False
     has_discord_webhook_url: bool = False
     steam_auto_import_enabled: bool = False
+    steam_wishlist_imported_at: datetime | None = None
     steam_family_ids: str | None = None
     setup_completed: bool = False
     default_sort: str = "status"
@@ -134,6 +136,7 @@ class PublicUser(msgspec.Struct):
             has_steamgriddb_api_key=bool(user.steamgriddb_api_key_encrypted),
             has_discord_webhook_url=bool(user.discord_webhook_url_encrypted),
             steam_auto_import_enabled=user.steam_auto_import_enabled,
+            steam_wishlist_imported_at=user.steam_wishlist_imported_at,
             steam_family_ids=user.steam_family_ids,
             setup_completed=user.setup_completed,
             default_sort=user.default_sort,

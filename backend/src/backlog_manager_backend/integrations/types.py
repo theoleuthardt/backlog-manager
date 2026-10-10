@@ -277,12 +277,17 @@ class SteamStoreItemAssets(msgspec.Struct):
     asset_url_format: str
     library_capsule: str | None = None
     library_capsule_2x: str | None = None
+    header: str | None = None
 
 
 class SteamStoreItem(msgspec.Struct):
-    """`assets` is absent for unknown or unreleased apps."""
+    """`assets` is absent for unknown or unreleased apps; `success` is 1
+    for a resolved item and another value (15 for an unknown app) when the
+    store has nothing to show, in which case `name` is empty."""
 
     id: int
+    success: int = 1
+    name: str = ""
     assets: SteamStoreItemAssets | None = None
 
 

@@ -913,8 +913,7 @@ async def test_import_steam_wishlist_stream_creates_not_owned_entries(
 
     done_events = [json.loads(data) for event, data in messages if event == "done"]
     assert len(done_events) == 1
-    assert done_events[0][0]["title"].startswith("Steam App 620")
-    assert done_events[0][0]["status"] == "Not Owned"
+    assert done_events[0] == []
 
 
 async def test_import_steam_wishlist_stream_requires_authentication(postgres_url: str) -> None:

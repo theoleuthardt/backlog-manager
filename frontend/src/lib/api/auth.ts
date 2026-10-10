@@ -16,6 +16,7 @@ export interface CurrentUser {
   hasSteamgriddbApiKey: boolean;
   hasDiscordWebhookUrl: boolean;
   steamAutoImportEnabled: boolean;
+  steamWishlistImportedAt?: string;
   steamFamilyIds?: string;
   setupCompleted: boolean;
   defaultSort: string;
@@ -70,6 +71,7 @@ export async function getCurrentUser(): Promise<CurrentUser> {
     hasSteamgriddbApiKey: data.has_steamgriddb_api_key ?? false,
     hasDiscordWebhookUrl: data.has_discord_webhook_url ?? false,
     steamAutoImportEnabled: data.steam_auto_import_enabled ?? false,
+    steamWishlistImportedAt: data.steam_wishlist_imported_at ?? undefined,
     steamFamilyIds: data.steam_family_ids ?? undefined,
     setupCompleted: data.setup_completed ?? false,
     defaultSort: data.default_sort ?? "status",

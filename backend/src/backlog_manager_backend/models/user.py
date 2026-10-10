@@ -25,6 +25,7 @@ class User(Base):
     steam_auto_import_enabled: Mapped[bool] = mapped_column(
         "SteamAutoImportEnabled", server_default=text("false")
     )
+    steam_wishlist_imported_at: Mapped[datetime | None] = mapped_column("SteamWishlistImportedAt")
     is_admin: Mapped[bool] = mapped_column("IsAdmin", server_default=text("false"))
     totp_secret_encrypted: Mapped[str | None] = mapped_column("TotpSecretEncrypted")
     totp_enabled: Mapped[bool] = mapped_column("TotpEnabled", server_default=text("false"))

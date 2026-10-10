@@ -55,6 +55,7 @@ def _to_schema(model: UserModel) -> User:
         steamgriddb_api_key_encrypted=model.steamgriddb_api_key_encrypted,
         discord_webhook_url_encrypted=model.discord_webhook_url_encrypted,
         steam_auto_import_enabled=model.steam_auto_import_enabled,
+        steam_wishlist_imported_at=model.steam_wishlist_imported_at,
         steam_family_ids=model.steam_family_ids,
         token_version=model.token_version,
         failed_login_attempts=model.failed_login_attempts,
@@ -160,6 +161,16 @@ async def update_user(session: AsyncSession, params: UpdateUserParams) -> User:
         handle_database_error(error, "update_user")
     await session.refresh(model)
     return _to_schema(model)
+
+
+async def mark_steam_wishlist_imported(session: AsyncSession, user_id: int) -> None:
+    """Records the first Steam wishlist import of the user; a later call
+    keeps the date of the first."""
+    model = await session.get(UserModel, user_id)
+    if model is None or model.steam_wishlist_imported_at is not None:
+        return
+    model.steam_wishlist_imported_at = now_truncated_to_minute()
+    await session.commit()
 
 
 async def bump_token_version(session: AsyncSession, user_id: int) -> None:

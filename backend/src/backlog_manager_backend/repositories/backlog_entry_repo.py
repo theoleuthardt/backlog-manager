@@ -37,6 +37,7 @@ def _to_schema(model: BacklogEntryModel) -> BacklogEntry:
         completion_time=model.completion_time,
         playtime=model.playtime,
         steam_app_id=model.steam_app_id,
+        steam_wishlist_import=model.steam_wishlist_import,
         review_stars=model.review_stars,
         review=model.review,
         note=model.note,
@@ -65,6 +66,7 @@ async def create_backlog_entry(
         completion_time=params.completion_time,
         playtime=params.playtime,
         steam_app_id=params.steam_app_id,
+        steam_wishlist_import=params.steam_wishlist_import,
         review_stars=params.review_stars,
         review=params.review,
         note=params.note,
@@ -200,6 +202,8 @@ async def update_backlog_entry(
         model.playtime = params.playtime
     if params.steam_app_id is not msgspec.UNSET:
         model.steam_app_id = params.steam_app_id
+    if params.steam_wishlist_import is not msgspec.UNSET:
+        model.steam_wishlist_import = params.steam_wishlist_import
     if params.review_stars is not msgspec.UNSET:
         model.review_stars = params.review_stars
     if params.review is not msgspec.UNSET:
