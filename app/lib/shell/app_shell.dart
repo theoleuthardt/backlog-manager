@@ -2,6 +2,7 @@ import 'package:backlog_manager/design/atmosphere.dart';
 import 'package:backlog_manager/design/glass.dart';
 import 'package:backlog_manager/design/glow.dart';
 import 'package:backlog_manager/features/library/wishlist_sync_prompt.dart';
+import 'package:backlog_manager/features/palette/command_palette.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:backlog_manager/shell/sidebar.dart';
@@ -41,28 +42,30 @@ class _AppShellState extends ConsumerState<AppShell> {
     final inspector = ref.watch(shellInspectorProvider);
     final location = widget.location;
 
-    return Material(
-      type: MaterialType.transparency,
-      child: AtmosphereBackground(
-        child: Column(
-          children: [
-            TitleBar(location: location),
-            Expanded(
-              child: Row(
-                children: [
-                  Sidebar(location: location),
-                  Expanded(
-                    child: SizedBox.expand(
-                      key: const Key('main-content'),
-                      child: WishlistSyncPrompt(child: widget.child),
+    return PaletteHost(
+      child: Material(
+        type: MaterialType.transparency,
+        child: AtmosphereBackground(
+          child: Column(
+            children: [
+              TitleBar(location: location),
+              Expanded(
+                child: Row(
+                  children: [
+                    Sidebar(location: location),
+                    Expanded(
+                      child: SizedBox.expand(
+                        key: const Key('main-content'),
+                        child: WishlistSyncPrompt(child: widget.child),
+                      ),
                     ),
-                  ),
-                  if (inspector != null) _InspectorSlot(child: inspector),
-                ],
+                    if (inspector != null) _InspectorSlot(child: inspector),
+                  ],
+                ),
               ),
-            ),
-            const StatusBar(),
-          ],
+              const StatusBar(),
+            ],
+          ),
         ),
       ),
     );
@@ -107,17 +110,19 @@ class FullWindowFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      type: MaterialType.transparency,
-      child: AtmosphereBackground(
-        child: Column(
-          children: [
-            TitleBar(
-              location: location,
-              minimal: location != AppRoutes.settings,
-            ),
-            Expanded(child: child),
-          ],
+    return PaletteHost(
+      child: Material(
+        type: MaterialType.transparency,
+        child: AtmosphereBackground(
+          child: Column(
+            children: [
+              TitleBar(
+                location: location,
+                minimal: location != AppRoutes.settings,
+              ),
+              Expanded(child: child),
+            ],
+          ),
         ),
       ),
     );
