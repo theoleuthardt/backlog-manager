@@ -11,6 +11,7 @@ class LibraryGroup {
     required this.label,
     required this.entries,
     this.status,
+    this.droppable = false,
   });
 
   /// Identifies the group across sort options, for the collapsed state.
@@ -18,6 +19,11 @@ class LibraryGroup {
   final String label;
   final List<BacklogEntry> entries;
   final String? status;
+
+  /// Whether a game can be dropped on the group: the status groups of the
+  /// status sort and the categories of the category sort, not the games
+  /// without a category.
+  final bool droppable;
 }
 
 /// The sections of the library for the (already filtered) [entries].
@@ -50,6 +56,7 @@ List<LibraryGroup> buildLibraryGroups({
             label: group.status,
             entries: group.entries,
             status: group.status,
+            droppable: true,
           ),
     ];
   }
@@ -64,6 +71,8 @@ List<LibraryGroup> buildLibraryGroups({
         key: '${sortBy.value}:${group.label}',
         label: group.label,
         entries: group.entries,
+        droppable:
+            sortBy == SortOption.category && group.label != uncategorizedLabel,
       ),
   ];
 
@@ -74,6 +83,11 @@ List<LibraryGroup> buildLibraryGroups({
   return [
     ...groups,
     for (final name in empty)
-      LibraryGroup(key: 'category:$name', label: name, entries: const []),
+      LibraryGroup(
+        key: 'category:$name',
+        label: name,
+        entries: const [],
+        droppable: true,
+      ),
   ];
 }

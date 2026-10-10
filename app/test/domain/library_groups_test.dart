@@ -187,4 +187,39 @@ void main() {
       expect(byStatus.key, isNot(byGenre.key));
     });
   });
+
+  group('drop targets', () {
+    test('every status group is one, empty ones too', () {
+      final groups = buildLibraryGroups(
+        entries: [game(1, 'A')],
+        config: config(SortOption.status),
+      );
+
+      expect(groups.every((group) => group.droppable), isTrue);
+    });
+
+    test('the categories are, the games without a category are not', () {
+      final groups = buildLibraryGroups(
+        entries: [game(1, 'A'), game(2, 'B')],
+        config: config(SortOption.category, categories: {1: 'RPG'}),
+        categoryNames: ['RPG', 'Indie'],
+      );
+
+      expect(
+        {for (final group in groups) group.label: group.droppable},
+        {'RPG': true, 'Uncategorized': false, 'Indie': true},
+      );
+    });
+
+    test('the other sort options have none', () {
+      final groups = buildLibraryGroups(
+        entries: [
+          game(1, 'A', genre: ['RPG']),
+        ],
+        config: config(SortOption.genre),
+      );
+
+      expect(groups.any((group) => group.droppable), isFalse);
+    });
+  });
 }

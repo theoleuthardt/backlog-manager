@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:backlog_manager/api/api_providers.dart';
 import 'package:backlog_manager/data/backlog_providers.dart';
+import 'package:backlog_manager/data/drag_providers.dart';
 import 'package:backlog_manager/data/entry_image.dart';
 import 'package:backlog_manager/data/filter_providers.dart';
 import 'package:backlog_manager/data/selection_providers.dart';
@@ -19,6 +20,7 @@ import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/domain/sort_entries.dart';
 import 'package:backlog_manager/domain/status_style.dart';
 import 'package:backlog_manager/features/common/entries_gate.dart';
+import 'package:backlog_manager/features/library/entry_drag.dart';
 import 'package:backlog_manager/features/library/filter_bar.dart';
 import 'package:backlog_manager/features/library/library_actions.dart';
 import 'package:backlog_manager/features/library/library_content.dart';
@@ -87,6 +89,24 @@ class _Library extends ConsumerStatefulWidget {
 
 class _LibraryState extends ConsumerState<_Library> {
   String? _reportedCount;
+  final _scroll = ScrollController();
+  final _viewportKey = GlobalKey();
+  final _headerKeys = <String, GlobalKey>{};
+  late final LibraryDrag _drag = LibraryDrag(
+    ref: ref,
+    context: context,
+    groups: () => ref.read(libraryContentProvider)?.groups ?? const [],
+    headerKeys: _headerKeys,
+    viewportKey: _viewportKey,
+    scroll: _scroll,
+  );
+
+  @override
+  void dispose() {
+    _drag.dispose();
+    _scroll.dispose();
+    super.dispose();
+  }
 
   void _report(String counts) {
     if (counts == _reportedCount) return;
@@ -113,27 +133,38 @@ class _LibraryState extends ConsumerState<_Library> {
     final layout = ref.watch(libraryViewProvider.select((v) => v.layout));
     final serverUrl = ref.watch(serverUrlProvider).value;
 
+    _headerKeys.removeWhere(
+      (key, _) => !content.groups.any((group) => group.key == key),
+    );
+
     return LibraryActionsScope(
       actions: LibraryActions(context, ref),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (selection.active)
-            const SelectionBar(gutter: _gutter)
-          else
-            _Toolbar(content: content),
-          const FilterBar(gutter: _gutter),
-          Expanded(
-            child: CustomScrollView(
-              slivers: [
-                const SliverPadding(padding: EdgeInsets.only(top: 6)),
-                for (final group in content.groups)
-                  ..._groupSlivers(group, layout, serverUrl),
-                const SliverPadding(padding: EdgeInsets.only(bottom: 36)),
-              ],
+      child: LibraryDragScope(
+        drag: _drag,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (selection.active)
+              const SelectionBar(gutter: _gutter)
+            else
+              _Toolbar(content: content),
+            const FilterBar(gutter: _gutter),
+            Expanded(
+              child: SizedBox.expand(
+                key: _viewportKey,
+                child: CustomScrollView(
+                  controller: _scroll,
+                  slivers: [
+                    const SliverPadding(padding: EdgeInsets.only(top: 6)),
+                    for (final group in content.groups)
+                      ..._groupSlivers(group, layout, serverUrl),
+                    const SliverPadding(padding: EdgeInsets.only(bottom: 36)),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -144,7 +175,12 @@ class _LibraryState extends ConsumerState<_Library> {
     String? serverUrl,
   ) {
     return [
-      SliverToBoxAdapter(child: _GroupHeader(group: group)),
+      SliverToBoxAdapter(
+        child: KeyedSubtree(
+          key: _headerKeys.putIfAbsent(group.key, GlobalKey.new),
+          child: _GroupHeader(group: group),
+        ),
+      ),
       _GroupBody(group: group, layout: layout, serverUrl: serverUrl),
     ];
   }
@@ -207,49 +243,63 @@ class _GroupHeader extends ConsumerWidget {
     final dot = group.status == null
         ? tokens.accent
         : colorFromHex(statusColor(group.status!));
+    final dropTarget = ref.watch(
+      dragProvider.select((drag) => drag.overGroupKey == group.key),
+    );
 
     return Padding(
       key: Key('group-${group.key}'),
       padding: const EdgeInsets.fromLTRB(_gutter, 22, _gutter, 12),
-      child: GestureDetector(
-        key: Key('group-toggle-${group.key}'),
-        behavior: HitTestBehavior.opaque,
-        onTap: () =>
-            ref.read(libraryViewProvider.notifier).toggleCollapsed(group.key),
-        child: Row(
-          children: [
-            DecoratedBox(
-              decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
-              child: const SizedBox(width: 9, height: 9),
-            ),
-            const SizedBox(width: 10),
-            Text(group.label, style: style.groupTitle),
-            const SizedBox(width: 8),
-            Text(
-              '${group.entries.length}',
-              style: style.caption.copyWith(color: tokens.muted),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      tokens.borderStrong,
-                      tokens.borderStrong.withAlpha(0),
-                    ],
-                  ),
-                ),
-                child: const SizedBox(height: 1),
+      child: DecoratedBox(
+        key: dropTarget ? const Key('drop-target') : null,
+        decoration: BoxDecoration(
+          color: dropTarget ? tokens.accentSoft : null,
+          borderRadius: BorderRadius.circular(ShelfRadius.card),
+          border: Border.all(
+            color: dropTarget ? tokens.accent : Colors.transparent,
+            width: 2,
+          ),
+        ),
+        child: GestureDetector(
+          key: Key('group-toggle-${group.key}'),
+          behavior: HitTestBehavior.opaque,
+          onTap: () =>
+              ref.read(libraryViewProvider.notifier).toggleCollapsed(group.key),
+          child: Row(
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
+                child: const SizedBox(width: 9, height: 9),
               ),
-            ),
-            const SizedBox(width: 10),
-            Icon(
-              collapsed ? Icons.chevron_right : Icons.expand_more,
-              size: 18,
-              color: tokens.muted,
-            ),
-          ],
+              const SizedBox(width: 10),
+              Text(group.label, style: style.groupTitle),
+              const SizedBox(width: 8),
+              Text(
+                '${group.entries.length}',
+                style: style.caption.copyWith(color: tokens.muted),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        tokens.borderStrong,
+                        tokens.borderStrong.withAlpha(0),
+                      ],
+                    ),
+                  ),
+                  child: const SizedBox(height: 1),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Icon(
+                collapsed ? Icons.chevron_right : Icons.expand_more,
+                size: 18,
+                color: tokens.muted,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -275,8 +325,9 @@ class _GroupBody extends ConsumerWidget {
     final visible = ref.watch(
       libraryViewProvider.select((v) => v.visibleIn(group.key)),
     );
-    if (collapsed || group.entries.isEmpty) {
-      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    if (collapsed) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    if (group.entries.isEmpty) {
+      return SliverToBoxAdapter(child: _DropHint(group: group));
     }
     final shownCount = math.min(visible, group.entries.length);
     final hidden = group.entries.length - shownCount;
@@ -342,6 +393,44 @@ class _GroupBody extends ConsumerWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// The slim placeholder of an empty group that takes a drop; it only shows
+/// while a game is dragged.
+class _DropHint extends ConsumerWidget {
+  const _DropHint({required this.group});
+
+  final LibraryGroup group;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dragging = ref.watch(dragProvider.select((drag) => drag.active));
+    if (!group.droppable || !dragging) return const SizedBox.shrink();
+    final tokens = Theme.of(context).extension<ShelfTokens>()!;
+    final style = Theme.of(context).extension<ShelfTextStyles>()!;
+    final status = group.status;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: _gutter),
+      child: DecoratedBox(
+        key: const Key('drop-hint'),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(ShelfRadius.card),
+          border: Border.all(color: tokens.borderStrong),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Center(
+            child: Text(
+              status == null
+                  ? 'Drop a game here to add it to ${group.label}'
+                  : 'Drop a game here to mark it as $status',
+              style: style.caption.copyWith(color: tokens.muted),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -697,6 +786,13 @@ class _EntryTargetState extends ConsumerState<_EntryTarget> {
         category.id,
     };
     final actions = LibraryActionsScope.of(context);
+    final sortBy = ref.watch(libraryViewProvider.select((v) => v.sortBy));
+    final drag = LibraryDragScope.maybeOf(context);
+    final canDrag =
+        drag != null &&
+        !selecting &&
+        (sortBy == SortOption.status || sortBy == SortOption.category);
+    final face = widget.builder(context, selected, selecting, _activate);
 
     return Focus(
       onFocusChange: (focused) => setState(() => _focused = focused),
@@ -710,7 +806,9 @@ class _EntryTargetState extends ConsumerState<_EntryTarget> {
             borderRadius: BorderRadius.circular(ShelfRadius.card),
             border: _focused ? Border.all(color: tokens.glow, width: 2) : null,
           ),
-          child: widget.builder(context, selected, selecting, _activate),
+          child: canDrag
+              ? EntryDragSource(entry: _entry, drag: drag, child: face)
+              : face,
         ),
       ),
     );

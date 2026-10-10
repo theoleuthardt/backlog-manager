@@ -5,6 +5,7 @@ import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/design/widgets/sheet.dart';
 import 'package:backlog_manager/design/widgets/toast.dart';
 import 'package:backlog_manager/domain/bulk_messages.dart';
+import 'package:backlog_manager/domain/drag_drop.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:flutter/material.dart';
@@ -33,8 +34,8 @@ class LibraryActionsScope extends InheritedWidget {
   bool updateShouldNotify(LibraryActionsScope oldWidget) => false;
 }
 
-/// What the library does with games: open one, move one or many to a status,
-/// delete, and add or remove categories. Every action reports its outcome in a
+/// What the library does with games: open one, move one or many to a status
+/// or a category, delete, and add or remove categories. Every action reports its outcome in a
 /// toast.
 class LibraryActions {
   LibraryActions(this._context, this._ref);
@@ -76,6 +77,37 @@ class LibraryActions {
       actionLabel: 'Undo',
       onAction: () => _entries.moveToStatus(entry.id, previous),
     );
+  }
+
+  /// Moves one game to a category: the category is added and the game's first
+  /// one is removed. Dropping a game on the category it is already in does
+  /// nothing.
+  Future<void> moveToCategory(BacklogEntry entry, Category target) async {
+    final assigned =
+        _ref.read(entryCategoriesProvider(null)).value?[entry.id] ??
+        const <Category>[];
+    final move = categoryMove(assigned: assigned, target: target);
+    if (move == null) return;
+    final actions = _ref.read(categoryActionsProvider(null));
+    final add = move.add;
+    final remove = move.remove;
+    var added = false;
+    try {
+      if (add != null) {
+        await actions.setAssigned(entry.id, add.id, assigned: true);
+        added = true;
+      }
+      if (remove != null) {
+        await actions.setAssigned(entry.id, remove.id, assigned: false);
+      }
+      _toast('Moved "${entry.title}" to ${target.name}');
+    } on Object catch (error) {
+      _toast(
+        added && remove != null
+            ? 'Added to ${target.name} but could not remove ${remove.name}'
+            : ApiException.from(error, 'Failed to change category').message,
+      );
+    }
   }
 
   Future<void> setStatusOfMany(List<int> entryIds, String status) async {
