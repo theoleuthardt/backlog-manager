@@ -39,7 +39,9 @@ class _SkippedRowsState extends State<SkippedRows> {
           children: [
             ShelfPressable(
               key: const Key('import-skipped-toggle'),
-              semanticLabel: skippedHeading(widget.rows.length),
+              semanticLabel:
+                  '${skippedHeading(widget.rows.length)}, '
+                  '${_open ? 'expanded' : 'collapsed'}',
               onPressed: () => setState(() => _open = !_open),
               builder: (context, state) => Row(
                 children: [

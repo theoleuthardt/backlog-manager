@@ -279,7 +279,9 @@ class _Duplicates extends StatelessWidget {
       children: [
         ShelfPressable(
           key: Key('import-duplicates-${row.rowIndex}'),
-          semanticLabel: 'Already in your backlog (${row.duplicates.length})',
+          semanticLabel:
+              'Already in your backlog (${row.duplicates.length}), '
+              '${open ? 'expanded' : 'collapsed'}',
           onPressed: onToggle,
           builder: (context, state) => Row(
             children: [

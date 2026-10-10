@@ -1,23 +1,32 @@
 import 'package:backlog_manager/domain/themes.dart';
 import 'package:backlog_manager/routing/session.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../data/fakes.dart';
 import '../library/library_page_test.dart' show game, pumpLibrary;
 import '../settings/settings_page_test.dart' show openSettings, theo;
 
-/// Triggers what Enter or Space does on the focused control that wraps the
-/// widget with [key]: the same intent the keyboard sends.
+/// Moves the focus to the control with [key] the way a user does, with Tab,
+/// and presses Enter on it.
 Future<void> activate(WidgetTester tester, Key key) async {
-  final inner = find.descendant(
-    of: find.byKey(key),
-    matching: find.byType(MouseRegion),
-  );
-  final context = tester.element(
-    inner.evaluate().isEmpty ? find.byKey(key) : inner.first,
-  );
-  Actions.invoke(context, const ActivateIntent());
+  final target = find.byKey(key);
+  for (var presses = 0; presses < 120; presses++) {
+    final focus = FocusManager.instance.primaryFocus?.context;
+    if (focus != null) {
+      var inside = false;
+      focus.visitAncestorElements((element) {
+        if (element.widget.key == key) inside = true;
+        return !inside;
+      });
+      if (inside) break;
+    }
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+  }
+  expect(target, findsOneWidget);
+  await tester.sendKeyEvent(LogicalKeyboardKey.enter);
   await tester.pumpAndSettle();
 }
 
