@@ -4,8 +4,10 @@ import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/data/backlog_providers.dart';
 import 'package:backlog_manager/data/games_api.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
+import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/domain/price_listings.dart';
+import 'package:backlog_manager/features/add_game/wrong_game_sheet.dart';
 import 'package:backlog_manager/platform/url_opener.dart';
 import 'package:backlog_manager/routing/router.dart';
 import 'package:backlog_manager/routing/routes.dart';
@@ -502,6 +504,156 @@ void main() {
         findsOneWidget,
       );
       expect(app.api.calls.where((c) => c.startsWith('update')), isEmpty);
+    });
+  });
+
+  group('the footer', () {
+    testWidgets('Change cover saves the chosen cover', (tester) async {
+      final games = FakeGamesApi();
+      games.onCovers = (id) async => ['https://cdn.example/new.png'];
+      final app = await openInspector(
+        tester,
+        overrides: [gamesApiProvider.overrideWithValue(games)],
+      );
+
+      await tester.tap(find.byKey(const Key('inspector-change-cover')));
+      await tester.pumpAndSettle();
+      expect(games.calls, contains('covers 1145360'));
+      await tester.tap(find.bySemanticsLabel('Cover option'));
+      await tester.pumpAndSettle();
+      expect(find.text('Cover updated'), findsOneWidget);
+      await afterAutosave(tester);
+
+      expect(
+        app.api.calls,
+        contains('update 1 {image_link: https://cdn.example/new.png}'),
+      );
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('Wrong game? makes the entry the game that was chosen', (
+      tester,
+    ) async {
+      final games = FakeGamesApi();
+      games.onSearch = (term, deep) async => [
+        const GameSearchResult(
+          id: 9,
+          title: 'Hades II',
+          imageUrl: 'https://img.example/h2.jpg',
+          genres: ['Roguelike'],
+          platforms: ['PC'],
+          mainStory: 30,
+          mainStoryWithExtras: 55,
+          completionist: 100,
+          description: 'The sequel.',
+        ),
+      ];
+      final app = await openInspector(
+        tester,
+        overrides: [gamesApiProvider.overrideWithValue(games)],
+      );
+
+      await tester.tap(find.byKey(const Key('inspector-wrong-game')));
+      await tester.pumpAndSettle();
+      expect(games.calls, contains('search Hades'));
+      await tester.tap(
+        find.descendant(
+          of: find.byType(WrongGameSheet),
+          matching: find.text('Hades II'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('wrong-use')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Game updated'), findsOneWidget);
+      final update = app.api.calls.singleWhere((c) => c.startsWith('update 1'));
+      expect(update, contains('title: Hades II'));
+      expect(update, contains('main_time: 30.0'));
+      expect(update, contains('steam_app_id: null'));
+      expect(
+        tester.widget<Text>(find.byKey(const Key('inspector-title'))).data,
+        'Hades II',
+      );
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('saves a pending edit before it replaces the game', (
+      tester,
+    ) async {
+      final games = FakeGamesApi();
+      games.onSearch = (term, deep) async => [
+        const GameSearchResult(
+          id: 9,
+          title: 'Hades II',
+          genres: [],
+          platforms: [],
+          mainStory: 1,
+          mainStoryWithExtras: 1,
+          completionist: 1,
+        ),
+      ];
+      final app = await openInspector(
+        tester,
+        overrides: [gamesApiProvider.overrideWithValue(games)],
+      );
+
+      await tester.enterText(find.byKey(const Key('inspector-playtime')), '50');
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.tap(find.byKey(const Key('inspector-wrong-game')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byType(WrongGameSheet),
+          matching: find.text('Hades II'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('wrong-use')));
+      await tester.pumpAndSettle();
+
+      final saves = app.api.calls.where((c) => c.startsWith('update 1'));
+      expect(saves.first, 'update 1 {playtime: 50.0}');
+      expect(saves.last, contains('title: Hades II'));
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('a failed wrong-game update shows a toast', (tester) async {
+      final games = FakeGamesApi();
+      games.onSearch = (term, deep) async => [
+        const GameSearchResult(
+          id: 9,
+          title: 'Hades II',
+          genres: [],
+          platforms: [],
+          mainStory: 1,
+          mainStoryWithExtras: 1,
+          completionist: 1,
+        ),
+      ];
+      final api = FakeBacklogApi(entries: const [hades])
+        ..onUpdate = (id, update) async =>
+            throw const ApiException('Server unavailable');
+      await openInspector(
+        tester,
+        backlog: api,
+        overrides: [gamesApiProvider.overrideWithValue(games)],
+      );
+
+      await tester.tap(find.byKey(const Key('inspector-wrong-game')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byType(WrongGameSheet),
+          matching: find.text('Hades II'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('wrong-use')));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Failed to update game'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 6));
     });
   });
 

@@ -5,6 +5,7 @@ import 'package:backlog_manager/auth/auth_controller.dart';
 import 'package:backlog_manager/data/backlog_api.dart';
 import 'package:backlog_manager/data/games_api.dart';
 import 'package:backlog_manager/domain/achievements.dart';
+import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/price_listings.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -16,6 +17,16 @@ final priceCacheTtlProvider = Provider<Duration>(
 /// How long the achievements of a game are kept.
 final achievementsCacheTtlProvider = Provider<Duration>(
   (ref) => const Duration(minutes: 5),
+);
+
+/// How long the results of a game search are kept.
+final searchCacheTtlProvider = Provider<Duration>(
+  (ref) => const Duration(minutes: 5),
+);
+
+/// How long covers and Steam App IDs are kept.
+final lookupCacheTtlProvider = Provider<Duration>(
+  (ref) => const Duration(hours: 1),
 );
 
 /// Keeps an auto-dispose provider alive for [ttl] after its last listener
@@ -58,4 +69,62 @@ final achievementsProvider = FutureProvider.autoDispose
       final progress = await api.achievements(steamAppId);
       if (ref.mounted) _cacheFor(ref, ttl);
       return achievementsFromResponse(progress);
+    });
+
+/// What a game search asks for.
+typedef GameSearchQuery = ({String term, bool deep});
+
+/// The games for a search term, cached for five minutes. An empty term asks
+/// nothing.
+final gameSearchProvider = FutureProvider.autoDispose
+    .family<List<GameSearchResult>, GameSearchQuery>((ref, query) async {
+      if (query.term.trim().isEmpty) return const [];
+      final api = ref.watch(gamesApiProvider);
+      final ttl = ref.read(searchCacheTtlProvider);
+      final results = await api.search(query.term.trim(), deep: query.deep);
+      if (ref.mounted) _cacheFor(ref, ttl);
+      return results;
+    });
+
+/// The Steam App ID of the game with a title, cached for an hour.
+final steamAppIdProvider = FutureProvider.autoDispose.family<int?, String>((
+  ref,
+  title,
+) async {
+  final api = ref.watch(gamesApiProvider);
+  final ttl = ref.read(lookupCacheTtlProvider);
+  final appId = await api.steamAppId(title);
+  if (ref.mounted) _cacheFor(ref, ttl);
+  return appId;
+});
+
+/// The SteamGridDB covers of a Steam App ID, cached for an hour.
+final steamGridDbCoversProvider = FutureProvider.autoDispose
+    .family<List<String>, int>((ref, steamAppId) async {
+      final api = ref.watch(gamesApiProvider);
+      final ttl = ref.read(lookupCacheTtlProvider);
+      final covers = await api.steamGridDbCovers(steamAppId);
+      if (ref.mounted) _cacheFor(ref, ttl);
+      return covers;
+    });
+
+/// The games SteamGridDB finds for a term, cached for five minutes.
+final steamGridDbSearchProvider = FutureProvider.autoDispose
+    .family<List<SteamGridDbMatch>, String>((ref, term) async {
+      if (term.trim().isEmpty) return const [];
+      final api = ref.watch(gamesApiProvider);
+      final ttl = ref.read(searchCacheTtlProvider);
+      final matches = await api.steamGridDbSearch(term.trim());
+      if (ref.mounted) _cacheFor(ref, ttl);
+      return matches;
+    });
+
+/// The covers of a game found on SteamGridDB, cached for an hour.
+final steamGridDbCoversByIdProvider = FutureProvider.autoDispose
+    .family<List<String>, int>((ref, gameId) async {
+      final api = ref.watch(gamesApiProvider);
+      final ttl = ref.read(lookupCacheTtlProvider);
+      final covers = await api.steamGridDbCoversById(gameId);
+      if (ref.mounted) _cacheFor(ref, ttl);
+      return covers;
     });

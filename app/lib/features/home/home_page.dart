@@ -90,11 +90,11 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 }
 
-class _EmptyBacklog extends StatelessWidget {
+class _EmptyBacklog extends ConsumerWidget {
   const _EmptyBacklog();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
     return Center(
@@ -114,7 +114,7 @@ class _EmptyBacklog extends StatelessWidget {
               ShelfButton(
                 label: 'Add a game',
                 kind: ShelfButtonKind.primary,
-                onPressed: () => context.go(AppRoutes.creationTool),
+                onPressed: ref.read(addGameRequestProvider.notifier).request,
               ),
               const SizedBox(width: 10),
               ShelfButton(

@@ -181,4 +181,61 @@ void main() {
     expect(achievements.items.map((a) => a.displayName), ['First', 'Secret']);
     expect(achievements.items.last.detail, 'Hidden achievement');
   });
+
+  group('gameSearchResultFromResponse', () {
+    const response = EnrichedResult(
+      id: 5,
+      hltbId: 99,
+      title: 'Hades',
+      imageUrl: 'https://img.example/h.jpg',
+      genres: ['Roguelike'],
+      platforms: ['PC'],
+      mainStory: 22,
+      mainStoryWithExtras: 48.5,
+      completionist: 95,
+      description: 'd',
+      publisher: 'Supergiant Games',
+      trailerUrl: 'https://www.youtube.com/watch?v=abcdefghijk',
+    );
+
+    test('maps the fields and the hours as numbers', () {
+      final result = gameSearchResultFromResponse(response);
+
+      expect(result.id, 5);
+      expect(result.title, 'Hades');
+      expect(result.imageUrl, 'https://img.example/h.jpg');
+      expect(result.steamAppId, isNull);
+      expect(result.mainStory, 22);
+      expect(result.mainStoryWithExtras, 48.5);
+      expect(result.publisher, 'Supergiant Games');
+    });
+
+    test('reads a Steam App ID that came as a number or as text', () {
+      EnrichedResult withId(Object? id) => EnrichedResult(
+        id: 1,
+        hltbId: 1,
+        title: 't',
+        imageUrl: null,
+        genres: const [],
+        platforms: const [],
+        mainStory: 0,
+        mainStoryWithExtras: 0,
+        completionist: 0,
+        steamAppId: id,
+      );
+
+      expect(gameSearchResultFromResponse(withId(620)).steamAppId, 620);
+      expect(gameSearchResultFromResponse(withId('620')).steamAppId, 620);
+      expect(gameSearchResultFromResponse(withId('')).steamAppId, isNull);
+    });
+  });
+
+  test('steamGridDbMatchFromResponse maps a match', () {
+    final match = steamGridDbMatchFromResponse(
+      const SteamGridDbSearchResult(id: 3, name: 'Hades'),
+    );
+
+    expect(match.id, 3);
+    expect(match.name, 'Hades');
+  });
 }

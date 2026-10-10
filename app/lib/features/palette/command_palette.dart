@@ -8,6 +8,7 @@ import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/design/widgets/sheet.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/domain/palette_search.dart';
+import 'package:backlog_manager/features/add_game/add_game_sheet.dart';
 import 'package:backlog_manager/features/palette/palette_actions.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/shell/palette_registry.dart';
@@ -18,8 +19,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 /// Opens the command palette when [paletteOpenProvider] turns on and closes it
-/// when that turns off, and registers the actions of the window. It sits
-/// inside the navigator, because the palette is a sheet of it.
+/// when that turns off, opens the add-a-game sheet when "Add game" is asked
+/// for ([addGameRequestProvider]), and registers the actions of the window. It
+/// sits inside the navigator, because the sheets are routes of it.
 class PaletteHost extends ConsumerStatefulWidget {
   const PaletteHost({required this.child, super.key});
 
@@ -31,6 +33,7 @@ class PaletteHost extends ConsumerStatefulWidget {
 
 class _PaletteHostState extends ConsumerState<PaletteHost> {
   bool _showing = false;
+  bool _addOpen = false;
 
   @override
   void initState() {
@@ -56,6 +59,11 @@ class _PaletteHostState extends ConsumerState<PaletteHost> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(addGameRequestProvider, (_, _) {
+      if (_addOpen) return;
+      _addOpen = true;
+      showAddGameSheet(context).whenComplete(() => _addOpen = false);
+    });
     ref.listen(paletteOpenProvider, (_, open) {
       if (open) {
         _show();

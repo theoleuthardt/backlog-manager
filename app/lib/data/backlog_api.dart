@@ -1,6 +1,7 @@
 import 'package:backlog_manager/api/api_providers.dart';
 import 'package:backlog_manager/api/generated/export.dart' as wire;
 import 'package:backlog_manager/api/mappers.dart';
+import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,7 +21,29 @@ class EntryUpdate {
     this.genre,
     this.platform,
     this.imageLink,
+    this.title,
+    this.description,
+    this.trailerLink,
+    this.mainTime,
+    this.mainPlusExtraTime,
+    this.completionTime,
+    this.clearSteamAppId = false,
   });
+
+  /// The update that makes an entry the game of [changes]: another title,
+  /// cover, description, trailer and times, and no Steam App ID any more.
+  EntryUpdate.wrongGame(WrongGameChanges changes)
+    : this(
+        title: changes.title,
+        genre: changes.genre,
+        imageLink: changes.imageLink,
+        description: changes.description,
+        trailerLink: changes.trailerLink,
+        mainTime: changes.mainTime,
+        mainPlusExtraTime: changes.mainPlusExtraTime,
+        completionTime: changes.completionTime,
+        clearSteamAppId: changes.clearSteamAppId,
+      );
 
   final String? status;
   final double? playtime;
@@ -32,6 +55,15 @@ class EntryUpdate {
   final List<String>? genre;
   final List<String>? platform;
   final String? imageLink;
+  final String? title;
+  final String? description;
+  final String? trailerLink;
+  final double? mainTime;
+  final double? mainPlusExtraTime;
+  final double? completionTime;
+
+  /// Sends an explicit `null` for the Steam App ID, which clears it.
+  final bool clearSteamAppId;
 
   Map<String, Object?> toJson() => {
     'status': ?status,
@@ -44,6 +76,13 @@ class EntryUpdate {
     'genre': ?genre,
     'platform': ?platform,
     'image_link': ?imageLink,
+    'title': ?title,
+    'description': ?description,
+    'trailer_link': ?trailerLink,
+    'main_time': ?mainTime,
+    'main_plus_extra_time': ?mainPlusExtraTime,
+    'completion_time': ?completionTime,
+    if (clearSteamAppId) 'steam_app_id': null,
   };
 }
 
