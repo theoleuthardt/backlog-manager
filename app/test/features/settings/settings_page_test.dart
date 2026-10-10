@@ -38,6 +38,8 @@ SessionUser applied(SessionUser user, UserUpdate update) {
     defaultSort: text('default_sort', user.defaultSort),
     steamId: text('steam_id', user.steamId),
     steamFamilyIds: text('steam_family_ids', user.steamFamilyIds),
+    theme: update.theme ?? user.theme,
+    customThemes: update.customThemes ?? user.customThemes,
     hasSteamApiKey: has('steam_api_key', user.hasSteamApiKey),
     hasIgdbCredentials: has('igdb_client_id', user.hasIgdbCredentials),
     hasSteamgriddbApiKey: has('steamgriddb_api_key', user.hasSteamgriddbApiKey),

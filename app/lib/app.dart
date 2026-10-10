@@ -1,4 +1,5 @@
 import 'package:backlog_manager/design/theme_provider.dart';
+import 'package:backlog_manager/features/appearance/theme_actions.dart';
 import 'package:backlog_manager/routing/router.dart';
 import 'package:backlog_manager/shell/shell_shortcuts.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +12,7 @@ class BacklogManagerApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(themeSyncProvider);
     return MaterialApp.router(
       title: 'Backlog Manager',
       debugShowCheckedModeBanner: false,

@@ -1,4 +1,20 @@
+import 'dart:convert';
 import 'dart:math';
+
+/// The six colours of a theme, in the order of the theme form.
+enum ThemeColorField {
+  background('Background', 'Page background'),
+  surface('Surface', 'Cards, dialogs and menus'),
+  foreground('Text', 'Text and icons'),
+  accent('Accent', 'Buttons and highlights'),
+  border('Border', 'Outlines and dividers'),
+  glow('Glow', 'Glow and gradient tint');
+
+  const ThemeColorField(this.label, this.hint);
+
+  final String label;
+  final String hint;
+}
 
 /// The six colours a theme is made of.
 class ThemeColors {
@@ -17,6 +33,43 @@ class ThemeColors {
   final String accent;
   final String border;
   final String glow;
+
+  String colorOf(ThemeColorField field) => switch (field) {
+    ThemeColorField.background => background,
+    ThemeColorField.surface => surface,
+    ThemeColorField.foreground => foreground,
+    ThemeColorField.accent => accent,
+    ThemeColorField.border => border,
+    ThemeColorField.glow => glow,
+  };
+
+  /// These colours with [field] set to [value].
+  ThemeColors withColor(ThemeColorField field, String value) {
+    String pick(ThemeColorField candidate) =>
+        candidate == field ? value : colorOf(candidate);
+    return ThemeColors(
+      background: pick(ThemeColorField.background),
+      surface: pick(ThemeColorField.surface),
+      foreground: pick(ThemeColorField.foreground),
+      accent: pick(ThemeColorField.accent),
+      border: pick(ThemeColorField.border),
+      glow: pick(ThemeColorField.glow),
+    );
+  }
+
+  /// Whether all six are `#rrggbb` colours.
+  bool get isValid =>
+      ThemeColorField.values.every((field) => isHexColor(colorOf(field)));
+
+  @override
+  bool operator ==(Object other) =>
+      other is ThemeColors &&
+      ThemeColorField.values.every(
+        (field) => colorOf(field) == other.colorOf(field),
+      );
+
+  @override
+  int get hashCode => Object.hashAll(ThemeColorField.values.map(colorOf));
 }
 
 /// A theme the user created; stored with the account.
@@ -27,9 +80,33 @@ class CustomTheme {
     required this.colors,
   });
 
+  factory CustomTheme.fromJson(Map<String, dynamic> json) {
+    return CustomTheme(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      colors: ThemeColors(
+        background: json['background'] as String,
+        surface: json['surface'] as String,
+        foreground: json['foreground'] as String,
+        accent: json['accent'] as String,
+        border: json['border'] as String,
+        glow: json['glow'] as String,
+      ),
+    );
+  }
+
   final String id;
   final String name;
   final ThemeColors colors;
+
+  /// The flat shape the backend stores: the name and the six colours beside
+  /// the id.
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'name': name,
+    for (final field in ThemeColorField.values)
+      field.name: colors.colorOf(field),
+  };
 }
 
 class BuiltinTheme {
@@ -73,7 +150,7 @@ const builtinThemes = [
   ),
   BuiltinTheme(
     id: 'dark',
-    name: 'Dark',
+    name: 'Classic dark',
     colors: ThemeColors(
       background: '#000000',
       surface: '#0f0f12',
@@ -165,4 +242,80 @@ String newCustomThemeId(List<String> takenIds, {Random? random}) {
     id = 'custom-$suffix';
   } while (takenIds.contains(id));
   return id;
+}
+
+/// The built-in themes as the appearance screen lists them: the old dark
+/// theme, which keeps its id, comes last.
+List<BuiltinTheme> get displayThemes => [
+  for (final theme in builtinThemes)
+    if (theme.id != 'dark') theme,
+  builtinThemes.firstWhere((theme) => theme.id == 'dark'),
+];
+
+const maxCustomThemes = 10;
+const themeNameMaxLength = 30;
+
+/// Whether the theme form can be saved: a name, six valid colours and, for a
+/// new theme, room below the limit of [maxCustomThemes].
+bool canSaveTheme({
+  required String name,
+  required ThemeColors colors,
+  required int customCount,
+  required bool editing,
+}) {
+  final atLimit = !editing && customCount >= maxCustomThemes;
+  return name.trim().isNotEmpty && colors.isValid && !atLimit;
+}
+
+const themeLimitMessage =
+    'You can keep up to $maxCustomThemes custom themes - delete one to save '
+    'another.';
+
+String themeSavedMessage(String name) => 'Theme "$name" saved';
+
+String themeDeletedMessage(String name) => 'Theme "$name" deleted';
+
+/// The selected theme and the custom themes, as the app keeps them on the
+/// device so the theme applies before the network answers.
+class ThemeSelection {
+  const ThemeSelection({required this.id, required this.customThemes});
+
+  final String id;
+  final List<CustomTheme> customThemes;
+}
+
+String encodeThemeCache(String id, List<CustomTheme> customThemes) {
+  return jsonEncode({
+    'id': id,
+    'customThemes': [for (final theme in customThemes) theme.toJson()],
+  });
+}
+
+/// The selection stored by [encodeThemeCache] (or by the web client, which
+/// stores more beside it), or null when [text] holds none. Themes that are
+/// not complete are dropped.
+ThemeSelection? decodeThemeCache(String? text) {
+  if (text == null) return null;
+  final Object? decoded;
+  try {
+    decoded = jsonDecode(text);
+  } on FormatException {
+    return null;
+  }
+  if (decoded is! Map<String, dynamic>) return null;
+  final id = decoded['id'];
+  if (id is! String) return null;
+  final stored = decoded['customThemes'];
+  final themes = <CustomTheme>[];
+  if (stored is List<dynamic>) {
+    for (final item in stored) {
+      if (item is! Map<String, dynamic>) continue;
+      try {
+        themes.add(CustomTheme.fromJson(item));
+      } on TypeError {
+        continue;
+      }
+    }
+  }
+  return ThemeSelection(id: id, customThemes: themes);
 }

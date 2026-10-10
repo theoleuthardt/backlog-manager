@@ -1,3 +1,4 @@
+import 'package:backlog_manager/features/appearance/appearance_page.dart';
 import 'package:backlog_manager/features/auth/loading_page.dart';
 import 'package:backlog_manager/features/auth/sign_in_page.dart';
 import 'package:backlog_manager/features/creation/creation_tool_page.dart';
@@ -107,6 +108,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                 AppRoutes.import => const ImportCsvPage(),
                 AppRoutes.space => const SpacePage(),
                 AppRoutes.steam => const SteamPage(),
+                AppRoutes.appearance => const AppearancePage(),
                 AppRoutes.creationTool => CreationToolPage(
                   key: ValueKey(state.uri.toString()),
                   query: state.uri.queryParameters,
