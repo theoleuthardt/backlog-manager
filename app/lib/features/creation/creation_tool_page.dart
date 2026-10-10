@@ -201,6 +201,7 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
       if (!mounted) return;
       setState(() => _state = _CreateState.created);
       _toast('Entry created successfully!');
+      _leave?.cancel();
       _leave = Timer(const Duration(milliseconds: 800), () {
         if (mounted) context.go(AppRoutes.library);
       });
@@ -211,6 +212,7 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
         'Failed to create: '
         '${ApiException.from(error, 'Please try again.').message}',
       );
+      _leave?.cancel();
       _leave = Timer(const Duration(seconds: 3), () {
         if (mounted) setState(() => _state = _CreateState.idle);
       });

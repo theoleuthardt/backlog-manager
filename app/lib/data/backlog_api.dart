@@ -332,7 +332,8 @@ class ApiBacklogApi implements BacklogApi {
     if (raw == null) return null;
     try {
       final hours = jsonDecode(raw);
-      return hours is num ? hours.toDouble() : toNumber(hours as String?);
+      if (hours is num) return hours.isFinite ? hours.toDouble() : null;
+      return hours is String ? toNumber(hours) : null;
     } on FormatException {
       return toNumber(raw);
     }

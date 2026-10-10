@@ -327,6 +327,40 @@ void main() {
       await tester.pump(const Duration(seconds: 6));
     });
 
+    testWidgets('a retry that works is not reset by the old failure timer', (
+      tester,
+    ) async {
+      var failing = true;
+      final tool = await openTool(
+        tester,
+        setUp: (api, games) => api.onCreate = (request, spaceId) async {
+          if (failing) throw Exception('offline');
+        },
+      );
+      await chooseStatus(tester, 'Not Started');
+      await submit(tester);
+      expect(find.text('Failed'), findsOneWidget);
+
+      failing = false;
+      await tester.pump(const Duration(milliseconds: 2500));
+      await tester.tap(find.byKey(const Key('creation-submit')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.text('Created!'), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 600));
+
+      expect(find.text('Created!'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('creation-submit')),
+          matching: find.text('Add game'),
+        ),
+        findsNothing,
+      );
+      expect(tool.api.created, hasLength(2));
+      await tester.pump(const Duration(seconds: 6));
+    });
+
     testWidgets('Ctrl+Enter creates the entry', (tester) async {
       final tool = await openTool(tester);
       await chooseStatus(tester, 'Not Started');

@@ -363,6 +363,20 @@ void main() {
       expect(await apiFor(server).steamPlaytime(620), 3);
     });
 
+    test(
+      'reads no Steam playtime from anything but a number or text',
+      () async {
+        for (final body in [
+          <String, Object?>{'hours': 12},
+          true,
+        ]) {
+          final server = FakeServer((_) => (status: 200, body: body));
+
+          expect(await apiFor(server).steamPlaytime(620), isNull);
+        }
+      },
+    );
+
     test('reads no Steam playtime when the account has none', () async {
       final server = FakeServer((_) => (status: 200, body: null));
 
