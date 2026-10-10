@@ -339,3 +339,7 @@ All three are sheets in `features/add_game/`, fed by `GamesApi` (`data/games_api
 ### Duplicate games
 
 The icon button next to "Sync IGDB" in the library toolbar opens "Duplicate games" (`features/duplicates/duplicates_sheet.dart`, logic in `domain/duplicates.dart`): every game that is in the personal backlog more than once, found on the client from the loaded entries. Entries are the same game when they share the title (case, outer and repeated spaces ignored, like the server's duplicate check) or the Steam App ID; entries linked by either end up in one group, so three entries chained by title and by app ID are one group. A group shows why it is one ("Same title", "Same Steam App ID", "Same title and Steam App ID"), its entries by age (the lowest ID, marked "(oldest)", is the one the others are compared with), and for every other entry what differs from the oldest as the usual minus/plus diff (genre, platform, status, owned, playtime, rating, note). "Delete" asks first, through the same confirmation as everywhere else, and the groups update as entries go.
+
+### Accessibility
+
+The checklist of what the client does for keyboard users, screen readers, contrast, text size and reduced motion, with the checks that are automated and the ones that need a person, is in [`ACCESSIBILITY.md`](ACCESSIBILITY.md).

@@ -70,7 +70,7 @@ class ShelfTokens extends ThemeExtension<ShelfTokens> {
       foreground: foreground,
       text2: mix(foreground, background, 0.11),
       muted: mix(foreground, background, 0.35),
-      faint: mix(foreground, background, 0.50),
+      faint: mix(foreground, background, 0.45),
       accent: accent,
       accentSoft: atOpacity(accent, 0.14),
       accentA: mix(accent, const Color(0xFFFFFFFF), 0.2),

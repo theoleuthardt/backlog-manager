@@ -10,6 +10,7 @@ import 'package:backlog_manager/design/widgets/chips.dart';
 import 'package:backlog_manager/design/widgets/color_picker.dart';
 import 'package:backlog_manager/design/widgets/fields.dart';
 import 'package:backlog_manager/design/widgets/menu.dart';
+import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/design/widgets/select.dart';
 import 'package:backlog_manager/design/widgets/toast.dart';
 import 'package:backlog_manager/domain/themes.dart';
@@ -466,49 +467,59 @@ class _ThemeItem extends StatelessWidget {
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onSelect,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: active ? tokens.accentSoft : tokens.surface,
-            borderRadius: BorderRadius.circular(ShelfRadius.control),
-            border: Border.all(
-              color: active ? tokens.accent : tokens.borderSubtle,
-            ),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: active ? tokens.accentSoft : tokens.surface,
+          borderRadius: BorderRadius.circular(ShelfRadius.control),
+          border: Border.all(
+            color: active ? tokens.accent : tokens.borderSubtle,
           ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            child: Row(
-              children: [
-                ThemeSwatch(colors: colors),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: style.label,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: ShelfPressable(
+                  semanticLabel: active ? '$name, active' : name,
+                  onPressed: onSelect,
+                  borderRadius: ShelfRadius.control,
+                  builder: (context, state) => Row(
+                    children: [
+                      ThemeSwatch(colors: colors),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: style.label,
+                        ),
+                      ),
+                      if (active)
+                        const ShelfChip(
+                          label: 'active',
+                          kind: ShelfChipKind.accent,
+                        ),
+                    ],
                   ),
                 ),
-                if (active)
-                  const ShelfChip(label: 'active', kind: ShelfChipKind.accent),
-                if (onEdit != null)
-                  ShelfIconButton(
-                    key: Key('theme-edit-$id'),
-                    icon: Icons.edit_outlined,
-                    tooltip: 'Edit $name',
-                    onPressed: onEdit,
-                  ),
-                if (onDelete != null)
-                  ShelfIconButton(
-                    key: Key('theme-delete-$id'),
-                    icon: Icons.delete_outline,
-                    tooltip: 'Delete $name',
-                    onPressed: onDelete,
-                  ),
-              ],
-            ),
+              ),
+              if (onEdit != null)
+                ShelfIconButton(
+                  key: Key('theme-edit-$id'),
+                  icon: Icons.edit_outlined,
+                  tooltip: 'Edit $name',
+                  onPressed: onEdit,
+                ),
+              if (onDelete != null)
+                ShelfIconButton(
+                  key: Key('theme-delete-$id'),
+                  icon: Icons.delete_outline,
+                  tooltip: 'Delete $name',
+                  onPressed: onDelete,
+                ),
+            ],
           ),
         ),
       ),

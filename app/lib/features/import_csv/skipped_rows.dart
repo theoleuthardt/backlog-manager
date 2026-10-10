@@ -1,6 +1,7 @@
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
+import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/domain/csv_import.dart';
 import 'package:backlog_manager/features/import_csv/csv_import_controller.dart';
 import 'package:flutter/material.dart';
@@ -36,11 +37,11 @@ class _SkippedRowsState extends State<SkippedRows> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            GestureDetector(
+            ShelfPressable(
               key: const Key('import-skipped-toggle'),
-              behavior: HitTestBehavior.opaque,
-              onTap: () => setState(() => _open = !_open),
-              child: Row(
+              semanticLabel: skippedHeading(widget.rows.length),
+              onPressed: () => setState(() => _open = !_open),
+              builder: (context, state) => Row(
                 children: [
                   Icon(Icons.warning_amber, size: 16, color: tokens.danger),
                   const SizedBox(width: 8),

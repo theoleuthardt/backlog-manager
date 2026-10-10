@@ -3,6 +3,7 @@ import 'package:backlog_manager/data/entry_image.dart';
 import 'package:backlog_manager/data/game_info_providers.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
+import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/design/widgets/progress.dart';
 import 'package:backlog_manager/design/widgets/sheet.dart';
 import 'package:backlog_manager/domain/achievements.dart';
@@ -71,19 +72,16 @@ class AchievementProgressSection extends ConsumerWidget {
             const SizedBox(height: 6),
             Align(
               alignment: Alignment.centerLeft,
-              child: GestureDetector(
+              child: ShelfPressable(
                 key: const Key('show-achievements'),
-                behavior: HitTestBehavior.opaque,
-                onTap: () => showShelfSheet<void>(
+                semanticLabel: 'Show all achievements',
+                onPressed: () => showShelfSheet<void>(
                   context,
                   builder: (_) => AchievementsSheet(achievements: data),
                 ),
-                child: MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: Text(
-                    'Show all achievements',
-                    style: style.caption.copyWith(color: tokens.muted),
-                  ),
+                builder: (context, state) => Text(
+                  'Show all achievements',
+                  style: style.caption.copyWith(color: tokens.muted),
                 ),
               ),
             ),

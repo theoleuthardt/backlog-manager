@@ -16,6 +16,7 @@ import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/design/widgets/chips.dart';
 import 'package:backlog_manager/design/widgets/cover.dart';
 import 'package:backlog_manager/design/widgets/menu.dart';
+import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/domain/format.dart';
 import 'package:backlog_manager/domain/library_groups.dart';
 import 'package:backlog_manager/domain/models.dart';
@@ -328,12 +329,15 @@ class _GroupHeader extends ConsumerWidget {
             width: 2,
           ),
         ),
-        child: GestureDetector(
+        child: ShelfPressable(
           key: Key('group-toggle-${group.key}'),
-          behavior: HitTestBehavior.opaque,
-          onTap: () =>
+          borderRadius: ShelfRadius.card,
+          semanticLabel:
+              '${group.label}, ${group.entries.length}, '
+              '${collapsed ? 'collapsed' : 'expanded'}',
+          onPressed: () =>
               ref.read(libraryViewProvider.notifier).toggleCollapsed(group.key),
-          child: Row(
+          builder: (context, state) => Row(
             children: [
               DecoratedBox(
                 decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
