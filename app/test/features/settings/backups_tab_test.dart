@@ -279,6 +279,33 @@ void main() {
       await tester.pump(const Duration(seconds: 6));
     });
 
+    testWidgets('sends the name once however often Save is pressed', (
+      tester,
+    ) async {
+      final gate = Completer<void>();
+      final (_, api, _, _) = await open(
+        tester,
+        setUp: (api) => api.onRename = (id, name) async {
+          await gate.future;
+          return manual;
+        },
+      );
+
+      await tester.tap(find.byKey(const Key('backup-rename-3')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('backup-name')), 'Safe');
+      await tester.tap(find.byKey(const Key('backup-name-save')));
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('backup-name-save')));
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pump();
+
+      expect(api.calls.where((c) => c.startsWith('rename')), hasLength(1));
+      gate.complete();
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 6));
+    });
+
     testWidgets('Esc and Cancel leave the name alone', (tester) async {
       final (_, api, _, _) = await open(tester);
 

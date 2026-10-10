@@ -30,6 +30,7 @@ class _BackupsTabState extends ConsumerState<BackupsTab> {
   final _name = TextEditingController();
   int? _renaming;
   bool _creating = false;
+  bool _renameSaving = false;
   bool _downloading = false;
 
   @override
@@ -65,7 +66,8 @@ class _BackupsTabState extends ConsumerState<BackupsTab> {
 
   Future<void> _saveRename() async {
     final id = _renaming;
-    if (id == null) return;
+    if (id == null || _renameSaving) return;
+    setState(() => _renameSaving = true);
     try {
       await ref
           .read(backupsApiProvider)
@@ -75,6 +77,8 @@ class _BackupsTabState extends ConsumerState<BackupsTab> {
       _toast('Backup renamed');
     } on Object catch (error) {
       _toast(_message(error, 'Failed to rename backup'));
+    } finally {
+      if (mounted) setState(() => _renameSaving = false);
     }
   }
 
@@ -291,6 +295,7 @@ class _BackupsTabState extends ConsumerState<BackupsTab> {
             key: const Key('backup-name-save'),
             label: 'Save',
             kind: ShelfButtonKind.primary,
+            busy: _renameSaving,
             onPressed: () => unawaited(_saveRename()),
           ),
           const SizedBox(width: 8),
