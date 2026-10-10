@@ -9,7 +9,7 @@ Built from `frontend/src/app/`, `frontend/src/hooks/` and `frontend/src/lib/` fo
 | `login` | `features/auth/sign_in_page.dart`: password, two-factor code or backup code, server address | done |
 | `setup` | `features/setup/`: the wizard (profile, Steam, API keys, theme) | done |
 | `dashboard` | `features/library/`: groups, covers and rows, filters, sort, drag and drop, selection, context menu | done |
-| (none) | `features/home/`: the home screen with continue playing, stats and recent games | new |
+| (none) | `features/home/`: the home screen with Up next, short games first, recently completed and the stats of the backlog | new |
 | `account` | `features/settings/`: general, integrations, security (two-factor), backups, about | done |
 | `creation-tool` | `features/creation/` and `features/add_game/`: search, wrong game, cover, duplicate check, creation tool | done |
 | `import-csv` | `features/import_csv/` | done |
@@ -73,7 +73,7 @@ Built from `frontend/src/app/`, `frontend/src/hooks/` and `frontend/src/lib/` fo
 | Empty backlog | "Your backlog is empty" with an add button; the shared space has its own empty text | done |
 | 2000 entries | lazy slivers in the library; not measured | open: #283 compares it with the Tauri baseline |
 | Expired token | a 401 ends the session with "Your session has ended. Sign in again." | done |
-| Backend offline | loading states with "Try again" on the library, the space and the settings tabs; the polling of the space keeps the screen | done |
+| Backend offline | "Try again" on the library and the space, error toasts and write-only fields elsewhere; a failed refresh of the space keeps the screen | done |
 | Large CSV | files up to 10 MB, a thousand rows stay fast, preview and import can be cancelled | done |
 | Space with an invitation | accept, decline, the dot in the sidebar, the 30 second refresh | done |
 | Two-factor sign-in, enrolment and disabling | `auth/`, `features/settings/security_tab.dart` | done |
