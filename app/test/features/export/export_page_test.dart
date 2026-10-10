@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:backlog_manager/data/backlog_api.dart';
-import 'package:backlog_manager/data/backlog_providers.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/platform/file_saver.dart';
 import 'package:flutter/material.dart';
