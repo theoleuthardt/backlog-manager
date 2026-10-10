@@ -4,6 +4,7 @@ import 'package:backlog_manager/features/creation/creation_tool_page.dart';
 import 'package:backlog_manager/features/export/export_page.dart';
 import 'package:backlog_manager/features/gallery/gallery_routes.dart';
 import 'package:backlog_manager/features/home/home_page.dart';
+import 'package:backlog_manager/features/import_csv/import_csv_page.dart';
 import 'package:backlog_manager/features/library/library_page.dart';
 import 'package:backlog_manager/features/settings/settings_page.dart';
 import 'package:backlog_manager/features/setup/setup_page.dart';
@@ -85,6 +86,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                 AppRoutes.home => const HomePage(),
                 AppRoutes.library => const LibraryPage(),
                 AppRoutes.export => const ExportPage(),
+                AppRoutes.import => const ImportCsvPage(),
                 AppRoutes.creationTool => CreationToolPage(
                   key: ValueKey(state.uri.toString()),
                   query: state.uri.queryParameters,
