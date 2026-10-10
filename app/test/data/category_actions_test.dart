@@ -89,6 +89,31 @@ void main() {
       expect(await assigned(), isEmpty);
     });
 
+    test('add a category to many games, one request per game', () async {
+      final result = await actions().setAssignedMany([1, 2], 1, assigned: true);
+
+      expect(result.succeeded, [1, 2]);
+      expect(result.failed, isEmpty);
+      expect(await assigned(), {
+        1: ['Story'],
+        2: ['Story'],
+      });
+    });
+
+    test('report the games a bulk change failed for', () async {
+      api.onSetEntryCategory = (entryId, categoryId, assigned) async {
+        if (entryId == 2) throw const ApiException('nope');
+      };
+
+      final result = await actions().setAssignedMany([1, 2], 1, assigned: true);
+
+      expect(result.succeeded, [1]);
+      expect(result.failed, [2]);
+      expect(await assigned(), {
+        1: ['Story'],
+      });
+    });
+
     test('work on the categories of a shared space', () async {
       await actions(4).create('Co-op', '#38bdf8');
 

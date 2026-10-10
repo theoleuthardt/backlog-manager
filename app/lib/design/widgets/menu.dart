@@ -31,6 +31,14 @@ class ShelfMenuItem extends ShelfMenuEntry {
   final List<ShelfMenuEntry>? submenu;
 }
 
+/// A small muted heading inside a menu, for example the title of the game a
+/// context menu belongs to.
+class ShelfMenuLabel extends ShelfMenuEntry {
+  const ShelfMenuLabel(this.label);
+
+  final String label;
+}
+
 class ShelfMenuDivider extends ShelfMenuEntry {
   const ShelfMenuDivider();
 }
@@ -89,6 +97,18 @@ List<Widget> _children(BuildContext context, List<ShelfMenuEntry> entries) {
   return [
     for (final entry in entries)
       switch (entry) {
+        ShelfMenuLabel() => Padding(
+          key: const Key('menu-label'),
+          padding: const EdgeInsets.fromLTRB(10, 6, 10, 4),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 220),
+            child: Text(
+              entry.label,
+              overflow: TextOverflow.ellipsis,
+              style: text.label.copyWith(color: tokens.muted),
+            ),
+          ),
+        ),
         ShelfMenuDivider() => Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: SizedBox(
