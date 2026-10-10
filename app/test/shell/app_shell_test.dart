@@ -180,11 +180,11 @@ void main() {
     testWidgets('navigates with the sidebar', (tester) async {
       final app = await pumpApp(tester);
 
-      await tester.tap(find.byKey(const Key('nav-steam')));
+      await tester.tap(find.byKey(const Key('nav-appearance')));
       await tester.pumpAndSettle();
 
-      expect(app.location, AppRoutes.steam);
-      expect(inMain(find.text('Steam sync')), findsOneWidget);
+      expect(app.location, AppRoutes.appearance);
+      expect(inMain(find.text('Appearance')), findsOneWidget);
     });
 
     testWidgets('shows the title of the current page in the title bar', (
@@ -577,7 +577,7 @@ void main() {
 
       await tester.tap(find.byKey(const Key('nav-library')));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('nav-steam')));
+      await tester.tap(find.byKey(const Key('nav-appearance')));
       await tester.pumpAndSettle();
       expect(enabled('nav-back'), isTrue);
 
@@ -588,7 +588,7 @@ void main() {
 
       await tester.tap(find.byKey(const Key('nav-forward')));
       await tester.pumpAndSettle();
-      expect(app.location, AppRoutes.steam);
+      expect(app.location, AppRoutes.appearance);
       expect(enabled('nav-forward'), isFalse);
     });
 
@@ -653,7 +653,7 @@ void main() {
       tester,
     ) async {
       final app = await pumpApp(tester);
-      await app.go(AppRoutes.steam);
+      await app.go(AppRoutes.appearance);
       app.container.read(navigationCountsProvider.notifier).set({
         'library': 148,
         'space': 12,

@@ -30,6 +30,8 @@ import 'package:backlog_manager/features/library/library_view.dart';
 import 'package:backlog_manager/features/library/selection_bar.dart';
 import 'package:backlog_manager/features/space/member_progress.dart';
 import 'package:backlog_manager/features/space/space_toolbar.dart';
+import 'package:backlog_manager/features/steam/steam_sync_button.dart';
+import 'package:backlog_manager/routing/session.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -271,6 +273,8 @@ class _Toolbar extends ConsumerWidget {
             style: muted,
           ),
           selectButton,
+          if (ref.watch(sessionUserProvider)?.hasSteamId ?? false)
+            const SteamSyncButton(),
           ShelfButton(
             key: const Key('igdb-sync-button'),
             label: 'Sync IGDB',

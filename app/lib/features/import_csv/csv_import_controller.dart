@@ -1,7 +1,6 @@
-import 'dart:async';
-
 import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/api/sse.dart';
+import 'package:backlog_manager/api/sse_runner.dart';
 import 'package:backlog_manager/data/backlog_providers.dart';
 import 'package:backlog_manager/data/csv_import_api.dart';
 import 'package:backlog_manager/domain/csv_import.dart';
@@ -84,21 +83,14 @@ class CsvImportState {
   }
 }
 
-class _Cancelled implements Exception {
-  const _Cancelled();
-}
-
 /// Runs the steps of the CSV import. Every step that can end in a message for
 /// the user returns it, the page shows it as a toast.
 class CsvImportController extends Notifier<CsvImportState> {
-  StreamSubscription<SseEvent>? _subscription;
-  Completer<Object?>? _pending;
+  final _runner = SseRunner();
 
   @override
   CsvImportState build() {
-    ref.onDispose(() {
-      unawaited(_subscription?.cancel());
-    });
+    ref.onDispose(_runner.cancel);
     return const CsvImportState();
   }
 
@@ -138,46 +130,17 @@ class CsvImportController extends Notifier<CsvImportState> {
   }
 
   /// Stops the running preview or import.
-  void cancel() {
-    final pending = _pending;
-    unawaited(_subscription?.cancel());
-    _subscription = null;
-    if (pending != null && !pending.isCompleted) {
-      pending.completeError(const _Cancelled());
-    }
-  }
+  void cancel() => _runner.cancel();
 
   Future<Object?> _consume(Stream<SseEvent> stream) {
-    final pending = Completer<Object?>();
-    _pending = pending;
-    _subscription = stream.listen(
-      (event) {
-        switch (event) {
-          case SseProgress(:final processed, :final total):
-            if (ref.mounted) {
-              state = state.copyWith(processed: processed, total: total);
-            }
-          case SseDone(:final data):
-            if (!pending.isCompleted) pending.complete(data);
-          case SseError(:final message):
-            if (!pending.isCompleted) {
-              pending.completeError(ApiException(message));
-            }
-        }
-      },
-      onError: (Object error, StackTrace stackTrace) {
-        if (!pending.isCompleted) pending.completeError(error, stackTrace);
-      },
-      onDone: () {
-        if (!pending.isCompleted) {
-          pending.completeError(const SseStreamEndedException());
+    return _runner.run(
+      stream,
+      onProgress: (processed, total) {
+        if (ref.mounted) {
+          state = state.copyWith(processed: processed, total: total);
         }
       },
     );
-    return pending.future.whenComplete(() {
-      _subscription = null;
-      _pending = null;
-    });
   }
 
   /// Matches the file against the game databases and shows the rows; the
@@ -205,7 +168,7 @@ class CsvImportController extends Notifier<CsvImportState> {
         byIndex: {for (final row in rows) row.rowIndex: row},
       );
       return rows.isEmpty ? 'No rows with a title found to preview' : null;
-    } on _Cancelled {
+    } on SseCancelled {
       return _idle('Preview cancelled');
     } on Object catch (error) {
       return _idle(
@@ -267,7 +230,7 @@ class CsvImportController extends Notifier<CsvImportState> {
       ref.invalidate(entriesProvider(null));
       state = CsvImportState(skipped: skipped);
       return importResultMessage(created, skipped.length);
-    } on _Cancelled {
+    } on SseCancelled {
       return _idle('Import cancelled');
     } on Object catch (error) {
       return _idle(
