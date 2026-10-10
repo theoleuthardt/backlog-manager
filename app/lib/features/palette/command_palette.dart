@@ -9,6 +9,7 @@ import 'package:backlog_manager/design/widgets/sheet.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/domain/palette_search.dart';
 import 'package:backlog_manager/features/add_game/add_game_sheet.dart';
+import 'package:backlog_manager/features/igdb_sync/igdb_sync_sheet.dart';
 import 'package:backlog_manager/features/palette/palette_actions.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/shell/palette_registry.dart';
@@ -34,6 +35,7 @@ class PaletteHost extends ConsumerStatefulWidget {
 class _PaletteHostState extends ConsumerState<PaletteHost> {
   bool _showing = false;
   bool _addOpen = false;
+  bool _syncOpen = false;
 
   @override
   void initState() {
@@ -63,6 +65,11 @@ class _PaletteHostState extends ConsumerState<PaletteHost> {
       if (_addOpen) return;
       _addOpen = true;
       showAddGameSheet(context).whenComplete(() => _addOpen = false);
+    });
+    ref.listen(igdbSyncRequestProvider, (_, _) {
+      if (_syncOpen) return;
+      _syncOpen = true;
+      showIgdbSyncSheet(context).whenComplete(() => _syncOpen = false);
     });
     ref.listen(paletteOpenProvider, (_, open) {
       if (open) {
