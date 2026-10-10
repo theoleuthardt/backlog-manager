@@ -1,3 +1,4 @@
+import { ExternalAnchor } from "components/ExternalAnchor";
 import { useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
@@ -437,14 +438,12 @@ export function AccountContent() {
           Not sure what this is? Open your Steam profile page and look at its
           URL - if it ends in a long number, that&apos;s your SteamID64, paste
           it above. If it ends in a custom name instead, look it up with{" "}
-          <a
+          <ExternalAnchor
             href="https://steamdb.com/en/tools/steam-id-finder"
-            target="_blank"
-            rel="noopener noreferrer"
             className="text-blue-400 underline hover:text-blue-300"
           >
             SteamDB&apos;s SteamID finder
-          </a>
+          </ExternalAnchor>
           .
         </p>
 
@@ -453,14 +452,12 @@ export function AccountContent() {
             ? "Your own Steam Web API key is set and used for syncing playtimes."
             : "Optionally set your own Steam Web API key. Falls back to the server's key otherwise."}{" "}
           Create or look up your key on{" "}
-          <a
+          <ExternalAnchor
             href="https://steamcommunity.com/dev/apikey"
-            target="_blank"
-            rel="noopener noreferrer"
             className="text-blue-400 underline hover:text-blue-300"
           >
             Steam&apos;s API key page
-          </a>
+          </ExternalAnchor>
           .
         </p>
         <div className="flex max-w-sm gap-2">
@@ -583,14 +580,12 @@ export function AccountContent() {
         </div>
         <p className="mt-2 text-xs text-gray-500">
           Create a Twitch application at{" "}
-          <a
+          <ExternalAnchor
             href="https://dev.twitch.tv/console/apps"
-            target="_blank"
-            rel="noopener noreferrer"
             className="text-blue-400 underline hover:text-blue-300"
           >
             dev.twitch.tv/console/apps
-          </a>{" "}
+          </ExternalAnchor>{" "}
           to get an IGDB Client ID and Client Secret.
         </p>
       </div>

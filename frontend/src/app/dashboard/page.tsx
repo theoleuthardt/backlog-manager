@@ -16,7 +16,7 @@ export default function Dashboard() {
               center={<DashboardSearch />}
             />
             <main className="drop-in flex-grow px-3 md:px-4">
-              <div className="mx-auto max-w-[100rem]">
+              <div className="w-full">
                 <DashboardContent />
               </div>
             </main>

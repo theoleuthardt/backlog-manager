@@ -1,5 +1,12 @@
 import React, { useEffect, useRef } from "react";
 import { useTheme } from "~/app/context/ThemeContext";
+import {
+  advanceStars,
+  createStars,
+  rescaleStars,
+  starCountFor,
+  type Star,
+} from "~/lib/starfield";
 
 export const UniverseBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -13,15 +20,25 @@ export const UniverseBackground = () => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    let w = (canvas.width = window.innerWidth);
-    let h = (canvas.height = window.innerHeight);
+    let w = 0;
+    let h = 0;
+    let stars: Star[] = [];
 
-    const stars = Array.from({ length: 200 }).map(() => ({
-      x: Math.random() * w,
-      y: Math.random() * h,
-      size: Math.random() * 1.5 + 0.5,
-      speed: Math.random() * 2 + 0.1,
-    }));
+    const fit = () => {
+      const nextW = canvas.clientWidth;
+      const nextH = canvas.clientHeight;
+      if (nextW === w && nextH === h) return;
+      const count = starCountFor(nextW, nextH);
+      const scaled = rescaleStars(stars, w, h, nextW, nextH);
+      stars =
+        scaled.length >= count
+          ? scaled.slice(0, count)
+          : [...scaled, ...createStars(count - scaled.length, nextW, nextH)];
+      w = canvas.width = nextW;
+      h = canvas.height = nextH;
+    };
+
+    fit();
 
     let animationId = 0;
 
@@ -29,9 +46,8 @@ export const UniverseBackground = () => {
       if (!ctx) return;
       ctx.clearRect(0, 0, w, h);
       ctx.fillStyle = starColor;
+      advanceStars(stars, h);
       stars.forEach((star) => {
-        star.y -= star.speed;
-        if (star.y < 0) star.y = h;
         ctx.beginPath();
         ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
         ctx.fill();
@@ -42,15 +58,11 @@ export const UniverseBackground = () => {
 
     animate();
 
-    const handleResize = () => {
-      w = canvas.width = window.innerWidth;
-      h = canvas.height = window.innerHeight;
-    };
-
-    window.addEventListener("resize", handleResize);
+    const observer = new ResizeObserver(fit);
+    observer.observe(canvas);
     return () => {
       cancelAnimationFrame(animationId);
-      window.removeEventListener("resize", handleResize);
+      observer.disconnect();
     };
   }, [starColor]);
 

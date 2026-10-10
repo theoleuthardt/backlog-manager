@@ -1,3 +1,4 @@
+import { ExternalAnchor } from "components/ExternalAnchor";
 import { Play } from "lucide-react";
 import {
   Dialog,
@@ -58,14 +59,12 @@ export const TrailerDialog = ({
         />
       </div>
       {watchUrl && (
-        <a
+        <ExternalAnchor
           href={watchUrl}
-          target="_blank"
-          rel="noopener noreferrer"
           className="px-4 py-3 text-sm text-white/70 underline-offset-2 hover:text-white hover:underline"
         >
           Video not playing? Watch it on YouTube
-        </a>
+        </ExternalAnchor>
       )}
     </DialogContent>
   </Dialog>

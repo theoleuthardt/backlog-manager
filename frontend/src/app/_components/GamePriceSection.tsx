@@ -1,3 +1,4 @@
+import { ExternalAnchor } from "components/ExternalAnchor";
 import { useState } from "react";
 import {
   ExternalLink,
@@ -172,10 +173,8 @@ export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
           </div>
         )}
         <div className="space-y-2">
-          <a
+          <ExternalAnchor
             href={`https://www.google.com/search?q=${encodeURIComponent(`site:keyforsteam.de ${title}`)}`}
-            target="_blank"
-            rel="noopener noreferrer"
             className="group flex items-center justify-between gap-3 rounded-lg border border-white/20 bg-black px-3 py-2.5 transition-colors hover:border-white/50 hover:bg-white/5"
           >
             <span className="flex min-w-0 items-center gap-2">
@@ -186,13 +185,11 @@ export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
               <span className="text-sm text-gray-400">Compare prices</span>
               <ExternalLink className="h-3.5 w-3.5 shrink-0 text-gray-500 opacity-0 transition-opacity group-hover:opacity-100" />
             </span>
-          </a>
+          </ExternalAnchor>
           {listings.map((listing) => (
-            <a
+            <ExternalAnchor
               key={listing.key}
               href={listing.url}
-              target="_blank"
-              rel="noopener noreferrer"
               className="group flex items-center justify-between gap-3 rounded-lg border border-white/20 bg-black px-3 py-2.5 transition-colors hover:border-white/50 hover:bg-white/5"
             >
               <span className="flex min-w-0 items-center gap-2">
@@ -224,7 +221,7 @@ export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
                 </span>
                 <ExternalLink className="h-3.5 w-3.5 shrink-0 text-gray-500 opacity-0 transition-opacity group-hover:opacity-100" />
               </span>
-            </a>
+            </ExternalAnchor>
           ))}
         </div>
       </div>

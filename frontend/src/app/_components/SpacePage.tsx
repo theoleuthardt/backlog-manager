@@ -305,7 +305,7 @@ export function SpacePage() {
               center={activeSpaceId !== null ? <DashboardSearch /> : undefined}
             />
             <main className="drop-in flex-grow px-3 md:px-4">
-              <div className="mx-auto max-w-[100rem]">{content}</div>
+              <div className="w-full">{content}</div>
             </main>
             <Footer />
           </div>

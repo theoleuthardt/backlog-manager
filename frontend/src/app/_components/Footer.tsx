@@ -1,3 +1,4 @@
+import { ExternalAnchor } from "components/ExternalAnchor";
 export function Footer() {
   return (
     <footer className="white mt-4 justify-center bg-transparent px-8 py-4 text-white shadow">
@@ -7,14 +8,12 @@ export function Footer() {
         </p>
         <div className="flex flex-row">
           <p className="text-sm">Icons by </p>
-          <a
+          <ExternalAnchor
             className="ml-1 text-sm font-bold hover:underline"
             href="https://icons8.com/"
-            target="_blank"
-            rel="noopener noreferrer"
           >
             Icons8
-          </a>
+          </ExternalAnchor>
         </div>
       </div>
     </footer>
