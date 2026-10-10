@@ -130,3 +130,32 @@ class SettingsNote extends StatelessWidget {
     );
   }
 }
+
+/// The title and the line below it at the top of a settings tab.
+class SettingsTabTitle extends StatelessWidget {
+  const SettingsTabTitle({
+    super.key,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = Theme.of(context).extension<ShelfTokens>()!;
+    final style = Theme.of(context).extension<ShelfTextStyles>()!;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: style.page.copyWith(fontSize: 22)),
+          const SizedBox(height: 4),
+          Text(subtitle, style: style.caption.copyWith(color: tokens.muted)),
+        ],
+      ),
+    );
+  }
+}

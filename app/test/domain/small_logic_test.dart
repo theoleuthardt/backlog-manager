@@ -188,4 +188,92 @@ void main() {
       expect(maxBackupNameLength, 60);
     });
   });
+
+  group('the backup dates', () {
+    test('read the zone-less time of the server as UTC', () {
+      final read = serverTimeAsUtc(DateTime(2026, 10, 9, 8, 7, 6));
+
+      expect(read.isUtc, isTrue);
+      expect((read.year, read.month, read.day), (2026, 10, 9));
+      expect((read.hour, read.minute, read.second), (8, 7, 6));
+    });
+
+    test('are written as day, month, year and the time', () {
+      expect(
+        backupDateLabel(DateTime.utc(2026, 10, 9, 8, 7), toLocal: false),
+        '9 Oct 2026, 08:07',
+      );
+      expect(
+        backupDateLabel(DateTime.utc(2026, 1, 31, 23, 59), toLocal: false),
+        '31 Jan 2026, 23:59',
+      );
+    });
+  });
+
+  group('Backup', () {
+    final backup = Backup(
+      id: 4,
+      kind: 'manual',
+      name: null,
+      createdAt: DateTime.utc(2026, 10, 9, 8, 7),
+      entryCount: 148,
+      categoryCount: 1,
+    );
+
+    test('is titled by its name or its kind', () {
+      expect(backup.title, 'Manual');
+      expect(
+        Backup(
+          id: 5,
+          kind: 'auto',
+          name: 'Before the move',
+          createdAt: backup.createdAt,
+          entryCount: 1,
+          categoryCount: 0,
+        ).title,
+        'Before the move',
+      );
+    });
+
+    test('summarises its content', () {
+      expect(backup.summary, '148 games, 1 category');
+    });
+
+    test('names its kind next to the summary only when it has a name', () {
+      expect(backup.detail, '148 games, 1 category');
+      expect(
+        Backup(
+          id: 5,
+          kind: 'auto',
+          name: 'Mine',
+          createdAt: backup.createdAt,
+          entryCount: 2,
+          categoryCount: 0,
+        ).detail,
+        'Automatic - 2 games, 0 categories',
+      );
+    });
+
+    test('is saved as a file named after its id', () {
+      expect(backup.fileName, 'backlog-backup-4.json');
+    });
+  });
+
+  group('RestoreResult', () {
+    test('says what came back and whether the old state was kept', () {
+      const kept = RestoreResult(
+        entryCount: 148,
+        categoryCount: 3,
+        safetyBackupId: 9,
+      );
+      const none = RestoreResult(entryCount: 1, categoryCount: 0);
+
+      expect(
+        kept.message,
+        'Restored 148 games, 3 categories. Your previous state was saved as a '
+        'backup.',
+      );
+      expect(none.message, 'Restored 1 game, 0 categories.');
+    });
+  });
 }
