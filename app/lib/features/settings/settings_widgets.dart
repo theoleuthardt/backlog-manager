@@ -6,7 +6,9 @@ import 'package:flutter/material.dart';
 
 /// A text input for a row of a settings group. [onCommit] is called with the
 /// text when the field loses the focus or Enter is pressed, for secrets that
-/// are only worth sending once they are complete.
+/// are only worth sending once they are complete. Enter followed by a blur
+/// calls it twice with the same text, so a caller must clear or ignore a text
+/// it has already taken.
 class SettingsTextField extends StatefulWidget {
   const SettingsTextField({
     required this.fieldKey,

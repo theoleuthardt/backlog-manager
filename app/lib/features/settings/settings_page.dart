@@ -426,13 +426,32 @@ class _IntegrationsTabState extends ConsumerState<_IntegrationsTab> {
   final _discord = TextEditingController();
   final _steamIdDebounce = Debouncer(_autosaveDelay);
   final _familyDebounce = Debouncer(_autosaveDelay);
+  late final SettingsController _controller;
 
   SessionUser get _user => widget.user;
 
   @override
+  void initState() {
+    super.initState();
+    _controller = ref.read(settingsControllerProvider.notifier);
+  }
+
+  @override
+  void didUpdateWidget(_IntegrationsTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!_steamIdDebounce.isPending && widget.user.steamId != _steamId.text) {
+      _steamId.text = widget.user.steamId;
+    }
+    if (!_familyDebounce.isPending &&
+        widget.user.steamFamilyIds != _family.text) {
+      _family.text = widget.user.steamFamilyIds;
+    }
+  }
+
+  @override
   void dispose() {
-    _steamIdDebounce.cancel();
-    _familyDebounce.cancel();
+    _steamIdDebounce.flush();
+    _familyDebounce.flush();
     for (final controller in [
       _steamId,
       _family,
@@ -455,16 +474,14 @@ class _IntegrationsTabState extends ConsumerState<_IntegrationsTab> {
   }
 
   Future<void> _saveQuietly(UserUpdate update) async {
-    final error = await ref
-        .read(settingsControllerProvider.notifier)
-        .save(update);
+    final error = await _controller.save(update);
     if (error != null && mounted) showShelfToast(context, error);
   }
 
   void _autosaveSteamId(String text) {
     _steamIdDebounce.run(() {
       final id = text.trim();
-      if (mounted && id != _user.steamId) {
+      if (id != _user.steamId) {
         unawaited(_saveQuietly(UserUpdate(steamId: id)));
       }
     });
@@ -473,7 +490,7 @@ class _IntegrationsTabState extends ConsumerState<_IntegrationsTab> {
   void _autosaveFamily(String text) {
     _familyDebounce.run(() {
       final ids = text.trim();
-      if (mounted && ids != _user.steamFamilyIds) {
+      if (ids != _user.steamFamilyIds) {
         unawaited(_saveQuietly(UserUpdate(steamFamilyIds: ids)));
       }
     });

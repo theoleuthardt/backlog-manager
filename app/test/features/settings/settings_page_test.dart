@@ -78,6 +78,7 @@ Future<Settings> openSettings(
   SessionUser user = theo,
   String location = '/settings',
   Future<void> Function(UserUpdate update)? onUpdate,
+  UserUpdate Function(UserUpdate update)? normalize,
 }) async {
   tester.view.physicalSize = const Size(1440, 1100);
   tester.view.devicePixelRatio = 1;
@@ -86,7 +87,7 @@ Future<Settings> openSettings(
   final users = FakeUserApi()
     ..onUpdate = (update) async {
       await onUpdate?.call(update);
-      account = applied(account, update);
+      account = applied(account, normalize?.call(update) ?? update);
       return account;
     };
   final auth = FakeAuthApi()..onCurrentUser = () async => account;
@@ -270,6 +271,43 @@ void main() {
 
       expect(settings.users.updates.single.steamId, '76561198000000001');
       expect(find.text('Saved'), findsOneWidget);
+    });
+
+    testWidgets('leaving the tab saves what is still waiting', (tester) async {
+      final settings = await openSettings(tester, location: integrations);
+
+      await tester.enterText(
+        find.byKey(const Key('settings-steam-id')),
+        '76561198000000001',
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.tap(find.byKey(const Key('settings-tab-about')));
+      await tester.pumpAndSettle();
+
+      expect(settings.users.updates.single.steamId, '76561198000000001');
+    });
+
+    testWidgets('shows the Steam ID the server holds after a save', (
+      tester,
+    ) async {
+      await openSettings(
+        tester,
+        location: integrations,
+        normalize: (update) => update.steamId == null
+            ? update
+            : const UserUpdate(steamId: '76561198000000009'),
+      );
+
+      await tester.enterText(
+        find.byKey(const Key('settings-steam-id')),
+        '  7656119800000000  ',
+      );
+      await afterAutosave(tester);
+
+      expect(
+        textOf(tester, const Key('settings-steam-id')),
+        '76561198000000009',
+      );
     });
 
     testWidgets('saves nothing when the Steam ID is the same', (tester) async {
