@@ -8,6 +8,7 @@ import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/design/widgets/sheet.dart';
 import 'package:backlog_manager/domain/price_listings.dart';
+import 'package:backlog_manager/domain/safe_url.dart';
 import 'package:backlog_manager/platform/url_opener.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
