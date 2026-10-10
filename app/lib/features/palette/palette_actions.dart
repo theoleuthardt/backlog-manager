@@ -28,6 +28,14 @@ void registerShellPaletteActions(ProviderContainer ref) {
     )
     ..register(
       PaletteAction(
+        id: 'sync-igdb',
+        label: 'Sync IGDB game data',
+        shortcut: const PaletteShortcut(LogicalKeyboardKey.keyI, shift: true),
+        run: () => ref.read(igdbSyncRequestProvider.notifier).request(),
+      ),
+    )
+    ..register(
+      PaletteAction(
         id: 'open-settings',
         label: 'Open settings',
         shortcut: const PaletteShortcut(LogicalKeyboardKey.comma),

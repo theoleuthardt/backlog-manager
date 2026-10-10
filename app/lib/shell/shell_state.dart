@@ -80,6 +80,18 @@ final addGameRequestProvider = NotifierProvider<AddGameRequestNotifier, int>(
   AddGameRequestNotifier.new,
 );
 
+/// Counts requests to open the IGDB sync sheet (toolbar button, palette).
+class IgdbSyncRequestNotifier extends Notifier<int> {
+  @override
+  int build() => 0;
+
+  void request() => state = state + 1;
+}
+
+final igdbSyncRequestProvider = NotifierProvider<IgdbSyncRequestNotifier, int>(
+  IgdbSyncRequestNotifier.new,
+);
+
 /// The focus node of the search field in the title bar, so `/` can reach it.
 final searchFocusNodeProvider = Provider<FocusNode>((ref) {
   final node = FocusNode(debugLabel: 'search');

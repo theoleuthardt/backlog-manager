@@ -215,6 +215,12 @@ class _Toolbar extends ConsumerWidget {
             onPressed: ref.read(selectionProvider.notifier).begin,
           ),
           ShelfButton(
+            key: const Key('igdb-sync-button'),
+            label: 'Sync IGDB',
+            icon: Icons.bolt,
+            onPressed: ref.read(igdbSyncRequestProvider.notifier).request,
+          ),
+          ShelfButton(
             label: 'Add game',
             icon: Icons.add,
             kind: ShelfButtonKind.primary,
