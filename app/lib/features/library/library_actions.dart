@@ -60,7 +60,9 @@ class LibraryActions {
   void openDetails(int entryId) {
     _context.go(
       Uri(
-        path: AppRoutes.library,
+        path: _ref.read(backlogScopeProvider) == null
+            ? AppRoutes.library
+            : AppRoutes.space,
         queryParameters: {'entry': '$entryId'},
       ).toString(),
     );
@@ -69,7 +71,8 @@ class LibraryActions {
   /// Moves one game; the toast offers to undo it.
   Future<void> moveEntry(BacklogEntry entry, String status) async {
     final previous = entry.status;
-    final failure = await _entries.moveToStatus(entry.id, status);
+    final entries = _entries;
+    final failure = await entries.moveToStatus(entry.id, status);
     if (failure != null) {
       _toast(failure);
       return;
@@ -77,7 +80,7 @@ class LibraryActions {
     _toast(
       'Moved "${entry.title}" to $status',
       actionLabel: 'Undo',
-      onAction: () => _entries.moveToStatus(entry.id, previous),
+      onAction: () => entries.moveToStatus(entry.id, previous),
     );
   }
 

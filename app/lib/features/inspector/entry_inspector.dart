@@ -38,7 +38,6 @@ import 'package:backlog_manager/features/prices/price_sheet.dart';
 import 'package:backlog_manager/features/space/share_to_space_button.dart';
 import 'package:backlog_manager/platform/url_opener.dart';
 import 'package:backlog_manager/routing/current_path.dart';
-import 'package:backlog_manager/routing/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -121,7 +120,10 @@ class _InspectorFrame extends StatelessWidget {
                 ShelfIconButton(
                   icon: Icons.close,
                   tooltip: 'Close inspector',
-                  onPressed: () => context.go(AppRoutes.library),
+                  onPressed: () => context.go(
+                    ProviderScope.containerOf(context)
+                        .read(currentPathProvider),
+                  ),
                 ),
               ],
             ),

@@ -1,6 +1,7 @@
 import 'package:backlog_manager/data/games_api.dart';
 import 'package:backlog_manager/data/space_api.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
+import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/routing/router.dart';
@@ -519,10 +520,18 @@ void main() {
         location: '/library?entry=1',
       );
 
+      final button = tester.widget<ShelfButton>(
+        find.byKey(const Key('inspector-add-to-space')),
+      );
       await tester.tap(find.byKey(const Key('inspector-add-to-space')));
       await tester.pumpAndSettle();
 
+      expect(button.onPressed, isNull);
       expect(opened.backlog.created, isEmpty);
+      expect(
+        find.byTooltip('Only Steam games can be added to the shared space'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a game that is in the space links to it', (tester) async {

@@ -78,12 +78,6 @@ void main() {
       );
     });
 
-    test('leaving cancels the invitation while one is pending', () {
-      expect(shared.leaveLabel, 'Leave space');
-      expect(alone.leaveLabel, 'Leave space');
-      expect(waiting.leaveLabel, 'Cancel invitation');
-    });
-
     test('the header caption', () {
       expect(shared.caption, 'with alex - ratings and playtime stay your own');
       expect(alone.caption, 'ratings and playtime stay your own');

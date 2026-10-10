@@ -39,6 +39,7 @@ class MemberProgress extends StatelessWidget {
             context,
             initials: memberInitials(partner!),
             color: tokens.info,
+            barColor: tokens.info,
             hours: entry.partnerPlaytime,
           ),
         ],
@@ -51,6 +52,7 @@ class MemberProgress extends StatelessWidget {
     required String initials,
     required Color color,
     required double? hours,
+    Color? barColor,
   }) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
@@ -70,7 +72,7 @@ class MemberProgress extends StatelessWidget {
           child: ShelfProgressBar(
             value: beatFraction(entry.mainTime, hours),
             height: 4,
-            color: color == tokens.info ? color : null,
+            color: barColor,
           ),
         ),
         const SizedBox(width: 8),
