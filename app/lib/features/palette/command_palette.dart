@@ -96,6 +96,7 @@ class CommandPalette extends ConsumerStatefulWidget {
 class _CommandPaletteState extends ConsumerState<CommandPalette> {
   final _controller = TextEditingController();
   int _highlight = 0;
+  List<_Item> _shown = const [];
 
   @override
   void dispose() {
@@ -110,11 +111,6 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
 
   List<PaletteAction> _actions() =>
       actionsMatching(ref.read(paletteRegistryProvider), _controller.text);
-
-  List<_Item> _items() => [
-    for (final entry in _games()) _GameItem(entry),
-    for (final action in _actions()) _ActionItem(action),
-  ];
 
   void _run(_Item item) {
     final router = GoRouter.of(context);
@@ -134,7 +130,7 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
 
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
     if (event is KeyUpEvent) return KeyEventResult.ignored;
-    final items = _items();
+    final items = _shown;
     final key = event.logicalKey;
     if (key == LogicalKeyboardKey.arrowDown && items.isNotEmpty) {
       setState(() => _highlight = (_highlight + 1) % items.length);
@@ -166,6 +162,7 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
       for (final entry in games) _GameItem(entry),
       for (final action in actions) _ActionItem(action),
     ];
+    _shown = items;
     final highlight = items.isEmpty
         ? -1
         : _highlight.clamp(0, items.length - 1);

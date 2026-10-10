@@ -201,7 +201,7 @@ features/*  ──►  providers (Riverpod)  ──►  lib/api (Dio + generated
 
 `features/library/` is the library screen. `domain/library_groups.dart` builds the sections for every sort option (status groups include empty ones and the custom statuses, category groups append categories without games, a status filter limits the status groups); `library_content.dart` feeds it from the entries and watches only the sort option and its direction, so folding a group or paging does not sort again; `library_view.dart` holds the view state (sort, layout, collapsed groups per sort and group, 60-cover pages). The page is one `CustomScrollView` with a header sliver and a grid or list sliver per group, so a library of thousands of games only builds what is on screen. The account's default sort and whether a Steam ID is set come with the session user (`auth/session_user_mapper.dart`).
 
-The IGDB and Steam sync buttons of the toolbar arrive with their features (#268, #269), the filter bar with #261, the selection mode with #262 and the command palette with #267; collapsed groups are kept in memory for the session.
+The IGDB and Steam sync buttons of the toolbar arrive with their features (#268, #269), the filter bar with #261, the selection mode with #262; collapsed groups are kept in memory for the session.
 
 ### Filter bar
 

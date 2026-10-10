@@ -70,13 +70,8 @@ class ShellShortcuts extends ConsumerWidget {
             enabled: () => !_typingInTextField(),
             run: () => ref.read(searchFocusNodeProvider).requestFocus(),
           ),
-          RunPaletteActionIntent: CallbackAction<RunPaletteActionIntent>(
-            onInvoke: (intent) {
-              if (ref.read(sessionProvider) is SessionSignedIn) {
-                intent.action.run();
-              }
-              return null;
-            },
+          RunPaletteActionIntent: _RunPaletteAction(
+            enabled: () => ref.read(sessionProvider) is SessionSignedIn,
           ),
           OpenPaletteIntent: _Action<OpenPaletteIntent>(
             enabled: () => ref.read(sessionProvider) is SessionSignedIn,
@@ -114,6 +109,21 @@ class _Action<T extends Intent> extends Action<T> {
   @override
   Object? invoke(T intent) {
     run();
+    return null;
+  }
+}
+
+class _RunPaletteAction extends Action<RunPaletteActionIntent> {
+  _RunPaletteAction({required this.enabled});
+
+  final bool Function() enabled;
+
+  @override
+  bool isEnabled(RunPaletteActionIntent intent) => enabled();
+
+  @override
+  Object? invoke(RunPaletteActionIntent intent) {
+    intent.action.run();
     return null;
   }
 }

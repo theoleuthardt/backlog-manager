@@ -82,7 +82,7 @@ void main() {
     expect(location(container), '${AppRoutes.library}?entry=2');
   });
 
-  testWidgets('the arrow keys move the highlight to an action', (tester) async {
+  testWidgets('Enter on an action runs it', (tester) async {
     final container = await openPalette(tester);
 
     await type(tester, 'settings');
@@ -92,24 +92,64 @@ void main() {
     expect(location(container), AppRoutes.settings);
   });
 
-  testWidgets('arrow down picks the next row, arrow up wraps around', (
+  testWidgets('arrow down moves the highlight from a game to an action', (
     tester,
   ) async {
+    final container = await openPalette(tester);
+    var ran = false;
+    container
+        .read(paletteRegistryProvider.notifier)
+        .register(
+          PaletteAction(
+            id: 'edit',
+            label: 'Edit things',
+            run: () => ran = true,
+          ),
+        );
+    await tester.pumpAndSettle();
+
+    await type(tester, 'e');
+    for (var i = 0; i < 4; i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    }
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+
+    expect(ran, isTrue);
+    expect(location(container), AppRoutes.library);
+  });
+
+  testWidgets('arrow down picks the next game', (tester) async {
     final container = await openPalette(tester);
 
     await type(tester, 'e');
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pumpAndSettle();
-    expect(location(container), '${AppRoutes.library}?entry=4');
 
-    container.read(paletteOpenProvider.notifier).open();
+    expect(location(container), '${AppRoutes.library}?entry=4');
+  });
+
+  testWidgets('arrow up from the first row wraps to the last one', (
+    tester,
+  ) async {
+    final container = await openPalette(tester);
+    final ran = <String>[];
+    container.read(paletteRegistryProvider.notifier)
+      ..register(
+        PaletteAction(id: 'zz-a', label: 'zzA', run: () => ran.add('a')),
+      )
+      ..register(
+        PaletteAction(id: 'zz-b', label: 'zzBBB', run: () => ran.add('b')),
+      );
     await tester.pumpAndSettle();
-    await type(tester, 'e');
+
+    await type(tester, 'zz');
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pumpAndSettle();
-    expect(location(container), isNot('${AppRoutes.library}?entry=1'));
+
+    expect(ran, ['b']);
   });
 
   testWidgets('a click runs an action', (tester) async {
