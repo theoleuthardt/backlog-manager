@@ -1,4 +1,5 @@
 import React from "react";
+import { toast } from "sonner";
 import { useIsTauri } from "~/hooks/useIsTauri";
 import { openExternalLink } from "~/lib/externalLink";
 
@@ -21,6 +22,8 @@ export const ExternalAnchor = ({
     void openExternalLink(href, async (url) => {
       const { openUrl } = await import("@tauri-apps/plugin-opener");
       await openUrl(url);
+    }).catch(() => {
+      toast.error(`Could not open ${href} in your browser`);
     });
   };
 
