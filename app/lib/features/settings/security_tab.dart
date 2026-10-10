@@ -1,7 +1,6 @@
-import 'package:backlog_manager/design/shelf_text.dart';
-import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/design/widgets/fields.dart';
+import 'package:backlog_manager/features/settings/settings_widgets.dart';
 import 'package:backlog_manager/features/settings/two_factor_sheets.dart';
 import 'package:backlog_manager/routing/session.dart';
 import 'package:flutter/material.dart';
@@ -15,25 +14,13 @@ class SecurityTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = Theme.of(context).extension<ShelfTokens>()!;
-    final style = Theme.of(context).extension<ShelfTextStyles>()!;
     final enabled = user.isTwoFactorEnabled;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Security', style: style.page.copyWith(fontSize: 22)),
-              const SizedBox(height: 4),
-              Text(
-                'Protect your account.',
-                style: style.caption.copyWith(color: tokens.muted),
-              ),
-            ],
-          ),
+        const SettingsTabTitle(
+          title: 'Security',
+          subtitle: 'Protect your account.',
         ),
         ShelfFormGroup(
           title: 'Two-factor authentication',

@@ -14,6 +14,7 @@ import 'package:backlog_manager/design/widgets/toast.dart';
 import 'package:backlog_manager/design/widgets/toggles.dart';
 import 'package:backlog_manager/domain/sort_entries.dart';
 import 'package:backlog_manager/features/common/debouncer.dart';
+import 'package:backlog_manager/features/settings/backups_tab.dart';
 import 'package:backlog_manager/features/settings/security_tab.dart';
 import 'package:backlog_manager/features/settings/settings_controller.dart';
 import 'package:backlog_manager/features/settings/settings_widgets.dart';
@@ -25,12 +26,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// The tabs of the settings window. Backups and App updates join them with
-/// their own features.
+/// The tabs of the settings window. App updates joins them with its own
+/// feature.
 enum SettingsTab {
   general('general', 'General', Icons.tune),
   security('security', 'Security', Icons.shield_outlined),
   integrations('integrations', 'Integrations', Icons.link),
+  backups('backups', 'Backups', Icons.storage_outlined),
   about('about', 'About', Icons.info_outline);
 
   const SettingsTab(this.id, this.label, this.icon);
@@ -111,6 +113,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                             SettingsTab.integrations => _IntegrationsTab(
                               user: user,
                             ),
+                            SettingsTab.backups => const BackupsTab(),
                             SettingsTab.about => const _AboutTab(),
                           },
                         ),
@@ -289,30 +292,6 @@ class _StatusLine extends ConsumerWidget {
   }
 }
 
-class _TabTitle extends StatelessWidget {
-  const _TabTitle({required this.title, required this.subtitle});
-
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = Theme.of(context).extension<ShelfTokens>()!;
-    final style = Theme.of(context).extension<ShelfTextStyles>()!;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: style.page.copyWith(fontSize: 22)),
-          const SizedBox(height: 4),
-          Text(subtitle, style: style.caption.copyWith(color: tokens.muted)),
-        ],
-      ),
-    );
-  }
-}
-
 class _GeneralTab extends ConsumerWidget {
   const _GeneralTab({required this.user});
 
@@ -336,7 +315,7 @@ class _GeneralTab extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const _TabTitle(
+        const SettingsTabTitle(
           title: 'General',
           subtitle: 'Your account and how the library starts.',
         ),
@@ -547,7 +526,7 @@ class _IntegrationsTabState extends ConsumerState<_IntegrationsTab> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const _TabTitle(
+        const SettingsTabTitle(
           title: 'Integrations',
           subtitle:
               'Connect the services that provide your library, game data and '
@@ -781,7 +760,7 @@ class _AboutTab extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const _TabTitle(
+        const SettingsTabTitle(
           title: 'About',
           subtitle: 'The app and where its code lives.',
         ),
