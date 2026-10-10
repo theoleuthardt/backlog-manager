@@ -18,5 +18,6 @@ SessionUser sessionUserFrom(PublicUser user) {
     hasDiscordWebhookUrl: user.hasDiscordWebhookUrl,
     steamWishlistAutoSync: user.steamWishlistAutoSync,
     steamWishlistImportedAt: user.steamWishlistImportedAt,
+    isTwoFactorEnabled: user.isTwoFactorEnabled,
   );
 }

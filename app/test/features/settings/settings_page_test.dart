@@ -10,6 +10,7 @@ import 'package:backlog_manager/routing/session.dart';
 import 'package:backlog_manager/shell/app_version.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../auth/fakes.dart';
@@ -45,11 +46,15 @@ SessionUser applied(SessionUser user, UserUpdate update) {
         ? json['steam_wishlist_auto_sync']! as bool
         : user.steamWishlistAutoSync,
     steamWishlistImportedAt: user.steamWishlistImportedAt,
+    isTwoFactorEnabled: user.isTwoFactorEnabled,
   );
 }
 
 class Settings {
-  Settings(this.tester, this.users, this.opened);
+  Settings(this.tester, this.users, this.opened, this.mutateAccount);
+
+  /// Changes the account the fake server holds.
+  final void Function(SessionUser Function(SessionUser account)) mutateAccount;
 
   final WidgetTester tester;
   final FakeUserApi users;
@@ -79,6 +84,7 @@ Future<Settings> openSettings(
   String location = '/settings',
   Future<void> Function(UserUpdate update)? onUpdate,
   UserUpdate Function(UserUpdate update)? normalize,
+  List<Override> overrides = const [],
 }) async {
   tester.view.physicalSize = const Size(1440, 1100);
   tester.view.devicePixelRatio = 1;
@@ -103,6 +109,7 @@ Future<Settings> openSettings(
         tokenStoreProvider.overrideWithValue(MemoryTokenStore('jwt')),
         urlOpenerProvider.overrideWithValue(opened.add),
         appVersionProvider.overrideWith((ref) async => 'v1.2.3'),
+        ...overrides,
       ],
       child: const BacklogManagerApp(),
     ),
@@ -113,7 +120,7 @@ Future<Settings> openSettings(
   );
   container.read(routerProvider).go(location);
   await tester.pumpAndSettle();
-  return Settings(tester, users, opened);
+  return Settings(tester, users, opened, (change) => account = change(account));
 }
 
 String textOf(WidgetTester tester, Key key) =>
