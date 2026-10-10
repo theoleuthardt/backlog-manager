@@ -34,6 +34,7 @@ class BackupEntry(msgspec.Struct):
     completion_time: Decimal | None = None
     playtime: Decimal | None = None
     steam_app_id: int | None = None
+    steam_wishlist_import: bool = False
     review_stars: int | None = None
     review: str | None = None
     note: str | None = None

@@ -10496,6 +10496,17 @@
             "type": "boolean",
             "default": false
           },
+          "steam_wishlist_imported_at": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "steam_family_ids": {
             "oneOf": [
               {

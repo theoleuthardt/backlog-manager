@@ -159,6 +159,14 @@ boundary rather than letting snake_case leak into components.
 | Steam Web API | Owned-games playtime sync, library import, achievements, Family sharing | Steam Web API key (per-user or server-wide) | Sync/import endpoints 503 if no key is configured anywhere |
 | SteamGridDB | Higher-quality cover art for Steam-imported games | SteamGridDB API key (per-user or server-wide) | Treated as fully optional — a missing key just skips cover lookup, never fails the request it's attached to |
 
+### Steam wishlist import
+
+`GetWishlist` returns bare app ids, so the names come from the Steam store, which limits how many lookups it answers. `steam_service._resolve_app_details` therefore asks in this order: the shared `SteamAppInfo` table (a name is resolved once for all users and reused for 30 days), then the store browse API in batches of 50 apps with a short pause between batches (`integrations/steam.get_store_items`), then the `appdetails` page for each app the batch did not resolve, retried with a wait when the store answers 429 or a server error. A game no lookup can name is **not** imported under a placeholder such as "Steam App <id>": the preview leaves it out, the import skips it and does not mark the wishlist as imported, so the import stays available for another try.
+
+The wishlist import is for the first time only: `Users.SteamWishlistImportedAt` holds the date of the first complete import and the Steam page then shows a note instead of the import. Entries it creates carry `BacklogEntries.SteamWishlistImport`, so later work can tell them from games the user added by hand.
+
+`backend/scripts/repair_steam_titles.py --user-id <id> [--apply]` repairs the entries of one user that still carry an app id as their title (the result of imports before this change): it prints what it would do and writes only with `--apply`; run it in the backend container, for example `podman exec blm_backend python scripts/repair_steam_titles.py --user-id 3`.
+
 ## Build, CI and configuration notes
 
 Config files (compose, workflows, `pyproject.toml`) carry no inline comments;

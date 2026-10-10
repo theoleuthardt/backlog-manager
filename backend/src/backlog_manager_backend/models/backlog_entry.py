@@ -61,6 +61,9 @@ class BacklogEntry(Base):
     completion_time: Mapped[Decimal | None] = mapped_column("CompletionTime")
     playtime: Mapped[Decimal | None] = mapped_column("Playtime")
     steam_app_id: Mapped[int | None] = mapped_column("SteamAppId", BigInteger)
+    steam_wishlist_import: Mapped[bool] = mapped_column(
+        "SteamWishlistImport", server_default=text("false")
+    )
     status: Mapped[str] = mapped_column("Status")
     owned: Mapped[bool] = mapped_column("Owned")
     interest: Mapped[int] = mapped_column("Interest")

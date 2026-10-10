@@ -36,6 +36,7 @@ _ENTRY_FIELDS = [
     "completion_time",
     "playtime",
     "steam_app_id",
+    "steam_wishlist_import",
     "review_stars",
     "review",
     "note",

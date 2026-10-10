@@ -15,6 +15,10 @@ import {
   useSteamLibraryPreviewStream,
 } from "~/hooks/useBacklog";
 import { FILLED_BUTTON } from "~/lib/buttonStyles";
+import {
+  skippedWishlistMessage,
+  wishlistImportDate,
+} from "~/lib/steamWishlist";
 
 type PreviewSource = "library" | "wishlist";
 
@@ -122,7 +126,7 @@ function SteamPreviewTable({
 }
 
 export function SteamContent() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [activeSource, setActiveSource] = useState<PreviewSource | null>(null);
   const [preview, setPreview] = useState<SteamPreviewItem[] | null>(null);
   const [isFetchingPreview, setIsFetchingPreview] = useState(false);
@@ -200,12 +204,18 @@ export function SteamContent() {
       const created = await wishlistImport.run(
         preview.map((item) => ({ appid: item.steamAppId })),
       );
+      const skippedMessage = skippedWishlistMessage(
+        preview.length,
+        created.length,
+      );
       setPreview(null);
       toast.success(
         created.length > 0
           ? `Imported ${created.length} game${created.length === 1 ? "" : "s"} from your Steam wishlist`
           : "No new games to import, your backlog already has everything",
       );
+      if (skippedMessage) toast.warning(skippedMessage);
+      await refreshUser();
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -224,6 +234,7 @@ export function SteamContent() {
   };
 
   const steamLinked = Boolean(user.steamId);
+  const wishlistImportedOn = wishlistImportDate(user.steamWishlistImportedAt);
 
   const renderPreview = () => {
     if (isFetchingPreview && !preview) {
@@ -304,23 +315,34 @@ export function SteamContent() {
       </div>
 
       <div className="rounded-lg border-2 border-white bg-black p-6">
-        <h2 className="mb-4 text-xl font-semibold">Wishlist Sync</h2>
-        <p className="mb-4 text-sm text-gray-300">
-          Loads your public Steam wishlist as a preview - press Import below to
-          create the entries as &quot;Not Owned&quot;.
-        </p>
-        <Button
-          className={FILLED_BUTTON}
-          onClick={loadWishlistPreview}
-          disabled={!steamLinked || isAnySyncRunning}
-        >
-          {isFetchingPreview && activeSource === "wishlist" ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Search className="h-4 w-4" />
-          )}
-          Load my wishlist
-        </Button>
+        <h2 className="mb-4 text-xl font-semibold">Wishlist Import</h2>
+        {wishlistImportedOn ? (
+          <p className="text-sm text-gray-300">
+            Your Steam wishlist was imported on {wishlistImportedOn}. The
+            wishlist import is for the first time only; the games it created are
+            marked as wishlist imports in your backlog.
+          </p>
+        ) : (
+          <>
+            <p className="mb-4 text-sm text-gray-300">
+              Loads your public Steam wishlist as a preview - press Import below
+              to create the entries as &quot;Not Owned&quot;. This import is for
+              the first time only.
+            </p>
+            <Button
+              className={FILLED_BUTTON}
+              onClick={loadWishlistPreview}
+              disabled={!steamLinked || isAnySyncRunning}
+            >
+              {isFetchingPreview && activeSource === "wishlist" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Search className="h-4 w-4" />
+              )}
+              Load my wishlist
+            </Button>
+          </>
+        )}
       </div>
 
       <div className="rounded-lg border-2 border-white bg-black p-6">

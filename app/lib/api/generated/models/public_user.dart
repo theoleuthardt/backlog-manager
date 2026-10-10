@@ -27,6 +27,7 @@ class PublicUser {
     this.defaultSort = 'status',
     this.theme = 'dark',
     this.steamId,
+    this.steamWishlistImportedAt,
     this.steamFamilyIds,
     this.customThemes,
   });
@@ -57,6 +58,8 @@ class PublicUser {
   final bool hasDiscordWebhookUrl;
   @JsonKey(name: 'steam_auto_import_enabled')
   final bool steamAutoImportEnabled;
+  @JsonKey(name: 'steam_wishlist_imported_at')
+  final DateTime? steamWishlistImportedAt;
   @JsonKey(name: 'steam_family_ids')
   final String? steamFamilyIds;
   @JsonKey(name: 'setup_completed')

@@ -33,6 +33,7 @@ class BacklogEntry(msgspec.Struct):
     partner_playtime: Decimal | None = None
     in_shared_space: bool = False
     steam_app_id: int | None = None
+    steam_wishlist_import: bool = False
     review_stars: int | None = None
     review: str | None = None
     note: str | None = None
@@ -65,6 +66,7 @@ class CreateBacklogEntryParams(msgspec.Struct):
     completion_time: Decimal | None = None
     playtime: Decimal | None = None
     steam_app_id: int | None = None
+    steam_wishlist_import: bool = False
     review_stars: int | None = None
     review: str | None = None
     note: str | None = None
@@ -94,6 +96,7 @@ class UpdateBacklogEntryParams(msgspec.Struct):
     completion_time: Decimal | None | msgspec.UnsetType = msgspec.UNSET
     playtime: Decimal | None | msgspec.UnsetType = msgspec.UNSET
     steam_app_id: int | None | msgspec.UnsetType = msgspec.UNSET
+    steam_wishlist_import: bool | msgspec.UnsetType = msgspec.UNSET
     review_stars: int | None | msgspec.UnsetType = msgspec.UNSET
     review: str | None | msgspec.UnsetType = msgspec.UNSET
     note: str | None | msgspec.UnsetType = msgspec.UNSET

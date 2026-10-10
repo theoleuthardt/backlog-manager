@@ -23,6 +23,9 @@ PublicUser _$PublicUserFromJson(Map<String, dynamic> json) => PublicUser(
   defaultSort: json['default_sort'] as String? ?? 'status',
   theme: json['theme'] as String? ?? 'dark',
   steamId: json['steam_id'] as String?,
+  steamWishlistImportedAt: json['steam_wishlist_imported_at'] == null
+      ? null
+      : DateTime.parse(json['steam_wishlist_imported_at'] as String),
   steamFamilyIds: json['steam_family_ids'] as String?,
   customThemes: (json['custom_themes'] as List<dynamic>?)
       ?.map((e) => CustomTheme.fromJson(e as Map<String, dynamic>))
@@ -44,6 +47,8 @@ Map<String, dynamic> _$PublicUserToJson(PublicUser instance) =>
       'has_steamgriddb_api_key': instance.hasSteamgriddbApiKey,
       'has_discord_webhook_url': instance.hasDiscordWebhookUrl,
       'steam_auto_import_enabled': instance.steamAutoImportEnabled,
+      'steam_wishlist_imported_at': instance.steamWishlistImportedAt
+          ?.toIso8601String(),
       'steam_family_ids': instance.steamFamilyIds,
       'setup_completed': instance.setupCompleted,
       'default_sort': instance.defaultSort,

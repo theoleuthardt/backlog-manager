@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS "blm-system"."Users"(
     "SteamGridDbApiKeyEncrypted" TEXT,
     "DiscordWebhookUrlEncrypted" TEXT,
     "SteamAutoImportEnabled" BOOLEAN NOT NULL DEFAULT FALSE,
+    "SteamWishlistImportedAt" TIMESTAMP,
     "IsAdmin" BOOLEAN NOT NULL DEFAULT FALSE,
     "TotpSecretEncrypted" TEXT,
     "TotpEnabled" BOOLEAN NOT NULL DEFAULT FALSE,
@@ -90,6 +91,7 @@ CREATE TABLE IF NOT EXISTS "blm-system"."BacklogEntries" (
     "CompletionTime" NUMERIC(10,2),
     "Playtime"       NUMERIC(10,2),
     "SteamAppId"     BIGINT,
+    "SteamWishlistImport" BOOLEAN NOT NULL      DEFAULT FALSE,
     "Status"         VARCHAR(20) NOT NULL,
     "Owned"          BOOLEAN NOT NULL            DEFAULT FALSE,
     "Interest"       INTEGER NOT NULL CHECK ("Interest" >= 1 AND "Interest" <= 10),
@@ -131,6 +133,13 @@ CREATE TABLE IF NOT EXISTS "blm-system"."CategoryBacklogEntries" (
         ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY ("BacklogEntryID") REFERENCES "blm-system"."BacklogEntries"("BacklogEntryID")
         ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS "blm-system"."SteamAppInfo" (
+    "SteamAppId"  BIGINT PRIMARY KEY,
+    "Name"        VARCHAR(255) NOT NULL,
+    "HeaderImage" TEXT,
+    "ResolvedAt"  TIMESTAMP WITHOUT TIME ZONE NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS "blm-system"."GamePrices" (

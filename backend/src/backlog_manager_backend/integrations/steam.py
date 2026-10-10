@@ -1,3 +1,5 @@
+import asyncio
+
 import httpx
 import msgspec
 import structlog
@@ -13,6 +15,7 @@ from backlog_manager_backend.integrations.types import (
     SteamOwnedGame,
     SteamPlayerStats,
     SteamStoreBrowseEnvelope,
+    SteamStoreItemAssets,
     SteamStoreSearchEnvelope,
     SteamStoreSearchItem,
     SteamWishlistItem,
@@ -30,6 +33,11 @@ _APP_DETAILS_URL = "https://store.steampowered.com/api/appdetails"
 _STORE_SEARCH_URL = "https://store.steampowered.com/api/storesearch/"
 _STORE_BROWSE_ITEMS_URL = "https://api.steampowered.com/IStoreBrowseService/GetItems/v1"
 _STORE_ASSETS_BASE_URL = "https://shared.steamstatic.com/store_item_assets/"
+STORE_ITEMS_BATCH_SIZE = 50
+STORE_ITEMS_BATCH_PAUSE_SECONDS = 0.5
+_STORE_ITEM_RESOLVED = 1
+_RETRY_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
+_RETRY_DELAYS_SECONDS = (1.0, 3.0)
 
 
 async def get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
@@ -152,10 +160,79 @@ async def _get_hashed_library_cover(app_id: int) -> str | None:
     return None
 
 
+async def _get_with_retry(url: str, params: dict[str, str | int], timeout: float) -> httpx.Response:
+    """GET that waits and tries again when the store rate-limits (429) or
+    has a server error, up to len(_RETRY_DELAYS_SECONDS) more times. The
+    store's appdetails endpoint allows only a few hundred requests per
+    five minutes per address, so a long wishlist hits that limit; without
+    a retry every item past it came back nameless. The last response is
+    returned whatever its status, the caller decides what to do with it."""
+    attempts = len(_RETRY_DELAYS_SECONDS) + 1
+    for attempt in range(attempts):
+        async with httpx.AsyncClient(timeout=httpx.Timeout(timeout)) as client:
+            response = await client.get(url, params=params)
+        if response.status_code not in _RETRY_STATUS_CODES or attempt == attempts - 1:
+            return response
+        await asyncio.sleep(_RETRY_DELAYS_SECONDS[attempt])
+    return response
+
+
+def _store_header_url(assets: SteamStoreItemAssets | None) -> str | None:
+    if assets is None or assets.header is None:
+        return None
+    path = assets.asset_url_format.replace("${FILENAME}", assets.header)
+    return f"{_STORE_ASSETS_BASE_URL}{path}"
+
+
+async def get_store_items(app_ids: list[int]) -> dict[int, SteamAppDetails]:
+    """Names and header images for many apps with one request per
+    STORE_ITEMS_BATCH_SIZE, through the store browse API (no key needed).
+    Unlike appdetails this is made for lists and does not hit a request
+    limit for a wishlist of a few hundred games. Apps the store does not
+    resolve (unknown, removed) are absent from the result. Raises on
+    transport or HTTP failure like get_wishlist; callers fall back to
+    appdetails."""
+    details: dict[int, SteamAppDetails] = {}
+    for start in range(0, len(app_ids), STORE_ITEMS_BATCH_SIZE):
+        if start:
+            await asyncio.sleep(STORE_ITEMS_BATCH_PAUSE_SECONDS)
+        chunk = app_ids[start : start + STORE_ITEMS_BATCH_SIZE]
+        input_json = msgspec.json.encode(
+            {
+                "ids": [{"appid": app_id} for app_id in chunk],
+                "context": {"language": "english", "country_code": "US"},
+                "data_request": {"include_basic_info": True, "include_assets": True},
+            }
+        ).decode()
+        try:
+            response = await _get_with_retry(
+                _STORE_BROWSE_ITEMS_URL, {"input_json": input_json}, 15.0
+            )
+        except httpx.HTTPError as error:
+            logger.error("store browse items error", error=str(error))
+            raise
+        if response.status_code >= 400:
+            raise httpx.HTTPStatusError(
+                f"Steam store API error: {response.status_code}",
+                request=response.request,
+                response=response,
+            )
+        try:
+            envelope = msgspec.json.decode(response.content, type=SteamStoreBrowseEnvelope)
+        except msgspec.DecodeError as error:
+            logger.error("store browse items decode error", error=str(error))
+            raise httpx.DecodingError("Steam store API returned an invalid response") from error
+        for item in envelope.response.store_items:
+            if item.success == _STORE_ITEM_RESOLVED and item.name:
+                details[item.id] = SteamAppDetails(
+                    name=item.name, header_image=_store_header_url(item.assets)
+                )
+    return details
+
+
 async def get_app_details(app_id: int) -> SteamAppDetails | None:
     try:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
-            response = await client.get(_APP_DETAILS_URL, params={"appids": app_id})
+        response = await _get_with_retry(_APP_DETAILS_URL, {"appids": app_id}, 15.0)
     except httpx.HTTPError as error:
         logger.error("appdetails error", app_id=app_id, error=str(error))
         raise

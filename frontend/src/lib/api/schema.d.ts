@@ -1351,6 +1351,7 @@ export interface components {
             has_discord_webhook_url?: boolean;
             /** @default false */
             steam_auto_import_enabled?: boolean;
+            steam_wishlist_imported_at?: string | null;
             steam_family_ids?: string | null;
             /** @default false */
             setup_completed?: boolean;

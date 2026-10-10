@@ -37,6 +37,7 @@ function toCurrentUser(user: components["schemas"]["PublicUser"]): CurrentUser {
     hasSteamgriddbApiKey: user.has_steamgriddb_api_key ?? false,
     hasDiscordWebhookUrl: user.has_discord_webhook_url ?? false,
     steamAutoImportEnabled: user.steam_auto_import_enabled ?? false,
+    steamWishlistImportedAt: user.steam_wishlist_imported_at ?? undefined,
     steamFamilyIds: user.steam_family_ids ?? undefined,
     setupCompleted: user.setup_completed ?? false,
     defaultSort: user.default_sort ?? "status",

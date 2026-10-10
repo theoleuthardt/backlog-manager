@@ -593,3 +593,236 @@ async def test_search_store_by_title_raises_on_missing_items(
 
     with pytest.raises(httpx.HTTPError):
         await search_store_by_title("Celeste")
+
+
+def _store_items_response(*items: dict[str, object]) -> dict[str, object]:
+    return {"response": {"store_items": list(items)}}
+
+
+async def test_get_store_items_returns_names_and_header_images_in_one_request(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import json
+
+    from backlog_manager_backend.integrations.steam import get_store_items
+
+    requests: list[dict[str, object]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        payload = json.loads(request.url.params["input_json"])
+        requests.append(payload)
+        return httpx.Response(
+            200,
+            json=_store_items_response(
+                {
+                    "id": 620,
+                    "success": 1,
+                    "name": "Portal 2",
+                    "assets": {
+                        "asset_url_format": "steam/apps/620/${FILENAME}?t=1",
+                        "header": "header.jpg",
+                    },
+                },
+                {"id": 504230, "success": 1, "name": "Celeste"},
+            ),
+        )
+
+    _mock_client(handler, monkeypatch)
+
+    details = await get_store_items([620, 504230])
+
+    assert len(requests) == 1
+    assert requests[0]["ids"] == [{"appid": 620}, {"appid": 504230}]
+    assert details[620].name == "Portal 2"
+    assert details[620].header_image == (
+        "https://shared.steamstatic.com/store_item_assets/steam/apps/620/header.jpg?t=1"
+    )
+    assert details[504230].name == "Celeste"
+    assert details[504230].header_image is None
+
+
+async def test_get_store_items_skips_apps_without_a_name(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from backlog_manager_backend.integrations.steam import get_store_items
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json=_store_items_response(
+                {"id": 620, "success": 1, "name": "Portal 2"},
+                {"id": 999999, "success": 15},
+                {"id": 123, "success": 1, "name": ""},
+            ),
+        )
+
+    _mock_client(handler, monkeypatch)
+
+    assert set(await get_store_items([620, 999999, 123])) == {620}
+
+
+async def test_get_store_items_splits_a_long_list_into_batches(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import json
+
+    from backlog_manager_backend.integrations.steam import (
+        STORE_ITEMS_BATCH_SIZE,
+        get_store_items,
+    )
+
+    sizes: list[int] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        ids = json.loads(request.url.params["input_json"])["ids"]
+        sizes.append(len(ids))
+        return httpx.Response(
+            200,
+            json=_store_items_response(
+                *(
+                    {"id": item["appid"], "success": 1, "name": f"Game {item['appid']}"}
+                    for item in ids
+                )
+            ),
+        )
+
+    _mock_client(handler, monkeypatch)
+
+    app_ids = list(range(1, STORE_ITEMS_BATCH_SIZE * 2 + 6))
+    details = await get_store_items(app_ids)
+
+    assert sizes == [STORE_ITEMS_BATCH_SIZE, STORE_ITEMS_BATCH_SIZE, 5]
+    assert len(details) == len(app_ids)
+
+
+async def test_get_store_items_returns_nothing_for_an_empty_list(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from backlog_manager_backend.integrations.steam import get_store_items
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise AssertionError("no request expected")
+
+    _mock_client(handler, monkeypatch)
+
+    assert await get_store_items([]) == {}
+
+
+async def test_get_store_items_raises_on_http_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    import asyncio
+
+    from backlog_manager_backend.integrations.steam import get_store_items
+
+    async def fake_sleep(seconds: float) -> None:
+        return None
+
+    monkeypatch.setattr(asyncio, "sleep", fake_sleep)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(503)
+
+    _mock_client(handler, monkeypatch)
+
+    with pytest.raises(httpx.HTTPError):
+        await get_store_items([620])
+
+
+async def test_get_app_details_retries_when_the_store_rate_limits(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import asyncio
+
+    from backlog_manager_backend.integrations.steam import get_app_details
+
+    sleeps: list[float] = []
+
+    async def fake_sleep(seconds: float) -> None:
+        sleeps.append(seconds)
+
+    monkeypatch.setattr(asyncio, "sleep", fake_sleep)
+    calls = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        if calls < 3:
+            return httpx.Response(429)
+        return httpx.Response(
+            200, json={"620": {"success": True, "data": {"name": "Portal 2", "header_image": None}}}
+        )
+
+    _mock_client(handler, monkeypatch)
+
+    detail = await get_app_details(620)
+
+    assert detail is not None
+    assert detail.name == "Portal 2"
+    assert calls == 3
+    assert sleeps == sorted(sleeps)
+    assert all(seconds > 0 for seconds in sleeps)
+
+
+async def test_get_app_details_gives_up_after_the_last_retry(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import asyncio
+
+    from backlog_manager_backend.integrations.steam import get_app_details
+
+    async def fake_sleep(seconds: float) -> None:
+        return None
+
+    monkeypatch.setattr(asyncio, "sleep", fake_sleep)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(429)
+
+    _mock_client(handler, monkeypatch)
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await get_app_details(620)
+
+
+async def test_get_app_details_does_not_retry_a_client_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from backlog_manager_backend.integrations.steam import get_app_details
+
+    calls = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        return httpx.Response(404)
+
+    _mock_client(handler, monkeypatch)
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await get_app_details(620)
+    assert calls == 1
+
+
+async def test_get_store_items_pauses_between_batches(monkeypatch: pytest.MonkeyPatch) -> None:
+    import asyncio
+
+    from backlog_manager_backend.integrations.steam import (
+        STORE_ITEMS_BATCH_PAUSE_SECONDS,
+        STORE_ITEMS_BATCH_SIZE,
+        get_store_items,
+    )
+
+    pauses: list[float] = []
+
+    async def fake_sleep(seconds: float) -> None:
+        pauses.append(seconds)
+
+    monkeypatch.setattr(asyncio, "sleep", fake_sleep)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=_store_items_response())
+
+    _mock_client(handler, monkeypatch)
+
+    await get_store_items(list(range(1, STORE_ITEMS_BATCH_SIZE * 3 + 1)))
+
+    assert pauses == [STORE_ITEMS_BATCH_PAUSE_SECONDS] * 2
