@@ -36,6 +36,9 @@ dev_dependencies:
 flutter:
 
   uses-material-design: true
+  assets:
+    - assets/royalcdkeys-icon.png
+    - assets/premiumcdkeys-icon.png
   fonts:
     - family: PlusJakartaSans
       fonts:

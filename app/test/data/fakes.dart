@@ -1,6 +1,8 @@
 import 'package:backlog_manager/api/generated/export.dart' as wire;
 import 'package:backlog_manager/data/backlog_api.dart';
+import 'package:backlog_manager/data/games_api.dart';
 import 'package:backlog_manager/domain/models.dart';
+import 'package:backlog_manager/domain/price_listings.dart';
 
 class FakeBacklogApi implements BacklogApi {
   FakeBacklogApi({List<BacklogEntry>? entries})
@@ -14,6 +16,7 @@ class FakeBacklogApi implements BacklogApi {
   List<Category> categoryList = const [];
   Map<int, List<BacklogEntry>> entriesByCategory = const {};
   List<CustomStatus> statusList = const [];
+  Future<wire.AchievementProgress> Function(int steamAppId)? onAchievements;
 
   @override
   Future<List<BacklogEntry>> entries(int? spaceId) async {
@@ -184,10 +187,34 @@ class FakeBacklogApi implements BacklogApi {
   @override
   Future<wire.AchievementProgress> achievements(int steamAppId) async {
     calls.add('achievements $steamAppId');
+    final custom = onAchievements;
+    if (custom != null) return custom(steamAppId);
     return const wire.AchievementProgress(
       unlocked: 3,
       total: 15,
       achievements: [],
     );
+  }
+}
+
+class FakeGamesApi implements GamesApi {
+  final calls = <String>[];
+  Future<PriceInfo> Function(int steamAppId)? onPrice;
+  Future<List<KeyShopOffer>> Function(String title)? onKeyShops;
+
+  @override
+  Future<PriceInfo> price(int steamAppId) async {
+    calls.add('price $steamAppId');
+    final custom = onPrice;
+    if (custom != null) return custom(steamAppId);
+    return const PriceInfo(deals: [], onSale: false);
+  }
+
+  @override
+  Future<List<KeyShopOffer>> keyShopPrices(String title) async {
+    calls.add('keys $title');
+    final custom = onKeyShops;
+    if (custom != null) return custom(title);
+    return const [];
   }
 }
