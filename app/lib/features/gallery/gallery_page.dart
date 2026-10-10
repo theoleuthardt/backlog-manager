@@ -14,6 +14,7 @@ import 'package:backlog_manager/design/widgets/table.dart';
 import 'package:backlog_manager/design/widgets/tabs.dart';
 import 'package:backlog_manager/design/widgets/toast.dart';
 import 'package:backlog_manager/design/widgets/toggles.dart';
+import 'package:backlog_manager/features/common/status_select.dart';
 import 'package:flutter/material.dart';
 
 class _Game {
@@ -39,6 +40,7 @@ class _GalleryPageState extends State<GalleryPage> {
   int _interest = 6;
   int _stars = 7;
   String? _sort = 'status';
+  String _status = 'In Progress';
   final Set<String> _selected = {'Celeste'};
 
   static const _games = [
@@ -146,6 +148,14 @@ class _GalleryPageState extends State<GalleryPage> {
                   ShelfOption(value: 'status', label: 'Status'),
                   ShelfOption(value: 'genre', label: 'Genre'),
                 ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: 360,
+              child: StatusSelect(
+                value: _status,
+                onChanged: (value) => setState(() => _status = value),
               ),
             ),
             const SizedBox(height: 16),

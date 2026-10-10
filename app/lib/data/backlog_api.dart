@@ -67,6 +67,10 @@ abstract interface class BacklogApi {
 
   Future<List<CustomStatus>> customStatuses(int? spaceId);
 
+  Future<CustomStatus> createCustomStatus(String name, int? spaceId);
+
+  Future<void> deleteCustomStatus(int statusId, int? spaceId);
+
   Future<List<Category>> categories(int? spaceId);
 
   Future<List<BacklogEntry>> entriesOfCategory(int categoryId, int? spaceId);
@@ -131,6 +135,24 @@ class ApiBacklogApi implements BacklogApi {
     final statuses = await (await _client())
         .apiBacklogStatusesListCustomStatuses(spaceId: spaceId);
     return statuses.map(customStatusFromResponse).toList();
+  }
+
+  @override
+  Future<CustomStatus> createCustomStatus(String name, int? spaceId) async {
+    final created = await (await _client())
+        .apiBacklogStatusesCreateCustomStatus(
+          body: wire.CreateCustomStatusRequest(name: name),
+          spaceId: spaceId,
+        );
+    return customStatusFromResponse(created);
+  }
+
+  @override
+  Future<void> deleteCustomStatus(int statusId, int? spaceId) async {
+    await (await _client()).apiBacklogStatusesStatusIdDeleteCustomStatus(
+      statusId: statusId,
+      spaceId: spaceId,
+    );
   }
 
   @override

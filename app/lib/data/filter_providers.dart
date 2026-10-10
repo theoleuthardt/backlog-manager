@@ -2,15 +2,8 @@ import 'package:backlog_manager/auth/auth_controller.dart';
 import 'package:backlog_manager/data/backlog_providers.dart';
 import 'package:backlog_manager/domain/filter_entries.dart';
 import 'package:backlog_manager/domain/filter_tokens.dart';
+import 'package:backlog_manager/domain/status_names.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-const builtInStatuses = [
-  'Not Started',
-  'In Progress',
-  'Completed',
-  'On Hold',
-  'Dropped',
-];
 
 /// The filters of the library for the personal backlog: the search text of the
 /// title bar and the filters of the filter bar. They stay while the user moves
@@ -96,7 +89,7 @@ final filterOptionsProvider = Provider<FilterOptions>((ref) {
     platforms: uniqueSorted(entries.expand((entry) => entry.platform)),
     genres: uniqueSorted(entries.expand((entry) => entry.genre)),
     statuses: <String>{
-      ...builtInStatuses,
+      ...defaultStatuses,
       for (final status in custom) status.name,
       for (final entry in entries) entry.status,
     }.toList(),

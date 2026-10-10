@@ -153,6 +153,31 @@ void main() {
       expect(result.single.color, '#38bdf8');
     });
 
+    test('creates a custom status in a space', () async {
+      final server = FakeServer(
+        (_) => (status: 201, body: {'id': 7, 'name': 'Replaying'}),
+      );
+
+      final created = await apiFor(server).createCustomStatus('Replaying', 3);
+
+      expect(created.id, 7);
+      expect(created.name, 'Replaying');
+      final request = server.requests.single;
+      expect(request.method, 'POST');
+      expect(request.path, '/api/backlog/statuses');
+      expect(request.queryParameters, {'space_id': 3});
+      expect(request.data, {'name': 'Replaying'});
+    });
+
+    test('deletes a custom status', () async {
+      final server = FakeServer((_) => (status: 204, body: null));
+
+      await apiFor(server).deleteCustomStatus(7, null);
+
+      expect(server.requests.single.method, 'DELETE');
+      expect(server.requests.single.path, '/api/backlog/statuses/7');
+    });
+
     test('lists the entries of a category', () async {
       final server = FakeServer((_) => (status: 200, body: [entryJson(9)]));
 

@@ -4,6 +4,7 @@ import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/design/widgets/chips.dart';
 import 'package:backlog_manager/design/widgets/menu.dart';
+import 'package:backlog_manager/design/widgets/menu_row.dart';
 import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/design/widgets/segmented.dart';
 import 'package:backlog_manager/design/widgets/toggles.dart';
@@ -311,7 +312,7 @@ class _AddFilterContentState extends ConsumerState<_AddFilterContent> {
           Divider(height: 1, color: tokens.borderSubtle),
           const SizedBox(height: 4),
           for (final field in fields)
-            _MenuRow(
+            ShelfMenuRow(
               key: Key('add-filter-field-${field.name}'),
               label: field.label,
               trailing: Icon(
@@ -344,7 +345,7 @@ class _PickerWithHeader extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _MenuRow(
+          ShelfMenuRow(
             key: const Key('add-filter-back'),
             label: field.label,
             leading: Icon(Icons.chevron_left, size: 16, color: tokens.muted),
@@ -354,60 +355,6 @@ class _PickerWithHeader extends StatelessWidget {
           Divider(height: 1, color: tokens.borderSubtle),
           FilterPicker(field: field),
         ],
-      ),
-    );
-  }
-}
-
-class _MenuRow extends StatelessWidget {
-  const _MenuRow({
-    required this.label,
-    required this.onPressed,
-    this.leading,
-    this.trailing,
-    this.labelStyle,
-    super.key,
-  });
-
-  final String label;
-  final VoidCallback onPressed;
-  final Widget? leading;
-  final Widget? trailing;
-  final TextStyle? labelStyle;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = Theme.of(context).extension<ShelfTokens>()!;
-    final style = Theme.of(context).extension<ShelfTextStyles>()!;
-
-    return ShelfPressable(
-      borderRadius: 6,
-      semanticLabel: label,
-      onPressed: onPressed,
-      builder: (context, state) => DecoratedBox(
-        decoration: BoxDecoration(
-          color: state.hovered ? tokens.glowSoft : null,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: SizedBox(
-          height: 32,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Row(
-              children: [
-                if (leading != null) ...[leading!, const SizedBox(width: 4)],
-                Expanded(
-                  child: Text(
-                    label,
-                    overflow: TextOverflow.ellipsis,
-                    style: labelStyle ?? style.control,
-                  ),
-                ),
-                ?trailing,
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -475,7 +422,7 @@ class _ListPicker extends ConsumerWidget {
           child: Column(
             children: [
               for (final value in options)
-                _MenuRow(
+                ShelfMenuRow(
                   key: Key('filter-option-$value'),
                   label: value,
                   leading: ShelfCheckbox(

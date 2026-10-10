@@ -62,6 +62,29 @@ class FakeBacklogApi implements BacklogApi {
     return statusList;
   }
 
+  int _nextStatusId = 50;
+  Future<void> Function(String name)? onCreateStatus;
+  Future<void> Function(int statusId)? onDeleteStatus;
+
+  @override
+  Future<CustomStatus> createCustomStatus(String name, int? spaceId) async {
+    calls.add('create-status $name ${spaceId ?? 'personal'}');
+    await onCreateStatus?.call(name);
+    final created = CustomStatus(id: _nextStatusId++, name: name);
+    statusList = [...statusList, created];
+    return created;
+  }
+
+  @override
+  Future<void> deleteCustomStatus(int statusId, int? spaceId) async {
+    calls.add('delete-status $statusId ${spaceId ?? 'personal'}');
+    await onDeleteStatus?.call(statusId);
+    statusList = [
+      for (final status in statusList)
+        if (status.id != statusId) status,
+    ];
+  }
+
   @override
   Future<List<Category>> categories(int? spaceId) async {
     calls.add('categories ${spaceId ?? 'personal'}');
