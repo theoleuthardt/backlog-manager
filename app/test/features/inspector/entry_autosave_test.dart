@@ -155,6 +155,24 @@ void main() {
     h.autosave.dispose();
   });
 
+  test('closing during a running save still sends the newest edit', () async {
+    final h = Harness();
+    final gate = Completer<void>();
+    h.gates.add(gate);
+
+    h.edit('a');
+    await wait(2);
+    h.edit('ab');
+    h.autosave
+      ..flush()
+      ..dispose();
+    gate.complete();
+    await wait(2);
+
+    expect(h.saves.map((c) => c.note), ['a', 'ab']);
+    expect(h.stored, 'ab');
+  });
+
   test('a disposed autosave saves nothing more', () async {
     final h = Harness();
 

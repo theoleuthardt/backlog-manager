@@ -261,6 +261,31 @@ void main() {
     });
   });
 
+  group('a change of the stored entry', () {
+    testWidgets('shows a playtime that was synced while it is open', (
+      tester,
+    ) async {
+      final app = await openInspector(tester);
+
+      app.api.stored[1] = const BacklogEntry(
+        id: 1,
+        title: 'Hades',
+        status: 'In Progress',
+        playtime: 42,
+      );
+      await app.container.read(entriesProvider(null).notifier).refresh();
+      await tester.pumpAndSettle();
+
+      expect(
+        tester
+            .widget<TextField>(find.byKey(const Key('inspector-playtime')))
+            .controller!
+            .text,
+        '42',
+      );
+    });
+  });
+
   group('the stat tiles', () {
     testWidgets('interest is clickable and clears on the current level', (
       tester,

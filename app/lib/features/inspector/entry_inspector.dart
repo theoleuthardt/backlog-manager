@@ -223,6 +223,12 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
       _syncText(_platform, _form.platform);
       _syncText(_note, _form.note);
       _syncText(_review, _form.review);
+      if (parsePlaytime(_playtime.text) != _form.playtime) {
+        _syncText(
+          _playtime,
+          _form.playtime == null ? '' : formatHours(_form.playtime!),
+        );
+      }
     });
     _autosave.changed();
   }

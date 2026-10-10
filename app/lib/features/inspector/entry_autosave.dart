@@ -30,6 +30,7 @@ class EntryAutosave {
   Timer? _timer;
   bool _saving = false;
   bool _disposed = false;
+  bool _flushRequested = false;
 
   /// Call after every edit, and whenever the stored entry changed.
   void changed() {
@@ -46,7 +47,10 @@ class EntryAutosave {
     state.value = SaveState.saving;
     try {
       await save(changes);
-      if (_disposed) return;
+      if (_disposed) {
+        _sendRest();
+        return;
+      }
       state.value = SaveState.saved;
     } on Object catch (error) {
       if (_disposed) return;
@@ -62,10 +66,20 @@ class EntryAutosave {
   /// Sends the pending changes now, unless a request is running (it ends by
   /// looking at what is pending again).
   void flush() {
+    _flushRequested = true;
     _timer?.cancel();
     final changes = pending();
     if (_saving || changes.isEmpty) return;
     unawaited(save(changes).catchError((Object _) {}));
+  }
+
+  /// A save that ended after the inspector closed sends the edits that came
+  /// in meanwhile, when a flush asked for them.
+  void _sendRest() {
+    if (!_flushRequested) return;
+    final rest = pending();
+    if (rest.isEmpty) return;
+    unawaited(save(rest).catchError((Object _) {}));
   }
 
   void dispose() {
