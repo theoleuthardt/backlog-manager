@@ -1,3 +1,4 @@
+import { ExternalAnchor } from "components/ExternalAnchor";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -177,14 +178,12 @@ export function SetupWizard() {
                 Open your Steam profile page: if its URL ends in a long number,
                 that&apos;s your SteamID64. If it ends in a custom name, look it
                 up with{" "}
-                <a
+                <ExternalAnchor
                   href="https://steamdb.com/en/tools/steam-id-finder"
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="text-blue-400 underline hover:text-blue-300"
                 >
                   SteamDB&apos;s SteamID finder
-                </a>
+                </ExternalAnchor>
                 .
               </p>
             </div>
@@ -200,14 +199,12 @@ export function SetupWizard() {
               />
               <p className="text-xs text-gray-500">
                 Create or look up your key on{" "}
-                <a
+                <ExternalAnchor
                   href="https://steamcommunity.com/dev/apikey"
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="text-blue-400 underline hover:text-blue-300"
                 >
                   Steam&apos;s API key page
-                </a>
+                </ExternalAnchor>
                 .
               </p>
             </div>
@@ -241,14 +238,12 @@ export function SetupWizard() {
               />
               <p className="text-xs text-gray-500">
                 Create a Twitch application at{" "}
-                <a
+                <ExternalAnchor
                   href="https://dev.twitch.tv/console/apps"
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="text-blue-400 underline hover:text-blue-300"
                 >
                   dev.twitch.tv/console/apps
-                </a>{" "}
+                </ExternalAnchor>{" "}
                 to get an IGDB Client ID and Client Secret.
               </p>
             </div>
