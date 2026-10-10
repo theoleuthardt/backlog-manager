@@ -84,8 +84,9 @@ class _CsvRowSheetState extends ConsumerState<CsvRowSheet> {
     final row = _row;
     if (row == null) return;
     final url = await showCoverPicker(context, initialQuery: row.title);
+    if (url == null || !mounted) return;
     final current = _row;
-    if (url == null || current == null || !mounted) return;
+    if (current == null) return;
     ref
         .read(csvImportProvider.notifier)
         .updateRow(current.copyWith(imageLink: url));

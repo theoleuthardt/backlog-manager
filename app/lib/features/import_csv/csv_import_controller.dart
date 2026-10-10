@@ -133,7 +133,7 @@ class CsvImportController extends Notifier<CsvImportState> {
 
   /// Leaves the file and the preview, for "Choose another file" and Cancel.
   void reset() {
-    unawaited(_subscription?.cancel());
+    cancel();
     state = const CsvImportState();
   }
 

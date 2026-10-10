@@ -9,6 +9,8 @@ import 'package:backlog_manager/design/theme_provider.dart';
 import 'package:backlog_manager/domain/csv_import.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/platform/csv_file_picker.dart';
+import 'package:backlog_manager/routing/router.dart';
+import 'package:backlog_manager/routing/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -604,11 +606,15 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('Already exists'), findsOneWidget);
       expect(find.textContaining('Portal'), findsWidgets);
+      await dismissToast(tester);
+      ProviderScope.containerOf(tester.element(find.byType(MaterialApp)))
+          .read(routerProvider)
+          .go(AppRoutes.library);
+      await tester.pumpAndSettle();
       expect(
         opened.backlog.calls.where((c) => c.startsWith('entries')).length,
-        greaterThanOrEqualTo(entriesBefore),
+        greaterThan(entriesBefore),
       );
-      await dismissToast(tester);
     });
 
     testWidgets('Cancel stops the import', (tester) async {

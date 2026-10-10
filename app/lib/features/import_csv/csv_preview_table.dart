@@ -90,8 +90,9 @@ class _CsvRowTileState extends ConsumerState<CsvRowTile> {
         }
       case RowAction.cover:
         final url = await showCoverPicker(context, initialQuery: row.title);
+        if (url == null || !mounted) return;
         final current = ref.read(csvRowProvider(row.rowIndex));
-        if (url != null && current != null && mounted) {
+        if (current != null) {
           controller.updateRow(current.copyWith(imageLink: url));
         }
     }
