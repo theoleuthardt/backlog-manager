@@ -255,6 +255,12 @@ tasks:
     cmds:
       - flutter test
 
+  app:test:integration:
+    desc: Run the Flutter app's integration tests against an in-memory backend (needs a display, see docs/FLUTTER.md)
+    dir: "{{.APP_DIR}}"
+    cmds:
+      - flutter drive --driver=test_driver/integration_test.dart --target=integration_test/main_flows_test.dart -d {{.APP_PLATFORM}}
+
   app:test:update-goldens:
     desc: Re-record the Flutter app's golden images (review the image diff before committing)
     dir: "{{.APP_DIR}}"

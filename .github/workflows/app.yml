@@ -130,3 +130,44 @@ jobs:
 
       - name: Build
         run: flutter build linux --release
+
+  integration:
+    name: App Integration Tests
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install Linux build and display dependencies
+        working-directory: .
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev xvfb xauth
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: app/pubspec.yaml
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run integration tests
+        run: >
+          xvfb-run -a -s "-screen 0 1440x900x24"
+          flutter drive
+          --driver=test_driver/integration_test.dart
+          --target=integration_test/main_flows_test.dart
+          -d linux
