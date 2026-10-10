@@ -1,5 +1,6 @@
 import 'package:backlog_manager/features/auth/loading_page.dart';
 import 'package:backlog_manager/features/auth/sign_in_page.dart';
+import 'package:backlog_manager/features/creation/creation_tool_page.dart';
 import 'package:backlog_manager/features/gallery/gallery_routes.dart';
 import 'package:backlog_manager/features/home/home_page.dart';
 import 'package:backlog_manager/features/library/library_page.dart';
@@ -27,11 +28,14 @@ const _mainPages = [
   AppRoutes.space,
 ];
 
-GoRoute _page(String path, Widget Function(String title) page) {
+GoRoute _page(
+  String path,
+  Widget Function(String title, GoRouterState state) page,
+) {
   return GoRoute(
     path: path,
     pageBuilder: (context, state) =>
-        NoTransitionPage(child: page(pageTitle(path))),
+        NoTransitionPage(child: page(pageTitle(path), state)),
   );
 }
 
@@ -75,9 +79,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           for (final path in _mainPages)
             _page(
               path,
-              (title) => switch (path) {
+              (title, state) => switch (path) {
                 AppRoutes.home => const HomePage(),
                 AppRoutes.library => const LibraryPage(),
+                AppRoutes.creationTool => CreationToolPage(
+                  key: ValueKey(state.uri.toString()),
+                  query: state.uri.queryParameters,
+                ),
                 _ => PlaceholderPage(title: title),
               },
             ),

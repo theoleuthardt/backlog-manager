@@ -1,5 +1,6 @@
 import 'package:backlog_manager/api/generated/export.dart';
 import 'package:backlog_manager/domain/achievements.dart';
+import 'package:backlog_manager/domain/creation_form.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/domain/price_listings.dart' as price;
@@ -150,4 +151,28 @@ GameSearchResult gameSearchResultFromResponse(EnrichedResult result) {
 
 SteamGridDbMatch steamGridDbMatchFromResponse(SteamGridDbSearchResult match) {
   return SteamGridDbMatch(id: match.id, name: match.name);
+}
+
+/// The request that creates [entry]; the backend takes hours as decimal text.
+CreateBacklogEntryRequest createRequestFrom(NewEntry entry) {
+  String? hours(double? value) => value == null ? null : '$value';
+  return CreateBacklogEntryRequest(
+    title: entry.title,
+    genre: entry.genre,
+    platform: entry.platform,
+    status: entry.status,
+    owned: entry.owned,
+    interest: entry.interest,
+    imageLink: entry.imageLink,
+    description: entry.description,
+    trailerLink: entry.trailerLink,
+    mainTime: hours(entry.mainTime),
+    mainPlusExtraTime: hours(entry.mainPlusExtraTime),
+    completionTime: hours(entry.completionTime),
+    playtime: '${entry.playtime}',
+    steamAppId: entry.steamAppId,
+    reviewStars: entry.reviewStars,
+    review: entry.review,
+    note: entry.note,
+  );
 }

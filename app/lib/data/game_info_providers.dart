@@ -14,6 +14,11 @@ final priceCacheTtlProvider = Provider<Duration>(
   (ref) => const Duration(hours: 1),
 );
 
+/// How long the Steam playtime of a game is kept.
+final playtimeCacheTtlProvider = Provider<Duration>(
+  (ref) => const Duration(minutes: 10),
+);
+
 /// How long the achievements of a game are kept.
 final achievementsCacheTtlProvider = Provider<Duration>(
   (ref) => const Duration(minutes: 5),
@@ -128,3 +133,16 @@ final steamGridDbCoversByIdProvider = FutureProvider.autoDispose
       if (ref.mounted) _cacheFor(ref, ttl);
       return covers;
     });
+
+/// The hours the Steam account has played of a game, cached for ten minutes.
+final steamPlaytimeProvider = FutureProvider.autoDispose.family<double?, int>((
+  ref,
+  steamAppId,
+) async {
+  ref.watch(sessionGenerationProvider);
+  final api = ref.watch(backlogApiProvider);
+  final ttl = ref.read(playtimeCacheTtlProvider);
+  final hours = await api.steamPlaytime(steamAppId);
+  if (ref.mounted) _cacheFor(ref, ttl);
+  return hours;
+});

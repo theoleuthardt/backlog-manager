@@ -1,5 +1,6 @@
 import 'package:backlog_manager/api/generated/export.dart';
 import 'package:backlog_manager/api/mappers.dart';
+import 'package:backlog_manager/domain/creation_form.dart';
 import 'package:backlog_manager/domain/price_listings.dart' as price;
 import 'package:flutter_test/flutter_test.dart';
 
@@ -237,5 +238,40 @@ void main() {
 
     expect(match.id, 3);
     expect(match.name, 'Hades');
+  });
+
+  group('createRequestFrom', () {
+    test('writes the hours as decimal text and keeps the fields', () {
+      final request = createRequestFrom(
+        const NewEntry(
+          title: 'Hades',
+          genre: ['Roguelike'],
+          platform: ['PC'],
+          status: 'In Progress',
+          owned: true,
+          interest: 8,
+          playtime: 12.5,
+          steamAppId: 1145360,
+          imageLink: 'https://img.example/h.jpg',
+          description: 'd',
+          trailerLink: 'https://www.youtube.com/watch?v=abcdefghijk',
+          mainTime: 22,
+          mainPlusExtraTime: 48.5,
+          reviewStars: 9,
+          review: 'Great',
+          note: 'n',
+        ),
+      );
+
+      final json = request.toJson();
+      expect(json['title'], 'Hades');
+      expect(json['playtime'], '12.5');
+      expect(json['main_time'], '22.0');
+      expect(json['main_plus_extra_time'], '48.5');
+      expect(json['completion_time'], isNull);
+      expect(json['steam_app_id'], 1145360);
+      expect(json['review_stars'], 9);
+      expect(json['interest'], 8);
+    });
   });
 }

@@ -13,6 +13,12 @@ class FakeBacklogApi implements BacklogApi {
   final calls = <String>[];
   Future<void> Function(int entryId, EntryUpdate update)? onUpdate;
   Future<void> Function(int entryId)? onDelete;
+  final created = <wire.CreateBacklogEntryRequest>[];
+  Future<void> Function(wire.CreateBacklogEntryRequest request, int? spaceId)?
+  onCreate;
+  List<BacklogEntry> Function(String title, int? steamAppId, int? spaceId)?
+  onDuplicates;
+  Future<double?> Function(int steamAppId)? onSteamPlaytime;
   Future<List<BacklogEntry>> Function(int? spaceId)? onEntries;
   List<Category> categoryList = const [];
   Map<int, List<BacklogEntry>> entriesByCategory = const {};
@@ -33,6 +39,9 @@ class FakeBacklogApi implements BacklogApi {
     int? spaceId,
   ) async {
     calls.add('create ${request.title}');
+    created.add(request);
+    final onCreate = this.onCreate;
+    if (onCreate != null) await onCreate(request, spaceId);
     final entry = BacklogEntry(id: stored.length + 100, title: request.title);
     stored[entry.id] = entry;
     return entry;
@@ -208,6 +217,26 @@ class FakeBacklogApi implements BacklogApi {
   ) async {
     calls.add('category-entries $categoryId');
     return entriesByCategory[categoryId] ?? const [];
+  }
+
+  @override
+  Future<List<BacklogEntry>> duplicates(
+    String title,
+    int? steamAppId,
+    int? spaceId,
+  ) async {
+    calls.add(
+      'duplicates $title ${steamAppId ?? '-'} ${spaceId ?? 'personal'}',
+    );
+    final custom = onDuplicates;
+    return custom == null ? const [] : custom(title, steamAppId, spaceId);
+  }
+
+  @override
+  Future<double?> steamPlaytime(int steamAppId) async {
+    calls.add('steam-playtime $steamAppId');
+    final custom = onSteamPlaytime;
+    return custom == null ? null : custom(steamAppId);
   }
 
   @override
