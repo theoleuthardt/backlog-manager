@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:backlog_manager/api/api_providers.dart';
@@ -22,6 +23,7 @@ import 'package:backlog_manager/domain/sort_entries.dart';
 import 'package:backlog_manager/domain/space.dart';
 import 'package:backlog_manager/domain/status_style.dart';
 import 'package:backlog_manager/features/common/entries_gate.dart';
+import 'package:backlog_manager/features/duplicates/duplicates_sheet.dart';
 import 'package:backlog_manager/features/library/entry_drag.dart';
 import 'package:backlog_manager/features/library/filter_bar.dart';
 import 'package:backlog_manager/features/library/library_actions.dart';
@@ -280,6 +282,12 @@ class _Toolbar extends ConsumerWidget {
             label: 'Sync IGDB',
             icon: Icons.bolt,
             onPressed: ref.read(igdbSyncRequestProvider.notifier).request,
+          ),
+          ShelfIconButton(
+            key: const Key('duplicates-button'),
+            icon: Icons.content_copy,
+            tooltip: 'Find duplicate games',
+            onPressed: () => unawaited(showDuplicatesSheet(context)),
           ),
           addButton,
         ],
