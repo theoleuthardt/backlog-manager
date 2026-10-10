@@ -203,6 +203,23 @@ void main() {
       expect(find.byKey(const Key('two-factor-disable')), findsOneWidget);
     });
 
+    testWidgets('keeps the backup codes when the account cannot be read', (
+      tester,
+    ) async {
+      final (settings, _) = await open(tester);
+      await startEnrol(tester);
+      await typeCode(tester, '123456');
+      settings.failRefreshes(true);
+
+      await tester.tap(find.byKey(const Key('two-factor-verify')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Save your backup codes'), findsOneWidget);
+      expect(find.text('aaaa-1111'), findsOneWidget);
+      expect(find.text('Invalid two-factor code'), findsNothing);
+      expect(find.textContaining('offline'), findsNothing);
+    });
+
     testWidgets('stays on the code step for a wrong code', (tester) async {
       await open(
         tester,
@@ -331,6 +348,28 @@ void main() {
       expect(api.calls, ['disable hunter2hunter2']);
       expect(find.text('Two-factor authentication disabled'), findsOneWidget);
       expect(find.text('Not enabled'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('reports success when the account cannot be read after', (
+      tester,
+    ) async {
+      final (settings, api) = await open(tester, enabled: true);
+      await tester.tap(find.byKey(const Key('two-factor-disable')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, 'hunter2hunter2');
+      await tester.pump();
+      settings.failRefreshes(true);
+
+      await tester.tap(find.byKey(const Key('two-factor-disable-confirm')));
+      await tester.pumpAndSettle();
+
+      expect(api.calls, ['disable hunter2hunter2']);
+      expect(find.text('Two-factor authentication disabled'), findsOneWidget);
+      expect(
+        find.text('Failed to disable two-factor authentication'),
+        findsNothing,
+      );
       await tester.pump(const Duration(seconds: 6));
     });
 

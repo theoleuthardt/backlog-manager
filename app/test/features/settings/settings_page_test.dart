@@ -51,7 +51,16 @@ SessionUser applied(SessionUser user, UserUpdate update) {
 }
 
 class Settings {
-  Settings(this.tester, this.users, this.opened, this.mutateAccount);
+  Settings(
+    this.tester,
+    this.users,
+    this.opened,
+    this.mutateAccount,
+    this.failRefreshes,
+  );
+
+  /// Makes reading the account fail, like a lost connection.
+  final void Function(bool fails) failRefreshes;
 
   /// Changes the account the fake server holds.
   final void Function(SessionUser Function(SessionUser account)) mutateAccount;
@@ -90,13 +99,18 @@ Future<Settings> openSettings(
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   var account = user;
+  var refreshFails = false;
   final users = FakeUserApi()
     ..onUpdate = (update) async {
       await onUpdate?.call(update);
       account = applied(account, normalize?.call(update) ?? update);
       return account;
     };
-  final auth = FakeAuthApi()..onCurrentUser = () async => account;
+  final auth = FakeAuthApi()
+    ..onCurrentUser = () async {
+      if (refreshFails) throw Exception('offline');
+      return account;
+    };
   final opened = <Uri>[];
 
   await tester.pumpWidget(
@@ -120,7 +134,13 @@ Future<Settings> openSettings(
   );
   container.read(routerProvider).go(location);
   await tester.pumpAndSettle();
-  return Settings(tester, users, opened, (change) => account = change(account));
+  return Settings(
+    tester,
+    users,
+    opened,
+    (change) => account = change(account),
+    (fails) => refreshFails = fails,
+  );
 }
 
 String textOf(WidgetTester tester, Key key) =>

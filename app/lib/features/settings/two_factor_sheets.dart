@@ -12,6 +12,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
+/// Reads the account again after two-factor authentication was switched. The
+/// change is already made on the server, so a failure here is not reported
+/// next to its result: the account is read again with the next request.
+Future<void> _refreshAccount(AuthController auth) async {
+  try {
+    await auth.refreshUser();
+  } on Object {
+    return;
+  }
+}
+
 /// Opens the setup of two-factor authentication.
 Future<void> showEnrollTwoFactorSheet(BuildContext context) {
   return showShelfSheet<void>(
@@ -75,6 +86,7 @@ class _EnrollTwoFactorSheetState extends ConsumerState<EnrollTwoFactorSheet> {
 
   Future<void> _verify() async {
     setState(() => _verifying = true);
+    final auth = ref.read(authControllerProvider.notifier);
     try {
       final codes = await ref.read(twoFactorApiProvider).verify(_code.text);
       if (!mounted) return;
@@ -83,7 +95,6 @@ class _EnrollTwoFactorSheetState extends ConsumerState<EnrollTwoFactorSheet> {
         _step = _EnrollStep.backupCodes;
         _verifying = false;
       });
-      await ref.read(authControllerProvider.notifier).refreshUser();
     } on Object catch (error) {
       if (!mounted) return;
       setState(() => _verifying = false);
@@ -91,7 +102,9 @@ class _EnrollTwoFactorSheetState extends ConsumerState<EnrollTwoFactorSheet> {
         context,
         ApiException.from(error, 'Invalid two-factor code').message,
       );
+      return;
     }
+    await _refreshAccount(auth);
   }
 
   Future<void> _copy() async {
@@ -273,12 +286,12 @@ class _DisableTwoFactorSheetState extends ConsumerState<DisableTwoFactorSheet> {
 
   Future<void> _disable() async {
     setState(() => _busy = true);
+    final auth = ref.read(authControllerProvider.notifier);
     try {
       await ref.read(twoFactorApiProvider).disable(_password.text);
       if (!mounted) return;
       showShelfToast(context, 'Two-factor authentication disabled');
       Navigator.of(context).pop();
-      await ref.read(authControllerProvider.notifier).refreshUser();
     } on Object catch (error) {
       if (!mounted) return;
       setState(() => _busy = false);
@@ -289,7 +302,9 @@ class _DisableTwoFactorSheetState extends ConsumerState<DisableTwoFactorSheet> {
           'Failed to disable two-factor authentication',
         ).message,
       );
+      return;
     }
+    await _refreshAccount(auth);
   }
 
   @override
