@@ -9,7 +9,11 @@ import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
+import 'package:backlog_manager/design/widgets/toast.dart';
 import 'package:backlog_manager/domain/themes.dart';
+import 'package:backlog_manager/features/appearance/appearance_page.dart';
+import 'package:backlog_manager/features/appearance/theme_actions.dart';
+import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/routing/session.dart';
 import 'package:backlog_manager/shell/navigation.dart';
 import 'package:backlog_manager/shell/navigation_counts.dart';
@@ -241,6 +245,32 @@ class _NavItem extends ConsumerWidget {
   }
 }
 
+PopupMenuItem<String> _themeItem(
+  String id,
+  String name,
+  ThemeColors colors,
+  String activeId,
+) {
+  return PopupMenuItem<String>(
+    key: Key('account-theme-$id'),
+    value: id,
+    height: 32,
+    child: Row(
+      children: [
+        ThemeSwatch(colors: colors),
+        const SizedBox(width: 10),
+        Expanded(child: Text(name, overflow: TextOverflow.ellipsis)),
+        if (id == activeId) const Icon(Icons.check, size: 16),
+      ],
+    ),
+  );
+}
+
+Future<void> _setTheme(BuildContext context, WidgetRef ref, String id) async {
+  final error = await ref.read(themeActionsProvider).setTheme(id);
+  if (error != null && context.mounted) showShelfToast(context, error);
+}
+
 class _AccountRow extends ConsumerWidget {
   const _AccountRow();
 
@@ -251,6 +281,8 @@ class _AccountRow extends ConsumerWidget {
     final session = ref.watch(sessionProvider);
     final user = session is SessionSignedIn ? session.user : null;
     final name = user?.name ?? '';
+    final activeTheme = ref.watch(themeIdProvider);
+    final customThemes = ref.watch(customThemesProvider);
 
     return PopupMenuButton<String>(
       key: const Key('account-row'),
@@ -260,8 +292,10 @@ class _AccountRow extends ConsumerWidget {
       onSelected: (value) {
         if (value == 'logout') {
           unawaited(ref.read(authControllerProvider.notifier).signOut());
+        } else if (value == 'creator') {
+          context.go(AppRoutes.appearance);
         } else {
-          ref.read(themeIdProvider.notifier).select(value);
+          unawaited(_setTheme(context, ref, value));
         }
       },
       itemBuilder: (context) => [
@@ -270,13 +304,25 @@ class _AccountRow extends ConsumerWidget {
           height: 28,
           child: Text('THEME', style: text.sidebarLabel),
         ),
-        for (final theme in builtinThemes)
+        for (final theme in displayThemes)
+          _themeItem(theme.id, theme.name, theme.colors, activeTheme),
+        if (customThemes.isNotEmpty) ...[
+          const PopupMenuDivider(),
           PopupMenuItem<String>(
-            value: theme.id,
-            height: 32,
-            child: Text(theme.name),
+            enabled: false,
+            height: 28,
+            child: Text('YOUR THEMES', style: text.sidebarLabel),
           ),
+          for (final theme in customThemes)
+            _themeItem(theme.id, theme.name, theme.colors, activeTheme),
+        ],
         const PopupMenuDivider(),
+        const PopupMenuItem<String>(
+          key: Key('account-theme-creator'),
+          value: 'creator',
+          height: 32,
+          child: Text('Theme creator'),
+        ),
         const PopupMenuItem<String>(
           value: 'logout',
           height: 32,

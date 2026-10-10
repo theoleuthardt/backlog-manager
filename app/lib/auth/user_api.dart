@@ -1,6 +1,7 @@
 import 'package:backlog_manager/api/api_providers.dart';
-import 'package:backlog_manager/api/generated/export.dart';
+import 'package:backlog_manager/api/generated/export.dart' hide CustomTheme;
 import 'package:backlog_manager/auth/session_user_mapper.dart';
+import 'package:backlog_manager/domain/themes.dart';
 import 'package:backlog_manager/routing/session.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class UserUpdate {
   const UserUpdate({
     this.theme,
+    this.customThemes,
     this.defaultSort,
     this.steamId,
     this.steamApiKey,
@@ -26,6 +28,7 @@ class UserUpdate {
   });
 
   final String? theme;
+  final List<CustomTheme>? customThemes;
   final String? defaultSort;
   final String? steamId;
   final String? steamApiKey;
@@ -39,6 +42,7 @@ class UserUpdate {
 
   Map<String, Object?> toJson() => {
     'theme': ?theme,
+    'custom_themes': ?customThemes?.map((theme) => theme.toJson()).toList(),
     'default_sort': ?defaultSort,
     'steam_id': ?steamId,
     'steam_api_key': ?steamApiKey,

@@ -1,3 +1,4 @@
+import 'package:backlog_manager/domain/themes.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// The signed-in user as far as the shell needs to know.
@@ -16,6 +17,8 @@ class SessionUser {
     this.steamWishlistAutoSync = false,
     this.steamWishlistImportedAt,
     this.isTwoFactorEnabled = false,
+    this.theme,
+    this.customThemes = const [],
   });
 
   final String name;
@@ -40,6 +43,11 @@ class SessionUser {
   final bool steamWishlistAutoSync;
   final DateTime? steamWishlistImportedAt;
   final bool isTwoFactorEnabled;
+
+  /// The id of the theme stored with the account; null where it is not
+  /// known.
+  final String? theme;
+  final List<CustomTheme> customThemes;
 
   bool get hasSteamId => steamId.isNotEmpty;
 }

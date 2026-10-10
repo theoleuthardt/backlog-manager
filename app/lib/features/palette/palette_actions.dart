@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:backlog_manager/design/theme_provider.dart';
 import 'package:backlog_manager/domain/themes.dart';
+import 'package:backlog_manager/features/appearance/theme_actions.dart';
 import 'package:backlog_manager/routing/router.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/shell/navigation.dart';
@@ -9,7 +12,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Registers the actions of the window itself: Add game, Open settings, a "Go
-/// to" action for every screen of the sidebar and one per built-in theme.
+/// to" action for every screen of the sidebar and one per theme, the
+/// built-in ones and the user's own.
 /// Registering again replaces the actions in place, so it may run whenever the
 /// window is built. Features add theirs the same way, through
 /// [paletteRegistryProvider].
@@ -57,13 +61,25 @@ void registerShellPaletteActions(ProviderContainer ref) {
     }
   }
 
+  PaletteAction switchTo(String id, String name) => PaletteAction(
+    id: 'theme-$id',
+    label: 'Switch theme to $name',
+    run: () => unawaited(ref.read(themeActionsProvider).setTheme(id)),
+  );
+
   for (final theme in builtinThemes) {
-    registry.register(
-      PaletteAction(
-        id: 'theme-${theme.id}',
-        label: 'Switch theme to ${theme.name}',
-        run: () => ref.read(themeIdProvider.notifier).select(theme.id),
-      ),
-    );
+    registry.register(switchTo(theme.id, theme.name));
   }
+
+  var registered = <String>{};
+  ref.listen(customThemesProvider, (_, themes) {
+    final ids = {for (final theme in themes) 'theme-${theme.id}'};
+    for (final stale in registered.difference(ids)) {
+      registry.unregister(stale);
+    }
+    for (final theme in themes) {
+      registry.register(switchTo(theme.id, theme.name));
+    }
+    registered = ids;
+  }, fireImmediately: true);
 }
