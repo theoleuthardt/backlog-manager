@@ -1,5 +1,8 @@
+import 'package:backlog_manager/design/freaky_orbs.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
+import 'package:backlog_manager/design/theme_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// One star of the sky; [halo] is the radius of its soft glow, 0 for none.
 class AtmosphereStar {
@@ -201,14 +204,22 @@ class AtmospherePainter extends CustomPainter {
 }
 
 /// The window background: the atmosphere of the current theme behind [child].
-class AtmosphereBackground extends StatelessWidget {
-  const AtmosphereBackground({required this.child, super.key});
+class AtmosphereBackground extends ConsumerWidget {
+  const AtmosphereBackground({required this.child, this.orbs, super.key});
 
   final Widget child;
 
+  /// Whether the drifting orbs of the Freaky theme show; by default they do
+  /// for that theme unless the system asks for less motion.
+  final bool? orbs;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
+    final showOrbs =
+        orbs ??
+        (ref.watch(resolvedThemeProvider).id == 'freaky' &&
+            !MediaQuery.of(context).disableAnimations);
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -218,6 +229,7 @@ class AtmosphereBackground extends StatelessWidget {
             size: Size.infinite,
           ),
         ),
+        if (showOrbs) const FreakyOrbs(),
         child,
       ],
     );

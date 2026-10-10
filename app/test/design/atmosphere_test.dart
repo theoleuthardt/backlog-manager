@@ -1,23 +1,58 @@
+import 'dart:math';
+
 import 'package:backlog_manager/design/atmosphere.dart';
+import 'package:backlog_manager/design/freaky_orbs.dart';
 import 'package:backlog_manager/design/shelf_theme.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
+import 'package:backlog_manager/design/theme_provider.dart';
 import 'package:backlog_manager/domain/themes.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 ShelfTokens tokensOf(String id) => ShelfTokens.forTheme(resolveTheme(id, []));
 
-Widget host(String themeId, Size size, {Widget? child}) {
-  return MaterialApp(
-    debugShowCheckedModeBanner: false,
-    theme: buildShelfTheme(tokensOf(themeId)),
-    home: Center(
-      child: SizedBox.fromSize(
-        size: size,
-        child: AtmosphereBackground(child: child ?? const SizedBox.expand()),
+Widget host(
+  String themeId,
+  Size size, {
+  Widget? child,
+  bool? orbs,
+  bool freakyActive = false,
+  bool reduceMotion = false,
+}) {
+  return ProviderScope(
+    overrides: [
+      themeIdProvider.overrideWith(
+        () => _FixedTheme(freakyActive ? 'freaky' : 'shelfOled'),
+      ),
+    ],
+    child: MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: buildShelfTheme(tokensOf(themeId)),
+      builder: (context, home) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(disableAnimations: reduceMotion),
+        child: home!,
+      ),
+      home: Center(
+        child: SizedBox.fromSize(
+          size: size,
+          child: AtmosphereBackground(
+            orbs: orbs,
+            child: child ?? const SizedBox.expand(),
+          ),
+        ),
       ),
     ),
   );
+}
+
+class _FixedTheme extends ThemeIdNotifier {
+  _FixedTheme(this.id);
+
+  final String id;
+
+  @override
+  String build() => id;
 }
 
 void main() {
@@ -165,5 +200,108 @@ void main() {
         );
       });
     }
+  });
+
+  group('the orbs of the Freaky theme', () {
+    testWidgets('show for the Freaky theme', (tester) async {
+      await tester.pumpWidget(
+        host('freaky', const Size(400, 300), freakyActive: true),
+      );
+
+      expect(find.byKey(const Key('freaky-orbs')), findsOneWidget);
+    });
+
+    testWidgets('do not show for another theme', (tester) async {
+      await tester.pumpWidget(host('shelfOled', const Size(400, 300)));
+
+      expect(find.byKey(const Key('freaky-orbs')), findsNothing);
+    });
+
+    testWidgets('are off when the system asks for less motion', (tester) async {
+      await tester.pumpWidget(
+        host(
+          'freaky',
+          const Size(400, 300),
+          freakyActive: true,
+          reduceMotion: true,
+        ),
+      );
+
+      expect(find.byKey(const Key('freaky-orbs')), findsNothing);
+    });
+
+    testWidgets('can be forced on or off by the caller', (tester) async {
+      await tester.pumpWidget(
+        host('shelfOled', const Size(400, 300), orbs: true),
+      );
+      expect(find.byKey(const Key('freaky-orbs')), findsOneWidget);
+
+      await tester.pumpWidget(
+        host('freaky', const Size(400, 300), freakyActive: true, orbs: false),
+      );
+      expect(find.byKey(const Key('freaky-orbs')), findsNothing);
+    });
+
+    testWidgets('keep moving frame after frame', (tester) async {
+      await tester.pumpWidget(
+        host('freaky', const Size(400, 300), freakyActive: true),
+      );
+
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
+
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('let taps through to what is above them', (tester) async {
+      var taps = 0;
+      await tester.pumpWidget(
+        host(
+          'freaky',
+          const Size(400, 300),
+          freakyActive: true,
+          child: GestureDetector(
+            key: const Key('content'),
+            behavior: HitTestBehavior.opaque,
+            onTap: () => taps++,
+            child: const SizedBox.expand(),
+          ),
+        ),
+      );
+
+      await tester.tap(find.byKey(const Key('content')));
+
+      expect(taps, 1);
+    });
+
+    testWidgets('golden: the orbs over the Freaky atmosphere', tags: 'golden', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: buildShelfTheme(tokensOf('freaky')),
+          home: SizedBox(
+            width: 600,
+            height: 400,
+            child: Stack(
+              children: [
+                const ColoredBox(
+                  color: Color(0xFF04040E),
+                  child: SizedBox.expand(),
+                ),
+                FreakyOrbs(random: Random(3)),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 16));
+
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile('goldens/freaky_orbs.png'),
+      );
+    });
   });
 }

@@ -343,3 +343,7 @@ The icon button next to "Sync IGDB" in the library toolbar opens "Duplicate game
 ### Accessibility
 
 The checklist of what the client does for keyboard users, screen readers, contrast, text size and reduced motion, with the checks that are automated and the ones that need a person, is in [`ACCESSIBILITY.md`](ACCESSIBILITY.md).
+
+### Freaky orbs
+
+`design/freaky_orbs.dart` (logic in `domain/orbs.dart`) paints the drifting orbs behind the whole window for the `freaky` theme, like `FreakyBackground.tsx` of the web client: 28 orbs of radius 40 to 160 with a random drift of at most 0.3 px per frame, wrapping at the edges, pulsing between 50 and 100 percent of their radius, alternately tinted with the glow and the accent colour at alpha 0.14 and added onto the atmosphere (`BlendMode.plus`). `AtmosphereBackground` shows them when the active theme id is `freaky` (not while colours are previewed in the theme creator, which uses another id) and the system does not ask for less motion; the layer takes no pointer input and is hidden from the semantics tree.
