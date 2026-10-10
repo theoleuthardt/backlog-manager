@@ -1,5 +1,7 @@
 import 'package:backlog_manager/api/generated/export.dart';
+import 'package:backlog_manager/domain/achievements.dart';
 import 'package:backlog_manager/domain/models.dart';
+import 'package:backlog_manager/domain/price_listings.dart' as price;
 import 'package:backlog_manager/domain/wishlist_sync_report.dart';
 
 /// Parses the backend's decimal strings (playtime, HowLongToBeat times);
@@ -78,5 +80,51 @@ WishlistSyncReport wishlistSyncReportFromResponse(
     updatedAt: report.updatedAt,
     added: (report.added ?? const []).map(change).toList(),
     removed: (report.removed ?? const []).map(change).toList(),
+  );
+}
+
+price.PriceInfo priceInfoFromResponse(GamePrice response) {
+  return price.PriceInfo(
+    deals: [
+      for (final deal in response.deals)
+        price.PriceDeal(
+          store: deal.store,
+          iconUrl: deal.icon,
+          price: deal.price.toDouble(),
+          retailPrice: deal.retailPrice.toDouble(),
+          url: deal.url,
+        ),
+    ],
+    onSale: response.onSale,
+    cheapestPriceEver: toNumber(response.cheapestPriceEver),
+  );
+}
+
+price.KeyShopOffer keyShopOfferFromResponse(KeyShopOffer offer) {
+  return price.KeyShopOffer(
+    shop: offer.shop,
+    title: offer.title,
+    price: offer.price.toDouble(),
+    currency: offer.currency,
+    url: offer.url,
+    discountPct: offer.discountPct,
+  );
+}
+
+GameAchievements achievementsFromResponse(AchievementProgress progress) {
+  return GameAchievements(
+    unlocked: progress.unlocked,
+    total: progress.total,
+    items: [
+      for (final item in progress.achievements)
+        GameAchievement(
+          apiname: item.apiname,
+          displayName: item.displayName,
+          description: item.description,
+          icon: item.icon,
+          achieved: item.achieved,
+          hidden: item.hidden,
+        ),
+    ],
   );
 }
