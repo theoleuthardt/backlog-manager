@@ -1,5 +1,6 @@
 import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/data/backlog_providers.dart';
+import 'package:backlog_manager/data/backlog_scope.dart';
 import 'package:backlog_manager/data/selection_providers.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/design/widgets/sheet.dart';
@@ -43,7 +44,8 @@ class LibraryActions {
   final BuildContext _context;
   final WidgetRef _ref;
 
-  EntriesNotifier get _entries => _ref.read(entriesProvider(null).notifier);
+  EntriesNotifier get _entries =>
+      _ref.read(entriesProvider(_ref.read(backlogScopeProvider)).notifier);
 
   void _toast(String message, {String? actionLabel, VoidCallback? onAction}) {
     if (!_context.mounted) return;
@@ -58,7 +60,9 @@ class LibraryActions {
   void openDetails(int entryId) {
     _context.go(
       Uri(
-        path: AppRoutes.library,
+        path: _ref.read(backlogScopeProvider) == null
+            ? AppRoutes.library
+            : AppRoutes.space,
         queryParameters: {'entry': '$entryId'},
       ).toString(),
     );
@@ -67,7 +71,8 @@ class LibraryActions {
   /// Moves one game; the toast offers to undo it.
   Future<void> moveEntry(BacklogEntry entry, String status) async {
     final previous = entry.status;
-    final failure = await _entries.moveToStatus(entry.id, status);
+    final entries = _entries;
+    final failure = await entries.moveToStatus(entry.id, status);
     if (failure != null) {
       _toast(failure);
       return;
@@ -75,7 +80,7 @@ class LibraryActions {
     _toast(
       'Moved "${entry.title}" to $status',
       actionLabel: 'Undo',
-      onAction: () => _entries.moveToStatus(entry.id, previous),
+      onAction: () => entries.moveToStatus(entry.id, previous),
     );
   }
 
@@ -84,11 +89,15 @@ class LibraryActions {
   /// nothing.
   Future<void> moveToCategory(BacklogEntry entry, Category target) async {
     final assigned =
-        _ref.read(entryCategoriesProvider(null)).value?[entry.id] ??
+        _ref
+            .read(entryCategoriesProvider(_ref.read(backlogScopeProvider)))
+            .value?[entry.id] ??
         const <Category>[];
     final move = categoryMove(assigned: assigned, target: target);
     if (move == null) return;
-    final actions = _ref.read(categoryActionsProvider(null));
+    final actions = _ref.read(
+      categoryActionsProvider(_ref.read(backlogScopeProvider)),
+    );
     final add = move.add;
     final remove = move.remove;
     var added = false;
@@ -150,7 +159,7 @@ class LibraryActions {
   }) async {
     try {
       await _ref
-          .read(categoryActionsProvider(null))
+          .read(categoryActionsProvider(_ref.read(backlogScopeProvider)))
           .setAssigned(entryId, categoryId, assigned: assigned);
     } on Object catch (error) {
       _toast(ApiException.from(error, 'Failed to update categories').message);
@@ -164,7 +173,7 @@ class LibraryActions {
   }) async {
     try {
       final result = await _ref
-          .read(categoryActionsProvider(null))
+          .read(categoryActionsProvider(_ref.read(backlogScopeProvider)))
           .setAssignedMany(entryIds, category.id, assigned: assigned);
       _toast(
         bulkCategoryMessage(
@@ -194,9 +203,9 @@ class _DeleteSheetState extends ConsumerState<_DeleteSheet> {
 
   Future<void> _delete() async {
     setState(() => _busy = true);
-    final result = await ref.read(entriesProvider(null).notifier).deleteMany([
-      for (final entry in widget.entries) entry.id,
-    ]);
+    final result = await ref
+        .read(entriesProvider(ref.read(backlogScopeProvider)).notifier)
+        .deleteMany([for (final entry in widget.entries) entry.id]);
     if (mounted) Navigator.of(context).pop(result);
   }
 

@@ -4,12 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 /// A bar that fills the share [value] (0 to 1) of its track with the glowing
-/// accent gradient.
+/// accent gradient, or with the flat [color] when one is given.
 class ShelfProgressBar extends StatelessWidget {
-  const ShelfProgressBar({required this.value, this.height = 6, super.key});
+  const ShelfProgressBar({
+    required this.value,
+    this.height = 6,
+    this.color,
+    super.key,
+  });
 
   final double value;
   final double height;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -29,8 +35,10 @@ class ShelfProgressBar extends StatelessWidget {
                 ? null
                 : DecoratedBox(
                     key: const Key('progress-fill'),
-                    decoration: ShelfGlow.progress(tokens)
-                        .copyWith(borderRadius: radius),
+                    decoration: color == null
+                        ? ShelfGlow.progress(tokens)
+                              .copyWith(borderRadius: radius)
+                        : BoxDecoration(color: color, borderRadius: radius),
                     child: SizedBox(
                       width: constraints.maxWidth * share,
                       height: height,

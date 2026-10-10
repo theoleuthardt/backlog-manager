@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:backlog_manager/api/api_providers.dart';
 import 'package:backlog_manager/data/backlog_providers.dart';
+import 'package:backlog_manager/data/backlog_scope.dart';
 import 'package:backlog_manager/data/drag_providers.dart';
 import 'package:backlog_manager/data/entry_image.dart';
 import 'package:backlog_manager/data/filter_providers.dart';
@@ -18,6 +19,7 @@ import 'package:backlog_manager/domain/format.dart';
 import 'package:backlog_manager/domain/library_groups.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/domain/sort_entries.dart';
+import 'package:backlog_manager/domain/space.dart';
 import 'package:backlog_manager/domain/status_style.dart';
 import 'package:backlog_manager/features/common/entries_gate.dart';
 import 'package:backlog_manager/features/library/entry_drag.dart';
@@ -26,6 +28,8 @@ import 'package:backlog_manager/features/library/library_actions.dart';
 import 'package:backlog_manager/features/library/library_content.dart';
 import 'package:backlog_manager/features/library/library_view.dart';
 import 'package:backlog_manager/features/library/selection_bar.dart';
+import 'package:backlog_manager/features/space/member_progress.dart';
+import 'package:backlog_manager/features/space/space_toolbar.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -34,23 +38,31 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 const _gutter = 28.0;
 
 /// The library: a toolbar and the games in sections, as covers or as rows.
+///
+/// With a [space] it is the library of the shared space: the header of the
+/// space replaces the title, and covers show the progress of both members.
 class LibraryPage extends StatelessWidget {
-  const LibraryPage({super.key});
+  const LibraryPage({this.space, super.key});
+
+  final Space? space;
 
   @override
   Widget build(BuildContext context) {
     return KeyedSubtree(
       key: const Key('page-library'),
       child: EntriesGate(
-        builder: (context, entries) =>
-            entries.isEmpty ? const _EmptyLibrary() : const _Library(),
+        builder: (context, entries) => entries.isEmpty
+            ? _EmptyLibrary(shared: space != null)
+            : _Library(space: space),
       ),
     );
   }
 }
 
 class _EmptyLibrary extends ConsumerWidget {
-  const _EmptyLibrary();
+  const _EmptyLibrary({required this.shared});
+
+  final bool shared;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -60,15 +72,21 @@ class _EmptyLibrary extends ConsumerWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Your backlog is empty', style: style.page),
+          Text(
+            shared ? 'Your shared space is empty' : 'Your backlog is empty',
+            style: style.page,
+          ),
           const SizedBox(height: 6),
           Text(
-            'Start by adding your first game!',
+            shared
+                ? 'Add a Steam game to start your co-op backlog.'
+                : 'Start by adding your first game!',
             style: style.caption.copyWith(color: tokens.muted),
           ),
           const SizedBox(height: 18),
           ShelfButton(
-            label: 'Add a game',
+            key: const Key('library-empty-add'),
+            label: shared ? 'Add Steam game' : 'Add a game',
             kind: ShelfButtonKind.primary,
             onPressed: ref.read(addGameRequestProvider.notifier).request,
           ),
@@ -79,7 +97,9 @@ class _EmptyLibrary extends ConsumerWidget {
 }
 
 class _Library extends ConsumerStatefulWidget {
-  const _Library();
+  const _Library({this.space});
+
+  final Space? space;
 
   @override
   ConsumerState<_Library> createState() => _LibraryState();
@@ -121,12 +141,18 @@ class _LibraryState extends ConsumerState<_Library> {
     if (content == null) return const SizedBox.shrink();
     final active = ref.watch(activeFilterCountProvider);
     final selection = ref.watch(selectionProvider);
+    final space = widget.space;
+    final filterNote = active == 0
+        ? ''
+        : ' · $active ${active == 1 ? 'filter' : 'filters'}';
     _report(
       selection.active
           ? '${selection.ids.length} of ${content.shown} games selected'
-                '${active == 0 ? '' : ' · $active ${active == 1 ? 'filter' : 'filters'}'}'
-          : '${content.shown} of ${content.total} games'
-                '${active == 0 ? '' : ' · $active ${active == 1 ? 'filter' : 'filters'}'}',
+                '$filterNote'
+          : space != null && content.shown == content.total
+          ? '${sharedGamesLabel(content.total)}$filterNote'
+          : '${content.shown} of ${content.total} '
+                '${space == null ? 'games' : 'shared games'}$filterNote',
     );
     final layout = ref.watch(libraryViewProvider.select((v) => v.layout));
     final serverUrl = ref.watch(serverUrlProvider).value;
@@ -145,7 +171,8 @@ class _LibraryState extends ConsumerState<_Library> {
             if (selection.active)
               const SelectionBar(gutter: _gutter)
             else
-              _Toolbar(content: content),
+              _Toolbar(content: content, space: space),
+            if (space != null) SpaceNotice(space: space),
             const FilterBar(gutter: _gutter),
             Expanded(
               child: SizedBox.expand(
@@ -185,15 +212,50 @@ class _LibraryState extends ConsumerState<_Library> {
 }
 
 class _Toolbar extends ConsumerWidget {
-  const _Toolbar({required this.content});
+  const _Toolbar({required this.content, this.space});
 
   final LibraryContent content;
+  final Space? space;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
     final muted = style.caption.copyWith(color: tokens.muted);
+
+    final space = this.space;
+    final selectButton = ShelfButton(
+      key: const Key('select-toggle'),
+      label: 'Select',
+      icon: Icons.checklist,
+      onPressed: ref.read(selectionProvider.notifier).begin,
+    );
+    final addButton = ShelfButton(
+      key: const Key('add-game-button'),
+      label: space == null ? 'Add game' : '+ Add Steam game',
+      icon: space == null ? Icons.add : null,
+      kind: ShelfButtonKind.primary,
+      onPressed: ref.read(addGameRequestProvider.notifier).request,
+    );
+
+    if (space != null) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(_gutter, 22, _gutter, 8),
+        child: Wrap(
+          spacing: 14,
+          runSpacing: 10,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            MemberAvatars(space: space),
+            Text('Co-op backlog', style: style.page.copyWith(fontSize: 18)),
+            Text(space.caption, key: const Key('space-caption'), style: muted),
+            SpaceControls(space: space),
+            selectButton,
+            addButton,
+          ],
+        ),
+      );
+    }
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(_gutter, 22, _gutter, 8),
@@ -208,24 +270,14 @@ class _Toolbar extends ConsumerWidget {
             '${formatCount(content.hoursToBeat.round())} h to beat',
             style: muted,
           ),
-          ShelfButton(
-            key: const Key('select-toggle'),
-            label: 'Select',
-            icon: Icons.checklist,
-            onPressed: ref.read(selectionProvider.notifier).begin,
-          ),
+          selectButton,
           ShelfButton(
             key: const Key('igdb-sync-button'),
             label: 'Sync IGDB',
             icon: Icons.bolt,
             onPressed: ref.read(igdbSyncRequestProvider.notifier).request,
           ),
-          ShelfButton(
-            label: 'Add game',
-            icon: Icons.add,
-            kind: ShelfButtonKind.primary,
-            onPressed: ref.read(addGameRequestProvider.notifier).request,
-          ),
+          addButton,
         ],
       ),
     );
@@ -343,7 +395,7 @@ class _GroupBody extends ConsumerWidget {
         ? SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: _gutter),
             sliver: ShelfCoverSliverGrid(
-              extraHeight: 36,
+              extraHeight: ref.watch(backlogScopeProvider) == null ? 36 : 80,
               itemCount: shownCount,
               itemBuilder: (context, index) => _EntryTarget(
                 key: ValueKey('tile-${group.entries[index].id}'),
@@ -449,7 +501,7 @@ String? _playtimeLabel(BacklogEntry entry) {
   return null;
 }
 
-class _Tile extends StatelessWidget {
+class _Tile extends ConsumerWidget {
   const _Tile({
     required this.entry,
     required this.serverUrl,
@@ -467,10 +519,18 @@ class _Tile extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final toBeat = entry.mainTime;
+    final members = ref.watch(spaceMembersProvider);
     return ShelfCover(
       title: entry.title,
+      footer: members == null
+          ? null
+          : MemberProgress(
+              entry: entry,
+              me: members.me,
+              partner: members.partner,
+            ),
       selected: selected,
       selectionMode: selecting,
       onTap: onTap,
@@ -662,7 +722,9 @@ class _EntryTargetState extends ConsumerState<_EntryTarget> {
 
   void _requestDelete() {
     final selection = ref.read(selectionProvider);
-    final entries = ref.read(entriesProvider(null)).value ?? const [];
+    final entries =
+        ref.read(entriesProvider(ref.read(backlogScopeProvider))).value ??
+        const [];
     final targets =
         selection.ids.length > 1 && selection.ids.contains(_entry.id)
         ? [
@@ -782,10 +844,15 @@ class _EntryTargetState extends ConsumerState<_EntryTarget> {
       filterOptionsProvider.select((options) => options.statuses),
     );
     final categories =
-        ref.watch(categoriesProvider(null)).value ?? const <Category>[];
+        ref.watch(categoriesProvider(ref.watch(backlogScopeProvider))).value ??
+        const <Category>[];
     final assigned = {
       for (final category
-          in ref.watch(entryCategoriesProvider(null)).value?[_entry.id] ??
+          in ref
+                  .watch(
+                    entryCategoriesProvider(ref.watch(backlogScopeProvider)),
+                  )
+                  .value?[_entry.id] ??
               const <Category>[])
         category.id,
     };

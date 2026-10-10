@@ -1,4 +1,5 @@
 import 'package:backlog_manager/data/backlog_providers.dart';
+import 'package:backlog_manager/data/backlog_scope.dart';
 import 'package:backlog_manager/data/filter_providers.dart';
 import 'package:backlog_manager/data/selection_providers.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
@@ -35,8 +36,11 @@ class SelectionBar extends ConsumerWidget {
       filterOptionsProvider.select((options) => options.statuses),
     );
     final categories =
-        ref.watch(categoriesProvider(null)).value ?? const <Category>[];
-    final byEntry = ref.watch(entryCategoriesProvider(null)).value;
+        ref.watch(categoriesProvider(ref.watch(backlogScopeProvider))).value ??
+        const <Category>[];
+    final byEntry = ref
+        .watch(entryCategoriesProvider(ref.watch(backlogScopeProvider)))
+        .value;
     final actions = LibraryActionsScope.of(context);
     final ids = selection.ids.toList()..sort();
     final none = ids.isEmpty;
@@ -132,7 +136,13 @@ class SelectionBar extends ConsumerWidget {
                     ? null
                     : () => actions.deleteEntries([
                         for (final entry
-                            in ref.read(entriesProvider(null)).value ??
+                            in ref
+                                    .read(
+                                      entriesProvider(
+                                        ref.read(backlogScopeProvider),
+                                      ),
+                                    )
+                                    .value ??
                                 const <BacklogEntry>[])
                           if (selection.ids.contains(entry.id)) entry,
                       ]),

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:backlog_manager/data/games_api.dart';
+import 'package:backlog_manager/data/space_api.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/models.dart';
@@ -9,10 +10,12 @@ import 'package:backlog_manager/routing/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../data/fakes.dart';
 import '../library/library_page_test.dart' show backlog, pumpLibrary;
+import '../space/space_page_test.dart' show FakeSpaceApi, together;
 
 const hades = GameSearchResult(
   id: 1,
@@ -47,6 +50,7 @@ Future<Tool> openTool(
   WidgetTester tester, {
   String? location,
   bool settle = true,
+  List<Override> overrides = const [],
   void Function(FakeBacklogApi api, FakeGamesApi games)? setUp,
 }) async {
   final api = FakeBacklogApi(entries: backlog);
@@ -56,7 +60,7 @@ Future<Tool> openTool(
     tester,
     api,
     height: 1100,
-    overrides: [gamesApiProvider.overrideWithValue(games)],
+    overrides: [gamesApiProvider.overrideWithValue(games), ...overrides],
   );
   container.read(routerProvider).go(location ?? creationToolLocation(hades));
   if (settle) {
@@ -592,6 +596,127 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tool.location, AppRoutes.library);
+    });
+  });
+
+  group('adding to the shared space', () {
+    List<Override> withSpace() => [
+      spaceApiProvider.overrideWithValue(FakeSpaceApi(together)),
+    ];
+
+    testWidgets('offers no target without an active space', (tester) async {
+      await openTool(tester);
+
+      expect(find.byKey(const Key('creation-target')), findsNothing);
+    });
+
+    testWidgets('adds to my backlog by default', (tester) async {
+      await openTool(tester, overrides: withSpace());
+
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('creation-target')),
+          matching: find.text('My backlog'),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('target=space in the address preselects the space', (
+      tester,
+    ) async {
+      await openTool(
+        tester,
+        overrides: withSpace(),
+        location: creationToolLocation(hades, inSpace: true),
+      );
+
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('creation-target')),
+          matching: find.text('Shared space'),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a game without Steam App ID cannot go to the space', (
+      tester,
+    ) async {
+      final tool = await openTool(
+        tester,
+        overrides: withSpace(),
+        location: creationToolLocation(hades, inSpace: true),
+      );
+
+      await chooseStatus(tester, 'In Progress');
+      await submit(tester);
+
+      expect(
+        find.text('Only Steam games can be added to the shared space'),
+        findsOneWidget,
+      );
+      expect(tool.api.created, isEmpty);
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('checks duplicates in the space and creates there', (
+      tester,
+    ) async {
+      final duplicateScopes = <int?>[];
+      final createdIn = <int?>[];
+      final tool = await openTool(
+        tester,
+        overrides: withSpace(),
+        location: creationToolLocation(hades, inSpace: true),
+        setUp: (api, games) {
+          games.onSteamAppId = (title) async => 1145360;
+          api
+            ..onDuplicates = (title, steamAppId, spaceId) {
+              duplicateScopes.add(spaceId);
+              return const [];
+            }
+            ..onCreate = (request, spaceId) async => createdIn.add(spaceId);
+        },
+      );
+
+      await chooseStatus(tester, 'In Progress');
+      await submit(tester);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+
+      expect(duplicateScopes, [4]);
+      expect(createdIn, [4]);
+      expect(tool.location, AppRoutes.space);
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('switching the target back creates in my backlog', (
+      tester,
+    ) async {
+      final createdIn = <int?>[];
+      final tool = await openTool(
+        tester,
+        overrides: withSpace(),
+        location: creationToolLocation(hades, inSpace: true),
+        setUp: (api, games) {
+          games.onSteamAppId = (title) async => 1145360;
+          api.onCreate = (request, spaceId) async => createdIn.add(spaceId);
+        },
+      );
+
+      await tester.tap(find.byKey(const Key('creation-target')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('My backlog').last);
+      await tester.pumpAndSettle();
+      await chooseStatus(tester, 'In Progress');
+      await submit(tester);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+
+      expect(createdIn, [null]);
+      expect(tool.location, AppRoutes.library);
+      await tester.pump(const Duration(seconds: 6));
     });
   });
 

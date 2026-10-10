@@ -8,6 +8,8 @@ import 'package:backlog_manager/features/import_csv/import_csv_page.dart';
 import 'package:backlog_manager/features/library/library_page.dart';
 import 'package:backlog_manager/features/settings/settings_page.dart';
 import 'package:backlog_manager/features/setup/setup_page.dart';
+import 'package:backlog_manager/features/space/space_page.dart';
+import 'package:backlog_manager/routing/current_path.dart';
 import 'package:backlog_manager/routing/guard.dart';
 import 'package:backlog_manager/routing/history.dart';
 import 'package:backlog_manager/routing/pages.dart';
@@ -66,11 +68,26 @@ final routerProvider = Provider<GoRouter>((ref) {
     refresh.value++;
   });
 
+  void publishPath(String path) {
+    try {
+      ref.read(currentPathProvider.notifier).set(path);
+    } on Object {
+      Future.microtask(() {
+        if (ref.mounted) ref.read(currentPathProvider.notifier).set(path);
+      });
+    }
+  }
+
   final router = GoRouter(
     initialLocation: AppRoutes.home,
     refreshListenable: refresh,
-    redirect: (context, state) =>
-        guardRedirect(ref.read(sessionProvider), state.uri.path),
+    redirect: (context, state) {
+      final target =
+          guardRedirect(ref.read(sessionProvider), state.uri.path) ??
+          state.uri.path;
+      publishPath(target);
+      return target == state.uri.path ? null : target;
+    },
     routes: [
       ShellRoute(
         builder: (context, state, child) => AppShell(
@@ -87,6 +104,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                 AppRoutes.library => const LibraryPage(),
                 AppRoutes.export => const ExportPage(),
                 AppRoutes.import => const ImportCsvPage(),
+                AppRoutes.space => const SpacePage(),
                 AppRoutes.creationTool => CreationToolPage(
                   key: ValueKey(state.uri.toString()),
                   query: state.uri.queryParameters,

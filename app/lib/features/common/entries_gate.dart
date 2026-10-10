@@ -1,5 +1,6 @@
 import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/data/backlog_providers.dart';
+import 'package:backlog_manager/data/backlog_scope.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
@@ -19,7 +20,7 @@ class EntriesGate extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final entries = ref.watch(entriesProvider(null));
+    final entries = ref.watch(entriesProvider(ref.watch(backlogScopeProvider)));
     return entries.when(
       skipLoadingOnRefresh: true,
       loading: () => const CenteredMessage(text: 'Loading your backlog...'),
@@ -27,7 +28,8 @@ class EntriesGate extends ConsumerWidget {
         text: ApiException.from(error, 'Could not load your backlog').message,
         action: ShelfButton(
           label: 'Try again',
-          onPressed: () => ref.invalidate(entriesProvider(null)),
+          onPressed: () =>
+              ref.invalidate(entriesProvider(ref.read(backlogScopeProvider))),
         ),
       ),
       data: (list) => builder(context, list),

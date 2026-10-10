@@ -2,7 +2,9 @@ import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/api/api_providers.dart';
 import 'package:backlog_manager/data/backlog_api.dart';
 import 'package:backlog_manager/data/backlog_providers.dart';
+import 'package:backlog_manager/data/backlog_scope.dart';
 import 'package:backlog_manager/data/entry_image.dart';
+import 'package:backlog_manager/data/space_api.dart';
 import 'package:backlog_manager/design/color_math.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
@@ -33,8 +35,9 @@ import 'package:backlog_manager/features/inspector/entry_autosave.dart';
 import 'package:backlog_manager/features/inspector/inspector_parts.dart';
 import 'package:backlog_manager/features/library/library_actions.dart';
 import 'package:backlog_manager/features/prices/price_sheet.dart';
+import 'package:backlog_manager/features/space/share_to_space_button.dart';
 import 'package:backlog_manager/platform/url_opener.dart';
-import 'package:backlog_manager/routing/routes.dart';
+import 'package:backlog_manager/routing/current_path.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -52,13 +55,13 @@ class EntryInspector extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final entries = ref.watch(entriesProvider(null));
+    final entries = ref.watch(entriesProvider(ref.watch(backlogScopeProvider)));
     final list = entries.value;
     final entry = list?.where((e) => e.id == entryId).firstOrNull;
 
     if (list != null && entry == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (context.mounted) context.go(AppRoutes.library);
+        if (context.mounted) context.go(ref.read(currentPathProvider));
       });
     }
     if (entry == null) {
@@ -117,7 +120,10 @@ class _InspectorFrame extends StatelessWidget {
                 ShelfIconButton(
                   icon: Icons.close,
                   tooltip: 'Close inspector',
-                  onPressed: () => context.go(AppRoutes.library),
+                  onPressed: () => context.go(
+                    ProviderScope.containerOf(context)
+                        .read(currentPathProvider),
+                  ),
                 ),
               ],
             ),
@@ -157,7 +163,9 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
     _stored = widget.initial;
     _form = entryFormFrom(_stored);
     _base = _form;
-    _entries = ref.read(entriesProvider(null).notifier);
+    _entries = ref.read(
+      entriesProvider(ref.read(backlogScopeProvider)).notifier,
+    );
     _playtime = TextEditingController(
       text: _form.playtime == null ? '' : formatHours(_form.playtime!),
     );
@@ -170,7 +178,10 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
       save: _save,
       onError: _onSaveError,
     );
-    ref.listenManual(entriesProvider(null), (_, next) {
+    ref.listenManual(entriesProvider(ref.read(backlogScopeProvider)), (
+      _,
+      next,
+    ) {
       final entry = next.value?.where((e) => e.id == _stored.id).firstOrNull;
       if (entry == null) return;
       _storedChanged(entry);
@@ -383,6 +394,7 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: StatusSelect(
+                                    spaceId: ref.watch(backlogScopeProvider),
                                     value: _form.status,
                                     onChanged: (status) => _edit(
                                       (form) => form.copyWith(status: status),
@@ -397,9 +409,14 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  CategoryPicker(entryId: entry.id),
+                  CategoryPicker(
+                    entryId: entry.id,
+                    spaceId: ref.watch(backlogScopeProvider),
+                  ),
                   const SizedBox(height: 10),
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
                       ShelfButton(
                         key: const Key('inspector-prices'),
@@ -411,7 +428,9 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
                           steamAppId: entry.steamAppId,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      if (ref.watch(backlogScopeProvider) == null &&
+                          ref.watch(activeSpaceIdProvider) != null)
+                        ShareToSpaceButton(entry: entry),
                       ShelfButton(
                         key: const Key('inspector-update-image'),
                         label: 'Update image',
@@ -469,11 +488,12 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        ShelfButton(
-                          key: const Key('inspector-wrong-game'),
-                          label: 'Wrong game?',
-                          onPressed: _wrongGame,
-                        ),
+                        if (ref.watch(backlogScopeProvider) == null)
+                          ShelfButton(
+                            key: const Key('inspector-wrong-game'),
+                            label: 'Wrong game?',
+                            onPressed: _wrongGame,
+                          ),
                         ShelfButton(
                           key: const Key('inspector-change-cover'),
                           label: 'Change cover',

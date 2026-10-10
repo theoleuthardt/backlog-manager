@@ -1,5 +1,6 @@
 import 'package:backlog_manager/auth/auth_controller.dart';
 import 'package:backlog_manager/data/backlog_providers.dart';
+import 'package:backlog_manager/data/backlog_scope.dart';
 import 'package:backlog_manager/domain/filter_entries.dart';
 import 'package:backlog_manager/domain/filter_tokens.dart';
 import 'package:backlog_manager/domain/status_names.dart';
@@ -41,7 +42,9 @@ final filtersProvider = NotifierProvider<FiltersNotifier, EntryFilters>(
 final effectiveFiltersProvider = Provider<EntryFilters>((ref) {
   final filters = ref.watch(filtersProvider);
   if (filters.categories.isEmpty) return filters;
-  final categories = ref.watch(categoriesProvider(null)).value;
+  final categories = ref
+      .watch(categoriesProvider(ref.watch(backlogScopeProvider)))
+      .value;
   if (categories == null) return filters;
   return dropMissingCategories(filters, [
     for (final category in categories) category.name,
@@ -82,9 +85,17 @@ class FilterOptions {
 }
 
 final filterOptionsProvider = Provider<FilterOptions>((ref) {
-  final entries = ref.watch(entriesProvider(null)).value ?? const [];
-  final custom = ref.watch(customStatusesProvider(null)).value ?? const [];
-  final categories = ref.watch(categoriesProvider(null)).value ?? const [];
+  final entries =
+      ref.watch(entriesProvider(ref.watch(backlogScopeProvider))).value ??
+      const [];
+  final custom =
+      ref
+          .watch(customStatusesProvider(ref.watch(backlogScopeProvider)))
+          .value ??
+      const [];
+  final categories =
+      ref.watch(categoriesProvider(ref.watch(backlogScopeProvider))).value ??
+      const [];
   return FilterOptions(
     platforms: uniqueSorted(entries.expand((entry) => entry.platform)),
     genres: uniqueSorted(entries.expand((entry) => entry.genre)),
@@ -100,5 +111,8 @@ final filterOptionsProvider = Provider<FilterOptions>((ref) {
 });
 
 final filterBoundsProvider = Provider<FilterBounds>((ref) {
-  return filterBounds(ref.watch(entriesProvider(null)).value ?? const []);
+  return filterBounds(
+    ref.watch(entriesProvider(ref.watch(backlogScopeProvider))).value ??
+        const [],
+  );
 });
