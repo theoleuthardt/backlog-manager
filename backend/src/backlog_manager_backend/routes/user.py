@@ -181,6 +181,7 @@ async def update_own_user(
                     data.discord_webhook_url
                 ),
                 steam_auto_import_enabled=data.steam_auto_import_enabled,
+                steam_wishlist_auto_sync=data.steam_wishlist_auto_sync,
                 steam_family_ids=data.steam_family_ids,
                 setup_completed=data.setup_completed,
                 default_sort=data.default_sort,
@@ -286,6 +287,7 @@ async def update_user_admin(
                     data.discord_webhook_url
                 ),
                 steam_auto_import_enabled=data.steam_auto_import_enabled,
+                steam_wishlist_auto_sync=data.steam_wishlist_auto_sync,
                 steam_family_ids=data.steam_family_ids,
                 setup_completed=data.setup_completed,
                 default_sort=data.default_sort,

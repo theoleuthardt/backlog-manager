@@ -25,6 +25,10 @@ from backlog_manager_backend.routes.images import proxy_image
 from backlog_manager_backend.routes.prices import price_check_router
 from backlog_manager_backend.routes.space import space_router
 from backlog_manager_backend.routes.steam import steam_router
+from backlog_manager_backend.routes.steam_wishlist_sync import (
+    steam_wishlist_sync_cron_router,
+    steam_wishlist_sync_router,
+)
 from backlog_manager_backend.routes.user import admin_user_router, user_router
 from backlog_manager_backend.services import backup_service
 
@@ -110,6 +114,8 @@ def create_app() -> Litestar:
             authenticated_games_router,
             get_steam_app_id,
             price_check_router,
+            steam_wishlist_sync_cron_router,
+            steam_wishlist_sync_router,
         ],
         dependencies={"db_session": Provide(provide_db_session)},
         on_startup=[bootstrap_initial_admin, start_backup_scheduler],

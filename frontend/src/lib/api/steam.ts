@@ -2,6 +2,7 @@ import { apiClient, apiErrorMessage } from "./client";
 import { toEntryData, type BacklogEntryData } from "./backlog";
 import { streamSse } from "./sseStream";
 import type { components } from "./schema";
+import type { WishlistSyncReport } from "~/lib/wishlistSyncReport";
 
 export interface SteamSyncProgress {
   processed: number;
@@ -155,4 +156,40 @@ export async function getSteamAchievements(
       hidden: achievement.hidden,
     })),
   };
+}
+
+type WishlistSyncReportResponse =
+  components["schemas"]["SteamWishlistSyncReport"];
+
+function toWishlistChanges(
+  changes: WishlistSyncReportResponse["added"],
+): WishlistSyncReport["added"] {
+  return (changes ?? []).map((change) => ({
+    steamAppId: change.steam_app_id,
+    title: change.title,
+    imageLink: change.image_link ?? undefined,
+  }));
+}
+
+export async function getWishlistSyncReport(): Promise<WishlistSyncReport> {
+  const { data, error } = await apiClient.GET(
+    "/api/user/steam/wishlist/sync-report",
+  );
+  if (error)
+    throw new Error(apiErrorMessage(error, "Failed to load the wishlist sync"));
+  return {
+    since: data.since ?? undefined,
+    added: toWishlistChanges(data.added),
+    removed: toWishlistChanges(data.removed),
+  };
+}
+
+export async function dismissWishlistSyncReport(): Promise<void> {
+  const { error } = await apiClient.DELETE(
+    "/api/user/steam/wishlist/sync-report",
+  );
+  if (error)
+    throw new Error(
+      apiErrorMessage(error, "Failed to close the wishlist sync"),
+    );
 }

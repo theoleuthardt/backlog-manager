@@ -84,7 +84,7 @@ uv run ruff check .  # Lint
 - `src/components/ui/` - shadcn/ui primitives
 
 **Key Directories** (all under `backend/src/backlog_manager_backend/`):
-- `routes/` - Litestar HTTP handlers (`auth.py`, `backlog.py`, `backups.py`, `csv.py`, `games.py`, `igdb_sync.py`, `images.py`, `prices.py`, `space.py`, `steam.py`, `user.py`, `health.py`)
+- `routes/` - Litestar HTTP handlers (`auth.py`, `backlog.py`, `backups.py`, `csv.py`, `games.py`, `igdb_sync.py`, `images.py`, `prices.py`, `space.py`, `steam.py`, `steam_wishlist_sync.py`, `user.py`, `health.py`)
 - `services/` - business logic (`auth_service.py`, `game_service.py`, `igdb_sync_service.py` (retroactive IGDB data for existing entries), `credentials.py` for the per-user-credential-with-server-fallback resolution shared by the routes, ...)
 - `repositories/` - SQLAlchemy data access, one module per entity
 - `models/` - SQLAlchemy declarative models
@@ -100,7 +100,7 @@ uv run ruff check .  # Lint
 
 **Database:** SQLAlchemy 2.0 async models/repositories (`backend/src/backlog_manager_backend/{models,repositories,schemas}/`) against PostgreSQL (`postgres/backlogmanagerdb-init.sql`), Alembic baselined onto the existing schema (`backend/alembic/`, stamped rather than migrated from scratch) and used for all schema changes since. The old frontend-side raw-`pg` access layer (`frontend/src/server/db/`) no longer exists.
 
-**Production stack:** `compose.prod.yml` (db, backend, price-check cron; pulls the published backend image) with `.env.prod.example` as its settings template. The backend's start command first checks the settings, waits for the database, stamps a database without an Alembic version at the head and runs `alembic upgrade head` before it starts uvicorn, so every start migrates. This is done in the container command on purpose: podman-compose (1.3 and 1.5, measured) ignores `depends_on` conditions such as `service_completed_successfully`, so a separate migration service would not be waited for. Fresh databases are created from `postgres/backlogmanagerdb-init.sql` and then stamped, which means every new migration must also update that SQL file.
+**Production stack:** `compose.prod.yml` (db, backend, price-check cron, hourly Steam wishlist sync cron; pulls the published backend image) with `.env.prod.example` as its settings template. The backend's start command first checks the settings, waits for the database, stamps a database without an Alembic version at the head and runs `alembic upgrade head` before it starts uvicorn, so every start migrates. This is done in the container command on purpose: podman-compose (1.3 and 1.5, measured) ignores `depends_on` conditions such as `service_completed_successfully`, so a separate migration service would not be waited for. Fresh databases are created from `postgres/backlogmanagerdb-init.sql` and then stamped, which means every new migration must also update that SQL file.
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the reasoning behind these choices (why REST/JWT replaced tRPC/NextAuth, the per-user-credential-with-server-wide-fallback pattern shared by IGDB/Steam/SteamGridDB, the image proxy's security posture) rather than just the shape of it.
 

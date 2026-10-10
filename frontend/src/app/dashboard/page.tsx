@@ -2,6 +2,7 @@ import { Navbar } from "components/Navbar";
 import { Footer } from "components/Footer";
 import { DashboardContent } from "components/DashboardContent";
 import { DashboardSearch } from "components/DashboardSearch";
+import { WishlistSyncDialog } from "components/WishlistSyncDialog";
 import { DashboardProvider } from "~/app/context/DashboardContext";
 import { dashboardNavLinks } from "~/constants";
 
@@ -18,6 +19,7 @@ export default function Dashboard() {
             <main className="drop-in flex-grow px-3 md:px-4">
               <div className="w-full">
                 <DashboardContent />
+                <WishlistSyncDialog />
               </div>
             </main>
             <Footer />

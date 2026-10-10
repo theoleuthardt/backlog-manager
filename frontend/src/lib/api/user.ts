@@ -15,6 +15,7 @@ export interface UpdateCurrentUserInput {
   steamgriddbApiKey?: string;
   discordWebhookUrl?: string;
   steamAutoImportEnabled?: boolean;
+  steamWishlistAutoSync?: boolean;
   steamFamilyIds?: string;
   setupCompleted?: boolean;
   defaultSort?: SortOption;
@@ -38,6 +39,7 @@ function toCurrentUser(user: components["schemas"]["PublicUser"]): CurrentUser {
     hasDiscordWebhookUrl: user.has_discord_webhook_url ?? false,
     steamAutoImportEnabled: user.steam_auto_import_enabled ?? false,
     steamWishlistImportedAt: user.steam_wishlist_imported_at ?? undefined,
+    steamWishlistAutoSync: user.steam_wishlist_auto_sync ?? false,
     steamFamilyIds: user.steam_family_ids ?? undefined,
     setupCompleted: user.setup_completed ?? false,
     defaultSort: user.default_sort ?? "status",
@@ -61,6 +63,7 @@ export async function updateCurrentUser(
       steamgriddb_api_key: input.steamgriddbApiKey,
       discord_webhook_url: input.discordWebhookUrl,
       steam_auto_import_enabled: input.steamAutoImportEnabled,
+      steam_wishlist_auto_sync: input.steamWishlistAutoSync,
       steam_family_ids: input.steamFamilyIds,
       setup_completed: input.setupCompleted,
       default_sort: input.defaultSort,

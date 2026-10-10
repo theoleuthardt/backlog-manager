@@ -1006,6 +1006,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/steam/wishlist/auto-sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** RunWishlistAutoSync */
+        post: operations["ApiSteamWishlistAutoSyncRunWishlistAutoSync"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/user/steam/wishlist/sync-report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GetWishlistSyncReport */
+        get: operations["ApiUserSteamWishlistSyncReportGetWishlistSyncReport"];
+        put?: never;
+        post?: never;
+        /** DismissWishlistSyncReport */
+        delete: operations["ApiUserSteamWishlistSyncReportDismissWishlistSyncReport"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1352,6 +1387,8 @@ export interface components {
             /** @default false */
             steam_auto_import_enabled?: boolean;
             steam_wishlist_imported_at?: string | null;
+            /** @default false */
+            steam_wishlist_auto_sync?: boolean;
             steam_family_ids?: string | null;
             /** @default false */
             setup_completed?: boolean;
@@ -1399,6 +1436,12 @@ export interface components {
             title: string;
             image_link?: string | null;
         };
+        /** SteamWishlistChange */
+        SteamWishlistChange: {
+            steam_app_id: number;
+            title: string;
+            image_link?: string | null;
+        };
         /** SteamWishlistItem */
         SteamWishlistItem: {
             appid: number;
@@ -1406,6 +1449,12 @@ export interface components {
             priority?: number;
             /** @default 0 */
             date_added?: number;
+        };
+        /** SteamWishlistSyncReport */
+        SteamWishlistSyncReport: {
+            since?: string | null;
+            added?: components["schemas"]["SteamWishlistChange"][];
+            removed?: components["schemas"]["SteamWishlistChange"][];
         };
         /** SubmitCsvEntry */
         SubmitCsvEntry: {
@@ -1425,6 +1474,17 @@ export interface components {
             main_time?: string | null;
             main_plus_extra_time?: string | null;
             completion_time?: string | null;
+        };
+        /** SyncSummary */
+        SyncSummary: {
+            /** @default 0 */
+            users?: number;
+            /** @default 0 */
+            added?: number;
+            /** @default 0 */
+            removed?: number;
+            /** @default 0 */
+            failed?: number;
         };
         /** TokenResponse */
         TokenResponse: {
@@ -1497,6 +1557,7 @@ export interface components {
             steamgriddb_api_key?: string | null;
             discord_webhook_url?: string | null;
             steam_auto_import_enabled?: boolean;
+            steam_wishlist_auto_sync?: boolean;
             steam_family_ids?: string | null;
             setup_completed?: boolean;
             default_sort?: "status" | "category" | "genre" | "playtime" | "platform" | "interest" | "review_stars";
@@ -1515,6 +1576,7 @@ export interface components {
             steamgriddb_api_key?: string | null;
             discord_webhook_url?: string | null;
             steam_auto_import_enabled?: boolean;
+            steam_wishlist_auto_sync?: boolean;
             steam_family_ids?: string | null;
             setup_completed?: boolean;
             default_sort?: "status" | "category" | "genre" | "playtime" | "platform" | "interest" | "review_stars";
@@ -4754,6 +4816,108 @@ export interface operations {
                         } | unknown[];
                     };
                 };
+            };
+        };
+    };
+    ApiSteamWishlistAutoSyncRunWishlistAutoSync: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Cron-Secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    "Strict-Transport-Security"?: string;
+                    "Referrer-Policy"?: string;
+                    "X-Content-Type-Options"?: string;
+                    "X-Frame-Options"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncSummary"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description No permission -- see authorization schemes */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiUserSteamWishlistSyncReportGetWishlistSyncReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    "Strict-Transport-Security"?: string;
+                    "Referrer-Policy"?: string;
+                    "X-Content-Type-Options"?: string;
+                    "X-Frame-Options"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SteamWishlistSyncReport"];
+                };
+            };
+        };
+    };
+    ApiUserSteamWishlistSyncReportDismissWishlistSyncReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    "Strict-Transport-Security"?: string;
+                    "Referrer-Policy"?: string;
+                    "X-Content-Type-Options"?: string;
+                    "X-Frame-Options"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

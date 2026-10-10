@@ -1,0 +1,20 @@
+meta {
+  name: Dismiss Wishlist Sync Report
+  type: http
+  seq: 12
+}
+
+delete {
+  url: {{backendUrl}}/api/user/steam/wishlist/sync-report
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Clears the wishlist sync report, called once the user has seen the diff
+  after signing in. Run auth/Login first.
+}

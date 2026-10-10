@@ -1,0 +1,26 @@
+meta {
+  name: Set Steam Wishlist Auto Sync
+  type: http
+  seq: 15
+}
+
+put {
+  url: {{backendUrl}}/api/user/me
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "steam_wishlist_auto_sync": true
+  }
+}
+
+docs {
+  Switches the hourly automatic Steam wishlist sync on or off. It only
+  runs after the first wishlist import. Run auth/Login first.
+}

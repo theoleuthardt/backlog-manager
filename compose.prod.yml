@@ -55,5 +55,22 @@ services:
       - backend
     restart: unless-stopped
 
+  steam-wishlist-sync-cron:
+    container_name: blm_steam-wishlist-sync-cron
+    image: docker.io/curlimages/curl:latest
+    environment:
+      PRICE_CHECK_CRON_SECRET: ${PRICE_CHECK_CRON_SECRET}
+    entrypoint:
+      - sh
+      - -c
+      - |
+        while true; do
+        curl --fail --connect-timeout 10 --max-time 900 --retry 5 --retry-delay 5 --retry-connrefused -X POST http://backend:8000/api/steam/wishlist/auto-sync -H "X-Cron-Secret: $${PRICE_CHECK_CRON_SECRET}" || true
+        sleep 3600
+        done
+    depends_on:
+      - backend
+    restart: unless-stopped
+
 volumes:
   postgres_data:

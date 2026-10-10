@@ -17,6 +17,7 @@ export interface CurrentUser {
   hasDiscordWebhookUrl: boolean;
   steamAutoImportEnabled: boolean;
   steamWishlistImportedAt?: string;
+  steamWishlistAutoSync: boolean;
   steamFamilyIds?: string;
   setupCompleted: boolean;
   defaultSort: string;
@@ -72,6 +73,7 @@ export async function getCurrentUser(): Promise<CurrentUser> {
     hasDiscordWebhookUrl: data.has_discord_webhook_url ?? false,
     steamAutoImportEnabled: data.steam_auto_import_enabled ?? false,
     steamWishlistImportedAt: data.steam_wishlist_imported_at ?? undefined,
+    steamWishlistAutoSync: data.steam_wishlist_auto_sync ?? false,
     steamFamilyIds: data.steam_family_ids ?? undefined,
     setupCompleted: data.setup_completed ?? false,
     defaultSort: data.default_sort ?? "status",

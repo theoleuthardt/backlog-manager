@@ -1,0 +1,26 @@
+meta {
+  name: Run Wishlist Auto Sync
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{backendUrl}}/api/steam/wishlist/auto-sync
+  body: none
+  auth: none
+}
+
+headers {
+  X-Cron-Secret: your-price-check-cron-secret
+}
+
+docs {
+  Syncs the Steam wishlist of every user who switched on the automatic
+  wishlist sync (and did the first wishlist import): adds new wishlist
+  games, removes wishlist imports that left the wishlist and stores the
+  difference as the user's sync report. Meant for the hourly
+  steam-wishlist-sync-cron container, so it takes the X-Cron-Secret
+  header (the backend's PRICE_CHECK_CRON_SECRET) instead of the authToken.
+  Returns {"users", "added", "removed", "failed"}; 401 for a missing or
+  wrong secret.
+}

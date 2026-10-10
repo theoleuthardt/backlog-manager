@@ -23,6 +23,7 @@ class PublicUser {
     this.hasSteamgriddbApiKey = false,
     this.hasDiscordWebhookUrl = false,
     this.steamAutoImportEnabled = false,
+    this.steamWishlistAutoSync = false,
     this.setupCompleted = false,
     this.defaultSort = 'status',
     this.theme = 'dark',
@@ -60,6 +61,8 @@ class PublicUser {
   final bool steamAutoImportEnabled;
   @JsonKey(name: 'steam_wishlist_imported_at')
   final DateTime? steamWishlistImportedAt;
+  @JsonKey(name: 'steam_wishlist_auto_sync')
+  final bool steamWishlistAutoSync;
   @JsonKey(name: 'steam_family_ids')
   final String? steamFamilyIds;
   @JsonKey(name: 'setup_completed')

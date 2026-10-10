@@ -14,6 +14,7 @@ import {
 import { AppUpdateSection } from "~/app/_components/AppUpdateSection";
 import { BackupSection } from "~/app/_components/BackupSection";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import {
@@ -60,6 +61,8 @@ export function AccountContent() {
   const [steamId, setSteamId] = useState("");
   const [steamIdLoadedFor, setSteamIdLoadedFor] = useState<number | null>(null);
   const [isSavingSteamId, setIsSavingSteamId] = useState(false);
+  const [isSavingWishlistAutoSync, setIsSavingWishlistAutoSync] =
+    useState(false);
 
   const [steamApiKey, setSteamApiKey] = useState("");
   const [isSavingSteamApiKey, setIsSavingSteamApiKey] = useState(false);
@@ -103,6 +106,27 @@ export function AccountContent() {
       );
     } finally {
       setIsSavingSteamId(false);
+    }
+  };
+
+  const handleToggleWishlistAutoSync = async (enabled: boolean) => {
+    setIsSavingWishlistAutoSync(true);
+    try {
+      await updateCurrentUser({ steamWishlistAutoSync: enabled });
+      await refreshUser();
+      toast.success(
+        enabled
+          ? "Your wishlist is now synced every hour"
+          : "Automatic wishlist sync turned off",
+      );
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to change the wishlist sync",
+      );
+    } finally {
+      setIsSavingWishlistAutoSync(false);
     }
   };
 
@@ -419,6 +443,29 @@ export function AccountContent() {
           </a>
           .
         </p>
+        <div className="mb-4 flex max-w-xl items-start gap-3">
+          <Checkbox
+            id="steam-wishlist-auto-sync"
+            checked={user.steamWishlistAutoSync}
+            disabled={!user.steamWishlistImportedAt || isSavingWishlistAutoSync}
+            onCheckedChange={(checked) =>
+              void handleToggleWishlistAutoSync(checked === true)
+            }
+          />
+          <div>
+            <Label
+              htmlFor="steam-wishlist-auto-sync"
+              className="cursor-pointer text-sm"
+            >
+              Sync my Steam wishlist automatically every hour
+            </Label>
+            <p className="mt-1 text-xs text-gray-500">
+              {user.steamWishlistImportedAt
+                ? "New wishlist games are added and games that left the wishlist are removed - only entries created by the wishlist import are touched. After your next sign-in you see what changed."
+                : "Available after the first wishlist import on the Steam page."}
+            </p>
+          </div>
+        </div>
         <div className="flex max-w-sm gap-2">
           <Input
             value={steamId}
