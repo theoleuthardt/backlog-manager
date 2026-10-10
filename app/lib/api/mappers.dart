@@ -1,5 +1,6 @@
 import 'package:backlog_manager/api/generated/export.dart';
 import 'package:backlog_manager/domain/achievements.dart';
+import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/domain/price_listings.dart' as price;
 import 'package:backlog_manager/domain/wishlist_sync_report.dart';
@@ -127,4 +128,26 @@ GameAchievements achievementsFromResponse(AchievementProgress progress) {
         ),
     ],
   );
+}
+
+GameSearchResult gameSearchResultFromResponse(EnrichedResult result) {
+  final appId = result.steamAppId;
+  return GameSearchResult(
+    id: result.id,
+    title: result.title,
+    imageUrl: result.imageUrl,
+    steamAppId: appId is num ? appId.toInt() : int.tryParse('$appId'),
+    genres: result.genres,
+    platforms: result.platforms,
+    mainStory: result.mainStory.toDouble(),
+    mainStoryWithExtras: result.mainStoryWithExtras.toDouble(),
+    completionist: result.completionist.toDouble(),
+    description: result.description,
+    publisher: result.publisher,
+    trailerUrl: result.trailerUrl,
+  );
+}
+
+SteamGridDbMatch steamGridDbMatchFromResponse(SteamGridDbSearchResult match) {
+  return SteamGridDbMatch(id: match.id, name: match.name);
 }

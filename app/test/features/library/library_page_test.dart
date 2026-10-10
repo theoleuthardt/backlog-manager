@@ -172,21 +172,13 @@ void main() {
     testWidgets('invites to add a first game when the backlog is empty', (
       tester,
     ) async {
-      final container = await pumpLibrary(tester, FakeBacklogApi());
+      await pumpLibrary(tester, FakeBacklogApi());
 
       expect(find.text('Your backlog is empty'), findsOneWidget);
       expect(find.text('Start by adding your first game!'), findsOneWidget);
       await tester.tap(find.text('Add a game'));
       await tester.pumpAndSettle();
-      expect(
-        container
-            .read(routerProvider)
-            .routerDelegate
-            .currentConfiguration
-            .uri
-            .path,
-        AppRoutes.creationTool,
-      );
+      expect(find.text('Search for a game'), findsOneWidget);
     });
   });
 
@@ -200,24 +192,13 @@ void main() {
       expect(inLibrary(find.text('135 h to beat')), findsOneWidget);
     });
 
-    testWidgets('opens the creation tool from "Add game"', (tester) async {
-      final container = await pumpLibrary(
-        tester,
-        FakeBacklogApi(entries: backlog),
-      );
+    testWidgets('opens the add-a-game sheet from "Add game"', (tester) async {
+      await pumpLibrary(tester, FakeBacklogApi(entries: backlog));
 
       await tester.tap(inLibrary(find.text('Add game')));
       await tester.pumpAndSettle();
 
-      expect(
-        container
-            .read(routerProvider)
-            .routerDelegate
-            .currentConfiguration
-            .uri
-            .path,
-        AppRoutes.creationTool,
-      );
+      expect(find.text('Search for a game'), findsOneWidget);
     });
 
     testWidgets('names the sort option on its button', (tester) async {

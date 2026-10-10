@@ -1,5 +1,6 @@
 import 'package:backlog_manager/api/api_client.dart';
 import 'package:backlog_manager/data/backlog_api.dart';
+import 'package:backlog_manager/domain/game_search.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../auth/api_auth_api_test.dart' show FakeServer;
@@ -68,6 +69,62 @@ void main() {
         expect(const EntryUpdate().toJson(), isEmpty);
       },
     );
+
+    test('carries the data of another game with the names of the backend', () {
+      expect(
+        const EntryUpdate(
+          title: 'Hades',
+          description: 'Defy the god of the dead.',
+          trailerLink: 'https://www.youtube.com/watch?v=abcdefghijk',
+          mainTime: 22,
+          mainPlusExtraTime: 48,
+          completionTime: 95,
+          clearSteamAppId: true,
+        ).toJson(),
+        {
+          'title': 'Hades',
+          'description': 'Defy the god of the dead.',
+          'trailer_link': 'https://www.youtube.com/watch?v=abcdefghijk',
+          'main_time': 22,
+          'main_plus_extra_time': 48,
+          'completion_time': 95,
+          'steam_app_id': null,
+        },
+      );
+    });
+
+    test('leaves the Steam App ID alone unless it is to be cleared', () {
+      expect(
+        const EntryUpdate(status: 'Playing').toJson(),
+        isNot(contains('steam_app_id')),
+      );
+    });
+
+    test('is built from the data of the right game', () {
+      final update = EntryUpdate.wrongGame(
+        const WrongGameChanges(
+          title: 'Hades',
+          genre: ['Roguelike'],
+          imageLink: 'https://img.example/h.jpg',
+          description: 'd',
+          trailerLink: null,
+          mainTime: 22,
+          mainPlusExtraTime: 48,
+          completionTime: 95,
+        ),
+      );
+
+      expect(update.toJson(), {
+        'title': 'Hades',
+        'genre': ['Roguelike'],
+        'image_link': 'https://img.example/h.jpg',
+        'description': 'd',
+        'main_time': 22,
+        'main_plus_extra_time': 48,
+        'completion_time': 95,
+        'steam_app_id': null,
+      });
+    });
   });
 
   group('ApiBacklogApi', () {

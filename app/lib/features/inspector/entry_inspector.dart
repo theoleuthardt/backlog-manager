@@ -17,6 +17,7 @@ import 'package:backlog_manager/design/widgets/toast.dart';
 import 'package:backlog_manager/design/widgets/toggles.dart';
 import 'package:backlog_manager/domain/entry_changes.dart';
 import 'package:backlog_manager/domain/format.dart';
+import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/inspector_logic.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/domain/safe_url.dart';
@@ -24,6 +25,8 @@ import 'package:backlog_manager/domain/split_list.dart';
 import 'package:backlog_manager/domain/status_style.dart';
 import 'package:backlog_manager/domain/trailer.dart';
 import 'package:backlog_manager/features/achievements/achievement_progress.dart';
+import 'package:backlog_manager/features/add_game/cover_picker_sheet.dart';
+import 'package:backlog_manager/features/add_game/wrong_game_sheet.dart';
 import 'package:backlog_manager/features/common/category_picker.dart';
 import 'package:backlog_manager/features/common/status_select.dart';
 import 'package:backlog_manager/features/inspector/entry_autosave.dart';
@@ -259,6 +262,39 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
     if (url != null) _edit((form) => form.copyWith(imageLink: url));
   }
 
+  Future<void> _changeCover() async {
+    final url = await showCoverPicker(
+      context,
+      initialQuery: _stored.title,
+      steamAppId: _stored.steamAppId,
+    );
+    if (url == null || !mounted) return;
+    _edit((form) => form.copyWith(imageLink: url));
+    showShelfToast(context, 'Cover updated');
+  }
+
+  /// Makes the entry the game the user picked: title, cover, description,
+  /// trailer and times come from the result and the Steam App ID goes.
+  Future<void> _wrongGame() async {
+    final result = await showWrongGameSheet(
+      context,
+      initialQuery: _stored.title,
+    );
+    if (result == null || !mounted) return;
+    final update = EntryUpdate.wrongGame(wrongGameChanges(result));
+    try {
+      await _entries.updateEntry(_stored.id, update);
+      if (mounted) showShelfToast(context, 'Game updated');
+    } on Object catch (error) {
+      if (!mounted) return;
+      showShelfToast(
+        context,
+        'Failed to update game: '
+        '${ApiException.from(error, 'Please try again.').message}',
+      );
+    }
+  }
+
   void _watchTrailer() {
     final link = _stored.trailerLink;
     if (link == null || youtubeEmbedUrl(link) == null) return;
@@ -424,6 +460,26 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
                     kind: ShelfButtonKind.danger,
                     onPressed: () =>
                         LibraryActions(context, ref).deleteEntries([entry]),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Wrap(
+                      alignment: WrapAlignment.end,
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        ShelfButton(
+                          key: const Key('inspector-wrong-game'),
+                          label: 'Wrong game?',
+                          onPressed: _wrongGame,
+                        ),
+                        ShelfButton(
+                          key: const Key('inspector-change-cover'),
+                          label: 'Change cover',
+                          onPressed: _changeCover,
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),

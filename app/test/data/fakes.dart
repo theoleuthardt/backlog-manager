@@ -1,6 +1,7 @@
 import 'package:backlog_manager/api/generated/export.dart' as wire;
 import 'package:backlog_manager/data/backlog_api.dart';
 import 'package:backlog_manager/data/games_api.dart';
+import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/domain/price_listings.dart';
 
@@ -53,7 +54,7 @@ class FakeBacklogApi implements BacklogApi {
   BacklogEntry _applied(BacklogEntry entry, EntryUpdate update) {
     return BacklogEntry(
       id: entry.id,
-      title: entry.title,
+      title: update.title ?? entry.title,
       imageLink: update.imageLink ?? entry.imageLink,
       imageAlt: entry.imageAlt,
       genre: update.genre ?? entry.genre,
@@ -64,15 +65,15 @@ class FakeBacklogApi implements BacklogApi {
       reviewStars: update.reviewStars ?? entry.reviewStars,
       review: update.review ?? entry.review,
       note: update.note ?? entry.note,
-      description: entry.description,
-      trailerLink: entry.trailerLink,
-      mainTime: entry.mainTime,
-      mainPlusExtraTime: entry.mainPlusExtraTime,
-      completionTime: entry.completionTime,
+      description: update.description ?? entry.description,
+      trailerLink: update.trailerLink ?? entry.trailerLink,
+      mainTime: update.mainTime ?? entry.mainTime,
+      mainPlusExtraTime: update.mainPlusExtraTime ?? entry.mainPlusExtraTime,
+      completionTime: update.completionTime ?? entry.completionTime,
       playtime: update.playtime ?? entry.playtime,
       partnerPlaytime: entry.partnerPlaytime,
       inSharedSpace: entry.inSharedSpace,
-      steamAppId: entry.steamAppId,
+      steamAppId: update.clearSteamAppId ? null : entry.steamAppId,
       completedAt: entry.completedAt,
     );
   }
@@ -226,6 +227,11 @@ class FakeGamesApi implements GamesApi {
   final calls = <String>[];
   Future<PriceInfo> Function(int steamAppId)? onPrice;
   Future<List<KeyShopOffer>> Function(String title)? onKeyShops;
+  Future<List<GameSearchResult>> Function(String term, bool deep)? onSearch;
+  Future<int?> Function(String title)? onSteamAppId;
+  Future<List<String>> Function(int steamAppId)? onCovers;
+  Future<List<SteamGridDbMatch>> Function(String term)? onGridSearch;
+  Future<List<String>> Function(int gameId)? onCoversById;
 
   @override
   Future<PriceInfo> price(int steamAppId) async {
@@ -241,5 +247,43 @@ class FakeGamesApi implements GamesApi {
     final custom = onKeyShops;
     if (custom != null) return custom(title);
     return const [];
+  }
+
+  @override
+  Future<List<GameSearchResult>> search(
+    String term, {
+    bool deep = false,
+  }) async {
+    calls.add('search $term${deep ? ' deep' : ''}');
+    final custom = onSearch;
+    return custom == null ? const [] : custom(term, deep);
+  }
+
+  @override
+  Future<int?> steamAppId(String title) async {
+    calls.add('steam-app-id $title');
+    final custom = onSteamAppId;
+    return custom == null ? null : custom(title);
+  }
+
+  @override
+  Future<List<String>> steamGridDbCovers(int steamAppId) async {
+    calls.add('covers $steamAppId');
+    final custom = onCovers;
+    return custom == null ? const [] : custom(steamAppId);
+  }
+
+  @override
+  Future<List<SteamGridDbMatch>> steamGridDbSearch(String term) async {
+    calls.add('grid-search $term');
+    final custom = onGridSearch;
+    return custom == null ? const [] : custom(term);
+  }
+
+  @override
+  Future<List<String>> steamGridDbCoversById(int gameId) async {
+    calls.add('covers-by-id $gameId');
+    final custom = onCoversById;
+    return custom == null ? const [] : custom(gameId);
   }
 }

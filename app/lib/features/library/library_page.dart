@@ -26,12 +26,10 @@ import 'package:backlog_manager/features/library/library_actions.dart';
 import 'package:backlog_manager/features/library/library_content.dart';
 import 'package:backlog_manager/features/library/library_view.dart';
 import 'package:backlog_manager/features/library/selection_bar.dart';
-import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 const _gutter = 28.0;
 
@@ -51,11 +49,11 @@ class LibraryPage extends StatelessWidget {
   }
 }
 
-class _EmptyLibrary extends StatelessWidget {
+class _EmptyLibrary extends ConsumerWidget {
   const _EmptyLibrary();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
     return Center(
@@ -72,7 +70,7 @@ class _EmptyLibrary extends StatelessWidget {
           ShelfButton(
             label: 'Add a game',
             kind: ShelfButtonKind.primary,
-            onPressed: () => context.go(AppRoutes.creationTool),
+            onPressed: ref.read(addGameRequestProvider.notifier).request,
           ),
         ],
       ),
@@ -220,7 +218,7 @@ class _Toolbar extends ConsumerWidget {
             label: 'Add game',
             icon: Icons.add,
             kind: ShelfButtonKind.primary,
-            onPressed: () => context.go(AppRoutes.creationTool),
+            onPressed: ref.read(addGameRequestProvider.notifier).request,
           ),
         ],
       ),
