@@ -245,6 +245,8 @@ class _NavItem extends ConsumerWidget {
   }
 }
 
+const _themePrefix = 'theme:';
+
 PopupMenuItem<String> _themeItem(
   String id,
   String name,
@@ -253,7 +255,7 @@ PopupMenuItem<String> _themeItem(
 ) {
   return PopupMenuItem<String>(
     key: Key('account-theme-$id'),
-    value: id,
+    value: '$_themePrefix$id',
     height: 32,
     child: Row(
       children: [
@@ -294,8 +296,10 @@ class _AccountRow extends ConsumerWidget {
           unawaited(ref.read(authControllerProvider.notifier).signOut());
         } else if (value == 'creator') {
           context.go(AppRoutes.appearance);
-        } else {
-          unawaited(_setTheme(context, ref, value));
+        } else if (value.startsWith(_themePrefix)) {
+          unawaited(
+            _setTheme(context, ref, value.substring(_themePrefix.length)),
+          );
         }
       },
       itemBuilder: (context) => [

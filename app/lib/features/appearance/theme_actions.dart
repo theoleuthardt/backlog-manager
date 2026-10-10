@@ -15,6 +15,7 @@ class ThemeActions {
   ThemeActions(this._ref);
 
   final Ref _ref;
+  int _latest = 0;
 
   String get _id => _ref.read(themeIdProvider);
   List<CustomTheme> get _custom => _ref.read(customThemesProvider);
@@ -37,6 +38,7 @@ class ThemeActions {
     List<CustomTheme> custom, {
     required bool includeCustom,
   }) async {
+    final mine = ++_latest;
     final previousId = _id;
     final previousCustom = _custom;
     _apply(id, custom);
@@ -51,7 +53,7 @@ class ThemeActions {
       if (_ref.mounted) _ref.read(sessionProvider.notifier).signIn(user);
       return null;
     } on Object catch (error) {
-      if (_ref.mounted) _apply(previousId, previousCustom);
+      if (_ref.mounted && mine == _latest) _apply(previousId, previousCustom);
       return ApiException.from(error, 'Failed to save theme').message;
     }
   }

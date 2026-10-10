@@ -170,6 +170,7 @@ class _AppearancePageState extends ConsumerState<AppearancePage> {
   }
 
   Future<void> _select(String id) async {
+    _preview.set(null);
     final error = await ref.read(themeActionsProvider).setTheme(id);
     if (error != null) _toast(error);
   }
@@ -269,6 +270,7 @@ class _AppearancePageState extends ConsumerState<AppearancePage> {
         for (final theme in displayThemes)
           _ThemeItem(
             key: Key('theme-item-${theme.id}'),
+            id: theme.id,
             name: theme.name,
             colors: theme.colors,
             active: theme.id == activeId,
@@ -288,6 +290,7 @@ class _AppearancePageState extends ConsumerState<AppearancePage> {
         for (final theme in custom)
           _ThemeItem(
             key: Key('theme-item-${theme.id}'),
+            id: theme.id,
             name: theme.name,
             colors: theme.colors,
             active: theme.id == activeId,
@@ -439,6 +442,7 @@ class _AppearancePageState extends ConsumerState<AppearancePage> {
 
 class _ThemeItem extends StatelessWidget {
   const _ThemeItem({
+    required this.id,
     required this.name,
     required this.colors,
     required this.active,
@@ -448,6 +452,7 @@ class _ThemeItem extends StatelessWidget {
     super.key,
   });
 
+  final String id;
   final String name;
   final ThemeColors colors;
   final bool active;
@@ -490,14 +495,14 @@ class _ThemeItem extends StatelessWidget {
                   const ShelfChip(label: 'active', kind: ShelfChipKind.accent),
                 if (onEdit != null)
                   ShelfIconButton(
-                    key: Key('theme-edit-$name'),
+                    key: Key('theme-edit-$id'),
                     icon: Icons.edit_outlined,
                     tooltip: 'Edit $name',
                     onPressed: onEdit,
                   ),
                 if (onDelete != null)
                   ShelfIconButton(
-                    key: Key('theme-delete-$name'),
+                    key: Key('theme-delete-$id'),
                     icon: Icons.delete_outline,
                     tooltip: 'Delete $name',
                     onPressed: onDelete,

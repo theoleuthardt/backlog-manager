@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:backlog_manager/data/theme_store.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
@@ -163,6 +165,46 @@ void main() {
       expect(opened.store.stored?.id, 'light');
     });
 
+    testWidgets('picking a theme while colours are previewed shows it', (
+      tester,
+    ) async {
+      final opened = await open(tester);
+      await typeHex(tester, 'background', '#102030');
+      expect(opened.container.read(themePreviewProvider), isNotNull);
+
+      await tester.tap(find.byKey(const Key('theme-item-light')));
+      await tester.pumpAndSettle();
+
+      expect(opened.container.read(themePreviewProvider), isNull);
+      expect(opened.activeId, 'light');
+    });
+
+    testWidgets('an older failed save does not undo a newer one', (
+      tester,
+    ) async {
+      final slow = Completer<void>();
+      var calls = 0;
+      final opened = await open(
+        tester,
+        onUpdate: (_) async {
+          calls++;
+          if (calls == 1) {
+            await slow.future;
+            throw Exception('offline');
+          }
+        },
+      );
+
+      unawaited(opened.container.read(themeActionsProvider).setTheme('light'));
+      await tester.pump();
+      await opened.container.read(themeActionsProvider).setTheme('colorful');
+      slow.complete();
+      await tester.pumpAndSettle();
+
+      expect(opened.activeId, 'colorful');
+      await dismissToast(tester);
+    });
+
     testWidgets('a failed save puts the previous theme back', (tester) async {
       final opened = await open(
         tester,
@@ -299,7 +341,7 @@ void main() {
     ) async {
       final opened = await open(tester, account: user(custom: [neon]));
 
-      await tester.tap(find.byKey(const Key('theme-edit-Neon')));
+      await tester.tap(find.byKey(const Key('theme-edit-custom-neon')));
       await tester.pump();
       expect(
         tester
@@ -319,7 +361,7 @@ void main() {
 
     testWidgets('New theme leaves the edit', (tester) async {
       await open(tester, account: user(custom: [neon]));
-      await tester.tap(find.byKey(const Key('theme-edit-Neon')));
+      await tester.tap(find.byKey(const Key('theme-edit-custom-neon')));
       await tester.pump();
 
       await tester.tap(find.byKey(const Key('theme-new')));
@@ -338,7 +380,7 @@ void main() {
     testWidgets('deleting removes the theme and says so', (tester) async {
       final opened = await open(tester, account: user(custom: [neon]));
 
-      await tester.tap(find.byKey(const Key('theme-delete-Neon')));
+      await tester.tap(find.byKey(const Key('theme-delete-custom-neon')));
       await tester.pumpAndSettle();
 
       expect(opened.custom, isEmpty);
@@ -356,7 +398,7 @@ void main() {
       );
       expect(opened.activeId, 'custom-neon');
 
-      await tester.tap(find.byKey(const Key('theme-delete-Neon')));
+      await tester.tap(find.byKey(const Key('theme-delete-custom-neon')));
       await tester.pumpAndSettle();
 
       expect(opened.activeId, defaultThemeId);
@@ -522,7 +564,7 @@ void main() {
         tester,
         account: user(theme: themeId, custom: [neon]),
       );
-      await tester.tap(find.byKey(const Key('theme-edit-Neon')));
+      await tester.tap(find.byKey(const Key('theme-edit-custom-neon')));
       await tester.pump();
       await typeHex(tester, 'accent', '#33cc99');
       await tester.pumpAndSettle();
