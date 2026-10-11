@@ -121,12 +121,11 @@ void main() {
         await mount(tester);
         final before = lightCenter(tester, 'cover-glow-light-a');
 
-        await tester.pump(const Duration(seconds: 7));
+        await tester.pump(const Duration(seconds: 4));
 
-        expect(
-          lightCenter(tester, 'cover-glow-light-a'),
-          isNot(equals(before)),
-        );
+        final after = lightCenter(tester, 'cover-glow-light-a');
+        final moved = (after.x - before.x).abs() + (after.y - before.y).abs();
+        expect(moved, greaterThan(0.3));
         await tester.pumpWidget(const SizedBox());
       });
 

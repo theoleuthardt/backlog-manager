@@ -167,7 +167,7 @@ class _CoverGlowBackdropState extends ConsumerState<CoverGlowBackdrop>
     with SingleTickerProviderStateMixin {
   late final AnimationController _drift = AnimationController(
     vsync: this,
-    duration: const Duration(seconds: 34),
+    duration: const Duration(seconds: 20),
   );
 
   @override
@@ -179,7 +179,7 @@ class _CoverGlowBackdropState extends ConsumerState<CoverGlowBackdrop>
   Alignment _wander(double t, {required double phase, required double speed}) {
     final x = math.sin(2 * math.pi * (t * speed + phase));
     final y = math.cos(2 * math.pi * (t * speed * 0.73 + phase * 1.7));
-    return Alignment(0.55 * x - 0.1, 0.35 * y - 0.1);
+    return Alignment(0.9 * x, 0.75 * y);
   }
 
   @override
@@ -218,6 +218,7 @@ class _CoverGlowBackdropState extends ConsumerState<CoverGlowBackdrop>
         animation: _drift,
         builder: (context, _) {
           final t = _drift.value;
+          final breath = 1 + 0.18 * math.sin(2 * math.pi * t * 2);
           return ShaderMask(
             blendMode: BlendMode.dstIn,
             shaderCallback: (bounds) => const LinearGradient(
@@ -234,11 +235,14 @@ class _CoverGlowBackdropState extends ConsumerState<CoverGlowBackdrop>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: const Alignment(-1, -1),
-                      end: const Alignment(0.9, 1),
+                      end: Alignment(
+                        0.9 + 0.5 * math.sin(2 * math.pi * t),
+                        1 - 0.35 * (1 - math.cos(2 * math.pi * t)),
+                      ),
                       colors: [
-                        glow.withValues(alpha: 0.5),
-                        glow.withValues(alpha: 0.36),
-                        glow.withValues(alpha: 0.12),
+                        glow.withValues(alpha: 0.5 * breath),
+                        glow.withValues(alpha: 0.36 * breath),
+                        glow.withValues(alpha: 0.12 * breath),
                         glow.withValues(alpha: 0),
                       ],
                       stops: const [0, 0.45, 0.8, 1],
@@ -249,16 +253,16 @@ class _CoverGlowBackdropState extends ConsumerState<CoverGlowBackdrop>
                   moving
                       ? _wander(t, phase: 0, speed: 1)
                       : const Alignment(-0.6, -0.2),
-                  0.34,
-                  0.9,
+                  0.55,
+                  0.62,
                   const Key('cover-glow-light-a'),
                 ),
                 light(
                   moving
                       ? _wander(t, phase: 0.45, speed: 1.3)
                       : const Alignment(0.55, -0.1),
-                  0.26,
-                  0.75,
+                  0.45,
+                  0.55,
                   const Key('cover-glow-light-b'),
                 ),
               ],
