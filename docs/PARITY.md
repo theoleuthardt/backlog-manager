@@ -79,7 +79,7 @@ Built from `frontend/src/app/`, `frontend/src/hooks/` and `frontend/src/lib/` fo
 | Two-factor sign-in, enrolment and disabling | `auth/`, `features/settings/security_tab.dart` | done |
 | Wishlist import for the first time only, skipped games, automatic sync report | `features/steam/`, `wishlist_sync_prompt.dart` | done |
 | Theme from the web client shows up in the app and the other way round | the same `custom_themes` shape and cache key | done (check in the beta) |
-| Window chrome, update from GitHub Releases, signing | title bar done; updates #278, #279; signing #280; release workflow #281 | open |
+| Window chrome, update from GitHub Releases, signing | title bar done; update notification done (#278); in-place updates #279; code signing postponed (#280) | open |
 
 ## Sign-off
 
