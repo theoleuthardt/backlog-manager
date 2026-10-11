@@ -91,12 +91,7 @@ async def _igdb_credentials(user: User) -> tuple[str, str]:
 
 
 async def _call_igdb[T](coro: Awaitable[T]) -> T:
-    """search_game_on_igdb() et al. already turn a bad HTTP status from
-    IGDB into an empty list internally, but a transport failure
-    (timeout, connection refused, ...) still propagates as
-    httpx.RequestError - map that to 503 instead of letting it fall
-    through to Litestar's generic 500. A bad status from the token request
-    (wrong client id or secret) is 503 with its own message."""
+    """Runs an IGDB call; a transport or status failure becomes a 503."""
     try:
         return await coro
     except (httpx.HTTPStatusError, httpx.RequestError) as error:

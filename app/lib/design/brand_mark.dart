@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:backlog_manager/design/atmosphere.dart';
@@ -20,38 +21,32 @@ class BrandMark extends ConsumerStatefulWidget {
 
 class _BrandMarkState extends ConsumerState<BrandMark>
     with SingleTickerProviderStateMixin {
-  AnimationController? _controller;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final moving =
-        atmosphereMotion &&
-        !MediaQuery.of(context).disableAnimations &&
-        ref.watch(backgroundMotionProvider);
-    if (moving && _controller == null) {
-      _controller = AnimationController(
-        vsync: this,
-        duration: const Duration(seconds: 9),
-      )..repeat();
-    } else if (!moving && _controller != null) {
-      _controller!.dispose();
-      _controller = null;
-    }
-  }
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 9),
+  );
 
   @override
   void dispose() {
-    _controller?.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
+    final moving =
+        atmosphereMotion &&
+        !MediaQuery.of(context).disableAnimations &&
+        ref.watch(backgroundMotionProvider);
+    if (moving && !_controller.isAnimating) {
+      unawaited(_controller.repeat());
+    } else if (!moving && _controller.isAnimating) {
+      _controller.stop();
+    }
     return CustomPaint(
       size: Size.square(widget.size),
-      painter: _PlanetPainter(tokens, _controller),
+      painter: _PlanetPainter(tokens, moving ? _controller : null),
     );
   }
 }

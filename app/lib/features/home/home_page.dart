@@ -164,9 +164,9 @@ class _Content extends ConsumerWidget {
               status: 'Not Started',
               entries: next,
               serverUrl: serverUrl,
-              meta: (entry) => entry.mainTime == null
+              meta: (entry) => entry.timeToBeat == null
                   ? null
-                  : '${formatHours(entry.mainTime!)} h to beat',
+                  : '${formatHours(entry.timeToBeat!)} h to beat',
             ),
           if (done.isNotEmpty)
             _Shelf(
@@ -304,7 +304,7 @@ class _HeroState extends ConsumerState<_Hero> {
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
     final entry = widget.entry;
     final played = entry.playtime ?? 0;
-    final toBeat = entry.mainTime;
+    final toBeat = entry.timeToBeat;
     final steamAppId = entry.steamAppId;
     final toGo = steamAppId == null
         ? null

@@ -69,4 +69,5 @@ __pycache__/
 .mypy_cache/
 .coverage
 htmlcov/
-*.egg-info/app/test/**/failures/
+*.egg-info/
+app/test/**/failures/
