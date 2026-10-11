@@ -2,4 +2,4 @@
 /// must verify against. Empty until the key pair of the project was created
 /// (`node scripts/app-update-keygen.mjs`, docs/APP_UPDATES.md); with no key the
 /// app never installs a payload and only points at the release page.
-const updatePublicKeyBase64 = '';
+const updatePublicKeyBase64 = 'm8OTUzvaGrQXpR2daipwD6BX/Tn1u1tAI0SEkkMMkvA=';
