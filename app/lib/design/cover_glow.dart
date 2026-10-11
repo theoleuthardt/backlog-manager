@@ -151,10 +151,11 @@ class _GlowColor extends InheritedWidget {
   bool updateShouldNotify(_GlowColor oldWidget) => color != oldWidget.color;
 }
 
-/// The glow behind the whole panel: a veil from the top left that fades out
-/// towards the bottom, and two soft lights that drift across the panel, the
-/// way light moves in a room. The lights stand still when [glowMotionProvider]
-/// is off, when the system asks for less motion, and in tests.
+/// The glow behind the header of a game (the cover, the title, the chips): a
+/// veil from the top left that fades out towards the bottom, and two soft
+/// lights that drift slowly inside that area, the way light moves in a room.
+/// The lights stand still when [glowMotionProvider] is off, when the system
+/// asks for less motion, and in tests. It fills the box it is given.
 class CoverGlowBackdrop extends ConsumerStatefulWidget {
   const CoverGlowBackdrop({super.key});
 
@@ -166,7 +167,7 @@ class _CoverGlowBackdropState extends ConsumerState<CoverGlowBackdrop>
     with SingleTickerProviderStateMixin {
   late final AnimationController _drift = AnimationController(
     vsync: this,
-    duration: const Duration(seconds: 28),
+    duration: const Duration(seconds: 34),
   );
 
   @override
@@ -178,7 +179,7 @@ class _CoverGlowBackdropState extends ConsumerState<CoverGlowBackdrop>
   Alignment _wander(double t, {required double phase, required double speed}) {
     final x = math.sin(2 * math.pi * (t * speed + phase));
     final y = math.cos(2 * math.pi * (t * speed * 0.73 + phase * 1.7));
-    return Alignment(0.85 * x, 0.9 * y);
+    return Alignment(0.55 * x - 0.1, 0.35 * y - 0.1);
   }
 
   @override
@@ -217,18 +218,18 @@ class _CoverGlowBackdropState extends ConsumerState<CoverGlowBackdrop>
         animation: _drift,
         builder: (context, _) {
           final t = _drift.value;
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              ShaderMask(
-                blendMode: BlendMode.dstIn,
-                shaderCallback: (bounds) => const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.white, Colors.white, Colors.transparent],
-                  stops: [0, 0.3, 0.62],
-                ).createShader(bounds),
-                child: DecoratedBox(
+          return ShaderMask(
+            blendMode: BlendMode.dstIn,
+            shaderCallback: (bounds) => const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Colors.white, Colors.white, Colors.transparent],
+              stops: [0, 0.5, 1],
+            ).createShader(bounds),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                DecoratedBox(
                   key: const Key('cover-glow-veil'),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -244,24 +245,24 @@ class _CoverGlowBackdropState extends ConsumerState<CoverGlowBackdrop>
                     ),
                   ),
                 ),
-              ),
-              light(
-                moving
-                    ? _wander(t, phase: 0, speed: 1)
-                    : const Alignment(-0.6, -0.55),
-                0.34,
-                0.95,
-                const Key('cover-glow-light-a'),
-              ),
-              light(
-                moving
-                    ? _wander(t, phase: 0.45, speed: 1.4)
-                    : const Alignment(0.7, -0.3),
-                0.26,
-                0.8,
-                const Key('cover-glow-light-b'),
-              ),
-            ],
+                light(
+                  moving
+                      ? _wander(t, phase: 0, speed: 1)
+                      : const Alignment(-0.6, -0.2),
+                  0.34,
+                  0.9,
+                  const Key('cover-glow-light-a'),
+                ),
+                light(
+                  moving
+                      ? _wander(t, phase: 0.45, speed: 1.3)
+                      : const Alignment(0.55, -0.1),
+                  0.26,
+                  0.75,
+                  const Key('cover-glow-light-b'),
+                ),
+              ],
+            ),
           );
         },
       ),

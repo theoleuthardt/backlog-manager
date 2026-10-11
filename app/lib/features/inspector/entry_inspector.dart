@@ -418,15 +418,21 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  const CoverGlowBackdrop(),
-                  SingleChildScrollView(
-                    padding: EdgeInsets.all(fullscreen ? 28 : 14),
-                    child: _InspectorLayout(
-                      fullscreen: fullscreen,
-                      left: [
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(fullscreen ? 28 : 14),
+                child: _InspectorLayout(
+                  fullscreen: fullscreen,
+                  left: [
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        const Positioned(
+                          left: -40,
+                          right: -40,
+                          top: -30,
+                          bottom: -56,
+                          child: CoverGlowBackdrop(),
+                        ),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -488,108 +494,107 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 14),
-                        Row(
-                          children: [
-                            DecoratedBox(
-                              decoration: BoxDecoration(
-                                color: dot,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const SizedBox(width: 9, height: 9),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: StatusSelect(
-                                spaceId: ref.watch(backlogScopeProvider),
-                                value: _form.status,
-                                onChanged: (status) => _edit(
-                                  (form) => form.copyWith(status: status),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (completedOn != null) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            completedOn,
-                            key: const Key('inspector-completed'),
-                            style: style.caption.copyWith(color: tokens.muted),
-                          ),
-                        ],
-                        const SizedBox(height: 14),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            if (ref.watch(backlogScopeProvider) == null)
-                              ShelfButton(
-                                key: const Key('inspector-wrong-game'),
-                                label: 'Wrong Game?',
-                                icon: Icons.swap_horiz,
-                                onPressed: _wrongGame,
-                              ),
-                            ShelfButton(
-                              key: const Key('inspector-change-cover'),
-                              label: 'Change Cover',
-                              icon: Icons.photo_library_outlined,
-                              onPressed: _changeCover,
-                            ),
-                            ShelfButton(
-                              key: const Key('inspector-update-image'),
-                              label: 'Image Link',
-                              icon: Icons.link,
-                              onPressed: _updateImage,
-                            ),
-                            ShelfButton(
-                              key: const Key('inspector-prices'),
-                              label: 'Prices',
-                              icon: Icons.sell_outlined,
-                              onPressed: () => showPriceSheet(
-                                context,
-                                title: entry.title,
-                                steamAppId: entry.steamAppId,
-                              ),
-                            ),
-                            if (ref.watch(backlogScopeProvider) == null &&
-                                ref.watch(activeSpaceIdProvider) != null)
-                              ShareToSpaceButton(entry: entry),
-                          ],
-                        ),
-                        const SizedBox(height: 18),
-                        CategoryPicker(
-                          entryId: entry.id,
-                          spaceId: ref.watch(backlogScopeProvider),
-                        ),
-                        const SizedBox(height: 14),
-                        _stats(context, entry, tokens, style),
-                      ],
-                      right: [
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: ShelfTabs(
-                            labels: const [
-                              'Overview',
-                              'Progress',
-                              'Review',
-                              'Trailer',
-                            ],
-                            index: _tab,
-                            onChanged: (index) => setState(() => _tab = index),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        switch (_tab) {
-                          0 => _overview(entry, tokens, style),
-                          1 => _progress(entry),
-                          2 => _reviewTab(reviewable),
-                          _ => _trailer(entry, tokens, style),
-                        },
                       ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: dot,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const SizedBox(width: 9, height: 9),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: StatusSelect(
+                            spaceId: ref.watch(backlogScopeProvider),
+                            value: _form.status,
+                            onChanged: (status) =>
+                                _edit((form) => form.copyWith(status: status)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (completedOn != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        completedOn,
+                        key: const Key('inspector-completed'),
+                        style: style.caption.copyWith(color: tokens.muted),
+                      ),
+                    ],
+                    const SizedBox(height: 14),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        if (ref.watch(backlogScopeProvider) == null)
+                          ShelfButton(
+                            key: const Key('inspector-wrong-game'),
+                            label: 'Wrong Game?',
+                            icon: Icons.swap_horiz,
+                            onPressed: _wrongGame,
+                          ),
+                        ShelfButton(
+                          key: const Key('inspector-change-cover'),
+                          label: 'Change Cover',
+                          icon: Icons.photo_library_outlined,
+                          onPressed: _changeCover,
+                        ),
+                        ShelfButton(
+                          key: const Key('inspector-update-image'),
+                          label: 'Image Link',
+                          icon: Icons.link,
+                          onPressed: _updateImage,
+                        ),
+                        ShelfButton(
+                          key: const Key('inspector-prices'),
+                          label: 'Prices',
+                          icon: Icons.sell_outlined,
+                          onPressed: () => showPriceSheet(
+                            context,
+                            title: entry.title,
+                            steamAppId: entry.steamAppId,
+                          ),
+                        ),
+                        if (ref.watch(backlogScopeProvider) == null &&
+                            ref.watch(activeSpaceIdProvider) != null)
+                          ShareToSpaceButton(entry: entry),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    CategoryPicker(
+                      entryId: entry.id,
+                      spaceId: ref.watch(backlogScopeProvider),
+                    ),
+                    const SizedBox(height: 14),
+                    _stats(context, entry, tokens, style),
+                  ],
+                  right: [
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: ShelfTabs(
+                        labels: const [
+                          'Overview',
+                          'Progress',
+                          'Review',
+                          'Trailer',
+                        ],
+                        index: _tab,
+                        onChanged: (index) => setState(() => _tab = index),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    switch (_tab) {
+                      0 => _overview(entry, tokens, style),
+                      1 => _progress(entry),
+                      2 => _reviewTab(reviewable),
+                      _ => _trailer(entry, tokens, style),
+                    },
+                  ],
+                ),
               ),
             ),
             DecoratedBox(
