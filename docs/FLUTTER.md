@@ -273,7 +273,7 @@ Decision (#325): the trailer keeps opening in the system browser; there is no em
 
 - A Chromium-based plugin (`webview_cef`) works on all three platforms but ships a Chromium runtime with the app (the order of a hundred megabytes per platform), needs a macOS Podfile hook for multi-process mode and renders in software on Linux.
 - Plugins on the native engines (WebKitGTK on Linux, WKWebView on macOS, WebView2 on Windows; `desktop_webview_window`, `atomic_webview`) add `webkit2gtk` as a system dependency of the Linux packages (AppImage, DEB and RPM have to agree on it and Bazzite does not carry it by default) and the WebView2 runtime on older Windows 10. They are small community packages that we would have to track through every Flutter upgrade.
-- YouTube refuses some embeds without a referrer (error 153), so an embedded player needs the "Video not playing? Watch it on YouTube" fallback anyway, and that fallback is what the browser gives for free: the watch page always plays.
+- YouTube refuses some embeds without a referrer (error 153), so an embedded player needs the "Video not playing? Watch it on YouTube" fallback anyway, and that fallback is what the browser gives for free: the watch page plays whenever the video is available to the viewer.
 
 `domain/trailer.dart` (`youtubeEmbedUrl`) accepts only canonical YouTube watch URLs, and the inspector opens a link only after it passed, so nothing else can ever be launched or become a future web view source. If a webview package that covers all three desktops without a runtime or system dependency appears, the trailer card is the only widget to change: it would open a sheet that hosts the player behind an interface, with the browser link as the fallback.
 
