@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Backlog Manager
+GenericName=Game backlog manager
+Icon=backlog-manager
+Exec=backlog-manager %U
+Categories=Game;Utility;
+Keywords=games;backlog;steam;
+StartupNotify=true

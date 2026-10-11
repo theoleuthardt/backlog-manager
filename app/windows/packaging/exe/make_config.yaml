@@ -1,0 +1,10 @@
+app_id: 5B0F2E54-7E1B-4D8E-9B77-3C1C2B6D8A11
+display_name: Backlog Manager
+publisher_name: Theo Leuthardt
+publisher_url: https://github.com/theoleuthardt/backlog-manager
+install_dir_name: '{autopf}\Backlog Manager'
+create_desktop_icon: true
+privileges_required: lowest
+setup_icon_file: windows/runner/resources/app_icon.ico
+locales:
+  - en

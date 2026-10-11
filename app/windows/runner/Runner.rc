@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "dev.theoleuthardt" "\0"
-            VALUE "FileDescription", "backlog_manager" "\0"
+            VALUE "CompanyName", "Theo Leuthardt" "\0"
+            VALUE "FileDescription", "Backlog Manager" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "backlog_manager" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 dev.theoleuthardt. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Theo Leuthardt. All rights reserved." "\0"
             VALUE "OriginalFilename", "backlog_manager.exe" "\0"
-            VALUE "ProductName", "backlog_manager" "\0"
+            VALUE "ProductName", "Backlog Manager" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

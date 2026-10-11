@@ -110,7 +110,36 @@ A build for another OS cannot be made on this one (Flutter has no cross-compilat
 
 ## Building and packaging locally
 
-`task app:build` makes a release build for the host platform: `app/build/macos/Build/Products/Release/backlog_manager.app`, `app/build/windows/x64/runner/Release/` or `app/build/linux/x64/release/bundle/`. `API_URL` sets the default server (`task app:build API_URL=https://api.example.com`) and the user can change it on the sign-in screen. Installers (dmg, msi, AppImage, deb, ...) come from the packaging issue (#277) and the release workflow.
+`task app:build` makes a release build for the host platform: `app/build/macos/Build/Products/Release/backlog_manager.app`, `app/build/windows/x64/runner/Release/` or `app/build/linux/x64/release/bundle/`. `API_URL` sets the default server (`task app:build API_URL=https://api.example.com`) and the user can change it on the sign-in screen.
+
+`task app:package` builds and packages for the host OS into `app/dist/<version>/` (`API_URL` works the same). Installers are not cross-built: every platform builds on its own machine (the release workflow has a runner per OS).
+
+| OS | Formats | Tool | Needs |
+| --- | --- | --- | --- |
+| Linux | `.AppImage`, `.deb`, `.rpm` | Fastforge (AppImage, DEB), `tool/package/rpm.sh` (RPM) | `clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev`, `rpm` (rpmbuild), `file`, `appimagetool` on the PATH (set `APPIMAGE_EXTRACT_AND_RUN=1` without FUSE) |
+| macOS | `.dmg` | Fastforge | Xcode, `npm install -g appdmg` |
+| Windows | `.exe` installer | Fastforge with Inno Setup | Visual Studio C++ workload, Inno Setup 6 (`choco install innosetup`) |
+
+Fastforge is pinned (`dart pub global activate fastforge 0.6.12` runs inside the task). Its configuration lives next to the platform code: `linux/packaging/{appimage,deb}/make_config.yaml`, `macos/packaging/dmg/make_config.yaml`, `windows/packaging/exe/make_config.yaml`. The RPM is built by `tool/package/rpm.sh` from `linux/packaging/rpm/backlog-manager.spec`, because Fastforge's RPM maker does not work with rpm 4.20 and marks the icon setuid.
+
+Decisions (#277):
+
+- **Formats:** DMG for macOS, an Inno Setup `.exe` for Windows (the counterpart of the NSIS installer; a per-user install without administrator rights), AppImage, DEB and RPM for Linux. There is no MSI: Fastforge has no maker for it and the `.exe` covers the same need. MSIX is not offered either, because it cannot be installed without a trusted signature and the app ships unsigned (the same baseline as the Tauri client; the signing decision is #280).
+- **Identity:** display name "Backlog Manager", bundle and application id `dev.theocloud.blm` (the id of the Tauri client, so the Flutter client replaces it on macOS and keeps one desktop entry), company "Theo Leuthardt". The binary on disk stays `backlog_manager`.
+- **Version:** one source, `version:` in `pubspec.yaml` (`X.Y.Z+build`). `package_info_plus` reads it for the status bar; the release workflow stamps it from the release version and uses the run number as build number.
+- **Artifact names:** `Backlog-Manager_<version>_<os>_<arch>.<ext>`, for example `Backlog-Manager_0.9.3_linux_x64.AppImage`, `Backlog-Manager_0.9.3_macos_universal.dmg`, `Backlog-Manager_0.9.3_windows_x64.exe`.
+- **Icons:** `tool/icons/icon.svg` is the single source (a ringed planet in the colours of the Shelf theme); `task app:icons` renders the macOS icon set, the Windows `.ico` and the Linux PNG (needs `rsvg-convert` and ImageMagick).
+- **Install locations** (what the in-place updater of #279 has to know): DEB puts the app in `/opt/backlog_manager` with a symlink in `/usr/bin`, RPM in `/usr/share/backlog-manager`, an AppImage is the file the user keeps, the DMG holds `backlog_manager.app` for `/Applications` and the Windows installer uses `%LOCALAPPDATA%\Programs\Backlog Manager`.
+
+Verified so far: the three Linux packages are built locally (an AppImage starts under Xvfb); the macOS and Windows packages only run in the release workflow's dry run.
+
+## Release workflow
+
+`.github/workflows/release-app.yml` (manual, "Release Flutter App") builds Linux, macOS and Windows on their own runners, packages with `task app:package` and uploads the installers as workflow artifacts. It keeps the version rule of the Tauri pipeline (`scripts/release-version.mjs`, tested by `task release:test`): the optional `version` input, otherwise a patch bump of the latest `v*.*.*` tag, and a requested version must be greater than the latest tag. The default server comes from the repository variable `NEXT_PUBLIC_API_URL`, passed as `API_URL`.
+
+- **Dry run:** with `publish` off (the default) nothing is released; take the installers from the run's artifacts.
+- **Publishing:** `publish` creates the GitHub Release with generated notes and all installers. `prerelease` (default on) marks it as a pre-release, which keeps it out of `releases/latest` and so out of the Tauri updater feed until the cutover (#287). The update feed of the Flutter client is added with the in-place updater (#279).
+- The Tauri workflows (`release-apps.yml`, `tauri-build.yml`) stay until the cutover.
 
 ## Architecture
 
