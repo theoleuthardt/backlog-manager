@@ -1,15 +1,22 @@
+import 'package:backlog_manager/domain/update_manifest.dart';
+
 /// A published release of the app that is newer than the installed one.
 class AppRelease {
   const AppRelease({
     required this.version,
     required this.pageUrl,
     this.notes = '',
+    this.manifest,
   });
 
   /// `1.2.3`, without the `v` of the tag.
   final String version;
   final Uri pageUrl;
   final String notes;
+
+  /// The installers the app can apply in place; null for a release that
+  /// published none (the app then only points at the release page).
+  final UpdateManifest? manifest;
 }
 
 final _plainVersion = RegExp(r'^v?(\d+)\.(\d+)\.(\d+)$');

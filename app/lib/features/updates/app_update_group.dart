@@ -2,13 +2,16 @@ import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/design/widgets/fields.dart';
+import 'package:backlog_manager/design/widgets/progress.dart';
 import 'package:backlog_manager/features/updates/app_update_state.dart';
 import 'package:backlog_manager/platform/url_opener.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// The "App Updates" group of the About tab: a manual check and its result.
-/// A newer release shows its notes and a button to its page in the browser.
+/// A newer release shows its notes and, where the install can update itself,
+/// a button that downloads and checks it and then restarts into it; elsewhere
+/// a button to its page in the browser.
 class AppUpdateGroup extends ConsumerWidget {
   const AppUpdateGroup({super.key});
 
@@ -19,6 +22,11 @@ class AppUpdateGroup extends ConsumerWidget {
     final state = ref.watch(appUpdateProvider);
     final release = state.release;
     final checking = state.check == UpdateCheck.checking;
+    final notifier = ref.read(appUpdateProvider.notifier);
+    final inPlace = release != null && notifier.canInstallInPlace;
+    final installing =
+        state.install == UpdateInstall.downloading ||
+        state.install == UpdateInstall.verifying;
 
     Widget note(String text, {Color? color, Key? key}) => Text(
       text,
@@ -39,21 +47,61 @@ class AppUpdateGroup extends ConsumerWidget {
             control: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                switch (state.check) {
-                  UpdateCheck.upToDate => note(
-                    'You are on the latest version.',
+                switch (state.install) {
+                  UpdateInstall.downloading => SizedBox(
+                    width: 200,
+                    child: ShelfProgressBar(
+                      key: const Key('update-progress'),
+                      value: state.progress ?? 0,
+                    ),
                   ),
-                  UpdateCheck.failed => note(
-                    'The update check failed. Try again later.',
+                  UpdateInstall.verifying => note('Checking the download...'),
+                  UpdateInstall.ready => note(
+                    'Version ${release?.version} is ready to install.',
+                  ),
+                  UpdateInstall.installing => note('Restarting...'),
+                  UpdateInstall.failed => note(
+                    state.installError ?? 'The update failed.',
                     color: tokens.danger,
+                    key: const Key('update-error'),
                   ),
-                  UpdateCheck.available when release != null => note(
-                    'Version ${release.version} is available.',
-                  ),
-                  _ => const SizedBox.shrink(),
+                  UpdateInstall.none => switch (state.check) {
+                    UpdateCheck.upToDate => note(
+                      'You are on the latest version.',
+                    ),
+                    UpdateCheck.failed => note(
+                      'The update check failed. Try again later.',
+                      color: tokens.danger,
+                    ),
+                    UpdateCheck.available when release != null => note(
+                      'Version ${release.version} is available.',
+                    ),
+                    _ => const SizedBox.shrink(),
+                  },
                 },
                 const SizedBox(width: 12),
-                if (release != null && state.check == UpdateCheck.available)
+                if (state.install == UpdateInstall.ready)
+                  ShelfButton(
+                    key: const Key('restart-update'),
+                    label: 'Restart to Update',
+                    kind: ShelfButtonKind.primary,
+                    onPressed: notifier.restart,
+                  )
+                else if (inPlace &&
+                    state.check == UpdateCheck.available &&
+                    !installing &&
+                    state.install != UpdateInstall.installing)
+                  ShelfButton(
+                    key: const Key('install-update'),
+                    label: state.install == UpdateInstall.failed
+                        ? 'Try Again'
+                        : 'Install Update',
+                    kind: ShelfButtonKind.primary,
+                    onPressed: notifier.install,
+                  )
+                else if (release != null &&
+                    state.check == UpdateCheck.available &&
+                    !installing)
                   ShelfButton(
                     key: const Key('view-release'),
                     label: 'View Release',
@@ -61,13 +109,11 @@ class AppUpdateGroup extends ConsumerWidget {
                     onPressed: () =>
                         ref.read(urlOpenerProvider)(release.pageUrl),
                   )
-                else
+                else if (!installing)
                   ShelfButton(
                     key: const Key('check-for-updates'),
                     label: checking ? 'Checking...' : 'Check for updates',
-                    onPressed: checking
-                        ? null
-                        : ref.read(appUpdateProvider.notifier).check,
+                    onPressed: checking ? null : notifier.check,
                   ),
               ],
             ),

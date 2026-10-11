@@ -127,9 +127,9 @@ tasks:
       - npm test
 
   release:test:
-    desc: Test the release pipeline's scripts (updater manifest, release version)
+    desc: Test the release pipeline's scripts (updater manifests, release version)
     cmds:
-      - node --test scripts/updater-manifest.test.mjs scripts/release-version.test.mjs
+      - node --test scripts/updater-manifest.test.mjs scripts/app-update-manifest.test.mjs scripts/release-version.test.mjs
 
   backend:install:
     desc: Install backend dependencies (uv sync)

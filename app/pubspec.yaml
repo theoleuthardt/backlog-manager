@@ -10,6 +10,7 @@ environment:
 
 dependencies:
   cached_network_image: ^4.0.4
+  cryptography: ^2.9.0
   desktop_drop: ^0.8.4
   dio: ^5.11.1
   file_selector: ^1.1.0
