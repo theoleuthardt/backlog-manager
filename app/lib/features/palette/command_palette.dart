@@ -11,6 +11,7 @@ import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/domain/palette_search.dart';
 import 'package:backlog_manager/features/add_game/add_game_sheet.dart';
 import 'package:backlog_manager/features/igdb_sync/igdb_sync_sheet.dart';
+import 'package:backlog_manager/features/library/reveal_entry.dart';
 import 'package:backlog_manager/features/palette/palette_actions.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/shell/palette_registry.dart';
@@ -136,6 +137,7 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
     Navigator.of(context).pop();
     switch (item) {
       case _GameItem(:final entry):
+        ref.read(revealRequestProvider.notifier).request(entry.id);
         router.go(
           Uri(
             path: AppRoutes.library,

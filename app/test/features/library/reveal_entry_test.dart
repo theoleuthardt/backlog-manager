@@ -34,6 +34,26 @@ void main() {
     expect(container.read(revealedEntryProvider), isNull);
   });
 
+  testWidgets('asking again for the open game points at it again', (
+    tester,
+  ) async {
+    final container = await pumpLibrary(
+      tester,
+      FakeBacklogApi(entries: many(20)),
+    );
+    container.read(routerProvider).go('/library?entry=5');
+    await tester.pumpAndSettle(const Duration(milliseconds: 100));
+    await tester.pump(revealDuration + const Duration(milliseconds: 100));
+    expect(container.read(revealedEntryProvider), isNull);
+
+    container.read(revealRequestProvider.notifier).request(5);
+    await tester.pump();
+    await tester.pump();
+
+    expect(container.read(revealedEntryProvider)!.id, 5);
+    await tester.pump(revealDuration + const Duration(milliseconds: 100));
+  });
+
   testWidgets('a folded group opens for the game', (tester) async {
     final container = await pumpLibrary(
       tester,

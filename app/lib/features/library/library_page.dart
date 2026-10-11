@@ -258,6 +258,12 @@ class _LibraryState extends ConsumerState<_Library> {
     final layout = ref.watch(libraryViewProvider.select((v) => v.layout));
     final serverUrl = ref.watch(serverUrlProvider).value;
 
+    ref.listen(revealRequestProvider, (_, request) {
+      if (request == null) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _reveal(request.id);
+      });
+    });
     final opened = int.tryParse(
       GoRouterState.of(context).uri.queryParameters['entry'] ?? '',
     );

@@ -73,9 +73,16 @@ class PaneWidthsNotifier extends Notifier<Map<Pane, double>> {
     return const {};
   }
 
+  final _touched = <Pane>{};
+
   Future<void> _load(PaneWidthStore store) async {
     final stored = await store.read();
-    if (ref.mounted && state.isEmpty && stored.isNotEmpty) state = stored;
+    if (!ref.mounted || stored.isEmpty) return;
+    state = {
+      for (final entry in stored.entries)
+        if (!_touched.contains(entry.key)) entry.key: entry.value,
+      ...state,
+    };
   }
 
   double widthOf(Pane pane) => state[pane] ?? pane.defaultWidth;
@@ -83,6 +90,7 @@ class PaneWidthsNotifier extends Notifier<Map<Pane, double>> {
   /// Moves the edge of [pane] by [delta]; the width stays within the limits
   /// of the pane.
   void resize(Pane pane, double delta) {
+    _touched.add(pane);
     state = {...state, pane: pane.clamp(widthOf(pane) + delta)};
   }
 
@@ -90,6 +98,7 @@ class PaneWidthsNotifier extends Notifier<Map<Pane, double>> {
   void commit() => unawaited(ref.read(paneWidthStoreProvider).write(state));
 
   void reset(Pane pane) {
+    _touched.add(pane);
     state = {...state}..remove(pane);
     commit();
   }

@@ -36,3 +36,27 @@ final revealedEntryProvider =
     NotifierProvider<RevealedEntryNotifier, RevealedEntry?>(
       RevealedEntryNotifier.new,
     );
+
+/// A request to point at a game even though the address does not change
+/// (the palette opening a game that is already the open one); the nonce makes
+/// every request a new value.
+class RevealRequest {
+  const RevealRequest(this.id, this.nonce);
+
+  final int id;
+  final int nonce;
+}
+
+class RevealRequestNotifier extends Notifier<RevealRequest?> {
+  var _count = 0;
+
+  @override
+  RevealRequest? build() => null;
+
+  void request(int id) => state = RevealRequest(id, ++_count);
+}
+
+final revealRequestProvider =
+    NotifierProvider<RevealRequestNotifier, RevealRequest?>(
+      RevealRequestNotifier.new,
+    );

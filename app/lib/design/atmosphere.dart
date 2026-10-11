@@ -228,12 +228,27 @@ class AtmosphereTwinklePainter extends CustomPainter {
   final ShelfTokens tokens;
   final Animation<double> progress;
 
+  static Size? _cachedSize;
+  static ShelfTokens? _cachedTokens;
+  static List<AtmosphereStar> _bright = const [];
+
+  List<AtmosphereStar> _brightStars(Size size) {
+    if (_cachedSize != size || _cachedTokens != tokens) {
+      _cachedSize = size;
+      _cachedTokens = tokens;
+      _bright = [
+        for (final star in atmosphereStars(size, tokens))
+          if (star.halo > 0) star,
+      ];
+    }
+    return _bright;
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     final turn = progress.value * 2 * math.pi;
     var index = 0;
-    for (final star in atmosphereStars(size, tokens)) {
-      if (star.halo <= 0) continue;
+    for (final star in _brightStars(size)) {
       index++;
       final wave = math.sin(turn * (24 + index % 5) + index * 1.9);
       final strength = 0.62 + 0.38 * wave;

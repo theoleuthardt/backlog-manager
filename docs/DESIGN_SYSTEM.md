@@ -93,7 +93,7 @@ Font: **Plus Jakarta Sans** (weights 400 to 800). Sizes in logical pixels; the b
 - **Spacing:** 4, 6, 8, 10, 12, 14, 16, 20, 24, 32. Content padding is 24 horizontally and 22 vertically; dividers are 1 px `borderSubtle`.
 - **Radii:** control 8, card (cover) 12, panel and group 14, dialog and sheet 16, window 12, chip full pill. Only chips are pills.
 - **Elevation:** only floating layers cast a shadow: menus, sheets, toasts, windows on the desktop, the segmented control's selected thumb. Menus, sheets and desktop windows add a faint `glow` ring or halo (see `elevation` in the tokens file). Panes and groups are flat.
-- **Motion:** 140-160 ms for hover and press (buttons ease between looks and shrink to 97% while pressed, covers lift 2% on hover), 200 ms for a page fading in, 250 ms for the inspector sliding in and sheets dropping 8 px from the title bar. The sky moves slowly: the bright stars twinkle and a moon travels each orbit ring (a 120 s cycle; off with reduced motion). Ease-out everywhere. With reduced motion enabled there is no slide. 250 ms for the inspector sliding in and sheets dropping 8 px from the title bar. Ease-out everywhere. With reduced motion enabled there is no slide.
+- **Motion:** 140-160 ms for hover and press (buttons ease between looks and shrink to 97% while pressed, covers lift 2% on hover), 200 ms for a page fading in, 250 ms for the inspector sliding in and sheets dropping 8 px from the title bar. The sky moves slowly: the bright stars twinkle and a moon travels each orbit ring (a 120 s cycle; off with reduced motion). Ease-out everywhere. With reduced motion enabled there is no slide and the sky stands still.
 - **Focus and selection:** keyboard focus is a 2 px accent outline with a 2 px offset. A selected cover gets a 3 px accent outline with a 3 px offset and, in selection mode, a 22 px check circle.
 
 ### Atmosphere
@@ -109,7 +109,7 @@ A space look in the window background and in the accents of nearly every element
 - **Glows:** primary buttons and progress bars use an accent gradient with a glow; covers cast a `glow`-coloured shadow; selected covers, the active switch, the avatar (with a `glow` ring) and the status dot glow; the active sidebar item has a `glow` gradient and a 2 px accent bar; the window has a faint inner `glow`.
 - **Details:** a four-point star before section headings, orbit rings with small glowing satellites on the home card, and a planet-with-ring brand mark in the sidebar.
 - **Derivation:** custom themes derive all of it from their six colours (see `atmosphere.derivation` in the tokens file). The four built-ins override it with tuned values.
-- **Motion:** nothing animates, so reduced motion needs no change. Keep the effects out of tables and forms, and cap the blur on slower machines.
+- **Motion:** the bright stars twinkle and a small moon travels each orbit ring over a 120 s cycle (`atmosphereMotion`); reduced motion and tests keep the sky still. Keep the effects out of tables and forms, and cap the blur on slower machines.
 
 ### Layout
 

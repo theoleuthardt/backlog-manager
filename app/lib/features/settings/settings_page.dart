@@ -244,7 +244,7 @@ class _AccountRow extends StatelessWidget {
               ),
               child: SizedBox(
                 width: 32,
-                height: 38,
+                height: 32,
                 child: Center(
                   child: Text(
                     initials.toUpperCase(),

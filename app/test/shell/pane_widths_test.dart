@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:backlog_manager/shell/pane_widths.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +15,19 @@ class MemoryStore implements PaneWidthStore {
 
   @override
   Future<void> write(Map<Pane, double> widths) async => saved = {...widths};
+}
+
+class SlowStore extends MemoryStore {
+  SlowStore(super.saved);
+
+  final loaded = Completer<void>();
+
+  @override
+  Future<Map<Pane, double>> read() async {
+    final atRead = {...saved};
+    await loaded.future;
+    return atRead;
+  }
 }
 
 ProviderContainer containerWith(MemoryStore store) {
