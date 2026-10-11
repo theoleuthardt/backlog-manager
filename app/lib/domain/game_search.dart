@@ -36,13 +36,6 @@ class GameSearchResult {
     return '${part(mainStory)} / ${part(mainStoryWithExtras)} / '
         '${part(completionist)} h';
   }
-
-  /// "Main 22 h · +Extra 48 h · Completionist 95 h".
-  String get hoursLine {
-    String part(double hours) => hours > 0 ? formatHours(hours) : '--';
-    return 'Main ${part(mainStory)} h · +Extra ${part(mainStoryWithExtras)} h · '
-        'Completionist ${part(completionist)} h';
-  }
 }
 
 /// A game found on SteamGridDB, whose covers can be listed.

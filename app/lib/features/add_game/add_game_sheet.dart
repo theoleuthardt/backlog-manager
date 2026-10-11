@@ -123,60 +123,7 @@ class _AddGameSheetState extends ConsumerState<AddGameSheet> {
       );
     } else {
       content = ShelfDataTable<GameSearchResult>(
-        columns: [
-          ShelfColumn(
-            header: 'Game',
-            flex: 5,
-            cell: (context, result) => Row(
-              children: [
-                ResultThumb(imageUrl: result.imageUrl, width: 58, height: 87),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        result.title,
-                        softWrap: true,
-                        overflow: TextOverflow.visible,
-                        style: style.control.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      if (result.platforms.isNotEmpty)
-                        Text(
-                          result.platforms.join(', '),
-                          softWrap: true,
-                          overflow: TextOverflow.visible,
-                          style: style.caption.copyWith(color: tokens.faint),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          ShelfColumn(
-            header: 'Genre',
-            flex: 3,
-            cell: (context, result) => Text(
-              result.genres.join(', '),
-              softWrap: true,
-              overflow: TextOverflow.visible,
-              style: style.caption.copyWith(color: tokens.muted),
-            ),
-          ),
-          ShelfColumn(
-            header: 'Time to beat',
-            flex: 3,
-            cell: (context, result) => Text(
-              result.timesLabel,
-              textAlign: TextAlign.right,
-              style: style.caption.copyWith(color: tokens.muted),
-            ),
-          ),
-        ],
+        columns: gameResultColumns(context),
         rows: results,
         isSelected: (result) => result.id == _selectedId,
         onRowTap: (result) => setState(() => _selectedId = result.id),

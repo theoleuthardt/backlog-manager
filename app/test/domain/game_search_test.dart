@@ -135,22 +135,6 @@ void main() {
     });
   });
 
-  group('hoursLine', () {
-    test('names the three times', () {
-      expect(
-        result().hoursLine,
-        'Main 22 h · +Extra 48 h · Completionist 95 h',
-      );
-    });
-
-    test('shows two dashes for a time that is not known', () {
-      expect(
-        result(extra: 0).hoursLine,
-        'Main 22 h · +Extra -- h · Completionist 95 h',
-      );
-    });
-  });
-
   group('deeperIds', () {
     test('are the results the normal search did not return', () {
       final normal = [result(id: 1), result(id: 2)];

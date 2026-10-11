@@ -3,7 +3,6 @@ import 'package:backlog_manager/data/game_info_providers.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
-import 'package:backlog_manager/design/widgets/chips.dart';
 import 'package:backlog_manager/design/widgets/search_input.dart';
 import 'package:backlog_manager/design/widgets/sheet.dart';
 import 'package:backlog_manager/design/widgets/table.dart';
@@ -103,43 +102,7 @@ class _WrongGameSheetState extends ConsumerState<WrongGameSheet> {
       list = const SheetNote('No results found.', noteKey: Key('wrong-empty'));
     } else {
       list = ShelfDataTable<GameSearchResult>(
-        columns: [
-          ShelfColumn(
-            header: 'Game',
-            flex: 1,
-            cell: (context, result) => Row(
-              children: [
-                ResultThumb(imageUrl: result.imageUrl, width: 26, height: 38),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        result.title,
-                        overflow: TextOverflow.ellipsis,
-                        style: style.control.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      Text(
-                        result.hoursLine,
-                        overflow: TextOverflow.ellipsis,
-                        style: style.caption.copyWith(color: tokens.faint),
-                      ),
-                    ],
-                  ),
-                ),
-                if (deeper.contains(result.id))
-                  const ShelfChip(
-                    key: Key('deeper-marker'),
-                    label: 'Found by deeper search',
-                  ),
-              ],
-            ),
-          ),
-        ],
+        columns: gameResultColumns(context, deeper: deeper),
         rows: results,
         isSelected: (result) => result.id == _selectedId,
         onRowTap: (result) => setState(() => _selectedId = result.id),
@@ -148,7 +111,7 @@ class _WrongGameSheetState extends ConsumerState<WrongGameSheet> {
 
     return ShelfSheet(
       title: 'Find the right game',
-      width: ShelfSheetWidth.standard,
+      width: ShelfSheetWidth.extraWide,
       footer: ShelfSheetFooter(
         onCancel: () => Navigator.of(context).pop(),
         primary: ShelfButton(
