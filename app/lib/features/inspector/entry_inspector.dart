@@ -426,12 +426,12 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
                     Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        const Positioned(
-                          left: -40,
-                          right: -40,
-                          top: -30,
-                          bottom: -56,
-                          child: CoverGlowBackdrop(),
+                        Positioned(
+                          left: -60,
+                          top: -50,
+                          width: coverWidth + 120,
+                          height: coverWidth * 1.5 + 110,
+                          child: const CoverGlowBackdrop(),
                         ),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,

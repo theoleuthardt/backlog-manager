@@ -314,7 +314,7 @@ class FactChips extends StatelessWidget {
       children: [
         Text(
           label.toUpperCase(),
-          style: style.eyebrow.copyWith(color: tokens.faint),
+          style: style.eyebrow.copyWith(color: tokens.foreground),
         ),
         const SizedBox(height: 6),
         LayoutBuilder(

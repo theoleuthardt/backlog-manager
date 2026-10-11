@@ -151,11 +151,11 @@ class _GlowColor extends InheritedWidget {
   bool updateShouldNotify(_GlowColor oldWidget) => color != oldWidget.color;
 }
 
-/// The glow behind the header of a game (the cover, the title, the chips): a
-/// veil from the top left that fades out towards the bottom, and two soft
-/// lights that drift slowly inside that area, the way light moves in a room.
-/// The lights stand still when [glowMotionProvider] is off, when the system
-/// asks for less motion, and in tests. It fills the box it is given.
+/// The glow around the cover of a game: a veil and two soft lights that drift
+/// slowly around the cover, the way light moves in a room, fading out towards
+/// the edge of the box. The lights stand still when [glowMotionProvider] is
+/// off, when the system asks for less motion, and in tests. It fills the box
+/// it is given.
 class CoverGlowBackdrop extends ConsumerStatefulWidget {
   const CoverGlowBackdrop({super.key});
 
@@ -221,11 +221,10 @@ class _CoverGlowBackdropState extends ConsumerState<CoverGlowBackdrop>
           final breath = 1 + 0.18 * math.sin(2 * math.pi * t * 2);
           return ShaderMask(
             blendMode: BlendMode.dstIn,
-            shaderCallback: (bounds) => const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
+            shaderCallback: (bounds) => const RadialGradient(
+              radius: 0.5,
               colors: [Colors.white, Colors.white, Colors.transparent],
-              stops: [0, 0.5, 1],
+              stops: [0, 0.55, 1],
             ).createShader(bounds),
             child: Stack(
               fit: StackFit.expand,

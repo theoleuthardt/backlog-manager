@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/data/backlog_providers.dart';
 import 'package:backlog_manager/data/games_api.dart';
+import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/models.dart';
@@ -103,6 +104,20 @@ void main() {
       expect(find.byKey(const Key('inspector-genres')), findsOneWidget);
       expect(find.byKey(const Key('inspector-platforms')), findsOneWidget);
       expect(find.text('Changes save automatically'), findsOneWidget);
+    });
+
+    testWidgets('the Genre and Platform captions are in the text colour', (
+      tester,
+    ) async {
+      await openInspector(tester);
+
+      final tokens = Theme.of(
+        tester.element(find.byKey(const Key('entry-inspector'))),
+      ).extension<ShelfTokens>()!;
+      for (final caption in ['GENRE', 'PLATFORM']) {
+        final style = tester.widget<Text>(find.text(caption)).style!;
+        expect(style.color, tokens.foreground, reason: caption);
+      }
     });
 
     testWidgets('many genres fill two lines and the rest is behind +N', (
