@@ -46,6 +46,16 @@ class BacklogEntry {
   final double? playtime;
   final double? partnerPlaytime;
   final bool inSharedSpace;
+
+  /// The hours to beat the game: the main story, else main plus extra, else
+  /// the completionist time, taking the first one that is above 0.
+  double? get timeToBeat {
+    for (final hours in [mainTime, mainPlusExtraTime, completionTime]) {
+      if (hours != null && hours > 0) return hours;
+    }
+    return null;
+  }
+
   final int? steamAppId;
   final DateTime? completedAt;
 

@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
-# Runs the app's tests as the only test run (a lock refuses a second one),
-# one `flutter test` per test directory so the compiler restarts and stays
-# inside the memory of small machines (one run for the whole suite grows past
-# 2 GB and gets OOM-killed). Every run has its own process group and a time
-# limit and is killed afterwards, so a hung test cannot leave flutter_tester
-# processes behind. Arguments are passed to flutter test; with a path under
-# test/ only that path runs, as one invocation.
+# Runs the app's tests as the only test run (a lock refuses a second one), in
+# its own process group with a time limit, and kills the group afterwards, so
+# a hung test cannot leave flutter_tester processes behind. Arguments are
+# passed to flutter test.
+#
+# The suite runs as one `flutter test` with one worker per core
+# (TEST_CONCURRENCY). On a machine with little memory (the compiler of one run
+# for the whole suite grows to 2 GB and more) set TEST_SHARD=1 to run one
+# `flutter test` per test directory instead, one worker at a time.
 set -u
 cd "$(dirname "$0")/../.."
 
@@ -23,8 +25,10 @@ if ! mkdir "$lock" 2>/dev/null; then
 fi
 echo $$ > "$lock/pid"
 
+cores=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2)
 per_test="${TEST_TIMEOUT:-60s}"
-shard_limit="${TEST_SHARD_TIMEOUT:-420}"
+limit="${TEST_RUN_TIMEOUT:-900}"
+workers="${TEST_CONCURRENCY:-$cores}"
 pid=""
 
 reap() {
@@ -43,11 +47,13 @@ else
   new_group=
 fi
 
-run_shard() {
-  $new_group flutter test --timeout="$per_test" --concurrency=1 "$@" &
+run_flutter() {
+  local count="$1"
+  shift
+  $new_group flutter test --no-pub --timeout="$per_test" --concurrency="$count" "$@" &
   pid=$!
   echo "$pid" > "$lock/group"
-  $new_group bash -c 'sleep "$1"; echo "shard exceeded $1s, killing it" >&2; kill -KILL -- "-$2"' _ "$shard_limit" "$pid" &
+  $new_group bash -c 'sleep "$1"; echo "test run exceeded $1s, killing it" >&2; kill -KILL -- "-$2"' _ "$limit" "$pid" &
   local watchdog=$!
   wait "$pid"
   local status=$?
@@ -63,8 +69,8 @@ for arg in "$@"; do
   case "$arg" in test/*|*_test.dart) explicit=1 ;; esac
 done
 
-if [ "$explicit" = 1 ]; then
-  run_shard "$@"
+if [ "$explicit" = 1 ] || [ "${TEST_SHARD:-0}" != 1 ]; then
+  run_flutter "$workers" "$@"
   exit $?
 fi
 
@@ -73,6 +79,6 @@ for dir in $(find test -name '*_test.dart' -exec dirname {} + | sort -u); do
   files=$(ls "$dir"/*_test.dart)
   echo "== $dir"
   # shellcheck disable=SC2086
-  run_shard "$@" $files || failed=1
+  run_flutter 1 "$@" $files || failed=1
 done
 exit "$failed"

@@ -75,7 +75,7 @@ final libraryContentProvider = Provider<LibraryContent?>((ref) {
   });
   var hours = 0.0;
   for (final entry in entries) {
-    hours += entry.mainTime ?? 0;
+    hours += entry.timeToBeat ?? 0;
   }
   return LibraryContent(
     groups: applyGroupOrder(

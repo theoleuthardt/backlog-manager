@@ -779,7 +779,7 @@ class _DropHint extends ConsumerWidget {
 
 String? _playtimeLabel(BacklogEntry entry) {
   final played = entry.playtime;
-  final toBeat = entry.mainTime;
+  final toBeat = entry.timeToBeat;
   if (toBeat != null) {
     return '${formatHours(played ?? 0)} / ${formatHours(toBeat)} h';
   }
@@ -808,7 +808,7 @@ class _Tile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final toBeat = entry.mainTime;
+    final toBeat = entry.timeToBeat;
     final members = ref.watch(spaceMembersProvider);
     return ShelfCover(
       title: entry.title,

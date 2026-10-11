@@ -28,7 +28,7 @@ HomeStats homeStats(List<BacklogEntry> entries, {required DateTime now}) {
   var playing = 0;
   var completed = 0;
   for (final entry in entries) {
-    time += entry.mainTime ?? 0;
+    time += entry.timeToBeat ?? 0;
     if (entry.status == _inProgress) playing++;
     if (entry.status == _completed && entry.completedAt?.year == now.year) {
       completed++;

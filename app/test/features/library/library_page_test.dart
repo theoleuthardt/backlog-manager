@@ -265,6 +265,29 @@ void main() {
       expect(find.text('41 / 60 h'), findsOneWidget);
     });
 
+    testWidgets('uses main plus extra when the main story has no time', (
+      tester,
+    ) async {
+      await pumpLibrary(
+        tester,
+        FakeBacklogApi(
+          entries: const [
+            BacklogEntry(
+              id: 1,
+              title: 'Hades',
+              status: 'In Progress',
+              playtime: 16,
+              mainTime: 0,
+              mainPlusExtraTime: 32,
+            ),
+          ],
+        ),
+      );
+
+      expect(find.text('16 / 32 h'), findsOneWidget);
+      expect(find.text('16 / 0 h'), findsNothing);
+    });
+
     testWidgets('marks a game that is also in the shared space', (
       tester,
     ) async {

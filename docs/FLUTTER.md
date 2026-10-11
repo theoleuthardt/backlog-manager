@@ -20,7 +20,7 @@ The desktop client in `app/` is the Flutter port of `frontend/` (epic #247). It 
 | --- | --- |
 | `task app:dev` | run the app on the host platform |
 | `task app:lint` | `flutter analyze` (`flutter_lints` plus the stricter rules in `app/analysis_options.yaml`) |
-| `task app:test` | `tool/test/run.sh`: unit, widget and golden tests, one `flutter test` per test directory (`task app:test -- test/features/inspector` runs one path) |
+| `task app:test` | `tool/test/run.sh`: unit, widget and golden tests, one run with a worker per core (`task app:test -- test/features/inspector` runs one path) |
 | `task app:test:update-goldens` | the same with `--update-goldens`, re-records the golden images |
 | `task app:format` / `task app:format:check` | `dart format` / check only |
 | `task app:build` | release build for the host platform |
@@ -93,7 +93,7 @@ app/
 
 `.github/workflows/app.yml` runs when `app/` or `backend/openapi.json` changes: formatting, `flutter analyze`, a check that `lib/api/generated/` matches `backend/openapi.json` (the commands of `task app:generate-api`, then `git diff --exit-code`), all tests without the goldens, and a Linux release build. The golden tests run in a job of their own that uploads the diff images of a failure as the `golden-failures` artifact. The golden images are recorded on Linux, the platform of the CI runner; on macOS or Windows the text edges differ by a few pixels, so run `flutter test --exclude-tags golden` there and re-record with `task app:test:update-goldens` on Linux (or take the images from the `golden-failures` artifact).
 
-`tool/test/run.sh` runs the tests (Linux and macOS; `setsid` is used where it exists): it takes a lock (two test runs at once crash the compiler), runs one `flutter test` per test directory because the compiler of a single run for the whole suite grows past 2 GB and gets OOM-killed on a small machine (the symptoms are a run that stops printing and "The Dart compiler exited unexpectedly"), puts every run in its own process group with a time limit (`TEST_TIMEOUT` per test, default 60s, `TEST_SHARD_TIMEOUT` per directory, default 420 s) and kills the group afterwards, so a hung test leaves no `flutter_tester` behind. The whole suite takes about nine minutes on two cores; run the directory you changed while working.
+`tool/test/run.sh` runs the tests (Linux and macOS; `setsid` is used where it exists): it takes a lock (two test runs at once crash the compiler), runs one `flutter test --no-pub` with one worker per core (`TEST_CONCURRENCY`), puts the run in its own process group with a time limit (`TEST_TIMEOUT` per test, default 60s, `TEST_RUN_TIMEOUT` for the run, default 900 s) and kills the group afterwards, so a hung test leaves no `flutter_tester` behind. The whole suite takes about two minutes on six cores (about 1,800 tests; each widget test builds the app, roughly 0.3 s, and each file costs about 3 s of compile and warm-up). While working run what you changed: `task app:test -- test/features/inspector` takes seconds. On a machine with little memory (the compiler of one run for the whole suite grows to 2 GB and more, and gets OOM-killed on 2 GB) set `TEST_SHARD=1`: one `flutter test` per test directory, one worker at a time.
 
 ## Running and debugging
 
