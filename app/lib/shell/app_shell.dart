@@ -4,6 +4,7 @@ import 'package:backlog_manager/design/glow.dart';
 import 'package:backlog_manager/features/inspector/entry_inspector.dart';
 import 'package:backlog_manager/features/library/wishlist_sync_prompt.dart';
 import 'package:backlog_manager/features/palette/command_palette.dart';
+import 'package:backlog_manager/features/updates/update_notifier.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:backlog_manager/shell/sidebar.dart';
@@ -95,7 +96,9 @@ class _AppShellState extends ConsumerState<AppShell> {
                     Expanded(
                       child: SizedBox.expand(
                         key: const Key('main-content'),
-                        child: WishlistSyncPrompt(child: widget.child),
+                        child: UpdateNotifier(
+                          child: WishlistSyncPrompt(child: widget.child),
+                        ),
                       ),
                     ),
                     if (inspector != null) _InspectorSlot(child: inspector),

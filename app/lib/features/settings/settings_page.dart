@@ -18,6 +18,7 @@ import 'package:backlog_manager/features/settings/backups_tab.dart';
 import 'package:backlog_manager/features/settings/security_tab.dart';
 import 'package:backlog_manager/features/settings/settings_controller.dart';
 import 'package:backlog_manager/features/settings/settings_widgets.dart';
+import 'package:backlog_manager/features/updates/app_update_group.dart';
 import 'package:backlog_manager/platform/url_opener.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/routing/session.dart';
@@ -26,8 +27,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// The tabs of the settings window. App updates joins them with its own
-/// feature.
+/// The tabs of the settings window.
 enum SettingsTab {
   general('general', 'General', Icons.tune),
   security('security', 'Security', Icons.shield_outlined),
@@ -787,6 +787,7 @@ class _AboutTab extends ConsumerWidget {
             ),
           ],
         ),
+        const AppUpdateGroup(),
       ],
     );
   }
