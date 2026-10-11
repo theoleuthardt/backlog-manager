@@ -24,6 +24,10 @@ games according to categories such as "Games I still want to play", "Games I'm c
 - User authentication
 - Access your backlog from anywhere (browser or native app)
 
+## Installing the desktop app
+
+The installers on the Releases page are not code signed yet, so macOS and Windows warn on the first start. How to open them and the signing options: [`docs/SIGNING.md`](docs/SIGNING.md).
+
 ## Architecture
 
 - **Frontend:** NextJS, in `frontend/` — calls the backend directly over REST, see issue #104 for the migration history.

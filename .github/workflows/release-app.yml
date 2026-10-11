@@ -133,6 +133,13 @@ jobs:
       contents: write
 
     steps:
+      - name: Checkout release notes
+        uses: actions/checkout@v5
+        with:
+          sparse-checkout: .github/release-install-notes.md
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
       - name: Download installers
         uses: actions/download-artifact@v7
         with:
@@ -147,6 +154,7 @@ jobs:
           target_commitish: ${{ github.sha }}
           name: Backlog Manager ${{ needs.version.outputs.tag }}
           prerelease: ${{ inputs.prerelease }}
+          body_path: .github/release-install-notes.md
           generate_release_notes: true
           fail_on_unmatched_files: true
           files: dist/**/*
