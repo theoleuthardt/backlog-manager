@@ -110,6 +110,7 @@ void main() {
         find.text('Welcome back. Your backlog is waiting.'),
         findsOneWidget,
       );
+      expect(find.text('Backlog Manager'), findsOneWidget);
       expect(find.text('Email'), findsOneWidget);
       expect(find.text('Password'), findsOneWidget);
       expect(find.text('Server: api.example.com'), findsOneWidget);
@@ -256,9 +257,9 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('Verification code'), findsOneWidget);
+      expect(find.text('Verification Code'), findsOneWidget);
       expect(find.text('Verify'), findsOneWidget);
-      expect(find.text('Start over'), findsOneWidget);
+      expect(find.text('Start Over'), findsOneWidget);
       expect(find.text('Email'), findsNothing);
     });
 
@@ -305,7 +306,7 @@ void main() {
     ) async {
       await reachTwoFactor(tester);
 
-      await tester.tap(find.text('Start over'));
+      await tester.tap(find.text('Start Over'));
       await tester.pumpAndSettle();
 
       expect(find.text('Email'), findsOneWidget);

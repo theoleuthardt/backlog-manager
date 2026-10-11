@@ -215,7 +215,7 @@ class _AppearancePageState extends ConsumerState<AppearancePage> {
               if (editing) ...[
                 ShelfButton(
                   key: const Key('theme-new'),
-                  label: 'New theme',
+                  label: 'New Theme',
                   icon: Icons.add,
                   onPressed: () => _startNew(_colors),
                 ),
@@ -223,7 +223,7 @@ class _AppearancePageState extends ConsumerState<AppearancePage> {
               ],
               ShelfButton(
                 key: const Key('theme-save'),
-                label: editing ? 'Save changes' : 'Save theme',
+                label: editing ? 'Save Changes' : 'Save Theme',
                 kind: ShelfButtonKind.primary,
                 busy: _saving,
                 onPressed: canSave && !_saving
@@ -278,7 +278,7 @@ class _AppearancePageState extends ConsumerState<AppearancePage> {
             onSelect: () => unawaited(_select(theme.id)),
           ),
         const SizedBox(height: 10),
-        _sideLabel('Your themes'),
+        _sideLabel('Your Themes'),
         if (custom.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -321,7 +321,7 @@ class _AppearancePageState extends ConsumerState<AppearancePage> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ShelfFormGroup(
-          title: editing ? 'Edit theme' : 'New theme',
+          title: editing ? 'Edit Theme' : 'New Theme',
           rows: [
             ShelfFormRow(
               label: 'Name',
@@ -348,7 +348,7 @@ class _AppearancePageState extends ConsumerState<AppearancePage> {
               ),
             ),
             ShelfFormRow(
-              label: 'Start from',
+              label: 'Start From',
               control: SizedBox(
                 width: 200,
                 child: ShelfMenuAnchor(
@@ -364,7 +364,7 @@ class _AppearancePageState extends ConsumerState<AppearancePage> {
                     key: const Key('theme-start-from'),
                     text: 'Choose a theme',
                     placeholder: true,
-                    semanticLabel: 'Start from',
+                    semanticLabel: 'Start From',
                     onPressed: () => menu.isOpen ? menu.close() : menu.open(),
                   ),
                 ),

@@ -5,9 +5,10 @@ import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:flutter/material.dart';
 
 enum ShelfSheetWidth {
-  compact(520),
-  standard(640),
-  wide(680);
+  compact(560),
+  standard(700),
+  wide(760),
+  extraWide(980);
 
   const ShelfSheetWidth(this.value);
 
@@ -145,7 +146,7 @@ class ShelfSheetFooter extends StatelessWidget {
       children: [
         ShelfButton(
           label: cancelLabel,
-          kind: ShelfButtonKind.quiet,
+          kind: ShelfButtonKind.danger,
           onPressed: onCancel,
         ),
         const SizedBox(width: 6),

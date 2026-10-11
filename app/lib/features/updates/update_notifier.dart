@@ -42,7 +42,7 @@ class _UpdateNotifierState extends ConsumerState<UpdateNotifier> {
       showShelfToast(
         context,
         'Backlog Manager ${release.version} is available',
-        actionLabel: 'View release',
+        actionLabel: 'View Release',
         onAction: () => ref.read(urlOpenerProvider)(release.pageUrl),
         duration: const Duration(days: 1),
       );

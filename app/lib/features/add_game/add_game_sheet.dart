@@ -3,6 +3,7 @@ import 'package:backlog_manager/data/game_info_providers.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
+import 'package:backlog_manager/design/widgets/note.dart';
 import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/design/widgets/search_input.dart';
 import 'package:backlog_manager/design/widgets/sheet.dart';
@@ -16,8 +17,8 @@ import 'package:go_router/go_router.dart';
 
 const _searchDelay = Duration(milliseconds: 800);
 
-/// Opens the "Search for a game" sheet. Inside a shared space [inSpace] makes
-/// the shared space the target of the creation tool.
+/// Opens the "Search for a game" sheet. Inside a Shared Space [inSpace] makes
+/// the Shared Space the target of the creation tool.
 Future<void> showAddGameSheet(BuildContext context, {bool inSpace = false}) {
   return showShelfSheet<void>(
     context,
@@ -122,57 +123,7 @@ class _AddGameSheetState extends ConsumerState<AddGameSheet> {
       );
     } else {
       content = ShelfDataTable<GameSearchResult>(
-        columns: [
-          ShelfColumn(
-            header: 'Game',
-            flex: 5,
-            cell: (context, result) => Row(
-              children: [
-                ResultThumb(imageUrl: result.imageUrl, width: 26, height: 38),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        result.title,
-                        overflow: TextOverflow.ellipsis,
-                        style: style.control.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      if (result.platforms.isNotEmpty)
-                        Text(
-                          result.platforms.join(', '),
-                          overflow: TextOverflow.ellipsis,
-                          style: style.caption.copyWith(color: tokens.faint),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          ShelfColumn(
-            header: 'Genre',
-            flex: 3,
-            cell: (context, result) => Text(
-              result.genres.join(', '),
-              overflow: TextOverflow.ellipsis,
-              style: style.caption.copyWith(color: tokens.muted),
-            ),
-          ),
-          ShelfColumn(
-            header: 'Time to beat',
-            flex: 3,
-            cell: (context, result) => Text(
-              result.timesLabel,
-              textAlign: TextAlign.right,
-              style: style.caption.copyWith(color: tokens.muted),
-            ),
-          ),
-        ],
+        columns: gameResultColumns(context),
         rows: results,
         isSelected: (result) => result.id == _selectedId,
         onRowTap: (result) => setState(() => _selectedId = result.id),
@@ -181,7 +132,10 @@ class _AddGameSheetState extends ConsumerState<AddGameSheet> {
 
     return ShelfSheet(
       title: 'Search for a game',
-      width: ShelfSheetWidth.wide,
+      description:
+          'Pick the game to continue with its details, cover and times to '
+          'beat filled in.',
+      width: ShelfSheetWidth.extraWide,
       footer: ShelfSheetFooter(
         onCancel: () => Navigator.of(context).pop(),
         primary: Row(
@@ -211,25 +165,29 @@ class _AddGameSheetState extends ConsumerState<AddGameSheet> {
           const SizedBox(height: 10),
           content,
           const SizedBox(height: 10),
-          Row(
-            children: [
-              Text(
-                'Not the game you meant? ',
-                style: style.caption.copyWith(color: tokens.muted),
-              ),
-              ShelfPressable(
-                key: const Key('add-custom'),
-                semanticLabel: 'Create it as a custom game',
-                onPressed: _custom,
-                builder: (context, state) => Text(
-                  'Create it as a custom game',
-                  style: style.caption.copyWith(
-                    color: tokens.accent,
-                    decoration: TextDecoration.underline,
+          ShelfNote(
+            icon: Icons.help_outline,
+            child: Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(
+                  'Not the game you meant? ',
+                  style: style.caption.copyWith(color: tokens.muted),
+                ),
+                ShelfPressable(
+                  key: const Key('add-custom'),
+                  semanticLabel: 'Create it as a custom game',
+                  onPressed: _custom,
+                  builder: (context, state) => Text(
+                    'Create it as a custom game',
+                    style: style.caption.copyWith(
+                      color: tokens.accent,
+                      decoration: TextDecoration.underline,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),

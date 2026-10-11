@@ -117,7 +117,7 @@ class _ExportPanelState extends ConsumerState<ExportPanel> {
         : 'Loading...';
 
     return ShelfSheet(
-      title: 'Export backlog',
+      title: 'Export Backlog',
       description:
           'Save all your entries as a CSV file you can open in any '
           'spreadsheet.',
@@ -147,7 +147,7 @@ class _ExportPanelState extends ConsumerState<ExportPanel> {
                 control: ShelfMenuAnchor(
                   entries: [
                     ShelfMenuItem(
-                      label: 'All statuses',
+                      label: 'All Statuses',
                       checked: _status == null,
                       onSelected: () => setState(() => _status = null),
                     ),
@@ -162,7 +162,7 @@ class _ExportPanelState extends ConsumerState<ExportPanel> {
                     width: 170,
                     child: ShelfSelectTrigger(
                       key: const Key('export-status'),
-                      text: _status ?? 'All statuses',
+                      text: _status ?? 'All Statuses',
                       semanticLabel: 'Status',
                       onPressed: () => controller.isOpen
                           ? controller.close()

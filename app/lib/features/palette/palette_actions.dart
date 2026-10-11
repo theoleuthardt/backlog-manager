@@ -25,7 +25,7 @@ void registerShellPaletteActions(ProviderContainer ref) {
     ..register(
       PaletteAction(
         id: 'add-game',
-        label: 'Add game',
+        label: 'Add Game',
         shortcut: const PaletteShortcut(LogicalKeyboardKey.keyN),
         run: () => ref.read(addGameRequestProvider.notifier).request(),
       ),
@@ -41,7 +41,7 @@ void registerShellPaletteActions(ProviderContainer ref) {
     ..register(
       PaletteAction(
         id: 'open-settings',
-        label: 'Open settings',
+        label: 'Open Settings',
         shortcut: const PaletteShortcut(LogicalKeyboardKey.comma),
         run: () => router.go(AppRoutes.settings),
       ),

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:backlog_manager/auth/user_api.dart';
+import 'package:backlog_manager/design/background_motion.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
@@ -8,6 +9,7 @@ import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/design/widgets/fields.dart';
 import 'package:backlog_manager/design/widgets/link_text.dart';
 import 'package:backlog_manager/design/widgets/menu.dart';
+import 'package:backlog_manager/design/widgets/note.dart';
 import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/design/widgets/select.dart';
 import 'package:backlog_manager/design/widgets/toast.dart';
@@ -23,6 +25,7 @@ import 'package:backlog_manager/platform/url_opener.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/routing/session.dart';
 import 'package:backlog_manager/shell/app_version.dart';
+import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -70,29 +73,56 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final user = _user;
+    final collapsed = ref.watch(sidebarCollapsedProvider);
     return Row(
       key: const Key('page-settings'),
       children: [
-        SizedBox(
-          width: 232,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: tokens.surface,
-              border: Border(right: BorderSide(color: tokens.borderSubtle)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 14),
-                for (final tab in SettingsTab.values)
-                  _TabItem(
-                    tab: tab,
-                    active: tab == _tab,
-                    onPressed: () => setState(() => _tab = tab),
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOut,
+          width: collapsed ? 0 : 252,
+          child: ClipRect(
+            child: OverflowBox(
+              alignment: Alignment.centerLeft,
+              minWidth: 252,
+              maxWidth: 252,
+              child: ExcludeFocus(
+                excluding: collapsed,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: tokens.surface,
+                    border: Border(
+                      right: BorderSide(color: tokens.borderSubtle),
+                    ),
                   ),
-                const Spacer(),
-                if (user != null) _AccountRow(user: user),
-              ],
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(10, 14, 10, 10),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: ShelfButton(
+                            key: const Key('settings-back'),
+                            label: 'Back to Dashboard',
+                            icon: Icons.arrow_back,
+                            kind: ShelfButtonKind.quiet,
+                            onPressed: () => context.go(AppRoutes.home),
+                          ),
+                        ),
+                      ),
+                      for (final tab in SettingsTab.values)
+                        _TabItem(
+                          tab: tab,
+                          active: tab == _tab,
+                          onPressed: () => setState(() => _tab = tab),
+                        ),
+                      const Spacer(),
+                      if (user != null) _AccountRow(user: user),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ),
@@ -106,7 +136,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       child: SingleChildScrollView(
                         padding: const EdgeInsets.fromLTRB(26, 22, 26, 22),
                         child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 720),
+                          constraints: const BoxConstraints(maxWidth: 820),
                           child: switch (_tab) {
                             SettingsTab.general => _GeneralTab(user: user),
                             SettingsTab.security => SecurityTab(user: user),
@@ -160,7 +190,7 @@ class _TabItem extends StatelessWidget {
             borderRadius: BorderRadius.circular(ShelfRadius.control),
           ),
           child: SizedBox(
-            height: 34,
+            height: 42,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Row(
@@ -347,7 +377,7 @@ class _GeneralTab extends ConsumerWidget {
           title: 'Library',
           rows: [
             ShelfFormRow(
-              label: 'Default sort',
+              label: 'Default Sort',
               description:
                   'The library opens sorted by this option; you can still '
                   'change it there at any time.',
@@ -365,7 +395,7 @@ class _GeneralTab extends ConsumerWidget {
                   builder: (context, controller) => ShelfSelectTrigger(
                     key: const Key('settings-default-sort'),
                     text: current.label,
-                    semanticLabel: 'Default sort',
+                    semanticLabel: 'Default Sort',
                     onPressed: () => controller.isOpen
                         ? controller.close()
                         : controller.open(),
@@ -374,11 +404,41 @@ class _GeneralTab extends ConsumerWidget {
               ),
             ),
             ShelfFormRow(
+              label: 'Animated Background',
+              description:
+                  'Twinkling and drifting stars, shooting stars and breathing '
+                  'nebulae behind the window. Kept on this device; the '
+                  'system setting for less motion turns it off as well.',
+              control: ShelfSwitch(
+                key: const Key('settings-background-motion'),
+                value: ref.watch(backgroundMotionProvider),
+                label: 'Animated Background',
+                onChanged: (value) => ref
+                    .read(backgroundMotionProvider.notifier)
+                    .setEnabled(enabled: value),
+              ),
+            ),
+            ShelfFormRow(
+              label: 'Animated Glow',
+              description:
+                  'Lets the glow behind the cover in the details of a game '
+                  'drift and breathe. Kept on this device; the system setting '
+                  'for less motion turns it off as well.',
+              control: ShelfSwitch(
+                key: const Key('settings-glow-motion'),
+                value: ref.watch(glowMotionProvider),
+                label: 'Animated Glow',
+                onChanged: (value) => ref
+                    .read(glowMotionProvider.notifier)
+                    .setEnabled(enabled: value),
+              ),
+            ),
+            ShelfFormRow(
               label: 'Appearance',
               description: 'Themes and your own colours.',
               control: ShelfButton(
                 key: const Key('settings-appearance'),
-                label: 'Open appearance',
+                label: 'Open Appearance',
                 onPressed: () => context.go(AppRoutes.appearance),
               ),
             ),
@@ -573,7 +633,7 @@ class _IntegrationsTabState extends ConsumerState<_IntegrationsTab> {
               ),
             ),
             ShelfFormRow(
-              label: 'Family members',
+              label: 'Family Members',
               description: 'Comma-separated SteamID64s',
               control: SettingsTextField(
                 fieldKey: const Key('settings-family-ids'),
@@ -607,26 +667,28 @@ class _IntegrationsTabState extends ConsumerState<_IntegrationsTab> {
           'Steam only reports playtime for the account being queried.',
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(4, 6, 4, 0),
-          child: LinkText(
-            parts: const [
-              LinkPart(
-                'Not sure what the Steam ID is? Open your Steam profile page: '
-                'if its URL ends in a long number, that is your SteamID64; if '
-                'it ends in a custom name, look it up with ',
-              ),
-              LinkPart(
-                "SteamDB's SteamID finder",
-                url: 'https://steamdb.com/en/tools/steam-id-finder',
-              ),
-              LinkPart('. Create or look up an API key on '),
-              LinkPart(
-                "Steam's API key page",
-                url: 'https://steamcommunity.com/dev/apikey',
-              ),
-              LinkPart('.'),
-            ],
-            onOpen: open,
+          padding: const EdgeInsets.only(top: 10),
+          child: ShelfNote(
+            child: LinkText(
+              parts: const [
+                LinkPart(
+                  'Not sure what the Steam ID is? Open your Steam profile page: '
+                  'if its URL ends in a long number, that is your SteamID64; if '
+                  'it ends in a custom name, look it up with ',
+                ),
+                LinkPart(
+                  "SteamDB's SteamID finder",
+                  url: 'https://steamdb.com/en/tools/steam-id-finder',
+                ),
+                LinkPart('. Create or look up an API key on '),
+                LinkPart(
+                  "Steam's API key page",
+                  url: 'https://steamcommunity.com/dev/apikey',
+                ),
+                LinkPart('.'),
+              ],
+              onOpen: open,
+            ),
           ),
         ),
         const SizedBox(height: 18),
@@ -668,10 +730,10 @@ class _IntegrationsTabState extends ConsumerState<_IntegrationsTab> {
               ),
             ),
             ShelfFormRow(
-              label: 'SteamGridDB key',
+              label: 'SteamGridDB Key',
               description: user.hasSteamgriddbApiKey
                   ? 'Your own key is set and used for cover art.'
-                  : 'Cover art',
+                  : 'Cover Art',
               control: SecretControl(
                 fieldKey: const Key('settings-grid-key'),
                 removeKey: const Key('settings-grid-remove'),
@@ -697,17 +759,19 @@ class _IntegrationsTabState extends ConsumerState<_IntegrationsTab> {
           ],
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(4, 6, 4, 0),
-          child: LinkText(
-            parts: const [
-              LinkPart('Create a Twitch application at '),
-              LinkPart(
-                'dev.twitch.tv/console/apps',
-                url: 'https://dev.twitch.tv/console/apps',
-              ),
-              LinkPart(' to get an IGDB Client ID and Client Secret.'),
-            ],
-            onOpen: open,
+          padding: const EdgeInsets.only(top: 10),
+          child: ShelfNote(
+            child: LinkText(
+              parts: const [
+                LinkPart('Create a Twitch application at '),
+                LinkPart(
+                  'dev.twitch.tv/console/apps',
+                  url: 'https://dev.twitch.tv/console/apps',
+                ),
+                LinkPart(' to get an IGDB Client ID and Client Secret.'),
+              ],
+              onOpen: open,
+            ),
           ),
         ),
         const SizedBox(height: 18),
@@ -776,7 +840,7 @@ class _AboutTab extends ConsumerWidget {
               ),
             ),
             ShelfFormRow(
-              label: 'Source code',
+              label: 'Source Code',
               control: ShelfButton(
                 key: const Key('settings-source'),
                 label: 'Open on GitHub',

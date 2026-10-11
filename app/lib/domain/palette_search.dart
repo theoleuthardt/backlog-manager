@@ -53,7 +53,7 @@ List<BacklogEntry> rankGames(
 /// the hours played and the hours to beat are both known.
 String gameMeta(BacklogEntry entry) {
   final played = entry.playtime;
-  final toBeat = entry.mainTime;
+  final toBeat = entry.timeToBeat;
   if (played == null || toBeat == null) return entry.status;
   return '${entry.status} · ${formatHours(played)} of ${formatHours(toBeat)} h';
 }

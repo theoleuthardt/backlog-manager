@@ -163,7 +163,7 @@ void main() {
       await open(tester, noSpace);
 
       expect(find.byKey(const Key('page-space')), findsOneWidget);
-      expect(find.text('Start a shared space'), findsOneWidget);
+      expect(find.text('Start a Shared Space'), findsOneWidget);
       expect(
         find.textContaining('only Steam games can be added'),
         findsOneWidget,
@@ -217,7 +217,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('No user with that username'), findsOneWidget);
-      expect(find.text('Start a shared space'), findsOneWidget);
+      expect(find.text('Start a Shared Space'), findsOneWidget);
       await dismissToast(tester);
     });
 
@@ -228,8 +228,8 @@ void main() {
         setUp: (api) => api.getError = Exception('offline'),
       );
 
-      expect(find.text('Failed to load the shared space'), findsOneWidget);
-      expect(find.text('Try again'), findsOneWidget);
+      expect(find.text('Failed to load the Shared Space'), findsOneWidget);
+      expect(find.text('Try Again'), findsOneWidget);
     });
   });
 
@@ -239,7 +239,7 @@ void main() {
     ) async {
       await open(tester, invitation);
 
-      expect(find.text('alex invited you to a shared space'), findsOneWidget);
+      expect(find.text('alex invited you to a Shared Space'), findsOneWidget);
       expect(find.byKey(const Key('space-accept')), findsOneWidget);
       expect(find.byKey(const Key('space-decline')), findsOneWidget);
     });
@@ -254,7 +254,7 @@ void main() {
       expect(find.text('Co-op backlog'), findsOneWidget);
       expect(
         find.text('with alex - ratings and playtime stay your own'),
-        findsOneWidget,
+        findsNothing,
       );
     });
 
@@ -265,7 +265,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(opened.space.calls, contains('leave'));
-      expect(find.text('Start a shared space'), findsOneWidget);
+      expect(find.text('Start a Shared Space'), findsOneWidget);
     });
 
     testWidgets('puts a dot on the sidebar entry', (tester) async {
@@ -299,7 +299,7 @@ void main() {
       expect(find.text('Co-op backlog'), findsOneWidget);
       expect(
         find.text('with alex - ratings and playtime stay your own'),
-        findsOneWidget,
+        findsNothing,
       );
       expect(find.text('+ Add Steam game'), findsOneWidget);
       expect(find.byKey(const Key('igdb-sync-button')), findsNothing);
@@ -356,7 +356,7 @@ void main() {
         find.text('Waiting for alex to accept your invitation.'),
         findsOneWidget,
       );
-      expect(find.text('Cancel invitation'), findsOneWidget);
+      expect(find.text('Cancel Invitation'), findsOneWidget);
       expect(find.text('Leave'), findsNothing);
     });
 
@@ -375,19 +375,17 @@ void main() {
       await tester.tap(find.byKey(const Key('space-info')));
       await tester.pumpAndSettle();
 
-      expect(
-        find.text(
-          'Shared with alex. Status and categories are shared; rating and '
-          'playtime stay your own.',
-        ),
-        findsOneWidget,
-      );
+      expect(find.text('Shared with alex'), findsOneWidget);
+      expect(find.text('Shared by both'), findsOneWidget);
+      expect(find.text('Status and categories'), findsOneWidget);
+      expect(find.text('Stays your own'), findsOneWidget);
+      expect(find.text('Rating, playtime and review'), findsOneWidget);
     });
 
     testWidgets('says that the space is empty', (tester) async {
       await open(tester, together, entries: const []);
 
-      expect(find.text('Your shared space is empty'), findsOneWidget);
+      expect(find.text('Your Shared Space is empty'), findsOneWidget);
       expect(find.byKey(const Key('library-empty-add')), findsOneWidget);
     });
 
@@ -399,14 +397,14 @@ void main() {
 
     testWidgets('refreshes the space every 30 seconds', (tester) async {
       final opened = await open(tester, waiting);
-      expect(find.text('Cancel invitation'), findsOneWidget);
+      expect(find.text('Cancel Invitation'), findsOneWidget);
 
       opened.space.space = together;
       await tester.pump(spaceRefreshInterval);
       await tester.pumpAndSettle();
 
       expect(find.text('Leave'), findsOneWidget);
-      expect(find.text('Cancel invitation'), findsNothing);
+      expect(find.text('Cancel Invitation'), findsNothing);
     });
 
     testWidgets('keeps the screen when a refresh fails', (tester) async {
@@ -429,7 +427,7 @@ void main() {
       await tester.tap(find.byKey(const Key('space-leave')));
       await tester.pumpAndSettle();
 
-      expect(find.text('Leave the shared space?'), findsOneWidget);
+      expect(find.text('Leave the Shared Space?'), findsOneWidget);
       expect(
         find.text(
           'You lose access to its entries. They stay with your partner; once '
@@ -460,8 +458,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(opened.space.calls, contains('leave'));
-      expect(find.text('You left the shared space'), findsOneWidget);
-      expect(find.text('Start a shared space'), findsOneWidget);
+      expect(find.text('You left the Shared Space'), findsOneWidget);
+      expect(find.text('Start a Shared Space'), findsOneWidget);
       expect(find.text('Portal 2'), findsNothing);
       await dismissToast(tester);
     });
@@ -506,7 +504,7 @@ void main() {
 
       expect(created, ['Portal 2 4 620']);
       expect(
-        find.text('Added "Portal 2" to your shared space'),
+        find.text('Added "Portal 2" to your Shared Space'),
         findsOneWidget,
       );
       await dismissToast(tester);
@@ -529,7 +527,7 @@ void main() {
       expect(button.onPressed, isNull);
       expect(opened.backlog.created, isEmpty);
       expect(
-        find.byTooltip('Only Steam games can be added to the shared space'),
+        find.byTooltip('Only Steam games can be added to the Shared Space'),
         findsOneWidget,
       );
     });
@@ -595,12 +593,12 @@ void main() {
 
       expect(opened.location, contains('target=space'));
       expect(find.byKey(const Key('page-creation')), findsOneWidget);
-      expect(find.text('Shared space'), findsWidgets);
+      expect(find.text('Shared Space'), findsWidgets);
     });
   });
 
   for (final themeId in ['shelfOled', 'light']) {
-    testWidgets('golden: the shared space in $themeId', tags: 'golden', (
+    testWidgets('golden: the Shared Space in $themeId', tags: 'golden', (
       tester,
     ) async {
       final opened = await open(

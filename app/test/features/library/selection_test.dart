@@ -371,7 +371,7 @@ void main() {
 
       expect(find.byKey(const Key('menu-label')), findsOneWidget);
       for (final label in [
-        'Open details',
+        'Open Details',
         'Select',
         'Move to status',
         'Categories',
@@ -387,7 +387,7 @@ void main() {
       final container = await pumpLibrary(tester, backlog());
 
       await rightClick(tester, 'Portal 2');
-      await tester.tap(find.text('Open details'));
+      await tester.tap(find.text('Open Details'));
       await tester.pumpAndSettle();
 
       expect(entryParameter(container), '3');

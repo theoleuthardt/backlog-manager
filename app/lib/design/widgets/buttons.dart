@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 
 enum ShelfButtonKind { primary, secondary, quiet, danger }
 
-/// A 32 px button. Primary has the accent gradient and glow, secondary the
+/// A 38 px button that eases between its resting, hover and pressed look. Primary has the accent gradient and glow, secondary the
 /// strong border, quiet only muted text, danger writes in the danger colour.
 /// Without [onPressed] it is dimmed to 40% and does nothing.
 class ShelfButton extends StatelessWidget {
@@ -18,12 +18,21 @@ class ShelfButton extends StatelessWidget {
     this.kind = ShelfButtonKind.secondary,
     this.icon,
     this.busy = false,
+    this.expanded = false,
+    this.tall = false,
     super.key,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final ShelfButtonKind kind;
+
+  /// Stretches the button to the width it is given and makes it taller, for
+  /// the one main action of a form.
+  final bool expanded;
+
+  /// As high as an input, to stand next to one.
+  final bool tall;
   final IconData? icon;
 
   /// Shows a spinner before the label and ignores taps; the button keeps its
@@ -39,18 +48,20 @@ class ShelfButton extends StatelessWidget {
       opacity: onPressed == null && !busy ? 0.4 : 1,
       child: ShelfPressable(
         onPressed: busy ? _ignore : onPressed,
+        pressedScale: 0.97,
         semanticLabel: label,
         builder: (context, state) {
           final color = _labelColor(tokens, state);
-          return DecoratedBox(
-            key: const Key('button-surface'),
+          return _EasedSurface(
             decoration: _decoration(tokens, state),
             child: SizedBox(
-              height: ShelfHeight.control,
+              height: expanded || tall
+                  ? ShelfHeight.input
+                  : ShelfHeight.control,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
+                padding: const EdgeInsets.symmetric(horizontal: 18),
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisSize: expanded ? MainAxisSize.max : MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (busy) ...[
@@ -64,10 +75,17 @@ class ShelfButton extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                     ] else if (icon != null) ...[
-                      Icon(icon, size: 16, color: color),
-                      const SizedBox(width: 6),
+                      Icon(icon, size: 18, color: color),
+                      const SizedBox(width: 8),
                     ],
-                    Text(label, style: text.control.copyWith(color: color)),
+                    Flexible(
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: text.control.copyWith(color: color),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -132,17 +150,22 @@ class ShelfButton extends StatelessWidget {
   }
 }
 
-/// A 32 px square button with only an icon; [tooltip] is also its label for
+/// A square button as high as [ShelfHeight.control] with only an icon; [tooltip] is also its label for
 /// assistive technology.
 class ShelfIconButton extends StatelessWidget {
   const ShelfIconButton({
     required this.icon,
     required this.tooltip,
     required this.onPressed,
+    this.badge,
     super.key,
   });
 
   final IconData icon;
+
+  /// A small second icon at the bottom right of [icon], such as the bolt of
+  /// a sync.
+  final IconData? badge;
   final String tooltip;
   final VoidCallback? onPressed;
 
@@ -157,8 +180,8 @@ class ShelfIconButton extends StatelessWidget {
         child: ShelfPressable(
           onPressed: onPressed,
           semanticLabel: tooltip,
-          builder: (context, state) => DecoratedBox(
-            key: const Key('button-surface'),
+          pressedScale: 0.92,
+          builder: (context, state) => _EasedSurface(
             decoration: BoxDecoration(
               color: state.hovered ? tokens.glowSoft : null,
               borderRadius: BorderRadius.circular(ShelfRadius.control),
@@ -166,15 +189,51 @@ class ShelfIconButton extends StatelessWidget {
             child: SizedBox(
               width: ShelfHeight.control,
               height: ShelfHeight.control,
-              child: Icon(
-                icon,
-                size: 18,
-                color: state.hovered ? tokens.foreground : tokens.muted,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Icon(
+                    icon,
+                    size: 20,
+                    color: state.hovered ? tokens.foreground : tokens.muted,
+                  ),
+                  if (badge != null)
+                    Positioned(
+                      right: 6,
+                      bottom: 5,
+                      child: Icon(badge, size: 13, color: tokens.accent),
+                    ),
+                ],
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The surface of a button: a [DecoratedBox] that eases between its looks
+/// (resting, hovered, pressed) instead of switching. It does not add the
+/// border to the size like an animated container would.
+class _EasedSurface extends StatelessWidget {
+  const _EasedSurface({required this.decoration, required this.child});
+
+  final BoxDecoration decoration;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<Decoration>(
+      tween: DecorationTween(end: decoration),
+      duration: const Duration(milliseconds: 140),
+      curve: Curves.easeOut,
+      builder: (context, value, child) => DecoratedBox(
+        key: const Key('button-surface'),
+        decoration: value,
+        child: child,
+      ),
+      child: child,
     );
   }
 }

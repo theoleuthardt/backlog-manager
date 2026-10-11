@@ -50,10 +50,10 @@ void main() {
     await open(tester);
 
     expect(find.byKey(const Key('page-export')), findsOneWidget);
-    expect(find.text('Export backlog'), findsOneWidget);
+    expect(find.text('Export Backlog'), findsOneWidget);
     expect(find.textContaining('CSV file you can open'), findsOneWidget);
     expect(find.text('3 games'), findsOneWidget);
-    expect(find.text('All statuses'), findsOneWidget);
+    expect(find.text('All Statuses'), findsOneWidget);
   });
 
   testWidgets('saves every entry as a dated CSV file', (tester) async {

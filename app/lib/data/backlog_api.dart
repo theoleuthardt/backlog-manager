@@ -88,7 +88,7 @@ class EntryUpdate {
   };
 }
 
-/// The backlog calls the app needs. Every call takes the id of a shared space
+/// The backlog calls the app needs. Every call takes the id of a Shared Space
 /// or null for the personal backlog.
 abstract interface class BacklogApi {
   Future<List<BacklogEntry>> entries(int? spaceId);

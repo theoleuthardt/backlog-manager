@@ -341,7 +341,7 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
       _CreateState.creating => 'Creating...',
       _CreateState.created => 'Created!',
       _CreateState.failed => 'Failed',
-      _CreateState.idle => 'Add game',
+      _CreateState.idle => 'Add Game',
     };
     return Padding(
       padding: const EdgeInsets.fromLTRB(28, 22, 28, 12),
@@ -349,7 +349,7 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
         children: [
           Expanded(
             child: Text(
-              _prefill.custom ? 'New custom game' : 'New game',
+              _prefill.custom ? 'New custom game' : 'New Game',
               style: style.page,
             ),
           ),
@@ -386,19 +386,19 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ShelfCover(
-            title: _title.text.trim().isEmpty ? 'New game' : _title.text.trim(),
+            title: _title.text.trim().isEmpty ? 'New Game' : _title.text.trim(),
             image: entryImage(serverUrl, value.text.trim()),
           ),
           const SizedBox(height: 10),
           ShelfButton(
             key: const Key('creation-search-again'),
-            label: 'Search again',
+            label: 'Search Again',
             onPressed: _state == _CreateState.creating ? null : _searchAgain,
           ),
           const SizedBox(height: 10),
           ShelfButton(
             key: const Key('creation-change-cover'),
-            label: 'Change cover',
+            label: 'Change Cover',
             onPressed: _changeCover,
           ),
           if (_prefill.publisher.isNotEmpty) ...[
@@ -515,7 +515,7 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ShelfFormGroup(
-          title: 'Game info',
+          title: 'Game Info',
           rows: [
             if (_activeSpaceId != null)
               _row(
@@ -525,19 +525,19 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
                   child: ShelfMenuAnchor(
                     entries: [
                       ShelfMenuItem(
-                        label: 'My backlog',
+                        label: 'My Backlog',
                         checked: !_toSpace,
                         onSelected: () => setState(() => _toSpaceTyped = false),
                       ),
                       ShelfMenuItem(
-                        label: 'Shared space',
+                        label: 'Shared Space',
                         checked: _toSpace,
                         onSelected: () => setState(() => _toSpaceTyped = true),
                       ),
                     ],
                     builder: (context, controller) => ShelfSelectTrigger(
                       key: const Key('creation-target'),
-                      text: _toSpace ? 'Shared space' : 'My backlog',
+                      text: _toSpace ? 'Shared Space' : 'My Backlog',
                       semanticLabel: 'Add to',
                       onPressed: () => controller.isOpen
                           ? controller.close()
@@ -576,7 +576,7 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
         ),
         const SizedBox(height: 16),
         ShelfFormGroup(
-          title: 'Your take',
+          title: 'Your Take',
           rows: [
             _row(
               'Status',
@@ -662,7 +662,7 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ShelfFormGroup(
-          title: 'HowLongToBeat times',
+          title: 'HowLongToBeat Times',
           description: custom
               ? null
               : _prefill.hasHltbData
@@ -747,7 +747,7 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
           title: 'Review & notes',
           rows: [
             _row(
-              'Review stars',
+              'Review Stars',
               Opacity(
                 opacity: reviewable ? 1 : 0.5,
                 child: StarRating(

@@ -17,7 +17,8 @@ class HomeStats {
   /// Number of games.
   final int inBacklog;
 
-  /// Sum of the main-story hours of all games that have a time.
+  /// Sum of the hours to beat of all games that have a time (the main story,
+  /// else main plus extra, else the completionist time).
   final double timeToBeat;
   final int playingNow;
   final int completedThisYear;
@@ -28,7 +29,7 @@ HomeStats homeStats(List<BacklogEntry> entries, {required DateTime now}) {
   var playing = 0;
   var completed = 0;
   for (final entry in entries) {
-    time += entry.mainTime ?? 0;
+    time += entry.timeToBeat ?? 0;
     if (entry.status == _inProgress) playing++;
     if (entry.status == _completed && entry.completedAt?.year == now.year) {
       completed++;
@@ -64,8 +65,8 @@ BacklogEntry? continuePlaying(List<BacklogEntry> entries) {
 List<BacklogEntry> upNext(List<BacklogEntry> entries) {
   final games = entries.where((e) => e.status == _notStarted).toList();
   return stableSorted(games, (a, b) {
-    final timeA = a.mainTime;
-    final timeB = b.mainTime;
+    final timeA = a.timeToBeat;
+    final timeB = b.timeToBeat;
     if (timeA != null && timeB != null) {
       final byTime = timeA.compareTo(timeB);
       if (byTime != 0) return byTime;

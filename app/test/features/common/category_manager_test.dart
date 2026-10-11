@@ -53,7 +53,7 @@ void main() {
   testWidgets('lists one row per category', (tester) async {
     await pumpManager(tester);
 
-    expect(find.text('Manage categories'), findsOneWidget);
+    expect(find.text('Manage Categories'), findsOneWidget);
     expect(find.byKey(const Key('category-row-1')), findsOneWidget);
     expect(find.byKey(const Key('category-row-2')), findsOneWidget);
   });
@@ -186,7 +186,7 @@ void main() {
     });
   });
 
-  testWidgets('works on the categories of a shared space', (tester) async {
+  testWidgets('works on the categories of a Shared Space', (tester) async {
     final api = await pumpManager(tester, spaceId: 4);
 
     await rename(tester, 1, 'Plot');

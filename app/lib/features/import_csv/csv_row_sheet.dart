@@ -106,7 +106,7 @@ class _CsvRowSheetState extends ConsumerState<CsvRowSheet> {
         : [...statuses, row.status];
 
     return ShelfSheet(
-      title: 'Edit row',
+      title: 'Edit Row',
       description: 'Changes apply to what is imported, not to the file.',
       footer: ShelfSheetFooter(
         cancelLabel: 'Remove from import',
@@ -186,13 +186,13 @@ class _CsvRowSheetState extends ConsumerState<CsvRowSheet> {
             children: [
               ShelfButton(
                 key: const Key('import-row-wrong-game'),
-                label: 'Wrong game',
+                label: 'Wrong Game',
                 onPressed: () => unawaited(_wrongGame()),
               ),
               const SizedBox(width: 8),
               ShelfButton(
                 key: const Key('import-row-cover'),
-                label: 'Choose cover',
+                label: 'Choose Cover',
                 onPressed: () => unawaited(_cover()),
               ),
             ],

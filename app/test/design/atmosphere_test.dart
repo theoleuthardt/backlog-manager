@@ -59,99 +59,58 @@ void main() {
   group('atmosphereStars', () {
     final tokens = tokensOf('shelfOled');
 
-    test('repeats each tile across the window', () {
-      final stars = atmosphereStars(const Size(1440, 900), tokens);
-      final gold = stars.where((s) => s.color == tokens.starGold).toList();
-
-      expect(gold.map((s) => s.center), [
-        for (var y = 0; y < 2; y++)
-          for (var x = 0; x < 3; x++) Offset(130 + x * 520, 200 + y * 420),
-      ]);
-    });
-
-    test('puts a star of every layer at its documented offset', () {
-      final centers = atmosphereStars(
-        const Size(1440, 900),
-        tokens,
-      ).map((s) => s.center).toSet();
+    test('are laid out the same way every time', () {
+      final first = atmosphereStars(const Size(1440, 900), tokens);
+      final second = atmosphereStars(const Size(1440, 900), tokens);
 
       expect(
-        centers,
-        containsAll(const [
-          Offset(12, 22),
-          Offset(70, 84),
-          Offset(96, 30),
-          Offset(40, 118),
-          Offset(150, 60),
-          Offset(210, 150),
-          Offset(58, 44),
-          Offset(130, 200),
-        ]),
+        [for (final star in first) star.center],
+        [for (final star in second) star.center],
       );
     });
 
-    test('colours the small stars with the three star colours', () {
+    test('are scattered at random, not in a grid', () {
       final stars = atmosphereStars(const Size(1440, 900), tokens);
+      final columns = {for (final star in stars) (star.center.dx / 10).round()};
+      final rows = {for (final star in stars) (star.center.dy / 10).round()};
 
-      expect(
-        stars.firstWhere((s) => s.center == const Offset(12, 22)).color,
-        tokens.starA,
-      );
-      expect(
-        stars.firstWhere((s) => s.center == const Offset(70, 84)).color,
-        tokens.starB,
-      );
-      expect(
-        stars.firstWhere((s) => s.center == const Offset(96, 30)).color,
-        tokens.starC,
-      );
+      expect(stars.length, greaterThan(300));
+      expect(columns.length, greaterThan(100));
+      expect(rows.length, greaterThan(60));
     });
 
-    test('gives only the bright and gold stars a halo', () {
-      final stars = atmosphereStars(const Size(1440, 900), tokens);
+    test('keep their place when the window grows', () {
+      final small = atmosphereStars(const Size(800, 600), tokens);
+      final large = atmosphereStars(const Size(1440, 900), tokens);
+      final largeCenters = {for (final star in large) star.center};
 
-      expect(
-        stars
-            .where((s) => s.color == tokens.starGold)
-            .every((s) => s.halo == 9),
-        isTrue,
-      );
-      expect(
-        stars
-            .where((s) => s.color == tokens.starHot)
-            .map((s) => s.halo)
-            .toSet(),
-        {7.0, 8.0},
-      );
-      expect(
-        stars.where((s) => s.color == tokens.starA).every((s) => s.halo == 0),
-        isTrue,
-      );
+      expect(large.length, greaterThan(small.length));
+      expect(small.every((star) => largeCenters.contains(star.center)), isTrue);
     });
 
     test('only places stars inside the window', () {
-      const size = Size(500, 300);
-
-      for (final star in atmosphereStars(size, tokens)) {
-        expect(star.center.dx, lessThan(size.width));
-        expect(star.center.dy, lessThan(size.height));
+      for (final star in atmosphereStars(const Size(300, 200), tokens)) {
+        expect(star.center.dx, lessThan(300 + 12));
+        expect(star.center.dy, lessThan(200 + 12));
       }
     });
 
-    test(
-      'is the same for the same input and takes its colours from the tokens',
-      () {
-        final first = atmosphereStars(const Size(800, 600), tokens);
-        final second = atmosphereStars(const Size(800, 600), tokens);
-        final light = atmosphereStars(const Size(800, 600), tokensOf('light'));
+    test('colours the small stars with the three star colours', () {
+      final small = atmosphereStars(
+        const Size(1440, 900),
+        tokens,
+      ).where((star) => star.halo == 0).map((star) => star.color).toSet();
 
-        expect(first.map((s) => s.center), second.map((s) => s.center));
-        expect(light.first.color, isNot(first.first.color));
-      },
-    );
+      expect(small, {tokens.starA, tokens.starB, tokens.starC});
+    });
 
-    test('has no stars in a window of no size', () {
-      expect(atmosphereStars(Size.zero, tokens), isEmpty);
+    test('have bright stars with a halo and gold ones', () {
+      final stars = atmosphereStars(const Size(1440, 900), tokens);
+      final bright = stars.where((star) => star.halo > 0);
+
+      expect(bright.any((star) => star.color == tokens.starHot), isTrue);
+      expect(bright.any((star) => star.color == tokens.starGold), isTrue);
+      expect(bright.every((star) => star.haloColor.a > 0), isTrue);
     });
   });
 

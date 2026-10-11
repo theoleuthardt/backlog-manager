@@ -64,10 +64,7 @@ void main() {
     expect(games.calls, contains('search Overcooked'));
     expect(find.text('Find the right game'), findsOneWidget);
     expect(inSheet(find.text('Overcooked!')), findsOneWidget);
-    expect(
-      inSheet(find.text('Main 12 h · +Extra 20 h · Completionist 40 h')),
-      findsOneWidget,
-    );
+    expect(inSheet(find.text('12 / 20 / 40 h')), findsOneWidget);
   });
 
   testWidgets('waits 300 ms after typing before it searches again', (

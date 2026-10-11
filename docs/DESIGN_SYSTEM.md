@@ -16,7 +16,7 @@ This document is the spec a second client (the planned Flutter client, issue #24
 2. **Covers first.** The cover art is the largest thing on every content screen. Text sits on it or directly beneath it.
 3. **Master and detail.** Selecting a game opens an inspector beside the list instead of covering it. Short tasks (add, export, find the right game) are sheets over the window.
 4. **One accent.** A single accent colour marks the primary action, progress, selection and focus. Everything else is neutral.
-5. **Dense but calm.** 32 px controls, 14 px text, hairline dividers between panes, soft filled groups instead of boxes.
+5. **Dense but calm.** 38 px controls, 15.5 px body text, 44 px inputs, hairline dividers between panes, soft filled groups instead of boxes.
 6. **Keyboard first.** Cmd/Ctrl+K opens a command palette, `/` focuses search, context menus show their shortcuts.
 7. **Changes save themselves.** Entry edits and settings autosave; destructive actions ask first.
 8. **Themeable from six colours.** Users keep the six-colour theme model; every other colour is derived.
@@ -72,20 +72,20 @@ Open point: on the old themes `border` is a bright colour (white, indigo, cyan).
 
 ### Typography
 
-Font: **Plus Jakarta Sans** (weights 400 to 800). Sizes in logical pixels; the base size is 14, a desktop scale.
+Font: **Plus Jakarta Sans** (weights 400 to 800). Sizes in logical pixels; the base size is 15.5 (the scale-up of #351, see the end of this file).
 
 | Style | Size / line height | Weight | Tracking | Use |
 |---|---|---|---|---|
-| `hero` | 30 / 1.1 | 800 | -0.02em | Title of the "continue playing" card |
-| `page` | 26 / 1.1 | 800 | -0.02em | Window or sheet title |
-| `section` | 16 / 1.25 | 800 | -0.01em | Shelf and group headings |
-| `groupTitle` | 13 / 1.3 | 800 | 0 | Titles of grouped settings sections |
-| `body` | 14 / 1.4 | 400 | 0 | Default text |
-| `control` | 13 / 1.2 | 600 | 0 | Buttons, segmented controls, tabs |
-| `label` | 12 / 1.3 | 600 | 0 | Field labels |
-| `caption` | 12.5 / 1.3 | 400 | 0 | Secondary text in rows, hints |
-| `eyebrow` | 11 / 1.2 | 700 | 0.12em | Uppercase kicker, accent colour |
-| `sidebarLabel` | 11 / 1.2 | 700 | 0.08em | Uppercase sidebar section labels, `faint` colour |
+| `hero` | 34 / 1.1 | 800 | -0.02em | Title of the "continue playing" card |
+| `page` | 30 / 1.1 | 800 | -0.02em | Window or sheet title |
+| `section` | 18 / 1.25 | 800 | -0.01em | Shelf and group headings |
+| `groupTitle` | 15 / 1.3 | 800 | 0 | Titles of grouped settings sections |
+| `body` | 15.5 / 1.4 | 400 | 0 | Default text |
+| `control` | 14.5 / 1.2 | 600 | 0 | Buttons, segmented controls, tabs |
+| `label` | 13.5 / 1.3 | 600 | 0 | Field labels |
+| `caption` | 13.5 / 1.3 | 400 | 0 | Secondary text in rows, hints |
+| `eyebrow` | 12 / 1.2 | 700 | 0.12em | Uppercase kicker, accent colour |
+| `sidebarLabel` | 12 / 1.2 | 700 | 0.08em | Uppercase sidebar section labels, `faint` colour |
 | `coverTitle` | 15 / 1.1 | 800 | 0 | Title printed on a cover without art |
 
 ### Spacing, radii, elevation, motion
@@ -93,7 +93,7 @@ Font: **Plus Jakarta Sans** (weights 400 to 800). Sizes in logical pixels; the b
 - **Spacing:** 4, 6, 8, 10, 12, 14, 16, 20, 24, 32. Content padding is 24 horizontally and 22 vertically; dividers are 1 px `borderSubtle`.
 - **Radii:** control 8, card (cover) 12, panel and group 14, dialog and sheet 16, window 12, chip full pill. Only chips are pills.
 - **Elevation:** only floating layers cast a shadow: menus, sheets, toasts, windows on the desktop, the segmented control's selected thumb. Menus, sheets and desktop windows add a faint `glow` ring or halo (see `elevation` in the tokens file). Panes and groups are flat.
-- **Motion:** 150 ms for hover, press and menus, 250 ms for the inspector sliding in and sheets dropping 8 px from the title bar. Ease-out everywhere. With reduced motion enabled there is no slide.
+- **Motion:** 140-160 ms for hover and press (buttons ease between looks and shrink to 97% while pressed, covers lift 2% on hover), 200 ms for a page fading in, 250 ms for the inspector sliding in and sheets dropping 8 px from the title bar. The sky moves slowly: the bright stars twinkle and a moon travels each orbit ring (a 120 s cycle; off with reduced motion). Ease-out everywhere. With reduced motion enabled there is no slide and the sky stands still.
 - **Focus and selection:** keyboard focus is a 2 px accent outline with a 2 px offset. A selected cover gets a 3 px accent outline with a 3 px offset and, in selection mode, a 22 px check circle.
 
 ### Atmosphere
@@ -103,13 +103,13 @@ A space look in the window background and in the accents of nearly every element
 - **Sky:** a gradient from the theme's `glow` (10 to 40%) over the top 42% of the window, so black turns into deep blue towards the top. Shelf OLED keeps it at 20% (and the nebulae at 7 to 22%) so the black stays black.
 - **Nebulae:** four radial clouds: `glow` at 22 to 38% top right (900 x 640), a yellow or `accent` one at 11% bottom centre (820 x 460), an azure one on the left edge (760 x 520) and a soft `glow` cloud at the top centre (700 x 360).
 - **Orbit rings:** thin rings of 300, 420 and 640 px radius around the window's corners, in `glow` or foreground at about 12%.
-- **Stars:** a dense field of 1 to 1.5 px dots in three colours in five staggered tiles from 120 x 110 to 340 x 310 px, two layers of brighter stars with a 7 to 8 px halo, and one layer of gold stars (`accent`-warm) with a halo, so the pattern never visibly repeats.
+- **Stars:** a seeded random arrangement (no grid) of 1 to 1.5 px dots in three colours over a 4096 x 2304 virtual sky, brighter stars with a 7 to 8 px halo and gold stars (`accent`-warm) with a halo. On light themes the stars are stronger so they stay visible. The sky moves unless Settings > General > "Animated background" is off or the system reduces motion: dust drifts in three depths, nebulae breathe, bright stars twinkle and shooting stars cross now and then.
 - **Glass and gradients:** title bar, sidebar, inspector and status bar are translucent with a blur; groups, tables, sheets, menus, sidebar and inspector carry a faint `glow` gradient from the top edge (the panel gradient), so panels shade from black into blue. The edge lines of the sidebar and inspector fade from `glow` to `border`, the title bar's and toolbar's bottom lines glow in the middle, and the content area has a soft `glow` at its floor.
 - **Blue accents:** `glow` marks hover and focus everywhere: secondary button border and tint, sidebar item hover, table row hover (2 px left line), token border, cover ring and the search focus ring. `accent` (yellow on Shelf OLED) stays the colour of action, progress and selection.
 - **Glows:** primary buttons and progress bars use an accent gradient with a glow; covers cast a `glow`-coloured shadow; selected covers, the active switch, the avatar (with a `glow` ring) and the status dot glow; the active sidebar item has a `glow` gradient and a 2 px accent bar; the window has a faint inner `glow`.
-- **Details:** a four-point star before section headings, orbit rings with small glowing satellites on the home card, and a planet-with-ring brand mark in the sidebar.
+- **Details:** a four-point star before section headings, orbit rings with small glowing satellites on the home card, and a planet-with-ring brand mark in the sidebar that animates under the same switch.
 - **Derivation:** custom themes derive all of it from their six colours (see `atmosphere.derivation` in the tokens file). The four built-ins override it with tuned values.
-- **Motion:** nothing animates, so reduced motion needs no change. Keep the effects out of tables and forms, and cap the blur on slower machines.
+- **Motion:** the bright stars twinkle and a small moon travels each orbit ring over a 120 s cycle (`atmosphereMotion`); reduced motion and tests keep the sky still. Keep the effects out of tables and forms, and cap the blur on slower machines.
 
 ### Layout
 
@@ -117,14 +117,14 @@ Reference window 1440 x 900. All sizes are logical pixels.
 
 | Part | Size |
 |---|---|
-| Title bar | 52 high; window controls, sidebar toggle, back and forward, title, search field (340 wide, shows the Cmd/Ctrl+K hint) |
+| Title bar | 56 high; window controls, sidebar toggle, back and forward, title, search field (340 wide, shows the Cmd/Ctrl+K hint) |
 | Sidebar | 232 wide, translucent `surface`, right divider; brand mark on top, navigation, and the account row (avatar, name, email, switcher) pinned to the very bottom on every window that has a sidebar |
 | Toolbar | 48 high under the title bar: title and count on the left, primary actions on the right; turns into a contextual bar (accent-tinted) while a selection is active |
 | Filter bar | 44 high under the toolbar on list screens: filter tokens on the left, owned-only switch, reset, sort and view toggle on the right |
 | Content | fills the rest, scrolls vertically, 24 px padding |
 | Inspector | 380 wide on the right, `surface`, left divider; closes with its button or Esc |
 | Status bar | 28 high; counts on the left, sync state and version on the right |
-| Controls | 32 high (inputs 34), table rows 48, table header 34, sidebar items 32, setup stepper steps 36 |
+| Controls | 38 high (inputs 44), table rows 48, table header 42, sidebar items 40, setup stepper steps 40 |
 | Covers | 2:3, at least 150 wide (140 beside the inspector), gap 22 / 16 |
 
 ## Window shell
@@ -142,21 +142,21 @@ Each component lists its parts and states. The "Flutter" column is a suggestion,
 | Component | Anatomy and states | Flutter |
 |---|---|---|
 | **Title bar** | Window controls, toggle, back/forward, title, search field with Cmd/Ctrl+K hint | `window_manager` for the frame; custom row |
-| **Sidebar** | Brand mark, section labels, items 32 high with icon, label and optional count; active item with a `glow` gradient and a 2 px accent bar | custom `ListView` |
+| **Sidebar** | Brand mark, section labels, items 40 high with icon, label and optional count; active item with a `glow` gradient and a 2 px accent bar | custom `ListView` |
 | **Account row** | 58 high, divider above, always the last element of the sidebar: gradient avatar, name, email, switcher button | custom row |
 | **Toolbar** | Left: view and sort controls; right: counts and primary actions. Selection variant: tinted bar with the count and bulk actions | custom row |
-| **Button** | Radius 8, 32 high. Primary (accent fill, `onAccent` text), secondary (strong border), quiet (no border, muted text), danger (danger text), icon (32 square). Hover lifts to `surface2`; focus ring; disabled 40% | `FilledButton`/`OutlinedButton`/`TextButton` themed |
+| **Button** | Radius 8, 38 high. Primary (accent fill, `onAccent` text), secondary (strong border), quiet (no border, muted text), danger (danger text), icon (38 square). Hover lifts to `surface2`; focus ring; disabled 40% | `FilledButton`/`OutlinedButton`/`TextButton` themed |
 | **Chip** | Pill, 24 high. Neutral, active (`foreground` fill), accent (`accentSoft`), ok (success tint), add (dashed border) | `Chip` |
 | **Segmented control** | Track on `surface2`, radius 8, selected segment on `surface3` with a soft shadow | `SegmentedButton` themed |
 | **Tabs** | Text tabs, active one with a 2 px accent underline | `TabBar` |
-| **Field** | Label above (12 muted), 34 high input on `surface2` with `borderSubtle`, radius 8, hint below in `faint` | `TextField` + `InputDecorationTheme` |
+| **Field** | Label above (13.5 muted), 44 high input on `surface2` with `borderSubtle`, radius 8, hint below in `faint` | `TextField` + `InputDecorationTheme` |
 | **Form group** | `surface`, radius 14. Title, optional description, then rows of label (left, with optional small description) and control (right), 1 px dividers; used for settings, creation tool and mapping | `Card` with row children |
 | **Switch** | 38 x 22 pill, on = accent | `Switch` themed |
 | **Cover** | 2:3, radius 12, title bottom-left when there is no art; optional thin progress bar and meta line beneath. Selected: accent outline; selection mode adds the check circle | `AspectRatio` + `ClipRRect` + `CachedNetworkImage` |
 | **Cover grid and shelf row** | Auto-fill grid of covers; shelf row is a horizontal, non-wrapping row of 150-wide covers | `SliverGrid` / horizontal `ListView` |
 | **Data table** | Header row (uppercase caption), 48 high rows with checkbox, thumbnail, title, columns, trailing chip or button; hover and selected (`accentSoft`) rows | `DataTable` or custom rows |
 | **Inspector** | Header with status ("All changes saved") and close, body with cover and title, tabs, description, beat-time bars, owned switch; footer with Delete, Wrong game, Change cover | custom pane in a `Row` |
-| **Context menu** | `surface2`, radius 10, 1 px strong border, items 30 high, hovered item filled with accent, shortcut hints on the right, separators, danger item last, submenus | `MenuAnchor` / `ContextMenuRegion` |
+| **Context menu** | `surface2`, radius 10, 1 px strong border, items 38 high, hovered item filled with accent, shortcut hints on the right, separators, danger item last, submenus | `MenuAnchor` / `ContextMenuRegion` |
 | **Filter bar** | 44 high strip: filter icon, one token per active filter (field in muted, value, remove x), a dashed "+ Add filter" token, right-aligned owned-only switch, reset, sort button and grid/list toggle | custom row |
 | **Add-filter menu** | Menu anchored under "+ Add filter": search field "Filter by...", list of fields (genre, platform, interest, review stars, play and beat times), each opening a value picker | `MenuAnchor` with custom children |
 | **Command palette** | Sheet 640 wide: input with Esc hint, sections "Games" and "Actions", highlighted row, shortcuts | `showDialog` with a list |
@@ -229,7 +229,7 @@ class ShelfTokens extends ThemeExtension<ShelfTokens> {
 
 ### Window and layout
 
-- Frame: `window_manager` for a hidden native title bar, custom drag region, and platform caption buttons; the title bar is the 52 px row from the layout table.
+- Frame: `window_manager` for a hidden native title bar, custom drag region, and platform caption buttons; the title bar is the 56 px row from the layout table.
 - Main window: a `Column` of title bar, a `Row` of sidebar and an `Expanded` main pane (toolbar plus content, optional inspector), and the status bar. Collapsing the sidebar animates its width with the base duration.
 - Secondary windows (Settings, setup, sign-in): either a second native window (`desktop_multi_window`) or full-size routes with the same window chrome; decide in the spike.
 - Shortcuts: `CallbackShortcuts` or `Shortcuts` + `Actions` for the palette, search, new game and settings.
@@ -263,3 +263,7 @@ The open questions about installers, signing and the updater are researched in i
 ## Keeping this in sync
 
 The web frontend does not use these tokens or this shell yet. If the redesign is applied to the web app first, port `shelf.tokens.json` into `frontend/src/styles/globals.css` as the new `--t-*` mapping and keep this document as the contract. A change to a token or component starts in the design canvas, then `design/canvas/` and `shelf.tokens.json`, then this document, then the clients.
+
+## Scale-up (#351)
+
+The first test on a real desktop found the design too small: the type scale (hero 34, page 30, section 18, group title 15, body 15.5, control 14.5, label and caption 13.5, field text 15, eyebrow and sidebar labels 12), the control height (38) and the input height (44) were raised, sheets are 560, 700 and 760 wide, the title bar is 56 px high. Explanations are `ShelfNote`s (info icon on a soft panel) rather than loose muted lines; the side panes can be dragged to another width (kept on the device, a double click restores it).

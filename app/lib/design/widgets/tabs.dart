@@ -56,12 +56,22 @@ class ShelfTabs extends StatelessWidget {
                         ),
                         SizedBox(
                           height: 2,
-                          child: i == index
-                              ? ColoredBox(
-                                  key: const Key('tab-underline'),
-                                  color: tokens.accent,
-                                )
-                              : null,
+                          child: TweenAnimationBuilder<double>(
+                            tween: Tween(end: i == index ? 1 : 0),
+                            duration: const Duration(milliseconds: 220),
+                            curve: Curves.easeOutCubic,
+                            builder: (context, factor, child) => Transform(
+                              alignment: Alignment.center,
+                              transform: Matrix4.diagonal3Values(factor, 1, 1),
+                              child: child,
+                            ),
+                            child: ColoredBox(
+                              key: i == index
+                                  ? const Key('tab-underline')
+                                  : null,
+                              color: tokens.accent,
+                            ),
+                          ),
                         ),
                       ],
                     ),

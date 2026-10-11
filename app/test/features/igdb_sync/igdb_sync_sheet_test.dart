@@ -148,7 +148,7 @@ void main() {
 
     expect(find.text('IGDB is currently unreachable'), findsOneWidget);
     expect(find.text('Sync IGDB game data'), findsOneWidget);
-    expect(find.text('Start sync'), findsOneWidget);
+    expect(find.text('Start Sync'), findsOneWidget);
     await dismissToast(tester);
   });
 

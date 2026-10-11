@@ -11,7 +11,7 @@ void main() {
   group('ShelfSelect', () {
     Widget select({String? value, ValueChanged<String>? onChanged}) {
       return ShelfSelect<String>(
-        label: 'Default sort',
+        label: 'Default Sort',
         hintText: 'Choose one',
         value: value,
         onChanged: onChanged ?? (_) {},
@@ -22,18 +22,18 @@ void main() {
       );
     }
 
-    testWidgets('shows the label above a 34 px trigger on surface2', (
+    testWidgets('shows the label above a 44 px trigger on surface2', (
       tester,
     ) async {
       await pumpThemed(tester, select(), width: 300);
 
       expect(
-        tester.getTopLeft(find.text('Default sort')).dy,
+        tester.getTopLeft(find.text('Default Sort')).dy,
         lessThan(tester.getTopLeft(find.byKey(const Key('select-trigger'))).dy),
       );
       expect(
         tester.getSize(find.byKey(const Key('select-trigger'))).height,
-        34,
+        44,
       );
       final box = tester.widget<DecoratedBox>(
         find.byKey(const Key('select-surface')),

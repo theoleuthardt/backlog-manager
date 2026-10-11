@@ -103,7 +103,20 @@ void main() {
     await openAppearance(tester);
 
     expect(find.bySemanticsLabel('Shelf OLED, active'), findsOneWidget);
-    expect(find.bySemanticsLabel('Light'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('page-appearance')),
+        matching: find.bySemanticsLabel('Light'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('sidebar-themes')),
+        matching: find.bySemanticsLabel('Light'),
+      ),
+      findsOneWidget,
+    );
     expect(find.bySemanticsLabel('Edit Neon'), findsOneWidget);
     expect(find.bySemanticsLabel('Delete Neon'), findsOneWidget);
     handle.dispose();

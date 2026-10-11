@@ -47,22 +47,22 @@ class ShelfTextStyles extends ThemeExtension<ShelfTextStyles> {
 
   factory ShelfTextStyles.fromTokens(ShelfTokens tokens) {
     return ShelfTextStyles(
-      hero: _style(tokens.foreground, 30, 1.1, 800, -0.02),
-      page: _style(tokens.foreground, 26, 1.1, 800, -0.02),
-      section: _style(tokens.foreground, 16, 1.25, 800, -0.01),
-      groupTitle: _style(tokens.foreground, 13, 1.3, 800),
-      body: _style(tokens.foreground, 14, 1.4, 400),
-      control: _style(tokens.foreground, 13, 1.2, 600),
-      label: _style(tokens.foreground, 12, 1.3, 600),
-      caption: _style(tokens.muted, 12.5, 1.3, 400),
-      eyebrow: _style(tokens.accent, 11, 1.2, 700, 0.12),
-      sidebarLabel: _style(tokens.faint, 11, 1.2, 700, 0.08),
-      coverTitle: _style(tokens.foreground, 15, 1.1, 800),
-      brand: _style(tokens.foreground, 15, 1.2, 800, -0.01),
-      navItem: _style(tokens.foreground, 13.5, 1.2, 600),
-      windowTitle: _style(tokens.foreground, 14, 1.2, 700),
-      fieldText: _style(tokens.foreground, 13, 1.3, 400),
-      keyHint: _style(tokens.faint, 11, 1.2, 600),
+      hero: _style(tokens.foreground, 34, 1.1, 800, -0.02),
+      page: _style(tokens.foreground, 30, 1.1, 800, -0.02),
+      section: _style(tokens.foreground, 18, 1.25, 800, -0.01),
+      groupTitle: _style(tokens.foreground, 15, 1.3, 800),
+      body: _style(tokens.foreground, 15.5, 1.4, 400),
+      control: _style(tokens.foreground, 14.5, 1.2, 600),
+      label: _style(tokens.foreground, 13.5, 1.3, 600),
+      caption: _style(tokens.muted, 13.5, 1.3, 400),
+      eyebrow: _style(tokens.accent, 12, 1.2, 700, 0.12),
+      sidebarLabel: _style(tokens.faint, 12, 1.2, 700, 0.08),
+      coverTitle: _style(tokens.foreground, 16.5, 1.1, 800),
+      brand: _style(tokens.foreground, 17, 1.2, 800, -0.01),
+      navItem: _style(tokens.foreground, 15, 1.2, 600),
+      windowTitle: _style(tokens.foreground, 15.5, 1.2, 700),
+      fieldText: _style(tokens.foreground, 15, 1.3, 400),
+      keyHint: _style(tokens.faint, 12, 1.2, 600),
     );
   }
 

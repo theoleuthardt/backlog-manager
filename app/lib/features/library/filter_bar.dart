@@ -42,54 +42,61 @@ class FilterBar extends ConsumerWidget {
         ),
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: gutter),
-          child: Row(
-            children: [
-              Icon(Icons.filter_alt_outlined, size: 14, color: tokens.muted),
-              const SizedBox(width: 6),
-              Text('Filter', style: style.label.copyWith(color: tokens.muted)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ScrollConfiguration(
-                  behavior: ScrollConfiguration.of(context)
-                      .copyWith(scrollbars: false),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        for (final token in filterTokens(filters)) ...[
-                          _FilterTokenView(token: token),
-                          const SizedBox(width: 8),
+          child: LayoutBuilder(
+            builder: (context, constraints) => Row(
+              children: [
+                Icon(Icons.filter_alt_outlined, size: 14, color: tokens.muted),
+                const SizedBox(width: 6),
+                Text(
+                  'Filter',
+                  style: style.label.copyWith(color: tokens.muted),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ScrollConfiguration(
+                    behavior: ScrollConfiguration.of(context)
+                        .copyWith(scrollbars: false),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          for (final token in filterTokens(filters)) ...[
+                            _FilterTokenView(token: token),
+                            const SizedBox(width: 8),
+                          ],
+                          const _AddFilter(),
                         ],
-                        const _AddFilter(),
-                      ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Owned only',
-                style: style.caption.copyWith(color: tokens.muted),
-              ),
-              const SizedBox(width: 8),
-              ShelfSwitch(
-                key: const Key('owned-only'),
-                label: 'Owned only',
-                value: filters.ownedOnly,
-                onChanged: ref.read(filtersProvider.notifier).setOwnedOnly,
-              ),
-              if (active > 0) ...[
-                const SizedBox(width: 8),
-                ShelfButton(
-                  key: const Key('filter-reset'),
-                  label: 'Reset',
-                  kind: ShelfButtonKind.quiet,
-                  onPressed: ref.read(filtersProvider.notifier).reset,
+                const SizedBox(width: 12),
+                if (constraints.maxWidth >= _ownedLabelMinWidth) ...[
+                  Text(
+                    'Owned Only',
+                    style: style.caption.copyWith(color: tokens.muted),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                ShelfSwitch(
+                  key: const Key('owned-only'),
+                  label: 'Owned Only',
+                  value: filters.ownedOnly,
+                  onChanged: ref.read(filtersProvider.notifier).setOwnedOnly,
                 ),
+                if (active > 0) ...[
+                  const SizedBox(width: 8),
+                  ShelfButton(
+                    key: const Key('filter-reset'),
+                    label: 'Reset',
+                    kind: ShelfButtonKind.quiet,
+                    onPressed: ref.read(filtersProvider.notifier).reset,
+                  ),
+                ],
+                const SizedBox(width: 12),
+                _SortAndView(compact: constraints.maxWidth < _compactMaxWidth),
               ],
-              const SizedBox(width: 12),
-              const _SortAndView(),
-            ],
+            ),
           ),
         ),
       ),
@@ -97,8 +104,17 @@ class FilterBar extends ConsumerWidget {
   }
 }
 
+/// Below this width the filter bar drops the caption of the owned-only switch.
+const _ownedLabelMinWidth = 900.0;
+
+/// Below this width the bar drops its "Filter" label and the sort menu shrinks
+/// to an icon, so a window with the details open still fits the controls.
+const _compactMaxWidth = 700.0;
+
 class _SortAndView extends ConsumerWidget {
-  const _SortAndView();
+  const _SortAndView({required this.compact});
+
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -116,18 +132,27 @@ class _SortAndView extends ConsumerWidget {
                 onSelected: () => notifier.setSort(option),
               ),
           ],
-          builder: (context, controller) => ShelfButton(
-            label: 'Sort: ${view.sortBy.label}',
-            onPressed: () =>
-                controller.isOpen ? controller.close() : controller.open(),
-          ),
+          builder: (context, controller) {
+            void toggle() =>
+                controller.isOpen ? controller.close() : controller.open();
+            return compact
+                ? ShelfIconButton(
+                    icon: Icons.sort,
+                    tooltip: 'Sort: ${view.sortBy.label}',
+                    onPressed: toggle,
+                  )
+                : ShelfButton(
+                    label: 'Sort: ${view.sortBy.label}',
+                    onPressed: toggle,
+                  );
+          },
         ),
         const SizedBox(width: 4),
         ShelfIconButton(
           icon: view.direction == SortDirection.asc
               ? Icons.arrow_upward
               : Icons.arrow_downward,
-          tooltip: 'Sort direction',
+          tooltip: 'Sort Direction',
           onPressed: notifier.toggleDirection,
         ),
         const SizedBox(width: 12),

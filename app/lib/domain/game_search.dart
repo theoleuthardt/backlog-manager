@@ -36,13 +36,6 @@ class GameSearchResult {
     return '${part(mainStory)} / ${part(mainStoryWithExtras)} / '
         '${part(completionist)} h';
   }
-
-  /// "Main 22 h · +Extra 48 h · Completionist 95 h".
-  String get hoursLine {
-    String part(double hours) => hours > 0 ? formatHours(hours) : '--';
-    return 'Main ${part(mainStory)} h · +Extra ${part(mainStoryWithExtras)} h · '
-        'Completionist ${part(completionist)} h';
-  }
 }
 
 /// A game found on SteamGridDB, whose covers can be listed.
@@ -68,7 +61,7 @@ String _hours(double hours) => hours == hours.roundToDouble()
     : hours.toString();
 
 /// Where "Continue in Creation Tool" goes: the creation tool with the chosen
-/// result in the address. Inside a shared space [inSpace] names it as the
+/// result in the address. Inside a Shared Space [inSpace] names it as the
 /// target.
 String creationToolLocation(GameSearchResult result, {bool inSpace = false}) {
   final description = result.description ?? '';

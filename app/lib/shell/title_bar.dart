@@ -5,6 +5,7 @@ import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/routing/history.dart';
+import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/shell/navigation.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:backlog_manager/shell/window_controls.dart';
@@ -14,7 +15,7 @@ import 'package:go_router/go_router.dart';
 
 const _macTrafficLights = 80.0;
 
-/// The 52 px title bar: sidebar toggle, back and forward, the page title and
+/// The 56 px title bar: sidebar toggle, back and forward, the page title and
 /// the search field with its shortcut hint. It is the drag region of the
 /// window; Windows and Linux get caption buttons on the right, macOS keeps its
 /// native traffic lights on the left. A [minimal] bar (sign-in, setup) has the
@@ -34,7 +35,7 @@ class TitleBar extends ConsumerWidget {
 
     return SizedBox(
       key: const Key('title-bar'),
-      height: 52,
+      height: 56,
       child: GlassSurface(
         opacity: 0.42,
         blur: 14,
@@ -51,78 +52,84 @@ class TitleBar extends ConsumerWidget {
                       onDoubleTap: controls.toggleMaximize,
                     ),
                   ),
-                  Row(
-                    children: [
-                      SizedBox(width: isMac ? _macTrafficLights : 20),
-                      if (!minimal) ...[
-                        _BarButton(
-                          key: const Key('sidebar-toggle'),
-                          icon: Icons.view_sidebar_outlined,
-                          tooltip: 'Show or hide the sidebar',
-                          onPressed: ref
-                              .read(sidebarCollapsedProvider.notifier)
-                              .toggle,
+                  Positioned.fill(
+                    child: Row(
+                      children: [
+                        SizedBox(width: isMac ? _macTrafficLights : 20),
+                        if (!minimal) ...[
+                          _BarButton(
+                            key: const Key('sidebar-toggle'),
+                            icon: Icons.view_sidebar_outlined,
+                            tooltip: 'Show or hide the sidebar',
+                            onPressed: ref
+                                .read(sidebarCollapsedProvider.notifier)
+                                .toggle,
+                          ),
+                          const SizedBox(width: 4),
+                          _BarButton(
+                            key: const Key('nav-back'),
+                            icon: Icons.arrow_back_ios_new,
+                            iconSize: 14,
+                            tooltip: 'Back',
+                            onPressed: history.canGoBack
+                                ? () => _go(
+                                    context,
+                                    ref
+                                        .read(
+                                          navigationHistoryProvider.notifier,
+                                        )
+                                        .back(),
+                                  )
+                                : null,
+                          ),
+                          _BarButton(
+                            key: const Key('nav-forward'),
+                            icon: Icons.arrow_forward_ios,
+                            iconSize: 14,
+                            tooltip: 'Forward',
+                            onPressed: history.canGoForward
+                                ? () => _go(
+                                    context,
+                                    ref
+                                        .read(
+                                          navigationHistoryProvider.notifier,
+                                        )
+                                        .forward(),
+                                  )
+                                : null,
+                          ),
+                        ],
+                        const SizedBox(width: 12),
+                        IgnorePointer(
+                          child: Text(
+                            pageTitle(location),
+                            key: const Key('title-bar-title'),
+                            style: text.windowTitle,
+                          ),
                         ),
-                        const SizedBox(width: 4),
-                        _BarButton(
-                          key: const Key('nav-back'),
-                          icon: Icons.arrow_back_ios_new,
-                          iconSize: 14,
-                          tooltip: 'Back',
-                          onPressed: history.canGoBack
-                              ? () => _go(
-                                  context,
-                                  ref
-                                      .read(navigationHistoryProvider.notifier)
-                                      .back(),
-                                )
-                              : null,
-                        ),
-                        _BarButton(
-                          key: const Key('nav-forward'),
-                          icon: Icons.arrow_forward_ios,
-                          iconSize: 14,
-                          tooltip: 'Forward',
-                          onPressed: history.canGoForward
-                              ? () => _go(
-                                  context,
-                                  ref
-                                      .read(navigationHistoryProvider.notifier)
-                                      .forward(),
-                                )
-                              : null,
-                        ),
+                        const Spacer(),
+                        if (!minimal) _SearchField(location: location),
+                        SizedBox(width: isMac ? 16 : 12),
+                        if (!isMac) ...[
+                          _CaptionButton(
+                            key: const Key('caption-minimize'),
+                            icon: Icons.remove,
+                            onPressed: controls.minimize,
+                          ),
+                          _CaptionButton(
+                            key: const Key('caption-maximize'),
+                            icon: Icons.crop_square,
+                            onPressed: controls.toggleMaximize,
+                          ),
+                          _CaptionButton(
+                            key: const Key('caption-close'),
+                            icon: Icons.close,
+                            danger: true,
+                            onPressed: controls.close,
+                          ),
+                        ],
                       ],
-                      const SizedBox(width: 12),
-                      IgnorePointer(
-                        child: Text(
-                          pageTitle(location),
-                          key: const Key('title-bar-title'),
-                          style: text.windowTitle,
-                        ),
-                      ),
-                      const Spacer(),
-                      if (!minimal) const _SearchField(),
-                      SizedBox(width: isMac ? 16 : 12),
-                      if (!isMac) ...[
-                        _CaptionButton(
-                          key: const Key('caption-minimize'),
-                          icon: Icons.remove,
-                          onPressed: controls.minimize,
-                        ),
-                        _CaptionButton(
-                          key: const Key('caption-maximize'),
-                          icon: Icons.crop_square,
-                          onPressed: controls.toggleMaximize,
-                        ),
-                        _CaptionButton(
-                          key: const Key('caption-close'),
-                          icon: Icons.close,
-                          danger: true,
-                          onPressed: controls.close,
-                        ),
-                      ],
-                    ],
+                    ),
                   ),
                 ],
               ),
@@ -198,21 +205,36 @@ class _CaptionButton extends StatelessWidget {
       containedInkWell: true,
       child: SizedBox(
         width: 46,
-        height: 52,
+        height: 56,
         child: Icon(icon, size: 16, color: tokens.muted),
       ),
     );
   }
 }
 
+/// The search field of the title bar. It filters the games of the library and
+/// the Shared Space, so typing on any other page takes the user to the
+/// library, where the result is.
 class _SearchField extends ConsumerStatefulWidget {
-  const _SearchField();
+  const _SearchField({required this.location});
+
+  final String location;
 
   @override
   ConsumerState<_SearchField> createState() => _SearchFieldState();
 }
 
 class _SearchFieldState extends ConsumerState<_SearchField> {
+  void _changed(String value) {
+    ref.read(filtersProvider.notifier).setSearch(value);
+    final onGameList =
+        widget.location == AppRoutes.library ||
+        widget.location == AppRoutes.space;
+    if (value.trim().isNotEmpty && !onGameList) {
+      context.go(AppRoutes.library);
+    }
+  }
+
   late final TextEditingController _controller = TextEditingController(
     text: ref.read(filtersProvider).search,
   );
@@ -238,7 +260,7 @@ class _SearchFieldState extends ConsumerState<_SearchField> {
       child: TextField(
         key: const Key('search-field'),
         controller: _controller,
-        onChanged: ref.read(filtersProvider.notifier).setSearch,
+        onChanged: _changed,
         focusNode: ref.watch(searchFocusNodeProvider),
         style: text.fieldText,
         decoration: InputDecoration(

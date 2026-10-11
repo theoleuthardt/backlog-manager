@@ -77,11 +77,11 @@ void main() {
     testWidgets('draws the add chip with a dashed border', (tester) async {
       await pumpThemed(
         tester,
-        const ShelfChip(label: 'Add filter', kind: ShelfChipKind.add),
+        const ShelfChip(label: 'Add Filter', kind: ShelfChipKind.add),
       );
 
       expect(find.byKey(const Key('chip-dashed-border')), findsOneWidget);
-      expect(chipTextColor(tester, 'Add filter'), tokens.muted);
+      expect(chipTextColor(tester, 'Add Filter'), tokens.muted);
     });
 
     testWidgets('calls onPressed and onRemove', (tester) async {
@@ -143,20 +143,60 @@ void main() {
       expect(decoration.borderRadius, BorderRadius.circular(8));
     });
 
-    testWidgets('raises the selected segment onto surface3', (tester) async {
+    testWidgets('raises a thumb onto surface3 under the selected segment', (
+      tester,
+    ) async {
       await pumpThemed(tester, segmented(value: 1));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
 
-      BoxDecoration segment(int value) =>
-          tester
-                  .widget<DecoratedBox>(
-                    find.byKey(Key('segment-$value-surface')),
-                  )
-                  .decoration
-              as BoxDecoration;
+      final thumb = tester.widget<DecoratedBox>(
+        find.byKey(const Key('segmented-thumb')),
+      );
+      final decoration = thumb.decoration as BoxDecoration;
+      expect(decoration.color, tokens.surface3);
+      expect(decoration.boxShadow, isNotEmpty);
+      expect(
+        tester.getCenter(find.byKey(const Key('segmented-thumb'))).dx,
+        closeTo(tester.getCenter(find.text('Wishlist')).dx, 1),
+      );
+    });
 
-      expect(segment(1).color, tokens.surface3);
-      expect(segment(1).boxShadow, isNotEmpty);
-      expect(segment(0).color, isNull);
+    testWidgets('slides the thumb to the segment that is chosen', (
+      tester,
+    ) async {
+      var value = 0;
+      late StateSetter update;
+      await pumpThemed(
+        tester,
+        StatefulBuilder(
+          builder: (context, setState) {
+            update = setState;
+            return ShelfSegmented<int>(
+              value: value,
+              onChanged: (_) {},
+              segments: const [
+                ShelfSegment(value: 0, label: 'Library'),
+                ShelfSegment(value: 1, label: 'Wishlist'),
+              ],
+            );
+          },
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      final before = tester.getCenter(find.byKey(const Key('segmented-thumb')));
+
+      update(() => value = 1);
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 60));
+      final during = tester.getCenter(find.byKey(const Key('segmented-thumb')));
+      await tester.pump(const Duration(milliseconds: 400));
+      final after = tester.getCenter(find.byKey(const Key('segmented-thumb')));
+
+      expect(during.dx, greaterThan(before.dx));
+      expect(during.dx, lessThan(after.dx));
     });
 
     testWidgets('reports the tapped segment', (tester) async {
@@ -254,7 +294,7 @@ void main() {
             const ShelfChip(label: 'Info', kind: ShelfChipKind.info),
             const ShelfChip(label: 'Ok', kind: ShelfChipKind.ok),
             ShelfChip(label: 'Genre: RPG', onRemove: () {}),
-            const ShelfChip(label: 'Add filter', kind: ShelfChipKind.add),
+            const ShelfChip(label: 'Add Filter', kind: ShelfChipKind.add),
           ],
         ),
         const SizedBox(height: 16),
@@ -275,7 +315,7 @@ void main() {
         ),
       ],
     ),
-    size: const Size(520, 220),
-    width: 480,
+    size: const Size(680, 280),
+    width: 640,
   );
 }

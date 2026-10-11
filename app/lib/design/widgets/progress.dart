@@ -39,11 +39,82 @@ class ShelfProgressBar extends StatelessWidget {
                         ? ShelfGlow.progress(tokens)
                               .copyWith(borderRadius: radius)
                         : BoxDecoration(color: color, borderRadius: radius),
-                    child: SizedBox(
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 260),
+                      curve: Curves.easeOut,
                       width: constraints.maxWidth * share,
                       height: height,
                     ),
                   ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A bar for work of unknown length: a glowing stretch of the accent sweeps
+/// across the track again and again.
+class ShelfIndeterminateBar extends StatefulWidget {
+  const ShelfIndeterminateBar({this.height = 6, super.key});
+
+  final double height;
+
+  @override
+  State<ShelfIndeterminateBar> createState() => _ShelfIndeterminateBarState();
+}
+
+class _ShelfIndeterminateBarState extends State<ShelfIndeterminateBar>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1500),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = Theme.of(context).extension<ShelfTokens>()!;
+    final radius = BorderRadius.circular(widget.height / 2);
+
+    return SizedBox(
+      height: widget.height,
+      child: DecoratedBox(
+        key: const Key('progress-track'),
+        decoration: BoxDecoration(color: tokens.surface3, borderRadius: radius),
+        child: ClipRRect(
+          borderRadius: radius,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final stretch = constraints.maxWidth * 0.32;
+              return AnimatedBuilder(
+                animation: _controller,
+                builder: (context, child) {
+                  final travel = constraints.maxWidth + stretch;
+                  return Stack(
+                    children: [
+                      Positioned(
+                        left: _controller.value * travel - stretch,
+                        width: stretch,
+                        top: 0,
+                        bottom: 0,
+                        child: child!,
+                      ),
+                    ],
+                  );
+                },
+                child: DecoratedBox(
+                  key: const Key('progress-sweep'),
+                  decoration: ShelfGlow.progress(tokens)
+                      .copyWith(borderRadius: radius),
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -82,7 +153,7 @@ class InterestSegments extends StatelessWidget {
                     ? null
                     : () => onChanged!(n == value ? 0 : n),
                 child: SizedBox(
-                  height: 18,
+                  height: 28,
                   child: Center(
                     child: DecoratedBox(
                       key: Key('interest-$n'),
@@ -90,7 +161,7 @@ class InterestSegments extends StatelessWidget {
                         color: n <= value ? tokens.accent : tokens.surface3,
                         borderRadius: BorderRadius.circular(3),
                       ),
-                      child: const SizedBox(height: 6, width: double.infinity),
+                      child: const SizedBox(height: 9, width: double.infinity),
                     ),
                   ),
                 ),

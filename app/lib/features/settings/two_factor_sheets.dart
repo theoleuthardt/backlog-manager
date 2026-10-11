@@ -223,7 +223,7 @@ class _EnrollTwoFactorSheetState extends ConsumerState<EnrollTwoFactorSheet> {
         children: [
           ShelfButton(
             key: const Key('two-factor-copy'),
-            label: 'Copy codes',
+            label: 'Copy Codes',
             onPressed: _copy,
           ),
           const Spacer(),

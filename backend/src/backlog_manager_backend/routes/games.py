@@ -39,6 +39,8 @@ from backlog_manager_backend.services.credentials import (
 
 _IGDB_NOT_CONFIGURED = "IGDB integration is not configured"
 _IGDB_UNAVAILABLE = "IGDB is currently unreachable"
+_IGDB_REJECTED = "IGDB rejected the configured credentials"
+_CREDENTIAL_STATUSES = frozenset({400, 401, 403})
 _STEAMGRIDDB_NOT_CONFIGURED = "SteamGridDB integration is not configured"
 _STEAMGRIDDB_UNAVAILABLE = "SteamGridDB is currently unreachable"
 _CHEAPSHARK_UNAVAILABLE = "CheapShark is currently unreachable"
@@ -65,6 +67,15 @@ def _resolve_steamgriddb_api_key(user: User) -> str | None:
         raise ServiceUnavailableException(_STEAMGRIDDB_UNAVAILABLE) from error
 
 
+def _igdb_failure(error: httpx.HTTPError) -> ServiceUnavailableException:
+    if (
+        isinstance(error, httpx.HTTPStatusError)
+        and error.response.status_code in _CREDENTIAL_STATUSES
+    ):
+        return ServiceUnavailableException(_IGDB_REJECTED)
+    return ServiceUnavailableException(_IGDB_UNAVAILABLE)
+
+
 async def _igdb_credentials(user: User) -> tuple[str, str]:
     """An httpx.HTTPError here is the same class of failure as
     _call_igdb below, just one step earlier (acquiring the token
@@ -75,20 +86,16 @@ async def _igdb_credentials(user: User) -> tuple[str, str]:
     except RuntimeError as error:
         raise ServiceUnavailableException(_IGDB_NOT_CONFIGURED) from error
     except httpx.HTTPError as error:
-        raise ServiceUnavailableException(_IGDB_UNAVAILABLE) from error
+        raise _igdb_failure(error) from error
     return client_id, access_token
 
 
 async def _call_igdb[T](coro: Awaitable[T]) -> T:
-    """search_game_on_igdb() et al. already turn a bad HTTP status from
-    IGDB into an empty list internally, but a transport failure
-    (timeout, connection refused, ...) still propagates as
-    httpx.RequestError - map that to 503 instead of letting it fall
-    through to Litestar's generic 500."""
+    """Runs an IGDB call; a transport or status failure becomes a 503."""
     try:
         return await coro
-    except httpx.RequestError as error:
-        raise ServiceUnavailableException(_IGDB_UNAVAILABLE) from error
+    except (httpx.HTTPStatusError, httpx.RequestError) as error:
+        raise _igdb_failure(error) from error
 
 
 @get("/api/games/search")

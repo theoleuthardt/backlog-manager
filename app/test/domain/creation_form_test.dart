@@ -101,7 +101,7 @@ void main() {
       expect(read.completionist, 0);
     });
 
-    test('names the shared space as the target', () {
+    test('names the Shared Space as the target', () {
       expect(
         CreationPrefill.fromQuery({'target': 'space'}).targetsSpace,
         isTrue,
@@ -167,10 +167,10 @@ void main() {
       },
     );
 
-    test('lets only Steam games into the shared space', () {
+    test('lets only Steam games into the Shared Space', () {
       expect(
         validateCreation(input(), toSpace: true),
-        'Only Steam games can be added to the shared space',
+        'Only Steam games can be added to the Shared Space',
       );
       expect(validateCreation(input(steamAppId: '620'), toSpace: true), isNull);
     });

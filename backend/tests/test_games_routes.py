@@ -459,6 +459,32 @@ async def test_enriched_search_returns_503_on_transport_failure(
     assert response.status_code == 503
 
 
+async def test_enriched_search_returns_503_when_igdb_rejects_the_credentials(
+    configured_igdb: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    postgres_url: str,
+    create_and_login,
+) -> None:
+    """Regression test: Twitch answering 400 to the token request (wrong
+    client id or secret) used to escape as httpx.HTTPStatusError and become
+    a 500 without a usable message."""
+    from backlog_manager_backend.app import create_app
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(400, json={"status": 400, "message": "invalid client"})
+
+    _mock_igdb(handler, monkeypatch)
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "rejected1@example.com")
+        response = client.get(
+            "/api/games/enriched-search", params={"search_term": "Celeste"}, headers=headers
+        )
+
+    assert response.status_code == 503
+    assert "credentials" in response.json()["detail"].lower()
+
+
 @pytest.fixture
 def _reset_steam_app_cache(monkeypatch: pytest.MonkeyPatch) -> None:
     from backlog_manager_backend.services import game_service as module

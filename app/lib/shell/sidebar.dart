@@ -13,18 +13,18 @@ import 'package:backlog_manager/design/widgets/toast.dart';
 import 'package:backlog_manager/domain/themes.dart';
 import 'package:backlog_manager/features/appearance/appearance_page.dart';
 import 'package:backlog_manager/features/appearance/theme_actions.dart';
+import 'package:backlog_manager/features/shortcuts/shortcuts_sheet.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/routing/session.dart';
 import 'package:backlog_manager/shell/navigation.dart';
 import 'package:backlog_manager/shell/navigation_counts.dart';
+import 'package:backlog_manager/shell/pane_widths.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-const _sidebarWidth = 232.0;
-
-/// The translucent 232 px sidebar: brand mark, grouped navigation with counts
+/// The translucent sidebar, 232 px unless dragged wider or narrower: brand mark, grouped navigation with counts
 /// and the account row pinned to the bottom. It collapses to nothing from the
 /// title bar.
 class Sidebar extends ConsumerWidget {
@@ -36,17 +36,18 @@ class Sidebar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final collapsed = ref.watch(sidebarCollapsedProvider);
     final animations = !MediaQuery.of(context).disableAnimations;
+    final width = ref.watch(paneWidthProvider(Pane.sidebar));
 
     return AnimatedContainer(
       key: const Key('sidebar'),
       duration: animations ? const Duration(milliseconds: 150) : Duration.zero,
       curve: Curves.easeOut,
-      width: collapsed ? 0 : _sidebarWidth,
+      width: collapsed ? 0 : width,
       child: ClipRect(
         child: OverflowBox(
           alignment: Alignment.centerLeft,
-          minWidth: _sidebarWidth,
-          maxWidth: _sidebarWidth,
+          minWidth: width,
+          maxWidth: width,
           child: ExcludeFocus(
             excluding: collapsed,
             child: ExcludeSemantics(
@@ -103,6 +104,8 @@ class _SidebarContent extends ConsumerWidget {
                               active: item.isActiveFor(location),
                               count: counts[item.id],
                             ),
+                          if (section.label == 'Personalise')
+                            const _ThemeStrip(),
                         ],
                       ],
                     ),
@@ -128,11 +131,11 @@ class _Brand extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 6),
       child: Row(
         children: [
-          const BrandMark(),
+          const BrandMark(size: 30),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Backlog',
+              'Backlog Manager',
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).extension<ShelfTextStyles>()!.brand,
             ),
@@ -158,7 +161,7 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-class _NavItem extends ConsumerWidget {
+class _NavItem extends ConsumerStatefulWidget {
   const _NavItem({required this.item, required this.active, this.count});
 
   final NavigationItem item;
@@ -166,109 +169,256 @@ class _NavItem extends ConsumerWidget {
   final int? count;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_NavItem> createState() => _NavItemState();
+}
+
+class _NavItemState extends ConsumerState<_NavItem> {
+  bool _hovered = false;
+  bool _pressed = false;
+
+  void _activate() {
+    final route = widget.item.route;
+    if (route != null) {
+      context.go(route);
+    } else if (widget.item.action == NavigationAction.addGame) {
+      ref.read(addGameRequestProvider.notifier).request();
+    } else if (widget.item.action == NavigationAction.shortcuts) {
+      unawaited(showShortcutsSheet(context));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
-    final color = active ? tokens.foreground : tokens.muted;
+    final text = Theme.of(context).extension<ShelfTextStyles>()!;
+    final item = widget.item;
+    final active = widget.active;
+    final lit = _hovered || active;
+    final color = active
+        ? tokens.foreground
+        : _hovered
+        ? tokens.foreground
+        : tokens.muted;
+    const duration = Duration(milliseconds: 180);
 
     return Semantics(
       key: Key('nav-${item.id}'),
       button: true,
       selected: active,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(ShelfRadius.control),
-        hoverColor: tokens.glowSoft,
-        onTap: () => _activate(context, ref),
-        child: Ink(
-          height: 32,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(ShelfRadius.control),
-            gradient: active
-                ? LinearGradient(colors: [tokens.glowSoft, Colors.transparent])
-                : null,
-          ),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 2,
-                height: 32,
-                child: ColoredBox(
-                  color: active ? tokens.accent : Colors.transparent,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Icon(item.icon, size: 16, color: color),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  item.label,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context)
-                      .extension<ShelfTextStyles>()!
-                      .navItem
-                      .copyWith(color: color),
-                ),
-              ),
-              if (item.id == 'space' && ref.watch(hasSpaceInvitationProvider))
-                Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: DecoratedBox(
-                    key: const Key('nav-space-invitation'),
-                    decoration: BoxDecoration(
-                      color: tokens.accent,
-                      shape: BoxShape.circle,
+      label: item.label,
+      excludeSemantics: true,
+      onTap: _activate,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() {
+          _hovered = false;
+          _pressed = false;
+        }),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _activate,
+          onTapDown: (_) => setState(() => _pressed = true),
+          onTapUp: (_) => setState(() => _pressed = false),
+          onTapCancel: () => setState(() => _pressed = false),
+          child: AnimatedScale(
+            scale: _pressed ? 0.97 : 1,
+            duration: const Duration(milliseconds: 90),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 1),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(ShelfRadius.control),
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: AnimatedContainer(
+                        duration: duration,
+                        curve: Curves.easeOut,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              tokens.glow.withValues(
+                                alpha: active
+                                    ? 0.22
+                                    : _hovered
+                                    ? 0.2
+                                    : 0,
+                              ),
+                              tokens.glow.withValues(
+                                alpha: _hovered ? 0.05 : 0,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
-                    child: const SizedBox(width: 8, height: 8),
-                  ),
+                    SizedBox(
+                      height: 40,
+                      child: Row(
+                        children: [
+                          AnimatedContainer(
+                            duration: duration,
+                            curve: Curves.easeOut,
+                            width: 3,
+                            height: lit ? (active ? 26 : 18) : 0,
+                            decoration: BoxDecoration(
+                              color: active ? tokens.accent : tokens.glow,
+                              borderRadius: const BorderRadius.horizontal(
+                                right: Radius.circular(3),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: (active ? tokens.accent : tokens.glow)
+                                      .withValues(alpha: lit ? 0.7 : 0),
+                                  blurRadius: 10,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 9),
+                          AnimatedScale(
+                            scale: _hovered ? 1.18 : 1,
+                            duration: duration,
+                            curve: Curves.easeOutBack,
+                            child: AnimatedRotation(
+                              turns: _hovered && !active ? -0.02 : 0,
+                              duration: duration,
+                              child: Icon(
+                                item.icon,
+                                size: 19,
+                                color: active || _hovered
+                                    ? tokens.accent
+                                    : color,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 11),
+                          Expanded(
+                            child: AnimatedSlide(
+                              offset: _hovered && !active
+                                  ? const Offset(0.035, 0)
+                                  : Offset.zero,
+                              duration: duration,
+                              curve: Curves.easeOut,
+                              child: Text(
+                                item.label,
+                                overflow: TextOverflow.ellipsis,
+                                style: text.navItem.copyWith(color: color),
+                              ),
+                            ),
+                          ),
+                          if (item.id == 'space' &&
+                              ref.watch(hasSpaceInvitationProvider))
+                            Padding(
+                              padding: const EdgeInsets.only(right: 12),
+                              child: DecoratedBox(
+                                key: const Key('nav-space-invitation'),
+                                decoration: BoxDecoration(
+                                  color: tokens.accent,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const SizedBox(width: 8, height: 8),
+                              ),
+                            ),
+                          if (widget.count != null)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 12),
+                              child: Text(
+                                '${widget.count}',
+                                style: text.label.copyWith(
+                                  color: _hovered ? tokens.muted : tokens.faint,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              if (count != null)
-                Padding(
-                  padding: const EdgeInsets.only(right: 10),
-                  child: Text(
-                    '$count',
-                    style: Theme.of(context)
-                        .extension<ShelfTextStyles>()!
-                        .label
-                        .copyWith(color: tokens.faint),
-                  ),
-                ),
-            ],
+              ),
+            ),
           ),
         ),
       ),
     );
   }
-
-  void _activate(BuildContext context, WidgetRef ref) {
-    final route = item.route;
-    if (route != null) {
-      context.go(route);
-    } else if (item.action == NavigationAction.addGame) {
-      ref.read(addGameRequestProvider.notifier).request();
-    }
-  }
 }
 
-const _themePrefix = 'theme:';
+/// The themes as small swatches under "Personalise": a click applies one, the
+/// plus opens the theme creator.
+class _ThemeStrip extends ConsumerWidget {
+  const _ThemeStrip();
 
-PopupMenuItem<String> _themeItem(
-  String id,
-  String name,
-  ThemeColors colors,
-  String activeId,
-) {
-  return PopupMenuItem<String>(
-    key: Key('account-theme-$id'),
-    value: '$_themePrefix$id',
-    height: 32,
-    child: Row(
-      children: [
-        ThemeSwatch(colors: colors),
-        const SizedBox(width: 10),
-        Expanded(child: Text(name, overflow: TextOverflow.ellipsis)),
-        if (id == activeId) const Icon(Icons.check, size: 16),
-      ],
-    ),
-  );
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = Theme.of(context).extension<ShelfTokens>()!;
+    final activeId = ref.watch(themeIdProvider);
+    final custom = ref.watch(customThemesProvider);
+
+    Widget swatch(String id, String name, ThemeColors colors) {
+      final active = id == activeId;
+      return Tooltip(
+        message: name,
+        child: Semantics(
+          key: Key('sidebar-theme-$id'),
+          button: true,
+          selected: active,
+          label: name,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () => unawaited(_setTheme(context, ref, id)),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 140),
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(9),
+                border: Border.all(
+                  color: active ? tokens.accent : Colors.transparent,
+                  width: 2,
+                ),
+              ),
+              child: ThemeSwatch(colors: colors),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      key: const Key('sidebar-themes'),
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+      child: Wrap(
+        spacing: 4,
+        runSpacing: 4,
+        children: [
+          for (final theme in displayThemes)
+            swatch(theme.id, theme.name, theme.colors),
+          for (final theme in custom)
+            swatch(theme.id, theme.name, theme.colors),
+          Tooltip(
+            message: 'Create a theme',
+            child: Semantics(
+              key: const Key('sidebar-theme-creator'),
+              button: true,
+              label: 'Create a theme',
+              child: InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () => context.go(AppRoutes.appearance),
+                child: Padding(
+                  padding: const EdgeInsets.all(3),
+                  child: SizedBox(
+                    width: 40,
+                    height: 32,
+                    child: Icon(Icons.add, size: 18, color: tokens.muted),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 Future<void> _setTheme(BuildContext context, WidgetRef ref, String id) async {
@@ -286,8 +436,6 @@ class _AccountRow extends ConsumerWidget {
     final session = ref.watch(sessionProvider);
     final user = session is SessionSignedIn ? session.user : null;
     final name = user?.name ?? '';
-    final activeTheme = ref.watch(themeIdProvider);
-    final customThemes = ref.watch(customThemesProvider);
 
     return PopupMenuButton<String>(
       key: const Key('account-row'),
@@ -297,43 +445,20 @@ class _AccountRow extends ConsumerWidget {
       onSelected: (value) {
         if (value == 'logout') {
           unawaited(ref.read(authControllerProvider.notifier).signOut());
-        } else if (value == 'creator') {
-          context.go(AppRoutes.appearance);
-        } else if (value.startsWith(_themePrefix)) {
-          unawaited(
-            _setTheme(context, ref, value.substring(_themePrefix.length)),
-          );
+        } else if (value == 'settings') {
+          context.go(AppRoutes.settings);
         }
       },
-      itemBuilder: (context) => [
+      itemBuilder: (context) => const [
         PopupMenuItem<String>(
-          enabled: false,
-          height: 28,
-          child: Text('THEME', style: text.sidebarLabel),
+          value: 'settings',
+          height: 40,
+          child: Text('Settings'),
         ),
-        for (final theme in displayThemes)
-          _themeItem(theme.id, theme.name, theme.colors, activeTheme),
-        if (customThemes.isNotEmpty) ...[
-          const PopupMenuDivider(),
-          PopupMenuItem<String>(
-            enabled: false,
-            height: 28,
-            child: Text('YOUR THEMES', style: text.sidebarLabel),
-          ),
-          for (final theme in customThemes)
-            _themeItem(theme.id, theme.name, theme.colors, activeTheme),
-        ],
-        const PopupMenuDivider(),
-        const PopupMenuItem<String>(
-          key: Key('account-theme-creator'),
-          value: 'creator',
-          height: 32,
-          child: Text('Theme creator'),
-        ),
-        const PopupMenuItem<String>(
+        PopupMenuItem<String>(
           value: 'logout',
-          height: 32,
-          child: Text('Log out'),
+          height: 40,
+          child: Text('Log Out'),
         ),
       ],
       child: SizedBox(

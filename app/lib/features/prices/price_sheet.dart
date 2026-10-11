@@ -300,7 +300,7 @@ class _KeyforsteamRow extends StatelessWidget {
       leading: Icon(Icons.search, size: 20, color: tokens.muted),
       name: 'Keyforsteam',
       trailing: Text(
-        'Compare prices',
+        'Compare Prices',
         style: style.caption.copyWith(color: tokens.muted),
       ),
     );

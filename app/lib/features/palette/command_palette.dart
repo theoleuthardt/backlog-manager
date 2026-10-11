@@ -11,6 +11,7 @@ import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/domain/palette_search.dart';
 import 'package:backlog_manager/features/add_game/add_game_sheet.dart';
 import 'package:backlog_manager/features/igdb_sync/igdb_sync_sheet.dart';
+import 'package:backlog_manager/features/library/reveal_entry.dart';
 import 'package:backlog_manager/features/palette/palette_actions.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/shell/palette_registry.dart';
@@ -136,6 +137,7 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
     Navigator.of(context).pop();
     switch (item) {
       case _GameItem(:final entry):
+        ref.read(revealRequestProvider.notifier).request(entry.id);
         router.go(
           Uri(
             path: AppRoutes.library,
@@ -214,18 +216,20 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
                 Focus(
                   onKeyEvent: _onKey,
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Icon(Icons.search, size: 18, color: tokens.muted),
-                        const SizedBox(width: 10),
+                        Icon(Icons.search, size: 20, color: tokens.muted),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: TextField(
                             key: const Key('palette-input'),
                             controller: _controller,
                             autofocus: true,
                             onChanged: (_) => setState(() => _highlight = 0),
-                            style: style.fieldText.copyWith(fontSize: 16),
+                            textAlignVertical: TextAlignVertical.center,
+                            style: style.fieldText.copyWith(fontSize: 17),
                             decoration: const InputDecoration(
                               hintText: 'Type a command or search games',
                               border: InputBorder.none,
@@ -233,6 +237,8 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
                               focusedBorder: InputBorder.none,
                               filled: false,
                               isDense: true,
+                              contentPadding: EdgeInsets.only(bottom: 3),
+                              constraints: BoxConstraints(),
                             ),
                           ),
                         ),
@@ -463,7 +469,7 @@ class _ActionRow extends StatelessWidget {
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
     final shortcut = action.shortcut;
     return _Row(
-      height: 36,
+      height: 42,
       highlighted: highlighted,
       onHover: onHover,
       onPressed: onPressed,

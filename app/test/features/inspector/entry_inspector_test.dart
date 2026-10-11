@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/data/backlog_providers.dart';
 import 'package:backlog_manager/data/games_api.dart';
+import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/domain/price_listings.dart';
 import 'package:backlog_manager/features/add_game/wrong_game_sheet.dart';
+import 'package:backlog_manager/platform/trailer_player.dart';
 import 'package:backlog_manager/platform/url_opener.dart';
 import 'package:backlog_manager/routing/router.dart';
 import 'package:backlog_manager/routing/routes.dart';
@@ -96,11 +98,66 @@ void main() {
         tester.widget<Text>(find.byKey(const Key('inspector-title'))).data,
         'Hades',
       );
-      expect(
-        tester.widget<Text>(find.byKey(const Key('inspector-subtitle'))).data,
-        'Roguelike · Action · PC',
-      );
+      for (final fact in ['Roguelike', 'Action', 'PC']) {
+        expect(find.text(fact), findsWidgets);
+      }
+      expect(find.byKey(const Key('inspector-genres')), findsOneWidget);
+      expect(find.byKey(const Key('inspector-platforms')), findsOneWidget);
       expect(find.text('Changes save automatically'), findsOneWidget);
+    });
+
+    testWidgets('the Genre and Platform captions are in the text colour', (
+      tester,
+    ) async {
+      await openInspector(tester);
+
+      final tokens = Theme.of(
+        tester.element(find.byKey(const Key('entry-inspector'))),
+      ).extension<ShelfTokens>()!;
+      for (final caption in ['GENRE', 'PLATFORM']) {
+        final style = tester.widget<Text>(find.text(caption)).style!;
+        expect(style.color, tokens.foreground, reason: caption);
+      }
+    });
+
+    testWidgets('many genres fill two lines and the rest is behind +N', (
+      tester,
+    ) async {
+      const genres = [
+        'Role-playing',
+        'Adventure',
+        'Strategy',
+        'Simulator',
+        'Puzzle',
+        'Indie',
+        'Shooter',
+        'Platform',
+        'Racing',
+        'Arcade',
+      ];
+      await openInspector(
+        tester,
+        entries: [
+          BacklogEntry(
+            id: 1,
+            title: 'Hades',
+            status: 'Not Started',
+            genre: genres,
+          ),
+        ],
+      );
+
+      final more = find.byKey(const Key('genre-more'));
+      expect(more, findsOneWidget);
+      expect(find.text('Arcade'), findsNothing);
+      final block = tester.getSize(find.byKey(const Key('inspector-genres')));
+      expect(block.height, lessThanOrEqualTo(80));
+
+      await tester.tap(more);
+      await tester.pumpAndSettle();
+      for (final genre in genres) {
+        expect(find.text(genre), findsWidgets);
+      }
     });
 
     testWidgets('closes itself for a game that does not exist', (tester) async {
@@ -115,7 +172,7 @@ void main() {
     ) async {
       final app = await openInspector(tester);
 
-      await tester.tap(find.byTooltip('Close inspector'));
+      await tester.tap(find.byTooltip('Close Inspector'));
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('entry-inspector')), findsNothing);
@@ -237,7 +294,7 @@ void main() {
 
       await tester.enterText(find.byKey(const Key('inspector-playtime')), '77');
       await tester.pump(const Duration(milliseconds: 100));
-      await tester.tap(find.byTooltip('Close inspector'));
+      await tester.tap(find.byTooltip('Close Inspector'));
       await tester.pumpAndSettle();
 
       expect(app.api.calls, contains('update 1 {playtime: 77.0}'));
@@ -316,7 +373,7 @@ void main() {
       expect(app.api.calls, contains('update 1 {owned: false}'));
     });
 
-    testWidgets('shows the playtime of the partner in a shared space', (
+    testWidgets('shows the playtime of the partner in a Shared Space', (
       tester,
     ) async {
       await openInspector(
@@ -331,7 +388,8 @@ void main() {
         ],
       );
 
-      expect(find.text('Your partner: 6.5h'), findsOneWidget);
+      expect(find.text('Partner playtime'), findsOneWidget);
+      expect(find.text('6.5 h'), findsOneWidget);
     });
   });
 
@@ -427,6 +485,53 @@ void main() {
       ]);
     });
 
+    testWidgets('trailer plays in a sheet where the platform has a player', (
+      tester,
+    ) async {
+      final opened = <Uri>[];
+      Uri? played;
+      await openInspector(
+        tester,
+        overrides: [
+          urlOpenerProvider.overrideWithValue(opened.add),
+          trailerPlayerBuilderProvider.overrideWithValue((context, embedUrl) {
+            played = embedUrl;
+            return const Center(key: Key('fake-player'), child: Text('Video'));
+          }),
+        ],
+      );
+
+      await openTab(tester, 'Trailer');
+      await tester.tap(find.byKey(const Key('trailer-card')));
+      await tester.pumpAndSettle();
+
+      expect(opened, isEmpty);
+      expect(
+        played.toString(),
+        'https://www.youtube-nocookie.com/embed/abcdefghijk',
+      );
+      expect(find.byKey(const Key('fake-player')), findsOneWidget);
+      final size = tester.getSize(find.byKey(const Key('trailer-player')));
+      expect(size.width / size.height, closeTo(16 / 9, 0.01));
+
+      await tester.tap(find.byKey(const Key('trailer-watch-on-youtube')));
+      await tester.pump();
+      expect(opened, [
+        Uri.parse('https://www.youtube.com/watch?v=abcdefghijk'),
+      ]);
+    });
+
+    testWidgets('the trailer card spans the width of the sidebar', (
+      tester,
+    ) async {
+      await openInspector(tester);
+      await openTab(tester, 'Trailer');
+
+      final card = tester.getSize(find.byKey(const Key('trailer-card')));
+      final slot = tester.getSize(find.byKey(const Key('inspector')));
+      expect(card.width, greaterThan(slot.width - 40));
+    });
+
     testWidgets('trailer says so when there is none', (tester) async {
       await openInspector(tester, id: 2);
 
@@ -519,7 +624,7 @@ void main() {
       await tester.tap(find.byKey(const Key('inspector-change-cover')));
       await tester.pumpAndSettle();
       expect(games.calls, contains('covers 1145360'));
-      await tester.tap(find.bySemanticsLabel('Cover option'));
+      await tester.tap(find.bySemanticsLabel('Cover Option'));
       await tester.pumpAndSettle();
       expect(find.text('Cover updated'), findsOneWidget);
       await afterAutosave(tester);

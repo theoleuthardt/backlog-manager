@@ -3,7 +3,7 @@ import 'dart:math';
 
 /// The six colours of a theme, in the order of the theme form.
 enum ThemeColorField {
-  background('Background', 'Page background'),
+  background('Background', 'Page Background'),
   surface('Surface', 'Cards, dialogs and menus'),
   foreground('Text', 'Text and icons'),
   accent('Accent', 'Buttons and highlights'),
@@ -150,7 +150,7 @@ const builtinThemes = [
   ),
   BuiltinTheme(
     id: 'dark',
-    name: 'Classic dark',
+    name: 'Classic Dark',
     colors: ThemeColors(
       background: '#000000',
       surface: '#0f0f12',

@@ -6,6 +6,7 @@ import 'package:backlog_manager/features/library/wishlist_sync_prompt.dart';
 import 'package:backlog_manager/features/palette/command_palette.dart';
 import 'package:backlog_manager/features/updates/update_notifier.dart';
 import 'package:backlog_manager/routing/routes.dart';
+import 'package:backlog_manager/shell/pane_widths.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:backlog_manager/shell/sidebar.dart';
 import 'package:backlog_manager/shell/status_bar.dart';
@@ -38,6 +39,7 @@ class AppShell extends ConsumerStatefulWidget {
 }
 
 class _AppShellState extends ConsumerState<AppShell> {
+  final _slotKey = GlobalKey();
   bool _showingEntry = false;
 
   @override
@@ -54,7 +56,7 @@ class _AppShellState extends ConsumerState<AppShell> {
       if (id != null) {
         _showingEntry = true;
         inspector.show(EntryInspector(entryId: id));
-      } else if (_showingEntry) {
+      } else {
         _showingEntry = false;
         inspector.hide();
       }
@@ -75,10 +77,21 @@ class _AppShellState extends ConsumerState<AppShell> {
   @override
   Widget build(BuildContext context) {
     final inspector = ref.watch(shellInspectorProvider);
+    final fullscreen =
+        inspector != null && ref.watch(inspectorFullscreenProvider);
     final location = widget.location;
+    final slot = inspector == null
+        ? null
+        : KeyedSubtree(
+            key: _slotKey,
+            child: _InspectorSlot(fullscreen: fullscreen, child: inspector),
+          );
     ref.listen(shellInspectorProvider, (_, next) {
-      if (next == null && _showingEntry && widget.entryId != null) {
-        context.go(widget.location);
+      if (next == null) {
+        ref.read(inspectorFullscreenProvider.notifier).exit();
+        if (_showingEntry && widget.entryId != null) {
+          context.go(widget.location);
+        }
       }
     });
 
@@ -93,15 +106,36 @@ class _AppShellState extends ConsumerState<AppShell> {
                 child: Row(
                   children: [
                     Sidebar(location: location),
+                    if (!ref.watch(sidebarCollapsedProvider))
+                      const PaneResizeHandle(
+                        pane: Pane.sidebar,
+                        growsToRight: true,
+                      ),
                     Expanded(
-                      child: SizedBox.expand(
-                        key: const Key('main-content'),
-                        child: UpdateNotifier(
-                          child: WishlistSyncPrompt(child: widget.child),
-                        ),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Offstage(
+                            offstage: fullscreen,
+                            child: SizedBox.expand(
+                              key: const Key('main-content'),
+                              child: UpdateNotifier(
+                                child: WishlistSyncPrompt(child: widget.child),
+                              ),
+                            ),
+                          ),
+                          if (slot != null && fullscreen)
+                            Positioned.fill(child: slot),
+                        ],
                       ),
                     ),
-                    if (inspector != null) _InspectorSlot(child: inspector),
+                    if (slot != null && !fullscreen) ...[
+                      const PaneResizeHandle(
+                        pane: Pane.inspector,
+                        growsToRight: false,
+                      ),
+                      slot,
+                    ],
                   ],
                 ),
               ),
@@ -114,16 +148,17 @@ class _AppShellState extends ConsumerState<AppShell> {
   }
 }
 
-class _InspectorSlot extends StatelessWidget {
-  const _InspectorSlot({required this.child});
+class _InspectorSlot extends ConsumerWidget {
+  const _InspectorSlot({required this.child, this.fullscreen = false});
 
   final Widget child;
+  final bool fullscreen;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return SizedBox(
       key: const Key('inspector'),
-      width: 380,
+      width: fullscreen ? null : ref.watch(paneWidthProvider(Pane.inspector)),
       child: GlassSurface(
         opacity: 0.52,
         blur: 10,

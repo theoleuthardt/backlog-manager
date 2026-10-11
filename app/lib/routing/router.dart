@@ -35,6 +35,40 @@ const _mainPages = [
   AppRoutes.space,
 ];
 
+/// A page without a route transition (the old page leaves at once, so two
+/// pages are never alive together) whose content fades in while it rises a
+/// few pixels.
+NoTransitionPage<void> _fadePage(GoRouterState state, Widget child) {
+  return NoTransitionPage<void>(
+    key: state.pageKey,
+    child: _FadeIn(child: child),
+  );
+}
+
+class _FadeIn extends StatelessWidget {
+  const _FadeIn({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (MediaQuery.of(context).disableAnimations) return child;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+      builder: (context, value, child) => Opacity(
+        opacity: value,
+        child: Transform.translate(
+          offset: Offset(0, 8 * (1 - value)),
+          child: child,
+        ),
+      ),
+      child: child,
+    );
+  }
+}
+
 GoRoute _page(
   String path,
   Widget Function(String title, GoRouterState state) page,
@@ -42,16 +76,15 @@ GoRoute _page(
   return GoRoute(
     path: path,
     pageBuilder: (context, state) =>
-        NoTransitionPage(child: page(pageTitle(path), state)),
+        _fadePage(state, page(pageTitle(path), state)),
   );
 }
 
 GoRoute _fullWindow(String path, Widget page) {
   return GoRoute(
     path: path,
-    pageBuilder: (context, state) => NoTransitionPage(
-      child: FullWindowFrame(location: path, child: page),
-    ),
+    pageBuilder: (context, state) =>
+        _fadePage(state, FullWindowFrame(location: path, child: page)),
   );
 }
 
@@ -121,8 +154,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.settings,
-        pageBuilder: (context, state) => NoTransitionPage(
-          child: FullWindowFrame(
+        pageBuilder: (context, state) => _fadePage(
+          state,
+          FullWindowFrame(
             location: AppRoutes.settings,
             child: SettingsPage(
               key: ValueKey(state.uri.queryParameters['tab']),

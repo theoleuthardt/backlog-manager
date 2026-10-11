@@ -16,7 +16,7 @@ Future<List<String>> pump(
     ShelfColorPicker(
       value: value,
       palette: palette,
-      label: 'Category colour',
+      label: 'Category Colour',
       onChanged: picked.add,
     ),
   );

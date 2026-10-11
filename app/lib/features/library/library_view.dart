@@ -18,6 +18,7 @@ class LibraryViewState {
     this.layout = LibraryLayout.grid,
     this.collapsed = const {},
     this.extraPages = const {},
+    this.reorderingGroups = false,
   });
 
   final SortOption sortBy;
@@ -25,6 +26,10 @@ class LibraryViewState {
   final LibraryLayout layout;
   final Set<String> collapsed;
   final Map<String, int> extraPages;
+
+  /// Whether a group header is being dragged to another place: every group
+  /// folds away meanwhile, so all headers are in view as drop targets.
+  final bool reorderingGroups;
 
   bool isCollapsed(String groupKey) => collapsed.contains(groupKey);
 
@@ -37,6 +42,7 @@ class LibraryViewState {
     LibraryLayout? layout,
     Set<String>? collapsed,
     Map<String, int>? extraPages,
+    bool? reorderingGroups,
   }) {
     return LibraryViewState(
       sortBy: sortBy ?? this.sortBy,
@@ -44,6 +50,7 @@ class LibraryViewState {
       layout: layout ?? this.layout,
       collapsed: collapsed ?? this.collapsed,
       extraPages: extraPages ?? this.extraPages,
+      reorderingGroups: reorderingGroups ?? this.reorderingGroups,
     );
   }
 }
@@ -86,6 +93,11 @@ class LibraryViewNotifier extends Notifier<LibraryViewState> {
     final next = {...state.collapsed};
     if (!next.remove(groupKey)) next.add(groupKey);
     state = state.copyWith(collapsed: next);
+  }
+
+  void setReorderingGroups({required bool active}) {
+    if (state.reorderingGroups == active) return;
+    state = state.copyWith(reorderingGroups: active);
   }
 
   void showMore(String groupKey) {

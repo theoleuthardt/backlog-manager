@@ -2,6 +2,7 @@ import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
+import 'package:backlog_manager/design/widgets/note.dart';
 import 'package:flutter/material.dart';
 
 /// A text input for a row of a settings group. [onCommit] is called with the
@@ -17,7 +18,8 @@ class SettingsTextField extends StatefulWidget {
     this.obscure = false,
     this.onChanged,
     this.onCommit,
-    this.width = 240,
+    this.width = 330,
+    this.trailing,
     super.key,
   });
 
@@ -28,6 +30,11 @@ class SettingsTextField extends StatefulWidget {
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onCommit;
   final double width;
+
+  /// What sits to the right of the field, for example the "Remove" button
+  /// of a secret. Its room is kept free in every row, so the fields of a
+  /// group all end at the same place.
+  final Widget? trailing;
 
   @override
   State<SettingsTextField> createState() => _SettingsTextFieldState();
@@ -53,20 +60,31 @@ class _SettingsTextFieldState extends State<SettingsTextField> {
   @override
   Widget build(BuildContext context) {
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
-    return SizedBox(
-      width: widget.width,
-      height: ShelfHeight.input,
-      child: TextField(
-        key: widget.fieldKey,
-        controller: widget.controller,
-        focusNode: _focus,
-        obscureText: widget.obscure,
-        onChanged: widget.onChanged,
-        onSubmitted: widget.onCommit,
-        style: style.fieldText,
-        textAlignVertical: TextAlignVertical.center,
-        decoration: InputDecoration(hintText: widget.hintText),
-      ),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: widget.width,
+          height: ShelfHeight.input,
+          child: TextField(
+            key: widget.fieldKey,
+            controller: widget.controller,
+            focusNode: _focus,
+            obscureText: widget.obscure,
+            onChanged: widget.onChanged,
+            onSubmitted: widget.onCommit,
+            style: style.fieldText,
+            textAlignVertical: TextAlignVertical.center,
+            decoration: InputDecoration(hintText: widget.hintText),
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 110,
+          height: ShelfHeight.input,
+          child: Align(alignment: Alignment.centerLeft, child: widget.trailing),
+        ),
+      ],
     );
   }
 }
@@ -95,26 +113,25 @@ class SecretControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SettingsTextField(
-          fieldKey: fieldKey,
-          controller: controller,
-          hintText: placeholder,
-          obscure: true,
-          onCommit: onCommit,
-        ),
-        if (isSet) ...[
-          const SizedBox(width: 8),
-          ShelfButton(key: removeKey, label: 'Remove', onPressed: onRemove),
-        ],
-      ],
+    return SettingsTextField(
+      fieldKey: fieldKey,
+      controller: controller,
+      hintText: placeholder,
+      obscure: true,
+      onCommit: onCommit,
+      trailing: isSet
+          ? ShelfButton(
+              key: removeKey,
+              label: 'Remove',
+              tall: true,
+              onPressed: onRemove,
+            )
+          : null,
     );
   }
 }
 
-/// A line of muted help text below a settings group.
+/// An explanation below a settings group, as a [ShelfNote].
 class SettingsNote extends StatelessWidget {
   const SettingsNote(this.text, {super.key});
 
@@ -122,11 +139,9 @@ class SettingsNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = Theme.of(context).extension<ShelfTokens>()!;
-    final style = Theme.of(context).extension<ShelfTextStyles>()!;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
-      child: Text(text, style: style.caption.copyWith(color: tokens.faint)),
+      padding: const EdgeInsets.only(top: 10),
+      child: ShelfNote(text: text),
     );
   }
 }

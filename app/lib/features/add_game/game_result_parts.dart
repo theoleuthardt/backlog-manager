@@ -2,6 +2,9 @@ import 'package:backlog_manager/api/api_providers.dart';
 import 'package:backlog_manager/data/entry_image.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
+import 'package:backlog_manager/design/widgets/chips.dart';
+import 'package:backlog_manager/design/widgets/table.dart';
+import 'package:backlog_manager/domain/game_search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -105,4 +108,76 @@ class KeyHint extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The columns of a list of game search results, shared by the sheet that adds
+/// a game and the sheet that replaces the game of an entry: the cover with the
+/// title and the platforms, the genres, and the times to beat. Long texts wrap.
+/// A result whose id is in [deeper] carries a "Found by deeper search" chip.
+List<ShelfColumn<GameSearchResult>> gameResultColumns(
+  BuildContext context, {
+  Set<int> deeper = const {},
+}) {
+  final tokens = Theme.of(context).extension<ShelfTokens>()!;
+  final style = Theme.of(context).extension<ShelfTextStyles>()!;
+  return [
+    ShelfColumn(
+      header: 'Game',
+      flex: 5,
+      cell: (context, result) => Row(
+        children: [
+          ResultThumb(imageUrl: result.imageUrl, width: 58, height: 87),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  result.title,
+                  softWrap: true,
+                  overflow: TextOverflow.visible,
+                  style: style.control.copyWith(fontWeight: FontWeight.w700),
+                ),
+                if (result.platforms.isNotEmpty)
+                  Text(
+                    result.platforms.join(', '),
+                    softWrap: true,
+                    overflow: TextOverflow.visible,
+                    style: style.caption.copyWith(color: tokens.faint),
+                  ),
+                if (deeper.contains(result.id))
+                  const Padding(
+                    padding: EdgeInsets.only(top: 6),
+                    child: ShelfChip(
+                      key: Key('deeper-marker'),
+                      label: 'Found by deeper search',
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+    ShelfColumn(
+      header: 'Genre',
+      flex: 3,
+      cell: (context, result) => Text(
+        result.genres.join(', '),
+        softWrap: true,
+        overflow: TextOverflow.visible,
+        style: style.caption.copyWith(color: tokens.muted),
+      ),
+    ),
+    ShelfColumn(
+      header: 'Time to beat',
+      flex: 3,
+      cell: (context, result) => Text(
+        result.timesLabel,
+        textAlign: TextAlign.right,
+        style: style.caption.copyWith(color: tokens.muted),
+      ),
+    ),
+  ];
 }

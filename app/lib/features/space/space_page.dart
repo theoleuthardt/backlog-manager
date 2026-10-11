@@ -15,7 +15,7 @@ import 'package:backlog_manager/features/space/invite_form.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// The shared space: what to do without one ("Start a shared space"), with an
+/// The Shared Space: what to do without one ("Start a Shared Space"), with an
 /// invitation (accept or decline), and for a member the library of the space.
 class SpacePage extends ConsumerWidget {
   const SpacePage({super.key});
@@ -30,14 +30,14 @@ class SpacePage extends ConsumerWidget {
         skipLoadingOnReload: true,
         skipLoadingOnRefresh: true,
         loading: () =>
-            const CenteredMessage(text: 'Loading the shared space...'),
+            const CenteredMessage(text: 'Loading the Shared Space...'),
         error: (error, _) => CenteredMessage(
           text: ApiException.from(
             error,
-            'Failed to load the shared space',
+            'Failed to load the Shared Space',
           ).message,
           action: ShelfButton(
-            label: 'Try again',
+            label: 'Try Again',
             onPressed: () => ref.invalidate(spaceProvider),
           ),
         ),
@@ -107,7 +107,7 @@ class _NoSpaceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const _Card(
-      title: 'Start a shared space',
+      title: 'Start a Shared Space',
       text:
           'Invite a friend by username to keep a co-op backlog together. '
           'Status and categories are shared, ratings and playtime stay your '

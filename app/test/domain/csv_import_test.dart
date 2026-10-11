@@ -256,7 +256,7 @@ void main() {
     test('a row that was not matched asks to check the match', () {
       final verdict = rowVerdict(row(matched: false));
 
-      expect(verdict.chip, 'Check match');
+      expect(verdict.chip, 'Check Match');
       expect(verdict.action, RowAction.wrongGame);
     });
 

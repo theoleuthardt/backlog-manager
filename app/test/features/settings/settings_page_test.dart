@@ -3,6 +3,7 @@ import 'package:backlog_manager/app.dart';
 import 'package:backlog_manager/auth/auth_api.dart';
 import 'package:backlog_manager/auth/token_store.dart';
 import 'package:backlog_manager/auth/user_api.dart';
+import 'package:backlog_manager/design/background_motion.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
 import 'package:backlog_manager/platform/url_opener.dart';
 import 'package:backlog_manager/routing/router.dart';
@@ -237,6 +238,24 @@ void main() {
       await tester.pump(const Duration(seconds: 6));
     });
 
+    testWidgets('turns the motion of the glow off and on', (tester) async {
+      await openSettings(tester);
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(MaterialApp)),
+      );
+      expect(container.read(glowMotionProvider), isTrue);
+
+      final toggle = find.byKey(const Key('settings-glow-motion'));
+      await tester.ensureVisible(toggle);
+      await tester.tap(toggle);
+      await tester.pumpAndSettle();
+      expect(container.read(glowMotionProvider), isFalse);
+
+      await tester.tap(toggle);
+      await tester.pumpAndSettle();
+      expect(container.read(glowMotionProvider), isTrue);
+    });
+
     testWidgets('offers all seven sort options', (tester) async {
       await openSettings(tester);
 
@@ -249,8 +268,8 @@ void main() {
         'Genre',
         'Playtime',
         'Platform',
-        'Interest level',
-        'Review stars',
+        'Interest Level',
+        'Review Stars',
       ]) {
         expect(find.text(label), findsWidgets, reason: label);
       }

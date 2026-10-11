@@ -3,10 +3,11 @@ import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:flutter/material.dart';
 
-/// A labelled text input: the label above in muted 12 px text, the 34 px input
-/// on `surface2`, and below it either an [error] in the danger colour or a
-/// [hint] in the faint colour.
-class ShelfField extends StatelessWidget {
+/// A labelled text input: the label above in muted text, the input on
+/// `surface2`, and below it either an [error] in the danger colour or a [hint]
+/// in the faint colour. An [obscure] field has a button at its right end that
+/// shows or hides what was typed.
+class ShelfField extends StatefulWidget {
   const ShelfField({
     required this.label,
     this.hint,
@@ -37,10 +38,19 @@ class ShelfField extends StatelessWidget {
   final TextInputType? keyboardType;
 
   @override
+  State<ShelfField> createState() => _ShelfFieldState();
+}
+
+class _ShelfFieldState extends State<ShelfField> {
+  bool _revealed = false;
+
+  @override
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final text = Theme.of(context).extension<ShelfTextStyles>()!;
-    final note = error ?? hint;
+    final widget = this.widget;
+    final error = widget.error;
+    final note = error ?? widget.hint;
     final dangerBorder = error == null
         ? null
         : OutlineInputBorder(
@@ -51,25 +61,39 @@ class ShelfField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: text.label.copyWith(color: tokens.muted)),
+        Text(widget.label, style: text.label.copyWith(color: tokens.muted)),
         const SizedBox(height: 6),
         SizedBox(
           height: ShelfHeight.input,
           child: TextField(
-            controller: controller,
-            focusNode: focusNode,
-            onChanged: onChanged,
-            onSubmitted: onSubmitted,
-            obscureText: obscure,
-            enabled: enabled,
-            autofocus: autofocus,
-            keyboardType: keyboardType,
+            controller: widget.controller,
+            focusNode: widget.focusNode,
+            onChanged: widget.onChanged,
+            onSubmitted: widget.onSubmitted,
+            obscureText: widget.obscure && !_revealed,
+            enabled: widget.enabled,
+            autofocus: widget.autofocus,
+            keyboardType: widget.keyboardType,
             style: text.fieldText,
             textAlignVertical: TextAlignVertical.center,
             decoration: InputDecoration(
-              hintText: hintText,
+              hintText: widget.hintText,
               enabledBorder: dangerBorder,
               focusedBorder: dangerBorder,
+              suffixIcon: widget.obscure
+                  ? IconButton(
+                      key: const Key('field-reveal'),
+                      tooltip: _revealed ? 'Hide password' : 'Show password',
+                      icon: Icon(
+                        _revealed
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        size: 20,
+                        color: tokens.muted,
+                      ),
+                      onPressed: () => setState(() => _revealed = !_revealed),
+                    )
+                  : null,
             ),
           ),
         ),

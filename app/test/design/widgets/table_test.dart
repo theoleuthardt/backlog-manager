@@ -35,14 +35,14 @@ void main() {
   final tokens = tokensOf('shelfOled');
 
   group('ShelfDataTable', () {
-    testWidgets('has a 34 px header with upper case captions', (tester) async {
+    testWidgets('has a 42 px header with upper case captions', (tester) async {
       await pumpThemed(
         tester,
         ShelfDataTable<Game>(columns: columns(), rows: games),
         width: 600,
       );
 
-      expect(tester.getSize(find.byKey(const Key('table-header'))).height, 34);
+      expect(tester.getSize(find.byKey(const Key('table-header'))).height, 42);
       expect(find.text('TITLE'), findsOneWidget);
       expect(find.text('HOURS'), findsOneWidget);
     });
@@ -60,6 +60,34 @@ void main() {
       expect(find.text('Hades'), findsOneWidget);
       expect(find.text('8 h'), findsOneWidget);
       expect(find.byKey(const Key('table-row-2')), findsOneWidget);
+    });
+
+    testWidgets('a row grows when a cell wraps onto more lines', (
+      tester,
+    ) async {
+      await pumpThemed(
+        tester,
+        ShelfDataTable<Game>(
+          columns: [
+            ShelfColumn(
+              header: 'Title',
+              cell: (context, game) => Text(
+                List.filled(30, game.title).join(' '),
+                softWrap: true,
+                overflow: TextOverflow.visible,
+              ),
+            ),
+          ],
+          rows: const [Game('Hades', 41)],
+        ),
+        width: 300,
+      );
+
+      expect(
+        tester.getSize(find.byKey(const Key('table-row-0'))).height,
+        greaterThan(48),
+      );
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('divides the width between the columns by their flex', (

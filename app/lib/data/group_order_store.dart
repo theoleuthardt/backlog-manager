@@ -81,11 +81,6 @@ class GroupOrderNotifier extends Notifier<List<String>> {
     ];
     unawaited(ref.read(groupOrderStoreProvider).write(state));
   }
-
-  void reset() {
-    state = const [];
-    unawaited(ref.read(groupOrderStoreProvider).write(state));
-  }
 }
 
 final groupOrderProvider = NotifierProvider<GroupOrderNotifier, List<String>>(

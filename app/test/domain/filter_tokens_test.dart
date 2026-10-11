@@ -33,9 +33,9 @@ void main() {
         'Status',
         'Category',
         'Interest',
-        'Review stars',
+        'Review Stars',
         'Playtime',
-        'Main story',
+        'Main Story',
         'Main + extra',
         'Completionist',
       ]);
@@ -89,9 +89,9 @@ void main() {
 
       expect(tokens.map((token) => '${token.field.label} ${token.value}'), [
         'Interest 3 to 8',
-        'Review stars 0 to 7',
+        'Review Stars 0 to 7',
         'Playtime 12 to 62 h',
-        'Main story 0.5 to 10 h',
+        'Main Story 0.5 to 10 h',
       ]);
     });
 

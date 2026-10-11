@@ -126,7 +126,7 @@ void main() {
       expect(find.text('Light'), findsOneWidget);
       expect(find.text('Colorful'), findsOneWidget);
       expect(find.text('Freaky'), findsOneWidget);
-      expect(find.text('Classic dark'), findsOneWidget);
+      expect(find.text('Classic Dark'), findsOneWidget);
       expect(find.text('No custom themes yet.'), findsOneWidget);
     });
 
@@ -258,7 +258,7 @@ void main() {
         'glow': '#3b82f6',
       });
       expect(find.text('Theme "Neon" saved'), findsOneWidget);
-      expect(find.text('Save changes'), findsOneWidget);
+      expect(find.text('Save Changes'), findsOneWidget);
       await dismissToast(tester);
     });
 
@@ -367,7 +367,7 @@ void main() {
       await tester.tap(find.byKey(const Key('theme-new')));
       await tester.pump();
 
-      expect(find.text('Save theme'), findsOneWidget);
+      expect(find.text('Save Theme'), findsOneWidget);
       expect(
         tester
             .widget<TextField>(find.byKey(const Key('theme-name')))
@@ -464,25 +464,20 @@ void main() {
   });
 
   group('the switcher', () {
-    testWidgets('the account row lists the themes and the creator', (
-      tester,
-    ) async {
+    testWidgets('the sidebar lists the themes and the creator', (tester) async {
       await open(
         tester,
         account: user(custom: [neon]),
         location: AppRoutes.library,
       );
 
-      await tester.tap(find.byKey(const Key('account-row')));
-      await tester.pumpAndSettle();
-
-      expect(find.byKey(const Key('account-theme-shelfOled')), findsOneWidget);
-      expect(find.byKey(const Key('account-theme-dark')), findsOneWidget);
+      expect(find.byKey(const Key('sidebar-theme-shelfOled')), findsOneWidget);
+      expect(find.byKey(const Key('sidebar-theme-dark')), findsOneWidget);
       expect(
-        find.byKey(const Key('account-theme-custom-neon')),
+        find.byKey(const Key('sidebar-theme-custom-neon')),
         findsOneWidget,
       );
-      expect(find.byKey(const Key('account-theme-creator')), findsOneWidget);
+      expect(find.byKey(const Key('sidebar-theme-creator')), findsOneWidget);
     });
 
     testWidgets('picking a theme there switches and saves it', (tester) async {
@@ -492,9 +487,7 @@ void main() {
         location: AppRoutes.library,
       );
 
-      await tester.tap(find.byKey(const Key('account-row')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('account-theme-custom-neon')));
+      await tester.tap(find.byKey(const Key('sidebar-theme-custom-neon')));
       await tester.pumpAndSettle();
 
       expect(opened.activeId, 'custom-neon');
@@ -503,12 +496,12 @@ void main() {
       ]);
     });
 
-    testWidgets('Theme creator opens the appearance screen', (tester) async {
+    testWidgets('the plus of the sidebar opens the appearance screen', (
+      tester,
+    ) async {
       await open(tester, location: AppRoutes.library);
 
-      await tester.tap(find.byKey(const Key('account-row')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('account-theme-creator')));
+      await tester.tap(find.byKey(const Key('sidebar-theme-creator')));
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('page-appearance')), findsOneWidget);

@@ -125,7 +125,7 @@ void main() {
     ) async {
       await pumpApp(tester);
 
-      expect(tester.getSize(find.byKey(const Key('title-bar'))).height, 52);
+      expect(tester.getSize(find.byKey(const Key('title-bar'))).height, 56);
       expect(tester.getSize(find.byKey(const Key('sidebar'))).width, 232);
       expect(tester.getSize(find.byKey(const Key('status-bar'))).height, 28);
       expect(find.byKey(const Key('main-content')), findsOneWidget);
@@ -140,9 +140,9 @@ void main() {
         'PERSONALISE',
         'Home',
         'Library',
-        'Shared space',
-        'Add game',
-        'Steam sync',
+        'Shared Space',
+        'Add Game',
+        'Steam Sync',
         'Import CSV',
         'Export CSV',
         'Appearance',
@@ -184,7 +184,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(app.location, AppRoutes.export);
-      expect(inMain(find.text('Export backlog')), findsOneWidget);
+      expect(inMain(find.text('Export Backlog')), findsOneWidget);
     });
 
     testWidgets('shows the title of the current page in the title bar', (
@@ -389,7 +389,7 @@ void main() {
 
       await tester.tap(find.byKey(const Key('account-row')));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Log out'));
+      await tester.tap(find.text('Log Out'));
       await tester.pumpAndSettle();
 
       expect(app.location, AppRoutes.signIn);
@@ -397,15 +397,13 @@ void main() {
       expect(app.tokens.token, isNull);
     });
 
-    testWidgets('switches the theme at runtime from the switcher', (
+    testWidgets('switches the theme at runtime from the sidebar', (
       tester,
     ) async {
       await pumpApp(tester);
       final before = Theme.of(tester.element(find.byKey(const Key('sidebar'))));
 
-      await tester.tap(find.byKey(const Key('account-row')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Light'));
+      await tester.tap(find.byKey(const Key('sidebar-theme-light')));
       await tester.pumpAndSettle();
 
       final after = Theme.of(tester.element(find.byKey(const Key('sidebar'))));
@@ -488,6 +486,19 @@ void main() {
       );
       expect(field.focusNode!.hasFocus, isTrue);
     });
+
+    testWidgets(
+      'typing in the title bar search takes any page to the library',
+      (tester) async {
+        final app = await pumpApp(tester, location: AppRoutes.home);
+        expect(app.location, AppRoutes.home);
+
+        await tester.enterText(find.byKey(const Key('search-field')), 'hades');
+        await tester.pumpAndSettle();
+
+        expect(app.location, AppRoutes.library);
+      },
+    );
 
     testWidgets('Cmd+K opens the command palette on macOS and Esc closes it', (
       tester,

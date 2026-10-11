@@ -9,6 +9,6 @@ abstract final class ShelfRadius {
 
 /// Heights of controls.
 abstract final class ShelfHeight {
-  static const control = 32.0;
-  static const input = 34.0;
+  static const control = 38.0;
+  static const input = 44.0;
 }

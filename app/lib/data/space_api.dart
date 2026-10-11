@@ -11,7 +11,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// The shared space of the signed-in user.
+/// The Shared Space of the signed-in user.
 abstract interface class SpaceApi {
   Future<Space> get();
 

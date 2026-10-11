@@ -97,7 +97,7 @@ class SelectionBar extends ConsumerWidget {
                 ],
                 builder: (context, controller) => ShelfButton(
                   key: const Key('selection-set-status'),
-                  label: 'Set status',
+                  label: 'Set Status',
                   onPressed: none
                       ? null
                       : () => controller.isOpen

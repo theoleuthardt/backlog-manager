@@ -83,7 +83,7 @@ void main() {
       expect(uri.queryParameters['mainStory'], '7.5');
     });
 
-    test('names the shared space as the target', () {
+    test('names the Shared Space as the target', () {
       final uri = Uri.parse(creationToolLocation(result(), inSpace: true));
 
       expect(uri.queryParameters['target'], 'space');
@@ -110,7 +110,7 @@ void main() {
       expect(uri.queryParameters, {'title': 'My game', 'custom': '1'});
     });
 
-    test('names the shared space as the target', () {
+    test('names the Shared Space as the target', () {
       final uri = Uri.parse(customGameLocation('My game', inSpace: true));
 
       expect(uri.queryParameters['target'], 'space');
@@ -132,22 +132,6 @@ void main() {
 
     test('keeps one decimal for half hours', () {
       expect(result(main: 7.5).timesLabel, '7.5 / 48 / 95 h');
-    });
-  });
-
-  group('hoursLine', () {
-    test('names the three times', () {
-      expect(
-        result().hoursLine,
-        'Main 22 h · +Extra 48 h · Completionist 95 h',
-      );
-    });
-
-    test('shows two dashes for a time that is not known', () {
-      expect(
-        result(extra: 0).hoursLine,
-        'Main 22 h · +Extra -- h · Completionist 95 h',
-      );
     });
   });
 

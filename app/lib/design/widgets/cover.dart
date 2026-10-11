@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'dart:math' as math;
 
 import 'package:backlog_manager/design/color_math.dart';
@@ -32,6 +34,7 @@ class ShelfCover extends StatelessWidget {
     this.overlay,
     this.footer,
     this.selected = false,
+    this.highlighted = false,
     this.selectionMode = false,
     this.onTap,
     this.onSecondaryTap,
@@ -48,9 +51,13 @@ class ShelfCover extends StatelessWidget {
   final Widget? overlay;
 
   /// Replaces [progress] and [meta] below the cover, for example one bar per
-  /// member of a shared space.
+  /// member of a Shared Space.
   final Widget? footer;
   final bool selected;
+
+  /// Draws the accent outline for a moment, to point at a game the library
+  /// scrolled to; it fades in.
+  final bool highlighted;
   final bool selectionMode;
   final VoidCallback? onTap;
   final ValueChanged<Offset>? onSecondaryTap;
@@ -60,89 +67,98 @@ class ShelfCover extends StatelessWidget {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final text = Theme.of(context).extension<ShelfTextStyles>()!;
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      onSecondaryTapDown: onSecondaryTap == null
-          ? null
-          : (details) => onSecondaryTap!(details.globalPosition),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AspectRatio(
-            key: const Key('cover-art'),
-            aspectRatio: 2 / 3,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Positioned.fill(
-                  child: DecoratedBox(
-                    key: const Key('cover-shadow'),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(ShelfRadius.card),
-                      boxShadow: ShelfGlow.coverShadow(tokens),
-                    ),
-                    child: ClipRRect(
-                      key: const Key('cover-clip'),
-                      borderRadius: BorderRadius.circular(ShelfRadius.card),
-                      child: _art(text),
+    return _HoverLift(
+      enabled: onTap != null,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        onSecondaryTapDown: onSecondaryTap == null
+            ? null
+            : (details) => onSecondaryTap!(details.globalPosition),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AspectRatio(
+              key: const Key('cover-art'),
+              aspectRatio: 2 / 3,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      key: const Key('cover-shadow'),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(ShelfRadius.card),
+                        boxShadow: ShelfGlow.coverShadow(tokens),
+                      ),
+                      child: ClipRRect(
+                        key: const Key('cover-clip'),
+                        borderRadius: BorderRadius.circular(ShelfRadius.card),
+                        child: _art(text),
+                      ),
                     ),
                   ),
-                ),
-                if (overlay != null) Positioned.fill(child: overlay!),
-                if (selected)
-                  Positioned(
-                    left: -6,
-                    top: -6,
-                    right: -6,
-                    bottom: -6,
-                    child: IgnorePointer(
-                      child: ClipPath(
-                        key: const Key('cover-ring-clip'),
-                        clipper: const _OutsideOfRing(
-                          width: 3,
-                          radius: ShelfRadius.card + 6,
-                        ),
-                        child: DecoratedBox(
-                          key: const Key('cover-ring'),
-                          decoration: ShelfGlow.selectedRing(
-                            tokens,
-                            radius: ShelfRadius.card + 6,
+                  if (overlay != null) Positioned.fill(child: overlay!),
+                  if (selected || highlighted)
+                    Positioned(
+                      left: -6,
+                      top: -6,
+                      right: -6,
+                      bottom: -6,
+                      child: IgnorePointer(
+                        child: TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0, end: 1),
+                          duration: const Duration(milliseconds: 260),
+                          builder: (context, opacity, child) =>
+                              Opacity(opacity: opacity, child: child),
+                          child: ClipPath(
+                            key: const Key('cover-ring-clip'),
+                            clipper: const _OutsideOfRing(
+                              width: 3,
+                              radius: ShelfRadius.card + 6,
+                            ),
+                            child: DecoratedBox(
+                              key: const Key('cover-ring'),
+                              decoration: ShelfGlow.selectedRing(
+                                tokens,
+                                radius: ShelfRadius.card + 6,
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                if (selectionMode)
-                  Positioned(
-                    left: 8,
-                    top: 8,
-                    child: _CheckCircle(checked: selected),
-                  ),
-              ],
-            ),
-          ),
-          if (footer != null) ...[
-            const SizedBox(height: 10),
-            footer!,
-          ] else ...[
-            if (progress != null) ...[
-              const SizedBox(height: 8),
-              ShelfProgressBar(value: progress!, height: 3),
-            ],
-            if (meta != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Text(
-                  meta!,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: text.caption.copyWith(color: tokens.muted),
-                ),
+                  if (selectionMode)
+                    Positioned(
+                      left: 8,
+                      top: 8,
+                      child: _CheckCircle(checked: selected),
+                    ),
+                ],
               ),
+            ),
+            if (footer != null) ...[
+              const SizedBox(height: 10),
+              footer!,
+            ] else ...[
+              if (progress != null) ...[
+                const SizedBox(height: 8),
+                ShelfProgressBar(value: progress!, height: 3),
+              ],
+              if (meta != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    meta!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: text.caption.copyWith(color: tokens.muted),
+                  ),
+                ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -150,12 +166,91 @@ class ShelfCover extends StatelessWidget {
   Widget _art(ShelfTextStyles text) {
     final fallback = _Fallback(title: title);
     if (image == null) return fallback;
+    return _DeferredArt(image: image!, fallback: fallback);
+  }
+}
+
+/// How long a cover has to stay built before its image is requested. A jump
+/// through a long library builds covers for a single frame each; without the
+/// delay every one of them would queue a download that nothing is waiting for
+/// any more, and the covers that are on screen would wait behind them.
+Duration coverImageDelay = const Duration(milliseconds: 150);
+
+class _DeferredArt extends StatefulWidget {
+  const _DeferredArt({required this.image, required this.fallback});
+
+  final ImageProvider image;
+  final Widget fallback;
+
+  @override
+  State<_DeferredArt> createState() => _DeferredArtState();
+}
+
+class _DeferredArtState extends State<_DeferredArt> {
+  Timer? _timer;
+  late bool _ready = coverImageDelay == Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!_ready) {
+      _timer = Timer(coverImageDelay, () {
+        if (mounted) setState(() => _ready = true);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_ready) return widget.fallback;
     return Image(
-      image: image!,
+      image: widget.image,
       fit: BoxFit.cover,
       width: double.infinity,
       height: double.infinity,
-      errorBuilder: (context, error, stackTrace) => fallback,
+      errorBuilder: (context, error, stackTrace) => widget.fallback,
+    );
+  }
+}
+
+/// Lifts what it holds a little while the pointer is over it.
+class _HoverLift extends StatefulWidget {
+  const _HoverLift({required this.enabled, required this.child});
+
+  final bool enabled;
+  final Widget child;
+
+  @override
+  State<_HoverLift> createState() => _HoverLiftState();
+}
+
+class _HoverLiftState extends State<_HoverLift> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.enabled) return widget.child;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedSlide(
+        offset: _hovered ? const Offset(0, -0.012) : Offset.zero,
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeOut,
+        child: AnimatedScale(
+          scale: _hovered ? 1.02 : 1,
+          duration: const Duration(milliseconds: 160),
+          curve: Curves.easeOut,
+          child: widget.child,
+        ),
+      ),
     );
   }
 }
@@ -271,6 +366,21 @@ double coverWidthFor(
   return (width - (columns - 1) * gap) / columns;
 }
 
+/// The distance between the tops of two rows of a [ShelfCoverSliverGrid] that
+/// is [width] wide, and how many covers a row holds; a page uses it to
+/// estimate where the n-th cover is.
+({int columns, double rowStride}) coverGridMetrics(
+  double width, {
+  required double extraHeight,
+}) {
+  final columns = coverGridColumns(width);
+  final cover = coverWidthFor(width, columns: columns);
+  return (
+    columns: columns,
+    rowStride: cover * 1.5 + extraHeight + _coverGapRow,
+  );
+}
+
 class _CoverGridDelegate extends SliverGridDelegate {
   const _CoverGridDelegate(this.extraHeight);
 
@@ -348,9 +458,37 @@ class ShelfCoverSliverGrid extends StatelessWidget {
     return SliverGrid(
       gridDelegate: _CoverGridDelegate(extraHeight),
       delegate: SliverChildBuilderDelegate(
-        (context, index) => itemBuilder(context, index),
+        (context, index) => _FadeUp(child: itemBuilder(context, index)),
         childCount: itemCount,
       ),
+    );
+  }
+}
+
+/// Lets what it holds fade in while it rises a few pixels, once, when it is
+/// built (a cover that scrolls into view).
+class _FadeUp extends StatelessWidget {
+  const _FadeUp({required this.child});
+
+  final Widget? child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (MediaQuery.of(context).disableAnimations) {
+      return child ?? const SizedBox();
+    }
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) => Opacity(
+        opacity: value,
+        child: Transform.translate(
+          offset: Offset(0, 14 * (1 - value)),
+          child: child,
+        ),
+      ),
+      child: child,
     );
   }
 }

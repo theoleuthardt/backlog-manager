@@ -23,7 +23,7 @@ void main() {
         tester,
         menuButton([
           const ShelfMenuLabel('Portal 2'),
-          ShelfMenuItem(label: 'Open details', onSelected: () {}),
+          ShelfMenuItem(label: 'Open Details', onSelected: () {}),
         ]),
       );
 
@@ -34,7 +34,7 @@ void main() {
       expect(label.style!.color, tokens.muted);
       expect(
         tester.getTopLeft(find.text('Portal 2')).dy,
-        lessThan(tester.getTopLeft(find.text('Open details')).dy),
+        lessThan(tester.getTopLeft(find.text('Open Details')).dy),
       );
     });
   });
@@ -47,19 +47,19 @@ void main() {
       await pumpThemed(
         tester,
         menuButton([
-          ShelfMenuItem(label: 'Open details', onSelected: () => chosen++),
+          ShelfMenuItem(label: 'Open Details', onSelected: () => chosen++),
         ]),
       );
 
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
-      expect(find.text('Open details'), findsOneWidget);
+      expect(find.text('Open Details'), findsOneWidget);
 
-      await tester.tap(find.text('Open details'));
+      await tester.tap(find.text('Open Details'));
       await tester.pumpAndSettle();
 
       expect(chosen, 1);
-      expect(find.text('Open details'), findsNothing);
+      expect(find.text('Open Details'), findsNothing);
     });
 
     testWidgets('shows the shortcut hint on the right of an item', (
@@ -68,7 +68,7 @@ void main() {
       await pumpThemed(
         tester,
         menuButton([
-          ShelfMenuItem(label: 'Add game', shortcut: '⌘N', onSelected: () {}),
+          ShelfMenuItem(label: 'Add Game', shortcut: '⌘N', onSelected: () {}),
         ]),
       );
 
@@ -77,7 +77,7 @@ void main() {
 
       expect(
         tester.getCenter(find.text('⌘N')).dx,
-        greaterThan(tester.getCenter(find.text('Add game')).dx),
+        greaterThan(tester.getCenter(find.text('Add Game')).dx),
       );
     });
 
@@ -103,7 +103,7 @@ void main() {
     testWidgets('fills the hovered item with the accent', (tester) async {
       await pumpThemed(
         tester,
-        menuButton([ShelfMenuItem(label: 'Open details', onSelected: () {})]),
+        menuButton([ShelfMenuItem(label: 'Open Details', onSelected: () {})]),
       );
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
@@ -126,7 +126,7 @@ void main() {
     ) async {
       await pumpThemed(
         tester,
-        menuButton([ShelfMenuItem(label: 'Open details', onSelected: () {})]),
+        menuButton([ShelfMenuItem(label: 'Open Details', onSelected: () {})]),
       );
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
@@ -195,7 +195,7 @@ void main() {
       await pumpThemed(
         tester,
         menuButton([
-          ShelfMenuItem(label: 'Open details', onSelected: () {}),
+          ShelfMenuItem(label: 'Open Details', onSelected: () {}),
           const ShelfMenuDivider(),
           ShelfMenuItem(label: 'Delete', danger: true, onSelected: () {}),
         ]),
@@ -209,18 +209,18 @@ void main() {
     testWidgets('opens with the keyboard and closes with Esc', (tester) async {
       await pumpThemed(
         tester,
-        menuButton([ShelfMenuItem(label: 'Open details', onSelected: () {})]),
+        menuButton([ShelfMenuItem(label: 'Open Details', onSelected: () {})]),
       );
 
       await tester.sendKeyEvent(LogicalKeyboardKey.tab);
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pumpAndSettle();
-      expect(find.text('Open details'), findsOneWidget);
+      expect(find.text('Open Details'), findsOneWidget);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
 
-      expect(find.text('Open details'), findsNothing);
+      expect(find.text('Open Details'), findsNothing);
     });
   });
 
@@ -231,7 +231,7 @@ void main() {
         await pumpThemed(
           tester,
           ContextMenuRegion(
-            entries: [ShelfMenuItem(label: 'Open details', onSelected: () {})],
+            entries: [ShelfMenuItem(label: 'Open Details', onSelected: () {})],
             child: const SizedBox(
               width: 300,
               height: 200,
@@ -242,13 +242,13 @@ void main() {
 
         await tester.tap(find.text('Cover'));
         await tester.pumpAndSettle();
-        expect(find.text('Open details'), findsNothing);
+        expect(find.text('Open Details'), findsNothing);
 
         await tester.tapAt(const Offset(120, 90), buttons: kSecondaryButton);
         await tester.pumpAndSettle();
 
-        expect(find.text('Open details'), findsOneWidget);
-        final menu = tester.getTopLeft(find.text('Open details'));
+        expect(find.text('Open Details'), findsOneWidget);
+        final menu = tester.getTopLeft(find.text('Open Details'));
         expect((menu.dx - 120).abs(), lessThan(40));
         expect((menu.dy - 90).abs(), lessThan(40));
       },
@@ -264,7 +264,7 @@ void main() {
         tester,
         menuButton([
           ShelfMenuItem(
-            label: 'Open details',
+            label: 'Open Details',
             shortcut: '↵',
             onSelected: () {},
           ),

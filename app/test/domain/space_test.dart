@@ -59,10 +59,10 @@ void main() {
     final alone = space('active', const [me]);
     final waiting = space('active', const [me, invitedPartner]);
 
-    test('the control shows the partner or "Shared space"', () {
+    test('the control shows the partner or "Shared Space"', () {
       expect(shared.controlLabel, 'alex');
-      expect(alone.controlLabel, 'Shared space');
-      expect(waiting.controlLabel, 'Shared space');
+      expect(alone.controlLabel, 'Shared Space');
+      expect(waiting.controlLabel, 'Shared Space');
     });
 
     test('the info text says who the space is shared with', () {
@@ -78,11 +78,6 @@ void main() {
       );
     });
 
-    test('the header caption', () {
-      expect(shared.caption, 'with alex - ratings and playtime stay your own');
-      expect(alone.caption, 'ratings and playtime stay your own');
-    });
-
     test('the waiting line', () {
       expect(waiting.waitingLine, 'Waiting for alex to accept your invitation');
       expect(shared.waitingLine, isNull);
@@ -91,11 +86,11 @@ void main() {
     test('the invitation names who invited', () {
       expect(
         space('invited', const [partner, me]).invitationTitle,
-        'alex invited you to a shared space',
+        'alex invited you to a Shared Space',
       );
       expect(
         space('invited', const []).invitationTitle,
-        'Someone invited you to a shared space',
+        'Someone invited you to a Shared Space',
       );
     });
   });
@@ -161,7 +156,7 @@ void main() {
       expect(canShareToSpace(const BacklogEntry(id: 2, title: 'x')), isFalse);
       expect(
         shareToSpaceHint,
-        'Only Steam games can be added to the shared space',
+        'Only Steam games can be added to the Shared Space',
       );
     });
 
@@ -199,7 +194,7 @@ void main() {
     test('the toast names the game', () {
       expect(
         sharedToastMessage('Portal 2'),
-        'Added "Portal 2" to your shared space',
+        'Added "Portal 2" to your Shared Space',
       );
     });
   });

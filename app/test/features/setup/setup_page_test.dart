@@ -90,7 +90,7 @@ void main() {
     }
     expect(find.byKey(const Key('step-0-circle')), findsOneWidget);
     expect(find.byKey(const Key('step-4-circle')), findsOneWidget);
-    expect(find.text('Skip setup'), findsOneWidget);
+    expect(find.text('Skip Setup'), findsOneWidget);
   });
 
   group('the theme step', () {
@@ -120,7 +120,7 @@ void main() {
       await next(tester);
 
       expect(app.users.updates.single.theme, 'shelfOled');
-      expect(find.text('Default sort'), findsOneWidget);
+      expect(find.text('Default Sort'), findsOneWidget);
     });
   });
 
@@ -239,7 +239,7 @@ void main() {
         expect(find.text('All set'), findsOneWidget);
         expect(find.textContaining('two-factor'), findsOneWidget);
         expect(find.textContaining('Discord'), findsOneWidget);
-        expect(find.text('Skip setup'), findsNothing);
+        expect(find.text('Skip Setup'), findsNothing);
       },
     );
 
@@ -259,7 +259,7 @@ void main() {
   ) async {
     final app = await pumpSetup(tester);
 
-    await tester.tap(find.text('Skip setup'));
+    await tester.tap(find.text('Skip Setup'));
     await tester.pumpAndSettle();
 
     expect(app.users.updates.single.setupCompleted, isTrue);

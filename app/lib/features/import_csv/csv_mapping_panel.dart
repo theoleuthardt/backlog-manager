@@ -113,7 +113,7 @@ class CsvMappingPanel extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ShelfFormGroup(
-          title: 'Column mapping',
+          title: 'Column Mapping',
           description: 'Pick which column holds which field.',
           rows: [
             select(
@@ -157,7 +157,7 @@ class CsvMappingPanel extends ConsumerWidget {
               ),
             ),
             select(
-              label: 'Completed date',
+              label: 'Completed Date',
               value: config.completedAtColumn,
               optional: true,
               onChanged: (v) => controller.setConfig(
@@ -180,7 +180,7 @@ class CsvMappingPanel extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               checks(
-                label: 'Review columns',
+                label: 'Review Columns',
                 description:
                     'Merged into the review text, for example "Reason '
                     'finished".',
@@ -190,7 +190,7 @@ class CsvMappingPanel extends ConsumerWidget {
                 ),
               ),
               checks(
-                label: 'Note columns',
+                label: 'Note Columns',
                 description:
                     'Merged as "Header: Value" so short yes or no columns '
                     'keep their context.',
@@ -207,8 +207,8 @@ class CsvMappingPanel extends ConsumerWidget {
           label: previewing
               ? previewLabel(state.processed, state.total)
               : state.hasPreview
-              ? 'Preview again'
-              : 'Preview import',
+              ? 'Preview Again'
+              : 'Preview Import',
           kind: ShelfButtonKind.primary,
           busy: previewing,
           onPressed: enabled ? onPreview : null,

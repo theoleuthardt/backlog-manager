@@ -12,7 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Opens the sheet that renames, recolours and deletes the categories of a
-/// backlog ([spaceId] is the shared space, null for the personal backlog).
+/// backlog ([spaceId] is the Shared Space, null for the personal backlog).
 Future<void> showCategoryManager(BuildContext context, {int? spaceId}) {
   return showShelfSheet<void>(
     context,
@@ -33,7 +33,7 @@ class _CategoryManagerSheet extends ConsumerWidget {
         ref.watch(categoriesProvider(spaceId)).value ?? const <Category>[];
 
     return ShelfSheet(
-      title: 'Manage categories',
+      title: 'Manage Categories',
       width: ShelfSheetWidth.compact,
       child: categories.isEmpty
           ? Text(

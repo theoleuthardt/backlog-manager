@@ -115,7 +115,7 @@ void main() {
 
       expect(find.byKey(const Key('page-steam')), findsOneWidget);
       expect(find.byKey(const Key('steam-empty-hint')), findsOneWidget);
-      expect(find.text('Load preview'), findsOneWidget);
+      expect(find.text('Load Preview'), findsOneWidget);
       expect(
         find.text('Nothing is written until you press Import.'),
         findsOneWidget,
@@ -168,8 +168,32 @@ void main() {
 
       expect(opened.steam.streamCancelled, isTrue);
       expect(find.text('Preview cancelled'), findsOneWidget);
-      expect(find.text('Load preview'), findsOneWidget);
+      expect(find.text('Load Preview'), findsOneWidget);
       await dismissToast(tester);
+    });
+
+    testWidgets('explains the wait and keeps the time while it loads', (
+      tester,
+    ) async {
+      final opened = await open(tester);
+      await tester.tap(find.byKey(const Key('steam-load')));
+      await tester.pump();
+
+      expect(find.byKey(const Key('steam-loading')), findsOneWidget);
+      expect(find.text('Reading your Steam library'), findsOneWidget);
+      expect(find.byKey(const Key('progress-sweep')), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 3));
+      expect(find.text('3 s'), findsOneWidget);
+
+      opened.steam.stream.add(const SseProgress(300, 1284));
+      await tester.pump();
+      expect(find.byKey(const Key('progress-sweep')), findsNothing);
+      expect(find.textContaining('300 of 1,284 checked - '), findsOneWidget);
+
+      opened.steam.stream.add(const SseDone(<Object?>[]));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('steam-loading')), findsNothing);
     });
 
     testWidgets('lists the games with app id and playtime', (tester) async {
@@ -186,7 +210,7 @@ void main() {
       expect(find.text('3.2 h'), findsOneWidget);
       expect(find.text('3 of 3 selected'), findsOneWidget);
       expect(find.text('Import 3 games'), findsOneWidget);
-      expect(find.text('Reload preview'), findsOneWidget);
+      expect(find.text('Reload Preview'), findsOneWidget);
     });
 
     testWidgets('copes with a server that sends no playtime', (tester) async {
@@ -227,7 +251,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Steam is not reachable'), findsOneWidget);
-      expect(find.text('Load preview'), findsOneWidget);
+      expect(find.text('Load Preview'), findsOneWidget);
       await dismissToast(tester);
     });
 

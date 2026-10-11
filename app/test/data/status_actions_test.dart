@@ -58,7 +58,7 @@ void main() {
       expect(second.id, isNot(first.id));
     });
 
-    test('work on the custom statuses of a shared space', () async {
+    test('work on the custom statuses of a Shared Space', () async {
       await container.read(customStatusActionsProvider(4)).create('Co-op');
 
       expect(api.calls, contains('create-status Co-op 4'));

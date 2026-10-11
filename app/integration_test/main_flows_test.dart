@@ -5,6 +5,8 @@ import 'package:backlog_manager/auth/auth_controller.dart';
 import 'package:backlog_manager/auth/token_store.dart';
 import 'package:backlog_manager/data/games_api.dart';
 import 'package:backlog_manager/data/theme_store.dart';
+import 'package:backlog_manager/design/atmosphere.dart';
+import 'package:backlog_manager/design/widgets/cover.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/themes.dart';
 import 'package:backlog_manager/routing/router.dart';
@@ -128,6 +130,8 @@ Future<RunningApp> openLibrary(
 
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  atmosphereMotion = false;
+  coverImageDelay = Duration.zero;
 
   testWidgets('signs in with a password and a two-factor code', (tester) async {
     final backend = FakeBackend(entries: library());
@@ -166,12 +170,21 @@ void main() {
     await openLibrary(tester, binding, backend);
 
     expect(find.byKey(const Key('page-library')), findsOneWidget);
-    for (final status in ['In Progress', 'Completed', 'Not Started']) {
-      expect(find.byKey(Key('group-status:$status')), findsOneWidget);
-    }
-    for (final id in [1, 2, 3, 4]) {
+    final scrollable = find
+        .descendant(
+          of: find.byKey(const Key('page-library')),
+          matching: find.byType(Scrollable),
+        )
+        .first;
+    for (final id in [4, 1, 2, 3]) {
+      await tester.scrollUntilVisible(
+        find.byKey(ValueKey('tile-$id')),
+        200,
+        scrollable: scrollable,
+      );
       expect(find.byKey(ValueKey('tile-$id')), findsOneWidget);
     }
+    expect(find.byKey(const Key('group-status:Completed')), findsOneWidget);
     expect(find.text('4 of 4 games'), findsWidgets);
   });
 
@@ -180,6 +193,8 @@ void main() {
   ) async {
     final backend = FakeBackend(entries: library());
     await openLibrary(tester, binding, backend);
+    await tester.tap(find.byKey(const Key('group-toggle-status:Not Started')));
+    await tester.pumpAndSettle();
 
     final gesture = await tester.startGesture(
       tester.getCenter(find.byKey(const ValueKey('tile-2'))),

@@ -7,8 +7,8 @@ enum SortOption {
   genre('genre', 'Genre'),
   playtime('playtime', 'Playtime'),
   platform('platform', 'Platform'),
-  interest('interest', 'Interest level'),
-  reviewStars('review_stars', 'Review stars');
+  interest('interest', 'Interest Level'),
+  reviewStars('review_stars', 'Review Stars');
 
   const SortOption(this.value, this.label);
 

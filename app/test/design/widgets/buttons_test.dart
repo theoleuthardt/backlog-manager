@@ -21,16 +21,17 @@ Future<void> hover(WidgetTester tester, Finder target) async {
   await mouse.addPointer(location: Offset.zero);
   await mouse.moveTo(tester.getCenter(target));
   await tester.pump();
+  await tester.pump(const Duration(milliseconds: 200));
 }
 
 void main() {
   final tokens = tokensOf('shelfOled');
 
   group('ShelfButton', () {
-    testWidgets('is 32 high with the control radius', (tester) async {
+    testWidgets('is 38 high with the control radius', (tester) async {
       await pumpThemed(tester, ShelfButton(label: 'Save', onPressed: () {}));
 
-      expect(tester.getSize(find.byType(ShelfButton)).height, 32);
+      expect(tester.getSize(find.byType(ShelfButton)).height, 38);
       expect(surfaceOf(tester).borderRadius, BorderRadius.circular(8));
     });
 
@@ -161,13 +162,13 @@ void main() {
   });
 
   group('ShelfIconButton', () {
-    testWidgets('is a 32 px square with a tooltip', (tester) async {
+    testWidgets('is a 38 px square with a tooltip', (tester) async {
       await pumpThemed(
         tester,
         ShelfIconButton(icon: Icons.close, tooltip: 'Close', onPressed: () {}),
       );
 
-      expect(tester.getSize(find.byType(ShelfIconButton)), const Size(32, 32));
+      expect(tester.getSize(find.byType(ShelfIconButton)), const Size(38, 38));
       expect(tester.widget<Tooltip>(find.byType(Tooltip)).message, 'Close');
     });
 
@@ -207,7 +208,7 @@ void main() {
           onPressed: () {},
         ),
         ShelfButton(
-          label: 'With icon',
+          label: 'With Icon',
           icon: Icons.add,
           kind: ShelfButtonKind.primary,
           onPressed: () {},

@@ -208,7 +208,7 @@ class _CoverOption extends ConsumerWidget {
     final image = entryImage(ref.watch(serverUrlProvider).value, url);
     return ShelfPressable(
       onPressed: onPressed,
-      semanticLabel: 'Cover option',
+      semanticLabel: 'Cover Option',
       borderRadius: 6,
       builder: (context, state) => DecoratedBox(
         decoration: BoxDecoration(

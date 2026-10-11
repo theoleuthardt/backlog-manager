@@ -162,7 +162,7 @@ void main() {
       expect(find.text('Server unavailable'), findsOneWidget);
 
       failing = false;
-      await tester.tap(find.text('Try again'));
+      await tester.tap(find.text('Try Again'));
       await tester.pumpAndSettle();
 
       expect(find.text('Server unavailable'), findsNothing);
@@ -195,7 +195,7 @@ void main() {
     testWidgets('opens the add-a-game sheet from "Add game"', (tester) async {
       await pumpLibrary(tester, FakeBacklogApi(entries: backlog));
 
-      await tester.tap(inLibrary(find.text('Add game')));
+      await tester.tap(inLibrary(find.text('Add Game')));
       await tester.pumpAndSettle();
 
       expect(find.text('Search for a game'), findsOneWidget);
@@ -265,12 +265,48 @@ void main() {
       expect(find.text('41 / 60 h'), findsOneWidget);
     });
 
-    testWidgets('marks a game that is also in the shared space', (
+    testWidgets('keeps the Add game button on the line of the title', (
+      tester,
+    ) async {
+      await pumpLibrary(tester, FakeBacklogApi(entries: backlog));
+      tester.view.physicalSize = const Size(820, 2400);
+      await tester.pumpAndSettle();
+
+      final title = tester.getCenter(inLibrary(find.text('Library')));
+      final add = tester.getCenter(find.byKey(const Key('add-game-button')));
+
+      expect((add.dy - title.dy).abs(), lessThanOrEqualTo(2));
+    });
+
+    testWidgets('uses main plus extra when the main story has no time', (
+      tester,
+    ) async {
+      await pumpLibrary(
+        tester,
+        FakeBacklogApi(
+          entries: const [
+            BacklogEntry(
+              id: 1,
+              title: 'Hades',
+              status: 'In Progress',
+              playtime: 16,
+              mainTime: 0,
+              mainPlusExtraTime: 32,
+            ),
+          ],
+        ),
+      );
+
+      expect(find.text('16 / 32 h'), findsOneWidget);
+      expect(find.text('16 / 0 h'), findsNothing);
+    });
+
+    testWidgets('marks a game that is also in the Shared Space', (
       tester,
     ) async {
       await pumpLibrary(tester, FakeBacklogApi(entries: backlog));
 
-      expect(find.byTooltip('Also in your shared space'), findsOneWidget);
+      expect(find.byTooltip('Also in your Shared Space'), findsOneWidget);
     });
   });
 
@@ -321,7 +357,7 @@ void main() {
           .getTopLeft(find.byKey(const Key('group-status:Not Started')))
           .dy;
 
-      await tester.tap(find.byTooltip('Sort direction'));
+      await tester.tap(find.byTooltip('Sort Direction'));
       await tester.pumpAndSettle();
 
       final after = tester.getTopLeft(
