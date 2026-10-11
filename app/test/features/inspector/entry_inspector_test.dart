@@ -105,6 +105,46 @@ void main() {
       expect(find.text('Changes save automatically'), findsOneWidget);
     });
 
+    testWidgets('many genres fill two lines and the rest is behind +N', (
+      tester,
+    ) async {
+      const genres = [
+        'Role-playing',
+        'Adventure',
+        'Strategy',
+        'Simulator',
+        'Puzzle',
+        'Indie',
+        'Shooter',
+        'Platform',
+        'Racing',
+        'Arcade',
+      ];
+      await openInspector(
+        tester,
+        entries: [
+          BacklogEntry(
+            id: 1,
+            title: 'Hades',
+            status: 'Not Started',
+            genre: genres,
+          ),
+        ],
+      );
+
+      final more = find.byKey(const Key('genre-more'));
+      expect(more, findsOneWidget);
+      expect(find.text('Arcade'), findsNothing);
+      final block = tester.getSize(find.byKey(const Key('inspector-genres')));
+      expect(block.height, lessThanOrEqualTo(80));
+
+      await tester.tap(more);
+      await tester.pumpAndSettle();
+      for (final genre in genres) {
+        expect(find.text(genre), findsWidgets);
+      }
+    });
+
     testWidgets('closes itself for a game that does not exist', (tester) async {
       final app = await openInspector(tester, id: 99);
 

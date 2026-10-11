@@ -453,7 +453,7 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
                                       key: const Key('inspector-genres'),
                                       label: 'Genre',
                                       values: genres,
-                                      oneLine: !fullscreen,
+                                      maxLines: fullscreen ? null : 2,
                                     ),
                                   ],
                                   if (platforms.isNotEmpty) ...[
@@ -462,7 +462,7 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
                                       key: const Key('inspector-platforms'),
                                       label: 'Platform',
                                       values: platforms,
-                                      oneLine: !fullscreen,
+                                      maxLines: fullscreen ? null : 1,
                                     ),
                                   ],
                                 ],
