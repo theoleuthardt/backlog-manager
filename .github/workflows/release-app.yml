@@ -49,6 +49,9 @@ jobs:
     name: Build ${{ matrix.name }}
     needs: version
     runs-on: ${{ matrix.runner }}
+    env:
+      SIGNPATH_ORGANIZATION_ID: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+      SIGNPATH_API_TOKEN_SET: ${{ secrets.SIGNPATH_API_TOKEN != '' }}
     strategy:
       fail-fast: false
       matrix:
@@ -116,6 +119,36 @@ jobs:
         env:
           API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
         run: task app:package API_URL="$API_URL"
+
+      - name: Upload the unsigned Windows installer for signing
+        id: unsigned
+        if: matrix.platform == 'windows' && env.SIGNPATH_ORGANIZATION_ID != '' && env.SIGNPATH_API_TOKEN_SET == 'true'
+        uses: actions/upload-artifact@v6
+        with:
+          name: backlog-manager-windows-unsigned
+          if-no-files-found: error
+          path: app/dist/*/Backlog-Manager_*.exe
+
+      - name: Sign the Windows installer with SignPath
+        if: matrix.platform == 'windows' && env.SIGNPATH_ORGANIZATION_ID != '' && env.SIGNPATH_API_TOKEN_SET == 'true'
+        uses: signpath/github-action-submit-signing-request@f6d04783b4569d051e0c80105fe66e82819d0092 # v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG || 'backlog-manager' }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG || 'release-signing' }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_ARTIFACT_CONFIGURATION_SLUG || 'windows-installer' }}
+          github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed
+
+      - name: Replace the Windows installer with the signed one
+        if: matrix.platform == 'windows' && env.SIGNPATH_ORGANIZATION_ID != '' && env.SIGNPATH_API_TOKEN_SET == 'true'
+        shell: bash
+        run: |
+          for signed in signed/*.exe; do
+            cp "$signed" app/dist/*/
+          done
 
       - name: Upload installers
         uses: actions/upload-artifact@v6
