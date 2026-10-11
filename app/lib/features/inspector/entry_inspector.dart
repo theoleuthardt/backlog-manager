@@ -8,6 +8,7 @@ import 'package:backlog_manager/data/backlog_scope.dart';
 import 'package:backlog_manager/data/entry_image.dart';
 import 'package:backlog_manager/data/space_api.dart';
 import 'package:backlog_manager/design/color_math.dart';
+import 'package:backlog_manager/design/cover_glow.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
@@ -420,58 +421,62 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
               child: _InspectorLayout(
                 fullscreen: fullscreen,
                 left: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: coverWidth,
-                        child: ShelfCover(
-                          title: entry.title,
-                          image: entryImage(serverUrl, _form.imageLink),
+                  CoverGlow(
+                    image: entryImage(serverUrl, _form.imageLink),
+                    coverSize: Size(coverWidth, coverWidth * 1.5),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: coverWidth,
+                          child: ShelfCover(
+                            title: entry.title,
+                            image: entryImage(serverUrl, _form.imageLink),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: SizedBox(
-                          height: coverWidth * 1.5,
-                          child: ClipRect(
-                            child: SingleChildScrollView(
-                              physics: const NeverScrollableScrollPhysics(),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    entry.title,
-                                    key: const Key('inspector-title'),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: style.page.copyWith(fontSize: 22),
-                                  ),
-                                  if (genres.isNotEmpty) ...[
-                                    const SizedBox(height: 12),
-                                    FactChips(
-                                      key: const Key('inspector-genres'),
-                                      label: 'Genre',
-                                      values: genres,
-                                      maxLines: fullscreen ? null : 2,
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: SizedBox(
+                            height: coverWidth * 1.5,
+                            child: ClipRect(
+                              child: SingleChildScrollView(
+                                physics: const NeverScrollableScrollPhysics(),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      entry.title,
+                                      key: const Key('inspector-title'),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: style.page.copyWith(fontSize: 22),
                                     ),
+                                    if (genres.isNotEmpty) ...[
+                                      const SizedBox(height: 12),
+                                      FactChips(
+                                        key: const Key('inspector-genres'),
+                                        label: 'Genre',
+                                        values: genres,
+                                        maxLines: fullscreen ? null : 2,
+                                      ),
+                                    ],
+                                    if (platforms.isNotEmpty) ...[
+                                      const SizedBox(height: 10),
+                                      FactChips(
+                                        key: const Key('inspector-platforms'),
+                                        label: 'Platform',
+                                        values: platforms,
+                                        maxLines: fullscreen ? null : 1,
+                                      ),
+                                    ],
                                   ],
-                                  if (platforms.isNotEmpty) ...[
-                                    const SizedBox(height: 10),
-                                    FactChips(
-                                      key: const Key('inspector-platforms'),
-                                      label: 'Platform',
-                                      values: platforms,
-                                      maxLines: fullscreen ? null : 1,
-                                    ),
-                                  ],
-                                ],
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 14),
                   Row(
