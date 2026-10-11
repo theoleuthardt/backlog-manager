@@ -26,9 +26,7 @@ games according to categories such as "Games I still want to play", "Games I'm c
 
 ## Installing the desktop app
 
-The installers on the Releases page are not code signed yet, so macOS and Windows warn on the first start. How to open them and the signing options: [`docs/SIGNING.md`](docs/SIGNING.md).
-
-**Code signing policy:** once the SignPath Foundation has approved the project, the Windows installer is signed with free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by [SignPath Foundation](https://signpath.org/); roles and privacy policy in [`docs/SIGNING.md`](docs/SIGNING.md#code-signing-policy).
+The installers on the Releases page are not code signed, so macOS and Windows warn on the first start: on macOS use right click > Open (or System Settings > Privacy & Security > Open Anyway), on Windows "More info" > "Run anyway".
 
 ## Architecture
 
