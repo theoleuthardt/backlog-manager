@@ -65,6 +65,7 @@ void main() {
 
       expect(find.byKey(const Key('cover-glow-halo')), findsOneWidget);
       expect(find.byKey(const Key('cover-glow-wash')), findsOneWidget);
+      expect(find.byKey(const Key('cover-glow-veil')), findsOneWidget);
       final halo = tester.widget<DecoratedBox>(
         find.byKey(const Key('cover-glow-halo')),
       );

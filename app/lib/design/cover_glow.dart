@@ -80,7 +80,9 @@ Future<Color?> _resolveGlow(ImageProvider provider) {
 
 /// Puts a glow in the colour of a cover behind [child]: a soft light around
 /// the cover itself ([coverSize], at the top left) and a wide wash behind the
-/// rest of the header. Without a picture, or until its colour is known, the
+/// rest of the header, a veil that
+/// runs from the cover over the title and the chips and fades out to the
+/// right and the bottom. Without a picture, or until its colour is known, the
 /// glow is the theme's own.
 class CoverGlow extends StatefulWidget {
   const CoverGlow({
@@ -145,19 +147,49 @@ class _CoverGlowState extends State<CoverGlow> {
               top: -50,
               bottom: -30,
               child: IgnorePointer(
-                child: DecoratedBox(
-                  key: const Key('cover-glow-wash'),
-                  decoration: BoxDecoration(
-                    gradient: RadialGradient(
-                      center: const Alignment(-0.55, -0.25),
-                      radius: 0.95,
-                      colors: [
-                        glow.withValues(alpha: 0.34),
-                        glow.withValues(alpha: 0.12),
-                        glow.withValues(alpha: 0),
-                      ],
-                      stops: const [0, 0.5, 1],
-                    ),
+                child: ShaderMask(
+                  blendMode: BlendMode.dstIn,
+                  shaderCallback: (bounds) => const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.white, Colors.white, Colors.transparent],
+                    stops: [0, 0.5, 1],
+                  ).createShader(bounds),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      DecoratedBox(
+                        key: const Key('cover-glow-wash'),
+                        decoration: BoxDecoration(
+                          gradient: RadialGradient(
+                            center: const Alignment(-0.6, -0.2),
+                            radius: 1.0,
+                            colors: [
+                              glow.withValues(alpha: 0.5),
+                              glow.withValues(alpha: 0.2),
+                              glow.withValues(alpha: 0),
+                            ],
+                            stops: const [0, 0.55, 1],
+                          ),
+                        ),
+                      ),
+                      DecoratedBox(
+                        key: const Key('cover-glow-veil'),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: const Alignment(-1, -1),
+                            end: const Alignment(0.9, 1),
+                            colors: [
+                              glow.withValues(alpha: 0.5),
+                              glow.withValues(alpha: 0.36),
+                              glow.withValues(alpha: 0.12),
+                              glow.withValues(alpha: 0),
+                            ],
+                            stops: const [0, 0.45, 0.8, 1],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -174,9 +206,9 @@ class _CoverGlowState extends State<CoverGlow> {
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: [
                       BoxShadow(
-                        color: glow.withValues(alpha: 0.55),
-                        blurRadius: 36,
-                        spreadRadius: 2,
+                        color: glow.withValues(alpha: 0.75),
+                        blurRadius: 46,
+                        spreadRadius: 4,
                       ),
                     ],
                   ),
