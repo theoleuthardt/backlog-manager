@@ -307,6 +307,8 @@ Decision (#351, replaces the browser-only decision of #325): "Watch trailer" ope
 
 `domain/trailer.dart` (`youtubeEmbedUrl`) accepts only canonical YouTube watch URLs, and the inspector opens the sheet only after a link passed, so nothing else can ever become the source of the web view.
 
+**Linux (#355, researched 2026-10-12):** Linux keeps opening the trailer in the browser. `flutter_inappwebview` 6.1.5 has no Linux implementation; the endorsed `flutter_inappwebview_linux` 0.1.0-beta.1 (WPE WebKit, with `flutter_inappwebview` 6.2.0-beta) needs `libwpewebkit-2.0-dev` to build (Ubuntu 24.04 does not package it) and its bundled WPE is not self-contained yet ([upstream #2807](https://github.com/pichillilorenzo/flutter_inappwebview/issues/2807)); `webview_win_floating` draws over Flutter widgets and cannot be a popup; `flutter_linux_webview` (CEF 96) is unstable and has no `baseUrl` for `loadHtmlString`; `webview_cef` and `desktop_webview_window` add a runtime or a separate window. Revisit when `flutter_inappwebview` 6.2 is stable, its Linux package is not beta and WPE is a normal dependency of Ubuntu LTS and Fedora; the prototype is: add the beta, install the WPE dev package in the Linux CI job, check that `trailerPage` plays and measure the AppImage size.
+
 ### Adding a game, the right game and covers
 
 All three are sheets in `features/add_game/`, fed by `GamesApi` (`data/games_api.dart`) through cached providers in `data/game_info_providers.dart` (searches five minutes, covers and Steam App IDs an hour).
