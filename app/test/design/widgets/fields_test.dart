@@ -29,6 +29,34 @@ void main() {
       expect(theme.inputDecorationTheme.filled, isTrue);
     });
 
+    testWidgets('a password field hides its text and shows it on request', (
+      tester,
+    ) async {
+      await pumpThemed(
+        tester,
+        const ShelfField(label: 'Password', obscure: true),
+        width: 300,
+      );
+      bool hidden() =>
+          tester.widget<TextField>(find.byType(TextField)).obscureText;
+
+      expect(hidden(), isTrue);
+
+      await tester.tap(find.byKey(const Key('field-reveal')));
+      await tester.pump();
+      expect(hidden(), isFalse);
+
+      await tester.tap(find.byKey(const Key('field-reveal')));
+      await tester.pump();
+      expect(hidden(), isTrue);
+    });
+
+    testWidgets('a plain field has no reveal button', (tester) async {
+      await pumpThemed(tester, const ShelfField(label: 'Title'), width: 300);
+
+      expect(find.byKey(const Key('field-reveal')), findsNothing);
+    });
+
     testWidgets('writes the label in muted 13.5 px text', (tester) async {
       await pumpThemed(tester, const ShelfField(label: 'Title'), width: 300);
 
@@ -123,11 +151,11 @@ void main() {
         description: 'How the app sorts your games',
         rows: [
           ShelfFormRow(
-            label: 'Default sort',
+            label: 'Default Sort',
             description: 'Used when you open the library',
             control: Text('Status'),
           ),
-          ShelfFormRow(label: 'Owned only', control: Text('Off')),
+          ShelfFormRow(label: 'Owned Only', control: Text('Off')),
           ShelfFormRow(label: 'Language', control: Text('English')),
         ],
       );
@@ -155,7 +183,7 @@ void main() {
       );
       expect(
         tester.getTopLeft(find.text('General')).dy,
-        lessThan(tester.getTopLeft(find.text('Default sort')).dy),
+        lessThan(tester.getTopLeft(find.text('Default Sort')).dy),
       );
       expect(find.text('How the app sorts your games'), findsOneWidget);
     });
@@ -176,7 +204,7 @@ void main() {
       await pumpThemed(tester, group(), width: 520);
 
       expect(
-        tester.getCenter(find.text('Default sort')).dx,
+        tester.getCenter(find.text('Default Sort')).dx,
         lessThan(tester.getCenter(find.text('Status')).dx),
       );
       expect(find.text('Used when you open the library'), findsOneWidget);
@@ -201,7 +229,7 @@ void main() {
           description: 'How the app sorts your games',
           rows: [
             ShelfFormRow(
-              label: 'Default sort',
+              label: 'Default Sort',
               description: 'Used when you open the library',
               control: Text('Status'),
             ),

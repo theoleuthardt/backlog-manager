@@ -56,7 +56,7 @@ class AppUpdateGroup extends ConsumerWidget {
                 if (release != null && state.check == UpdateCheck.available)
                   ShelfButton(
                     key: const Key('view-release'),
-                    label: 'View release',
+                    label: 'View Release',
                     kind: ShelfButtonKind.primary,
                     onPressed: () =>
                         ref.read(urlOpenerProvider)(release.pageUrl),

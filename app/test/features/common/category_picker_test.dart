@@ -257,7 +257,7 @@ void main() {
     });
   });
 
-  group('in a shared space', () {
+  group('in a Shared Space', () {
     testWidgets('uses the categories of that space', (tester) async {
       final api = await pumpPicker(tester, spaceId: 4);
       await openList(tester);

@@ -24,7 +24,7 @@ class StatusSelect extends ConsumerWidget {
     required this.value,
     required this.onChanged,
     this.spaceId,
-    this.placeholder = 'Select status',
+    this.placeholder = 'Select Status',
     super.key,
   });
 
@@ -34,7 +34,7 @@ class StatusSelect extends ConsumerWidget {
   /// with '' when the selected custom status was deleted.
   final ValueChanged<String> onChanged;
 
-  /// The shared space whose custom statuses are offered; null for the personal
+  /// The Shared Space whose custom statuses are offered; null for the personal
   /// backlog.
   final int? spaceId;
   final String placeholder;
@@ -223,7 +223,7 @@ class _AddStatusSheetState extends ConsumerState<_AddStatusSheet> {
   @override
   Widget build(BuildContext context) {
     return ShelfSheet(
-      title: 'Add status',
+      title: 'Add Status',
       width: ShelfSheetWidth.compact,
       footer: ShelfSheetFooter(
         onCancel: () => Navigator.of(context).maybePop(),

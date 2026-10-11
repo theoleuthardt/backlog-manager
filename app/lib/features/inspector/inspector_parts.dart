@@ -1,6 +1,7 @@
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
+import 'package:backlog_manager/design/widgets/chips.dart';
 import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/design/widgets/progress.dart';
 import 'package:backlog_manager/domain/inspector_logic.dart';
@@ -148,7 +149,7 @@ class TrailerCard extends StatelessWidget {
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
     return ShelfPressable(
       borderRadius: ShelfRadius.card,
-      semanticLabel: 'Watch trailer',
+      semanticLabel: 'Watch Trailer',
       onPressed: onPressed,
       builder: (context, state) => DecoratedBox(
         key: const Key('trailer-card'),
@@ -180,7 +181,7 @@ class TrailerCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Text('Watch trailer', style: style.section),
+                Text('Watch Trailer', style: style.section),
                 const SizedBox(height: 2),
                 Text(
                   'Plays in a window',
@@ -260,6 +261,36 @@ class SaveStatus extends StatelessWidget {
       liveRegion: true,
       container: true,
       child: content,
+    );
+  }
+}
+
+/// A small label over a wrapping row of chips: the genres or the platforms of
+/// a game beside its cover.
+class FactChips extends StatelessWidget {
+  const FactChips({required this.label, required this.values, super.key});
+
+  final String label;
+  final List<String> values;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = Theme.of(context).extension<ShelfTokens>()!;
+    final style = Theme.of(context).extension<ShelfTextStyles>()!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: style.eyebrow.copyWith(color: tokens.faint),
+        ),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: [for (final value in values) ShelfChip(label: value)],
+        ),
+      ],
     );
   }
 }

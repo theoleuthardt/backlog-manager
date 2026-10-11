@@ -310,7 +310,7 @@ CsvPreviewRow applyWrongGame(CsvPreviewRow row, GameSearchResult result) {
 /// The button a row of the preview offers.
 enum RowAction {
   cover('Cover'),
-  wrongGame('Wrong game');
+  wrongGame('Wrong Game');
 
   const RowAction(this.label);
 
@@ -320,7 +320,7 @@ enum RowAction {
 /// The chip and the button of a row: a row that was not matched asks for the
 /// right game, otherwise the first thing that is missing is named.
 ({String? chip, RowAction action}) rowVerdict(CsvPreviewRow row) {
-  if (!row.matched) return (chip: 'Check match', action: RowAction.wrongGame);
+  if (!row.matched) return (chip: 'Check Match', action: RowAction.wrongGame);
   if (row.mainTime == null) {
     return (chip: 'No beat times', action: RowAction.cover);
   }

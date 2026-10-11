@@ -81,7 +81,7 @@ void main() {
     testWidgets('shows the placeholder without a value', (tester) async {
       await pumpSelect(tester, value: '');
 
-      expect(find.text('Select status'), findsOneWidget);
+      expect(find.text('Select Status'), findsOneWidget);
     });
   });
 
@@ -244,7 +244,7 @@ void main() {
     });
   });
 
-  group('in a shared space', () {
+  group('in a Shared Space', () {
     testWidgets('lists and creates the statuses of that space', (tester) async {
       final api = await pumpSelect(tester, spaceId: 4);
       await open(tester);

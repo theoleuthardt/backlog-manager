@@ -140,7 +140,7 @@ void main() {
       expect(server.requests.single.queryParameters, isEmpty);
     });
 
-    test('lists the entries of a shared space', () async {
+    test('lists the entries of a Shared Space', () async {
       final server = FakeServer((_) => (status: 200, body: [entryJson(1)]));
 
       await apiFor(server).entries(7);

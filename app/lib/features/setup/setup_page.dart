@@ -68,7 +68,7 @@ class _SetupPageState extends ConsumerState<SetupPage> {
                 const Spacer(),
                 if (!setup.isLastStep)
                   ShelfButton(
-                    label: 'Skip setup',
+                    label: 'Skip Setup',
                     kind: ShelfButtonKind.quiet,
                     onPressed: setup.saving ? null : controller.skip,
                   ),
@@ -164,7 +164,7 @@ class _SetupPageState extends ConsumerState<SetupPage> {
             'This is the sorting the library opens with.',
           ),
           ShelfSelect<String>(
-            label: 'Default sort',
+            label: 'Default Sort',
             value: setup.defaultSort,
             onChanged: controller.setDefaultSort,
             options: [

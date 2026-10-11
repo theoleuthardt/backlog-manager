@@ -49,7 +49,7 @@ class ShelfCover extends StatelessWidget {
   final Widget? overlay;
 
   /// Replaces [progress] and [meta] below the cover, for example one bar per
-  /// member of a shared space.
+  /// member of a Shared Space.
   final Widget? footer;
   final bool selected;
 

@@ -208,7 +208,7 @@ void main() {
           onPressed: () {},
         ),
         ShelfButton(
-          label: 'With icon',
+          label: 'With Icon',
           icon: Icons.add,
           kind: ShelfButtonKind.primary,
           onPressed: () {},

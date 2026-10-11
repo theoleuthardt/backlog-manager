@@ -49,7 +49,7 @@ const _gutter = 28.0;
 
 /// The library: a toolbar and the games in sections, as covers or as rows.
 ///
-/// With a [space] it is the library of the shared space: the header of the
+/// With a [space] it is the library of the Shared Space: the header of the
 /// space replaces the title, and covers show the progress of both members.
 class LibraryPage extends StatelessWidget {
   const LibraryPage({this.space, super.key});
@@ -83,7 +83,7 @@ class _EmptyLibrary extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            shared ? 'Your shared space is empty' : 'Your backlog is empty',
+            shared ? 'Your Shared Space is empty' : 'Your backlog is empty',
             style: style.page,
           ),
           const SizedBox(height: 6),
@@ -356,7 +356,7 @@ class _Toolbar extends ConsumerWidget {
     );
     final addButton = ShelfButton(
       key: const Key('add-game-button'),
-      label: space == null ? 'Add game' : '+ Add Steam game',
+      label: space == null ? 'Add Game' : '+ Add Steam game',
       icon: space == null ? Icons.add : null,
       kind: ShelfButtonKind.primary,
       onPressed: ref.read(addGameRequestProvider.notifier).request,
@@ -383,7 +383,7 @@ class _Toolbar extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(_gutter, 22, _gutter, 8),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             child: Wrap(
@@ -391,7 +391,13 @@ class _Toolbar extends ConsumerWidget {
               runSpacing: 10,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                Text('Library', style: style.page),
+                SizedBox(
+                  height: ShelfHeight.control,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text('Library', style: style.page),
+                  ),
+                ),
                 selectButton,
                 if (ref.watch(sessionUserProvider)?.hasSteamId ?? false)
                   const SteamSyncButton(),
@@ -886,7 +892,7 @@ class _SharedBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     return Tooltip(
-      message: 'Also in your shared space',
+      message: 'Also in your Shared Space',
       child: DecoratedBox(
         decoration: BoxDecoration(color: tokens.scrim, shape: BoxShape.circle),
         child: const Padding(
@@ -1060,7 +1066,7 @@ class _EntryTargetState extends ConsumerState<_EntryTarget> {
       ShelfMenuLabel(_entry.title),
       const ShelfMenuDivider(),
       ShelfMenuItem(
-        label: 'Open details',
+        label: 'Open Details',
         icon: Icons.open_in_new,
         shortcut: 'Enter',
         onSelected: () => actions.openDetails(_entry.id),

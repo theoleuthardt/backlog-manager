@@ -37,7 +37,7 @@ void main() {
   testWidgets('opens from the toolbar next to the IGDB sync', (tester) async {
     await open(tester, [entry(1, 'Hades'), entry(2, 'Hades')]);
 
-    expect(find.text('Duplicate games'), findsOneWidget);
+    expect(find.text('Duplicate Games'), findsOneWidget);
     expect(find.byKey(const Key('igdb-sync-button')), findsOneWidget);
   });
 

@@ -17,8 +17,8 @@ import 'package:go_router/go_router.dart';
 
 const _searchDelay = Duration(milliseconds: 800);
 
-/// Opens the "Search for a game" sheet. Inside a shared space [inSpace] makes
-/// the shared space the target of the creation tool.
+/// Opens the "Search for a game" sheet. Inside a Shared Space [inSpace] makes
+/// the Shared Space the target of the creation tool.
 Future<void> showAddGameSheet(BuildContext context, {bool inSpace = false}) {
   return showShelfSheet<void>(
     context,

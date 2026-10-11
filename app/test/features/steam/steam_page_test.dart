@@ -115,7 +115,7 @@ void main() {
 
       expect(find.byKey(const Key('page-steam')), findsOneWidget);
       expect(find.byKey(const Key('steam-empty-hint')), findsOneWidget);
-      expect(find.text('Load preview'), findsOneWidget);
+      expect(find.text('Load Preview'), findsOneWidget);
       expect(
         find.text('Nothing is written until you press Import.'),
         findsOneWidget,
@@ -168,7 +168,7 @@ void main() {
 
       expect(opened.steam.streamCancelled, isTrue);
       expect(find.text('Preview cancelled'), findsOneWidget);
-      expect(find.text('Load preview'), findsOneWidget);
+      expect(find.text('Load Preview'), findsOneWidget);
       await dismissToast(tester);
     });
 
@@ -210,7 +210,7 @@ void main() {
       expect(find.text('3.2 h'), findsOneWidget);
       expect(find.text('3 of 3 selected'), findsOneWidget);
       expect(find.text('Import 3 games'), findsOneWidget);
-      expect(find.text('Reload preview'), findsOneWidget);
+      expect(find.text('Reload Preview'), findsOneWidget);
     });
 
     testWidgets('copes with a server that sends no playtime', (tester) async {
@@ -251,7 +251,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Steam is not reachable'), findsOneWidget);
-      expect(find.text('Load preview'), findsOneWidget);
+      expect(find.text('Load Preview'), findsOneWidget);
       await dismissToast(tester);
     });
 

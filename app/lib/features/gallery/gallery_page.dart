@@ -83,7 +83,7 @@ class _GalleryPageState extends State<GalleryPage> {
                   onPressed: () {},
                 ),
                 ShelfButton(
-                  label: 'With icon',
+                  label: 'With Icon',
                   icon: Icons.add,
                   onPressed: () {},
                 ),
@@ -107,7 +107,7 @@ class _GalleryPageState extends State<GalleryPage> {
                 const ShelfChip(label: 'Info', kind: ShelfChipKind.info),
                 const ShelfChip(label: 'Ok', kind: ShelfChipKind.ok),
                 ShelfChip(label: 'Genre: RPG', onRemove: () {}),
-                const ShelfChip(label: 'Add filter', kind: ShelfChipKind.add),
+                const ShelfChip(label: 'Add Filter', kind: ShelfChipKind.add),
               ],
             ),
           ]),
@@ -141,7 +141,7 @@ class _GalleryPageState extends State<GalleryPage> {
             SizedBox(
               width: 360,
               child: ShelfSelect<String>(
-                label: 'Default sort',
+                label: 'Default Sort',
                 value: _sort,
                 onChanged: (value) => setState(() => _sort = value),
                 options: const [
@@ -166,7 +166,7 @@ class _GalleryPageState extends State<GalleryPage> {
                 description: 'How the app sorts your games',
                 rows: [
                   ShelfFormRow(
-                    label: 'Owned only',
+                    label: 'Owned Only',
                     description: 'Hide games you do not own',
                     control: ShelfSwitch(
                       value: _switch,
@@ -242,7 +242,7 @@ class _GalleryPageState extends State<GalleryPage> {
               ],
             ),
           ]),
-          _section('Data table', [
+          _section('Data Table', [
             SizedBox(
               width: 640,
               child: ShelfDataTable<_Game>(
@@ -281,7 +281,7 @@ class _GalleryPageState extends State<GalleryPage> {
                 ShelfMenuAnchor(
                   entries: [
                     ShelfMenuItem(
-                      label: 'Open details',
+                      label: 'Open Details',
                       shortcut: '↵',
                       onSelected: () {},
                     ),

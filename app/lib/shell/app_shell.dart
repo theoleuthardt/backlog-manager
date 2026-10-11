@@ -39,6 +39,7 @@ class AppShell extends ConsumerStatefulWidget {
 }
 
 class _AppShellState extends ConsumerState<AppShell> {
+  final _slotKey = GlobalKey();
   bool _showingEntry = false;
 
   @override
@@ -79,6 +80,12 @@ class _AppShellState extends ConsumerState<AppShell> {
     final fullscreen =
         inspector != null && ref.watch(inspectorFullscreenProvider);
     final location = widget.location;
+    final slot = inspector == null
+        ? null
+        : KeyedSubtree(
+            key: _slotKey,
+            child: _InspectorSlot(fullscreen: fullscreen, child: inspector),
+          );
     ref.listen(shellInspectorProvider, (_, next) {
       if (next == null) {
         ref.read(inspectorFullscreenProvider.notifier).exit();
@@ -105,30 +112,29 @@ class _AppShellState extends ConsumerState<AppShell> {
                         growsToRight: true,
                       ),
                     Expanded(
-                      flex: fullscreen ? 0 : 1,
-                      child: Offstage(
-                        offstage: fullscreen,
-                        child: SizedBox.expand(
-                          key: const Key('main-content'),
-                          child: UpdateNotifier(
-                            child: WishlistSyncPrompt(child: widget.child),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Offstage(
+                            offstage: fullscreen,
+                            child: SizedBox.expand(
+                              key: const Key('main-content'),
+                              child: UpdateNotifier(
+                                child: WishlistSyncPrompt(child: widget.child),
+                              ),
+                            ),
                           ),
-                        ),
+                          if (slot != null && fullscreen)
+                            Positioned.fill(child: slot),
+                        ],
                       ),
                     ),
-                    if (inspector != null && fullscreen)
-                      Expanded(
-                        child: _InspectorSlot(
-                          fullscreen: true,
-                          child: inspector,
-                        ),
-                      )
-                    else if (inspector != null) ...[
+                    if (slot != null && !fullscreen) ...[
                       const PaneResizeHandle(
                         pane: Pane.inspector,
                         growsToRight: false,
                       ),
-                      _InspectorSlot(child: inspector),
+                      slot,
                     ],
                   ],
                 ),

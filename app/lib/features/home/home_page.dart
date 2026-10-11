@@ -159,7 +159,7 @@ class _Content extends ConsumerWidget {
           if (next.isNotEmpty)
             _Shelf(
               shelfKey: 'up-next',
-              title: 'Up next',
+              title: 'Up Next',
               subtitle: 'Short games first',
               status: 'Not Started',
               entries: next,
@@ -171,7 +171,7 @@ class _Content extends ConsumerWidget {
           if (done.isNotEmpty)
             _Shelf(
               shelfKey: 'recently-completed',
-              title: 'Recently completed',
+              title: 'Recently Completed',
               status: 'Completed',
               entries: done,
               serverUrl: serverUrl,
@@ -197,7 +197,7 @@ class _StatTiles extends StatelessWidget {
       children: [
         Expanded(
           child: _StatTile(
-            label: 'In backlog',
+            label: 'In Backlog',
             value: formatCount(stats.inBacklog),
             unit: 'games',
           ),
@@ -213,7 +213,7 @@ class _StatTiles extends StatelessWidget {
         const SizedBox(width: 14),
         Expanded(
           child: _StatTile(
-            label: 'Playing now',
+            label: 'Playing Now',
             value: formatCount(stats.playingNow),
             unit: 'games',
           ),
@@ -373,7 +373,7 @@ class _HeroState extends ConsumerState<_Hero> {
                         Row(
                           children: [
                             ShelfButton(
-                              label: 'Open details',
+                              label: 'Open Details',
                               kind: ShelfButtonKind.primary,
                               onPressed: () => context.go(
                                 _library({'entry': '${entry.id}'}),
@@ -475,7 +475,7 @@ class _Shelf extends StatelessWidget {
               const Spacer(),
               ShelfButton(
                 key: Key('see-all-$shelfKey'),
-                label: 'See all',
+                label: 'See All',
                 kind: ShelfButtonKind.quiet,
                 onPressed: () => context.go(_library({'status': status})),
               ),

@@ -140,9 +140,9 @@ void main() {
         'PERSONALISE',
         'Home',
         'Library',
-        'Shared space',
-        'Add game',
-        'Steam sync',
+        'Shared Space',
+        'Add Game',
+        'Steam Sync',
         'Import CSV',
         'Export CSV',
         'Appearance',
@@ -184,7 +184,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(app.location, AppRoutes.export);
-      expect(inMain(find.text('Export backlog')), findsOneWidget);
+      expect(inMain(find.text('Export Backlog')), findsOneWidget);
     });
 
     testWidgets('shows the title of the current page in the title bar', (
@@ -389,7 +389,7 @@ void main() {
 
       await tester.tap(find.byKey(const Key('account-row')));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Log out'));
+      await tester.tap(find.text('Log Out'));
       await tester.pumpAndSettle();
 
       expect(app.location, AppRoutes.signIn);

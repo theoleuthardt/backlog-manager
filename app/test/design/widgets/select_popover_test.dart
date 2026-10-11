@@ -11,7 +11,7 @@ void main() {
   group('ShelfSelect', () {
     Widget select({String? value, ValueChanged<String>? onChanged}) {
       return ShelfSelect<String>(
-        label: 'Default sort',
+        label: 'Default Sort',
         hintText: 'Choose one',
         value: value,
         onChanged: onChanged ?? (_) {},
@@ -28,7 +28,7 @@ void main() {
       await pumpThemed(tester, select(), width: 300);
 
       expect(
-        tester.getTopLeft(find.text('Default sort')).dy,
+        tester.getTopLeft(find.text('Default Sort')).dy,
         lessThan(tester.getTopLeft(find.byKey(const Key('select-trigger'))).dy),
       );
       expect(

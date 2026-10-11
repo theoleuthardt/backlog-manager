@@ -26,7 +26,7 @@ class CategoryPicker extends ConsumerWidget {
 
   final int entryId;
 
-  /// The shared space the game lives in; null for the personal backlog.
+  /// The Shared Space the game lives in; null for the personal backlog.
   final int? spaceId;
 
   @override
@@ -300,7 +300,7 @@ class _CategoryPanelState extends ConsumerState<_CategoryPanel> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'New category',
+                  'New Category',
                   style: style.label.copyWith(color: tokens.muted),
                 ),
                 const SizedBox(height: 8),
@@ -308,7 +308,7 @@ class _CategoryPanelState extends ConsumerState<_CategoryPanel> {
                   children: [
                     ShelfColorSwatch(
                       value: color,
-                      label: 'Category colour',
+                      label: 'Category Colour',
                       onPressed: () =>
                           setState(() => _paletteOpen = !_paletteOpen),
                     ),

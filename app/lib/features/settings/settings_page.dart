@@ -377,7 +377,7 @@ class _GeneralTab extends ConsumerWidget {
           title: 'Library',
           rows: [
             ShelfFormRow(
-              label: 'Default sort',
+              label: 'Default Sort',
               description:
                   'The library opens sorted by this option; you can still '
                   'change it there at any time.',
@@ -395,7 +395,7 @@ class _GeneralTab extends ConsumerWidget {
                   builder: (context, controller) => ShelfSelectTrigger(
                     key: const Key('settings-default-sort'),
                     text: current.label,
-                    semanticLabel: 'Default sort',
+                    semanticLabel: 'Default Sort',
                     onPressed: () => controller.isOpen
                         ? controller.close()
                         : controller.open(),
@@ -404,7 +404,7 @@ class _GeneralTab extends ConsumerWidget {
               ),
             ),
             ShelfFormRow(
-              label: 'Animated background',
+              label: 'Animated Background',
               description:
                   'Twinkling and drifting stars, shooting stars and breathing '
                   'nebulae behind the window. Kept on this device; the '
@@ -412,7 +412,7 @@ class _GeneralTab extends ConsumerWidget {
               control: ShelfSwitch(
                 key: const Key('settings-background-motion'),
                 value: ref.watch(backgroundMotionProvider),
-                label: 'Animated background',
+                label: 'Animated Background',
                 onChanged: (value) => ref
                     .read(backgroundMotionProvider.notifier)
                     .setEnabled(enabled: value),
@@ -423,7 +423,7 @@ class _GeneralTab extends ConsumerWidget {
               description: 'Themes and your own colours.',
               control: ShelfButton(
                 key: const Key('settings-appearance'),
-                label: 'Open appearance',
+                label: 'Open Appearance',
                 onPressed: () => context.go(AppRoutes.appearance),
               ),
             ),
@@ -618,7 +618,7 @@ class _IntegrationsTabState extends ConsumerState<_IntegrationsTab> {
               ),
             ),
             ShelfFormRow(
-              label: 'Family members',
+              label: 'Family Members',
               description: 'Comma-separated SteamID64s',
               control: SettingsTextField(
                 fieldKey: const Key('settings-family-ids'),
@@ -715,10 +715,10 @@ class _IntegrationsTabState extends ConsumerState<_IntegrationsTab> {
               ),
             ),
             ShelfFormRow(
-              label: 'SteamGridDB key',
+              label: 'SteamGridDB Key',
               description: user.hasSteamgriddbApiKey
                   ? 'Your own key is set and used for cover art.'
-                  : 'Cover art',
+                  : 'Cover Art',
               control: SecretControl(
                 fieldKey: const Key('settings-grid-key'),
                 removeKey: const Key('settings-grid-remove'),
@@ -825,7 +825,7 @@ class _AboutTab extends ConsumerWidget {
               ),
             ),
             ShelfFormRow(
-              label: 'Source code',
+              label: 'Source Code',
               control: ShelfButton(
                 key: const Key('settings-source'),
                 label: 'Open on GitHub',

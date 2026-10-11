@@ -6,7 +6,7 @@ import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/domain/space.dart';
 import 'package:flutter/material.dart';
 
-/// Below a cover in the shared space: the hours of both members, each with
+/// Below a cover in the Shared Space: the hours of both members, each with
 /// their initials and a bar of how far they are with the game.
 class MemberProgress extends StatelessWidget {
   const MemberProgress({

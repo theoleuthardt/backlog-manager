@@ -27,7 +27,7 @@ class EntriesGate extends ConsumerWidget {
       error: (error, _) => CenteredMessage(
         text: ApiException.from(error, 'Could not load your backlog').message,
         action: ShelfButton(
-          label: 'Try again',
+          label: 'Try Again',
           onPressed: () =>
               ref.invalidate(entriesProvider(ref.read(backlogScopeProvider))),
         ),

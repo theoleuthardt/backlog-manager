@@ -68,7 +68,7 @@ String _hours(double hours) => hours == hours.roundToDouble()
     : hours.toString();
 
 /// Where "Continue in Creation Tool" goes: the creation tool with the chosen
-/// result in the address. Inside a shared space [inSpace] names it as the
+/// result in the address. Inside a Shared Space [inSpace] names it as the
 /// target.
 String creationToolLocation(GameSearchResult result, {bool inSpace = false}) {
   final description = result.description ?? '';

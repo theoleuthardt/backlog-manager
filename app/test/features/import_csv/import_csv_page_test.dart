@@ -194,12 +194,12 @@ void main() {
 
       expect(opened.api.headerCalls, ['a,b\n1,2']);
       expect(find.text('backlog-2025.csv'), findsOneWidget);
-      expect(find.text('Column mapping'), findsOneWidget);
+      expect(find.text('Column Mapping'), findsOneWidget);
       expect(find.text('A: Game'), findsOneWidget);
       expect(find.text('B: Genre'), findsOneWidget);
       expect(find.text('C: Platform'), findsOneWidget);
       expect(find.text('D: Status'), findsOneWidget);
-      expect(find.text('Preview import'), findsOneWidget);
+      expect(find.text('Preview Import'), findsOneWidget);
     });
 
     testWidgets('does nothing when the dialog is cancelled', (tester) async {
@@ -294,9 +294,9 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('E: Hours').last);
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('import-Review columns-E')));
+      await tester.tap(find.byKey(const Key('import-Review Columns-E')));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('import-Note columns-B')));
+      await tester.tap(find.byKey(const Key('import-Note Columns-B')));
       await tester.pumpAndSettle();
       await startPreview(tester, opened);
 
@@ -352,7 +352,7 @@ void main() {
 
       expect(opened.api.previewCancelled, isTrue);
       expect(find.text('Preview cancelled'), findsOneWidget);
-      expect(find.text('Preview import'), findsOneWidget);
+      expect(find.text('Preview Import'), findsOneWidget);
       await dismissToast(tester);
     });
 
@@ -365,9 +365,9 @@ void main() {
       expect(find.text('RPG · PC · Playing'), findsNWidgets(3));
       expect(find.byKey(const Key('import-chip-0')), findsOneWidget);
       expect(find.text('Owned'), findsOneWidget);
-      expect(find.text('Check match'), findsOneWidget);
+      expect(find.text('Check Match'), findsOneWidget);
       expect(find.text('No beat times'), findsOneWidget);
-      expect(find.text('Wrong game'), findsOneWidget);
+      expect(find.text('Wrong Game'), findsOneWidget);
       expect(find.text('Cover'), findsNWidgets(2));
       expect(find.text('3 rows'), findsOneWidget);
       expect(find.text('Import 3 games'), findsOneWidget);
@@ -410,7 +410,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('IGDB is unreachable'), findsOneWidget);
-      expect(find.text('Preview import'), findsOneWidget);
+      expect(find.text('Preview Import'), findsOneWidget);
       await dismissToast(tester);
     });
 
@@ -562,7 +562,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Crash Bandicoot'), findsOneWidget);
-      expect(find.text('Check match'), findsNothing);
+      expect(find.text('Check Match'), findsNothing);
       expect(find.text('Platformer · PC · Playing'), findsOneWidget);
       expect(find.text('Cover'), findsOneWidget);
     });

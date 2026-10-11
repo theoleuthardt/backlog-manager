@@ -51,6 +51,24 @@ void main() {
     expect(find.text('Ctrl+N'), findsOneWidget);
   });
 
+  testWidgets('the search icon, the input and Esc share one line', (
+    tester,
+  ) async {
+    await openPalette(tester);
+
+    final palette = find.byKey(const Key('command-palette'));
+    final icon = tester.getCenter(
+      find.descendant(of: palette, matching: find.byIcon(Icons.search)),
+    );
+    final input = tester.getCenter(find.byKey(const Key('palette-input')));
+    final esc = tester.getCenter(
+      find.descendant(of: palette, matching: find.text('Esc')),
+    );
+
+    expect((input.dy - icon.dy).abs(), lessThanOrEqualTo(2));
+    expect((esc.dy - icon.dy).abs(), lessThanOrEqualTo(1));
+  });
+
   testWidgets('Esc closes it', (tester) async {
     final container = await openPalette(tester);
 

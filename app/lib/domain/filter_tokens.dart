@@ -11,9 +11,9 @@ enum FilterField {
   status('Status'),
   category('Category'),
   interest('Interest'),
-  reviewStars('Review stars'),
+  reviewStars('Review Stars'),
   playtime('Playtime', unit: ' h'),
-  mainTime('Main story', unit: ' h'),
+  mainTime('Main Story', unit: ' h'),
   mainPlusExtraTime('Main + extra', unit: ' h'),
   completionTime('Completionist', unit: ' h');
 

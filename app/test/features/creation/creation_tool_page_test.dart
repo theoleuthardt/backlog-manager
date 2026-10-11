@@ -247,7 +247,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.bySemanticsLabel('Cover option'));
+      await tester.tap(find.bySemanticsLabel('Cover Option'));
       await tester.pumpAndSettle();
 
       expect(
@@ -327,7 +327,7 @@ void main() {
       expect(tool.location, startsWith('/creation-tool'));
       await tester.pump(const Duration(seconds: 4));
       await tester.pumpAndSettle();
-      expect(find.text('Add game'), findsWidgets);
+      expect(find.text('Add Game'), findsWidgets);
       await tester.pump(const Duration(seconds: 6));
     });
 
@@ -357,7 +357,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byKey(const Key('creation-submit')),
-          matching: find.text('Add game'),
+          matching: find.text('Add Game'),
         ),
         findsNothing,
       );
@@ -422,7 +422,7 @@ void main() {
 
       expect(tool0!.api.created, isEmpty);
       expect(find.text('Duplicate found'), findsNothing);
-      expect(find.text('Add game'), findsWidgets);
+      expect(find.text('Add Game'), findsWidgets);
     });
 
     testWidgets('"Add Anyway" creates the entry', (tester) async {
@@ -599,7 +599,7 @@ void main() {
     });
   });
 
-  group('adding to the shared space', () {
+  group('adding to the Shared Space', () {
     List<Override> withSpace() => [
       spaceApiProvider.overrideWithValue(FakeSpaceApi(together)),
     ];
@@ -616,7 +616,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byKey(const Key('creation-target')),
-          matching: find.text('My backlog'),
+          matching: find.text('My Backlog'),
         ),
         findsOneWidget,
       );
@@ -634,7 +634,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byKey(const Key('creation-target')),
-          matching: find.text('Shared space'),
+          matching: find.text('Shared Space'),
         ),
         findsOneWidget,
       );
@@ -653,7 +653,7 @@ void main() {
       await submit(tester);
 
       expect(
-        find.text('Only Steam games can be added to the shared space'),
+        find.text('Only Steam games can be added to the Shared Space'),
         findsOneWidget,
       );
       expect(tool.api.created, isEmpty);
@@ -707,7 +707,7 @@ void main() {
 
       await tester.tap(find.byKey(const Key('creation-target')));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('My backlog').last);
+      await tester.tap(find.text('My Backlog').last);
       await tester.pumpAndSettle();
       await chooseStatus(tester, 'In Progress');
       await submit(tester);

@@ -123,7 +123,7 @@ class SpaceMember {
   final bool isMe;
 }
 
-/// The shared space of the signed-in user, if any.
+/// The Shared Space of the signed-in user, if any.
 class Space {
   const Space({this.spaceId, this.myStatus, this.members = const []});
 

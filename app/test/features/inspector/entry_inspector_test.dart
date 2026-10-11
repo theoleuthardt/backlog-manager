@@ -97,10 +97,11 @@ void main() {
         tester.widget<Text>(find.byKey(const Key('inspector-title'))).data,
         'Hades',
       );
-      expect(
-        tester.widget<Text>(find.byKey(const Key('inspector-subtitle'))).data,
-        'Roguelike · Action · PC',
-      );
+      for (final fact in ['Roguelike', 'Action', 'PC']) {
+        expect(find.text(fact), findsWidgets);
+      }
+      expect(find.byKey(const Key('inspector-genres')), findsOneWidget);
+      expect(find.byKey(const Key('inspector-platforms')), findsOneWidget);
       expect(find.text('Changes save automatically'), findsOneWidget);
     });
 
@@ -116,7 +117,7 @@ void main() {
     ) async {
       final app = await openInspector(tester);
 
-      await tester.tap(find.byTooltip('Close inspector'));
+      await tester.tap(find.byTooltip('Close Inspector'));
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('entry-inspector')), findsNothing);
@@ -238,7 +239,7 @@ void main() {
 
       await tester.enterText(find.byKey(const Key('inspector-playtime')), '77');
       await tester.pump(const Duration(milliseconds: 100));
-      await tester.tap(find.byTooltip('Close inspector'));
+      await tester.tap(find.byTooltip('Close Inspector'));
       await tester.pumpAndSettle();
 
       expect(app.api.calls, contains('update 1 {playtime: 77.0}'));
@@ -317,7 +318,7 @@ void main() {
       expect(app.api.calls, contains('update 1 {owned: false}'));
     });
 
-    testWidgets('shows the playtime of the partner in a shared space', (
+    testWidgets('shows the playtime of the partner in a Shared Space', (
       tester,
     ) async {
       await openInspector(
@@ -332,7 +333,8 @@ void main() {
         ],
       );
 
-      expect(find.text('Your partner: 6.5h'), findsOneWidget);
+      expect(find.text('Partner playtime'), findsOneWidget);
+      expect(find.text('6.5 h'), findsOneWidget);
     });
   });
 
@@ -567,7 +569,7 @@ void main() {
       await tester.tap(find.byKey(const Key('inspector-change-cover')));
       await tester.pumpAndSettle();
       expect(games.calls, contains('covers 1145360'));
-      await tester.tap(find.bySemanticsLabel('Cover option'));
+      await tester.tap(find.bySemanticsLabel('Cover Option'));
       await tester.pumpAndSettle();
       expect(find.text('Cover updated'), findsOneWidget);
       await afterAutosave(tester);

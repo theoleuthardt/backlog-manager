@@ -115,7 +115,7 @@ void appearanceTests() {
     test('the old dark theme keeps its id and is called Classic dark', () {
       final dark = builtinThemes.firstWhere((theme) => theme.id == 'dark');
 
-      expect(dark.name, 'Classic dark');
+      expect(dark.name, 'Classic Dark');
     });
 
     test('are listed with Classic dark last', () {
@@ -168,7 +168,7 @@ void appearanceTests() {
         'Border',
         'Glow',
       ]);
-      expect(ThemeColorField.background.hint, 'Page background');
+      expect(ThemeColorField.background.hint, 'Page Background');
       expect(ThemeColorField.surface.hint, 'Cards, dialogs and menus');
     });
   });

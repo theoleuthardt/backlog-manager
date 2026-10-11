@@ -83,7 +83,7 @@ void main() {
       expect(uri.queryParameters['mainStory'], '7.5');
     });
 
-    test('names the shared space as the target', () {
+    test('names the Shared Space as the target', () {
       final uri = Uri.parse(creationToolLocation(result(), inSpace: true));
 
       expect(uri.queryParameters['target'], 'space');
@@ -110,7 +110,7 @@ void main() {
       expect(uri.queryParameters, {'title': 'My game', 'custom': '1'});
     });
 
-    test('names the shared space as the target', () {
+    test('names the Shared Space as the target', () {
       final uri = Uri.parse(customGameLocation('My game', inSpace: true));
 
       expect(uri.queryParameters['target'], 'space');

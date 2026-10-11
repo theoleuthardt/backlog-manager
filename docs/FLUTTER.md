@@ -400,6 +400,16 @@ Second round of the same test:
 - **Settings:** the back button reads "Back to Dashboard"; the input fields and their Remove buttons of Integrations share one 110 px trailing slot so they align.
 - **Interest bar:** segments are 28 px high to hit, 9 px visible.
 
+Third round:
+
+- **Titles:** two-word titles, labels and buttons are written in Title Case ("Shared Space", "Add Game", "Space Info"); prepositions stay small ("Add to").
+- **Space info** is a card (who shares, what is shared by both, what stays one's own), not a grey line.
+- **Inspector:** genre and platform are labelled chip rows beside the cover; the partner's playtime is a field-like row under one's own; the full-screen view puts the facts and controls in a 460 px column on the left and the tabs on the right (`_InspectorLayout`), and the shell keeps the inspector's state while it moves between the slot and the full-screen view (`GlobalKey`).
+- **Trailer on macOS:** the web view loads a small page with the embed in a frame and the base URL `https://www.youtube.com/` (`trailerPage`), which gives the player a referrer; opened as a top-level address YouTube answers error 153.
+- **Shortcuts:** the sidebar entry under Personalise opens `features/shortcuts/shortcuts_sheet.dart`, the list of every shortcut (palette actions come from the registry).
+- **Sign-in:** the heading reads "Backlog Manager" in the page size beside a 46 px animated mark; password fields have a show/hide button (`ShelfField.obscure`).
+- **Filter bar:** below 900 px it drops the caption of the owned-only switch, below 700 px also its "Filter" label and the sort menu becomes an icon.
+
 ### Update notification
 
 `features/updates/` tells the user about a newer release; it installs nothing (in-place updates are #279). `domain/app_update.dart` holds the pure part (`parseVersion`, `isNewerVersion` compare plain `X.Y.Z` numerically, `appReleaseFromJson` drops drafts, pre-releases, tags that are not a plain version and pages outside github.com); `data/release_source.dart` reads `releases/latest` of the repository (GitHub already leaves out drafts and pre-releases; 404 means no release) and the installed version from `package_info_plus`.

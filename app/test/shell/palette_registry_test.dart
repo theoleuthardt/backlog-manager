@@ -52,9 +52,9 @@ void main() {
 
   group('actionsMatching', () {
     final actions = [
-      action('add', 'Add game'),
+      action('add', 'Add Game'),
       action('sync', 'Sync Steam playtimes'),
-      action('settings', 'Open settings'),
+      action('settings', 'Open Settings'),
     ];
 
     test('lists every action for an empty query, in registration order', () {

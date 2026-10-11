@@ -73,14 +73,14 @@ class FilterBar extends ConsumerWidget {
                 const SizedBox(width: 12),
                 if (constraints.maxWidth >= _ownedLabelMinWidth) ...[
                   Text(
-                    'Owned only',
+                    'Owned Only',
                     style: style.caption.copyWith(color: tokens.muted),
                   ),
                   const SizedBox(width: 8),
                 ],
                 ShelfSwitch(
                   key: const Key('owned-only'),
-                  label: 'Owned only',
+                  label: 'Owned Only',
                   value: filters.ownedOnly,
                   onChanged: ref.read(filtersProvider.notifier).setOwnedOnly,
                 ),
@@ -94,7 +94,7 @@ class FilterBar extends ConsumerWidget {
                   ),
                 ],
                 const SizedBox(width: 12),
-                const _SortAndView(),
+                _SortAndView(compact: constraints.maxWidth < _compactMaxWidth),
               ],
             ),
           ),
@@ -107,8 +107,14 @@ class FilterBar extends ConsumerWidget {
 /// Below this width the filter bar drops the caption of the owned-only switch.
 const _ownedLabelMinWidth = 900.0;
 
+/// Below this width the bar drops its "Filter" label and the sort menu shrinks
+/// to an icon, so a window with the details open still fits the controls.
+const _compactMaxWidth = 700.0;
+
 class _SortAndView extends ConsumerWidget {
-  const _SortAndView();
+  const _SortAndView({required this.compact});
+
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -126,18 +132,27 @@ class _SortAndView extends ConsumerWidget {
                 onSelected: () => notifier.setSort(option),
               ),
           ],
-          builder: (context, controller) => ShelfButton(
-            label: 'Sort: ${view.sortBy.label}',
-            onPressed: () =>
-                controller.isOpen ? controller.close() : controller.open(),
-          ),
+          builder: (context, controller) {
+            void toggle() =>
+                controller.isOpen ? controller.close() : controller.open();
+            return compact
+                ? ShelfIconButton(
+                    icon: Icons.sort,
+                    tooltip: 'Sort: ${view.sortBy.label}',
+                    onPressed: toggle,
+                  )
+                : ShelfButton(
+                    label: 'Sort: ${view.sortBy.label}',
+                    onPressed: toggle,
+                  );
+          },
         ),
         const SizedBox(width: 4),
         ShelfIconButton(
           icon: view.direction == SortDirection.asc
               ? Icons.arrow_upward
               : Icons.arrow_downward,
-          tooltip: 'Sort direction',
+          tooltip: 'Sort Direction',
           onPressed: notifier.toggleDirection,
         ),
         const SizedBox(width: 12),

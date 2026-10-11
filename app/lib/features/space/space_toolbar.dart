@@ -66,6 +66,101 @@ class MemberAvatars extends StatelessWidget {
   }
 }
 
+/// What the "Space info" popover shows: who shares the backlog and which part
+/// of an entry is shared and which stays with each member.
+class _SpaceInfoCard extends StatelessWidget {
+  const _SpaceInfoCard({required this.space});
+
+  final Space space;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = Theme.of(context).extension<ShelfTokens>()!;
+    final style = Theme.of(context).extension<ShelfTextStyles>()!;
+    final partner = space.partnerIsActive ? space.partner!.username : null;
+
+    Widget row(IconData icon, String title, String detail) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: tokens.accentSoft,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: SizedBox(
+                width: 32,
+                height: 32,
+                child: Icon(icon, size: 17, color: tokens.accent),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: style.control.copyWith(
+                      color: tokens.foreground,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    detail,
+                    style: style.caption.copyWith(color: tokens.muted),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Semantics(
+      label: space.infoText,
+      child: Padding(
+        key: const Key('space-info-text'),
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+        child: SizedBox(
+          width: 320,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Shared Space',
+                style: style.section.copyWith(color: tokens.foreground),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                partner == null
+                    ? 'A co-op backlog for two'
+                    : 'Shared with $partner',
+                style: style.caption.copyWith(color: tokens.accent),
+              ),
+              row(
+                Icons.layers_outlined,
+                'Shared by both',
+                'Status and categories',
+              ),
+              row(
+                Icons.person_outline,
+                'Stays your own',
+                'Rating, playtime and review',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// "Space info" and "Leave" of the space header.
 class SpaceControls extends ConsumerWidget {
   const SpaceControls({required this.space, super.key});
@@ -74,34 +169,21 @@ class SpaceControls extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tokens = Theme.of(context).extension<ShelfTokens>()!;
-    final style = Theme.of(context).extension<ShelfTextStyles>()!;
-
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         ShelfPopover(
-          content: Padding(
-            padding: const EdgeInsets.all(12),
-            child: SizedBox(
-              width: 260,
-              child: Text(
-                space.infoText,
-                key: const Key('space-info-text'),
-                style: style.caption.copyWith(color: tokens.text2),
-              ),
-            ),
-          ),
+          content: _SpaceInfoCard(space: space),
           builder: (context, menu) => ShelfButton(
             key: const Key('space-info'),
-            label: 'Space info',
+            label: 'Space Info',
             onPressed: () => menu.isOpen ? menu.close() : menu.open(),
           ),
         ),
         const SizedBox(width: 8),
         ShelfButton(
           key: const Key('space-leave'),
-          label: space.waitingForPartner ? 'Cancel invitation' : 'Leave',
+          label: space.waitingForPartner ? 'Cancel Invitation' : 'Leave',
           kind: ShelfButtonKind.danger,
           onPressed: () => unawaited(showLeaveSpaceSheet(context)),
         ),
@@ -130,7 +212,7 @@ class _LeaveSheetState extends ConsumerState<_LeaveSheet> {
     try {
       await ref.read(spaceProvider.notifier).leave();
       if (!mounted) return;
-      showShelfToast(context, 'You left the shared space');
+      showShelfToast(context, 'You left the Shared Space');
       navigator.pop();
     } on Object catch (error) {
       if (!mounted) return;
@@ -145,7 +227,7 @@ class _LeaveSheetState extends ConsumerState<_LeaveSheet> {
   @override
   Widget build(BuildContext context) {
     return ShelfSheet(
-      title: 'Leave the shared space?',
+      title: 'Leave the Shared Space?',
       width: ShelfSheetWidth.compact,
       footer: ShelfSheetFooter(
         cancelLabel: 'Stay',

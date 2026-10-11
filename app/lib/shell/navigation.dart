@@ -2,7 +2,7 @@ import 'package:backlog_manager/routing/routes.dart';
 import 'package:flutter/material.dart';
 
 /// What a navigation item does when it is not a page of the router.
-enum NavigationAction { addGame }
+enum NavigationAction { addGame, shortcuts }
 
 class NavigationItem {
   const NavigationItem({
@@ -53,7 +53,7 @@ const navigationSections = [
       ),
       NavigationItem(
         id: 'space',
-        label: 'Shared space',
+        label: 'Shared Space',
         icon: Icons.group_outlined,
         route: AppRoutes.space,
       ),
@@ -64,13 +64,13 @@ const navigationSections = [
     items: [
       NavigationItem(
         id: 'add-game',
-        label: 'Add game',
+        label: 'Add Game',
         icon: Icons.add_circle_outline,
         action: NavigationAction.addGame,
       ),
       NavigationItem(
         id: 'steam',
-        label: 'Steam sync',
+        label: 'Steam Sync',
         icon: Icons.sync_outlined,
         route: AppRoutes.steam,
       ),
@@ -103,12 +103,18 @@ const navigationSections = [
         icon: Icons.settings_outlined,
         route: AppRoutes.settings,
       ),
+      NavigationItem(
+        id: 'shortcuts',
+        label: 'Shortcuts',
+        icon: Icons.keyboard_outlined,
+        action: NavigationAction.shortcuts,
+      ),
     ],
   ),
 ];
 
 const _pageTitles = {
-  AppRoutes.creationTool: 'Creation tool',
+  AppRoutes.creationTool: 'Creation Tool',
   AppRoutes.setup: 'Setup',
   AppRoutes.signIn: 'Sign in',
   AppRoutes.loading: 'Loading',

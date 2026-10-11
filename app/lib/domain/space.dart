@@ -2,7 +2,7 @@ import 'package:backlog_manager/domain/creation_form.dart';
 import 'package:backlog_manager/domain/format.dart';
 import 'package:backlog_manager/domain/models.dart';
 
-/// Where the signed-in user stands with the shared space.
+/// Where the signed-in user stands with the Shared Space.
 enum SpaceStage { none, invited, active }
 
 /// What the screens say and do about the space of the signed-in user: none,
@@ -33,9 +33,9 @@ extension SpaceView on Space {
   /// An active space nobody was invited into yet.
   bool get needsInvitation => stage == SpaceStage.active && partner == null;
 
-  /// The partner's name, or "Shared space" while there is no active partner.
+  /// The partner's name, or "Shared Space" while there is no active partner.
   String get controlLabel =>
-      partnerIsActive ? partner!.username : 'Shared space';
+      partnerIsActive ? partner!.username : 'Shared Space';
 
   String get infoText => partnerIsActive
       ? 'Shared with ${partner!.username}. Status and categories are '
@@ -44,14 +44,14 @@ extension SpaceView on Space {
             'rating and playtime stay your own.';
 
   String get leaveLabel =>
-      waitingForPartner ? 'Cancel invitation' : 'Leave space';
+      waitingForPartner ? 'Cancel Invitation' : 'Leave Space';
 
   String? get waitingLine => waitingForPartner
       ? 'Waiting for ${partner!.username} to accept your invitation'
       : null;
 
   String get invitationTitle =>
-      '${partner?.username ?? 'Someone'} invited you to a shared space';
+      '${partner?.username ?? 'Someone'} invited you to a Shared Space';
 }
 
 /// "TH" for "theo", the letters of the avatar of a member.
@@ -77,7 +77,7 @@ const leaveWarning =
     'You lose access to its entries. They stay with your partner; once '
     'nobody is left they are deleted.';
 
-const shareToSpaceHint = 'Only Steam games can be added to the shared space';
+const shareToSpaceHint = 'Only Steam games can be added to the Shared Space';
 
 /// Only Steam games can live in a space.
 bool canShareToSpace(BacklogEntry entry) => entry.steamAppId != null;
@@ -106,4 +106,4 @@ NewEntry sharedCopyOf(BacklogEntry entry) {
 }
 
 String sharedToastMessage(String title) =>
-    'Added "$title" to your shared space';
+    'Added "$title" to your Shared Space';

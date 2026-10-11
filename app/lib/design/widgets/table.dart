@@ -86,7 +86,7 @@ class ShelfDataTable<T> extends StatelessWidget {
                   child: ShelfCheckbox(
                     key: const Key('table-select-all'),
                     value: all,
-                    label: 'Select all',
+                    label: 'Select All',
                     onChanged: onSelectAll,
                   ),
                 ),

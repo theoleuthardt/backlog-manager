@@ -118,14 +118,14 @@ class _SteamPageState extends ConsumerState<SteamPage> {
                   onChanged: controller.setSource,
                 )
               else
-                Text('Steam library', style: style.page),
+                Text('Steam Library', style: style.page),
               ShelfButton(
                 key: const Key('steam-load'),
                 label: previewing
                     ? 'Loading...'
                     : rows == null
-                    ? 'Load preview'
-                    : 'Reload preview',
+                    ? 'Load Preview'
+                    : 'Reload Preview',
                 kind: ShelfButtonKind.primary,
                 busy: previewing,
                 onPressed: !linked || state.busy
@@ -179,7 +179,7 @@ class _SteamPageState extends ConsumerState<SteamPage> {
                 const SizedBox(width: 10),
                 ShelfButton(
                   key: const Key('steam-open-settings'),
-                  label: 'Open settings',
+                  label: 'Open Settings',
                   onPressed: () =>
                       context.go('${AppRoutes.settings}?tab=integrations'),
                 ),
@@ -253,9 +253,13 @@ class _SteamPageState extends ConsumerState<SteamPage> {
       if (state.phase == SteamPhase.previewing) {
         return _LoadingPanel(source: source, state: state);
       }
-      return message(
-        'Nothing loaded yet - load a preview to see what would be imported.',
-        key: const Key('steam-empty-hint'),
+      return Center(
+        child: Text(
+          'Nothing loaded yet!',
+          key: const Key('steam-empty-hint'),
+          textAlign: TextAlign.center,
+          style: style.page.copyWith(color: tokens.foreground),
+        ),
       );
     }
     if (rows.isEmpty) {
@@ -288,13 +292,13 @@ class _SteamPageState extends ConsumerState<SteamPage> {
                     ),
                     ShelfButton(
                       key: const Key('steam-select-none'),
-                      label: 'Select none',
+                      label: 'Select None',
                       kind: ShelfButtonKind.quiet,
                       onPressed: state.busy ? null : controller.selectNone,
                     ),
                     ShelfButton(
                       key: const Key('steam-select-all'),
-                      label: 'Select all',
+                      label: 'Select All',
                       kind: ShelfButtonKind.quiet,
                       onPressed: state.busy ? null : controller.selectAll,
                     ),
@@ -306,7 +310,7 @@ class _SteamPageState extends ConsumerState<SteamPage> {
                 width: 240,
                 child: ShelfSearchInput(
                   controller: _filter,
-                  hintText: 'Filter list',
+                  hintText: 'Filter List',
                   onChanged: controller.setQuery,
                 ),
               ),

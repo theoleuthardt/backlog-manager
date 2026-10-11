@@ -132,11 +132,11 @@ void main() {
       expect(find.text('Server unavailable'), findsOneWidget);
 
       failing = false;
-      await tester.tap(find.text('Try again'));
+      await tester.tap(find.text('Try Again'));
       await tester.pumpAndSettle();
 
       expect(find.text('Server unavailable'), findsNothing);
-      expect(find.text('Continue playing'.toUpperCase()), findsOneWidget);
+      expect(find.text('Continue Playing'.toUpperCase()), findsOneWidget);
     });
 
     testWidgets('shows an empty state with the ways to fill the backlog', (
@@ -154,11 +154,11 @@ void main() {
     testWidgets('shows the four stat tiles', (tester) async {
       await pumpHome(tester, FakeBacklogApi(entries: backlog));
 
-      expect(inHome(find.text('In backlog')), findsOneWidget);
+      expect(inHome(find.text('In Backlog')), findsOneWidget);
       expect(inHome(find.text('6')), findsOneWidget);
       expect(inHome(find.text('Time to beat')), findsOneWidget);
       expect(inHome(find.text('135')), findsOneWidget);
-      expect(inHome(find.text('Playing now')), findsOneWidget);
+      expect(inHome(find.text('Playing Now')), findsOneWidget);
       expect(inHome(find.text('Completed this year')), findsOneWidget);
     });
 
@@ -223,7 +223,7 @@ void main() {
         FakeBacklogApi(entries: backlog),
       );
 
-      await tester.tap(find.text('Open details'));
+      await tester.tap(find.text('Open Details'));
       await tester.pumpAndSettle();
 
       final uri = container
@@ -241,7 +241,7 @@ void main() {
         await pumpHome(tester, FakeBacklogApi(entries: backlog));
 
         final up = find.byKey(const Key('shelf-up-next'));
-        expect(find.text('Up next'), findsOneWidget);
+        expect(find.text('Up Next'), findsOneWidget);
         expect(find.text('Short games first'), findsOneWidget);
         final celeste = tester
             .getTopLeft(find.descendant(of: up, matching: find.text('Celeste')))
@@ -288,7 +288,7 @@ void main() {
         await pumpHome(tester, FakeBacklogApi(entries: backlog));
 
         final done = find.byKey(const Key('shelf-recently-completed'));
-        expect(find.text('Recently completed'), findsOneWidget);
+        expect(find.text('Recently Completed'), findsOneWidget);
         expect(
           tester
               .getTopLeft(
@@ -329,8 +329,8 @@ void main() {
       final entries = [game(1, 'Hades', status: 'In Progress', playtime: 3)];
       await pumpHome(tester, FakeBacklogApi(entries: entries));
 
-      expect(find.text('Up next'), findsNothing);
-      expect(find.text('Recently completed'), findsNothing);
+      expect(find.text('Up Next'), findsNothing);
+      expect(find.text('Recently Completed'), findsNothing);
     });
   });
 

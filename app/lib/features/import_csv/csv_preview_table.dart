@@ -179,7 +179,7 @@ class _CsvRowTileState extends ConsumerState<CsvRowTile> {
                             label: verdict.chip!,
                             kind: switch (verdict.chip) {
                               'Owned' => ShelfChipKind.ok,
-                              'Check match' => ShelfChipKind.accent,
+                              'Check Match' => ShelfChipKind.accent,
                               _ => ShelfChipKind.neutral,
                             },
                           ),

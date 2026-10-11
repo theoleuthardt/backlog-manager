@@ -12,17 +12,18 @@ void main() {
     expect(navigationSections[0].items.map((i) => i.label), [
       'Home',
       'Library',
-      'Shared space',
+      'Shared Space',
     ]);
     expect(navigationSections[1].items.map((i) => i.label), [
-      'Add game',
-      'Steam sync',
+      'Add Game',
+      'Steam Sync',
       'Import CSV',
       'Export CSV',
     ]);
     expect(navigationSections[2].items.map((i) => i.label), [
       'Appearance',
       'Settings',
+      'Shortcuts',
     ]);
   });
 
@@ -36,14 +37,14 @@ void main() {
 
       expect(byLabel['Home']!.route, AppRoutes.home);
       expect(byLabel['Library']!.route, AppRoutes.library);
-      expect(byLabel['Shared space']!.route, AppRoutes.space);
-      expect(byLabel['Steam sync']!.route, AppRoutes.steam);
+      expect(byLabel['Shared Space']!.route, AppRoutes.space);
+      expect(byLabel['Steam Sync']!.route, AppRoutes.steam);
       expect(byLabel['Import CSV']!.route, AppRoutes.import);
       expect(byLabel['Export CSV']!.route, AppRoutes.export);
       expect(byLabel['Appearance']!.route, AppRoutes.appearance);
       expect(byLabel['Settings']!.route, AppRoutes.settings);
-      expect(byLabel['Add game']!.route, isNull);
-      expect(byLabel['Add game']!.action, NavigationAction.addGame);
+      expect(byLabel['Add Game']!.route, isNull);
+      expect(byLabel['Add Game']!.action, NavigationAction.addGame);
     },
   );
 

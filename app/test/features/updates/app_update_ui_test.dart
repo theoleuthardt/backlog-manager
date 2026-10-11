@@ -128,7 +128,7 @@ void main() {
 
       expect(find.text('Backlog Manager 0.9.4 is available'), findsOneWidget);
 
-      await tester.tap(find.text('View release'));
+      await tester.tap(find.text('View Release'));
       await tester.pumpAndSettle();
       expect(opened.single.path, endsWith('/releases/tag/v0.9.4'));
 

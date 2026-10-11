@@ -37,7 +37,7 @@ class DuplicatesSheet extends ConsumerWidget {
     final count = groups.fold<int>(0, (sum, g) => sum + g.entries.length);
 
     return ShelfSheet(
-      title: 'Duplicate games',
+      title: 'Duplicate Games',
       description:
           'Games that are in your backlog more than once, by title or Steam '
           'App ID. Delete the entries you do not need.',

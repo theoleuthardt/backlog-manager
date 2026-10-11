@@ -122,7 +122,7 @@ class _IgdbSyncSheetState extends ConsumerState<IgdbSyncSheet> {
           onCancel: _running ? null : () => Navigator.of(context).maybePop(),
           primary: ShelfButton(
             key: const Key('igdb-sync-start'),
-            label: _running ? 'Syncing...' : 'Start sync',
+            label: _running ? 'Syncing...' : 'Start Sync',
             kind: ShelfButtonKind.primary,
             busy: _running,
             onPressed: !_running && count != null && count > 0 ? _start : null,

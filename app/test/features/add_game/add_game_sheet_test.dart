@@ -43,7 +43,7 @@ Future<(ProviderContainer, FakeGamesApi)> openSheet(
     height: 900,
     overrides: [gamesApiProvider.overrideWithValue(games)],
   );
-  await tester.tap(find.text('Add game').first);
+  await tester.tap(find.text('Add Game').first);
   await tester.pumpAndSettle();
   return (container, games);
 }

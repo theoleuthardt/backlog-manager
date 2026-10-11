@@ -80,11 +80,15 @@ class _SignInPageState extends ConsumerState<SignInPage> {
             children: [
               Row(
                 children: [
-                  const BrandMark(size: 30),
-                  const SizedBox(width: 12),
-                  Text(
-                    twoFactor ? 'Two-factor authentication' : 'Backlog',
-                    style: text.eyebrow,
+                  const BrandMark(size: 46),
+                  const SizedBox(width: 14),
+                  Flexible(
+                    child: Text(
+                      twoFactor
+                          ? 'Two-factor authentication'
+                          : 'Backlog Manager',
+                      style: text.page.copyWith(color: tokens.accent),
+                    ),
                   ),
                 ],
               ),
@@ -153,7 +157,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
   List<Widget> _twoFactorForm(LoginFlow flow) {
     return [
       ShelfField(
-        label: 'Verification code',
+        label: 'Verification Code',
         controller: _code,
         autofocus: true,
         onSubmitted: (_) => _verify(),
@@ -169,7 +173,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
       ),
       const SizedBox(height: 8),
       ShelfButton(
-        label: 'Start over',
+        label: 'Start Over',
         kind: ShelfButtonKind.quiet,
         onPressed: () {
           _code.clear();
@@ -314,7 +318,7 @@ class _ServerSheetState extends ConsumerState<_ServerSheet> {
       ),
       child: ShelfField(
         key: const Key('server-url-field'),
-        label: 'Server address',
+        label: 'Server Address',
         hintText: 'https://api.example.com',
         controller: _address,
         autofocus: true,

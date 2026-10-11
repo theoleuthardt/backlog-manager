@@ -15,7 +15,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 /// The inspector action of a personal game: it copies the game into the
-/// shared space, or, once it is there, links to the space. Only Steam games
+/// Shared Space, or, once it is there, links to the space. Only Steam games
 /// can be shared, so a game without a Steam App ID gets a disabled button with
 /// a hint. Nothing shows in the space itself or without an active space.
 class ShareToSpaceButton extends ConsumerStatefulWidget {
@@ -45,7 +45,7 @@ class _ShareToSpaceButtonState extends ConsumerState<ShareToSpaceButton> {
           context,
           ApiException.from(
             error,
-            'Failed to add the game to your shared space',
+            'Failed to add the game to your Shared Space',
           ).message,
         );
       }
@@ -65,7 +65,7 @@ class _ShareToSpaceButtonState extends ConsumerState<ShareToSpaceButton> {
     if (entry.inSharedSpace) {
       return ShelfButton(
         key: const Key('inspector-in-space'),
-        label: 'In shared space',
+        label: 'In Shared Space',
         icon: Icons.people_outline,
         onPressed: () => context.go(AppRoutes.space),
       );
@@ -75,7 +75,7 @@ class _ShareToSpaceButtonState extends ConsumerState<ShareToSpaceButton> {
       message: shareable ? '' : shareToSpaceHint,
       child: ShelfButton(
         key: const Key('inspector-add-to-space'),
-        label: 'Add to shared space',
+        label: 'Add to Shared Space',
         icon: Icons.people_outline,
         busy: _busy,
         onPressed: shareable && !_busy

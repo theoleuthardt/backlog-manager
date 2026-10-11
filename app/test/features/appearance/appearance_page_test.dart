@@ -126,7 +126,7 @@ void main() {
       expect(find.text('Light'), findsOneWidget);
       expect(find.text('Colorful'), findsOneWidget);
       expect(find.text('Freaky'), findsOneWidget);
-      expect(find.text('Classic dark'), findsOneWidget);
+      expect(find.text('Classic Dark'), findsOneWidget);
       expect(find.text('No custom themes yet.'), findsOneWidget);
     });
 
@@ -258,7 +258,7 @@ void main() {
         'glow': '#3b82f6',
       });
       expect(find.text('Theme "Neon" saved'), findsOneWidget);
-      expect(find.text('Save changes'), findsOneWidget);
+      expect(find.text('Save Changes'), findsOneWidget);
       await dismissToast(tester);
     });
 
@@ -367,7 +367,7 @@ void main() {
       await tester.tap(find.byKey(const Key('theme-new')));
       await tester.pump();
 
-      expect(find.text('Save theme'), findsOneWidget);
+      expect(find.text('Save Theme'), findsOneWidget);
       expect(
         tester
             .widget<TextField>(find.byKey(const Key('theme-name')))

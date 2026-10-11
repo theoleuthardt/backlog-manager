@@ -77,11 +77,11 @@ void main() {
     testWidgets('draws the add chip with a dashed border', (tester) async {
       await pumpThemed(
         tester,
-        const ShelfChip(label: 'Add filter', kind: ShelfChipKind.add),
+        const ShelfChip(label: 'Add Filter', kind: ShelfChipKind.add),
       );
 
       expect(find.byKey(const Key('chip-dashed-border')), findsOneWidget);
-      expect(chipTextColor(tester, 'Add filter'), tokens.muted);
+      expect(chipTextColor(tester, 'Add Filter'), tokens.muted);
     });
 
     testWidgets('calls onPressed and onRemove', (tester) async {
@@ -294,7 +294,7 @@ void main() {
             const ShelfChip(label: 'Info', kind: ShelfChipKind.info),
             const ShelfChip(label: 'Ok', kind: ShelfChipKind.ok),
             ShelfChip(label: 'Genre: RPG', onRemove: () {}),
-            const ShelfChip(label: 'Add filter', kind: ShelfChipKind.add),
+            const ShelfChip(label: 'Add Filter', kind: ShelfChipKind.add),
           ],
         ),
         const SizedBox(height: 16),

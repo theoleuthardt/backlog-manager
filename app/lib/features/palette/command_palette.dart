@@ -237,7 +237,7 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
                               focusedBorder: InputBorder.none,
                               filled: false,
                               isDense: true,
-                              contentPadding: EdgeInsets.zero,
+                              contentPadding: EdgeInsets.only(bottom: 3),
                               constraints: BoxConstraints(),
                             ),
                           ),

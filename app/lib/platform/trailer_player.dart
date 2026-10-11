@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -22,11 +24,16 @@ Widget? systemTrailerPlayer(BuildContext context, Uri embedUrl) {
   if (!supported) return null;
   return InAppWebView(
     key: const Key('trailer-webview'),
-    initialUrlRequest: URLRequest(url: WebUri.uri(embedUrl)),
+    initialData: InAppWebViewInitialData(
+      data: trailerPage(embedUrl),
+      baseUrl: WebUri('https://www.youtube.com/'),
+    ),
     shouldOverrideUrlLoading: (controller, action) async {
       final host = action.request.url?.host ?? '';
       final embedded =
-          host == 'www.youtube-nocookie.com' || host == 'www.youtube.com';
+          !action.isForMainFrame ||
+          host == 'www.youtube-nocookie.com' ||
+          host == 'www.youtube.com';
       return embedded
           ? NavigationActionPolicy.ALLOW
           : NavigationActionPolicy.CANCEL;
@@ -37,6 +44,21 @@ Widget? systemTrailerPlayer(BuildContext context, Uri embedUrl) {
       transparentBackground: true,
     ),
   );
+}
+
+/// The page the web view loads: the embed in a frame that fills the view. YouTube
+/// answers error 153 to an embed that is opened as a top-level address, because
+/// the player is given no referrer; a page with a YouTube origin around the
+/// frame gives it one.
+String trailerPage(Uri embedUrl) {
+  final src = const HtmlEscape(HtmlEscapeMode.attribute).convert('$embedUrl');
+  return '<!doctype html><html><head><meta charset="utf-8">'
+      '<meta name="referrer" content="strict-origin-when-cross-origin">'
+      '<style>html,body{margin:0;height:100%;background:#000}'
+      'iframe{border:0;width:100%;height:100%}</style></head><body>'
+      '<iframe src="$src" allow="autoplay; encrypted-media; picture-in-picture" '
+      'allowfullscreen referrerpolicy="strict-origin-when-cross-origin">'
+      '</iframe></body></html>';
 }
 
 final trailerPlayerBuilderProvider = Provider<TrailerPlayerBuilder>(

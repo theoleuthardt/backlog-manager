@@ -114,7 +114,7 @@ void main() {
       });
     });
 
-    test('work on the categories of a shared space', () async {
+    test('work on the categories of a Shared Space', () async {
       await actions(4).create('Co-op', '#38bdf8');
 
       expect(api.calls, contains('create-category Co-op #38bdf8 4'));

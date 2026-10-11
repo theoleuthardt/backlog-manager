@@ -13,6 +13,7 @@ import 'package:backlog_manager/design/widgets/toast.dart';
 import 'package:backlog_manager/domain/themes.dart';
 import 'package:backlog_manager/features/appearance/appearance_page.dart';
 import 'package:backlog_manager/features/appearance/theme_actions.dart';
+import 'package:backlog_manager/features/shortcuts/shortcuts_sheet.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/routing/session.dart';
 import 'package:backlog_manager/shell/navigation.dart';
@@ -181,6 +182,8 @@ class _NavItemState extends ConsumerState<_NavItem> {
       context.go(route);
     } else if (widget.item.action == NavigationAction.addGame) {
       ref.read(addGameRequestProvider.notifier).request();
+    } else if (widget.item.action == NavigationAction.shortcuts) {
+      unawaited(showShortcutsSheet(context));
     }
   }
 
@@ -455,7 +458,7 @@ class _AccountRow extends ConsumerWidget {
         PopupMenuItem<String>(
           value: 'logout',
           height: 40,
-          child: Text('Log out'),
+          child: Text('Log Out'),
         ),
       ],
       child: SizedBox(

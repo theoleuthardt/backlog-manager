@@ -63,7 +63,7 @@ void main() {
     expect(find.text('SteamGridDB Covers'), findsOneWidget);
     expect(games.calls, ['covers 620']);
     expect(find.byKey(const Key('cover-grid')), findsOneWidget);
-    expect(find.bySemanticsLabel('Cover option'), findsNWidgets(2));
+    expect(find.bySemanticsLabel('Cover Option'), findsNWidgets(2));
   });
 
   testWidgets('picking a cover returns its address', (tester) async {
@@ -75,7 +75,7 @@ void main() {
       ],
     );
 
-    await tester.tap(find.bySemanticsLabel('Cover option').last);
+    await tester.tap(find.bySemanticsLabel('Cover Option').last);
     await tester.pumpAndSettle();
 
     expect(picked.closed, isTrue);
@@ -150,7 +150,7 @@ void main() {
 
     expect(games.calls, contains('covers-by-id 7'));
     expect(find.byKey(const Key('cover-matches')), findsNothing);
-    await tester.tap(find.bySemanticsLabel('Cover option'));
+    await tester.tap(find.bySemanticsLabel('Cover Option'));
     await tester.pumpAndSettle();
     expect(picked.url, 'https://cdn.example/portal.png');
   });

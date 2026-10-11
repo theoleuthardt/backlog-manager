@@ -249,8 +249,8 @@ void main() {
         'Genre',
         'Playtime',
         'Platform',
-        'Interest level',
-        'Review stars',
+        'Interest Level',
+        'Review Stars',
       ]) {
         expect(find.text(label), findsWidgets, reason: label);
       }

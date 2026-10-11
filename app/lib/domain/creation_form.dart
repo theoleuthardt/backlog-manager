@@ -104,14 +104,14 @@ class CreationInput {
 
 /// The message of the first thing missing from the form, in the words of the
 /// web client, or null when the entry can be created. [toSpace] is set for an
-/// entry of the shared space, which needs a Steam App ID.
+/// entry of the Shared Space, which needs a Steam App ID.
 String? validateCreation(CreationInput input, {bool toSpace = false}) {
   if (input.title.trim().isEmpty) return 'Please enter a title';
   if (splitList(input.genre).isEmpty) return 'Please enter at least one genre';
   if (splitList(input.platform).isEmpty) return 'Please select a platform';
   if (input.status.isEmpty) return 'Please select a status';
   if (toSpace && resolvedSteamAppId(input.steamAppId) == null) {
-    return 'Only Steam games can be added to the shared space';
+    return 'Only Steam games can be added to the Shared Space';
   }
   return null;
 }
