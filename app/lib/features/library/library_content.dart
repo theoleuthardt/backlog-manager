@@ -1,7 +1,9 @@
 import 'package:backlog_manager/data/backlog_providers.dart';
 import 'package:backlog_manager/data/backlog_scope.dart';
 import 'package:backlog_manager/data/filter_providers.dart';
+import 'package:backlog_manager/data/group_order_store.dart';
 import 'package:backlog_manager/domain/filter_entries.dart';
+import 'package:backlog_manager/domain/group_order.dart';
 import 'package:backlog_manager/domain/library_groups.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/domain/sort_entries.dart';
@@ -44,6 +46,8 @@ final libraryContentProvider = Provider<LibraryContent?>((ref) {
     filterOptionsProvider.select((options) => options.statuses),
   );
 
+  final groupOrder = ref.watch(groupOrderProvider);
+
   var categoriesByEntry = const <int, List<Category>>{};
   if (sortBy == SortOption.category || filters.categories.isNotEmpty) {
     categoriesByEntry =
@@ -74,16 +78,19 @@ final libraryContentProvider = Provider<LibraryContent?>((ref) {
     hours += entry.mainTime ?? 0;
   }
   return LibraryContent(
-    groups: buildLibraryGroups(
-      entries: visible,
-      config: SortConfig(
-        sortBy: sortBy,
-        direction: direction,
-        statusOrder: statusOrder,
-        categoryByEntryId: firstCategory,
+    groups: applyGroupOrder(
+      buildLibraryGroups(
+        entries: visible,
+        config: SortConfig(
+          sortBy: sortBy,
+          direction: direction,
+          statusOrder: statusOrder,
+          categoryByEntryId: firstCategory,
+        ),
+        statusFilter: filters.statuses.toSet(),
+        categoryNames: categoryNames,
       ),
-      statusFilter: filters.statuses.toSet(),
-      categoryNames: categoryNames,
+      groupOrder,
     ),
     total: entries.length,
     shown: visible.length,
