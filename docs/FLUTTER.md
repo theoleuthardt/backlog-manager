@@ -139,6 +139,7 @@ Verified so far: the three Linux packages are built locally (an AppImage starts 
 
 - **Dry run:** with `publish` off (the default) nothing is released; take the installers from the run's artifacts.
 - **Publishing:** `publish` creates the GitHub Release with generated notes and all installers. `prerelease` (default on) marks it as a pre-release, which keeps it out of `releases/latest` and so out of the Tauri updater feed until the cutover (#287). The update feed of the Flutter client is added with the in-place updater (#279).
+- The release notes start with the install instructions for unsigned builds (`.github/release-install-notes.md`); signing options and costs: [`docs/SIGNING.md`](SIGNING.md).
 - The Tauri workflows (`release-apps.yml`, `tauri-build.yml`) stay until the cutover.
 
 ## Architecture
