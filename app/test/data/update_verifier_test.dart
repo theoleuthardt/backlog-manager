@@ -113,4 +113,24 @@ void main() {
       UpdateVerdict.badSignature,
     );
   });
+
+  test('rejects a signature of the wrong length without throwing', () async {
+    final set = await signed(dir: dir);
+    final short = UpdatePayload(
+      url: set.payload.url,
+      sha256: set.payload.sha256,
+      signature: base64Encode([1, 2, 3]),
+      size: set.payload.size,
+    );
+
+    expect(
+      await set.verifier.verify(
+        file: set.file,
+        payload: short,
+        version: _version,
+        key: _key,
+      ),
+      UpdateVerdict.badSignature,
+    );
+  });
 }

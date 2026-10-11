@@ -145,24 +145,29 @@ void main() {
   });
 
   group('WindowsExeInstaller', () {
-    test('runs the setup silently and then starts the app', () async {
-      final installer = WindowsExeInstaller(
-        executablePath: r'C:\Apps\Backlog Manager\backlog_manager.exe',
-        start: record,
-      );
+    test(
+      'writes a batch file that runs the setup and starts the app',
+      () async {
+        final installer = WindowsExeInstaller(
+          executablePath: r'C:\Apps\Backlog Manager\backlog_manager.exe',
+          start: record,
+        );
+        final payload = File('${dir.path}/update.exe')..writeAsStringSync('x');
 
-      await installer.apply(File(r'C:\Temp\update.exe'));
+        await installer.apply(payload);
 
-      final (executable, arguments) = started.single;
-      expect(executable, 'cmd.exe');
-      expect(arguments.first, '/c');
-      final command = arguments[1];
-      expect(command, contains('"C:\\Temp\\update.exe" /VERYSILENT'));
-      expect(command, contains('/NORESTART'));
-      expect(
-        command,
-        endsWith(r'start "" "C:\Apps\Backlog Manager\backlog_manager.exe"'),
-      );
-    });
+        final (executable, arguments) = started.single;
+        expect(executable, 'cmd.exe');
+        expect(arguments, ['/c', '${payload.path}.cmd']);
+        final script = File('${payload.path}.cmd').readAsStringSync();
+        expect(script, contains('"${payload.path}" /VERYSILENT'));
+        expect(script, contains('/NORESTART'));
+        expect(
+          script,
+          contains(r'start "" "C:\Apps\Backlog Manager\backlog_manager.exe"'),
+        );
+        expect(script, contains(r'del "%~f0"'));
+      },
+    );
   });
 }

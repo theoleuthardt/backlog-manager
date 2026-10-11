@@ -71,7 +71,7 @@ export function verifyMessage(publicKeyBase64, message, signatureBase64) {
 function listFiles(dir) {
   return readdirSync(dir, { recursive: true, withFileTypes: true })
     .filter((entry) => entry.isFile())
-    .map((entry) => path.join(entry.parentPath, entry.name));
+    .map((entry) => path.join(entry.parentPath ?? entry.path, entry.name));
 }
 
 /**

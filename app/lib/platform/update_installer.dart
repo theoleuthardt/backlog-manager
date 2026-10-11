@@ -118,15 +118,19 @@ class MacDmgInstaller implements UpdateInstaller {
   ]);
 }
 
-/// The command line that, once the running app has had a moment to close, runs
-/// the installer without a window and starts the new version.
-String windowsUpdateCommand({
+/// The batch file that, once the running app has had a moment to close, runs
+/// the installer without a window, starts the new version and removes itself.
+/// It is a file because `cmd.exe` does not read quotes the way Dart escapes
+/// them in an argument.
+String windowsUpdateScript({
   required String installer,
   required String executable,
 }) =>
-    'ping -n 3 127.0.0.1 >nul & '
-    '"$installer" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART & '
-    'start "" "$executable"';
+    '@echo off\r\n'
+    'ping -n 3 127.0.0.1 >nul\r\n'
+    '"$installer" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART\r\n'
+    'start "" "$executable"\r\n'
+    'del "%~f0"\r\n';
 
 /// A Windows install runs the setup of the new version over itself.
 class WindowsExeInstaller implements UpdateInstaller {
@@ -145,10 +149,16 @@ class WindowsExeInstaller implements UpdateInstaller {
   Directory get stagingDirectory => Directory.systemTemp;
 
   @override
-  Future<void> apply(File payload) => _start('cmd.exe', [
-    '/c',
-    windowsUpdateCommand(installer: payload.path, executable: executablePath),
-  ]);
+  Future<void> apply(File payload) async {
+    final script = File('${payload.path}.cmd')
+      ..writeAsStringSync(
+        windowsUpdateScript(
+          installer: payload.path,
+          executable: executablePath,
+        ),
+      );
+    await _start('cmd.exe', ['/c', script.path]);
+  }
 }
 
 /// The installer of the system the app runs on, or null where it cannot

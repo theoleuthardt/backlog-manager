@@ -31,7 +31,7 @@ and opens its page.
    |---|---|
    | Linux AppImage | the new file is made executable, moved over the running AppImage (`$APPIMAGE`) and started; the old process keeps its open inode and exits |
    | macOS | a detached shell script waits for the app to exit, mounts the disk image, copies the app over the bundle with `ditto` and opens it; the file is not quarantined because the app downloaded it itself |
-   | Windows | a detached `cmd` runs the Inno Setup installer silently over the install and starts the app |
+   | Windows | a detached `cmd` runs a small batch file next to the download: it waits a moment, runs the Inno Setup installer silently over the install, starts the app and deletes itself |
 
    An install in a folder the user cannot write to has no payload key and stays
    notify-only. A failure while applying removes the download and leaves the

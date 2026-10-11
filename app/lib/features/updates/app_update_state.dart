@@ -166,12 +166,21 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
     }
     if (!ref.mounted) return;
     state = state.copyWith(install: UpdateInstall.verifying);
-    final verdict = await verifier.verify(
-      file: file,
-      payload: payload,
-      version: release.version,
-      key: key,
-    );
+    final UpdateVerdict verdict;
+    try {
+      verdict = await verifier.verify(
+        file: file,
+        payload: payload,
+        version: release.version,
+        key: key,
+      );
+    } on Object {
+      await fail(
+        'The update could not be verified and was not installed. '
+        'Your version keeps working.',
+      );
+      return;
+    }
     if (verdict != UpdateVerdict.ok) {
       await fail(
         'The update could not be verified and was not installed. '

@@ -267,4 +267,33 @@ void main() {
     expect(exited, 0);
     expect(staged('0.9.4').existsSync(), isFalse);
   });
+
+  test('a check that throws does not leave the install stuck', () async {
+    final container = await checked(
+      containerFor(
+        downloader: FakeDownloader(_content),
+        verifierOverride: _ThrowingVerifier(),
+      ),
+    );
+    final notifier = container.read(appUpdateProvider.notifier);
+
+    await notifier.install();
+
+    final state = container.read(appUpdateProvider);
+    expect(state.install, UpdateInstall.failed);
+    expect(staged('0.9.4').existsSync(), isFalse);
+    expect(notifier.canInstallInPlace, isTrue);
+  });
+}
+
+class _ThrowingVerifier extends UpdateVerifier {
+  _ThrowingVerifier() : super(Uint8List(32));
+
+  @override
+  Future<UpdateVerdict> verify({
+    required File file,
+    required UpdatePayload payload,
+    required String version,
+    required String key,
+  }) async => throw const FileSystemException('removed');
 }

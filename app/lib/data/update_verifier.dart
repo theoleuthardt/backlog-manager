@@ -46,6 +46,7 @@ class UpdateVerifier {
     } on FormatException {
       return UpdateVerdict.badSignature;
     }
+    if (signature.length != 64) return UpdateVerdict.badSignature;
     final message = utf8.encode(
       updateMessage(version: version, key: key, sha256: payload.sha256),
     );
