@@ -54,7 +54,7 @@ Built from `frontend/src/app/`, `frontend/src/hooks/` and `frontend/src/lib/` fo
 | `StatusSelect` | `features/common/status_select.dart` | done |
 | `SteamContent`, `SteamSyncButton` | `features/steam/` | done |
 | `ThemeCreator`, `ThemeMenu`, `ThemeContext` | `features/appearance/`, the account row of the sidebar, the palette | done |
-| `TrailerDialog`, `lib/trailer` | the trailer tab opens the browser, `domain/trailer.dart` | open: #325 (in-app player) |
+| `TrailerDialog`, `lib/trailer` | the trailer tab opens the browser, `domain/trailer.dart` | done, the trailer plays in the browser on purpose (docs/FLUTTER.md "Trailer player") |
 | `WishlistSyncDialog`, `lib/wishlistSyncReport` | `features/library/wishlist_sync_prompt.dart` | done |
 | (none) | command palette (Cmd/Ctrl+K), keyboard shortcuts, the debug gallery of the UI kit | new |
 

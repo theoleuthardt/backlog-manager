@@ -265,7 +265,17 @@ Two reusable sheets for the Steam data of a game; the inspector (#264) and the c
 - Tabs: Overview (genre and platform as comma-separated fields, the description), Progress (HowLongToBeat bars against the playtime, then the achievements), Review (the note; stars and review text only for the status Completed, otherwise "Set the status to Completed to write a review") and Trailer (a play card that opens the YouTube video in the browser, "No trailer available for this game." otherwise). Footer: Delete with the usual confirmation.
 - Autosave (`EntryAutosave`): the fields that differ from the stored entry (`diffEntryForm`: image link, playtime, genre, platform, status, owned, interest, review stars, review, note) are saved 800 ms after the last change; edits during a running save are saved by the next one; closing saves what is pending; a failed save shows "Not saved" and a toast. Title, description and times change only through "wrong game".
 - When the stored entry changes while the inspector is open (a drag to another group, a sync) the fields the user has not touched follow it (`rebaseForm`), so the autosave never writes the old value back and the inspector stays open when the game moves between groups.
-- Footer: Delete, "Wrong game?" and "Change cover" (the sheets below). Not here yet: the in-app trailer player (#325), the publisher line (#293) and "synced 2 h ago" (#268). The trailer plays in the browser; an in-app player needs a webview that works on all three desktop platforms.
+- Footer: Delete, "Wrong game?" and "Change cover" (the sheets below). Not here yet: the publisher line (#293) and "synced 2 h ago" (#268). The trailer plays in the browser on purpose (see "Trailer player").
+
+### Trailer player
+
+Decision (#325): the trailer keeps opening in the system browser; there is no embedded player. Flutter's first-party `webview_flutter` has no desktop support, and every desktop option brings a cost that is out of proportion for one button:
+
+- A Chromium-based plugin (`webview_cef`) works on all three platforms but ships a Chromium runtime with the app (the order of a hundred megabytes per platform), needs a macOS Podfile hook for multi-process mode and renders in software on Linux.
+- Plugins on the native engines (WebKitGTK on Linux, WKWebView on macOS, WebView2 on Windows; `desktop_webview_window`, `atomic_webview`) add `webkit2gtk` as a system dependency of the Linux packages (AppImage, DEB and RPM have to agree on it and Bazzite does not carry it by default) and the WebView2 runtime on older Windows 10. They are small community packages that we would have to track through every Flutter upgrade.
+- YouTube refuses some embeds without a referrer (error 153), so an embedded player needs the "Video not playing? Watch it on YouTube" fallback anyway, and that fallback is what the browser gives for free: the watch page always plays.
+
+`domain/trailer.dart` (`youtubeEmbedUrl`) accepts only canonical YouTube watch URLs, and the inspector opens a link only after it passed, so nothing else can ever be launched or become a future web view source. If a webview package that covers all three desktops without a runtime or system dependency appears, the trailer card is the only widget to change: it would open a sheet that hosts the player behind an interface, with the browser link as the fallback.
 
 ### Adding a game, the right game and covers
 
