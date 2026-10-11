@@ -6,6 +6,7 @@ import 'package:backlog_manager/auth/token_store.dart';
 import 'package:backlog_manager/data/games_api.dart';
 import 'package:backlog_manager/data/theme_store.dart';
 import 'package:backlog_manager/design/atmosphere.dart';
+import 'package:backlog_manager/design/widgets/cover.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/themes.dart';
 import 'package:backlog_manager/routing/router.dart';
@@ -130,6 +131,7 @@ Future<RunningApp> openLibrary(
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   atmosphereMotion = false;
+  coverImageDelay = Duration.zero;
 
   testWidgets('signs in with a password and a two-factor code', (tester) async {
     final backend = FakeBackend(entries: library());

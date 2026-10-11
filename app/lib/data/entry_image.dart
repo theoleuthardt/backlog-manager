@@ -7,5 +7,5 @@ import 'package:flutter/widgets.dart';
 ImageProvider? entryImage(String? serverUrl, String imageLink) {
   if (serverUrl == null) return null;
   final url = proxiedImageUrl(serverUrl, imageLink);
-  return url == null ? null : CachedNetworkImageProvider(url);
+  return url == null ? null : CachedNetworkImageProvider(url, maxWidth: 420);
 }

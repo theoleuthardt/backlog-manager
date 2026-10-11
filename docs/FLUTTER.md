@@ -409,6 +409,7 @@ Third round:
 - **Inspector header:** the cover is 132 px wide in the slot (160 in the full-screen view); genre and platform sit beside it on one line each (faded at the edge, the tooltip has the whole list; they wrap in the full-screen view), so the block never gets taller than the cover, and the status drop-down is a full-width row under it.
 - **Shortcuts:** the sidebar entry under Personalise opens `features/shortcuts/shortcuts_sheet.dart`, the list of every shortcut (palette actions come from the registry).
 - **Sign-in:** the heading reads "Backlog Manager" in the page size beside a 46 px animated mark; password fields have a show/hide button (`ShelfField.obscure`).
+- **Covers while jumping:** a cover requests its image only after it has stayed built for 150 ms (`coverImageDelay`, zero in tests), and the images are decoded at most 420 px wide. Jumping to a game far down a library of 1,300 entries builds the covers of every viewport on the way for a single frame; without the delay each of them queued a download that nothing waited for and the covers on screen appeared after half a minute.
 - **Filter bar:** below 900 px it drops the caption of the owned-only switch, below 700 px also its "Filter" label and the sort menu becomes an icon.
 
 ### Update notification

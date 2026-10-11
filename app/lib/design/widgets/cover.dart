@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'dart:math' as math;
 
 import 'package:backlog_manager/design/color_math.dart';
@@ -164,12 +166,55 @@ class ShelfCover extends StatelessWidget {
   Widget _art(ShelfTextStyles text) {
     final fallback = _Fallback(title: title);
     if (image == null) return fallback;
+    return _DeferredArt(image: image!, fallback: fallback);
+  }
+}
+
+/// How long a cover has to stay built before its image is requested. A jump
+/// through a long library builds covers for a single frame each; without the
+/// delay every one of them would queue a download that nothing is waiting for
+/// any more, and the covers that are on screen would wait behind them.
+Duration coverImageDelay = const Duration(milliseconds: 150);
+
+class _DeferredArt extends StatefulWidget {
+  const _DeferredArt({required this.image, required this.fallback});
+
+  final ImageProvider image;
+  final Widget fallback;
+
+  @override
+  State<_DeferredArt> createState() => _DeferredArtState();
+}
+
+class _DeferredArtState extends State<_DeferredArt> {
+  Timer? _timer;
+  late bool _ready = coverImageDelay == Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!_ready) {
+      _timer = Timer(coverImageDelay, () {
+        if (mounted) setState(() => _ready = true);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_ready) return widget.fallback;
     return Image(
-      image: image!,
+      image: widget.image,
       fit: BoxFit.cover,
       width: double.infinity,
       height: double.infinity,
-      errorBuilder: (context, error, stackTrace) => fallback,
+      errorBuilder: (context, error, stackTrace) => widget.fallback,
     );
   }
 }

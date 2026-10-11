@@ -26,6 +26,52 @@ BoxDecoration fallbackOf(WidgetTester tester) {
 void main() {
   final tokens = tokensOf('shelfOled');
 
+  group('the delay of the cover image', () {
+    late Duration saved;
+
+    setUp(() {
+      saved = coverImageDelay;
+      coverImageDelay = const Duration(milliseconds: 150);
+    });
+    tearDown(() => coverImageDelay = saved);
+
+    testWidgets('requests the image only when the cover stays', (tester) async {
+      await pumpThemed(
+        tester,
+        SizedBox(
+          width: 150,
+          child: ShelfCover(title: 'Hades', image: pixel),
+        ),
+      );
+
+      expect(find.byType(Image), findsNothing);
+      expect(find.byKey(const Key('cover-fallback')), findsOneWidget);
+
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(find.byType(Image), findsOneWidget);
+    });
+
+    testWidgets('a cover that is gone before the delay never asks', (
+      tester,
+    ) async {
+      final provider = _CountingImage();
+      await tester.pumpWidget(
+        themed(
+          'shelfOled',
+          SizedBox(
+            width: 150,
+            child: ShelfCover(title: 'Hades', image: provider),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pumpWidget(themed('shelfOled', const SizedBox()));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(provider.resolved, 0);
+    });
+  });
+
   group('proxiedImageUrl', () {
     test('sends the address through the image proxy of the server', () {
       expect(
@@ -396,4 +442,22 @@ void main() {
     size: const Size(720, 360),
     width: 680,
   );
+}
+
+class _CountingImage extends ImageProvider<_CountingImage> {
+  int resolved = 0;
+
+  @override
+  Future<_CountingImage> obtainKey(ImageConfiguration configuration) {
+    resolved++;
+    return Future.value(this);
+  }
+
+  @override
+  ImageStreamCompleter loadImage(
+    _CountingImage key,
+    ImageDecoderCallback decode,
+  ) {
+    throw UnimplementedError();
+  }
 }
