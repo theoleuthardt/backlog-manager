@@ -333,7 +333,15 @@ class _GroupHeader extends ConsumerWidget {
     ];
     void arrange(List<String> arranged) =>
         ref.read(groupOrderProvider.notifier).arrange(arranged);
-    final position = keys().indexOf(group.key);
+    final (position, count) = ref.watch(
+      libraryContentProvider.select((content) {
+        final groups = content?.groups ?? const <LibraryGroup>[];
+        return (
+          groups.indexWhere((item) => item.key == group.key),
+          groups.length,
+        );
+      }),
+    );
 
     return DragTarget<String>(
       onWillAcceptWithDetails: (details) => details.data != group.key,
@@ -344,7 +352,7 @@ class _GroupHeader extends ConsumerWidget {
           if (position > 0)
             CustomSemanticsAction(label: 'Move group up'): () =>
                 arrange(moveGroupBy(keys(), group.key, -1)),
-          if (position < keys().length - 1)
+          if (position < count - 1)
             CustomSemanticsAction(label: 'Move group down'): () =>
                 arrange(moveGroupBy(keys(), group.key, 1)),
         },

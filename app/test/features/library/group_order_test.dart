@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:backlog_manager/data/group_order_store.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../data/fakes.dart';
@@ -34,7 +37,43 @@ Future<void> dragHandle(WidgetTester tester, String from, String onto) async {
   await tester.pumpAndSettle();
 }
 
+class SlowStore extends MemoryGroupOrderStore {
+  SlowStore(super.saved);
+
+  final loaded = Completer<void>();
+
+  @override
+  Future<List<String>> read() async {
+    final atRead = saved;
+    await loaded.future;
+    return atRead;
+  }
+}
+
 void main() {
+  test(
+    'keeps what was saved when the load finishes after a rearrange',
+    () async {
+      final store = SlowStore(['genre:RPG']);
+      final container = ProviderContainer(
+        overrides: [groupOrderStoreProvider.overrideWithValue(store)],
+      );
+      addTearDown(container.dispose);
+      final subscription = container.listen(groupOrderProvider, (_, _) {});
+      addTearDown(subscription.close);
+
+      container.read(groupOrderProvider.notifier).arrange(['status:Completed']);
+      store.loaded.complete();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(container.read(groupOrderProvider), [
+        'status:Completed',
+        'genre:RPG',
+      ]);
+      expect(store.saved, ['status:Completed', 'genre:RPG']);
+    },
+  );
+
   testWidgets('dragging the handle of a group moves it and saves the order', (
     tester,
   ) async {

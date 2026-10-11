@@ -58,7 +58,17 @@ class GroupOrderNotifier extends Notifier<List<String>> {
 
   Future<void> _load(GroupOrderStore store) async {
     final stored = await store.read();
-    if (ref.mounted && state.isEmpty && stored.isNotEmpty) state = stored;
+    if (!ref.mounted || stored.isEmpty) return;
+    if (state.isEmpty) {
+      state = stored;
+      return;
+    }
+    state = [
+      ...state,
+      for (final key in stored)
+        if (!state.contains(key)) key,
+    ];
+    unawaited(store.write(state));
   }
 
   /// Saves [arranged], the order of the groups on screen, in front of the
