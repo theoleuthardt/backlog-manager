@@ -412,193 +412,210 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
         valueListenable: _autosave.state,
         builder: (context, state, _) => SaveStatus(state: state, dirty: dirty),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(fullscreen ? 28 : 14),
-              child: _InspectorLayout(
-                fullscreen: fullscreen,
-                left: [
-                  CoverGlow(
-                    image: entryImage(serverUrl, _form.imageLink),
-                    coverSize: Size(coverWidth, coverWidth * 1.5),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(
-                          width: coverWidth,
-                          child: ShelfCover(
-                            title: entry.title,
-                            image: entryImage(serverUrl, _form.imageLink),
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: SizedBox(
-                            height: coverWidth * 1.5,
-                            child: ClipRect(
-                              child: SingleChildScrollView(
-                                physics: const NeverScrollableScrollPhysics(),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      entry.title,
-                                      key: const Key('inspector-title'),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: style.page.copyWith(fontSize: 22),
-                                    ),
-                                    if (genres.isNotEmpty) ...[
-                                      const SizedBox(height: 12),
-                                      FactChips(
-                                        key: const Key('inspector-genres'),
-                                        label: 'Genre',
-                                        values: genres,
-                                        maxLines: fullscreen ? null : 2,
-                                      ),
-                                    ],
-                                    if (platforms.isNotEmpty) ...[
-                                      const SizedBox(height: 10),
-                                      FactChips(
-                                        key: const Key('inspector-platforms'),
-                                        label: 'Platform',
-                                        values: platforms,
-                                        maxLines: fullscreen ? null : 1,
-                                      ),
-                                    ],
-                                  ],
+      child: CoverGlowScope(
+        image: entryImage(serverUrl, _form.imageLink),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  const CoverGlowBackdrop(),
+                  SingleChildScrollView(
+                    padding: EdgeInsets.all(fullscreen ? 28 : 14),
+                    child: _InspectorLayout(
+                      fullscreen: fullscreen,
+                      left: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: coverWidth,
+                              child: CoverGlowHalo(
+                                child: ShelfCover(
+                                  title: entry.title,
+                                  image: entryImage(serverUrl, _form.imageLink),
                                 ),
                               ),
                             ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: SizedBox(
+                                height: coverWidth * 1.5,
+                                child: ClipRect(
+                                  child: SingleChildScrollView(
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          entry.title,
+                                          key: const Key('inspector-title'),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: style.page.copyWith(
+                                            fontSize: 22,
+                                          ),
+                                        ),
+                                        if (genres.isNotEmpty) ...[
+                                          const SizedBox(height: 12),
+                                          FactChips(
+                                            key: const Key('inspector-genres'),
+                                            label: 'Genre',
+                                            values: genres,
+                                            maxLines: fullscreen ? null : 2,
+                                          ),
+                                        ],
+                                        if (platforms.isNotEmpty) ...[
+                                          const SizedBox(height: 10),
+                                          FactChips(
+                                            key: const Key(
+                                              'inspector-platforms',
+                                            ),
+                                            label: 'Platform',
+                                            values: platforms,
+                                            maxLines: fullscreen ? null : 1,
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: dot,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const SizedBox(width: 9, height: 9),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: StatusSelect(
+                                spaceId: ref.watch(backlogScopeProvider),
+                                value: _form.status,
+                                onChanged: (status) => _edit(
+                                  (form) => form.copyWith(status: status),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (completedOn != null) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            completedOn,
+                            key: const Key('inspector-completed'),
+                            style: style.caption.copyWith(color: tokens.muted),
+                          ),
+                        ],
+                        const SizedBox(height: 14),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            if (ref.watch(backlogScopeProvider) == null)
+                              ShelfButton(
+                                key: const Key('inspector-wrong-game'),
+                                label: 'Wrong Game?',
+                                icon: Icons.swap_horiz,
+                                onPressed: _wrongGame,
+                              ),
+                            ShelfButton(
+                              key: const Key('inspector-change-cover'),
+                              label: 'Change Cover',
+                              icon: Icons.photo_library_outlined,
+                              onPressed: _changeCover,
+                            ),
+                            ShelfButton(
+                              key: const Key('inspector-update-image'),
+                              label: 'Image Link',
+                              icon: Icons.link,
+                              onPressed: _updateImage,
+                            ),
+                            ShelfButton(
+                              key: const Key('inspector-prices'),
+                              label: 'Prices',
+                              icon: Icons.sell_outlined,
+                              onPressed: () => showPriceSheet(
+                                context,
+                                title: entry.title,
+                                steamAppId: entry.steamAppId,
+                              ),
+                            ),
+                            if (ref.watch(backlogScopeProvider) == null &&
+                                ref.watch(activeSpaceIdProvider) != null)
+                              ShareToSpaceButton(entry: entry),
+                          ],
+                        ),
+                        const SizedBox(height: 18),
+                        CategoryPicker(
+                          entryId: entry.id,
+                          spaceId: ref.watch(backlogScopeProvider),
+                        ),
+                        const SizedBox(height: 14),
+                        _stats(context, entry, tokens, style),
+                      ],
+                      right: [
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: ShelfTabs(
+                            labels: const [
+                              'Overview',
+                              'Progress',
+                              'Review',
+                              'Trailer',
+                            ],
+                            index: _tab,
+                            onChanged: (index) => setState(() => _tab = index),
                           ),
                         ),
+                        const SizedBox(height: 14),
+                        switch (_tab) {
+                          0 => _overview(entry, tokens, style),
+                          1 => _progress(entry),
+                          2 => _reviewTab(reviewable),
+                          _ => _trailer(entry, tokens, style),
+                        },
                       ],
                     ),
                   ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: dot,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const SizedBox(width: 9, height: 9),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: StatusSelect(
-                          spaceId: ref.watch(backlogScopeProvider),
-                          value: _form.status,
-                          onChanged: (status) =>
-                              _edit((form) => form.copyWith(status: status)),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (completedOn != null) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      completedOn,
-                      key: const Key('inspector-completed'),
-                      style: style.caption.copyWith(color: tokens.muted),
+                ],
+              ),
+            ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border(top: BorderSide(color: tokens.borderSubtle)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                child: Row(
+                  children: [
+                    ShelfButton(
+                      key: const Key('inspector-delete'),
+                      label: 'Delete',
+                      kind: ShelfButtonKind.danger,
+                      onPressed: () =>
+                          LibraryActions(context, ref).deleteEntries([entry]),
                     ),
                   ],
-                  const SizedBox(height: 14),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      if (ref.watch(backlogScopeProvider) == null)
-                        ShelfButton(
-                          key: const Key('inspector-wrong-game'),
-                          label: 'Wrong Game?',
-                          icon: Icons.swap_horiz,
-                          onPressed: _wrongGame,
-                        ),
-                      ShelfButton(
-                        key: const Key('inspector-change-cover'),
-                        label: 'Change Cover',
-                        icon: Icons.photo_library_outlined,
-                        onPressed: _changeCover,
-                      ),
-                      ShelfButton(
-                        key: const Key('inspector-update-image'),
-                        label: 'Image Link',
-                        icon: Icons.link,
-                        onPressed: _updateImage,
-                      ),
-                      ShelfButton(
-                        key: const Key('inspector-prices'),
-                        label: 'Prices',
-                        icon: Icons.sell_outlined,
-                        onPressed: () => showPriceSheet(
-                          context,
-                          title: entry.title,
-                          steamAppId: entry.steamAppId,
-                        ),
-                      ),
-                      if (ref.watch(backlogScopeProvider) == null &&
-                          ref.watch(activeSpaceIdProvider) != null)
-                        ShareToSpaceButton(entry: entry),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  CategoryPicker(
-                    entryId: entry.id,
-                    spaceId: ref.watch(backlogScopeProvider),
-                  ),
-                  const SizedBox(height: 14),
-                  _stats(context, entry, tokens, style),
-                ],
-                right: [
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: ShelfTabs(
-                      labels: const [
-                        'Overview',
-                        'Progress',
-                        'Review',
-                        'Trailer',
-                      ],
-                      index: _tab,
-                      onChanged: (index) => setState(() => _tab = index),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  switch (_tab) {
-                    0 => _overview(entry, tokens, style),
-                    1 => _progress(entry),
-                    2 => _reviewTab(reviewable),
-                    _ => _trailer(entry, tokens, style),
-                  },
-                ],
+                ),
               ),
             ),
-          ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              border: Border(top: BorderSide(color: tokens.borderSubtle)),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              child: Row(
-                children: [
-                  ShelfButton(
-                    key: const Key('inspector-delete'),
-                    label: 'Delete',
-                    kind: ShelfButtonKind.danger,
-                    onPressed: () =>
-                        LibraryActions(context, ref).deleteEntries([entry]),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

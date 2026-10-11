@@ -3,10 +3,11 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const _storageKey = 'blm-animated-background';
+const _backgroundKey = 'blm-animated-background';
+const _glowKey = 'blm-animated-glow';
 
-/// Keeps on the device whether the sky of the window moves. A store that
-/// cannot be read or written is ignored.
+/// Keeps on the device whether a motion of the window is on (the sky, the glow
+/// of a cover). A store that cannot be read or written is ignored.
 abstract interface class BackgroundMotionStore {
   Future<bool?> read();
 
@@ -14,13 +15,15 @@ abstract interface class BackgroundMotionStore {
 }
 
 class PreferencesBackgroundMotionStore implements BackgroundMotionStore {
-  const PreferencesBackgroundMotionStore();
+  const PreferencesBackgroundMotionStore([this.key = _backgroundKey]);
+
+  final String key;
 
   @override
   Future<bool?> read() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      return prefs.getBool(_storageKey);
+      return prefs.getBool(key);
     } on Object {
       return null;
     }
@@ -30,7 +33,7 @@ class PreferencesBackgroundMotionStore implements BackgroundMotionStore {
   Future<void> write({required bool enabled}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_storageKey, enabled);
+      await prefs.setBool(key, enabled);
     } on Object {
       return;
     }
@@ -41,15 +44,18 @@ final backgroundMotionStoreProvider = Provider<BackgroundMotionStore>(
   (ref) => const PreferencesBackgroundMotionStore(),
 );
 
-/// Whether the background of the window is animated (twinkling and drifting
-/// stars, shooting stars, breathing nebulae). On by default; a setting of the
-/// device, not of the account.
+/// Whether a motion is on: the background of the window (twinkling and
+/// drifting stars, shooting stars, breathing nebulae) or the glow behind a
+/// cover. On by default; a setting of the device, not of the account.
 class BackgroundMotionNotifier extends Notifier<bool> {
+  BackgroundMotionNotifier(this._store);
+
+  final Provider<BackgroundMotionStore> _store;
   var _chosen = false;
 
   @override
   bool build() {
-    unawaited(_load(ref.read(backgroundMotionStoreProvider)));
+    unawaited(_load(ref.read(_store)));
     return true;
   }
 
@@ -61,11 +67,20 @@ class BackgroundMotionNotifier extends Notifier<bool> {
   void setEnabled({required bool enabled}) {
     _chosen = true;
     state = enabled;
-    unawaited(ref.read(backgroundMotionStoreProvider).write(enabled: enabled));
+    unawaited(ref.read(_store).write(enabled: enabled));
   }
 }
 
 final backgroundMotionProvider =
     NotifierProvider<BackgroundMotionNotifier, bool>(
-      BackgroundMotionNotifier.new,
+      () => BackgroundMotionNotifier(backgroundMotionStoreProvider),
     );
+
+final glowMotionStoreProvider = Provider<BackgroundMotionStore>(
+  (ref) => const PreferencesBackgroundMotionStore(_glowKey),
+);
+
+/// Whether the glow behind the cover in the details drifts and breathes.
+final glowMotionProvider = NotifierProvider<BackgroundMotionNotifier, bool>(
+  () => BackgroundMotionNotifier(glowMotionStoreProvider),
+);

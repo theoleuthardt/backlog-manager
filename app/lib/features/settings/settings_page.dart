@@ -419,6 +419,21 @@ class _GeneralTab extends ConsumerWidget {
               ),
             ),
             ShelfFormRow(
+              label: 'Animated Glow',
+              description:
+                  'Lets the glow behind the cover in the details of a game '
+                  'drift and breathe. Kept on this device; the system setting '
+                  'for less motion turns it off as well.',
+              control: ShelfSwitch(
+                key: const Key('settings-glow-motion'),
+                value: ref.watch(glowMotionProvider),
+                label: 'Animated Glow',
+                onChanged: (value) => ref
+                    .read(glowMotionProvider.notifier)
+                    .setEnabled(enabled: value),
+              ),
+            ),
+            ShelfFormRow(
               label: 'Appearance',
               description: 'Themes and your own colours.',
               control: ShelfButton(

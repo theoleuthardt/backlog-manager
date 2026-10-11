@@ -1,8 +1,12 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:backlog_manager/design/atmosphere.dart';
+import 'package:backlog_manager/design/background_motion.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// The colour a cover glows in, taken from its RGBA [pixels]: the average of
 /// the pixels weighted by how saturated they are (grey and black borders do
@@ -78,29 +82,20 @@ Future<Color?> _resolveGlow(ImageProvider provider) {
   return completer.future;
 }
 
-/// Puts a glow in the colour of a cover behind [child]: a soft light around
-/// the cover itself ([coverSize], at the top left) and a wide wash behind the
-/// rest of the header, a veil that
-/// runs from the cover over the title and the chips and fades out to the
-/// right and the bottom. Without a picture, or until its colour is known, the
-/// glow is the theme's own.
-class CoverGlow extends StatefulWidget {
-  const CoverGlow({
-    required this.coverSize,
-    required this.child,
-    this.image,
-    super.key,
-  });
+/// Holds the colour the glow of one cover has, for [CoverGlowBackdrop] and
+/// [CoverGlowHalo] below it. The colour is taken from [image] and fades in;
+/// without a picture, or until it is known, it is the theme's own glow.
+class CoverGlowScope extends StatefulWidget {
+  const CoverGlowScope({required this.child, this.image, super.key});
 
   final ImageProvider? image;
-  final Size coverSize;
   final Widget child;
 
   @override
-  State<CoverGlow> createState() => _CoverGlowState();
+  State<CoverGlowScope> createState() => _CoverGlowScopeState();
 }
 
-class _CoverGlowState extends State<CoverGlow> {
+class _CoverGlowScopeState extends State<CoverGlowScope> {
   Color? _color;
 
   @override
@@ -110,7 +105,7 @@ class _CoverGlowState extends State<CoverGlow> {
   }
 
   @override
-  void didUpdateWidget(CoverGlow oldWidget) {
+  void didUpdateWidget(CoverGlowScope oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.image != widget.image) _load();
   }
@@ -132,94 +127,170 @@ class _CoverGlowState extends State<CoverGlow> {
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final target = _color ?? tokens.glow;
-
     return TweenAnimationBuilder<Color?>(
       tween: ColorTween(end: target),
       duration: const Duration(milliseconds: 500),
-      builder: (context, color, child) {
-        final glow = color ?? target;
-        return Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Positioned(
-              left: -60,
-              right: -60,
-              top: -50,
-              bottom: -30,
-              child: IgnorePointer(
-                child: ShaderMask(
-                  blendMode: BlendMode.dstIn,
-                  shaderCallback: (bounds) => const LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.white, Colors.white, Colors.transparent],
-                    stops: [0, 0.5, 1],
-                  ).createShader(bounds),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      DecoratedBox(
-                        key: const Key('cover-glow-wash'),
-                        decoration: BoxDecoration(
-                          gradient: RadialGradient(
-                            center: const Alignment(-0.6, -0.2),
-                            radius: 1.0,
-                            colors: [
-                              glow.withValues(alpha: 0.5),
-                              glow.withValues(alpha: 0.2),
-                              glow.withValues(alpha: 0),
-                            ],
-                            stops: const [0, 0.55, 1],
-                          ),
-                        ),
-                      ),
-                      DecoratedBox(
-                        key: const Key('cover-glow-veil'),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: const Alignment(-1, -1),
-                            end: const Alignment(0.9, 1),
-                            colors: [
-                              glow.withValues(alpha: 0.5),
-                              glow.withValues(alpha: 0.36),
-                              glow.withValues(alpha: 0.12),
-                              glow.withValues(alpha: 0),
-                            ],
-                            stops: const [0, 0.45, 0.8, 1],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              left: 0,
-              top: 0,
-              width: widget.coverSize.width,
-              height: widget.coverSize.height,
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  key: const Key('cover-glow-halo'),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: glow.withValues(alpha: 0.75),
-                        blurRadius: 46,
-                        spreadRadius: 4,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            child!,
-          ],
-        );
-      },
+      builder: (context, color, child) =>
+          _GlowColor(color: color ?? target, child: child!),
       child: widget.child,
+    );
+  }
+}
+
+class _GlowColor extends InheritedWidget {
+  const _GlowColor({required this.color, required super.child});
+
+  final Color color;
+
+  static Color of(BuildContext context) {
+    final scope = context.dependOnInheritedWidgetOfExactType<_GlowColor>();
+    return scope?.color ?? Theme.of(context).extension<ShelfTokens>()!.glow;
+  }
+
+  @override
+  bool updateShouldNotify(_GlowColor oldWidget) => color != oldWidget.color;
+}
+
+/// The glow behind the whole panel: a veil from the top left that fades out
+/// towards the bottom, and two soft lights that drift across the panel, the
+/// way light moves in a room. The lights stand still when [glowMotionProvider]
+/// is off, when the system asks for less motion, and in tests.
+class CoverGlowBackdrop extends ConsumerStatefulWidget {
+  const CoverGlowBackdrop({super.key});
+
+  @override
+  ConsumerState<CoverGlowBackdrop> createState() => _CoverGlowBackdropState();
+}
+
+class _CoverGlowBackdropState extends ConsumerState<CoverGlowBackdrop>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _drift = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 28),
+  );
+
+  @override
+  void dispose() {
+    _drift.dispose();
+    super.dispose();
+  }
+
+  Alignment _wander(double t, {required double phase, required double speed}) {
+    final x = math.sin(2 * math.pi * (t * speed + phase));
+    final y = math.cos(2 * math.pi * (t * speed * 0.73 + phase * 1.7));
+    return Alignment(0.85 * x, 0.9 * y);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final glow = _GlowColor.of(context);
+    final moving =
+        atmosphereMotion &&
+        !MediaQuery.of(context).disableAnimations &&
+        ref.watch(glowMotionProvider);
+    if (moving && !_drift.isAnimating) {
+      unawaited(_drift.repeat());
+    } else if (!moving && _drift.isAnimating) {
+      _drift.stop();
+    }
+
+    Widget light(Alignment center, double alpha, double radius, Key key) {
+      return DecoratedBox(
+        key: key,
+        decoration: BoxDecoration(
+          gradient: RadialGradient(
+            center: center,
+            radius: radius,
+            colors: [
+              glow.withValues(alpha: alpha),
+              glow.withValues(alpha: alpha * 0.4),
+              glow.withValues(alpha: 0),
+            ],
+            stops: const [0, 0.55, 1],
+          ),
+        ),
+      );
+    }
+
+    return IgnorePointer(
+      child: AnimatedBuilder(
+        animation: _drift,
+        builder: (context, _) {
+          final t = _drift.value;
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              ShaderMask(
+                blendMode: BlendMode.dstIn,
+                shaderCallback: (bounds) => const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.white, Colors.white, Colors.transparent],
+                  stops: [0, 0.3, 0.62],
+                ).createShader(bounds),
+                child: DecoratedBox(
+                  key: const Key('cover-glow-veil'),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: const Alignment(-1, -1),
+                      end: const Alignment(0.9, 1),
+                      colors: [
+                        glow.withValues(alpha: 0.5),
+                        glow.withValues(alpha: 0.36),
+                        glow.withValues(alpha: 0.12),
+                        glow.withValues(alpha: 0),
+                      ],
+                      stops: const [0, 0.45, 0.8, 1],
+                    ),
+                  ),
+                ),
+              ),
+              light(
+                moving
+                    ? _wander(t, phase: 0, speed: 1)
+                    : const Alignment(-0.6, -0.55),
+                0.34,
+                0.95,
+                const Key('cover-glow-light-a'),
+              ),
+              light(
+                moving
+                    ? _wander(t, phase: 0.45, speed: 1.4)
+                    : const Alignment(0.7, -0.3),
+                0.26,
+                0.8,
+                const Key('cover-glow-light-b'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// A soft light around the cover that holds it, in the colour of the glow.
+class CoverGlowHalo extends StatelessWidget {
+  const CoverGlowHalo({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final glow = _GlowColor.of(context);
+    return DecoratedBox(
+      key: const Key('cover-glow-halo'),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: glow.withValues(alpha: 0.75),
+            blurRadius: 46,
+            spreadRadius: 4,
+          ),
+        ],
+      ),
+      child: child,
     );
   }
 }

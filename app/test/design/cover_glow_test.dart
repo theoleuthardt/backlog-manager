@@ -1,7 +1,11 @@
 import 'dart:typed_data';
 
+import 'package:backlog_manager/design/atmosphere.dart';
+import 'package:backlog_manager/design/background_motion.dart';
 import 'package:backlog_manager/design/cover_glow.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'widgets/harness.dart';
@@ -50,31 +54,100 @@ void main() {
     });
   });
 
-  group('CoverGlow', () {
-    testWidgets('lights the cover and the header in the theme glow', (
+  group('the glow of a cover', () {
+    Widget scene({Widget? backdrop}) => CoverGlowScope(
+      child: SizedBox(
+        width: 380,
+        height: 600,
+        child: Stack(
+          children: [
+            Positioned.fill(child: backdrop ?? const CoverGlowBackdrop()),
+            const Positioned(
+              left: 14,
+              top: 14,
+              width: 130,
+              height: 195,
+              child: CoverGlowHalo(child: SizedBox.expand()),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    Alignment lightCenter(WidgetTester tester, String key) {
+      final box = tester.widget<DecoratedBox>(find.byKey(Key(key)));
+      final gradient = (box.decoration as BoxDecoration).gradient!;
+      return (gradient as RadialGradient).center as Alignment;
+    }
+
+    Future<void> mount(
+      WidgetTester tester, {
+      List<Override> overrides = const [],
+    }) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: overrides,
+          child: themed('shelfOled', scene(), width: 400),
+        ),
+      );
+      await tester.pump();
+    }
+
+    testWidgets('lights the panel and the cover in the theme glow', (
       tester,
     ) async {
-      await pumpThemed(
-        tester,
-        const CoverGlow(
-          coverSize: Size(100, 150),
-          child: SizedBox(width: 300, height: 150),
-        ),
-        width: 400,
-      );
+      await mount(tester);
 
-      expect(find.byKey(const Key('cover-glow-halo')), findsOneWidget);
-      expect(find.byKey(const Key('cover-glow-wash')), findsOneWidget);
       expect(find.byKey(const Key('cover-glow-veil')), findsOneWidget);
+      expect(find.byKey(const Key('cover-glow-light-a')), findsOneWidget);
+      expect(find.byKey(const Key('cover-glow-light-b')), findsOneWidget);
       final halo = tester.widget<DecoratedBox>(
         find.byKey(const Key('cover-glow-halo')),
       );
       final shadow = (halo.decoration as BoxDecoration).boxShadow!.single;
       expect(shadow.color.a, greaterThan(0));
-      expect(
-        tester.getSize(find.byKey(const Key('cover-glow-halo'))),
-        const Size(100, 150),
-      );
+    });
+
+    group('with the motion on', () {
+      late bool saved;
+
+      setUp(() {
+        saved = atmosphereMotion;
+        atmosphereMotion = true;
+      });
+      tearDown(() => atmosphereMotion = saved);
+
+      testWidgets('the lights drift across the panel', (tester) async {
+        await mount(tester);
+        final before = lightCenter(tester, 'cover-glow-light-a');
+
+        await tester.pump(const Duration(seconds: 7));
+
+        expect(
+          lightCenter(tester, 'cover-glow-light-a'),
+          isNot(equals(before)),
+        );
+        await tester.pumpWidget(const SizedBox());
+      });
+
+      testWidgets('they stand still when the setting is off', (tester) async {
+        await mount(
+          tester,
+          overrides: [glowMotionProvider.overrideWith(_Off.new)],
+        );
+        final before = lightCenter(tester, 'cover-glow-light-a');
+
+        await tester.pump(const Duration(seconds: 7));
+
+        expect(lightCenter(tester, 'cover-glow-light-a'), equals(before));
+      });
     });
   });
+}
+
+class _Off extends BackgroundMotionNotifier {
+  _Off() : super(glowMotionStoreProvider);
+
+  @override
+  bool build() => false;
 }
