@@ -124,44 +124,52 @@ class ShelfDataTable<T> extends StatelessWidget {
               : null,
           border: Border(bottom: BorderSide(color: tokens.borderSubtle)),
         ),
-        child: SizedBox(
-          height: 48,
-          child: Row(
-            children: [
-              SizedBox(
-                width: 2,
-                height: 48,
-                child: ColoredBox(
-                  key: Key('table-row-$index-line'),
-                  color: state.hovered ? tokens.glow : Colors.transparent,
-                ),
-              ),
-              const SizedBox(width: 16),
-              if (_selectable)
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
                 SizedBox(
-                  width: _checkColumnWidth,
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: ShelfCheckbox(
-                      key: Key('table-row-$index-check'),
-                      value: selected,
-                      onChanged: (value) => onSelectionChanged!(row, value),
+                  width: 2,
+                  child: ColoredBox(
+                    key: Key('table-row-$index-line'),
+                    color: state.hovered ? tokens.glow : Colors.transparent,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                if (_selectable)
+                  SizedBox(
+                    width: _checkColumnWidth,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: ShelfCheckbox(
+                        key: Key('table-row-$index-check'),
+                        value: selected,
+                        onChanged: (value) => onSelectionChanged!(row, value),
+                      ),
                     ),
                   ),
-                ),
-              for (final column in columns)
-                Expanded(
-                  flex: column.flex,
-                  child: DefaultTextStyle.merge(
-                    style: Theme.of(context)
-                        .extension<ShelfTextStyles>()!
-                        .fieldText,
-                    overflow: TextOverflow.ellipsis,
-                    child: column.cell(context, row),
+                for (final column in columns)
+                  Expanded(
+                    flex: column.flex,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: DefaultTextStyle.merge(
+                          style: Theme.of(context)
+                              .extension<ShelfTextStyles>()!
+                              .fieldText,
+                          overflow: TextOverflow.ellipsis,
+                          child: column.cell(context, row),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              const SizedBox(width: 16),
-            ],
+                const SizedBox(width: 16),
+              ],
+            ),
           ),
         ),
       ),

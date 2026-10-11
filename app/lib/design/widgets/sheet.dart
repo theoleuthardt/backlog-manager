@@ -7,7 +7,8 @@ import 'package:flutter/material.dart';
 enum ShelfSheetWidth {
   compact(560),
   standard(700),
-  wide(760);
+  wide(760),
+  extraWide(980);
 
   const ShelfSheetWidth(this.value);
 

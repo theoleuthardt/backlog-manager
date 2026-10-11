@@ -62,6 +62,34 @@ void main() {
       expect(find.byKey(const Key('table-row-2')), findsOneWidget);
     });
 
+    testWidgets('a row grows when a cell wraps onto more lines', (
+      tester,
+    ) async {
+      await pumpThemed(
+        tester,
+        ShelfDataTable<Game>(
+          columns: [
+            ShelfColumn(
+              header: 'Title',
+              cell: (context, game) => Text(
+                List.filled(30, game.title).join(' '),
+                softWrap: true,
+                overflow: TextOverflow.visible,
+              ),
+            ),
+          ],
+          rows: const [Game('Hades', 41)],
+        ),
+        width: 300,
+      );
+
+      expect(
+        tester.getSize(find.byKey(const Key('table-row-0'))).height,
+        greaterThan(48),
+      );
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('divides the width between the columns by their flex', (
       tester,
     ) async {

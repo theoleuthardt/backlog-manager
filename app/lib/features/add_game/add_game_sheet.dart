@@ -129,7 +129,7 @@ class _AddGameSheetState extends ConsumerState<AddGameSheet> {
             flex: 5,
             cell: (context, result) => Row(
               children: [
-                ResultThumb(imageUrl: result.imageUrl, width: 38, height: 56),
+                ResultThumb(imageUrl: result.imageUrl, width: 58, height: 87),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -138,7 +138,8 @@ class _AddGameSheetState extends ConsumerState<AddGameSheet> {
                     children: [
                       Text(
                         result.title,
-                        overflow: TextOverflow.ellipsis,
+                        softWrap: true,
+                        overflow: TextOverflow.visible,
                         style: style.control.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
@@ -146,7 +147,8 @@ class _AddGameSheetState extends ConsumerState<AddGameSheet> {
                       if (result.platforms.isNotEmpty)
                         Text(
                           result.platforms.join(', '),
-                          overflow: TextOverflow.ellipsis,
+                          softWrap: true,
+                          overflow: TextOverflow.visible,
                           style: style.caption.copyWith(color: tokens.faint),
                         ),
                     ],
@@ -160,7 +162,8 @@ class _AddGameSheetState extends ConsumerState<AddGameSheet> {
             flex: 3,
             cell: (context, result) => Text(
               result.genres.join(', '),
-              overflow: TextOverflow.ellipsis,
+              softWrap: true,
+              overflow: TextOverflow.visible,
               style: style.caption.copyWith(color: tokens.muted),
             ),
           ),
@@ -185,7 +188,7 @@ class _AddGameSheetState extends ConsumerState<AddGameSheet> {
       description:
           'Pick the game to continue with its details, cover and times to '
           'beat filled in.',
-      width: ShelfSheetWidth.wide,
+      width: ShelfSheetWidth.extraWide,
       footer: ShelfSheetFooter(
         onCancel: () => Navigator.of(context).pop(),
         primary: Row(

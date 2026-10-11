@@ -46,6 +46,9 @@ void main() {
     testWidgets('is 700 wide by default and has the compact and wide widths', (
       tester,
     ) async {
+      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
       await pumpThemed(tester, sheetBody());
       expect(tester.getSize(find.byKey(const Key('sheet-surface'))).width, 700);
 
@@ -68,6 +71,16 @@ void main() {
         ),
       );
       expect(tester.getSize(find.byKey(const Key('sheet-surface'))).width, 760);
+
+      await pumpThemed(
+        tester,
+        ShelfSheet(
+          title: 'Search',
+          width: ShelfSheetWidth.extraWide,
+          child: const Text('Body'),
+        ),
+      );
+      expect(tester.getSize(find.byKey(const Key('sheet-surface'))).width, 980);
     });
 
     testWidgets('is a surface with the dialog radius and the strong border', (
