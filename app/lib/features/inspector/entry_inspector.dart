@@ -404,7 +404,7 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
     final dot = colorFromHex(statusColor(_form.status));
     final reviewable = canReview(_form.status);
     final fullscreen = ref.watch(inspectorFullscreenProvider);
-    final coverWidth = fullscreen ? 150.0 : 104.0;
+    final coverWidth = fullscreen ? 160.0 : 132.0;
 
     return _InspectorFrame(
       status: ValueListenableBuilder<SaveState>(
@@ -432,83 +432,76 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
                       ),
                       const SizedBox(width: 14),
                       Expanded(
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            minHeight: coverWidth * 1.5,
-                          ),
-                          child: IntrinsicHeight(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  entry.title,
-                                  key: const Key('inspector-title'),
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: style.page.copyWith(fontSize: 22),
-                                ),
-                                if (genres.isNotEmpty) ...[
-                                  const SizedBox(height: 14),
-                                  FactChips(
-                                    key: const Key('inspector-genres'),
-                                    label: 'Genre',
-                                    values: genres,
-                                  ),
-                                ],
-                                if (platforms.isNotEmpty) ...[
-                                  const SizedBox(height: 12),
-                                  FactChips(
-                                    key: const Key('inspector-platforms'),
-                                    label: 'Platform',
-                                    values: platforms,
-                                  ),
-                                ],
-                                if (completedOn != null) ...[
-                                  const SizedBox(height: 12),
+                        child: SizedBox(
+                          height: coverWidth * 1.5,
+                          child: ClipRect(
+                            child: SingleChildScrollView(
+                              physics: const NeverScrollableScrollPhysics(),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
                                   Text(
-                                    completedOn,
-                                    key: const Key('inspector-completed'),
-                                    style: style.caption.copyWith(
-                                      color: tokens.muted,
-                                    ),
+                                    entry.title,
+                                    key: const Key('inspector-title'),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: style.page.copyWith(fontSize: 22),
                                   ),
-                                ],
-                                const Spacer(),
-                                const SizedBox(height: 14),
-                                Row(
-                                  children: [
-                                    DecoratedBox(
-                                      decoration: BoxDecoration(
-                                        color: dot,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: const SizedBox(
-                                        width: 9,
-                                        height: 9,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: StatusSelect(
-                                        spaceId: ref.watch(
-                                          backlogScopeProvider,
-                                        ),
-                                        value: _form.status,
-                                        onChanged: (status) => _edit(
-                                          (form) =>
-                                              form.copyWith(status: status),
-                                        ),
-                                      ),
+                                  if (genres.isNotEmpty) ...[
+                                    const SizedBox(height: 12),
+                                    FactChips(
+                                      key: const Key('inspector-genres'),
+                                      label: 'Genre',
+                                      values: genres,
+                                      oneLine: !fullscreen,
                                     ),
                                   ],
-                                ),
-                              ],
+                                  if (platforms.isNotEmpty) ...[
+                                    const SizedBox(height: 10),
+                                    FactChips(
+                                      key: const Key('inspector-platforms'),
+                                      label: 'Platform',
+                                      values: platforms,
+                                      oneLine: !fullscreen,
+                                    ),
+                                  ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ],
                   ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: dot,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const SizedBox(width: 9, height: 9),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: StatusSelect(
+                          spaceId: ref.watch(backlogScopeProvider),
+                          value: _form.status,
+                          onChanged: (status) =>
+                              _edit((form) => form.copyWith(status: status)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (completedOn != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      completedOn,
+                      key: const Key('inspector-completed'),
+                      style: style.caption.copyWith(color: tokens.muted),
+                    ),
+                  ],
                   const SizedBox(height: 14),
                   Wrap(
                     spacing: 8,

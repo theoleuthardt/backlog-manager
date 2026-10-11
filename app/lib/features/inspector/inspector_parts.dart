@@ -265,13 +265,21 @@ class SaveStatus extends StatelessWidget {
   }
 }
 
-/// A small label over a wrapping row of chips: the genres or the platforms of
-/// a game beside its cover.
+/// A small label over a row of chips: the genres or the platforms of a game
+/// beside its cover. With [oneLine] the chips stay on one line and fade out at
+/// the edge (the whole list is the tooltip), so the block keeps a fixed height
+/// next to the cover; otherwise they wrap.
 class FactChips extends StatelessWidget {
-  const FactChips({required this.label, required this.values, super.key});
+  const FactChips({
+    required this.label,
+    required this.values,
+    this.oneLine = false,
+    super.key,
+  });
 
   final String label;
   final List<String> values;
+  final bool oneLine;
 
   @override
   Widget build(BuildContext context) {
@@ -285,11 +293,35 @@ class FactChips extends StatelessWidget {
           style: style.eyebrow.copyWith(color: tokens.faint),
         ),
         const SizedBox(height: 6),
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: [for (final value in values) ShelfChip(label: value)],
-        ),
+        if (oneLine)
+          Tooltip(
+            message: values.join(', '),
+            child: ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
+                colors: [Colors.white, Colors.white, Colors.transparent],
+                stops: [0, 0.85, 1],
+              ).createShader(bounds),
+              blendMode: BlendMode.dstIn,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const NeverScrollableScrollPhysics(),
+                child: Row(
+                  children: [
+                    for (final value in values) ...[
+                      ShelfChip(label: value),
+                      const SizedBox(width: 6),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          )
+        else
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [for (final value in values) ShelfChip(label: value)],
+          ),
       ],
     );
   }

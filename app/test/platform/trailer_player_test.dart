@@ -10,18 +10,19 @@ void main() {
     test('puts the embed in a frame that fills the page', () {
       expect(
         page,
-        contains(
-          'src="https://www.youtube-nocookie.com/embed/abc123?autoplay=1"',
-        ),
+        contains('src="https://www.youtube-nocookie.com/embed/abc123?'),
       );
+      expect(page, contains('autoplay=1'));
       expect(page, contains('<iframe'));
       expect(page, contains('allowfullscreen'));
     });
 
-    test('sends the origin as referrer, so YouTube does not answer 153', () {
+    test('names the app as the embedding origin, not YouTube itself', () {
+      expect(trailerOrigin, isNot(contains('youtube')));
+      expect(page, contains('referrerpolicy="strict-origin"'));
       expect(
         page,
-        contains('referrerpolicy="strict-origin-when-cross-origin"'),
+        contains('origin=${Uri.encodeQueryComponent(trailerOrigin)}'),
       );
     });
 

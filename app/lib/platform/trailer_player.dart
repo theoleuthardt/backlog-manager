@@ -26,12 +26,13 @@ Widget? systemTrailerPlayer(BuildContext context, Uri embedUrl) {
     key: const Key('trailer-webview'),
     initialData: InAppWebViewInitialData(
       data: trailerPage(embedUrl),
-      baseUrl: WebUri('https://www.youtube.com/'),
+      baseUrl: WebUri('$trailerOrigin/'),
     ),
     shouldOverrideUrlLoading: (controller, action) async {
       final host = action.request.url?.host ?? '';
       final embedded =
           !action.isForMainFrame ||
+          host == Uri.parse(trailerOrigin).host ||
           host == 'www.youtube-nocookie.com' ||
           host == 'www.youtube.com';
       return embedded
@@ -46,18 +47,29 @@ Widget? systemTrailerPlayer(BuildContext context, Uri embedUrl) {
   );
 }
 
-/// The page the web view loads: the embed in a frame that fills the view. YouTube
-/// answers error 153 to an embed that is opened as a top-level address, because
-/// the player is given no referrer; a page with a YouTube origin around the
-/// frame gives it one.
+/// The origin the app presents to YouTube: its application id as an https
+/// address. YouTube identifies an embedding client by the origin of the page
+/// around the frame; a page without one gets error 153, a page that claims to
+/// be youtube.com gets error 152.
+const trailerOrigin = 'https://dev.theocloud.blm';
+
+/// The page the web view loads: the embed in a frame that fills the view,
+/// told which origin embeds it.
 String trailerPage(Uri embedUrl) {
-  final src = const HtmlEscape(HtmlEscapeMode.attribute).convert('$embedUrl');
+  final withOrigin = embedUrl.replace(
+    queryParameters: {
+      ...embedUrl.queryParameters,
+      'origin': trailerOrigin,
+      'widget_referrer': trailerOrigin,
+    },
+  );
+  final src = const HtmlEscape(HtmlEscapeMode.attribute).convert('$withOrigin');
   return '<!doctype html><html><head><meta charset="utf-8">'
-      '<meta name="referrer" content="strict-origin-when-cross-origin">'
+      '<meta name="referrer" content="strict-origin">'
       '<style>html,body{margin:0;height:100%;background:#000}'
       'iframe{border:0;width:100%;height:100%}</style></head><body>'
       '<iframe src="$src" allow="autoplay; encrypted-media; picture-in-picture" '
-      'allowfullscreen referrerpolicy="strict-origin-when-cross-origin">'
+      'allowfullscreen referrerpolicy="strict-origin">'
       '</iframe></body></html>';
 }
 
