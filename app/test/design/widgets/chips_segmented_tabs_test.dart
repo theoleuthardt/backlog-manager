@@ -275,7 +275,7 @@ void main() {
         ),
       ],
     ),
-    size: const Size(520, 220),
-    width: 480,
+    size: const Size(680, 280),
+    width: 640,
   );
 }

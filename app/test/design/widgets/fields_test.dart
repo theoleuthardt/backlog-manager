@@ -210,7 +210,7 @@ void main() {
         ),
       ],
     ),
-    size: const Size(540, 420),
+    size: const Size(540, 480),
     width: 500,
   );
 }
