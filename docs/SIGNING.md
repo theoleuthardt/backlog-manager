@@ -55,7 +55,7 @@ Hosting: nothing needs to be hosted besides the policy below. SignPath requires 
 
 ## Code signing policy
 
-Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
+Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by [SignPath Foundation](https://signpath.org/). This applies from the first release the foundation signed; before that, and for builds outside the release workflow, the installers are unsigned.
 
 - **Scope:** only the Windows installer of Backlog Manager, built from this repository by the `Release Flutter App` workflow on GitHub-hosted runners. Nothing else is signed with the certificate.
 - **Roles:** Authors, reviewers and approvers are the maintainers of this repository: [theoleuthardt](https://github.com/theoleuthardt). Every signing request is approved by hand.
