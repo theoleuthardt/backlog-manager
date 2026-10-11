@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:backlog_manager/data/release_source.dart';
+import 'package:backlog_manager/data/update_download.dart';
 import 'package:backlog_manager/domain/app_update.dart';
 import 'package:backlog_manager/features/updates/app_update_state.dart';
+import 'package:backlog_manager/platform/update_installer.dart';
 import 'package:backlog_manager/platform/url_opener.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
@@ -11,6 +14,8 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../data/fakes.dart';
 import '../library/library_page_test.dart' show backlog, pumpLibrary;
 import '../settings/settings_page_test.dart' show openSettings;
+import 'app_update_install_test.dart'
+    show FakeDownloader, FakeInstaller, signedRelease;
 
 class FakeSource implements ReleaseSource {
   FakeSource({this.release, this.fail = false});
@@ -162,6 +167,50 @@ void main() {
       );
 
       expect(find.textContaining('is available'), findsNothing);
+    });
+  });
+
+  group('an update that can be installed in place', () {
+    testWidgets('installs from the About tab and restarts into it', (
+      tester,
+    ) async {
+      final signed = (await tester.runAsync(signedRelease))!;
+      final content = List<int>.generate(2000, (i) => i % 251);
+      final dir = Directory.systemTemp.createTempSync('blm-ui-update-');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      final installer = FakeInstaller(dir);
+      var exited = 0;
+      await openSettings(
+        tester,
+        location: '/settings?tab=about',
+        overrides: [
+          ...updateOverrides(FakeSource(release: signed.release)),
+          updateInstallerProvider.overrideWithValue(installer),
+          updateVerifierProvider.overrideWithValue(signed.verifier),
+          updateDownloaderProvider.overrideWithValue(FakeDownloader(content)),
+          appExitProvider.overrideWithValue(() => exited++),
+        ],
+      );
+
+      await tester.tap(find.byKey(const Key('check-for-updates')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('view-release')), findsNothing);
+
+      await tester.runAsync(() async {
+        await tester.tap(find.byKey(const Key('install-update')));
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+      });
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('restart-update')), findsOneWidget);
+
+      await tester.runAsync(() async {
+        await tester.tap(find.byKey(const Key('restart-update')));
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      });
+      await tester.pump();
+
+      expect(installer.applied, hasLength(1));
+      expect(exited, 1);
     });
   });
 }

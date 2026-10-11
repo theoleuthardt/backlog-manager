@@ -1,18 +1,44 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:backlog_manager/data/release_source.dart';
+import 'package:backlog_manager/data/update_download.dart';
+import 'package:backlog_manager/data/update_public_key.dart';
+import 'package:backlog_manager/data/update_verifier.dart';
 import 'package:backlog_manager/domain/app_update.dart';
+import 'package:backlog_manager/platform/update_installer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum UpdateCheck { idle, checking, available, upToDate, failed }
+
+/// Where an in-place update is: nothing started, the installer is loading,
+/// it is being checked, it is ready to be applied by a restart, or it failed
+/// (the installed version keeps working).
+enum UpdateInstall { none, downloading, verifying, ready, installing, failed }
 
 class AppUpdateState {
   const AppUpdateState({
     this.check = UpdateCheck.idle,
     this.release,
     this.announced = false,
+    this.install = UpdateInstall.none,
+    this.progress,
+    this.installError,
+    this.staged,
   });
 
   final UpdateCheck check;
+
+  /// The in-place update of [release].
+  final UpdateInstall install;
+
+  /// 0 to 1 while the installer loads, when its size is known.
+  final double? progress;
+  final String? installError;
+
+  /// The verified installer while [install] is [UpdateInstall.ready].
+  final File? staged;
 
   /// The newer release while [check] is [UpdateCheck.available].
   final AppRelease? release;
@@ -25,11 +51,20 @@ class AppUpdateState {
     AppRelease? release,
     bool? announced,
     bool clearRelease = false,
+    UpdateInstall? install,
+    double? progress,
+    String? installError,
+    File? staged,
+    bool clearInstall = false,
   }) {
     return AppUpdateState(
       check: check ?? this.check,
       release: clearRelease ? null : release ?? this.release,
       announced: announced ?? this.announced,
+      install: clearInstall ? UpdateInstall.none : install ?? this.install,
+      progress: clearInstall ? null : progress ?? this.progress,
+      installError: clearInstall ? null : installError ?? this.installError,
+      staged: clearInstall ? null : staged ?? this.staged,
     );
   }
 }
@@ -65,7 +100,135 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
   }
 
   void markAnnounced() => state = state.copyWith(announced: true);
+
+  /// Whether this install can apply the newer release in place: the release
+  /// published a payload for it, the app knows the key to verify it with, and
+  /// the install can replace itself.
+  bool get canInstallInPlace {
+    final release = state.release;
+    final key = ref.read(updateInstallerProvider)?.payloadKey;
+    return release?.manifest?.payloads[key] != null &&
+        ref.read(updateVerifierProvider) != null;
+  }
+
+  /// Downloads the installer of [AppUpdateState.release], checks its size,
+  /// hash and signature and leaves it ready for [restart]. Any failure keeps
+  /// the installed version and removes what was downloaded.
+  Future<void> install() async {
+    final release = state.release;
+    final installer = ref.read(updateInstallerProvider);
+    final verifier = ref.read(updateVerifierProvider);
+    final key = installer?.payloadKey;
+    final payload = release?.manifest?.payloads[key];
+    if (release == null ||
+        installer == null ||
+        verifier == null ||
+        key == null ||
+        payload == null ||
+        state.install == UpdateInstall.downloading ||
+        state.install == UpdateInstall.verifying) {
+      return;
+    }
+    state = state.copyWith(
+      install: UpdateInstall.downloading,
+      progress: 0,
+      clearInstall: false,
+    );
+    final file = File(
+      '${installer.stagingDirectory.path}/.blm-update-${release.version}',
+    );
+    Future<void> fail(String message) async {
+      if (file.existsSync()) file.deleteSync();
+      if (!ref.mounted) return;
+      state = AppUpdateState(
+        check: state.check,
+        release: state.release,
+        announced: state.announced,
+        install: UpdateInstall.failed,
+        installError: message,
+      );
+    }
+
+    try {
+      await ref
+          .read(updateDownloaderProvider)
+          .download(
+            payload.url,
+            file,
+            onProgress: (received, total) {
+              if (!ref.mounted || total <= 0) return;
+              state = state.copyWith(progress: received / total);
+            },
+          );
+    } on Object {
+      await fail('The download failed. Check the connection and try again.');
+      return;
+    }
+    if (!ref.mounted) return;
+    state = state.copyWith(install: UpdateInstall.verifying);
+    final UpdateVerdict verdict;
+    try {
+      verdict = await verifier.verify(
+        file: file,
+        payload: payload,
+        version: release.version,
+        key: key,
+      );
+    } on Object {
+      await fail(
+        'The update could not be verified and was not installed. '
+        'Your version keeps working.',
+      );
+      return;
+    }
+    if (verdict != UpdateVerdict.ok) {
+      await fail(
+        'The update could not be verified and was not installed. '
+        'Your version keeps working.',
+      );
+      return;
+    }
+    if (!ref.mounted) return;
+    state = state.copyWith(install: UpdateInstall.ready, staged: file);
+  }
+
+  /// Applies the verified installer and ends the app; the new version starts
+  /// by itself. A failure leaves the installed version running.
+  Future<void> restart() async {
+    final file = state.staged;
+    final installer = ref.read(updateInstallerProvider);
+    if (state.install != UpdateInstall.ready ||
+        file == null ||
+        installer == null) {
+      return;
+    }
+    state = state.copyWith(install: UpdateInstall.installing);
+    try {
+      await installer.apply(file);
+    } on Object {
+      if (file.existsSync()) file.deleteSync();
+      if (!ref.mounted) return;
+      state = AppUpdateState(
+        check: state.check,
+        release: state.release,
+        announced: state.announced,
+        install: UpdateInstall.failed,
+        installError:
+            'The update could not be installed. Your version keeps working.',
+      );
+      return;
+    }
+    ref.read(appExitProvider)();
+  }
 }
+
+/// The verifier for the key built into the app, or null while there is none.
+final updateVerifierProvider = Provider<UpdateVerifier?>((ref) {
+  if (updatePublicKeyBase64.isEmpty) return null;
+  return UpdateVerifier(
+    Uint8List.fromList(base64Decode(updatePublicKeyBase64)),
+  );
+});
 
 final appUpdateProvider = NotifierProvider<AppUpdateNotifier, AppUpdateState>(
   AppUpdateNotifier.new,
