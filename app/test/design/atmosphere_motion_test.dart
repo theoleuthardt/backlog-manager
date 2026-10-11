@@ -1,4 +1,5 @@
 import 'package:backlog_manager/design/atmosphere.dart';
+import 'package:backlog_manager/design/background_motion.dart';
 import 'package:backlog_manager/design/shelf_theme.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/domain/themes.dart';
@@ -6,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Widget sky({bool reduceMotion = false}) {
+ProviderScope sky({bool reduceMotion = false}) {
   final tokens = ShelfTokens.forTheme(resolveTheme('shelfOled', []));
   return ProviderScope(
     child: MaterialApp(
@@ -36,20 +37,17 @@ void main() {
   testWidgets('the sky twinkles and keeps animating', (tester) async {
     await tester.pumpWidget(sky());
 
-    expect(
-      painters(tester).whereType<AtmosphereTwinklePainter>(),
-      hasLength(1),
-    );
+    expect(painters(tester).whereType<AtmosphereMotionPainter>(), hasLength(1));
     expect(tester.hasRunningAnimations, isTrue);
   });
 
-  testWidgets('the bright stars belong to the moving layer only', (
+  testWidgets('the still layer leaves the stars to the moving one', (
     tester,
   ) async {
     await tester.pumpWidget(sky());
 
     final still = painters(tester).whereType<AtmospherePainter>().single;
-    expect(still.brightStars, isFalse);
+    expect(still.moving, isTrue);
   });
 
   testWidgets('the sky stands still when the system asks for less motion', (
@@ -57,11 +55,29 @@ void main() {
   ) async {
     await tester.pumpWidget(sky(reduceMotion: true));
 
-    expect(painters(tester).whereType<AtmosphereTwinklePainter>(), isEmpty);
+    expect(painters(tester).whereType<AtmosphereMotionPainter>(), isEmpty);
     expect(
-      painters(tester).whereType<AtmospherePainter>().single.brightStars,
-      isTrue,
+      painters(tester).whereType<AtmospherePainter>().single.moving,
+      isFalse,
     );
+    expect(tester.hasRunningAnimations, isFalse);
+  });
+
+  testWidgets('the sky stands still when the setting is off', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          backgroundMotionStoreProvider.overrideWithValue(
+            _FixedMotionStore(enabled: false),
+          ),
+        ],
+        child: sky().child,
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    expect(painters(tester).whereType<AtmosphereMotionPainter>(), isEmpty);
     expect(tester.hasRunningAnimations, isFalse);
   });
 
@@ -69,6 +85,18 @@ void main() {
     atmosphereMotion = false;
     await tester.pumpWidget(sky());
 
-    expect(painters(tester).whereType<AtmosphereTwinklePainter>(), isEmpty);
+    expect(painters(tester).whereType<AtmosphereMotionPainter>(), isEmpty);
   });
+}
+
+class _FixedMotionStore implements BackgroundMotionStore {
+  _FixedMotionStore({required this.enabled});
+
+  bool enabled;
+
+  @override
+  Future<bool?> read() async => enabled;
+
+  @override
+  Future<void> write({required bool enabled}) async => this.enabled = enabled;
 }

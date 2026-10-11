@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/api/api_providers.dart';
 import 'package:backlog_manager/data/backlog_api.dart';
@@ -33,11 +35,12 @@ import 'package:backlog_manager/features/common/category_picker.dart';
 import 'package:backlog_manager/features/common/status_select.dart';
 import 'package:backlog_manager/features/inspector/entry_autosave.dart';
 import 'package:backlog_manager/features/inspector/inspector_parts.dart';
+import 'package:backlog_manager/features/inspector/trailer_sheet.dart';
 import 'package:backlog_manager/features/library/library_actions.dart';
 import 'package:backlog_manager/features/prices/price_sheet.dart';
 import 'package:backlog_manager/features/space/share_to_space_button.dart';
-import 'package:backlog_manager/platform/url_opener.dart';
 import 'package:backlog_manager/routing/current_path.dart';
+import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -78,14 +81,15 @@ class EntryInspector extends ConsumerWidget {
   }
 }
 
-class _InspectorFrame extends StatelessWidget {
+class _InspectorFrame extends ConsumerWidget {
   const _InspectorFrame({required this.child, this.status});
 
   final Widget child;
   final Widget? status;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final fullscreen = ref.watch(inspectorFullscreenProvider);
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
     return Column(
@@ -100,13 +104,25 @@ class _InspectorFrame extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(14, 6, 8, 6),
             child: Row(
               children: [
-                Text(
-                  'Details',
-                  style: style.caption.copyWith(
-                    color: tokens.muted,
-                    fontWeight: FontWeight.w600,
+                if (fullscreen)
+                  ShelfButton(
+                    key: const Key('inspector-back'),
+                    label: 'Back to Dashboard',
+                    icon: Icons.arrow_back,
+                    kind: ShelfButtonKind.quiet,
+                    onPressed: () => context.go(
+                      ProviderScope.containerOf(context)
+                          .read(currentPathProvider),
+                    ),
+                  )
+                else
+                  Text(
+                    'Details',
+                    style: style.caption.copyWith(
+                      color: tokens.muted,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Align(
@@ -118,8 +134,21 @@ class _InspectorFrame extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 ShelfIconButton(
+                  key: const Key('inspector-fullscreen'),
+                  icon: fullscreen
+                      ? Icons.close_fullscreen
+                      : Icons.open_in_full,
+                  tooltip: fullscreen
+                      ? 'Back to the sidebar view'
+                      : 'Show the details in full screen',
+                  onPressed: ref
+                      .read(inspectorFullscreenProvider.notifier)
+                      .toggle,
+                ),
+                ShelfIconButton(
+                  key: const Key('inspector-close'),
                   icon: Icons.close,
-                  tooltip: 'Close inspector',
+                  tooltip: fullscreen ? 'Back to Dashboard' : 'Close inspector',
                   onPressed: () => context.go(
                     ProviderScope.containerOf(context)
                         .read(currentPathProvider),
@@ -129,7 +158,17 @@ class _InspectorFrame extends StatelessWidget {
             ),
           ),
         ),
-        Expanded(child: child),
+        Expanded(
+          child: fullscreen
+              ? Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 760),
+                    child: child,
+                  ),
+                )
+              : child,
+        ),
       ],
     );
   }
@@ -308,9 +347,14 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
   }
 
   void _watchTrailer() {
-    final link = _stored.trailerLink;
-    if (link == null || youtubeEmbedUrl(link) == null) return;
-    ref.read(urlOpenerProvider)(Uri.parse(link));
+    unawaited(
+      showTrailer(
+        context,
+        ref,
+        title: _stored.title,
+        link: _stored.trailerLink,
+      ),
+    );
   }
 
   @override
@@ -353,57 +397,82 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
                       ),
                       const SizedBox(width: 14),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              entry.title,
-                              key: const Key('inspector-title'),
-                              style: style.page.copyWith(fontSize: 22),
-                            ),
-                            if (subtitle.isNotEmpty) ...[
-                              const SizedBox(height: 6),
-                              Text(
-                                subtitle,
-                                key: const Key('inspector-subtitle'),
-                                style: style.caption.copyWith(
-                                  color: tokens.muted,
-                                ),
-                              ),
-                            ],
-                            if (completedOn != null) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                completedOn,
-                                key: const Key('inspector-completed'),
-                                style: style.caption.copyWith(
-                                  color: tokens.muted,
-                                ),
-                              ),
-                            ],
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    color: dot,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const SizedBox(width: 9, height: 9),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: StatusSelect(
-                                    spaceId: ref.watch(backlogScopeProvider),
-                                    value: _form.status,
-                                    onChanged: (status) => _edit(
-                                      (form) => form.copyWith(status: status),
+                        child: SizedBox(
+                          height: 104 * 1.5,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: ClipRect(
+                                  child: SingleChildScrollView(
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          entry.title,
+                                          key: const Key('inspector-title'),
+                                          maxLines: 3,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: style.page.copyWith(
+                                            fontSize: 22,
+                                          ),
+                                        ),
+                                        if (subtitle.isNotEmpty) ...[
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            subtitle,
+                                            key: const Key(
+                                              'inspector-subtitle',
+                                            ),
+                                            style: style.caption.copyWith(
+                                              color: tokens.muted,
+                                            ),
+                                          ),
+                                        ],
+                                        if (completedOn != null) ...[
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            completedOn,
+                                            key: const Key(
+                                              'inspector-completed',
+                                            ),
+                                            style: style.caption.copyWith(
+                                              color: tokens.muted,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
                                     ),
                                   ),
                                 ),
-                              ],
-                            ),
-                          ],
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      color: dot,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const SizedBox(width: 9, height: 9),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: StatusSelect(
+                                      spaceId: ref.watch(backlogScopeProvider),
+                                      value: _form.status,
+                                      onChanged: (status) => _edit(
+                                        (form) => form.copyWith(status: status),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -432,18 +501,6 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
                         icon: Icons.link,
                         onPressed: _updateImage,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  CategoryPicker(
-                    entryId: entry.id,
-                    spaceId: ref.watch(backlogScopeProvider),
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
                       ShelfButton(
                         key: const Key('inspector-prices'),
                         label: 'Prices',
@@ -458,6 +515,11 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
                           ref.watch(activeSpaceIdProvider) != null)
                         ShareToSpaceButton(entry: entry),
                     ],
+                  ),
+                  const SizedBox(height: 18),
+                  CategoryPicker(
+                    entryId: entry.id,
+                    spaceId: ref.watch(backlogScopeProvider),
                   ),
                   const SizedBox(height: 14),
                   _stats(context, entry, tokens, style),

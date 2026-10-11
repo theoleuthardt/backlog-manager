@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:backlog_manager/auth/user_api.dart';
+import 'package:backlog_manager/design/background_motion.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
@@ -103,7 +104,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           alignment: Alignment.centerLeft,
                           child: ShelfButton(
                             key: const Key('settings-back'),
-                            label: 'Back to app',
+                            label: 'Back to Dashboard',
                             icon: Icons.arrow_back,
                             kind: ShelfButtonKind.quiet,
                             onPressed: () => context.go(AppRoutes.home),
@@ -400,6 +401,21 @@ class _GeneralTab extends ConsumerWidget {
                         : controller.open(),
                   ),
                 ),
+              ),
+            ),
+            ShelfFormRow(
+              label: 'Animated background',
+              description:
+                  'Twinkling and drifting stars, shooting stars and breathing '
+                  'nebulae behind the window. Kept on this device; the '
+                  'system setting for less motion turns it off as well.',
+              control: ShelfSwitch(
+                key: const Key('settings-background-motion'),
+                value: ref.watch(backgroundMotionProvider),
+                label: 'Animated background',
+                onChanged: (value) => ref
+                    .read(backgroundMotionProvider.notifier)
+                    .setEnabled(enabled: value),
               ),
             ),
             ShelfFormRow(

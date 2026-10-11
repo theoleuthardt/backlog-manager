@@ -254,7 +254,7 @@ void main() {
       expect(find.text('Co-op backlog'), findsOneWidget);
       expect(
         find.text('with alex - ratings and playtime stay your own'),
-        findsOneWidget,
+        findsNothing,
       );
     });
 
@@ -299,7 +299,7 @@ void main() {
       expect(find.text('Co-op backlog'), findsOneWidget);
       expect(
         find.text('with alex - ratings and playtime stay your own'),
-        findsOneWidget,
+        findsNothing,
       );
       expect(find.text('+ Add Steam game'), findsOneWidget);
       expect(find.byKey(const Key('igdb-sync-button')), findsNothing);

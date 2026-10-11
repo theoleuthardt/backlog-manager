@@ -19,6 +19,7 @@ class ShelfButton extends StatelessWidget {
     this.icon,
     this.busy = false,
     this.expanded = false,
+    this.tall = false,
     super.key,
   });
 
@@ -29,6 +30,9 @@ class ShelfButton extends StatelessWidget {
   /// Stretches the button to the width it is given and makes it taller, for
   /// the one main action of a form.
   final bool expanded;
+
+  /// As high as an input, to stand next to one.
+  final bool tall;
   final IconData? icon;
 
   /// Shows a spinner before the label and ignores taps; the button keeps its
@@ -51,7 +55,9 @@ class ShelfButton extends StatelessWidget {
           return _EasedSurface(
             decoration: _decoration(tokens, state),
             child: SizedBox(
-              height: expanded ? ShelfHeight.input : ShelfHeight.control,
+              height: expanded || tall
+                  ? ShelfHeight.input
+                  : ShelfHeight.control,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 18),
                 child: Row(

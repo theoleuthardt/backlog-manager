@@ -8,6 +8,7 @@ import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/domain/price_listings.dart';
 import 'package:backlog_manager/features/add_game/wrong_game_sheet.dart';
+import 'package:backlog_manager/platform/trailer_player.dart';
 import 'package:backlog_manager/platform/url_opener.dart';
 import 'package:backlog_manager/routing/router.dart';
 import 'package:backlog_manager/routing/routes.dart';
@@ -425,6 +426,53 @@ void main() {
       expect(opened, [
         Uri.parse('https://www.youtube.com/watch?v=abcdefghijk'),
       ]);
+    });
+
+    testWidgets('trailer plays in a sheet where the platform has a player', (
+      tester,
+    ) async {
+      final opened = <Uri>[];
+      Uri? played;
+      await openInspector(
+        tester,
+        overrides: [
+          urlOpenerProvider.overrideWithValue(opened.add),
+          trailerPlayerBuilderProvider.overrideWithValue((context, embedUrl) {
+            played = embedUrl;
+            return const Center(key: Key('fake-player'), child: Text('Video'));
+          }),
+        ],
+      );
+
+      await openTab(tester, 'Trailer');
+      await tester.tap(find.byKey(const Key('trailer-card')));
+      await tester.pumpAndSettle();
+
+      expect(opened, isEmpty);
+      expect(
+        played.toString(),
+        'https://www.youtube-nocookie.com/embed/abcdefghijk',
+      );
+      expect(find.byKey(const Key('fake-player')), findsOneWidget);
+      final size = tester.getSize(find.byKey(const Key('trailer-player')));
+      expect(size.width / size.height, closeTo(16 / 9, 0.01));
+
+      await tester.tap(find.byKey(const Key('trailer-watch-on-youtube')));
+      await tester.pump();
+      expect(opened, [
+        Uri.parse('https://www.youtube.com/watch?v=abcdefghijk'),
+      ]);
+    });
+
+    testWidgets('the trailer card spans the width of the sidebar', (
+      tester,
+    ) async {
+      await openInspector(tester);
+      await openTab(tester, 'Trailer');
+
+      final card = tester.getSize(find.byKey(const Key('trailer-card')));
+      final slot = tester.getSize(find.byKey(const Key('inspector')));
+      expect(card.width, greaterThan(slot.width - 40));
     });
 
     testWidgets('trailer says so when there is none', (tester) async {

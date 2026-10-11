@@ -78,11 +78,6 @@ void main() {
       );
     });
 
-    test('the header caption', () {
-      expect(shared.caption, 'with alex - ratings and playtime stay your own');
-      expect(alone.caption, 'ratings and playtime stay your own');
-    });
-
     test('the waiting line', () {
       expect(waiting.waitingLine, 'Waiting for alex to accept your invitation');
       expect(shared.waitingLine, isNull);

@@ -20,8 +20,8 @@ The desktop client in `app/` is the Flutter port of `frontend/` (epic #247). It 
 | --- | --- |
 | `task app:dev` | run the app on the host platform |
 | `task app:lint` | `flutter analyze` (`flutter_lints` plus the stricter rules in `app/analysis_options.yaml`) |
-| `task app:test` | `flutter test` (unit, widget and golden tests) |
-| `task app:test:update-goldens` | `flutter test --update-goldens`, re-records the golden images |
+| `task app:test` | `tool/test/run.sh`: unit, widget and golden tests, one `flutter test` per test directory (`task app:test -- test/features/inspector` runs one path) |
+| `task app:test:update-goldens` | the same with `--update-goldens`, re-records the golden images |
 | `task app:format` / `task app:format:check` | `dart format` / check only |
 | `task app:build` | release build for the host platform |
 
@@ -93,7 +93,7 @@ app/
 
 `.github/workflows/app.yml` runs when `app/` or `backend/openapi.json` changes: formatting, `flutter analyze`, a check that `lib/api/generated/` matches `backend/openapi.json` (the commands of `task app:generate-api`, then `git diff --exit-code`), all tests without the goldens, and a Linux release build. The golden tests run in a job of their own that uploads the diff images of a failure as the `golden-failures` artifact. The golden images are recorded on Linux, the platform of the CI runner; on macOS or Windows the text edges differ by a few pixels, so run `flutter test --exclude-tags golden` there and re-record with `task app:test:update-goldens` on Linux (or take the images from the `golden-failures` artifact).
 
-If `flutter test` hangs or prints "The Dart compiler exited unexpectedly" on a small machine, run it with `--concurrency=2`: several test files compiling at once can crash the compiler.
+`tool/test/run.sh` is the only way tests are run: it takes a lock (two test runs at once crash the compiler), runs one `flutter test` per test directory because the compiler of a single run for the whole suite grows past 2 GB and gets OOM-killed on a small machine (the symptoms are a run that stops printing and "The Dart compiler exited unexpectedly"), puts every run in its own process group with a time limit (`TEST_TIMEOUT` per test, default 60s, `TEST_SHARD_TIMEOUT` per directory, default 420 s) and kills the group afterwards, so a hung test leaves no `flutter_tester` behind. The whole suite takes about nine minutes on two cores; run the directory you changed while working.
 
 ## Running and debugging
 
@@ -299,17 +299,13 @@ Two reusable sheets for the Steam data of a game; the inspector (#264) and the c
 - Tabs: Overview (genre and platform as comma-separated fields, the description), Progress (HowLongToBeat bars against the playtime, then the achievements), Review (the note; stars and review text only for the status Completed, otherwise "Set the status to Completed to write a review") and Trailer (a play card that opens the YouTube video in the browser, "No trailer available for this game." otherwise). Footer: Delete with the usual confirmation.
 - Autosave (`EntryAutosave`): the fields that differ from the stored entry (`diffEntryForm`: image link, playtime, genre, platform, status, owned, interest, review stars, review, note) are saved 800 ms after the last change; edits during a running save are saved by the next one; closing saves what is pending; a failed save shows "Not saved" and a toast. Title, description and times change only through "wrong game".
 - When the stored entry changes while the inspector is open (a drag to another group, a sync) the fields the user has not touched follow it (`rebaseForm`), so the autosave never writes the old value back and the inspector stays open when the game moves between groups.
-- Footer: Delete, "Wrong game?" and "Change cover" (the sheets below). Not here yet: the publisher line (#293) and "synced 2 h ago" (#268). The trailer plays in the browser on purpose (see "Trailer player").
+- Footer: Delete, "Wrong game?" and "Change cover" (the sheets below). Not here yet: the publisher line (#293) and "synced 2 h ago" (#268). The trailer plays in a sheet (see "Trailer player").
 
 ### Trailer player
 
-Decision (#325): the trailer keeps opening in the system browser; there is no embedded player. Flutter's first-party `webview_flutter` has no desktop support, and every desktop option brings a cost that is out of proportion for one button:
+Decision (#351, replaces the browser-only decision of #325): "Watch trailer" opens a sheet (`features/inspector/trailer_sheet.dart`) with the player, like the old Tauri client. The player is `flutter_inappwebview` (WKWebView on macOS, WebView2 on Windows); it has no Linux implementation, so there the sheet offers the browser link only. `platform/trailer_player.dart` holds the builder behind `trailerPlayerBuilderProvider` (it returns `null` where there is no player, and tests override it), so nothing else knows about the plugin. YouTube refuses some embeds without a referrer, so the sheet always has the "Watch it on YouTube" link.
 
-- A Chromium-based plugin (`webview_cef`) works on all three platforms but ships a Chromium runtime with the app (the order of a hundred megabytes per platform), needs a macOS Podfile hook for multi-process mode and renders in software on Linux.
-- Plugins on the native engines (WebKitGTK on Linux, WKWebView on macOS, WebView2 on Windows; `desktop_webview_window`, `atomic_webview`) add `webkit2gtk` as a system dependency of the Linux packages (AppImage, DEB and RPM have to agree on it and Bazzite does not carry it by default) and the WebView2 runtime on older Windows 10. They are small community packages that we would have to track through every Flutter upgrade.
-- YouTube refuses some embeds without a referrer (error 153), so an embedded player needs the "Video not playing? Watch it on YouTube" fallback anyway, and that fallback is what the browser gives for free: the watch page plays whenever the video is available to the viewer.
-
-`domain/trailer.dart` (`youtubeEmbedUrl`) accepts only canonical YouTube watch URLs, and the inspector opens a link only after it passed, so nothing else can ever be launched or become a future web view source. If a webview package that covers all three desktops without a runtime or system dependency appears, the trailer card is the only widget to change: it would open a sheet that hosts the player behind an interface, with the browser link as the fallback.
+`domain/trailer.dart` (`youtubeEmbedUrl`) accepts only canonical YouTube watch URLs, and the inspector opens the sheet only after a link passed, so nothing else can ever become the source of the web view.
 
 ### Adding a game, the right game and covers
 
@@ -394,6 +390,15 @@ The first test on a real desktop (macOS) led to a round of changes; the decision
 - **Steam preview** shows what it is doing (`_LoadingPanel`): which list is read, a sweeping bar until the number of games is known, the count and the seconds elapsed.
 - **IGDB errors:** the backend answers 503 "IGDB rejected the configured credentials" when Twitch refuses the token request (it was an unexplained 500).
 - Cancel buttons of sheets are red; explanations are `ShelfNote`s.
+
+Second round of the same test:
+
+- **Atmosphere:** the sky is a seeded random arrangement of stars (no grid), with drifting dust in three depths, breathing nebulae, twinkling stars and shooting stars on every theme (`AtmosphereMotionPainter`). Settings > Appearance has the switch "Animated background" (`backgroundMotionProvider`, kept on the device); the system setting "reduce motion" turns it off too. Tests switch it off globally with `atmosphereMotion = false` in `test/flutter_test_config.dart`.
+- **Brand mark:** the icon next to "Backlog Manager" in the sidebar animates (`design/brand_mark.dart`) under the same switch.
+- **Inspector:** the status dot and drop-down sit at the bottom edge of the cover, all actions under the cover wrap in one group, the trailer card spans the sidebar, and the header has a button for the full-screen view (`inspectorFullscreenProvider`) with a button back to the dashboard. The sidebar closes whenever the route is none of Library, Shared space or Home.
+- **Motion:** sidebar items glow, slide and light up their marker on hover; the segmented controls slide their thumb (the grid/list switch and the Steam Library/Wishlist switch fade the content); tab underlines grow; grid items fade up; toasts enter.
+- **Settings:** the back button reads "Back to Dashboard"; the input fields and their Remove buttons of Integrations share one 110 px trailing slot so they align.
+- **Interest bar:** segments are 28 px high to hit, 9 px visible.
 
 ### Update notification
 

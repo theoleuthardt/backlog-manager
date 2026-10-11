@@ -159,28 +159,35 @@ class TrailerCard extends StatelessWidget {
             color: state.hovered ? tokens.borderStrong : tokens.borderSubtle,
           ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 28),
-          child: Column(
-            children: [
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: tokens.accent,
-                  shape: BoxShape.circle,
+        child: SizedBox(
+          width: double.infinity,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 34),
+            child: Column(
+              children: [
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: tokens.accent,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Padding(
+                    padding: EdgeInsets.all(14),
+                    child: Icon(
+                      Icons.play_arrow,
+                      size: 26,
+                      color: Colors.black,
+                    ),
+                  ),
                 ),
-                child: const Padding(
-                  padding: EdgeInsets.all(14),
-                  child: Icon(Icons.play_arrow, size: 26, color: Colors.black),
+                const SizedBox(height: 12),
+                Text('Watch trailer', style: style.section),
+                const SizedBox(height: 2),
+                Text(
+                  'Plays in a window',
+                  style: style.caption.copyWith(color: tokens.muted),
                 ),
-              ),
-              const SizedBox(height: 12),
-              Text('Watch trailer', style: style.section),
-              const SizedBox(height: 2),
-              Text(
-                'Opens on YouTube',
-                style: style.caption.copyWith(color: tokens.muted),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

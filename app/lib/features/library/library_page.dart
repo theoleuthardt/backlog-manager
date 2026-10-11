@@ -372,7 +372,6 @@ class _Toolbar extends ConsumerWidget {
           children: [
             MemberAvatars(space: space),
             Text('Co-op backlog', style: style.page.copyWith(fontSize: 18)),
-            Text(space.caption, key: const Key('space-caption'), style: muted),
             SpaceControls(space: space),
             selectButton,
             addButton,

@@ -216,18 +216,20 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
                 Focus(
                   onKeyEvent: _onKey,
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Icon(Icons.search, size: 18, color: tokens.muted),
-                        const SizedBox(width: 10),
+                        Icon(Icons.search, size: 20, color: tokens.muted),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: TextField(
                             key: const Key('palette-input'),
                             controller: _controller,
                             autofocus: true,
                             onChanged: (_) => setState(() => _highlight = 0),
-                            style: style.fieldText.copyWith(fontSize: 16),
+                            textAlignVertical: TextAlignVertical.center,
+                            style: style.fieldText.copyWith(fontSize: 17),
                             decoration: const InputDecoration(
                               hintText: 'Type a command or search games',
                               border: InputBorder.none,
@@ -235,6 +237,8 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
                               focusedBorder: InputBorder.none,
                               filled: false,
                               isDense: true,
+                              contentPadding: EdgeInsets.zero,
+                              constraints: BoxConstraints(),
                             ),
                           ),
                         ),

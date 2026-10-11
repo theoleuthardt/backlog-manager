@@ -250,10 +250,10 @@ tasks:
       - flutter analyze
 
   app:test:
-    desc: Run the Flutter app's tests
+    desc: Run the Flutter app's tests (per-test and overall time limit, hung test processes are killed)
     dir: "{{.APP_DIR}}"
     cmds:
-      - flutter test
+      - tool/test/run.sh {{.CLI_ARGS}}
 
   app:test:integration:
     desc: Run the Flutter app's integration tests against an in-memory backend (needs a display, see docs/FLUTTER.md)
@@ -265,7 +265,7 @@ tasks:
     desc: Re-record the Flutter app's golden images (review the image diff before committing)
     dir: "{{.APP_DIR}}"
     cmds:
-      - flutter test --update-goldens
+      - tool/test/run.sh --update-goldens {{.CLI_ARGS}}
 
   app:format:
     desc: Format the Flutter app (dart format)

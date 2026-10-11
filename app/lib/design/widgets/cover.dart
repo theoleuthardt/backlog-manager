@@ -398,9 +398,37 @@ class ShelfCoverSliverGrid extends StatelessWidget {
     return SliverGrid(
       gridDelegate: _CoverGridDelegate(extraHeight),
       delegate: SliverChildBuilderDelegate(
-        (context, index) => itemBuilder(context, index),
+        (context, index) => _FadeUp(child: itemBuilder(context, index)),
         childCount: itemCount,
       ),
+    );
+  }
+}
+
+/// Lets what it holds fade in while it rises a few pixels, once, when it is
+/// built (a cover that scrolls into view).
+class _FadeUp extends StatelessWidget {
+  const _FadeUp({required this.child});
+
+  final Widget? child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (MediaQuery.of(context).disableAnimations) {
+      return child ?? const SizedBox();
+    }
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) => Opacity(
+        opacity: value,
+        child: Transform.translate(
+          offset: Offset(0, 14 * (1 - value)),
+          child: child,
+        ),
+      ),
+      child: child,
     );
   }
 }

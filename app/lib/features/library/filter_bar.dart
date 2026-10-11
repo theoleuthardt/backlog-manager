@@ -42,60 +42,70 @@ class FilterBar extends ConsumerWidget {
         ),
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: gutter),
-          child: Row(
-            children: [
-              Icon(Icons.filter_alt_outlined, size: 14, color: tokens.muted),
-              const SizedBox(width: 6),
-              Text('Filter', style: style.label.copyWith(color: tokens.muted)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ScrollConfiguration(
-                  behavior: ScrollConfiguration.of(context)
-                      .copyWith(scrollbars: false),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        for (final token in filterTokens(filters)) ...[
-                          _FilterTokenView(token: token),
-                          const SizedBox(width: 8),
+          child: LayoutBuilder(
+            builder: (context, constraints) => Row(
+              children: [
+                Icon(Icons.filter_alt_outlined, size: 14, color: tokens.muted),
+                const SizedBox(width: 6),
+                Text(
+                  'Filter',
+                  style: style.label.copyWith(color: tokens.muted),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ScrollConfiguration(
+                    behavior: ScrollConfiguration.of(context)
+                        .copyWith(scrollbars: false),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          for (final token in filterTokens(filters)) ...[
+                            _FilterTokenView(token: token),
+                            const SizedBox(width: 8),
+                          ],
+                          const _AddFilter(),
                         ],
-                        const _AddFilter(),
-                      ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Owned only',
-                style: style.caption.copyWith(color: tokens.muted),
-              ),
-              const SizedBox(width: 8),
-              ShelfSwitch(
-                key: const Key('owned-only'),
-                label: 'Owned only',
-                value: filters.ownedOnly,
-                onChanged: ref.read(filtersProvider.notifier).setOwnedOnly,
-              ),
-              if (active > 0) ...[
-                const SizedBox(width: 8),
-                ShelfButton(
-                  key: const Key('filter-reset'),
-                  label: 'Reset',
-                  kind: ShelfButtonKind.quiet,
-                  onPressed: ref.read(filtersProvider.notifier).reset,
+                const SizedBox(width: 12),
+                if (constraints.maxWidth >= _ownedLabelMinWidth) ...[
+                  Text(
+                    'Owned only',
+                    style: style.caption.copyWith(color: tokens.muted),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                ShelfSwitch(
+                  key: const Key('owned-only'),
+                  label: 'Owned only',
+                  value: filters.ownedOnly,
+                  onChanged: ref.read(filtersProvider.notifier).setOwnedOnly,
                 ),
+                if (active > 0) ...[
+                  const SizedBox(width: 8),
+                  ShelfButton(
+                    key: const Key('filter-reset'),
+                    label: 'Reset',
+                    kind: ShelfButtonKind.quiet,
+                    onPressed: ref.read(filtersProvider.notifier).reset,
+                  ),
+                ],
+                const SizedBox(width: 12),
+                const _SortAndView(),
               ],
-              const SizedBox(width: 12),
-              const _SortAndView(),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 }
+
+/// Below this width the filter bar drops the caption of the owned-only switch.
+const _ownedLabelMinWidth = 900.0;
 
 class _SortAndView extends ConsumerWidget {
   const _SortAndView();

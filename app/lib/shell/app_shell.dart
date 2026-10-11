@@ -55,7 +55,7 @@ class _AppShellState extends ConsumerState<AppShell> {
       if (id != null) {
         _showingEntry = true;
         inspector.show(EntryInspector(entryId: id));
-      } else if (_showingEntry) {
+      } else {
         _showingEntry = false;
         inspector.hide();
       }
@@ -76,10 +76,15 @@ class _AppShellState extends ConsumerState<AppShell> {
   @override
   Widget build(BuildContext context) {
     final inspector = ref.watch(shellInspectorProvider);
+    final fullscreen =
+        inspector != null && ref.watch(inspectorFullscreenProvider);
     final location = widget.location;
     ref.listen(shellInspectorProvider, (_, next) {
-      if (next == null && _showingEntry && widget.entryId != null) {
-        context.go(widget.location);
+      if (next == null) {
+        ref.read(inspectorFullscreenProvider.notifier).exit();
+        if (_showingEntry && widget.entryId != null) {
+          context.go(widget.location);
+        }
       }
     });
 
@@ -100,14 +105,25 @@ class _AppShellState extends ConsumerState<AppShell> {
                         growsToRight: true,
                       ),
                     Expanded(
-                      child: SizedBox.expand(
-                        key: const Key('main-content'),
-                        child: UpdateNotifier(
-                          child: WishlistSyncPrompt(child: widget.child),
+                      flex: fullscreen ? 0 : 1,
+                      child: Offstage(
+                        offstage: fullscreen,
+                        child: SizedBox.expand(
+                          key: const Key('main-content'),
+                          child: UpdateNotifier(
+                            child: WishlistSyncPrompt(child: widget.child),
+                          ),
                         ),
                       ),
                     ),
-                    if (inspector != null) ...[
+                    if (inspector != null && fullscreen)
+                      Expanded(
+                        child: _InspectorSlot(
+                          fullscreen: true,
+                          child: inspector,
+                        ),
+                      )
+                    else if (inspector != null) ...[
                       const PaneResizeHandle(
                         pane: Pane.inspector,
                         growsToRight: false,
@@ -127,15 +143,16 @@ class _AppShellState extends ConsumerState<AppShell> {
 }
 
 class _InspectorSlot extends ConsumerWidget {
-  const _InspectorSlot({required this.child});
+  const _InspectorSlot({required this.child, this.fullscreen = false});
 
   final Widget child;
+  final bool fullscreen;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return SizedBox(
       key: const Key('inspector'),
-      width: ref.watch(paneWidthProvider(Pane.inspector)),
+      width: fullscreen ? null : ref.watch(paneWidthProvider(Pane.inspector)),
       child: GlassSurface(
         opacity: 0.52,
         blur: 10,

@@ -110,15 +110,27 @@ ShelfToastHandle showShelfToast(
       child: Center(
         child: Material(
           type: MaterialType.transparency,
-          child: ShelfToast(
-            message: message,
-            actionLabel: actionLabel,
-            onAction: onAction == null
-                ? null
-                : () {
-                    onAction();
-                    handle.dismiss();
-                  },
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: 1),
+            duration: const Duration(milliseconds: 240),
+            curve: Curves.easeOutCubic,
+            builder: (context, value, child) => Opacity(
+              opacity: value,
+              child: Transform.translate(
+                offset: Offset(0, 18 * (1 - value)),
+                child: child,
+              ),
+            ),
+            child: ShelfToast(
+              message: message,
+              actionLabel: actionLabel,
+              onAction: onAction == null
+                  ? null
+                  : () {
+                      onAction();
+                      handle.dismiss();
+                    },
+            ),
           ),
         ),
       ),

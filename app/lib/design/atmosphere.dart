@@ -1,5 +1,8 @@
 import 'dart:math' as math;
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
+import 'package:backlog_manager/design/background_motion.dart';
 import 'package:backlog_manager/design/freaky_orbs.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
@@ -23,77 +26,45 @@ class AtmosphereStar {
   final Color haloColor;
 }
 
-class _StarLayer {
-  const _StarLayer({
-    required this.tile,
-    required this.offset,
+/// How many stars of one kind the sky has per million square pixels, and how
+/// they look: the layers go from the faint dust to the bright stars with a
+/// halo and the few gold ones.
+class _StarKind {
+  const _StarKind({
+    required this.perMegapixel,
     required this.size,
     required this.color,
     this.halo = 0,
     this.haloColor,
   });
 
-  final Size tile;
-  final Offset offset;
+  final double perMegapixel;
   final double size;
   final Color Function(ShelfTokens) color;
   final double halo;
   final Color Function(ShelfTokens)? haloColor;
 }
 
-/// The star layers from the lowest to the highest, with the tile each one
-/// repeats and the position of its star inside the tile (the staggered tile
-/// sizes keep the pattern from visibly repeating).
-final _starLayers = [
-  _StarLayer(
-    tile: const Size(340, 310),
-    offset: const Offset(150, 60),
-    size: 1,
-    color: (t) => t.starC,
-  ),
-  _StarLayer(
-    tile: const Size(270, 230),
-    offset: const Offset(40, 118),
-    size: 1.5,
-    color: (t) => t.starB,
-  ),
-  _StarLayer(
-    tile: const Size(190, 170),
-    offset: const Offset(96, 30),
-    size: 1,
-    color: (t) => t.starC,
-  ),
-  _StarLayer(
-    tile: const Size(150, 130),
-    offset: const Offset(70, 84),
-    size: 1,
-    color: (t) => t.starB,
-  ),
-  _StarLayer(
-    tile: const Size(120, 110),
-    offset: const Offset(12, 22),
-    size: 1,
-    color: (t) => t.starA,
-  ),
-  _StarLayer(
-    tile: const Size(430, 380),
-    offset: const Offset(210, 150),
+final _starKinds = [
+  _StarKind(perMegapixel: 300, size: 1, color: (t) => t.starC),
+  _StarKind(perMegapixel: 140, size: 1.5, color: (t) => t.starB),
+  _StarKind(perMegapixel: 220, size: 1, color: (t) => t.starA),
+  _StarKind(
+    perMegapixel: 26,
     size: 1.5,
     color: (t) => t.starHot,
     halo: 7,
     haloColor: (t) => t.starHalo,
   ),
-  _StarLayer(
-    tile: const Size(310, 260),
-    offset: const Offset(58, 44),
+  _StarKind(
+    perMegapixel: 14,
     size: 2,
     color: (t) => t.starHot,
     halo: 8,
     haloColor: (t) => t.starHalo,
   ),
-  _StarLayer(
-    tile: const Size(520, 420),
-    offset: const Offset(130, 200),
+  _StarKind(
+    perMegapixel: 7,
     size: 2,
     color: (t) => t.starGold,
     halo: 9,
@@ -103,95 +74,88 @@ final _starLayers = [
 
 const _dotShare = 0.6;
 
-/// Every star that falls inside a window of [size], lowest layer first. The
-/// positions are fixed by the tiles, so the sky does not flicker or move when
-/// the window is resized.
+/// The sky is laid out once on a canvas of 4096 x 2304 px with a fixed seed;
+/// a window shows the part of it that fits, so the stars do not move when it
+/// is resized.
+const _skySize = Size(4096, 2304);
+
+List<AtmosphereStar>? _skyCache;
+ShelfTokens? _skyTokens;
+
+/// Every star that falls inside a window of [size], lowest kind first, at
+/// random positions that are the same every time.
 List<AtmosphereStar> atmosphereStars(Size size, ShelfTokens tokens) {
-  final stars = <AtmosphereStar>[];
-  for (final layer in _starLayers) {
-    for (var y = layer.offset.dy; y < size.height; y += layer.tile.height) {
-      for (var x = layer.offset.dx; x < size.width; x += layer.tile.width) {
-        stars.add(
+  if (_skyCache == null || _skyTokens != tokens) {
+    final random = math.Random(2718);
+    final megapixels = _skySize.width * _skySize.height / 1e6;
+    final all = <AtmosphereStar>[];
+    for (final kind in _starKinds) {
+      final count = (kind.perMegapixel * megapixels).round();
+      for (var i = 0; i < count; i++) {
+        all.add(
           AtmosphereStar(
-            center: Offset(x, y),
-            radius: layer.size * _dotShare,
-            color: layer.color(tokens),
-            halo: layer.halo,
-            haloColor: layer.haloColor?.call(tokens) ?? const Color(0x00000000),
+            center: Offset(
+              random.nextDouble() * _skySize.width,
+              random.nextDouble() * _skySize.height,
+            ),
+            radius: kind.size * _dotShare,
+            color: kind.color(tokens),
+            halo: kind.halo,
+            haloColor: kind.haloColor?.call(tokens) ?? const Color(0x00000000),
           ),
         );
       }
     }
+    _skyCache = all;
+    _skyTokens = tokens;
   }
-  return stars;
+  return [
+    for (final star in _skyCache!)
+      if (star.center.dx < size.width + 12 && star.center.dy < size.height + 12)
+        star,
+  ];
 }
 
-/// Paints the space look behind the window content: the sky gradient over the
-/// top 42%, four nebulae, three orbit rings around the corners and the star
-/// layers, all in the colours of the tokens.
+/// Paints the still part of the space look behind the window content: the
+/// sky gradient over the top 42%, the orbit rings and, when [moving] is off,
+/// the star layers and four nebulae too (the moving sky draws those itself).
 class AtmospherePainter extends CustomPainter {
-  const AtmospherePainter(this.tokens, {this.brightStars = true});
+  const AtmospherePainter(this.tokens, {this.moving = false});
 
   final ShelfTokens tokens;
 
-  /// Whether the stars with a halo are part of this layer. The animated sky
-  /// draws them itself ([AtmosphereTwinklePainter]) so they can twinkle.
-  final bool brightStars;
+  /// Whether [AtmosphereMotionPainter] draws the stars and nebulae.
+  final bool moving;
 
   @override
   void paint(Canvas canvas, Size size) {
     canvas.drawRect(Offset.zero & size, Paint()..color = tokens.background);
-    for (final star in atmosphereStars(size, tokens)) {
-      if (star.halo > 0 && !brightStars) continue;
-      if (star.halo > 0) _halo(canvas, star);
-      canvas.drawCircle(star.center, star.radius, Paint()..color = star.color);
+    if (!moving) {
+      for (final star in atmosphereStars(size, tokens)) {
+        if (star.halo > 0) {
+          _halo(canvas, star.center, star.halo, star.haloColor);
+        }
+        canvas.drawCircle(
+          star.center,
+          star.radius,
+          Paint()..color = star.color,
+        );
+      }
     }
-    _rings(canvas, size);
-    _nebula(canvas, size, tokens.nebula4, 700, 360, 0.40, 0.06);
-    _nebula(canvas, size, tokens.nebula2, 820, 460, 0.62, 1.18);
-    _nebula(canvas, size, tokens.nebula3, 760, 520, -0.08, 0.48);
-    _nebula(canvas, size, tokens.nebula1, 900, 640, 0.96, -0.12);
+    _rings(canvas, size, tokens);
+    if (!moving) {
+      for (final nebula in _nebulae) {
+        _paintNebula(
+          canvas,
+          size,
+          nebula.color(tokens),
+          nebula,
+          1,
+          Offset.zero,
+        );
+      }
+    }
     _sky(canvas, size);
-  }
-
-  void _halo(Canvas canvas, AtmosphereStar star) {
-    final shader = RadialGradient(
-      colors: [star.haloColor, star.haloColor.withValues(alpha: 0)],
-    ).createShader(Rect.fromCircle(center: star.center, radius: star.halo));
-    canvas.drawCircle(star.center, star.halo, Paint()..shader = shader);
-  }
-
-  void _rings(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = tokens.orbit
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    final top = Offset(size.width * -0.04, size.height * -0.08);
-    final bottom = Offset(size.width * 1.04, size.height * 1.08);
-    canvas.drawCircle(top, 300, paint);
-    canvas.drawCircle(bottom, 420, paint);
-    canvas.drawCircle(bottom, 640, paint);
-  }
-
-  void _nebula(
-    Canvas canvas,
-    Size size,
-    Color color,
-    double radiusX,
-    double radiusY,
-    double centerX,
-    double centerY,
-  ) {
-    final shader = RadialGradient(
-      colors: [color, color.withValues(alpha: 0)],
-      stops: const [0, 0.7],
-    ).createShader(Rect.fromCircle(center: Offset.zero, radius: radiusX));
-    canvas
-      ..save()
-      ..translate(size.width * centerX, size.height * centerY)
-      ..scale(1, radiusY / radiusX)
-      ..drawCircle(Offset.zero, radiusX, Paint()..shader = shader)
-      ..restore();
   }
 
   void _sky(Canvas canvas, Size size) {
@@ -206,96 +170,317 @@ class AtmospherePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(AtmospherePainter oldDelegate) {
-    return oldDelegate.tokens != tokens ||
-        oldDelegate.brightStars != brightStars;
+    return oldDelegate.tokens != tokens || oldDelegate.moving != moving;
   }
 }
 
-/// Whether the sky of the window moves: the bright stars twinkle and a small
-/// moon travels each orbit ring. Off when the system asks for less motion;
-/// tests switch it off so that they can settle and compare images.
+void _halo(Canvas canvas, Offset center, double radius, Color color) {
+  final shader = RadialGradient(colors: [color, color.withValues(alpha: 0)])
+      .createShader(Rect.fromCircle(center: center, radius: radius));
+  canvas.drawCircle(center, radius, Paint()..shader = shader);
+}
+
+/// The centres of the three orbit rings.
+List<(Offset, double)> _ringShapes(Size size) => [
+  (Offset(size.width * -0.04, size.height * -0.08), 300),
+  (Offset(size.width * 1.04, size.height * 1.08), 420),
+  (Offset(size.width * 1.04, size.height * 1.08), 640),
+];
+
+void _rings(Canvas canvas, Size size, ShelfTokens tokens) {
+  final paint = Paint()
+    ..color = tokens.orbit
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.5;
+  for (final (center, radius) in _ringShapes(size)) {
+    canvas.drawCircle(center, radius, paint);
+  }
+}
+
+class _Nebula {
+  const _Nebula(this.color, this.radiusX, this.radiusY, this.x, this.y);
+
+  final Color Function(ShelfTokens) color;
+  final double radiusX;
+  final double radiusY;
+  final double x;
+  final double y;
+}
+
+final _nebulae = [
+  _Nebula((t) => t.nebula4, 700, 360, 0.40, 0.06),
+  _Nebula((t) => t.nebula2, 820, 460, 0.62, 1.18),
+  _Nebula((t) => t.nebula3, 760, 520, -0.08, 0.48),
+  _Nebula((t) => t.nebula1, 900, 640, 0.96, -0.12),
+];
+
+/// Draws one nebula; [strength] scales its colour, [shift] moves it.
+void _paintNebula(
+  Canvas canvas,
+  Size size,
+  Color color,
+  _Nebula nebula,
+  double strength,
+  Offset shift,
+) {
+  final tinted = color.withValues(alpha: color.a * strength.clamp(0, 1.4));
+  final shader = RadialGradient(
+    colors: [tinted, tinted.withValues(alpha: 0)],
+    stops: const [0, 0.7],
+  ).createShader(Rect.fromCircle(center: Offset.zero, radius: nebula.radiusX));
+  canvas
+    ..save()
+    ..translate(
+      size.width * nebula.x + shift.dx,
+      size.height * nebula.y + shift.dy,
+    )
+    ..scale(1, nebula.radiusY / nebula.radiusX)
+    ..drawCircle(Offset.zero, nebula.radiusX, Paint()..shader = shader)
+    ..restore();
+}
+
+/// Whether the sky of the window moves: the bright stars twinkle, the dust
+/// drifts in three depths, nebulae breathe, shooting stars cross the sky and
+/// a moon travels each orbit ring. Off when the system asks for less motion
+/// or the user turned it off; tests switch it off so that they can settle and
+/// compare images.
 bool atmosphereMotion = true;
 
-/// How long the twinkle and the orbits take for one turn.
+/// How long a shooting star is under way, in seconds.
+const _shootingSeconds = 1.2;
+
+/// Seconds between the shooting stars of the cycle on average.
+const _shootingCycle = 90.0;
+
+class _ShootingEvent {
+  const _ShootingEvent({
+    required this.start,
+    required this.origin,
+    required this.angle,
+    required this.travel,
+    required this.length,
+  });
+
+  final double start;
+  final Offset origin;
+  final double angle;
+  final double travel;
+  final double length;
+}
+
+/// A shooting star every four seconds or so, from a fixed seed so that a cycle
+/// always looks the same; some are long and bright.
+final _shootingEvents = () {
+  final random = math.Random(31415);
+  const count = 22;
+  return [
+    for (var i = 0; i < count; i++)
+      _ShootingEvent(
+        start: (i + 0.15 + random.nextDouble() * 0.7) / count * _shootingCycle,
+        origin: Offset(
+          0.08 + random.nextDouble() * 0.84,
+          0.04 + random.nextDouble() * 0.8,
+        ),
+        angle:
+            (random.nextBool() ? 1 : -1) * (0.35 + random.nextDouble() * 0.6) +
+            (random.nextBool() ? 0 : math.pi),
+        travel: 420 + random.nextDouble() * 520,
+        length: 90 + random.nextDouble() * 150,
+      ),
+  ];
+}();
+
+/// How long the twinkle and the orbit moons take for one turn.
 const atmosphereCycle = Duration(seconds: 120);
 
-/// The moving part of the sky: the stars with a halo, twinkling, and one moon
-/// on each orbit ring. [progress] runs from 0 to 1 once per [atmosphereCycle].
-class AtmosphereTwinklePainter extends CustomPainter {
-  const AtmosphereTwinklePainter(this.tokens, this.progress)
+/// How long the clock of the moving sky runs before it starts again.
+const atmosphereClock = Duration(hours: 1);
+
+/// The drifting dust: the dots of one colour and size as points, so that a
+/// layer is one draw call.
+class _DustLayer {
+  const _DustLayer(this.points, this.color, this.size, this.speed);
+
+  final Float32List points;
+  final Color color;
+  final double size;
+  final double speed;
+}
+
+/// The moving part of the sky. [progress] is the clock from 0 to 1 over
+/// [atmosphereClock].
+class AtmosphereMotionPainter extends CustomPainter {
+  AtmosphereMotionPainter(this.tokens, this.progress)
     : super(repaint: progress);
 
   final ShelfTokens tokens;
   final Animation<double> progress;
 
-  static Size? _cachedSize;
-  static ShelfTokens? _cachedTokens;
-  static List<AtmosphereStar> _bright = const [];
+  Size? _dustSize;
+  List<_DustLayer> _dust = const [];
+  List<AtmosphereStar> _bright = const [];
 
-  List<AtmosphereStar> _brightStars(Size size) {
-    if (_cachedSize != size || _cachedTokens != tokens) {
-      _cachedSize = size;
-      _cachedTokens = tokens;
-      _bright = [
-        for (final star in atmosphereStars(size, tokens))
-          if (star.halo > 0) star,
-      ];
+  void _prepare(Size size) {
+    if (_dustSize == size) return;
+    _dustSize = size;
+    final groups = <(Color, double), List<double>>{};
+    final bright = <AtmosphereStar>[];
+    for (final star in atmosphereStars(size, tokens)) {
+      if (star.halo > 0) {
+        bright.add(star);
+        continue;
+      }
+      (groups[(star.color, star.radius)] ??= []).addAll([
+        star.center.dx,
+        star.center.dy,
+      ]);
     }
-    return _bright;
+    _bright = bright;
+    var depth = 0;
+    _dust = [
+      for (final entry in groups.entries)
+        _DustLayer(
+          Float32List.fromList(entry.value),
+          entry.key.$1,
+          entry.key.$2 * 2,
+          const [4.0, 9.0, 15.0][depth++ % 3],
+        ),
+    ];
   }
 
   @override
   void paint(Canvas canvas, Size size) {
-    final turn = progress.value * 2 * math.pi;
+    _prepare(size);
+    final seconds = progress.value * atmosphereClock.inSeconds;
+    final turn = seconds / atmosphereCycle.inSeconds * 2 * math.pi;
+    _nebulaeBreathing(canvas, size, seconds);
+    _dustDrift(canvas, size, seconds);
+    _twinkle(canvas, turn);
+    _shootingStars(canvas, size, seconds % _shootingCycle);
+    _pulse(canvas, size, seconds);
+    _moons(canvas, size, turn);
+  }
+
+  void _nebulaeBreathing(Canvas canvas, Size size, double seconds) {
+    for (final (index, nebula) in _nebulae.indexed) {
+      final phase = seconds / (11 + index * 3) + index * 1.7;
+      _paintNebula(
+        canvas,
+        size,
+        nebula.color(tokens),
+        nebula,
+        0.8 + 0.3 * math.sin(phase),
+        Offset(26 * math.sin(phase * 0.7), 18 * math.cos(phase * 0.6)),
+      );
+    }
+  }
+
+  void _dustDrift(Canvas canvas, Size size, double seconds) {
+    for (final layer in _dust) {
+      final dx = (seconds * layer.speed) % size.width;
+      final dy = (seconds * layer.speed * 0.3) % size.height;
+      final paint = Paint()
+        ..color = layer.color
+        ..strokeWidth = layer.size
+        ..strokeCap = StrokeCap.round;
+      for (final shiftX in [dx, dx - size.width]) {
+        for (final shiftY in [dy, dy - size.height]) {
+          canvas
+            ..save()
+            ..translate(shiftX, shiftY)
+            ..drawRawPoints(ui.PointMode.points, layer.points, paint)
+            ..restore();
+        }
+      }
+    }
+  }
+
+  void _twinkle(Canvas canvas, double turn) {
     var index = 0;
-    for (final star in _brightStars(size)) {
+    for (final star in _bright) {
       index++;
       final wave = math.sin(turn * (24 + index % 5) + index * 1.9);
       final strength = 0.62 + 0.38 * wave;
-      final halo = Paint()
-        ..shader = RadialGradient(
+      _halo(
+        canvas,
+        star.center,
+        star.halo * (0.9 + 0.25 * strength),
+        star.haloColor.withValues(alpha: star.haloColor.a * strength),
+      );
+      canvas.drawCircle(
+        star.center,
+        star.radius * (0.85 + 0.3 * strength),
+        Paint()..color = star.color.withValues(alpha: 0.55 + 0.45 * strength),
+      );
+    }
+  }
+
+  void _shootingStars(Canvas canvas, Size size, double second) {
+    for (final event in _shootingEvents) {
+      final t = (second - event.start) / _shootingSeconds;
+      if (t < 0 || t > 1) continue;
+      final fade = math.sin(t * math.pi);
+      final direction = Offset(math.cos(event.angle), math.sin(event.angle));
+      final origin = Offset(
+        event.origin.dx * size.width,
+        event.origin.dy * size.height * 0.8,
+      );
+      final head = origin + direction * (event.travel * t);
+      final tail = head - direction * event.length;
+      final paint = Paint()
+        ..strokeWidth = 2
+        ..strokeCap = StrokeCap.round
+        ..shader = LinearGradient(
           colors: [
-            star.haloColor.withValues(
-              alpha: star.haloColor.a * strength.clamp(0, 1),
-            ),
-            star.haloColor.withValues(alpha: 0),
+            tokens.starHot.withValues(alpha: 0),
+            tokens.starHot.withValues(alpha: 0.95 * fade),
           ],
-        ).createShader(Rect.fromCircle(center: star.center, radius: star.halo));
+        ).createShader(Rect.fromPoints(tail, head));
       canvas
-        ..drawCircle(star.center, star.halo, halo)
+        ..drawLine(tail, head, paint)
         ..drawCircle(
-          star.center,
-          star.radius * (0.85 + 0.3 * strength),
-          Paint()..color = star.color.withValues(alpha: 0.55 + 0.45 * strength),
+          head,
+          6,
+          Paint()..color = tokens.starHalo.withValues(alpha: 0.5 * fade),
+        )
+        ..drawCircle(
+          head,
+          2.2,
+          Paint()..color = tokens.starHot.withValues(alpha: fade),
         );
     }
-    final rings = [
-      (Offset(size.width * -0.04, size.height * -0.08), 300.0, 0.0, 1.0),
-      (Offset(size.width * 1.04, size.height * 1.08), 420.0, 2.1, -1.0),
-      (Offset(size.width * 1.04, size.height * 1.08), 640.0, 4.0, 1.0),
-    ];
-    for (final (center, radius, start, direction) in rings) {
-      final angle = start + direction * turn * 2;
+  }
+
+  /// A faint ring that widens from the lower right corner every half minute.
+  void _pulse(Canvas canvas, Size size, double seconds) {
+    const period = 30.0;
+    final t = (seconds % period) / 9;
+    if (t > 1) return;
+    final radius = 120 + 1100 * Curves.easeOut.transform(t);
+    canvas.drawCircle(
+      Offset(size.width * 1.04, size.height * 1.08),
+      radius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..color = tokens.glow.withValues(alpha: 0.22 * (1 - t)),
+    );
+  }
+
+  void _moons(Canvas canvas, Size size, double turn) {
+    const starts = [0.0, 2.1, 4.0];
+    const directions = [1.0, -1.0, 1.0];
+    for (final (index, (center, radius)) in _ringShapes(size).indexed) {
+      final angle = starts[index] + directions[index] * turn * 2;
       final moon = center + Offset(math.cos(angle), math.sin(angle)) * radius;
       if (!(Offset.zero & size).inflate(8).contains(moon)) continue;
-      canvas
-        ..drawCircle(
-          moon,
-          9,
-          Paint()
-            ..shader = RadialGradient(
-              colors: [
-                tokens.accent.withValues(alpha: 0.45),
-                tokens.accent.withValues(alpha: 0),
-              ],
-            ).createShader(Rect.fromCircle(center: moon, radius: 9)),
-        )
-        ..drawCircle(moon, 2.2, Paint()..color = tokens.accentA);
+      _halo(canvas, moon, 9, tokens.accent.withValues(alpha: 0.45));
+      canvas.drawCircle(moon, 2.2, Paint()..color = tokens.accentA);
     }
   }
 
   @override
-  bool shouldRepaint(AtmosphereTwinklePainter oldDelegate) {
+  bool shouldRepaint(AtmosphereMotionPainter oldDelegate) {
     return oldDelegate.tokens != tokens || oldDelegate.progress != progress;
   }
 }
@@ -313,7 +498,7 @@ class _MovingSkyState extends State<_MovingSky>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: atmosphereCycle,
+    duration: atmosphereClock,
   )..repeat();
 
   @override
@@ -327,7 +512,7 @@ class _MovingSkyState extends State<_MovingSky>
     return RepaintBoundary(
       child: IgnorePointer(
         child: CustomPaint(
-          painter: AtmosphereTwinklePainter(widget.tokens, _controller),
+          painter: AtmosphereMotionPainter(widget.tokens, _controller),
           size: Size.infinite,
         ),
       ),
@@ -348,18 +533,17 @@ class AtmosphereBackground extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
+    final reduced = MediaQuery.of(context).disableAnimations;
     final showOrbs =
-        orbs ??
-        (ref.watch(resolvedThemeProvider).id == 'freaky' &&
-            !MediaQuery.of(context).disableAnimations);
+        orbs ?? (ref.watch(resolvedThemeProvider).id == 'freaky' && !reduced);
     final moving =
-        atmosphereMotion && !MediaQuery.of(context).disableAnimations;
+        atmosphereMotion && !reduced && ref.watch(backgroundMotionProvider);
     return Stack(
       fit: StackFit.expand,
       children: [
         RepaintBoundary(
           child: CustomPaint(
-            painter: AtmospherePainter(tokens, brightStars: !moving),
+            painter: AtmospherePainter(tokens, moving: moving),
             size: Size.infinite,
           ),
         ),

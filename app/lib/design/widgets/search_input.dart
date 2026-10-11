@@ -35,8 +35,11 @@ class ShelfSearchInput extends StatelessWidget {
         style: text.fieldText.copyWith(fontSize: 14),
         decoration: InputDecoration(
           hintText: hintText,
-          prefixIcon: Icon(Icons.search, size: 16, color: tokens.faint),
-          prefixIconConstraints: const BoxConstraints(minWidth: 38),
+          prefixIcon: Padding(
+            padding: const EdgeInsets.only(left: 6),
+            child: Icon(Icons.search, size: 18, color: tokens.faint),
+          ),
+          prefixIconConstraints: const BoxConstraints(minWidth: 46),
         ),
       ),
     );

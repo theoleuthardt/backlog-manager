@@ -153,7 +153,7 @@ class InterestSegments extends StatelessWidget {
                     ? null
                     : () => onChanged!(n == value ? 0 : n),
                 child: SizedBox(
-                  height: 18,
+                  height: 28,
                   child: Center(
                     child: DecoratedBox(
                       key: Key('interest-$n'),
@@ -161,7 +161,7 @@ class InterestSegments extends StatelessWidget {
                         color: n <= value ? tokens.accent : tokens.surface3,
                         borderRadius: BorderRadius.circular(3),
                       ),
-                      child: const SizedBox(height: 6, width: double.infinity),
+                      child: const SizedBox(height: 9, width: double.infinity),
                     ),
                   ),
                 ),

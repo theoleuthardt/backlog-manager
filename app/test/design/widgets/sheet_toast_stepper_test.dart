@@ -273,6 +273,7 @@ void main() {
         await tester.tap(find.text('Open'));
         await tester.pump();
         expect(find.text('Saved'), findsOneWidget);
+        await tester.pump(const Duration(milliseconds: 400));
         expect(
           tester.getBottomLeft(find.byKey(const Key('toast-surface'))).dy,
           lessThan(600 - 28),

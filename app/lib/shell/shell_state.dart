@@ -98,3 +98,16 @@ final searchFocusNodeProvider = Provider<FocusNode>((ref) {
   ref.onDispose(node.dispose);
   return node;
 });
+
+class _InspectorFullscreenNotifier extends _FlagNotifier {
+  void toggle() => state = !state;
+
+  void exit() => state = false;
+}
+
+/// Whether the game details fill the whole main pane instead of the slot on
+/// its right; the library stays alive behind it.
+final inspectorFullscreenProvider =
+    NotifierProvider<_InspectorFullscreenNotifier, bool>(
+      _InspectorFullscreenNotifier.new,
+    );

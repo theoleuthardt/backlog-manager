@@ -83,7 +83,7 @@ ThemeData buildShelfTheme(ShelfTokens tokens) {
       isDense: true,
       filled: true,
       fillColor: tokens.surface2,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
       hoverColor: tokens.surface3,
       constraints: const BoxConstraints(minHeight: ShelfHeight.input),
       hintStyle: text.body.copyWith(color: tokens.faint),

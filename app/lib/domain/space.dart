@@ -46,10 +46,6 @@ extension SpaceView on Space {
   String get leaveLabel =>
       waitingForPartner ? 'Cancel invitation' : 'Leave space';
 
-  String get caption => partnerIsActive
-      ? 'with ${partner!.username} - ratings and playtime stay your own'
-      : 'ratings and playtime stay your own';
-
   String? get waitingLine => waitingForPartner
       ? 'Waiting for ${partner!.username} to accept your invitation'
       : null;

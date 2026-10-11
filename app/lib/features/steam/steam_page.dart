@@ -201,7 +201,30 @@ class _SteamPageState extends ConsumerState<SteamPage> {
               ),
             ),
           ),
-        Expanded(child: _body(state, source)),
+        Expanded(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 280),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeIn,
+            transitionBuilder: (child, animation) {
+              final toWishlist = source == SteamSource.wishlist;
+              return FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween(
+                    begin: Offset(toWishlist ? 0.04 : -0.04, 0),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                ),
+              );
+            },
+            child: KeyedSubtree(
+              key: ValueKey(source),
+              child: _body(state, source),
+            ),
+          ),
+        ),
         if (rows != null && rows.isNotEmpty)
           _Footer(state: state, onImport: () => unawaited(_import())),
       ],
