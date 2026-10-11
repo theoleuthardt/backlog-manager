@@ -32,6 +32,7 @@ import 'package:backlog_manager/features/library/filter_bar.dart';
 import 'package:backlog_manager/features/library/library_actions.dart';
 import 'package:backlog_manager/features/library/library_content.dart';
 import 'package:backlog_manager/features/library/library_view.dart';
+import 'package:backlog_manager/features/library/reveal_entry.dart';
 import 'package:backlog_manager/features/library/selection_bar.dart';
 import 'package:backlog_manager/features/space/member_progress.dart';
 import 'package:backlog_manager/features/space/space_toolbar.dart';
@@ -42,6 +43,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 const _gutter = 28.0;
 
@@ -115,6 +117,8 @@ class _Library extends ConsumerStatefulWidget {
 
 class _LibraryState extends ConsumerState<_Library> {
   String? _reportedCount;
+  int? _openedEntry;
+  final _revealKey = GlobalKey();
   final _scroll = ScrollController();
   final _viewportKey = GlobalKey();
   final _headerKeys = <String, GlobalKey>{};
@@ -134,11 +138,100 @@ class _LibraryState extends ConsumerState<_Library> {
     super.dispose();
   }
 
+  /// Points at the game of the address (`?entry=`): opens its group, shows
+  /// enough of the group to include it, scrolls it into view and outlines it.
+  /// A game that is already fully on screen is only outlined.
+  void _reveal(int id) {
+    final content = ref.read(libraryContentProvider);
+    if (content == null) return;
+    LibraryGroup? group;
+    var index = -1;
+    for (final candidate in content.groups) {
+      index = candidate.entries.indexWhere((entry) => entry.id == id);
+      if (index != -1) {
+        group = candidate;
+        break;
+      }
+    }
+    if (group == null) return;
+    final view = ref.read(libraryViewProvider.notifier);
+    if (ref.read(libraryViewProvider).isCollapsed(group.key)) {
+      view.toggleCollapsed(group.key);
+    }
+    while (index >= ref.read(libraryViewProvider).visibleIn(group.key)) {
+      view.showMore(group.key);
+    }
+    ref.read(revealedEntryProvider.notifier).reveal(id);
+    _scrollTo(group.key, attempts: 60);
+  }
+
+  /// Brings the revealed game into view. The grid builds only what is near
+  /// the viewport, so the page first puts the group header at the top and
+  /// then moves down one viewport per frame until the tile exists; the last
+  /// move is animated.
+  void _scrollTo(
+    String groupKey, {
+    required int attempts,
+    bool aligned = false,
+  }) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scroll.hasClients) return;
+      final target = ref.read(revealedEntryProvider);
+      if (target == null) return;
+      final tile = _revealKey.currentContext;
+      if (tile != null && tile.mounted) {
+        if (!_fullyVisible(tile)) {
+          unawaited(
+            Scrollable.ensureVisible(
+              tile,
+              alignment: 0.35,
+              duration: const Duration(milliseconds: 380),
+              curve: Curves.easeOutCubic,
+            ),
+          );
+        }
+        return;
+      }
+      if (attempts <= 0) return;
+      final position = _scroll.position;
+      final header = _headerKeys[groupKey]?.currentContext;
+      if (!aligned && header != null) {
+        unawaited(
+          Scrollable.ensureVisible(
+            header,
+            alignment: 0,
+            duration: Duration.zero,
+          ),
+        );
+        _scrollTo(groupKey, attempts: attempts, aligned: true);
+        return;
+      }
+      if (position.pixels >= position.maxScrollExtent) return;
+      position.jumpTo(
+        math.min(
+          position.maxScrollExtent,
+          position.pixels + position.viewportDimension * 0.9,
+        ),
+      );
+      _scrollTo(groupKey, attempts: attempts - 1, aligned: true);
+    });
+  }
+
+  bool _fullyVisible(BuildContext tile) {
+    final viewport = _viewportKey.currentContext?.findRenderObject();
+    final box = tile.findRenderObject();
+    if (viewport is! RenderBox || box is! RenderBox) return false;
+    final top = box.localToGlobal(Offset.zero).dy;
+    final bottom = top + box.size.height;
+    final viewTop = viewport.localToGlobal(Offset.zero).dy;
+    return top >= viewTop && bottom <= viewTop + viewport.size.height;
+  }
+
   void _report(String counts) {
     if (counts == _reportedCount) return;
     _reportedCount = counts;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
+      if (!mounted || ModalRoute.of(context)?.isCurrent == false) return;
       ref.read(shellStatusProvider.notifier).update(counts: counts);
     });
   }
@@ -164,6 +257,18 @@ class _LibraryState extends ConsumerState<_Library> {
     );
     final layout = ref.watch(libraryViewProvider.select((v) => v.layout));
     final serverUrl = ref.watch(serverUrlProvider).value;
+
+    final opened = int.tryParse(
+      GoRouterState.of(context).uri.queryParameters['entry'] ?? '',
+    );
+    if (opened != _openedEntry) {
+      _openedEntry = opened;
+      if (opened != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _reveal(opened);
+        });
+      }
+    }
 
     _headerKeys.removeWhere(
       (key, _) => !content.groups.any((group) => group.key == key),
@@ -214,7 +319,12 @@ class _LibraryState extends ConsumerState<_Library> {
           child: _GroupHeader(group: group),
         ),
       ),
-      _GroupBody(group: group, layout: layout, serverUrl: serverUrl),
+      _GroupBody(
+        group: group,
+        layout: layout,
+        serverUrl: serverUrl,
+        revealKey: _revealKey,
+      ),
     ];
   }
 }
@@ -267,39 +377,45 @@ class _Toolbar extends ConsumerWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(_gutter, 22, _gutter, 8),
-      child: Wrap(
-        spacing: 14,
-        runSpacing: 10,
-        crossAxisAlignment: WrapCrossAlignment.center,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text('Library', style: style.page),
-          Text('${content.shown} of ${content.total} games', style: muted),
-          Text(
-            '${formatCount(content.hoursToBeat.round())} h to beat',
-            style: muted,
-          ),
-          selectButton,
-          if (ref.watch(sessionUserProvider)?.hasSteamId ?? false)
-            const SteamSyncButton(),
-          ShelfButton(
-            key: const Key('igdb-sync-button'),
-            label: 'Sync IGDB',
-            icon: Icons.bolt,
-            onPressed: ref.read(igdbSyncRequestProvider.notifier).request,
-          ),
-          ShelfIconButton(
-            key: const Key('duplicates-button'),
-            icon: Icons.content_copy,
-            tooltip: 'Find duplicate games',
-            onPressed: () => unawaited(showDuplicatesSheet(context)),
-          ),
-          if (ref.watch(groupOrderProvider).isNotEmpty)
-            ShelfIconButton(
-              key: const Key('reset-group-order'),
-              icon: Icons.restart_alt,
-              tooltip: 'Reset the order of the groups',
-              onPressed: ref.read(groupOrderProvider.notifier).reset,
+          Expanded(
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 10,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text('Library', style: style.page),
+                selectButton,
+                if (ref.watch(sessionUserProvider)?.hasSteamId ?? false)
+                  const SteamSyncButton(),
+                ShelfIconButton(
+                  key: const Key('igdb-sync-button'),
+                  icon: Icons.storage_outlined,
+                  badge: Icons.bolt,
+                  tooltip: 'Sync IGDB',
+                  onPressed: ref.read(igdbSyncRequestProvider.notifier).request,
+                ),
+                ShelfIconButton(
+                  key: const Key('duplicates-button'),
+                  icon: Icons.difference_outlined,
+                  tooltip: 'Find duplicate games',
+                  onPressed: () => unawaited(showDuplicatesSheet(context)),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '${content.shown} of ${content.total} games',
+                  style: muted,
+                ),
+                Text(
+                  '${formatCount(content.hoursToBeat.round())} h to beat',
+                  style: muted,
+                ),
+              ],
             ),
+          ),
+          const SizedBox(width: 12),
           addButton,
         ],
       ),
@@ -317,7 +433,9 @@ class _GroupHeader extends ConsumerWidget {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
     final collapsed = ref.watch(
-      libraryViewProvider.select((v) => v.isCollapsed(group.key)),
+      libraryViewProvider.select(
+        (v) => v.isCollapsed(group.key) || v.reorderingGroups,
+      ),
     );
     final dot = group.status == null
         ? tokens.accent
@@ -465,27 +583,45 @@ class _GroupHandle extends StatelessWidget {
         const SizedBox(width: 10),
       ],
     );
-    return Draggable<String>(
-      key: Key('group-handle-${group.key}'),
-      data: group.key,
-      feedback: Material(
-        color: Colors.transparent,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: tokens.surface2,
-            borderRadius: BorderRadius.circular(ShelfRadius.card),
-            border: Border.all(color: tokens.accent),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            child: Text(group.label, style: style.groupTitle),
+    return Consumer(
+      builder: (context, ref, child) => Draggable<String>(
+        key: Key('group-handle-${group.key}'),
+        data: group.key,
+        onDragStarted: () => ref
+            .read(libraryViewProvider.notifier)
+            .setReorderingGroups(active: true),
+        onDragEnd: (_) => ref
+            .read(libraryViewProvider.notifier)
+            .setReorderingGroups(active: false),
+        feedback: Material(
+          color: Colors.transparent,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: tokens.surface2,
+              borderRadius: BorderRadius.circular(ShelfRadius.card),
+              border: Border.all(color: tokens.accent),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              child: Text(group.label, style: style.groupTitle),
+            ),
           ),
         ),
+        childWhenDragging: Opacity(opacity: 0.4, child: grip),
+        child: MouseRegion(cursor: SystemMouseCursors.grab, child: grip),
       ),
-      childWhenDragging: Opacity(opacity: 0.4, child: grip),
-      child: MouseRegion(cursor: SystemMouseCursors.grab, child: grip),
     );
   }
+}
+
+Widget _revealable(
+  RevealedEntry? revealed,
+  GlobalKey key,
+  int id,
+  Widget child,
+) {
+  if (revealed == null || revealed.id != id) return child;
+  return KeyedSubtree(key: key, child: child);
 }
 
 class _GroupBody extends ConsumerWidget {
@@ -493,7 +629,11 @@ class _GroupBody extends ConsumerWidget {
     required this.group,
     required this.layout,
     required this.serverUrl,
+    required this.revealKey,
   });
+
+  /// Marks the tile of the revealed game so that the page can scroll to it.
+  final GlobalKey revealKey;
 
   final LibraryGroup group;
   final LibraryLayout layout;
@@ -502,7 +642,9 @@ class _GroupBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final collapsed = ref.watch(
-      libraryViewProvider.select((v) => v.isCollapsed(group.key)),
+      libraryViewProvider.select(
+        (v) => v.isCollapsed(group.key) || v.reorderingGroups,
+      ),
     );
     final visible = ref.watch(
       libraryViewProvider.select((v) => v.visibleIn(group.key)),
@@ -511,6 +653,7 @@ class _GroupBody extends ConsumerWidget {
     if (group.entries.isEmpty) {
       return SliverToBoxAdapter(child: _DropHint(group: group));
     }
+    final revealed = ref.watch(revealedEntryProvider);
     final shownCount = math.min(visible, group.entries.length);
     final hidden = group.entries.length - shownCount;
     final showStatus =
@@ -521,18 +664,24 @@ class _GroupBody extends ConsumerWidget {
         ? SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: _gutter),
             sliver: ShelfCoverSliverGrid(
-              extraHeight: ref.watch(backlogScopeProvider) == null ? 36 : 80,
+              extraHeight: ref.watch(backlogScopeProvider) == null ? 44 : 92,
               itemCount: shownCount,
-              itemBuilder: (context, index) => _EntryTarget(
-                key: ValueKey('tile-${group.entries[index].id}'),
-                entry: group.entries[index],
-                builder: (context, selected, selecting, onTap) => _Tile(
+              itemBuilder: (context, index) => _revealable(
+                revealed,
+                revealKey,
+                group.entries[index].id,
+                _EntryTarget(
+                  key: ValueKey('tile-${group.entries[index].id}'),
                   entry: group.entries[index],
-                  serverUrl: serverUrl,
-                  showStatus: showStatus,
-                  selected: selected,
-                  selecting: selecting,
-                  onTap: onTap,
+                  builder: (context, selected, selecting, onTap) => _Tile(
+                    entry: group.entries[index],
+                    serverUrl: serverUrl,
+                    showStatus: showStatus,
+                    selected: selected,
+                    selecting: selecting,
+                    highlighted: revealed?.id == group.entries[index].id,
+                    onTap: onTap,
+                  ),
                 ),
               ),
             ),
@@ -541,14 +690,20 @@ class _GroupBody extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: _gutter),
             sliver: SliverList.builder(
               itemCount: shownCount,
-              itemBuilder: (context, index) => _EntryTarget(
-                key: ValueKey('row-${group.entries[index].id}'),
-                entry: group.entries[index],
-                builder: (context, selected, selecting, onTap) => _Row(
+              itemBuilder: (context, index) => _revealable(
+                revealed,
+                revealKey,
+                group.entries[index].id,
+                _EntryTarget(
+                  key: ValueKey('row-${group.entries[index].id}'),
                   entry: group.entries[index],
-                  selected: selected,
-                  selecting: selecting,
-                  onTap: onTap,
+                  builder: (context, selected, selecting, onTap) => _Row(
+                    entry: group.entries[index],
+                    selected:
+                        selected || revealed?.id == group.entries[index].id,
+                    selecting: selecting,
+                    onTap: onTap,
+                  ),
                 ),
               ),
             ),
@@ -634,6 +789,7 @@ class _Tile extends ConsumerWidget {
     required this.showStatus,
     required this.selected,
     required this.selecting,
+    required this.highlighted,
     required this.onTap,
   });
 
@@ -642,6 +798,7 @@ class _Tile extends ConsumerWidget {
   final bool showStatus;
   final bool selected;
   final bool selecting;
+  final bool highlighted;
   final VoidCallback onTap;
 
   @override
@@ -658,6 +815,7 @@ class _Tile extends ConsumerWidget {
               partner: members.partner,
             ),
       selected: selected,
+      highlighted: highlighted,
       selectionMode: selecting,
       onTap: onTap,
       image: entryImage(serverUrl, entry.imageLink),

@@ -125,7 +125,7 @@ void main() {
     ) async {
       await pumpApp(tester);
 
-      expect(tester.getSize(find.byKey(const Key('title-bar'))).height, 52);
+      expect(tester.getSize(find.byKey(const Key('title-bar'))).height, 56);
       expect(tester.getSize(find.byKey(const Key('sidebar'))).width, 232);
       expect(tester.getSize(find.byKey(const Key('status-bar'))).height, 28);
       expect(find.byKey(const Key('main-content')), findsOneWidget);
@@ -397,15 +397,13 @@ void main() {
       expect(app.tokens.token, isNull);
     });
 
-    testWidgets('switches the theme at runtime from the switcher', (
+    testWidgets('switches the theme at runtime from the sidebar', (
       tester,
     ) async {
       await pumpApp(tester);
       final before = Theme.of(tester.element(find.byKey(const Key('sidebar'))));
 
-      await tester.tap(find.byKey(const Key('account-row')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Light'));
+      await tester.tap(find.byKey(const Key('sidebar-theme-light')));
       await tester.pumpAndSettle();
 
       final after = Theme.of(tester.element(find.byKey(const Key('sidebar'))));

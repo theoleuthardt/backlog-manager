@@ -172,6 +172,30 @@ void main() {
       await dismissToast(tester);
     });
 
+    testWidgets('explains the wait and keeps the time while it loads', (
+      tester,
+    ) async {
+      final opened = await open(tester);
+      await tester.tap(find.byKey(const Key('steam-load')));
+      await tester.pump();
+
+      expect(find.byKey(const Key('steam-loading')), findsOneWidget);
+      expect(find.text('Reading your Steam library'), findsOneWidget);
+      expect(find.byKey(const Key('progress-sweep')), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 3));
+      expect(find.text('3 s'), findsOneWidget);
+
+      opened.steam.stream.add(const SseProgress(300, 1284));
+      await tester.pump();
+      expect(find.byKey(const Key('progress-sweep')), findsNothing);
+      expect(find.textContaining('300 of 1,284 checked - '), findsOneWidget);
+
+      opened.steam.stream.add(const SseDone(<Object?>[]));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('steam-loading')), findsNothing);
+    });
+
     testWidgets('lists the games with app id and playtime', (tester) async {
       final opened = await open(tester);
 

@@ -60,7 +60,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     if (counts == _reportedCount) return;
     _reportedCount = counts;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
+      if (!mounted || ModalRoute.of(context)?.isCurrent == false) return;
       final status = ref.read(shellStatusProvider.notifier);
       if (counts == null) {
         status.clear();
@@ -483,7 +483,7 @@ class _Shelf extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           ShelfRow(
-            extraHeight: 28,
+            extraHeight: 34,
             itemCount: entries.length,
             itemBuilder: (context, index) {
               final entry = entries[index];

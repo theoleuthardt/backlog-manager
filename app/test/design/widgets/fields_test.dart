@@ -8,7 +8,7 @@ void main() {
   final tokens = tokensOf('shelfOled');
 
   group('ShelfField', () {
-    testWidgets('puts the label above a 34 px input on surface2', (
+    testWidgets('puts the label above a 44 px input on surface2', (
       tester,
     ) async {
       await pumpThemed(
@@ -20,7 +20,7 @@ void main() {
       final label = tester.getTopLeft(find.text('Title'));
       final input = tester.getTopLeft(find.byType(TextField));
       expect(label.dy, lessThan(input.dy));
-      expect(tester.getSize(find.byType(TextField)).height, 34);
+      expect(tester.getSize(find.byType(TextField)).height, 44);
 
       final field = tester.widget<TextField>(find.byType(TextField));
       expect(field.decoration!.hintText, 'Name of the game');
@@ -29,11 +29,11 @@ void main() {
       expect(theme.inputDecorationTheme.filled, isTrue);
     });
 
-    testWidgets('writes the label in muted 12 px text', (tester) async {
+    testWidgets('writes the label in muted 13.5 px text', (tester) async {
       await pumpThemed(tester, const ShelfField(label: 'Title'), width: 300);
 
       final style = tester.widget<Text>(find.text('Title')).style!;
-      expect(style.fontSize, 12);
+      expect(style.fontSize, 13.5);
       expect(style.color, tokens.muted);
     });
 

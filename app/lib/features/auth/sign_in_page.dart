@@ -2,6 +2,8 @@ import 'package:backlog_manager/api/api_providers.dart';
 import 'package:backlog_manager/api/server_url.dart';
 import 'package:backlog_manager/auth/auth_controller.dart';
 import 'package:backlog_manager/design/brand_mark.dart';
+import 'package:backlog_manager/design/color_math.dart';
+import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/banner.dart';
@@ -71,48 +73,45 @@ class _SignInPageState extends ConsumerState<SignInPage> {
 
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(vertical: 32),
-        child: SizedBox(
-          width: 360,
+        padding: const EdgeInsets.all(32),
+        child: _AuthCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
                 children: [
-                  const BrandMark(),
-                  const SizedBox(width: 10),
-                  Text('Backlog', style: text.section),
+                  const BrandMark(size: 30),
+                  const SizedBox(width: 12),
+                  Text(
+                    twoFactor ? 'Two-factor authentication' : 'Backlog',
+                    style: text.eyebrow,
+                  ),
                 ],
               ),
+              const SizedBox(height: 18),
+              Text(
+                twoFactor ? 'Verify it is you' : 'Sign in',
+                style: text.hero,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                twoFactor
+                    ? 'Enter the 6-digit code from your authenticator app, or '
+                          'one of your backup codes.'
+                    : 'Welcome back. Your backlog is waiting.',
+                style: text.body.copyWith(color: tokens.muted),
+              ),
               const SizedBox(height: 28),
-              if (twoFactor) ...[
-                Text('Two-factor authentication', style: text.eyebrow),
-                const SizedBox(height: 6),
-                Text('Verify it is you', style: text.page),
-                const SizedBox(height: 6),
-                Text(
-                  'Enter the 6-digit code from your authenticator app, or one of your backup codes.',
-                  style: text.caption.copyWith(color: tokens.muted),
-                ),
-              ] else ...[
-                Text('Sign in', style: text.page),
-                const SizedBox(height: 6),
-                Text(
-                  'Welcome back. Your backlog is waiting.',
-                  style: text.caption.copyWith(color: tokens.muted),
-                ),
-              ],
-              const SizedBox(height: 20),
               if (flow.error != null) ...[
                 ShelfBanner(message: flow.error!),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
               ],
               if (twoFactor)
                 ..._twoFactorForm(flow)
               else
                 ..._passwordForm(flow),
               if (!twoFactor) ...[
-                const SizedBox(height: 20),
+                const SizedBox(height: 28),
                 const _ServerLine(),
               ],
             ],
@@ -131,7 +130,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
         keyboardType: TextInputType.emailAddress,
         onSubmitted: (_) => _passwordFocus.requestFocus(),
       ),
-      const SizedBox(height: 14),
+      const SizedBox(height: 18),
       ShelfField(
         label: 'Password',
         controller: _password,
@@ -139,11 +138,12 @@ class _SignInPageState extends ConsumerState<SignInPage> {
         obscure: true,
         onSubmitted: (_) => _signIn(),
       ),
-      const SizedBox(height: 20),
+      const SizedBox(height: 26),
       ShelfButton(
         key: const Key('sign-in-submit'),
         label: flow.busy ? 'Logging in...' : 'Sign in',
         kind: ShelfButtonKind.primary,
+        expanded: true,
         busy: flow.busy,
         onPressed: _canSignIn ? _signIn : null,
       ),
@@ -158,11 +158,12 @@ class _SignInPageState extends ConsumerState<SignInPage> {
         autofocus: true,
         onSubmitted: (_) => _verify(),
       ),
-      const SizedBox(height: 20),
+      const SizedBox(height: 26),
       ShelfButton(
         key: const Key('verify-submit'),
         label: flow.busy ? 'Verifying...' : 'Verify',
         kind: ShelfButtonKind.primary,
+        expanded: true,
         busy: flow.busy,
         onPressed: _code.text.trim().isEmpty ? null : _verify,
       ),
@@ -176,6 +177,38 @@ class _SignInPageState extends ConsumerState<SignInPage> {
         },
       ),
     ];
+  }
+}
+
+/// The card of the sign-in window: the surface of the design with its glow,
+/// 480 px wide.
+class _AuthCard extends StatelessWidget {
+  const _AuthCard({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = Theme.of(context).extension<ShelfTokens>()!;
+    return Container(
+      key: const Key('auth-card'),
+      width: 480,
+      padding: const EdgeInsets.fromLTRB(44, 40, 44, 32),
+      decoration: BoxDecoration(
+        color: atOpacity(tokens.surface, 0.82),
+        borderRadius: BorderRadius.circular(ShelfRadius.dialog + 4),
+        border: Border.all(color: tokens.borderStrong),
+        boxShadow: [
+          BoxShadow(
+            color: tokens.shadow,
+            blurRadius: 90,
+            offset: const Offset(0, 30),
+          ),
+          BoxShadow(color: tokens.glowSoft, blurRadius: 70),
+        ],
+      ),
+      child: child,
+    );
   }
 }
 
@@ -196,7 +229,6 @@ class _ServerLine extends ConsumerWidget {
         : uri.host;
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Flexible(
           child: Text(

@@ -17,14 +17,13 @@ import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/routing/session.dart';
 import 'package:backlog_manager/shell/navigation.dart';
 import 'package:backlog_manager/shell/navigation_counts.dart';
+import 'package:backlog_manager/shell/pane_widths.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-const _sidebarWidth = 232.0;
-
-/// The translucent 232 px sidebar: brand mark, grouped navigation with counts
+/// The translucent sidebar, 232 px unless dragged wider or narrower: brand mark, grouped navigation with counts
 /// and the account row pinned to the bottom. It collapses to nothing from the
 /// title bar.
 class Sidebar extends ConsumerWidget {
@@ -36,17 +35,18 @@ class Sidebar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final collapsed = ref.watch(sidebarCollapsedProvider);
     final animations = !MediaQuery.of(context).disableAnimations;
+    final width = ref.watch(paneWidthProvider(Pane.sidebar));
 
     return AnimatedContainer(
       key: const Key('sidebar'),
       duration: animations ? const Duration(milliseconds: 150) : Duration.zero,
       curve: Curves.easeOut,
-      width: collapsed ? 0 : _sidebarWidth,
+      width: collapsed ? 0 : width,
       child: ClipRect(
         child: OverflowBox(
           alignment: Alignment.centerLeft,
-          minWidth: _sidebarWidth,
-          maxWidth: _sidebarWidth,
+          minWidth: width,
+          maxWidth: width,
           child: ExcludeFocus(
             excluding: collapsed,
             child: ExcludeSemantics(
@@ -103,6 +103,8 @@ class _SidebarContent extends ConsumerWidget {
                               active: item.isActiveFor(location),
                               count: counts[item.id],
                             ),
+                          if (section.label == 'Personalise')
+                            const _ThemeStrip(),
                         ],
                       ],
                     ),
@@ -179,7 +181,7 @@ class _NavItem extends ConsumerWidget {
         hoverColor: tokens.glowSoft,
         onTap: () => _activate(context, ref),
         child: Ink(
-          height: 32,
+          height: 38,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(ShelfRadius.control),
             gradient: active
@@ -190,13 +192,13 @@ class _NavItem extends ConsumerWidget {
             children: [
               SizedBox(
                 width: 2,
-                height: 32,
+                height: 38,
                 child: ColoredBox(
                   color: active ? tokens.accent : Colors.transparent,
                 ),
               ),
               const SizedBox(width: 8),
-              Icon(item.icon, size: 16, color: color),
+              Icon(item.icon, size: 18, color: color),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -248,27 +250,81 @@ class _NavItem extends ConsumerWidget {
   }
 }
 
-const _themePrefix = 'theme:';
+/// The themes as small swatches under "Personalise": a click applies one, the
+/// plus opens the theme creator.
+class _ThemeStrip extends ConsumerWidget {
+  const _ThemeStrip();
 
-PopupMenuItem<String> _themeItem(
-  String id,
-  String name,
-  ThemeColors colors,
-  String activeId,
-) {
-  return PopupMenuItem<String>(
-    key: Key('account-theme-$id'),
-    value: '$_themePrefix$id',
-    height: 32,
-    child: Row(
-      children: [
-        ThemeSwatch(colors: colors),
-        const SizedBox(width: 10),
-        Expanded(child: Text(name, overflow: TextOverflow.ellipsis)),
-        if (id == activeId) const Icon(Icons.check, size: 16),
-      ],
-    ),
-  );
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = Theme.of(context).extension<ShelfTokens>()!;
+    final activeId = ref.watch(themeIdProvider);
+    final custom = ref.watch(customThemesProvider);
+
+    Widget swatch(String id, String name, ThemeColors colors) {
+      final active = id == activeId;
+      return Tooltip(
+        message: name,
+        child: Semantics(
+          key: Key('sidebar-theme-$id'),
+          button: true,
+          selected: active,
+          label: name,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () => unawaited(_setTheme(context, ref, id)),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 140),
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(9),
+                border: Border.all(
+                  color: active ? tokens.accent : Colors.transparent,
+                  width: 2,
+                ),
+              ),
+              child: ThemeSwatch(colors: colors),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      key: const Key('sidebar-themes'),
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+      child: Wrap(
+        spacing: 4,
+        runSpacing: 4,
+        children: [
+          for (final theme in displayThemes)
+            swatch(theme.id, theme.name, theme.colors),
+          for (final theme in custom)
+            swatch(theme.id, theme.name, theme.colors),
+          Tooltip(
+            message: 'Create a theme',
+            child: Semantics(
+              key: const Key('sidebar-theme-creator'),
+              button: true,
+              label: 'Create a theme',
+              child: InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () => context.go(AppRoutes.appearance),
+                child: Padding(
+                  padding: const EdgeInsets.all(3),
+                  child: SizedBox(
+                    width: 40,
+                    height: 32,
+                    child: Icon(Icons.add, size: 18, color: tokens.muted),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 Future<void> _setTheme(BuildContext context, WidgetRef ref, String id) async {
@@ -286,8 +342,6 @@ class _AccountRow extends ConsumerWidget {
     final session = ref.watch(sessionProvider);
     final user = session is SessionSignedIn ? session.user : null;
     final name = user?.name ?? '';
-    final activeTheme = ref.watch(themeIdProvider);
-    final customThemes = ref.watch(customThemesProvider);
 
     return PopupMenuButton<String>(
       key: const Key('account-row'),
@@ -297,42 +351,19 @@ class _AccountRow extends ConsumerWidget {
       onSelected: (value) {
         if (value == 'logout') {
           unawaited(ref.read(authControllerProvider.notifier).signOut());
-        } else if (value == 'creator') {
-          context.go(AppRoutes.appearance);
-        } else if (value.startsWith(_themePrefix)) {
-          unawaited(
-            _setTheme(context, ref, value.substring(_themePrefix.length)),
-          );
+        } else if (value == 'settings') {
+          context.go(AppRoutes.settings);
         }
       },
-      itemBuilder: (context) => [
+      itemBuilder: (context) => const [
         PopupMenuItem<String>(
-          enabled: false,
-          height: 28,
-          child: Text('THEME', style: text.sidebarLabel),
+          value: 'settings',
+          height: 40,
+          child: Text('Settings'),
         ),
-        for (final theme in displayThemes)
-          _themeItem(theme.id, theme.name, theme.colors, activeTheme),
-        if (customThemes.isNotEmpty) ...[
-          const PopupMenuDivider(),
-          PopupMenuItem<String>(
-            enabled: false,
-            height: 28,
-            child: Text('YOUR THEMES', style: text.sidebarLabel),
-          ),
-          for (final theme in customThemes)
-            _themeItem(theme.id, theme.name, theme.colors, activeTheme),
-        ],
-        const PopupMenuDivider(),
-        const PopupMenuItem<String>(
-          key: Key('account-theme-creator'),
-          value: 'creator',
-          height: 32,
-          child: Text('Theme creator'),
-        ),
-        const PopupMenuItem<String>(
+        PopupMenuItem<String>(
           value: 'logout',
-          height: 32,
+          height: 40,
           child: Text('Log out'),
         ),
       ],

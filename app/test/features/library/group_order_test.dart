@@ -97,7 +97,7 @@ void main() {
     expect(store.saved.first, 'status:Completed');
   });
 
-  testWidgets('shows the saved order and resets it', (tester) async {
+  testWidgets('shows the saved order', (tester) async {
     final store = MemoryGroupOrderStore([
       'status:Completed',
       'status:Not Started',
@@ -112,23 +112,27 @@ void main() {
       top(tester, 'status:Completed'),
       lessThan(top(tester, 'status:Not Started')),
     );
-
-    await tester.tap(find.byKey(const Key('reset-group-order')));
-    await tester.pumpAndSettle();
-
-    expect(
-      top(tester, 'status:Not Started'),
-      lessThan(top(tester, 'status:Completed')),
-    );
-    expect(store.saved, isEmpty);
-    expect(find.byKey(const Key('reset-group-order')), findsNothing);
   });
 
-  testWidgets('offers no reset while the groups keep their order', (
+  testWidgets('folds every group away while a header is dragged', (
     tester,
   ) async {
     await pumpLibrary(tester, FakeBacklogApi(entries: backlog));
+    expect(find.byKey(const ValueKey('tile-2')), findsOneWidget);
 
-    expect(find.byKey(const Key('reset-group-order')), findsNothing);
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byKey(const Key('group-handle-status:Completed'))),
+      kind: PointerDeviceKind.mouse,
+    );
+    await gesture.moveBy(const Offset(0, 24));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.byKey(const ValueKey('tile-2')), findsNothing);
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('tile-2')), findsOneWidget);
   });
 }

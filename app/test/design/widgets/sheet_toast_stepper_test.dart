@@ -43,11 +43,11 @@ void main() {
       expect(body, lessThan(foot));
     });
 
-    testWidgets('is 640 wide by default and has the compact and wide widths', (
+    testWidgets('is 700 wide by default and has the compact and wide widths', (
       tester,
     ) async {
       await pumpThemed(tester, sheetBody());
-      expect(tester.getSize(find.byKey(const Key('sheet-surface'))).width, 640);
+      expect(tester.getSize(find.byKey(const Key('sheet-surface'))).width, 700);
 
       await pumpThemed(
         tester,
@@ -57,7 +57,7 @@ void main() {
           child: const Text('Body'),
         ),
       );
-      expect(tester.getSize(find.byKey(const Key('sheet-surface'))).width, 520);
+      expect(tester.getSize(find.byKey(const Key('sheet-surface'))).width, 560);
 
       await pumpThemed(
         tester,
@@ -67,7 +67,7 @@ void main() {
           child: const Text('Body'),
         ),
       );
-      expect(tester.getSize(find.byKey(const Key('sheet-surface'))).width, 680);
+      expect(tester.getSize(find.byKey(const Key('sheet-surface'))).width, 760);
     });
 
     testWidgets('is a surface with the dialog radius and the strong border', (
@@ -241,7 +241,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(
         tester.getSize(find.byKey(const Key('toast-surface'))).width,
-        lessThanOrEqualTo(520 + 28),
+        lessThanOrEqualTo(560 + 28),
       );
     });
   });
@@ -356,7 +356,7 @@ void main() {
       },
     );
 
-    testWidgets('is 36 px per step with the labels beside the circles', (
+    testWidgets('is 40 px per step with the labels beside the circles', (
       tester,
     ) async {
       await pumpThemed(
@@ -365,7 +365,7 @@ void main() {
         width: 240,
       );
 
-      expect(tester.getSize(find.byKey(const Key('step-0'))).height, 36);
+      expect(tester.getSize(find.byKey(const Key('step-0'))).height, 40);
       expect(
         tester.getCenter(find.byKey(const Key('step-0-circle'))).dx,
         lessThan(tester.getCenter(find.text('Theme')).dx),

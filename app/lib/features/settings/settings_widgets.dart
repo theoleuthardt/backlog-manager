@@ -2,6 +2,7 @@ import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
+import 'package:backlog_manager/design/widgets/note.dart';
 import 'package:flutter/material.dart';
 
 /// A text input for a row of a settings group. [onCommit] is called with the
@@ -17,7 +18,7 @@ class SettingsTextField extends StatefulWidget {
     this.obscure = false,
     this.onChanged,
     this.onCommit,
-    this.width = 240,
+    this.width = 330,
     super.key,
   });
 
@@ -114,7 +115,7 @@ class SecretControl extends StatelessWidget {
   }
 }
 
-/// A line of muted help text below a settings group.
+/// An explanation below a settings group, as a [ShelfNote].
 class SettingsNote extends StatelessWidget {
   const SettingsNote(this.text, {super.key});
 
@@ -122,11 +123,9 @@ class SettingsNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = Theme.of(context).extension<ShelfTokens>()!;
-    final style = Theme.of(context).extension<ShelfTextStyles>()!;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
-      child: Text(text, style: style.caption.copyWith(color: tokens.faint)),
+      padding: const EdgeInsets.only(top: 10),
+      child: ShelfNote(text: text),
     );
   }
 }

@@ -32,6 +32,7 @@ class ShelfCover extends StatelessWidget {
     this.overlay,
     this.footer,
     this.selected = false,
+    this.highlighted = false,
     this.selectionMode = false,
     this.onTap,
     this.onSecondaryTap,
@@ -51,6 +52,10 @@ class ShelfCover extends StatelessWidget {
   /// member of a shared space.
   final Widget? footer;
   final bool selected;
+
+  /// Draws the accent outline for a moment, to point at a game the library
+  /// scrolled to; it fades in.
+  final bool highlighted;
   final bool selectionMode;
   final VoidCallback? onTap;
   final ValueChanged<Offset>? onSecondaryTap;
@@ -60,89 +65,98 @@ class ShelfCover extends StatelessWidget {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final text = Theme.of(context).extension<ShelfTextStyles>()!;
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      onSecondaryTapDown: onSecondaryTap == null
-          ? null
-          : (details) => onSecondaryTap!(details.globalPosition),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AspectRatio(
-            key: const Key('cover-art'),
-            aspectRatio: 2 / 3,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Positioned.fill(
-                  child: DecoratedBox(
-                    key: const Key('cover-shadow'),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(ShelfRadius.card),
-                      boxShadow: ShelfGlow.coverShadow(tokens),
-                    ),
-                    child: ClipRRect(
-                      key: const Key('cover-clip'),
-                      borderRadius: BorderRadius.circular(ShelfRadius.card),
-                      child: _art(text),
+    return _HoverLift(
+      enabled: onTap != null,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        onSecondaryTapDown: onSecondaryTap == null
+            ? null
+            : (details) => onSecondaryTap!(details.globalPosition),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AspectRatio(
+              key: const Key('cover-art'),
+              aspectRatio: 2 / 3,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      key: const Key('cover-shadow'),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(ShelfRadius.card),
+                        boxShadow: ShelfGlow.coverShadow(tokens),
+                      ),
+                      child: ClipRRect(
+                        key: const Key('cover-clip'),
+                        borderRadius: BorderRadius.circular(ShelfRadius.card),
+                        child: _art(text),
+                      ),
                     ),
                   ),
-                ),
-                if (overlay != null) Positioned.fill(child: overlay!),
-                if (selected)
-                  Positioned(
-                    left: -6,
-                    top: -6,
-                    right: -6,
-                    bottom: -6,
-                    child: IgnorePointer(
-                      child: ClipPath(
-                        key: const Key('cover-ring-clip'),
-                        clipper: const _OutsideOfRing(
-                          width: 3,
-                          radius: ShelfRadius.card + 6,
-                        ),
-                        child: DecoratedBox(
-                          key: const Key('cover-ring'),
-                          decoration: ShelfGlow.selectedRing(
-                            tokens,
-                            radius: ShelfRadius.card + 6,
+                  if (overlay != null) Positioned.fill(child: overlay!),
+                  if (selected || highlighted)
+                    Positioned(
+                      left: -6,
+                      top: -6,
+                      right: -6,
+                      bottom: -6,
+                      child: IgnorePointer(
+                        child: TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0, end: 1),
+                          duration: const Duration(milliseconds: 260),
+                          builder: (context, opacity, child) =>
+                              Opacity(opacity: opacity, child: child),
+                          child: ClipPath(
+                            key: const Key('cover-ring-clip'),
+                            clipper: const _OutsideOfRing(
+                              width: 3,
+                              radius: ShelfRadius.card + 6,
+                            ),
+                            child: DecoratedBox(
+                              key: const Key('cover-ring'),
+                              decoration: ShelfGlow.selectedRing(
+                                tokens,
+                                radius: ShelfRadius.card + 6,
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                if (selectionMode)
-                  Positioned(
-                    left: 8,
-                    top: 8,
-                    child: _CheckCircle(checked: selected),
-                  ),
-              ],
-            ),
-          ),
-          if (footer != null) ...[
-            const SizedBox(height: 10),
-            footer!,
-          ] else ...[
-            if (progress != null) ...[
-              const SizedBox(height: 8),
-              ShelfProgressBar(value: progress!, height: 3),
-            ],
-            if (meta != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Text(
-                  meta!,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: text.caption.copyWith(color: tokens.muted),
-                ),
+                  if (selectionMode)
+                    Positioned(
+                      left: 8,
+                      top: 8,
+                      child: _CheckCircle(checked: selected),
+                    ),
+                ],
               ),
+            ),
+            if (footer != null) ...[
+              const SizedBox(height: 10),
+              footer!,
+            ] else ...[
+              if (progress != null) ...[
+                const SizedBox(height: 8),
+                ShelfProgressBar(value: progress!, height: 3),
+              ],
+              if (meta != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    meta!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: text.caption.copyWith(color: tokens.muted),
+                  ),
+                ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -156,6 +170,42 @@ class ShelfCover extends StatelessWidget {
       width: double.infinity,
       height: double.infinity,
       errorBuilder: (context, error, stackTrace) => fallback,
+    );
+  }
+}
+
+/// Lifts what it holds a little while the pointer is over it.
+class _HoverLift extends StatefulWidget {
+  const _HoverLift({required this.enabled, required this.child});
+
+  final bool enabled;
+  final Widget child;
+
+  @override
+  State<_HoverLift> createState() => _HoverLiftState();
+}
+
+class _HoverLiftState extends State<_HoverLift> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.enabled) return widget.child;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedSlide(
+        offset: _hovered ? const Offset(0, -0.012) : Offset.zero,
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeOut,
+        child: AnimatedScale(
+          scale: _hovered ? 1.02 : 1,
+          duration: const Duration(milliseconds: 160),
+          curve: Curves.easeOut,
+          child: widget.child,
+        ),
+      ),
     );
   }
 }

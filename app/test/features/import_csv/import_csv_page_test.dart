@@ -319,7 +319,11 @@ void main() {
 
       await tester.tap(find.byKey(const Key('import-column-rating')));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('-- none --').last);
+      final item = find.descendant(
+        of: find.byType(MenuItemButton),
+        matching: find.text('-- none --'),
+      );
+      await tester.tap(item);
       await tester.pumpAndSettle();
       await startPreview(tester, opened);
 

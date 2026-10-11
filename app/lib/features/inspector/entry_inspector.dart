@@ -408,7 +408,33 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      if (ref.watch(backlogScopeProvider) == null)
+                        ShelfButton(
+                          key: const Key('inspector-wrong-game'),
+                          label: 'Wrong game?',
+                          icon: Icons.swap_horiz,
+                          onPressed: _wrongGame,
+                        ),
+                      ShelfButton(
+                        key: const Key('inspector-change-cover'),
+                        label: 'Change cover',
+                        icon: Icons.photo_library_outlined,
+                        onPressed: _changeCover,
+                      ),
+                      ShelfButton(
+                        key: const Key('inspector-update-image'),
+                        label: 'Image link',
+                        icon: Icons.link,
+                        onPressed: _updateImage,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
                   CategoryPicker(
                     entryId: entry.id,
                     spaceId: ref.watch(backlogScopeProvider),
@@ -431,12 +457,6 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
                       if (ref.watch(backlogScopeProvider) == null &&
                           ref.watch(activeSpaceIdProvider) != null)
                         ShareToSpaceButton(entry: entry),
-                      ShelfButton(
-                        key: const Key('inspector-update-image'),
-                        label: 'Update image',
-                        icon: Icons.edit_outlined,
-                        onPressed: _updateImage,
-                      ),
                     ],
                   ),
                   const SizedBox(height: 14),
@@ -480,27 +500,6 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
                     kind: ShelfButtonKind.danger,
                     onPressed: () =>
                         LibraryActions(context, ref).deleteEntries([entry]),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Wrap(
-                      alignment: WrapAlignment.end,
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        if (ref.watch(backlogScopeProvider) == null)
-                          ShelfButton(
-                            key: const Key('inspector-wrong-game'),
-                            label: 'Wrong game?',
-                            onPressed: _wrongGame,
-                          ),
-                        ShelfButton(
-                          key: const Key('inspector-change-cover'),
-                          label: 'Change cover',
-                          onPressed: _changeCover,
-                        ),
-                      ],
-                    ),
                   ),
                 ],
               ),

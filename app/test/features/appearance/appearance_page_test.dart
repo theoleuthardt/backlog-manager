@@ -464,25 +464,20 @@ void main() {
   });
 
   group('the switcher', () {
-    testWidgets('the account row lists the themes and the creator', (
-      tester,
-    ) async {
+    testWidgets('the sidebar lists the themes and the creator', (tester) async {
       await open(
         tester,
         account: user(custom: [neon]),
         location: AppRoutes.library,
       );
 
-      await tester.tap(find.byKey(const Key('account-row')));
-      await tester.pumpAndSettle();
-
-      expect(find.byKey(const Key('account-theme-shelfOled')), findsOneWidget);
-      expect(find.byKey(const Key('account-theme-dark')), findsOneWidget);
+      expect(find.byKey(const Key('sidebar-theme-shelfOled')), findsOneWidget);
+      expect(find.byKey(const Key('sidebar-theme-dark')), findsOneWidget);
       expect(
-        find.byKey(const Key('account-theme-custom-neon')),
+        find.byKey(const Key('sidebar-theme-custom-neon')),
         findsOneWidget,
       );
-      expect(find.byKey(const Key('account-theme-creator')), findsOneWidget);
+      expect(find.byKey(const Key('sidebar-theme-creator')), findsOneWidget);
     });
 
     testWidgets('picking a theme there switches and saves it', (tester) async {
@@ -492,9 +487,7 @@ void main() {
         location: AppRoutes.library,
       );
 
-      await tester.tap(find.byKey(const Key('account-row')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('account-theme-custom-neon')));
+      await tester.tap(find.byKey(const Key('sidebar-theme-custom-neon')));
       await tester.pumpAndSettle();
 
       expect(opened.activeId, 'custom-neon');
@@ -503,12 +496,12 @@ void main() {
       ]);
     });
 
-    testWidgets('Theme creator opens the appearance screen', (tester) async {
+    testWidgets('the plus of the sidebar opens the appearance screen', (
+      tester,
+    ) async {
       await open(tester, location: AppRoutes.library);
 
-      await tester.tap(find.byKey(const Key('account-row')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('account-theme-creator')));
+      await tester.tap(find.byKey(const Key('sidebar-theme-creator')));
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('page-appearance')), findsOneWidget);

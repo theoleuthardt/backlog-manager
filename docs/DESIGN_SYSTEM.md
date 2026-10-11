@@ -16,7 +16,7 @@ This document is the spec a second client (the planned Flutter client, issue #24
 2. **Covers first.** The cover art is the largest thing on every content screen. Text sits on it or directly beneath it.
 3. **Master and detail.** Selecting a game opens an inspector beside the list instead of covering it. Short tasks (add, export, find the right game) are sheets over the window.
 4. **One accent.** A single accent colour marks the primary action, progress, selection and focus. Everything else is neutral.
-5. **Dense but calm.** 32 px controls, 14 px text, hairline dividers between panes, soft filled groups instead of boxes.
+5. **Dense but calm.** 38 px controls, 15.5 px body text, 44 px inputs, hairline dividers between panes, soft filled groups instead of boxes.
 6. **Keyboard first.** Cmd/Ctrl+K opens a command palette, `/` focuses search, context menus show their shortcuts.
 7. **Changes save themselves.** Entry edits and settings autosave; destructive actions ask first.
 8. **Themeable from six colours.** Users keep the six-colour theme model; every other colour is derived.
@@ -93,7 +93,7 @@ Font: **Plus Jakarta Sans** (weights 400 to 800). Sizes in logical pixels; the b
 - **Spacing:** 4, 6, 8, 10, 12, 14, 16, 20, 24, 32. Content padding is 24 horizontally and 22 vertically; dividers are 1 px `borderSubtle`.
 - **Radii:** control 8, card (cover) 12, panel and group 14, dialog and sheet 16, window 12, chip full pill. Only chips are pills.
 - **Elevation:** only floating layers cast a shadow: menus, sheets, toasts, windows on the desktop, the segmented control's selected thumb. Menus, sheets and desktop windows add a faint `glow` ring or halo (see `elevation` in the tokens file). Panes and groups are flat.
-- **Motion:** 150 ms for hover, press and menus, 250 ms for the inspector sliding in and sheets dropping 8 px from the title bar. Ease-out everywhere. With reduced motion enabled there is no slide.
+- **Motion:** 140-160 ms for hover and press (buttons ease between looks and shrink to 97% while pressed, covers lift 2% on hover), 200 ms for a page fading in, 250 ms for the inspector sliding in and sheets dropping 8 px from the title bar. The sky moves slowly: the bright stars twinkle and a moon travels each orbit ring (a 120 s cycle; off with reduced motion). Ease-out everywhere. With reduced motion enabled there is no slide. 250 ms for the inspector sliding in and sheets dropping 8 px from the title bar. Ease-out everywhere. With reduced motion enabled there is no slide.
 - **Focus and selection:** keyboard focus is a 2 px accent outline with a 2 px offset. A selected cover gets a 3 px accent outline with a 3 px offset and, in selection mode, a 22 px check circle.
 
 ### Atmosphere
@@ -142,7 +142,7 @@ Each component lists its parts and states. The "Flutter" column is a suggestion,
 | Component | Anatomy and states | Flutter |
 |---|---|---|
 | **Title bar** | Window controls, toggle, back/forward, title, search field with Cmd/Ctrl+K hint | `window_manager` for the frame; custom row |
-| **Sidebar** | Brand mark, section labels, items 32 high with icon, label and optional count; active item with a `glow` gradient and a 2 px accent bar | custom `ListView` |
+| **Sidebar** | Brand mark, section labels, items 38 high with icon, label and optional count; active item with a `glow` gradient and a 2 px accent bar | custom `ListView` |
 | **Account row** | 58 high, divider above, always the last element of the sidebar: gradient avatar, name, email, switcher button | custom row |
 | **Toolbar** | Left: view and sort controls; right: counts and primary actions. Selection variant: tinted bar with the count and bulk actions | custom row |
 | **Button** | Radius 8, 32 high. Primary (accent fill, `onAccent` text), secondary (strong border), quiet (no border, muted text), danger (danger text), icon (32 square). Hover lifts to `surface2`; focus ring; disabled 40% | `FilledButton`/`OutlinedButton`/`TextButton` themed |
@@ -156,7 +156,7 @@ Each component lists its parts and states. The "Flutter" column is a suggestion,
 | **Cover grid and shelf row** | Auto-fill grid of covers; shelf row is a horizontal, non-wrapping row of 150-wide covers | `SliverGrid` / horizontal `ListView` |
 | **Data table** | Header row (uppercase caption), 48 high rows with checkbox, thumbnail, title, columns, trailing chip or button; hover and selected (`accentSoft`) rows | `DataTable` or custom rows |
 | **Inspector** | Header with status ("All changes saved") and close, body with cover and title, tabs, description, beat-time bars, owned switch; footer with Delete, Wrong game, Change cover | custom pane in a `Row` |
-| **Context menu** | `surface2`, radius 10, 1 px strong border, items 30 high, hovered item filled with accent, shortcut hints on the right, separators, danger item last, submenus | `MenuAnchor` / `ContextMenuRegion` |
+| **Context menu** | `surface2`, radius 10, 1 px strong border, items 38 high, hovered item filled with accent, shortcut hints on the right, separators, danger item last, submenus | `MenuAnchor` / `ContextMenuRegion` |
 | **Filter bar** | 44 high strip: filter icon, one token per active filter (field in muted, value, remove x), a dashed "+ Add filter" token, right-aligned owned-only switch, reset, sort button and grid/list toggle | custom row |
 | **Add-filter menu** | Menu anchored under "+ Add filter": search field "Filter by...", list of fields (genre, platform, interest, review stars, play and beat times), each opening a value picker | `MenuAnchor` with custom children |
 | **Command palette** | Sheet 640 wide: input with Esc hint, sections "Games" and "Actions", highlighted row, shortcuts | `showDialog` with a list |
@@ -229,7 +229,7 @@ class ShelfTokens extends ThemeExtension<ShelfTokens> {
 
 ### Window and layout
 
-- Frame: `window_manager` for a hidden native title bar, custom drag region, and platform caption buttons; the title bar is the 52 px row from the layout table.
+- Frame: `window_manager` for a hidden native title bar, custom drag region, and platform caption buttons; the title bar is the 56 px row from the layout table.
 - Main window: a `Column` of title bar, a `Row` of sidebar and an `Expanded` main pane (toolbar plus content, optional inspector), and the status bar. Collapsing the sidebar animates its width with the base duration.
 - Secondary windows (Settings, setup, sign-in): either a second native window (`desktop_multi_window`) or full-size routes with the same window chrome; decide in the spike.
 - Shortcuts: `CallbackShortcuts` or `Shortcuts` + `Actions` for the palette, search, new game and settings.
@@ -263,3 +263,7 @@ The open questions about installers, signing and the updater are researched in i
 ## Keeping this in sync
 
 The web frontend does not use these tokens or this shell yet. If the redesign is applied to the web app first, port `shelf.tokens.json` into `frontend/src/styles/globals.css` as the new `--t-*` mapping and keep this document as the contract. A change to a token or component starts in the design canvas, then `design/canvas/` and `shelf.tokens.json`, then this document, then the clients.
+
+## Scale-up (#351)
+
+The first test on a real desktop found the design too small: the type scale (hero 34, page 30, section 18, group title 15, body 15.5, control 14.5, label and caption 13.5, field text 15, eyebrow and sidebar labels 12), the control height (38) and the input height (44) were raised, sheets are 560, 700 and 760 wide, the title bar is 56 px high. Explanations are `ShelfNote`s (info icon on a soft panel) rather than loose muted lines; the side panes can be dragged to another width (kept on the device, a double click restores it).

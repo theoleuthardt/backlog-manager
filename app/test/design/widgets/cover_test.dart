@@ -82,7 +82,7 @@ void main() {
 
       expect(find.text('Hades'), findsOneWidget);
       final text = tester.widget<Text>(find.text('Hades'));
-      expect(text.style!.fontSize, 15);
+      expect(text.style!.fontSize, 16.5);
       expect(text.style!.fontWeight, FontWeight.w800);
       final cover = tester.getRect(find.byKey(const Key('cover-art')));
       expect(

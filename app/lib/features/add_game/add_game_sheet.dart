@@ -3,6 +3,7 @@ import 'package:backlog_manager/data/game_info_providers.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
+import 'package:backlog_manager/design/widgets/note.dart';
 import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/design/widgets/search_input.dart';
 import 'package:backlog_manager/design/widgets/sheet.dart';
@@ -128,7 +129,7 @@ class _AddGameSheetState extends ConsumerState<AddGameSheet> {
             flex: 5,
             cell: (context, result) => Row(
               children: [
-                ResultThumb(imageUrl: result.imageUrl, width: 26, height: 38),
+                ResultThumb(imageUrl: result.imageUrl, width: 38, height: 56),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -181,6 +182,9 @@ class _AddGameSheetState extends ConsumerState<AddGameSheet> {
 
     return ShelfSheet(
       title: 'Search for a game',
+      description:
+          'Pick the game to continue with its details, cover and times to '
+          'beat filled in.',
       width: ShelfSheetWidth.wide,
       footer: ShelfSheetFooter(
         onCancel: () => Navigator.of(context).pop(),
@@ -211,25 +215,29 @@ class _AddGameSheetState extends ConsumerState<AddGameSheet> {
           const SizedBox(height: 10),
           content,
           const SizedBox(height: 10),
-          Row(
-            children: [
-              Text(
-                'Not the game you meant? ',
-                style: style.caption.copyWith(color: tokens.muted),
-              ),
-              ShelfPressable(
-                key: const Key('add-custom'),
-                semanticLabel: 'Create it as a custom game',
-                onPressed: _custom,
-                builder: (context, state) => Text(
-                  'Create it as a custom game',
-                  style: style.caption.copyWith(
-                    color: tokens.accent,
-                    decoration: TextDecoration.underline,
+          ShelfNote(
+            icon: Icons.help_outline,
+            child: Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(
+                  'Not the game you meant? ',
+                  style: style.caption.copyWith(color: tokens.muted),
+                ),
+                ShelfPressable(
+                  key: const Key('add-custom'),
+                  semanticLabel: 'Create it as a custom game',
+                  onPressed: _custom,
+                  builder: (context, state) => Text(
+                    'Create it as a custom game',
+                    style: style.caption.copyWith(
+                      color: tokens.accent,
+                      decoration: TextDecoration.underline,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),

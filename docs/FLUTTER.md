@@ -273,7 +273,7 @@ In the status sort a game can be dragged onto another status group, in the categ
 
 ### Ordering the groups
 
-Every group header has a grip: dragging it onto another header moves the group there (`domain/group_order.dart`: `moveGroup` puts the group where the target was, like a reorderable list; `applyGroupOrder` sorts the groups of the current sort by the saved keys and puts groups the order does not know yet after the known ones). It works in every sort option, because group keys carry their sort option (`status:Playing`, `genre:RPG`), so one saved list serves all of them; the order replaces the default and the sort direction only orders the games inside the groups. Screen readers get "Move group up/down" actions on the header. The order is kept on the device (`data/group_order_store.dart`, key `blm-group-order`), not in the account, because the backend has no field for it; a reset button appears in the toolbar while an order is saved. This drag is separate from dragging games onto a group.
+Every group header has a grip: dragging it onto another header moves the group there (`domain/group_order.dart`: `moveGroup` puts the group where the target was, like a reorderable list; `applyGroupOrder` sorts the groups of the current sort by the saved keys and puts groups the order does not know yet after the known ones). It works in every sort option, because group keys carry their sort option (`status:Playing`, `genre:RPG`), so one saved list serves all of them; the order replaces the default and the sort direction only orders the games inside the groups. Screen readers get "Move group up/down" actions on the header. The order is kept on the device (`data/group_order_store.dart`, key `blm-group-order`), not in the account, because the backend has no field for it. This drag is separate from dragging games onto a group.
 
 ### Command palette
 
@@ -379,6 +379,21 @@ All three are sheets in `features/add_game/`, fed by `GamesApi` (`data/games_api
 - **Live preview.** `themePreviewProvider` holds the colours being edited; `resolvedThemeProvider` uses them instead of the active theme while they are a valid set, so the whole app repaints. The preview is dropped when the screen is left; saving a theme makes it the active one.
 - **Where the theme lives.** `themeIdProvider` and `customThemesProvider` hold what the app shows. `ThemeActions` (`theme_actions.dart`) changes it: at once in the app and in the device cache (`data/theme_store.dart`, `shared_preferences`, key `blm-theme`, the shape of the web client's cache so both read it), then on the account (`PUT /api/user/me` with `theme`, and `custom_themes` when they changed, as the flat `{id, name, background, surface, foreground, accent, border, glow}` the web client uses). A failed save puts the previous theme back and reports it. Deleting the active custom theme falls back to the default `shelfOled`. `themeSyncProvider` (watched by the app) applies the cached theme at start, before anybody is signed in, and the theme of the account whenever the signed-in user changes (`SessionUser.theme` / `customThemes`).
 - **Quick switch.** The account row of the sidebar lists the built-in themes, then "Your themes", each with a swatch and a check on the active one, and "Theme creator"; the command palette has "Switch theme to <name>" for every theme (the custom ones follow the list) and "Go to Appearance".
+
+### Test round of #284 (#351)
+
+The first test on a real desktop (macOS) led to a round of changes; the decisions that are not obvious from the code:
+
+- **macOS sandbox:** the file panels (CSV import and export) need `com.apple.security.files.user-selected.read-write` in both entitlement files; without it the open and save panels never appear and the export waits forever.
+- **Size and feel:** type scale, control and input heights were raised (see `docs/DESIGN_SYSTEM.md`, "Scale-up"); buttons ease between their looks and shrink on press, covers lift on hover, pages fade in (`_FadeIn` in the router, not a route transition: two pages must never be alive together), the sky twinkles and a moon travels each orbit ring (`atmosphereMotion`, off in tests and with reduced motion).
+- **Sign-in** follows the design: a 480 px card with the eyebrow, hero title, 44 px fields and a full-width primary button; the title bar content is centred vertically (it sat at the top before).
+- **Library:** the toolbar groups the actions next to the title (an icon button for the IGDB sync with a bolt, a different icon for the duplicates), the Add button is at the right end; a game opened by a search or a click is scrolled to, its group is opened and its cover outlined for two seconds (`reveal_entry.dart`; the page moves one viewport per frame until the lazily built tile exists).
+- **Inspector:** "Wrong game?", "Change cover" and "Image link" sit under the status select; the footer only has Delete.
+- **Sidebar:** the themes are swatches under "Personalise" with a plus for the creator; the account menu only has Settings and Log out. The sidebar and the inspector can be dragged to another width (`shell/pane_widths.dart`, a double click restores it).
+- **Settings** has a "Back to app" button, and the sidebar toggle of the title bar hides the tab list there.
+- **Steam preview** shows what it is doing (`_LoadingPanel`): which list is read, a sweeping bar until the number of games is known, the count and the seconds elapsed.
+- **IGDB errors:** the backend answers 503 "IGDB rejected the configured credentials" when Twitch refuses the token request (it was an unexplained 500).
+- Cancel buttons of sheets are red; explanations are `ShelfNote`s.
 
 ### Update notification
 

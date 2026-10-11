@@ -6,6 +6,7 @@ import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
+import 'package:backlog_manager/design/widgets/note.dart';
 import 'package:backlog_manager/design/widgets/progress.dart';
 import 'package:backlog_manager/design/widgets/search_input.dart';
 import 'package:backlog_manager/design/widgets/segmented.dart';
@@ -153,11 +154,13 @@ class _SteamPageState extends ConsumerState<SteamPage> {
                   kind: ShelfButtonKind.quiet,
                   onPressed: controller.cancel,
                 ),
-              Text(
-                'Nothing is written until you press Import.',
-                style: style.caption.copyWith(color: tokens.muted),
-              ),
             ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(_gutter, 4, _gutter, 8),
+          child: const ShelfNote(
+            text: 'Nothing is written until you press Import.',
           ),
         ),
         if (!linked)
@@ -165,10 +168,13 @@ class _SteamPageState extends ConsumerState<SteamPage> {
             padding: const EdgeInsets.fromLTRB(_gutter, 0, _gutter, 8),
             child: Row(
               children: [
-                Text(
-                  'Link your Steam account in the settings to load your games.',
-                  key: const Key('steam-not-linked'),
-                  style: style.caption.copyWith(color: tokens.muted),
+                Flexible(
+                  child: Text(
+                    'Link your Steam account in the settings to load your '
+                    'games.',
+                    key: const Key('steam-not-linked'),
+                    style: style.caption.copyWith(color: tokens.muted),
+                  ),
                 ),
                 const SizedBox(width: 10),
                 ShelfButton(
@@ -183,13 +189,16 @@ class _SteamPageState extends ConsumerState<SteamPage> {
         if (importedOn != null)
           Padding(
             padding: const EdgeInsets.fromLTRB(_gutter, 0, _gutter, 8),
-            child: Text(
-              'Your Steam wishlist was imported on $importedOn. The wishlist '
-              'import is for the first time only; the games it created are '
-              'marked as wishlist imports in your backlog. Automatic wishlist '
-              'sync is ${user?.steamWishlistAutoSync ?? false ? 'on' : 'off'}.',
-              key: const Key('steam-wishlist-imported'),
-              style: style.caption.copyWith(color: tokens.muted),
+            child: ShelfNote(
+              child: Text(
+                'Your Steam wishlist was imported on $importedOn. The '
+                'wishlist import is for the first time only; the games it '
+                'created are marked as wishlist imports in your backlog. '
+                'Automatic wishlist sync is '
+                '${user?.steamWishlistAutoSync ?? false ? 'on' : 'off'}.',
+                key: const Key('steam-wishlist-imported'),
+                style: style.caption.copyWith(color: tokens.muted),
+              ),
             ),
           ),
         Expanded(child: _body(state, source)),
@@ -218,11 +227,11 @@ class _SteamPageState extends ConsumerState<SteamPage> {
     );
 
     if (rows == null) {
+      if (state.phase == SteamPhase.previewing) {
+        return _LoadingPanel(source: source, state: state);
+      }
       return message(
-        state.phase == SteamPhase.previewing
-            ? 'Loading preview...'
-            : 'Nothing loaded yet - load a preview to see what would be '
-                  'imported.',
+        'Nothing loaded yet - load a preview to see what would be imported.',
         key: const Key('steam-empty-hint'),
       );
     }
@@ -240,25 +249,36 @@ class _SteamPageState extends ConsumerState<SteamPage> {
         children: [
           Row(
             children: [
-              Text(
-                previewHeading(source, rows.length),
-                key: const Key('steam-heading'),
-                style: style.section,
+              Expanded(
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: Text(
+                        previewHeading(source, rows.length),
+                        key: const Key('steam-heading'),
+                        style: style.section,
+                      ),
+                    ),
+                    ShelfButton(
+                      key: const Key('steam-select-none'),
+                      label: 'Select none',
+                      kind: ShelfButtonKind.quiet,
+                      onPressed: state.busy ? null : controller.selectNone,
+                    ),
+                    ShelfButton(
+                      key: const Key('steam-select-all'),
+                      label: 'Select all',
+                      kind: ShelfButtonKind.quiet,
+                      onPressed: state.busy ? null : controller.selectAll,
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(width: 10),
-              ShelfButton(
-                key: const Key('steam-select-none'),
-                label: 'Select none',
-                kind: ShelfButtonKind.quiet,
-                onPressed: state.busy ? null : controller.selectNone,
-              ),
-              ShelfButton(
-                key: const Key('steam-select-all'),
-                label: 'Select all',
-                kind: ShelfButtonKind.quiet,
-                onPressed: state.busy ? null : controller.selectAll,
-              ),
-              const Spacer(),
+              const SizedBox(width: 12),
               SizedBox(
                 width: 240,
                 child: ShelfSearchInput(
@@ -448,6 +468,97 @@ class _Footer extends ConsumerWidget {
               onPressed: state.busy || selected == 0 ? null : onImport,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// What the page shows while a preview loads: which list is being read, a bar
+/// (a sweeping one until the number of games is known) and how long it has
+/// taken, so a big library does not look like a hung app.
+class _LoadingPanel extends StatefulWidget {
+  const _LoadingPanel({required this.source, required this.state});
+
+  final SteamSource source;
+  final SteamState state;
+
+  @override
+  State<_LoadingPanel> createState() => _LoadingPanelState();
+}
+
+class _LoadingPanelState extends State<_LoadingPanel>
+    with SingleTickerProviderStateMixin {
+  static const _limit = Duration(hours: 1);
+
+  late final AnimationController _tick = AnimationController(
+    vsync: this,
+    duration: _limit,
+  )..forward();
+
+  @override
+  void dispose() {
+    _tick.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = Theme.of(context).extension<ShelfTokens>()!;
+    final style = Theme.of(context).extension<ShelfTextStyles>()!;
+    final state = widget.state;
+    final total = state.total;
+    final library = widget.source == SteamSource.library;
+
+    return Align(
+      alignment: Alignment.topCenter,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(_gutter, 48, _gutter, 0),
+        child: ConstrainedBox(
+          key: const Key('steam-loading'),
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                library
+                    ? 'Reading your Steam library'
+                    : 'Reading your Steam wishlist',
+                style: style.section,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                library
+                    ? 'Every game is checked against your backlog and its '
+                          'details are looked up, so a big library takes a '
+                          'minute or two.'
+                    : 'The wishlist and the details of its games are being '
+                          'fetched.',
+                style: style.body.copyWith(color: tokens.muted),
+              ),
+              const SizedBox(height: 22),
+              if (total != null && total > 0)
+                ShelfProgressBar(value: (state.processed ?? 0) / total)
+              else
+                const ShelfIndeterminateBar(),
+              const SizedBox(height: 10),
+              AnimatedBuilder(
+                animation: _tick,
+                builder: (context, _) {
+                  final seconds = (_tick.value * _limit.inSeconds).floor();
+                  final counted = total != null && total > 0
+                      ? '${checkedLine(state.processed, total)} - '
+                      : '';
+                  return Text(
+                    '$counted$seconds s',
+                    key: const Key('steam-loading-time'),
+                    style: style.caption.copyWith(color: tokens.faint),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

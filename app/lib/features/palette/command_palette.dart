@@ -463,7 +463,7 @@ class _ActionRow extends StatelessWidget {
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
     final shortcut = action.shortcut;
     return _Row(
-      height: 36,
+      height: 42,
       highlighted: highlighted,
       onHover: onHover,
       onPressed: onPressed,

@@ -6,6 +6,7 @@ import 'package:backlog_manager/features/library/wishlist_sync_prompt.dart';
 import 'package:backlog_manager/features/palette/command_palette.dart';
 import 'package:backlog_manager/features/updates/update_notifier.dart';
 import 'package:backlog_manager/routing/routes.dart';
+import 'package:backlog_manager/shell/pane_widths.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:backlog_manager/shell/sidebar.dart';
 import 'package:backlog_manager/shell/status_bar.dart';
@@ -93,6 +94,11 @@ class _AppShellState extends ConsumerState<AppShell> {
                 child: Row(
                   children: [
                     Sidebar(location: location),
+                    if (!ref.watch(sidebarCollapsedProvider))
+                      const PaneResizeHandle(
+                        pane: Pane.sidebar,
+                        growsToRight: true,
+                      ),
                     Expanded(
                       child: SizedBox.expand(
                         key: const Key('main-content'),
@@ -101,7 +107,13 @@ class _AppShellState extends ConsumerState<AppShell> {
                         ),
                       ),
                     ),
-                    if (inspector != null) _InspectorSlot(child: inspector),
+                    if (inspector != null) ...[
+                      const PaneResizeHandle(
+                        pane: Pane.inspector,
+                        growsToRight: false,
+                      ),
+                      _InspectorSlot(child: inspector),
+                    ],
                   ],
                 ),
               ),
@@ -114,16 +126,16 @@ class _AppShellState extends ConsumerState<AppShell> {
   }
 }
 
-class _InspectorSlot extends StatelessWidget {
+class _InspectorSlot extends ConsumerWidget {
   const _InspectorSlot({required this.child});
 
   final Widget child;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return SizedBox(
       key: const Key('inspector'),
-      width: 380,
+      width: ref.watch(paneWidthProvider(Pane.inspector)),
       child: GlassSurface(
         opacity: 0.52,
         blur: 10,

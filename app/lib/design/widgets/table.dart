@@ -70,7 +70,7 @@ class ShelfDataTable<T> extends StatelessWidget {
 
     return SizedBox(
       key: const Key('table-header'),
-      height: 34,
+      height: 42,
       child: DecoratedBox(
         decoration: BoxDecoration(
           border: Border(bottom: BorderSide(color: tokens.borderSubtle)),

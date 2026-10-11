@@ -22,7 +22,7 @@ class ShelfStepper extends StatelessWidget {
         for (var i = 0; i < steps.length; i++)
           SizedBox(
             key: Key('step-$i'),
-            height: 36,
+            height: 40,
             child: Row(
               children: [
                 DecoratedBox(

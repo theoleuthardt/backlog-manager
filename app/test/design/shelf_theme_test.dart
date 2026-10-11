@@ -75,7 +75,7 @@ void main() {
       final body = theme.textTheme.bodyMedium!;
 
       expect(body.fontFamily, 'PlusJakartaSans');
-      expect(body.fontSize, 14);
+      expect(body.fontSize, 15.5);
       expect(body.height, 1.4);
       expect(body.fontWeight, FontWeight.w400);
     });
@@ -83,42 +83,42 @@ void main() {
     test('maps the scale onto the text theme roles', () {
       final text = theme.textTheme;
 
-      expect(text.displayMedium!.fontSize, 30);
+      expect(text.displayMedium!.fontSize, 34);
       expect(text.displayMedium!.fontWeight, FontWeight.w800);
-      expect(text.headlineMedium!.fontSize, 26);
-      expect(text.titleMedium!.fontSize, 16);
-      expect(text.titleSmall!.fontSize, 13);
-      expect(text.labelLarge!.fontSize, 13);
+      expect(text.headlineMedium!.fontSize, 30);
+      expect(text.titleMedium!.fontSize, 18);
+      expect(text.titleSmall!.fontSize, 15);
+      expect(text.labelLarge!.fontSize, 14.5);
       expect(text.labelLarge!.fontWeight, FontWeight.w600);
-      expect(text.labelMedium!.fontSize, 12);
-      expect(text.bodySmall!.fontSize, 12.5);
+      expect(text.labelMedium!.fontSize, 13.5);
+      expect(text.bodySmall!.fontSize, 13.5);
     });
 
     test('has the styles that no text theme role fits', () {
       final styles = theme.extension<ShelfTextStyles>()!;
       final tokens = tokensOf('shelfOled');
 
-      expect(styles.eyebrow.fontSize, 11);
+      expect(styles.eyebrow.fontSize, 12);
       expect(styles.eyebrow.fontWeight, FontWeight.w700);
-      expect(styles.eyebrow.letterSpacing, closeTo(11 * 0.12, 0.001));
+      expect(styles.eyebrow.letterSpacing, closeTo(12 * 0.12, 0.001));
       expect(styles.eyebrow.color, tokens.accent);
-      expect(styles.sidebarLabel.letterSpacing, closeTo(11 * 0.08, 0.001));
+      expect(styles.sidebarLabel.letterSpacing, closeTo(12 * 0.08, 0.001));
       expect(styles.sidebarLabel.color, tokens.faint);
-      expect(styles.coverTitle.fontSize, 15);
+      expect(styles.coverTitle.fontSize, 16.5);
       expect(styles.coverTitle.height, 1.1);
-      expect(styles.page.letterSpacing, closeTo(26 * -0.02, 0.001));
+      expect(styles.page.letterSpacing, closeTo(30 * -0.02, 0.001));
     });
 
     test('has styles for the shell: brand, nav item, title, search, hint', () {
       final styles = themeOf('shelfOled').extension<ShelfTextStyles>()!;
 
-      expect(styles.brand.fontSize, 15);
+      expect(styles.brand.fontSize, 17);
       expect(styles.brand.fontWeight, FontWeight.w800);
-      expect(styles.navItem.fontSize, 13.5);
-      expect(styles.windowTitle.fontSize, 14);
+      expect(styles.navItem.fontSize, 15);
+      expect(styles.windowTitle.fontSize, 15.5);
       expect(styles.windowTitle.fontWeight, FontWeight.w700);
-      expect(styles.fieldText.fontSize, 13);
-      expect(styles.keyHint.fontSize, 11);
+      expect(styles.fieldText.fontSize, 15);
+      expect(styles.keyHint.fontSize, 12);
       expect(styles.keyHint.color, tokensOf('shelfOled').faint);
     });
 
@@ -160,18 +160,18 @@ void main() {
 
       expect(style.backgroundColor!.resolve({}), tokens.accent);
       expect(style.foregroundColor!.resolve({}), tokens.onAccent);
-      expect(style.minimumSize!.resolve({})!.height, 32);
+      expect(style.minimumSize!.resolve({})!.height, 38);
       expect(
         (style.shape!.resolve({}) as RoundedRectangleBorder).borderRadius,
         BorderRadius.circular(8),
       );
     });
 
-    test('inputs are 34 high with the control radius and a glow focus', () {
+    test('inputs are 44 high with the control radius and a glow focus', () {
       final decoration = theme.inputDecorationTheme;
       final focused = decoration.focusedBorder! as OutlineInputBorder;
 
-      expect(decoration.constraints!.minHeight, 34);
+      expect(decoration.constraints!.minHeight, 44);
       expect(focused.borderRadius, BorderRadius.circular(8));
       expect(focused.borderSide.color, tokens.glow);
     });

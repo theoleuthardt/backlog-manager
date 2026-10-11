@@ -22,7 +22,7 @@ void main() {
       );
     }
 
-    testWidgets('shows the label above a 34 px trigger on surface2', (
+    testWidgets('shows the label above a 44 px trigger on surface2', (
       tester,
     ) async {
       await pumpThemed(tester, select(), width: 300);
@@ -33,7 +33,7 @@ void main() {
       );
       expect(
         tester.getSize(find.byKey(const Key('select-trigger'))).height,
-        34,
+        44,
       );
       final box = tester.widget<DecoratedBox>(
         find.byKey(const Key('select-surface')),

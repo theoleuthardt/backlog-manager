@@ -35,14 +35,14 @@ void main() {
   final tokens = tokensOf('shelfOled');
 
   group('ShelfDataTable', () {
-    testWidgets('has a 34 px header with upper case captions', (tester) async {
+    testWidgets('has a 42 px header with upper case captions', (tester) async {
       await pumpThemed(
         tester,
         ShelfDataTable<Game>(columns: columns(), rows: games),
         width: 600,
       );
 
-      expect(tester.getSize(find.byKey(const Key('table-header'))).height, 34);
+      expect(tester.getSize(find.byKey(const Key('table-header'))).height, 42);
       expect(find.text('TITLE'), findsOneWidget);
       expect(find.text('HOURS'), findsOneWidget);
     });

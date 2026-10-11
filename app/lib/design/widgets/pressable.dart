@@ -26,6 +26,7 @@ class ShelfPressable extends StatefulWidget {
     required this.builder,
     this.onPressed,
     this.borderRadius = 8,
+    this.pressedScale = 1,
     this.semanticLabel,
     this.focusNode,
     this.autofocus = false,
@@ -37,6 +38,10 @@ class ShelfPressable extends StatefulWidget {
 
   /// The radius of the focus ring is this plus its offset.
   final double borderRadius;
+
+  /// The scale the look shrinks to while the pointer is down, so buttons
+  /// answer a press; 1 keeps the size.
+  final double pressedScale;
   final String? semanticLabel;
   final FocusNode? focusNode;
   final bool autofocus;
@@ -102,7 +107,12 @@ class _ShelfPressableState extends State<ShelfPressable> {
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                widget.builder(context, state),
+                AnimatedScale(
+                  scale: state.pressed ? widget.pressedScale : 1,
+                  duration: const Duration(milliseconds: 90),
+                  curve: Curves.easeOut,
+                  child: widget.builder(context, state),
+                ),
                 if (state.focused)
                   Positioned(
                     left: -4,

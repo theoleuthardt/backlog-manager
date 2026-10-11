@@ -36,7 +36,7 @@ class ShelfMenuRow extends StatelessWidget {
           borderRadius: BorderRadius.circular(6),
         ),
         child: SizedBox(
-          height: 32,
+          height: 38,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Row(
