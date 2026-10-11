@@ -366,6 +366,21 @@ double coverWidthFor(
   return (width - (columns - 1) * gap) / columns;
 }
 
+/// The distance between the tops of two rows of a [ShelfCoverSliverGrid] that
+/// is [width] wide, and how many covers a row holds; a page uses it to
+/// estimate where the n-th cover is.
+({int columns, double rowStride}) coverGridMetrics(
+  double width, {
+  required double extraHeight,
+}) {
+  final columns = coverGridColumns(width);
+  final cover = coverWidthFor(width, columns: columns);
+  return (
+    columns: columns,
+    rowStride: cover * 1.5 + extraHeight + _coverGapRow,
+  );
+}
+
 class _CoverGridDelegate extends SliverGridDelegate {
   const _CoverGridDelegate(this.extraHeight);
 

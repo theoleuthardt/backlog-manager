@@ -34,6 +34,26 @@ void main() {
     expect(container.read(revealedEntryProvider), isNull);
   });
 
+  testWidgets('a game 1,250 entries down is scrolled to and on screen', (
+    tester,
+  ) async {
+    final container = await pumpLibrary(
+      tester,
+      FakeBacklogApi(entries: many(1300)),
+      height: 900,
+    );
+
+    container.read(routerProvider).go('/library?entry=1250');
+    await tester.pumpAndSettle(const Duration(milliseconds: 100));
+
+    final tile = find.byKey(const ValueKey('tile-1250'));
+    expect(tile, findsOneWidget);
+    expect(find.byKey(const Key('cover-ring')), findsOneWidget);
+    final center = tester.getCenter(tile);
+    expect(center.dy, inInclusiveRange(0, 900));
+    await tester.pump(revealDuration + const Duration(milliseconds: 100));
+  });
+
   testWidgets('asking again for the open game points at it again', (
     tester,
   ) async {

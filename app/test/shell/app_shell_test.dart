@@ -487,6 +487,19 @@ void main() {
       expect(field.focusNode!.hasFocus, isTrue);
     });
 
+    testWidgets(
+      'typing in the title bar search takes any page to the library',
+      (tester) async {
+        final app = await pumpApp(tester, location: AppRoutes.home);
+        expect(app.location, AppRoutes.home);
+
+        await tester.enterText(find.byKey(const Key('search-field')), 'hades');
+        await tester.pumpAndSettle();
+
+        expect(app.location, AppRoutes.library);
+      },
+    );
+
     testWidgets('Cmd+K opens the command palette on macOS and Esc closes it', (
       tester,
     ) async {

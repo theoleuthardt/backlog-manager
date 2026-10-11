@@ -410,6 +410,7 @@ Third round:
 - **Shortcuts:** the sidebar entry under Personalise opens `features/shortcuts/shortcuts_sheet.dart`, the list of every shortcut (palette actions come from the registry).
 - **Sign-in:** the heading reads "Backlog Manager" in the page size beside a 46 px animated mark; password fields have a show/hide button (`ShelfField.obscure`).
 - **Covers while jumping:** a cover requests its image only after it has stayed built for 150 ms (`coverImageDelay`, zero in tests), and the images are decoded at most 420 px wide. Jumping to a game far down a library of 1,300 entries builds the covers of every viewport on the way for a single frame; without the delay each of them queued a download that nothing waited for and the covers on screen appeared after half a minute.
+- **Jumping to a game:** the page puts the group header at the top, estimates the row of the game from the grid metrics (`coverGridMetrics`) and jumps there at once; stepping a viewport at a time is only the fallback (the list layout). Typing in the search field of the title bar on a page that is not the library or the Shared Space takes the user to the library.
 - **Filter bar:** below 900 px it drops the caption of the owned-only switch, below 700 px also its "Filter" label and the sort menu becomes an icon.
 
 ### Update notification

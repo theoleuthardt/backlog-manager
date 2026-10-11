@@ -162,7 +162,7 @@ class _LibraryState extends ConsumerState<_Library> {
       view.showMore(group.key);
     }
     ref.read(revealedEntryProvider.notifier).reveal(id);
-    _scrollTo(group.key, attempts: 60);
+    _scrollTo(group.key, index: index, attempts: 400);
   }
 
   /// Brings the revealed game into view. The grid builds only what is near
@@ -171,8 +171,10 @@ class _LibraryState extends ConsumerState<_Library> {
   /// move is animated.
   void _scrollTo(
     String groupKey, {
+    required int index,
     required int attempts,
     bool aligned = false,
+    bool estimated = false,
   }) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_scroll.hasClients) return;
@@ -203,8 +205,34 @@ class _LibraryState extends ConsumerState<_Library> {
             duration: Duration.zero,
           ),
         );
-        _scrollTo(groupKey, attempts: attempts, aligned: true);
+        _scrollTo(groupKey, index: index, attempts: attempts, aligned: true);
         return;
+      }
+      if (!estimated &&
+          ref.read(libraryViewProvider).layout == LibraryLayout.grid) {
+        final width = _scroll.position.viewportDimension > 0
+            ? (_viewportKey.currentContext?.size?.width ?? 0) - 2 * _gutter
+            : 0.0;
+        if (width > 0) {
+          final metrics = coverGridMetrics(
+            width,
+            extraHeight: ref.read(backlogScopeProvider) == null ? 44 : 92,
+          );
+          final rows = index ~/ metrics.columns;
+          position.jumpTo(
+            (position.pixels + rows * metrics.rowStride)
+                .clamp(0, position.maxScrollExtent)
+                .toDouble(),
+          );
+          _scrollTo(
+            groupKey,
+            index: index,
+            attempts: attempts,
+            aligned: true,
+            estimated: true,
+          );
+          return;
+        }
       }
       if (position.pixels >= position.maxScrollExtent) return;
       position.jumpTo(
@@ -213,7 +241,13 @@ class _LibraryState extends ConsumerState<_Library> {
           position.pixels + position.viewportDimension * 0.9,
         ),
       );
-      _scrollTo(groupKey, attempts: attempts - 1, aligned: true);
+      _scrollTo(
+        groupKey,
+        index: index,
+        attempts: attempts - 1,
+        aligned: true,
+        estimated: true,
+      );
     });
   }
 

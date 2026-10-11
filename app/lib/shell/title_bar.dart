@@ -5,6 +5,7 @@ import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/routing/history.dart';
+import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/shell/navigation.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:backlog_manager/shell/window_controls.dart';
@@ -107,7 +108,7 @@ class TitleBar extends ConsumerWidget {
                           ),
                         ),
                         const Spacer(),
-                        if (!minimal) const _SearchField(),
+                        if (!minimal) _SearchField(location: location),
                         SizedBox(width: isMac ? 16 : 12),
                         if (!isMac) ...[
                           _CaptionButton(
@@ -211,14 +212,29 @@ class _CaptionButton extends StatelessWidget {
   }
 }
 
+/// The search field of the title bar. It filters the games of the library and
+/// the Shared Space, so typing on any other page takes the user to the
+/// library, where the result is.
 class _SearchField extends ConsumerStatefulWidget {
-  const _SearchField();
+  const _SearchField({required this.location});
+
+  final String location;
 
   @override
   ConsumerState<_SearchField> createState() => _SearchFieldState();
 }
 
 class _SearchFieldState extends ConsumerState<_SearchField> {
+  void _changed(String value) {
+    ref.read(filtersProvider.notifier).setSearch(value);
+    final onGameList =
+        widget.location == AppRoutes.library ||
+        widget.location == AppRoutes.space;
+    if (value.trim().isNotEmpty && !onGameList) {
+      context.go(AppRoutes.library);
+    }
+  }
+
   late final TextEditingController _controller = TextEditingController(
     text: ref.read(filtersProvider).search,
   );
@@ -244,7 +260,7 @@ class _SearchFieldState extends ConsumerState<_SearchField> {
       child: TextField(
         key: const Key('search-field'),
         controller: _controller,
-        onChanged: ref.read(filtersProvider.notifier).setSearch,
+        onChanged: _changed,
         focusNode: ref.watch(searchFocusNodeProvider),
         style: text.fieldText,
         decoration: InputDecoration(
