@@ -1,0 +1,159 @@
+name: Release Flutter App
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version as X.Y.Z (empty = bump the patch of the latest release)
+        required: false
+        type: string
+        default: ""
+      publish:
+        description: Publish a GitHub Release (off = dry run, installers only as workflow artifacts)
+        required: false
+        type: boolean
+        default: false
+      prerelease:
+        description: Mark the release as a pre-release (keeps it out of the Tauri updater feed until the cutover)
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: Compute release version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.compute.outputs.version }}
+      tag: ${{ steps.compute.outputs.tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Compute release version
+        id: compute
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: |
+          LATEST_TAG=$(git tag -l 'v*.*.*' --sort=-v:refname | head -n1)
+          PACKAGE_VERSION=$(sed -n 's/^version: *\([0-9][0-9.]*\).*/\1/p' app/pubspec.yaml)
+          node scripts/release-version.mjs "$LATEST_TAG" "$PACKAGE_VERSION" "$REQUESTED_VERSION" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build ${{ matrix.name }}
+    needs: version
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux
+            runner: ubuntu-latest
+            platform: linux
+          - name: macOS
+            runner: macos-latest
+            platform: macos
+          - name: Windows
+            runner: windows-latest
+            platform: windows
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Install Linux packaging dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev rpm file
+          sudo curl -fsSL -o /usr/local/bin/appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          sudo chmod +x /usr/local/bin/appimagetool
+          echo "APPIMAGE_EXTRACT_AND_RUN=1" >> "$GITHUB_ENV"
+
+      - name: Install macOS packaging dependencies
+        if: matrix.platform == 'macos'
+        run: npm install -g appdmg
+
+      - name: Install Windows packaging dependencies
+        if: matrix.platform == 'windows'
+        run: choco install innosetup --no-progress -y
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: app/pubspec.yaml
+          channel: stable
+          cache: true
+
+      - name: Install Task
+        run: npm install -g @go-task/cli
+
+      - name: Stamp app version
+        shell: bash
+        working-directory: app
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+            echo "Version must use MAJOR.MINOR.PATCH format, got: $VERSION" >&2
+            exit 1
+          }
+          sed -i.bak "s/^version: .*/version: ${VERSION}+${BUILD_NUMBER}/" pubspec.yaml
+          rm pubspec.yaml.bak
+          grep '^version:' pubspec.yaml
+
+      - name: Build and package
+        shell: bash
+        env:
+          API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+        run: task app:package API_URL="$API_URL"
+
+      - name: Upload installers
+        uses: actions/upload-artifact@v6
+        with:
+          name: backlog-manager-app-${{ matrix.platform }}
+          if-no-files-found: error
+          path: app/dist/*/Backlog-Manager_*
+
+  release:
+    name: Publish GitHub Release
+    needs: [version, build]
+    if: inputs.publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download installers
+        uses: actions/download-artifact@v7
+        with:
+          pattern: backlog-manager-app-*
+          path: dist
+          merge-multiple: true
+
+      - name: Create release
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          tag_name: ${{ needs.version.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: Backlog Manager ${{ needs.version.outputs.tag }}
+          prerelease: ${{ inputs.prerelease }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: dist/**/*
+
+      - name: Release summary
+        env:
+          TAG: ${{ needs.version.outputs.tag }}
+        run: |
+          echo "### Flutter app release published :rocket:" >> "$GITHUB_STEP_SUMMARY"
+          echo "Backlog Manager \`$TAG\` - see the Releases page for download links." >> "$GITHUB_STEP_SUMMARY"
