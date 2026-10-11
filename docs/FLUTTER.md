@@ -241,6 +241,10 @@ In the status sort a game can be dragged onto another status group, in the categ
 - Category sort: the target category is added and the first category removed (`categoryMove`); dropping on the first category does nothing, "Uncategorized" is no drop target and empty categories stay visible and take a drop. An empty group shows a dashed hint while a game is dragged.
 - Dragging is off in every other sort option and in selection mode, where a click toggles a game and a drag would only get in the way.
 
+### Ordering the groups
+
+Every group header has a grip: dragging it onto another header moves the group there (`domain/group_order.dart`: `moveGroup` puts the group where the target was, like a reorderable list; `applyGroupOrder` sorts the groups of the current sort by the saved keys and puts groups the order does not know yet after the known ones). It works in every sort option, because group keys carry their sort option (`status:Playing`, `genre:RPG`), so one saved list serves all of them; the order replaces the default and the sort direction only orders the games inside the groups. Screen readers get "Move group up/down" actions on the header. The order is kept on the device (`data/group_order_store.dart`, key `blm-group-order`), not in the account, because the backend has no field for it; a reset button appears in the toolbar while an order is saved. This drag is separate from dragging games onto a group.
+
 ### Command palette
 
 Cmd+K (macOS) or Ctrl+K opens the palette from any screen of a signed-in session (`features/palette/command_palette.dart`; `/` still focuses the search field). `PaletteHost` sits in both window frames: it opens the sheet when `paletteOpenProvider` turns on and registers the actions of the window. The sheet has an input, the section "Games" (the best matches of the loaded entries, a cover thumbnail, title and `Status · 18 of 22 h`) and the section "Actions"; the arrow keys move the highlight, Enter runs it (a game opens in the library with its details, `?entry=<id>`), Esc closes it. Without a query only the actions show.

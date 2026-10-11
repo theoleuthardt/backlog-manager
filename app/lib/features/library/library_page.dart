@@ -7,6 +7,7 @@ import 'package:backlog_manager/data/backlog_scope.dart';
 import 'package:backlog_manager/data/drag_providers.dart';
 import 'package:backlog_manager/data/entry_image.dart';
 import 'package:backlog_manager/data/filter_providers.dart';
+import 'package:backlog_manager/data/group_order_store.dart';
 import 'package:backlog_manager/data/selection_providers.dart';
 import 'package:backlog_manager/design/color_math.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
@@ -18,6 +19,7 @@ import 'package:backlog_manager/design/widgets/cover.dart';
 import 'package:backlog_manager/design/widgets/menu.dart';
 import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/domain/format.dart';
+import 'package:backlog_manager/domain/group_order.dart';
 import 'package:backlog_manager/domain/library_groups.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/domain/sort_entries.dart';
@@ -37,6 +39,7 @@ import 'package:backlog_manager/features/steam/steam_sync_button.dart';
 import 'package:backlog_manager/routing/session.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -290,6 +293,13 @@ class _Toolbar extends ConsumerWidget {
             tooltip: 'Find duplicate games',
             onPressed: () => unawaited(showDuplicatesSheet(context)),
           ),
+          if (ref.watch(groupOrderProvider).isNotEmpty)
+            ShelfIconButton(
+              key: const Key('reset-group-order'),
+              icon: Icons.restart_alt,
+              tooltip: 'Reset the order of the groups',
+              onPressed: ref.read(groupOrderProvider.notifier).reset,
+            ),
           addButton,
         ],
       ),
@@ -316,64 +326,156 @@ class _GroupHeader extends ConsumerWidget {
       dragProvider.select((drag) => drag.overGroupKey == group.key),
     );
 
-    return Padding(
-      key: Key('group-${group.key}'),
-      padding: const EdgeInsets.fromLTRB(_gutter, 22, _gutter, 12),
-      child: DecoratedBox(
-        key: dropTarget ? const Key('drop-target') : null,
-        decoration: BoxDecoration(
-          color: dropTarget ? tokens.accentSoft : null,
-          borderRadius: BorderRadius.circular(ShelfRadius.card),
-          border: Border.all(
-            color: dropTarget ? tokens.accent : Colors.transparent,
-            width: 2,
-          ),
-        ),
-        child: ShelfPressable(
-          key: Key('group-toggle-${group.key}'),
-          borderRadius: ShelfRadius.card,
-          semanticLabel:
-              '${group.label}, ${group.entries.length}, '
-              '${collapsed ? 'collapsed' : 'expanded'}',
-          onPressed: () =>
-              ref.read(libraryViewProvider.notifier).toggleCollapsed(group.key),
-          builder: (context, state) => Row(
-            children: [
-              DecoratedBox(
-                decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
-                child: const SizedBox(width: 9, height: 9),
+    List<String> keys() => [
+      for (final item
+          in ref.read(libraryContentProvider)?.groups ?? const <LibraryGroup>[])
+        item.key,
+    ];
+    void arrange(List<String> arranged) =>
+        ref.read(groupOrderProvider.notifier).arrange(arranged);
+    final position = keys().indexOf(group.key);
+
+    return DragTarget<String>(
+      onWillAcceptWithDetails: (details) => details.data != group.key,
+      onAcceptWithDetails: (details) =>
+          arrange(moveGroup(keys(), from: details.data, onto: group.key)),
+      builder: (context, candidates, rejected) => Semantics(
+        customSemanticsActions: {
+          if (position > 0)
+            CustomSemanticsAction(label: 'Move group up'): () =>
+                arrange(moveGroupBy(keys(), group.key, -1)),
+          if (position < keys().length - 1)
+            CustomSemanticsAction(label: 'Move group down'): () =>
+                arrange(moveGroupBy(keys(), group.key, 1)),
+        },
+        child: Padding(
+          key: Key('group-${group.key}'),
+          padding: const EdgeInsets.fromLTRB(_gutter, 22, _gutter, 12),
+          child: DecoratedBox(
+            key: dropTarget ? const Key('drop-target') : null,
+            decoration: BoxDecoration(
+              color: dropTarget ? tokens.accentSoft : null,
+              borderRadius: BorderRadius.circular(ShelfRadius.card),
+              border: Border.all(
+                color: dropTarget ? tokens.accent : Colors.transparent,
+                width: 2,
               ),
-              const SizedBox(width: 10),
-              Text(group.label, style: style.groupTitle),
-              const SizedBox(width: 8),
-              Text(
-                '${group.entries.length}',
-                style: style.caption.copyWith(color: tokens.muted),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        tokens.borderStrong,
-                        tokens.borderStrong.withAlpha(0),
-                      ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (candidates.isNotEmpty)
+                  DecoratedBox(
+                    key: const Key('group-order-target'),
+                    decoration: BoxDecoration(
+                      color: tokens.accent,
+                      borderRadius: BorderRadius.circular(2),
                     ),
+                    child: const SizedBox(height: 3),
                   ),
-                  child: const SizedBox(height: 1),
+                Row(
+                  children: [
+                    _GroupHandle(group: group, dot: dot),
+                    Expanded(
+                      child: ShelfPressable(
+                        key: Key('group-toggle-${group.key}'),
+                        borderRadius: ShelfRadius.card,
+                        semanticLabel:
+                            '${group.label}, ${group.entries.length}, '
+                            '${collapsed ? 'collapsed' : 'expanded'}',
+                        onPressed: () => ref
+                            .read(libraryViewProvider.notifier)
+                            .toggleCollapsed(group.key),
+                        builder: (context, state) => Row(
+                          children: [
+                            Text(group.label, style: style.groupTitle),
+                            const SizedBox(width: 8),
+                            Text(
+                              '${group.entries.length}',
+                              style: style.caption.copyWith(
+                                color: tokens.muted,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      tokens.borderStrong,
+                                      tokens.borderStrong.withAlpha(0),
+                                    ],
+                                  ),
+                                ),
+                                child: const SizedBox(height: 1),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Icon(
+                              collapsed
+                                  ? Icons.chevron_right
+                                  : Icons.expand_more,
+                              size: 18,
+                              color: tokens.muted,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 10),
-              Icon(
-                collapsed ? Icons.chevron_right : Icons.expand_more,
-                size: 18,
-                color: tokens.muted,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The grip at the start of a group header: dragging it onto another header
+/// moves the group there. The coloured dot of the group sits next to it.
+class _GroupHandle extends StatelessWidget {
+  const _GroupHandle({required this.group, required this.dot});
+
+  final LibraryGroup group;
+  final Color dot;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = Theme.of(context).extension<ShelfTokens>()!;
+    final style = Theme.of(context).extension<ShelfTextStyles>()!;
+    final grip = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.drag_indicator, size: 18, color: tokens.muted),
+        const SizedBox(width: 4),
+        DecoratedBox(
+          decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
+          child: const SizedBox(width: 9, height: 9),
+        ),
+        const SizedBox(width: 10),
+      ],
+    );
+    return Draggable<String>(
+      key: Key('group-handle-${group.key}'),
+      data: group.key,
+      feedback: Material(
+        color: Colors.transparent,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: tokens.surface2,
+            borderRadius: BorderRadius.circular(ShelfRadius.card),
+            border: Border.all(color: tokens.accent),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            child: Text(group.label, style: style.groupTitle),
+          ),
+        ),
+      ),
+      childWhenDragging: Opacity(opacity: 0.4, child: grip),
+      child: MouseRegion(cursor: SystemMouseCursors.grab, child: grip),
     );
   }
 }
