@@ -241,7 +241,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(
         tester.getSize(find.byKey(const Key('toast-surface'))).width,
-        lessThanOrEqualTo(560 + 28),
+        lessThanOrEqualTo(520 + 28),
       );
     });
   });

@@ -13,7 +13,8 @@ typedef TrailerPlayerBuilder = Widget? Function(
 );
 
 /// The player of the app: the system web view (WKWebView, WebView2) on macOS
-/// and Windows; the web view plugin has no Linux implementation.
+/// and Windows; the web view plugin has no Linux implementation. Navigation
+/// stays on the YouTube hosts, every other address is cancelled.
 Widget? systemTrailerPlayer(BuildContext context, Uri embedUrl) {
   final supported =
       defaultTargetPlatform == TargetPlatform.macOS ||
@@ -22,6 +23,14 @@ Widget? systemTrailerPlayer(BuildContext context, Uri embedUrl) {
   return InAppWebView(
     key: const Key('trailer-webview'),
     initialUrlRequest: URLRequest(url: WebUri.uri(embedUrl)),
+    shouldOverrideUrlLoading: (controller, action) async {
+      final host = action.request.url?.host ?? '';
+      final embedded =
+          host == 'www.youtube-nocookie.com' || host == 'www.youtube.com';
+      return embedded
+          ? NavigationActionPolicy.ALLOW
+          : NavigationActionPolicy.CANCEL;
+    },
     initialSettings: InAppWebViewSettings(
       mediaPlaybackRequiresUserGesture: false,
       allowsInlineMediaPlayback: true,

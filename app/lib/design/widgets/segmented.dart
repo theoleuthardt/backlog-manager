@@ -32,7 +32,7 @@ class ShelfSegmented<T> extends StatefulWidget {
 
 class _ShelfSegmentedState<T> extends State<ShelfSegmented<T>> {
   final _track = GlobalKey();
-  late final List<GlobalKey> _keys;
+  late List<GlobalKey> _keys;
   Rect? _thumb;
 
   @override
@@ -45,6 +45,9 @@ class _ShelfSegmentedState<T> extends State<ShelfSegmented<T>> {
   @override
   void didUpdateWidget(ShelfSegmented<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.segments.length != widget.segments.length) {
+      _keys = List.generate(widget.segments.length, (_) => GlobalKey());
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) => _measure());
   }
 

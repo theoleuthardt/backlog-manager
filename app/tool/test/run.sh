@@ -9,12 +9,19 @@
 set -u
 cd "$(dirname "$0")/../.."
 
-exec 9>"${TMPDIR:-/tmp}/blm-flutter-test.lock"
-if ! flock -n 9; then
-  echo "another flutter test run is active; concurrent runs crash the compiler" >&2
-  exit 75
+lock="${TMPDIR:-/tmp}/blm-flutter-test.lock.d"
+if ! mkdir "$lock" 2>/dev/null; then
+  holder=$(cat "$lock/pid" 2>/dev/null)
+  if [ -n "$holder" ] && kill -0 "$holder" 2>/dev/null; then
+    echo "another flutter test run is active (pid $holder); concurrent runs crash the compiler" >&2
+    exit 75
+  fi
+  stale=$(cat "$lock/group" 2>/dev/null)
+  [ -n "$stale" ] && kill -KILL -- "-$stale" 2>/dev/null
+  rm -rf "$lock"
+  mkdir "$lock"
 fi
-pkill -KILL -x flutter_tester 2>/dev/null
+echo $$ > "$lock/pid"
 
 per_test="${TEST_TIMEOUT:-60s}"
 shard_limit="${TEST_SHARD_TIMEOUT:-420}"
@@ -22,15 +29,25 @@ pid=""
 
 reap() {
   [ -n "$pid" ] && kill -KILL -- "-$pid" 2>/dev/null
-  pkill -KILL -x flutter_tester 2>/dev/null
   return 0
 }
-trap reap EXIT INT TERM
+release() {
+  reap
+  rm -rf "$lock"
+}
+trap release EXIT INT TERM
+
+if command -v setsid >/dev/null 2>&1; then
+  new_group=setsid
+else
+  new_group=
+fi
 
 run_shard() {
-  setsid flutter test --timeout="$per_test" --concurrency=1 "$@" 9>&- &
+  $new_group flutter test --timeout="$per_test" --concurrency=1 "$@" &
   pid=$!
-  setsid bash -c 'sleep "$1"; echo "shard exceeded $1s, killing it" >&2; kill -KILL -- "-$2"' _ "$shard_limit" "$pid" 9>&- &
+  echo "$pid" > "$lock/group"
+  $new_group bash -c 'sleep "$1"; echo "shard exceeded $1s, killing it" >&2; kill -KILL -- "-$2"' _ "$shard_limit" "$pid" &
   local watchdog=$!
   wait "$pid"
   local status=$?
@@ -52,7 +69,7 @@ if [ "$explicit" = 1 ]; then
 fi
 
 failed=0
-for dir in $(find test -name '*_test.dart' -printf '%h\n' | sort -u); do
+for dir in $(find test -name '*_test.dart' -exec dirname {} + | sort -u); do
   files=$(ls "$dir"/*_test.dart)
   echo "== $dir"
   # shellcheck disable=SC2086

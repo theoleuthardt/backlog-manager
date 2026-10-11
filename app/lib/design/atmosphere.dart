@@ -1,11 +1,11 @@
 import 'dart:math' as math;
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:backlog_manager/design/background_motion.dart';
 import 'package:backlog_manager/design/freaky_orbs.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -314,7 +314,7 @@ class AtmosphereMotionPainter extends CustomPainter {
     : super(repaint: progress);
 
   final ShelfTokens tokens;
-  final Animation<double> progress;
+  final ValueListenable<double> progress;
 
   Size? _dustSize;
   List<_DustLayer> _dust = const [];
@@ -485,6 +485,35 @@ class AtmosphereMotionPainter extends CustomPainter {
   }
 }
 
+/// The clock of the moving sky at 30 frames per second at most: the ticker
+/// runs at the rate of the display, the dust and the stars do not need it.
+class _SkyClock extends ChangeNotifier implements ValueListenable<double> {
+  _SkyClock(this._source) {
+    _value = _source.value;
+    _source.addListener(_onTick);
+  }
+
+  static const _step = 1 / 30 / 3600;
+
+  final Animation<double> _source;
+  late double _value;
+
+  @override
+  double get value => _value;
+
+  void _onTick() {
+    if ((_source.value - _value).abs() < _step) return;
+    _value = _source.value;
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _source.removeListener(_onTick);
+    super.dispose();
+  }
+}
+
 class _MovingSky extends StatefulWidget {
   const _MovingSky({required this.tokens});
 
@@ -500,9 +529,11 @@ class _MovingSkyState extends State<_MovingSky>
     vsync: this,
     duration: atmosphereClock,
   )..repeat();
+  late final _SkyClock _clock = _SkyClock(_controller);
 
   @override
   void dispose() {
+    _clock.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -512,7 +543,7 @@ class _MovingSkyState extends State<_MovingSky>
     return RepaintBoundary(
       child: IgnorePointer(
         child: CustomPaint(
-          painter: AtmosphereMotionPainter(widget.tokens, _controller),
+          painter: AtmosphereMotionPainter(widget.tokens, _clock),
           size: Size.infinite,
         ),
       ),
