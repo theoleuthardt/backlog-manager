@@ -12,12 +12,14 @@
 # image and the backup instead. podman-compose 1.x tries to create the database
 # container again on `up` and reports an error although the service started, so
 # the result of `up` is not trusted and the containers are verified instead.
-# `up` of podman-compose 1.3 and 1.4 tears the whole project down, the database
-# included, when the config hash of an existing container differs from the
-# current compose config, and `--no-recreate` is not implemented there. The
-# image reference is part of that config, so the pulled image is tagged with the
-# constant name $local_image and only that name is handed to compose: the hash
-# then changes only when compose.prod.yml itself changes.
+# `up` of podman-compose tears every container of the project down when the
+# config hash of an existing one differs. 1.3 ignores `--no-deps` when it picks
+# those containers, so the database is stopped and recreated (seen in
+# production); 1.4 honors it. `--no-recreate` is not implemented in 1.3 and 1.4.
+# The image reference is part of the config, so the pulled image is tagged with
+# the constant name $local_image and only that name is handed to compose: the
+# hash then changes only when compose.prod.yml itself changes. The first deploy
+# after switching from per-deploy image names still restarts the database once.
 set -euo pipefail
 
 cd "$(dirname "$0")"
