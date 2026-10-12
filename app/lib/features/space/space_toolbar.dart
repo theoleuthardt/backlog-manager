@@ -10,6 +10,7 @@ import 'package:backlog_manager/design/widgets/sheet.dart';
 import 'package:backlog_manager/design/widgets/toast.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/domain/space.dart';
+import 'package:backlog_manager/features/common/user_avatar.dart';
 import 'package:backlog_manager/features/space/invite_form.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,7 +27,7 @@ class MemberAvatars extends StatelessWidget {
     final me = space.members.where((member) => member.isMe).firstOrNull;
     final partner = space.partner;
 
-    Widget avatar(String username, Color color) => DecoratedBox(
+    Widget avatar(SpaceMember member, Color color) => DecoratedBox(
       decoration: BoxDecoration(
         color: color,
         shape: BoxShape.circle,
@@ -35,17 +36,22 @@ class MemberAvatars extends StatelessWidget {
       child: SizedBox(
         width: 28,
         height: 28,
-        child: Center(
-          child: Text(
-            memberInitials(username),
-            style: Theme.of(context)
-                .extension<ShelfTextStyles>()!
-                .caption
-                .copyWith(
-                  color: tokens.onAccent,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 11,
-                ),
+        child: UserAvatar(
+          userId: member.userId,
+          version: member.avatarUpdatedAt,
+          size: 24,
+          fallback: Center(
+            child: Text(
+              memberInitials(member.username),
+              style: Theme.of(context)
+                  .extension<ShelfTextStyles>()!
+                  .caption
+                  .copyWith(
+                    color: tokens.onAccent,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 11,
+                  ),
+            ),
           ),
         ),
       ),
@@ -57,9 +63,9 @@ class MemberAvatars extends StatelessWidget {
       height: 28,
       child: Stack(
         children: [
-          if (me != null) avatar(me.username, tokens.accent),
+          if (me != null) avatar(me, tokens.accent),
           if (partner != null)
-            Positioned(left: 18, child: avatar(partner.username, tokens.info)),
+            Positioned(left: 18, child: avatar(partner, tokens.info)),
         ],
       ),
     );

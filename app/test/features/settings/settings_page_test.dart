@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/app.dart';
 import 'package:backlog_manager/auth/auth_api.dart';
@@ -5,6 +7,8 @@ import 'package:backlog_manager/auth/token_store.dart';
 import 'package:backlog_manager/auth/user_api.dart';
 import 'package:backlog_manager/design/background_motion.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
+import 'package:backlog_manager/platform/csv_file_picker.dart';
+import 'package:backlog_manager/platform/image_file_picker.dart';
 import 'package:backlog_manager/platform/url_opener.dart';
 import 'package:backlog_manager/routing/router.dart';
 import 'package:backlog_manager/routing/session.dart';
@@ -235,6 +239,51 @@ void main() {
       expect(settings.users.updates.single.defaultSort, 'playtime');
       expect(find.text('Default sort saved'), findsOneWidget);
       expect(find.text('Saved'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('chooses a profile picture, crops it and removes it again', (
+      tester,
+    ) async {
+      final source = (await tester.runAsync(() async {
+        final recorder = ui.PictureRecorder();
+        ui.Canvas(recorder).drawRect(
+          const ui.Rect.fromLTWH(0, 0, 300, 200),
+          ui.Paint()..color = const ui.Color(0xFF3366CC),
+        );
+        final image = await recorder.endRecording().toImage(300, 200);
+        return (await image.toByteData(format: ui.ImageByteFormat.png))!.buffer
+            .asUint8List();
+      }))!;
+      final settings = await openSettings(
+        tester,
+        overrides: [
+          imageFilePickerProvider.overrideWithValue(
+            _OneFilePicker(
+              PickedFile(name: 'me.png', readBytes: () async => source),
+            ),
+          ),
+        ],
+      );
+      expect(find.byKey(const Key('profile-picture-remove')), findsNothing);
+
+      await tester.runAsync(() async {
+        await tester.tap(find.byKey(const Key('profile-picture-choose')));
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+      });
+      await tester.pumpAndSettle();
+
+      final upload = settings.users.avatarUploads.single;
+      expect(upload.sublist(0, 4), [0x89, 0x50, 0x4e, 0x47]);
+      expect(find.text('Profile picture saved'), findsOneWidget);
+      expect(find.byKey(const Key('profile-picture-remove')), findsOneWidget);
+      await tester.pump(const Duration(seconds: 6));
+
+      await tester.tap(find.byKey(const Key('profile-picture-remove')));
+      await tester.pumpAndSettle();
+
+      expect(settings.users.avatarRemovals, 1);
+      expect(find.byKey(const Key('profile-picture-remove')), findsNothing);
       await tester.pump(const Duration(seconds: 6));
     });
 
@@ -632,4 +681,13 @@ void main() {
       );
     });
   }
+}
+
+class _OneFilePicker implements ImageFilePicker {
+  _OneFilePicker(this.file);
+
+  final PickedFile file;
+
+  @override
+  Future<PickedFile?> pick() async => file;
 }

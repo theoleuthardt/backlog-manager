@@ -10,6 +10,8 @@ SessionUser sessionUserFrom(wire.PublicUser user) {
     name: user.name,
     email: user.email,
     setupCompleted: user.setupCompleted,
+    id: user.id,
+    avatarUpdatedAt: user.avatarUpdatedAt,
     defaultSort: user.defaultSort,
     steamId: user.steamId ?? '',
     steamFamilyIds: user.steamFamilyIds ?? '',

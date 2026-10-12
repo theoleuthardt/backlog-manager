@@ -31,6 +31,7 @@ class PublicUser {
     this.steamWishlistImportedAt,
     this.steamFamilyIds,
     this.customThemes,
+    this.avatarUpdatedAt,
   });
 
   factory PublicUser.fromJson(Map<String, Object?> json) =>
@@ -72,6 +73,8 @@ class PublicUser {
   final String theme;
   @JsonKey(name: 'custom_themes')
   final List<CustomTheme>? customThemes;
+  @JsonKey(name: 'avatar_updated_at')
+  final DateTime? avatarUpdatedAt;
 
   Map<String, Object?> toJson() => _$PublicUserToJson(this);
 }

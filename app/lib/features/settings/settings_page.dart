@@ -17,6 +17,7 @@ import 'package:backlog_manager/design/widgets/toggles.dart';
 import 'package:backlog_manager/domain/sort_entries.dart';
 import 'package:backlog_manager/features/common/debouncer.dart';
 import 'package:backlog_manager/features/settings/backups_tab.dart';
+import 'package:backlog_manager/features/settings/profile_picture_row.dart';
 import 'package:backlog_manager/features/settings/security_tab.dart';
 import 'package:backlog_manager/features/settings/settings_controller.dart';
 import 'package:backlog_manager/features/settings/settings_widgets.dart';
@@ -352,6 +353,14 @@ class _GeneralTab extends ConsumerWidget {
         ShelfFormGroup(
           title: 'Account',
           rows: [
+            ShelfFormRow(
+              label: 'Profile Picture',
+              description:
+                  'Shown in the sidebar and, in a Shared Space, to the other '
+                  'member. A PNG, JPEG or WebP picture; it is cropped to a '
+                  'square.',
+              control: ProfilePictureControl(user: user),
+            ),
             ShelfFormRow(
               label: 'Signed in as',
               control: Column(

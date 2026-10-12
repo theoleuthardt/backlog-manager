@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/auth/auth_api.dart';
 import 'package:backlog_manager/auth/auth_controller.dart';
@@ -27,6 +29,35 @@ class FakeUserApi implements UserApi {
           ),
         );
   }
+
+  final avatarUploads = <Uint8List>[];
+  var avatarRemovals = 0;
+
+  @override
+  Future<SessionUser> setAvatar(Uint8List bytes, String contentType) async {
+    avatarUploads.add(bytes);
+    return SessionUser(
+      name: 'Theo',
+      email: 't@e.de',
+      setupCompleted: true,
+      id: 1,
+      avatarUpdatedAt: DateTime.utc(2026, 10, 12, 10),
+    );
+  }
+
+  @override
+  Future<SessionUser> removeAvatar() async {
+    avatarRemovals++;
+    return const SessionUser(
+      name: 'Theo',
+      email: 't@e.de',
+      setupCompleted: true,
+      id: 1,
+    );
+  }
+
+  @override
+  Future<Uint8List?> avatar(int userId) async => null;
 }
 
 void main() {

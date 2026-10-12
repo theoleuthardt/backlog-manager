@@ -301,6 +301,20 @@ abstract class FallbackClient {
   @DELETE('/api/user/me')
   Future<void> apiUserMeDeleteOwnUser();
 
+  /// PutOwnAvatar
+  @PUT('/api/user/avatar')
+  Future<void> apiUserAvatarPutOwnAvatar();
+
+  /// DeleteOwnAvatar
+  @DELETE('/api/user/avatar')
+  Future<void> apiUserAvatarDeleteOwnAvatar();
+
+  /// GetAvatar
+  @GET('/api/user/{user_id}/avatar')
+  Future<String> apiUserUserIdAvatarGetAvatar({
+    @Path('user_id') required int userId,
+  });
+
   /// GetUserByUsername
   @GET('/api/user/by-username/{username}')
   Future<PublicUsername> apiUserByUsernameGetUserByUsername({

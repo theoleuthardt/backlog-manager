@@ -1,0 +1,27 @@
+meta {
+  name: Upload Profile Picture
+  type: http
+  seq: 16
+}
+
+put {
+  url: {{backendUrl}}/api/user/avatar
+  body: file
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:file {
+  file: @file(avatar.png) @contentType(image/png)
+}
+
+docs {
+  Sets or replaces the logged-in user's profile picture. The body is the
+  raw image, Content-Type image/png, image/jpeg or image/webp, at most
+  512 KB; the bytes must be that format. Answers 204. The profile
+  (`avatar_updated_at`) then carries the version of the picture. Run
+  auth/Login first and put an avatar.png next to this file.
+}

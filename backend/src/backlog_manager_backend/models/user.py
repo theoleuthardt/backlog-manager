@@ -46,5 +46,6 @@ class User(Base):
     custom_themes: Mapped[list[dict[str, Any]]] = mapped_column(
         "CustomThemes", JSONB, server_default=text("'[]'::jsonb")
     )
+    avatar_updated_at: Mapped[datetime | None] = mapped_column("AvatarUpdatedAt")
     created_at: Mapped[datetime] = mapped_column("CreatedAt", server_default=TIMESTAMP_DEFAULT)
     updated_at: Mapped[datetime] = mapped_column("UpdatedAt", server_default=TIMESTAMP_DEFAULT)

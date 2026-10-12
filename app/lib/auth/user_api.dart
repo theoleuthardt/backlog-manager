@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:backlog_manager/api/api_providers.dart';
 import 'package:backlog_manager/api/generated/export.dart' hide CustomTheme;
 import 'package:backlog_manager/auth/session_user_mapper.dart';
@@ -61,6 +63,17 @@ class UserUpdate {
 abstract interface class UserApi {
   /// Saves [update] and returns the user as it is now.
   Future<SessionUser> update(UserUpdate update);
+
+  /// Sets the profile picture (PNG, JPEG or WebP, at most 512 KB) and returns
+  /// the user as it is now.
+  Future<SessionUser> setAvatar(Uint8List bytes, String contentType);
+
+  /// Removes the profile picture and returns the user as it is now.
+  Future<SessionUser> removeAvatar();
+
+  /// The picture of the user [userId] (the caller or the partner of the
+  /// Shared Space), or null when there is none or it may not be read.
+  Future<Uint8List?> avatar(int userId);
 }
 
 class ApiUserApi implements UserApi {
@@ -75,6 +88,44 @@ class ApiUserApi implements UserApi {
       data: update.toJson(),
     );
     return sessionUserFrom(PublicUser.fromJson(response.data!));
+  }
+
+  Future<SessionUser> _own() async {
+    final response = await (await _dio()).get<Map<String, dynamic>>(
+      '/api/user/me',
+    );
+    return sessionUserFrom(PublicUser.fromJson(response.data!));
+  }
+
+  @override
+  Future<SessionUser> setAvatar(Uint8List bytes, String contentType) async {
+    await (await _dio()).put<void>(
+      '/api/user/avatar',
+      data: bytes,
+      options: Options(contentType: contentType),
+    );
+    return _own();
+  }
+
+  @override
+  Future<SessionUser> removeAvatar() async {
+    await (await _dio()).delete<void>('/api/user/avatar');
+    return _own();
+  }
+
+  @override
+  Future<Uint8List?> avatar(int userId) async {
+    try {
+      final response = await (await _dio()).get<List<int>>(
+        '/api/user/$userId/avatar',
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final data = response.data;
+      return data == null ? null : Uint8List.fromList(data);
+    } on DioException catch (error) {
+      if (error.response?.statusCode == 404) return null;
+      rethrow;
+    }
   }
 }
 

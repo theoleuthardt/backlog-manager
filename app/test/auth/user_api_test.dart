@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:backlog_manager/api/api_client.dart';
 import 'package:backlog_manager/auth/user_api.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -115,6 +117,55 @@ void main() {
 
       expect(user.setupCompleted, isTrue);
       expect(user.name, 'Theo');
+    });
+  });
+
+  group('ApiUserApi profile picture', () {
+    final png = Uint8List.fromList([0x89, 0x50, 0x4e, 0x47, 1, 2, 3]);
+
+    test('puts the raw bytes with their type and returns the user', () async {
+      final server = FakeServer(
+        (options) => options.method == 'PUT'
+            ? (status: 204, body: null)
+            : (
+                status: 200,
+                body: {
+                  ...userJson(),
+                  'avatar_updated_at': '2026-10-12T10:00:00.123456',
+                },
+              ),
+      );
+
+      final user = await apiFor(server).setAvatar(png, 'image/png');
+
+      final put = server.requests.first;
+      expect(put.method, 'PUT');
+      expect(put.path, '/api/user/avatar');
+      expect(put.contentType, 'image/png');
+      expect(put.data, png);
+      expect(server.requests.last.path, '/api/user/me');
+      expect(user.avatarUpdatedAt, isNotNull);
+    });
+
+    test('deletes the picture and returns the user', () async {
+      final server = FakeServer(
+        (options) => options.method == 'DELETE'
+            ? (status: 204, body: null)
+            : (status: 200, body: userJson()),
+      );
+
+      final user = await apiFor(server).removeAvatar();
+
+      expect(server.requests.first.method, 'DELETE');
+      expect(server.requests.first.path, '/api/user/avatar');
+      expect(user.avatarUpdatedAt, isNull);
+    });
+
+    test('a user without a readable picture is null', () async {
+      final server = FakeServer((_) => (status: 404, body: {'detail': 'x'}));
+
+      expect(await apiFor(server).avatar(7), isNull);
+      expect(server.requests.single.path, '/api/user/7/avatar');
     });
   });
 }
