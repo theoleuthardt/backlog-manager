@@ -20,7 +20,8 @@ backend image; anything else is refused.
    (`BLM_FORCE=1` redeploys it)
 4. removes only `blm_backend` (with its dependents, the two cron containers,
    which podman ties to it) and recreates the backend and the cron containers
-   with `up -d --no-deps`; the database is never touched
+   with `up -d --no-deps --no-recreate`; the database is never touched (without
+   `--no-recreate` this podman-compose recreates every existing container)
 5. verifies the three containers run, the backend runs the requested image,
    `/health` answers and Alembic is at the head; the exit code of
    `podman-compose up` is not trusted because 1.x also complains about the

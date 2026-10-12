@@ -12,6 +12,8 @@
 # image and the backup instead. podman-compose 1.x tries to create the database
 # container again on `up` and reports an error although the service started, so
 # the result of `up` is not trusted and the containers are verified instead.
+# `up` also recreates containers that already exist, the database included,
+# unless `--no-recreate` is given, so that flag is always passed.
 set -euo pipefail
 
 cd "$(dirname "$0")"
@@ -68,7 +70,7 @@ previous=$(cat .deployed-image 2>/dev/null || true)
 echo "deploy: replacing the backend and the cron containers"
 podman rm --force --depend --ignore blm_backend >/dev/null 2>&1 || true
 podman rm --force --depend --ignore blm_backend-old >/dev/null 2>&1 || true
-BACKEND_IMAGE="$ref" podman compose -f compose.prod.yml up -d --no-deps \
+BACKEND_IMAGE="$ref" podman compose -f compose.prod.yml up -d --no-deps --no-recreate \
   backend price-check-cron steam-wishlist-sync-cron \
   || echo "deploy: compose reported errors, verifying the containers instead"
 
