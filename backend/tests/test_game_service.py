@@ -415,6 +415,83 @@ async def test_search_enriches_description_and_publisher(
     assert results[0].publisher == "Matt Makes Games"
 
 
+def _patch_publisher_lookup(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch, *, companies_fail: bool
+) -> None:
+    async def search_game(
+        search_term: str, client_id: str, access_token: str
+    ) -> list[IGDBSearchResult]:
+        return [IGDBSearchResult(id=1, game=1, name="Celeste")]
+
+    async def games(game_ids: list[int], client_id: str, access_token: str) -> list[IGDBGameData]:
+        return [
+            IGDBGameData(
+                id=1, name="Celeste", cover=None, genres=[], platforms=[], involved_companies=[9002]
+            )
+        ]
+
+    async def involved(
+        ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBInvolvedCompany]:
+        return [IGDBInvolvedCompany(id=9002, company=802, developer=False, publisher=True)]
+
+    async def companies(ids: list[int], client_id: str, access_token: str) -> list[IGDBCompany]:
+        if companies_fail:
+            raise httpx.HTTPStatusError(
+                "400", request=httpx.Request("POST", "https://x"), response=httpx.Response(400)
+            )
+        return [IGDBCompany(id=802, name="Matt Makes Games")]
+
+    async def time_to_beat(
+        ids: list[int], client_id: str, access_token: str
+    ) -> list[IGDBGameTimeToBeat]:
+        return [IGDBGameTimeToBeat(id=1, game_id=1, normally=3600)]
+
+    async def token(client_id: str, client_secret: str) -> str:
+        return "tok"
+
+    monkeypatch.setattr(game_service, "search_game_on_igdb", search_game)
+    monkeypatch.setattr(game_service, "get_games_on_igdb", games)
+    monkeypatch.setattr(game_service, "get_involved_companies_on_igdb", involved)
+    monkeypatch.setattr(game_service, "get_companies_on_igdb", companies)
+    monkeypatch.setattr(game_service, "get_games_time_to_beat_on_igdb", time_to_beat)
+    monkeypatch.setattr(game_service, "get_valid_token", token)
+
+
+async def test_a_failed_company_lookup_leaves_the_publisher_empty_for_a_search(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _patch_publisher_lookup(game_service, monkeypatch, companies_fail=True)
+
+    results = await game_service.search("Celeste", "cid", "secret", None)
+
+    assert results[0].title == "Celeste"
+    assert results[0].publisher is None
+
+
+async def test_a_failed_company_lookup_is_no_match_for_the_igdb_sync(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The sync stores an empty publisher for "the game has none", so a
+    lookup that failed must not look like that."""
+    _patch_publisher_lookup(game_service, monkeypatch, companies_fail=True)
+
+    match = await game_service.find_igdb_match("Celeste", ("cid", "secret"), include_publisher=True)
+
+    assert match is None
+
+
+async def test_the_igdb_sync_match_carries_the_publisher_when_the_lookup_works(
+    game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _patch_publisher_lookup(game_service, monkeypatch, companies_fail=False)
+
+    match = await game_service.find_igdb_match("Celeste", ("cid", "secret"), include_publisher=True)
+
+    assert match is not None
+    assert match.publisher == "Matt Makes Games"
+
+
 async def test_search_batches_multiple_results_into_one_call_each(
     game_service: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:

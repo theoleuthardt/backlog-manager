@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import BigInteger, CheckConstraint, ForeignKey, Index, text
+from sqlalchemy import BigInteger, CheckConstraint, ForeignKey, Index, String, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backlog_manager_backend.models import TIMESTAMP_DEFAULT, Base
@@ -56,7 +56,7 @@ class BacklogEntry(Base):
     image_link: Mapped[str | None] = mapped_column("ImageLink")
     description: Mapped[str | None] = mapped_column("Description")
     trailer_link: Mapped[str | None] = mapped_column("TrailerLink")
-    publisher: Mapped[str | None] = mapped_column("Publisher")
+    publisher: Mapped[str | None] = mapped_column("Publisher", String(255))
     main_time: Mapped[Decimal | None] = mapped_column("MainTime")
     main_plus_extra_time: Mapped[Decimal | None] = mapped_column("MainPlusExtraTime")
     completion_time: Mapped[Decimal | None] = mapped_column("CompletionTime")

@@ -832,6 +832,7 @@ async def test_entry_publisher_is_created_updated_and_cleared(
         kept = client.put(
             f"/api/backlog/entries/{entry_id}", headers=headers, json={"status": "Completed"}
         )
+        listed_while_set = client.get("/api/backlog/entries", headers=headers).json()
         changed = client.put(
             f"/api/backlog/entries/{entry_id}", headers=headers, json={"publisher": "Annapurna"}
         )
@@ -843,6 +844,10 @@ async def test_entry_publisher_is_created_updated_and_cleared(
     assert without.json()["publisher"] is None
     assert created.json()["publisher"] == "Supergiant Games"
     assert kept.json()["publisher"] == "Supergiant Games"
+    assert {entry["title"]: entry["publisher"] for entry in listed_while_set} == {
+        "Celeste": None,
+        "Hades": "Supergiant Games",
+    }
     assert changed.json()["publisher"] == "Annapurna"
     assert cleared.json()["publisher"] is None
     assert {entry["title"]: entry["publisher"] for entry in listed} == {

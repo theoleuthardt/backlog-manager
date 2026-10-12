@@ -297,6 +297,7 @@ async def _enrich_search_results(
     include_platforms: bool = True,
     include_publisher: bool = True,
     deep: bool = False,
+    strict_publisher: bool = False,
 ) -> list[EnrichedResult]:
     """Batches every IGDB lookup needed to enrich a page of search
     results into (at most) one request per data type, instead of one
@@ -425,6 +426,8 @@ async def _enrich_search_results(
                     _involved_company_cache[involved_company.id] = involved_company
             except httpx.HTTPError:
                 logger.error("Failed to fetch involved companies batch")
+                if strict_publisher:
+                    raise
 
         publisher_company_ids = {
             involved.company
@@ -446,6 +449,8 @@ async def _enrich_search_results(
                         _company_cache[company.id] = company.name
             except httpx.HTTPError:
                 logger.error("Failed to fetch companies batch")
+                if strict_publisher:
+                    raise
 
     time_to_beat_by_game_id: dict[int, tuple[int, float, float, float]] = {}
     uncached_time_to_beat_ids = [game.id for game in games if game.id not in _time_to_beat_cache]
@@ -563,6 +568,7 @@ async def search(
     include_platforms: bool = True,
     include_publisher: bool = True,
     deep: bool = False,
+    strict_publisher: bool = False,
 ) -> list[EnrichedResult]:
     """Enriched search: finds games on IGDB, then fills in cover image,
     genres, platforms and beat-time data (falling back to HowLongToBeat
@@ -581,6 +587,9 @@ async def search(
     `limit`/`include_genres`/`include_platforms`/`include_publisher` let
     a caller that only needs the top match and a subset of its data
     skip the rest of the work - see _enrich_search_results's docstring.
+    `strict_publisher` lets a failed company lookup raise instead of
+    leaving `publisher` empty, for a caller that must tell "the game has no
+    publisher" from "the lookup failed" (the retroactive IGDB sync).
 
     `deep` is the "search more" mode for a title the normal search
     misses: it additionally searches the punctuation-free term and a
@@ -612,6 +621,7 @@ async def search(
         include_genres=include_genres,
         include_platforms=include_platforms,
         include_publisher=include_publisher,
+        strict_publisher=strict_publisher,
     )
 
 
@@ -622,9 +632,11 @@ async def find_igdb_match(
     title, for imports and the retroactive IGDB sync. SteamGridDB is
     skipped (Steam's own cover is preferred), as are platforms, and the
     publisher unless `include_publisher` asks for it (the retroactive
-    IGDB sync does; imports don't need the extra company lookups). No credentials,
-    an IGDB outage and a title without a hit all resolve to None so the
-    caller keeps working with what it has."""
+    IGDB sync does; imports don't need the extra company lookups, and a
+    failed company lookup then resolves to None: the match would claim the
+    game has no publisher). No credentials, an IGDB outage and a title
+    without a hit all resolve to None so the caller keeps working with
+    what it has."""
     if igdb_credentials is None:
         return None
     client_id, client_secret = igdb_credentials
@@ -637,6 +649,7 @@ async def find_igdb_match(
             limit=1,
             include_platforms=False,
             include_publisher=include_publisher,
+            strict_publisher=include_publisher,
         )
     except (httpx.HTTPError, RuntimeError):
         return None

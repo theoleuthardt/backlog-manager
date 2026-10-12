@@ -254,6 +254,34 @@ async def test_restore_keeps_the_publisher(
     assert restored.publisher == "Supergiant Games"
 
 
+async def test_restoring_a_snapshot_made_before_the_publisher_leaves_it_empty(
+    backup_service: ModuleType, session: AsyncSession
+) -> None:
+    from sqlalchemy import select
+
+    from backlog_manager_backend.models.user_backup import UserBackup
+
+    user = await _make_user(session, "restoreoldsnapshot")
+    await _make_entry(session, user.id, "Hades", publisher="Supergiant Games")
+    backup = await backup_service.create_manual_backup(session, user.id)
+    row = (await session.execute(select(UserBackup).where(UserBackup.id == backup.id))).scalar_one()
+    payload = {
+        **row.payload,
+        "entries": [
+            {key: value for key, value in entry.items() if key != "publisher"}
+            for entry in row.payload["entries"]
+        ],
+    }
+    row.payload = payload
+    await session.commit()
+    await backlog_entry_repo.delete_backlog_entries_by_user(session, user.id)
+
+    await backup_service.restore_backup(session, user.id, backup.id)
+
+    [restored] = await backlog_entry_repo.get_backlog_entries_by_user(session, user.id)
+    assert restored.publisher is None
+
+
 async def test_restore_first_takes_a_safety_backup_that_undoes_the_restore(
     backup_service: ModuleType, session: AsyncSession
 ) -> None:

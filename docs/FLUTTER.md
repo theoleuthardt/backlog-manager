@@ -299,7 +299,7 @@ Two reusable sheets for the Steam data of a game; the inspector (#264) and the c
 - Tabs: Overview (genre and platform as comma-separated fields, the description), Progress (HowLongToBeat bars against the playtime, then the achievements), Review (the note; stars and review text only for the status Completed, otherwise "Set the status to Completed to write a review") and Trailer (a play card that opens the YouTube video in the browser, "No trailer available for this game." otherwise). Footer: Delete with the usual confirmation.
 - Autosave (`EntryAutosave`): the fields that differ from the stored entry (`diffEntryForm`: image link, playtime, genre, platform, status, owned, interest, review stars, review, note) are saved 800 ms after the last change; edits during a running save are saved by the next one; closing saves what is pending; a failed save shows "Not saved" and a toast. Title, description and times change only through "wrong game".
 - When the stored entry changes while the inspector is open (a drag to another group, a sync) the fields the user has not touched follow it (`rebaseForm`), so the autosave never writes the old value back and the inspector stays open when the game moves between groups.
-- Footer: Delete, "Wrong game?" and "Change cover" (the sheets below). Not here yet: the publisher line (#293) and "synced 2 h ago" (#268). The trailer plays in a sheet (see "Trailer player").
+- Footer: Delete, "Wrong game?" and "Change cover" (the sheets below). Not here yet: "synced 2 h ago" (#268). The trailer plays in a sheet (see "Trailer player").
 
 ### Trailer player
 
