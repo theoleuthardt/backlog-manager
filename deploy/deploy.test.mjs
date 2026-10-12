@@ -13,8 +13,10 @@ const SHA = "0123456789abcdef0123456789abcdef01234567";
 const FAKE_PODMAN = `#!/usr/bin/env bash
 state="$FAKE_DIR/state"
 echo "$*" >> "$FAKE_DIR/calls"
+[ "$1" = compose ] && echo "BACKEND_IMAGE=$BACKEND_IMAGE" >> "$FAKE_DIR/calls"
 case "$1" in
   pull) exit 0 ;;
+  tag) exit 0 ;;
   image) echo "$(cat "$state/new-id")" ;;
   inspect)
     format="$3"; name="$4"
@@ -89,6 +91,14 @@ describe("deploy.sh", () => {
     assert.doesNotMatch(result.calls, /rm .*blm_db/);
     assert.match(result.calls, /up -d --no-deps --no-recreate backend price-check-cron steam-wishlist-sync-cron/);
     assert.ok(existsSync(join(env.dir, "calls-backup")), "backup ran");
+  });
+
+  it("hands compose a constant image name so the config hash does not change per deploy", () => {
+    const first = run(env, [SHA]);
+    assert.equal(first.status, 0, first.stderr);
+    assert.match(first.calls, new RegExp(`tag ${REPO}:${SHA} localhost/backlog-manager-backend:deployed`));
+    assert.match(first.calls, /BACKEND_IMAGE=localhost\/backlog-manager-backend:deployed/);
+    assert.doesNotMatch(first.calls, new RegExp(`BACKEND_IMAGE=${REPO}`));
   });
 
   it("takes the image from SSH_ORIGINAL_COMMAND and uses its last word", () => {

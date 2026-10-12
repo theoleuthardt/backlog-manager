@@ -18,10 +18,16 @@ backend image; anything else is refused.
 2. runs `backup.sh`; a failing backup aborts before anything is changed
 3. pulls the image; when it is the one already running the script stops
    (`BLM_FORCE=1` redeploys it)
-4. removes only `blm_backend` (with its dependents, the two cron containers,
+4. tags the pulled image as `localhost/backlog-manager-backend:deployed`,
+   removes only `blm_backend` (with its dependents, the two cron containers,
    which podman ties to it) and recreates the backend and the cron containers
-   with `up -d --no-deps --no-recreate`; the database is never touched (without
-   `--no-recreate` this podman-compose recreates every existing container)
+   with `up -d --no-deps --no-recreate`. The constant local name matters:
+   podman-compose 1.3/1.4 tears the **whole** project down, the database
+   included, when the config hash of an existing container differs, and the
+   image reference is part of that config. With a constant name the database
+   container keeps running across deployments; it is only restarted when
+   `compose.prod.yml` itself changes (the data stays in the
+   `blm_postgres_data` volume either way).
 5. verifies the three containers run, the backend runs the requested image,
    `/health` answers and Alembic is at the head; the exit code of
    `podman-compose up` is not trusted because 1.x also complains about the

@@ -12,8 +12,12 @@
 # image and the backup instead. podman-compose 1.x tries to create the database
 # container again on `up` and reports an error although the service started, so
 # the result of `up` is not trusted and the containers are verified instead.
-# `up` also recreates containers that already exist, the database included,
-# unless `--no-recreate` is given, so that flag is always passed.
+# `up` of podman-compose 1.3 and 1.4 tears the whole project down, the database
+# included, when the config hash of an existing container differs from the
+# current compose config, and `--no-recreate` is not implemented there. The
+# image reference is part of that config, so the pulled image is tagged with the
+# constant name $local_image and only that name is handed to compose: the hash
+# then changes only when compose.prod.yml itself changes.
 set -euo pipefail
 
 cd "$(dirname "$0")"
@@ -22,6 +26,7 @@ image_repo="ghcr.io/theoleuthardt/backlog-manager-backend"
 backup_script="${BLM_BACKUP_SCRIPT:-./backup.sh}"
 health_timeout="${BLM_HEALTH_TIMEOUT:-120}"
 health_interval="${BLM_HEALTH_INTERVAL:-3}"
+local_image="localhost/backlog-manager-backend:deployed"
 services=(blm_backend blm_price-check-cron blm_steam-wishlist-sync-cron)
 
 fail() {
@@ -70,7 +75,8 @@ previous=$(cat .deployed-image 2>/dev/null || true)
 echo "deploy: replacing the backend and the cron containers"
 podman rm --force --depend --ignore blm_backend >/dev/null 2>&1 || true
 podman rm --force --depend --ignore blm_backend-old >/dev/null 2>&1 || true
-BACKEND_IMAGE="$ref" podman compose -f compose.prod.yml up -d --no-deps --no-recreate \
+podman tag "$ref" "$local_image"
+BACKEND_IMAGE="$local_image" podman compose -f compose.prod.yml up -d --no-deps --no-recreate \
   backend price-check-cron steam-wishlist-sync-cron \
   || echo "deploy: compose reported errors, verifying the containers instead"
 
