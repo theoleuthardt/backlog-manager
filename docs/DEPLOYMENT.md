@@ -22,7 +22,7 @@ backend image; anything else is refused.
    which podman ties to it) and recreates the backend and the cron containers
    with `up -d --no-deps`; the database is never touched
 5. verifies the three containers run, the backend runs the requested image,
-   `/api/health` answers and Alembic is at the head; the exit code of
+   `/health` answers and Alembic is at the head; the exit code of
    `podman-compose up` is not trusted because 1.x also complains about the
    already existing database container
 

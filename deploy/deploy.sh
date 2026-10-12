@@ -82,9 +82,10 @@ if [ "$healthy" = 0 ]; then
 fi
 
 waited=0
+[ "$healthy" != 0 ] || echo "deploy: waiting for the backend (up to ${health_timeout}s)"
 while [ "$healthy" = 0 ]; do
   if podman exec blm_backend python -c \
-      "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3)" \
+      "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)" \
       >/dev/null 2>&1 \
     && podman exec blm_backend alembic current 2>/dev/null | grep -q '(head)'; then
     break
