@@ -129,6 +129,22 @@ void main() {
         await tester.pumpWidget(const SizedBox());
       });
 
+      testWidgets('they redraw at most 30 times per second', (tester) async {
+        await mount(tester);
+        var previous = lightCenter(tester, 'cover-glow-light-a');
+        var redraws = 0;
+
+        for (var frame = 0; frame < 60; frame++) {
+          await tester.pump(const Duration(microseconds: 16667));
+          final current = lightCenter(tester, 'cover-glow-light-a');
+          if (current != previous) redraws++;
+          previous = current;
+        }
+
+        expect(redraws, inInclusiveRange(20, 31));
+        await tester.pumpWidget(const SizedBox());
+      });
+
       testWidgets('they stand still when the setting is off', (tester) async {
         await mount(
           tester,

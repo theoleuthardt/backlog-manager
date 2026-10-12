@@ -443,6 +443,21 @@ class _GeneralTab extends ConsumerWidget {
               ),
             ),
             ShelfFormRow(
+              label: 'Blur Effects',
+              description:
+                  'Blurs what is behind the sidebar, the title bar and the '
+                  'details. Switch it off on a slow graphics card: it is the '
+                  'costliest part of the window. Kept on this device.',
+              control: ShelfSwitch(
+                key: const Key('settings-blur-effects'),
+                value: ref.watch(blurEffectsProvider),
+                label: 'Blur Effects',
+                onChanged: (value) => ref
+                    .read(blurEffectsProvider.notifier)
+                    .setEnabled(enabled: value),
+              ),
+            ),
+            ShelfFormRow(
               label: 'Appearance',
               description: 'Themes and your own colours.',
               control: ShelfButton(

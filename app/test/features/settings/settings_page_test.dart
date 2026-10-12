@@ -305,6 +305,24 @@ void main() {
       expect(container.read(glowMotionProvider), isTrue);
     });
 
+    testWidgets('turns the blur effects off and on', (tester) async {
+      await openSettings(tester);
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(MaterialApp)),
+      );
+      expect(container.read(blurEffectsProvider), isTrue);
+
+      final toggle = find.byKey(const Key('settings-blur-effects'));
+      await tester.ensureVisible(toggle);
+      await tester.tap(toggle);
+      await tester.pumpAndSettle();
+      expect(container.read(blurEffectsProvider), isFalse);
+
+      await tester.tap(toggle);
+      await tester.pumpAndSettle();
+      expect(container.read(blurEffectsProvider), isTrue);
+    });
+
     testWidgets('offers all seven sort options', (tester) async {
       await openSettings(tester);
 

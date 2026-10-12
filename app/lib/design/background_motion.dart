@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const _backgroundKey = 'blm-animated-background';
 const _glowKey = 'blm-animated-glow';
+const _blurKey = 'blm-blur-effects';
 
 /// Keeps on the device whether a motion of the window is on (the sky, the glow
 /// of a cover). A store that cannot be read or written is ignored.
@@ -83,4 +84,15 @@ final glowMotionStoreProvider = Provider<BackgroundMotionStore>(
 /// Whether the glow behind the cover in the details drifts and breathes.
 final glowMotionProvider = NotifierProvider<BackgroundMotionNotifier, bool>(
   () => BackgroundMotionNotifier(glowMotionStoreProvider),
+);
+
+final blurEffectsStoreProvider = Provider<BackgroundMotionStore>(
+  (ref) => const PreferencesBackgroundMotionStore(_blurKey),
+);
+
+/// Whether the glass of the window blurs what is behind it. On by default;
+/// turning it off is the first thing for a slow graphics card, since the blur
+/// behind a moving sky is the costliest part of the window.
+final blurEffectsProvider = NotifierProvider<BackgroundMotionNotifier, bool>(
+  () => BackgroundMotionNotifier(blurEffectsStoreProvider),
 );

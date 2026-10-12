@@ -8,9 +8,14 @@ import 'package:flutter/scheduler.dart';
 
 /// Drifting, pulsing neon orbs for the Freaky theme, tinted with the accent
 /// and the glow colour of the theme and added onto what is behind them. It
-/// paints on every frame and takes no part in layout or in hit testing.
+/// paints at 30 frames per second at most and takes no part in layout or in
+/// hit testing.
 /// One frame of a 60 Hz screen in microseconds.
 const _frameMicroseconds = 1000000 / 60;
+
+/// The frames of a 60 Hz screen that pass between two paints, a tenth short so
+/// that display jitter does not skip one: the orbs paint at 30 fps at most.
+const _paintEveryFrames = 2 * 0.95;
 
 class FreakyOrbs extends StatefulWidget {
   const FreakyOrbs({this.random, super.key});
@@ -27,6 +32,7 @@ class _FreakyOrbsState extends State<FreakyOrbs>
   late final Ticker _ticker;
   final _frame = ValueNotifier<double>(0);
   Duration _last = Duration.zero;
+  double _pending = 0;
   List<Orb>? _orbs;
   Size2 _size = const Size2(0, 0);
 
@@ -34,8 +40,11 @@ class _FreakyOrbsState extends State<FreakyOrbs>
   void initState() {
     super.initState();
     _ticker = createTicker((elapsed) {
-      final frames = (elapsed - _last).inMicroseconds / _frameMicroseconds;
+      _pending += (elapsed - _last).inMicroseconds / _frameMicroseconds;
       _last = elapsed;
+      if (_pending < _paintEveryFrames) return;
+      final frames = _pending;
+      _pending = 0;
       final orbs = _orbs;
       if (orbs != null) {
         for (final orb in orbs) {
