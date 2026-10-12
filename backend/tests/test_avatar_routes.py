@@ -102,7 +102,7 @@ async def test_a_picture_over_the_limit_is_refused(postgres_url: str, create_and
         big = _put(client, headers, PNG + b"\x00" * MAX_BYTES)
         exact = _put(client, headers, PNG + b"\x00" * (MAX_BYTES - len(PNG)))
 
-    assert big.status_code == 400
+    assert big.status_code == 413
     assert exact.status_code == 204
 
 

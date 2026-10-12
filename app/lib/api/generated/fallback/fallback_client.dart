@@ -301,7 +301,9 @@ abstract class FallbackClient {
   @DELETE('/api/user/me')
   Future<void> apiUserMeDeleteOwnUser();
 
-  /// PutOwnAvatar
+  /// Set the profile picture.
+  ///
+  /// The body is the raw image: Content-Type image/png, image/jpeg or image/webp, at most 512 KB, and the bytes must be that format. Answers 400 for another type or other bytes and 413 above the limit.
   @PUT('/api/user/avatar')
   Future<void> apiUserAvatarPutOwnAvatar();
 

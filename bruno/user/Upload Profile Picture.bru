@@ -21,7 +21,8 @@ body:file {
 docs {
   Sets or replaces the logged-in user's profile picture. The body is the
   raw image, Content-Type image/png, image/jpeg or image/webp, at most
-  512 KB; the bytes must be that format. Answers 204. The profile
+  512 KB; the bytes must be that format. Answers 204; 400 for another
+  content type or bytes that are not that format, 413 above 512 KB. The profile
   (`avatar_updated_at`) then carries the version of the picture. Run
   auth/Login first and put an avatar.png next to this file.
 }

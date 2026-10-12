@@ -218,7 +218,6 @@ async def delete_own_user(
 AVATAR_MAX_BYTES = 512 * 1024
 _AVATAR_TYPES = ("image/png", "image/jpeg", "image/webp")
 _AVATAR_TYPE_ERROR = "The profile picture must be a PNG, JPEG or WebP image"
-_AVATAR_SIZE_ERROR = "The profile picture must be at most 512 KB"
 _AVATAR_NO_CACHE = CacheControlHeader(private=True, no_cache=True)
 
 
@@ -233,7 +232,19 @@ def _looks_like(content_type: str, data: bytes) -> bool:
     return data[:4] == b"RIFF" and data[8:12] == b"WEBP"
 
 
-@put("/api/user/avatar", status_code=HTTP_204_NO_CONTENT, security=BEARER_SECURITY_REQUIREMENT)
+@put(
+    "/api/user/avatar",
+    status_code=HTTP_204_NO_CONTENT,
+    security=BEARER_SECURITY_REQUIREMENT,
+    request_max_body_size=AVATAR_MAX_BYTES,
+    raises=[ClientException],
+    summary="Set the profile picture",
+    description=(
+        "The body is the raw image: Content-Type image/png, image/jpeg or "
+        "image/webp, at most 512 KB, and the bytes must be that format. "
+        "Answers 400 for another type or other bytes and 413 above the limit."
+    ),
+)
 async def put_own_avatar(
     request: Request,
     db_session: NamedDependency[AsyncSession],
@@ -242,12 +253,7 @@ async def put_own_avatar(
     content_type = (request.headers.get("content-type") or "").split(";")[0].strip().lower()
     if content_type not in _AVATAR_TYPES:
         raise ClientException(_AVATAR_TYPE_ERROR)
-    declared = request.headers.get("content-length")
-    if declared is not None and declared.isdigit() and int(declared) > AVATAR_MAX_BYTES:
-        raise ClientException(_AVATAR_SIZE_ERROR)
     data = await request.body()
-    if len(data) > AVATAR_MAX_BYTES:
-        raise ClientException(_AVATAR_SIZE_ERROR)
     if not _looks_like(content_type, data):
         raise ClientException(_AVATAR_TYPE_ERROR)
     await avatar_repo.set_avatar(db_session, current_user.id, content_type, data)

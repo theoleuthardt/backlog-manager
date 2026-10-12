@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:backlog_manager/auth/auth_controller.dart';
 import 'package:backlog_manager/auth/user_api.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,9 +10,11 @@ typedef AvatarKey = ({int userId, DateTime version});
 
 /// The bytes of a profile picture, read once per version: a new upload has a
 /// new `avatarUpdatedAt`, so the key changes and the picture is read again.
-final avatarBytesProvider = FutureProvider.family<Uint8List?, AvatarKey>(
-  (ref, key) => ref.read(userApiProvider).avatar(key.userId),
-);
+final avatarBytesProvider = FutureProvider.autoDispose
+    .family<Uint8List?, AvatarKey>((ref, key) {
+      ref.watch(sessionGenerationProvider);
+      return ref.read(userApiProvider).avatar(key.userId);
+    });
 
 /// A round profile picture of [size], or [fallback] (the initials) while the
 /// user has none, while it loads and when it cannot be read.
