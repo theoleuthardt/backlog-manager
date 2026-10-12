@@ -1,0 +1,34 @@
+name: Deploy Backend
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_ref:
+        description: Backend image to deploy, a full git SHA of main (empty = the commit this workflow runs on)
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to production
+    if: github.actor == 'theoleuthardt' && github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, linux, deploy]
+    environment: production
+    timeout-minutes: 20
+
+    steps:
+      - name: Run deploy.sh on the production host
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          IMAGE_REF: ${{ inputs.image_ref || github.sha }}
+        run: |
+          test -n "$DEPLOY_HOST"
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$DEPLOY_HOST" "deploy $IMAGE_REF"
