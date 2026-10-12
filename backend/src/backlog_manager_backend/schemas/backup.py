@@ -12,6 +12,8 @@ from typing import Annotated
 
 import msgspec
 
+from backlog_manager_backend.schemas.backlog_entry import Publisher
+
 PAYLOAD_VERSION = 1
 
 
@@ -29,6 +31,7 @@ class BackupEntry(msgspec.Struct):
     image_link: str | None = None
     description: str | None = None
     trailer_link: str | None = None
+    publisher: Publisher | None = None
     main_time: Decimal | None = None
     main_plus_extra_time: Decimal | None = None
     completion_time: Decimal | None = None

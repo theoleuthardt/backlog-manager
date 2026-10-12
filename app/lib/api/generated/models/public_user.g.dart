@@ -22,7 +22,7 @@ PublicUser _$PublicUserFromJson(Map<String, dynamic> json) => PublicUser(
   steamWishlistAutoSync: json['steam_wishlist_auto_sync'] as bool? ?? false,
   setupCompleted: json['setup_completed'] as bool? ?? false,
   defaultSort: json['default_sort'] as String? ?? 'status',
-  theme: json['theme'] as String? ?? 'dark',
+  theme: json['theme'] as String? ?? 'shelfOled',
   steamId: json['steam_id'] as String?,
   steamWishlistImportedAt: json['steam_wishlist_imported_at'] == null
       ? null

@@ -25,6 +25,7 @@ class EntryUpdate {
     this.imageLink,
     this.title,
     this.description,
+    this.publisher,
     this.trailerLink,
     this.mainTime,
     this.mainPlusExtraTime,
@@ -40,6 +41,7 @@ class EntryUpdate {
         genre: changes.genre,
         imageLink: changes.imageLink,
         description: changes.description,
+        publisher: changes.publisher,
         trailerLink: changes.trailerLink,
         mainTime: changes.mainTime,
         mainPlusExtraTime: changes.mainPlusExtraTime,
@@ -59,6 +61,7 @@ class EntryUpdate {
   final String? imageLink;
   final String? title;
   final String? description;
+  final String? publisher;
   final String? trailerLink;
   final double? mainTime;
   final double? mainPlusExtraTime;
@@ -80,6 +83,7 @@ class EntryUpdate {
     'image_link': ?imageLink,
     'title': ?title,
     'description': ?description,
+    'publisher': ?publisher,
     'trailer_link': ?trailerLink,
     'main_time': ?mainTime,
     'main_plus_extra_time': ?mainPlusExtraTime,

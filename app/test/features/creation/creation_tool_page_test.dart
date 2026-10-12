@@ -99,12 +99,10 @@ void main() {
       expect(textOf(tester, const Key('creation-main')), '22');
       expect(textOf(tester, const Key('creation-extra')), '48');
       expect(textOf(tester, const Key('creation-completionist')), '95');
+      expect(find.text('Publisher'), findsOneWidget);
       expect(
-        tester
-            .widget<Text>(find.byKey(const Key('creation-publisher')))
-            .textSpan!
-            .toPlainText(),
-        'Published by Supergiant Games',
+        tester.widget<Text>(find.byKey(const Key('creation-publisher'))).data,
+        'Supergiant Games',
       );
       expect(find.text('Defy the god of the dead.'), findsOneWidget);
       expect(find.byKey(const Key('creation-warning')), findsNothing);

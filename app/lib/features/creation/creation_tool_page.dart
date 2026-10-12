@@ -404,21 +404,12 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
           ),
           if (_prefill.publisher.isNotEmpty) ...[
             const SizedBox(height: 12),
-            Text.rich(
-              TextSpan(
-                text: 'Published by ',
-                style: style.caption.copyWith(color: tokens.muted),
-                children: [
-                  TextSpan(
-                    text: _prefill.publisher,
-                    style: style.caption.copyWith(
-                      color: tokens.foreground,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
+            Text('Publisher', style: style.label),
+            const SizedBox(height: 4),
+            Text(
+              _prefill.publisher,
               key: const Key('creation-publisher'),
+              style: style.caption.copyWith(color: tokens.text2),
             ),
           ],
           if (_prefill.description.isNotEmpty) ...[

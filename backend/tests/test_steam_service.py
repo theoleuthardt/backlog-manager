@@ -925,6 +925,7 @@ async def test_preview_wishlist_lists_unlinked_games_with_titles_and_covers(
     assert preview[0].steam_app_id == 620
     assert preview[0].title == "Portal 2"
     assert preview[0].image_link == "https://example.com/portal2.jpg"
+    assert preview[0].playtime is None
 
 
 async def test_preview_wishlist_raises_when_steam_not_linked(session: AsyncSession) -> None:
@@ -1032,6 +1033,28 @@ async def test_preview_library_lists_unlinked_owned_games(
 
     assert [item.steam_app_id for item in preview] == [620]
     assert preview[0].title == "Portal 2"
+
+
+async def test_preview_library_reports_playtime_in_hours(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = await _make_user(session)
+
+    async def fake_get_owned_games(steam_id: str, api_key: str) -> list[SteamOwnedGame]:
+        return [
+            SteamOwnedGame(appid=620, name="Portal 2", playtime_forever=125),
+            SteamOwnedGame(appid=730, name="Family Only", playtime_forever=0),
+        ]
+
+    async def fake_get_cover(app_id: int, key: str | None) -> str | None:
+        return None
+
+    monkeypatch.setattr(steam_service, "get_owned_games", fake_get_owned_games)
+    monkeypatch.setattr(steam_service, "_try_get_cover", fake_get_cover)
+
+    preview = await steam_service.preview_library(session, user, "api-key")
+
+    assert [item.playtime for item in preview] == [Decimal("2.08"), Decimal("0.00")]
 
 
 async def test_operation_budget_bounds_concurrent_lookups(

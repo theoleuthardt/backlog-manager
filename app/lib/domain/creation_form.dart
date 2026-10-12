@@ -148,6 +148,7 @@ class NewEntry {
     this.steamAppId,
     this.imageLink,
     this.description,
+    this.publisher,
     this.trailerLink,
     this.mainTime,
     this.mainPlusExtraTime,
@@ -167,6 +168,7 @@ class NewEntry {
   final int? steamAppId;
   final String? imageLink;
   final String? description;
+  final String? publisher;
   final String? trailerLink;
   final double? mainTime;
   final double? mainPlusExtraTime;
@@ -186,8 +188,8 @@ double? _hoursAboveZero(String text) {
   return value != null && value > 0 ? value : null;
 }
 
-/// The entry the form describes; description and trailer come from the
-/// search. Beat times of zero, an empty cover and an empty review are left
+/// The entry the form describes; description, publisher and trailer come from
+/// the search. Beat times of zero, an empty cover and an empty review are left
 /// out.
 NewEntry buildNewEntry(CreationInput input, CreationPrefill prefill) {
   return NewEntry(
@@ -201,6 +203,7 @@ NewEntry buildNewEntry(CreationInput input, CreationPrefill prefill) {
     steamAppId: resolvedSteamAppId(input.steamAppId),
     imageLink: _blankToNull(input.imageUrl),
     description: _blankToNull(prefill.description),
+    publisher: _blankToNull(prefill.publisher),
     trailerLink: _blankToNull(prefill.trailerUrl),
     mainTime: _hoursAboveZero(input.mainStory),
     mainPlusExtraTime: _hoursAboveZero(input.mainStoryWithExtras),

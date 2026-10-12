@@ -8,6 +8,7 @@ import pytest
 from backlog_manager_backend.integrations import igdb
 from backlog_manager_backend.integrations.igdb import (
     generate_igdb_token,
+    get_companies_on_igdb,
     get_covers_on_igdb,
     get_game_videos_on_igdb,
     get_games_on_igdb,
@@ -395,3 +396,49 @@ async def test_search_games_by_name_on_igdb_returns_empty_on_an_http_error_statu
     _mock_client(lambda request: httpx.Response(400), monkeypatch)
 
     assert await search_games_by_name_on_igdb("x", "cid", "tok") == []
+
+
+_COMPANY_FIELDS = {
+    "change_date",
+    "change_date_category",
+    "changed_company_id",
+    "checksum",
+    "country",
+    "created_at",
+    "description",
+    "developed",
+    "logo",
+    "name",
+    "parent",
+    "published",
+    "slug",
+    "start_date",
+    "start_date_category",
+    "updated_at",
+    "url",
+    "websites",
+}
+
+
+async def test_companies_query_asks_only_for_fields_igdb_has(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """IGDB answers 400 "Invalid Field" for a field the endpoint does not
+    have, which silently left every game without its publisher."""
+    seen: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/v4/companies"
+        body = request.content.decode()
+        seen.append(body)
+        fields = body.split(";")[0].removeprefix("fields ").split(",")
+        if not set(fields) <= _COMPANY_FIELDS:
+            return httpx.Response(400, json=[{"cause": "Invalid Field"}])
+        return httpx.Response(200, json=[{"id": 7, "name": "Supergiant Games"}])
+
+    _mock_client(handler, monkeypatch)
+
+    companies = await get_companies_on_igdb([7], "cid", "tok")
+
+    assert [(company.id, company.name) for company in companies] == [(7, "Supergiant Games")]
+    assert "where id = (7)" in seen[0] or "where id = 7" in seen[0]

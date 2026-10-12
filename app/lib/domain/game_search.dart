@@ -105,13 +105,14 @@ Set<int> deeperIds({
 }
 
 /// What replaces the data of an entry when the chosen result is the right
-/// game: title, cover, description, trailer and the three times, the genres
+/// game: title, cover, description, publisher, trailer and the three times, the genres
 /// only when the result has some, and the Steam App ID goes.
 class WrongGameChanges {
   const WrongGameChanges({
     required this.title,
     required this.imageLink,
     required this.description,
+    required this.publisher,
     required this.trailerLink,
     required this.mainTime,
     required this.mainPlusExtraTime,
@@ -124,6 +125,7 @@ class WrongGameChanges {
   final List<String>? genre;
   final String imageLink;
   final String? description;
+  final String? publisher;
   final String? trailerLink;
   final double mainTime;
   final double mainPlusExtraTime;
@@ -137,6 +139,7 @@ WrongGameChanges wrongGameChanges(GameSearchResult result) {
     genre: result.genres.isEmpty ? null : result.genres,
     imageLink: result.imageUrl ?? '',
     description: result.description,
+    publisher: result.publisher,
     trailerLink: result.trailerUrl,
     mainTime: result.mainStory,
     mainPlusExtraTime: result.mainStoryWithExtras,

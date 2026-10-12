@@ -1078,6 +1078,7 @@ export interface components {
             image_link?: string | null;
             description?: string | null;
             trailer_link?: string | null;
+            publisher?: string | null;
             main_time?: string | null;
             main_plus_extra_time?: string | null;
             completion_time?: string | null;
@@ -1122,6 +1123,7 @@ export interface components {
             image_link?: string | null;
             description?: string | null;
             trailer_link?: string | null;
+            publisher?: string | null;
             main_time?: string | null;
             main_plus_extra_time?: string | null;
             completion_time?: string | null;
@@ -1394,7 +1396,7 @@ export interface components {
             setup_completed?: boolean;
             /** @default status */
             default_sort?: string;
-            /** @default dark */
+            /** @default shelfOled */
             theme?: string;
             custom_themes?: components["schemas"]["CustomTheme"][];
         };
@@ -1435,6 +1437,7 @@ export interface components {
             steam_app_id: number;
             title: string;
             image_link?: string | null;
+            playtime?: string | null;
         };
         /** SteamWishlistChange */
         SteamWishlistChange: {
@@ -1527,6 +1530,7 @@ export interface components {
             image_link?: string | null;
             description?: string | null;
             trailer_link?: string | null;
+            publisher?: string | null;
             main_time?: string | null;
             main_plus_extra_time?: string | null;
             completion_time?: string | null;

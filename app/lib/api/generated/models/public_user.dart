@@ -26,7 +26,7 @@ class PublicUser {
     this.steamWishlistAutoSync = false,
     this.setupCompleted = false,
     this.defaultSort = 'status',
-    this.theme = 'dark',
+    this.theme = 'shelfOled',
     this.steamId,
     this.steamWishlistImportedAt,
     this.steamFamilyIds,

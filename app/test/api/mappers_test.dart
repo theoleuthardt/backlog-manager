@@ -35,6 +35,7 @@ void main() {
       playtime: '30',
       partnerPlaytime: 'oops',
       reviewStars: 9,
+      publisher: 'Supergiant Games',
       steamAppId: 1145360,
     );
 
@@ -49,6 +50,7 @@ void main() {
       expect(entry.playtime, 30);
       expect(entry.partnerPlaytime, isNull);
       expect(entry.reviewStars, 9);
+      expect(entry.publisher, 'Supergiant Games');
       expect(entry.steamAppId, 1145360);
       expect(entry.inSharedSpace, isFalse);
     });
@@ -254,6 +256,7 @@ void main() {
           steamAppId: 1145360,
           imageLink: 'https://img.example/h.jpg',
           description: 'd',
+          publisher: 'Supergiant Games',
           trailerLink: 'https://www.youtube.com/watch?v=abcdefghijk',
           mainTime: 22,
           mainPlusExtraTime: 48.5,
@@ -265,6 +268,7 @@ void main() {
 
       final json = request.toJson();
       expect(json['title'], 'Hades');
+      expect(json['publisher'], 'Supergiant Games');
       expect(json['playtime'], '12.5');
       expect(json['main_time'], '22.0');
       expect(json['main_plus_extra_time'], '48.5');

@@ -177,7 +177,6 @@ class IGDBInvolvedCompany(msgspec.Struct):
 
 class IGDBCompany(msgspec.Struct):
     id: int
-    changed_at: int | None = None
     checksum: str | None = None
     country: int | None = None
     created_at: int | None = None

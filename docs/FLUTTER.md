@@ -299,7 +299,7 @@ Two reusable sheets for the Steam data of a game; the inspector (#264) and the c
 - Tabs: Overview (genre and platform as comma-separated fields, the description), Progress (HowLongToBeat bars against the playtime, then the achievements), Review (the note; stars and review text only for the status Completed, otherwise "Set the status to Completed to write a review") and Trailer (a play card that opens the YouTube video in the browser, "No trailer available for this game." otherwise). Footer: Delete with the usual confirmation.
 - Autosave (`EntryAutosave`): the fields that differ from the stored entry (`diffEntryForm`: image link, playtime, genre, platform, status, owned, interest, review stars, review, note) are saved 800 ms after the last change; edits during a running save are saved by the next one; closing saves what is pending; a failed save shows "Not saved" and a toast. Title, description and times change only through "wrong game".
 - When the stored entry changes while the inspector is open (a drag to another group, a sync) the fields the user has not touched follow it (`rebaseForm`), so the autosave never writes the old value back and the inspector stays open when the game moves between groups.
-- Footer: Delete, "Wrong game?" and "Change cover" (the sheets below). Not here yet: the publisher line (#293) and "synced 2 h ago" (#268). The trailer plays in a sheet (see "Trailer player").
+- Footer: Delete, "Wrong game?" and "Change cover" (the sheets below). Not here yet: "synced 2 h ago" (#268). The trailer plays in a sheet (see "Trailer player").
 
 ### Trailer player
 
@@ -416,6 +416,10 @@ Third round:
 - **Cover glow:** `design/cover_glow.dart` lights the area around the cover of the inspector in the colour of the cover; the title, the chips and the rest of the panel stay dark. `CoverGlowScope` holds the colour (the saturation-weighted average of the cover scaled down to 24 px, `glowColorFromPixels`, pushed to a bright shade, cached per image, faded in; the theme's own glow until it is known or without a cover), `CoverGlowBackdrop` paints a veil and two soft lights that drift slowly around the cover only, fading out towards the edge of its box (a 20 s loop; the veil sways and breathes as well), `CoverGlowHalo` lights the cover itself. Settings > General > "Animated Glow" (`glowMotionProvider`, kept on the device) and the system setting for less motion stop the drift; the lights then stay where they are. Tests switch all motion off with `atmosphereMotion = false`.
 - **Search for a game and Wrong Game:** both sheets use `gameResultColumns` (`features/add_game/game_result_parts.dart`): the sheet is 980 px wide (`ShelfSheetWidth.extraWide`), the thumbnails are 58 x 87 and long platform and genre lists wrap; `ShelfDataTable` rows are at least 48 px and grow with their content.
 - **Filter bar:** below 900 px it drops the caption of the owned-only switch, below 700 px also its "Filter" label and the sort menu becomes an icon.
+
+### Publisher
+
+`BacklogEntry.publisher` (from `publisher` of the entry, #293): the creation tool sends the one of the search result and shows it as a "Publisher" block under the cover, like "About"; the "Wrong Game?" replacement carries the one of the chosen game (`WrongGameChanges.publisher`, `EntryUpdate`); the inspector has a "Publisher" field in the Overview tab below Platform, saved with the other edits (`EntryForm.publisher`). Entries stay without a publisher until an IGDB sync, a replacement or an edit fills it; the sync never overwrites a value the user set. The IGDB `companies` request asks only for fields the endpoint has (`changed_at` is not one; IGDB answered 400 "Invalid Field" and no game got a publisher).
 
 ### Profile picture
 

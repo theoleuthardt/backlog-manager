@@ -8,7 +8,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.integrations.types import EnrichedResult
 from backlog_manager_backend.repositories import backlog_entry_repo
-from backlog_manager_backend.schemas.backlog_entry import BacklogEntry, UpdateBacklogEntryParams
+from backlog_manager_backend.schemas.backlog_entry import (
+    MAX_PUBLISHER_LENGTH,
+    BacklogEntry,
+    UpdateBacklogEntryParams,
+)
 from backlog_manager_backend.schemas.user import User
 from backlog_manager_backend.services import game_service
 from backlog_manager_backend.services.steam_service import ProgressCallback
@@ -17,7 +21,10 @@ _LOOKUP_CONCURRENCY = 4
 
 
 def _missing_igdb_data(entry: BacklogEntry) -> bool:
-    return not entry.genre.strip() or entry.description is None
+    """A publisher of None means "never looked up"; a lookup that found a
+    game without a publisher stores an empty string, so such entries stop
+    counting as pending."""
+    return not entry.genre.strip() or entry.description is None or entry.publisher is None
 
 
 def _has_dirty_steam_title(entry: BacklogEntry) -> bool:
@@ -46,6 +53,8 @@ def _build_update(entry: BacklogEntry, match: EnrichedResult | None) -> UpdateBa
             changes["description"] = match.description
         if entry.trailer_link is None and match.trailer_url:
             changes["trailer_link"] = match.trailer_url
+        if entry.publisher is None:
+            changes["publisher"] = (match.publisher or "")[:MAX_PUBLISHER_LENGTH]
         times = game_service.igdb_times(match)
         no_times_yet = (
             entry.main_time is None
@@ -71,7 +80,7 @@ async def sync_igdb_data(
     on_progress: ProgressCallback | None = None,
 ) -> list[BacklogEntry]:
     """Looks up the top IGDB match for every personal entry that lacks a
-    genre or description (or carries trademark symbols in its title) and
+    genre, description or publisher (or carries trademark symbols in its title) and
     fills in what is missing, returning the entries that changed.
     Lookups run concurrently (bounded by _LOOKUP_CONCURRENCY) and report
     progress as each finishes; the DB writes that follow are serial,
@@ -91,7 +100,9 @@ async def sync_igdb_data(
         if _missing_igdb_data(entry):
             async with semaphore:
                 match = await game_service.find_igdb_match(
-                    game_service.clean_game_title(entry.title), igdb_credentials
+                    game_service.clean_game_title(entry.title),
+                    igdb_credentials,
+                    include_publisher=True,
                 )
         processed += 1
         if on_progress:
