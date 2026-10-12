@@ -16,7 +16,7 @@ from backlog_manager_backend.utils import now_truncated_to_minute
 
 async def get_members(session: AsyncSession, space_id: int) -> list[SpaceMemberRecord]:
     result = await session.execute(
-        select(SpaceMemberModel, UserModel.username)
+        select(SpaceMemberModel, UserModel.username, UserModel.avatar_updated_at)
         .join(UserModel, UserModel.id == SpaceMemberModel.user_id)
         .where(SpaceMemberModel.space_id == space_id)
         .order_by(SpaceMemberModel.created_at, SpaceMemberModel.user_id)
@@ -27,8 +27,9 @@ async def get_members(session: AsyncSession, space_id: int) -> list[SpaceMemberR
             user_id=member.user_id,
             username=username,
             status=member.status,
+            avatar_updated_at=avatar_updated_at,
         )
-        for member, username in result.all()
+        for member, username, avatar_updated_at in result.all()
     ]
 
 

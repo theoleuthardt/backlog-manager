@@ -1,0 +1,23 @@
+meta {
+  name: Get Profile Picture
+  type: http
+  seq: 18
+}
+
+get {
+  url: {{backendUrl}}/api/user/{{userId}}/avatar
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  The profile picture of the logged-in user or of the other member of
+  their Shared Space (`userId` is the `user_id` of the member in
+  GET /api/space). Anyone else, and a user without a picture, gets 404.
+  The response has an ETag; send it as If-None-Match to get a 304. Run
+  auth/Login first.
+}

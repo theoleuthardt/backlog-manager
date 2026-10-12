@@ -59,6 +59,7 @@ class User(msgspec.Struct):
     default_sort: str = "status"
     theme: str = "dark"
     custom_themes: list[CustomTheme] = msgspec.field(default_factory=list)
+    avatar_updated_at: datetime | None = None
 
 
 class CreateUserParams(msgspec.Struct):
@@ -125,6 +126,7 @@ class PublicUser(msgspec.Struct):
     default_sort: str = "status"
     theme: str = "dark"
     custom_themes: list[CustomTheme] = msgspec.field(default_factory=list)
+    avatar_updated_at: datetime | None = None
 
     @classmethod
     def from_user(cls, user: User) -> "PublicUser":
@@ -149,6 +151,7 @@ class PublicUser(msgspec.Struct):
             default_sort=user.default_sort,
             theme=user.theme,
             custom_themes=user.custom_themes,
+            avatar_updated_at=user.avatar_updated_at,
         )
 
 

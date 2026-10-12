@@ -64,6 +64,8 @@ Space spaceFromResponse(SpaceResponse space) {
           username: member.username,
           status: member.status,
           isMe: member.isMe,
+          userId: member.userId,
+          avatarUpdatedAt: member.avatarUpdatedAt,
         ),
     ],
   );

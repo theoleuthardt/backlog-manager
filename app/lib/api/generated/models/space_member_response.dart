@@ -12,6 +12,8 @@ class SpaceMemberResponse {
     required this.username,
     required this.status,
     required this.isMe,
+    this.avatarUpdatedAt,
+    this.userId = 0,
   });
 
   factory SpaceMemberResponse.fromJson(Map<String, Object?> json) =>
@@ -21,6 +23,10 @@ class SpaceMemberResponse {
   final String status;
   @JsonKey(name: 'is_me')
   final bool isMe;
+  @JsonKey(name: 'user_id')
+  final int userId;
+  @JsonKey(name: 'avatar_updated_at')
+  final DateTime? avatarUpdatedAt;
 
   Map<String, Object?> toJson() => _$SpaceMemberResponseToJson(this);
 }

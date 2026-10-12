@@ -7,6 +7,8 @@ class SessionUser {
     required this.name,
     required this.email,
     required this.setupCompleted,
+    this.id = 0,
+    this.avatarUpdatedAt,
     this.defaultSort = 'status',
     this.steamId = '',
     this.steamFamilyIds = '',
@@ -24,6 +26,10 @@ class SessionUser {
   final String name;
   final String email;
   final bool setupCompleted;
+  final int id;
+
+  /// The version of the profile picture, null when there is none.
+  final DateTime? avatarUpdatedAt;
 
   /// The identifier of the sort option the library starts with.
   final String defaultSort;

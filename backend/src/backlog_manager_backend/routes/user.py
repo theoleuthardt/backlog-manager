@@ -13,13 +13,20 @@ require_admin below would be registered but never called, leaving the
 route silently unprotected. Do not remove that parameter from a handler
 even though nothing in its body reads it."""
 
+import hashlib
+
 import msgspec
-from litestar import Router, delete, get, post, put
+from litestar import Request, Response, Router, delete, get, post, put
 from litestar.datastructures import CacheControlHeader
 from litestar.di import NamedDependency, Provide
 from litestar.exceptions import ClientException, NotFoundException, ServiceUnavailableException
 from litestar.params import FromPath
-from litestar.status_codes import HTTP_201_CREATED, HTTP_204_NO_CONTENT, HTTP_409_CONFLICT
+from litestar.status_codes import (
+    HTTP_201_CREATED,
+    HTTP_204_NO_CONTENT,
+    HTTP_304_NOT_MODIFIED,
+    HTTP_409_CONFLICT,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.auth.dependencies import (
@@ -33,7 +40,7 @@ from backlog_manager_backend.config import settings
 from backlog_manager_backend.errors import ConflictError, NotFoundError, ValidationError
 from backlog_manager_backend.integrations.discord import is_valid_discord_webhook_url
 from backlog_manager_backend.integrations.types import IGDBCredentials
-from backlog_manager_backend.repositories import user_repo
+from backlog_manager_backend.repositories import avatar_repo, space_repo, user_repo
 from backlog_manager_backend.schemas.user import (
     CreateUserRequest,
     PublicUser,
@@ -48,6 +55,7 @@ from backlog_manager_backend.services.auth_service import create_user, validate_
 _NO_STORE = CacheControlHeader(no_store=True)
 
 _USER_NOT_FOUND = "User not found"
+_AVATAR_NOT_FOUND = "Profile picture not found"
 
 
 def _hash_if_present(password: str | object) -> str | object:
@@ -207,6 +215,87 @@ async def delete_own_user(
         raise ClientException(str(error)) from error
 
 
+AVATAR_MAX_BYTES = 512 * 1024
+_AVATAR_TYPES = ("image/png", "image/jpeg", "image/webp")
+_AVATAR_TYPE_ERROR = "The profile picture must be a PNG, JPEG or WebP image"
+_AVATAR_NO_CACHE = CacheControlHeader(private=True, no_cache=True)
+
+
+def _looks_like(content_type: str, data: bytes) -> bool:
+    """Whether the first bytes are those of the declared image format. The
+    declared type alone is not trusted: the bytes are served back to
+    other users under that type."""
+    if content_type == "image/png":
+        return data.startswith(b"\x89PNG\r\n\x1a\n")
+    if content_type == "image/jpeg":
+        return data.startswith(b"\xff\xd8\xff")
+    return data[:4] == b"RIFF" and data[8:12] == b"WEBP"
+
+
+@put(
+    "/api/user/avatar",
+    status_code=HTTP_204_NO_CONTENT,
+    security=BEARER_SECURITY_REQUIREMENT,
+    request_max_body_size=AVATAR_MAX_BYTES,
+    raises=[ClientException],
+    summary="Set the profile picture",
+    description=(
+        "The body is the raw image: Content-Type image/png, image/jpeg or "
+        "image/webp, at most 512 KB, and the bytes must be that format. "
+        "Answers 400 for another type or other bytes and 413 above the limit."
+    ),
+)
+async def put_own_avatar(
+    request: Request,
+    db_session: NamedDependency[AsyncSession],
+    current_user: NamedDependency[User],
+) -> None:
+    content_type = (request.headers.get("content-type") or "").split(";")[0].strip().lower()
+    if content_type not in _AVATAR_TYPES:
+        raise ClientException(_AVATAR_TYPE_ERROR)
+    data = await request.body()
+    if not _looks_like(content_type, data):
+        raise ClientException(_AVATAR_TYPE_ERROR)
+    await avatar_repo.set_avatar(db_session, current_user.id, content_type, data)
+
+
+@delete("/api/user/avatar", status_code=HTTP_204_NO_CONTENT, security=BEARER_SECURITY_REQUIREMENT)
+async def delete_own_avatar(
+    db_session: NamedDependency[AsyncSession],
+    current_user: NamedDependency[User],
+) -> None:
+    await avatar_repo.delete_avatar(db_session, current_user.id)
+
+
+@get(
+    "/api/user/{user_id:int}/avatar",
+    security=BEARER_SECURITY_REQUIREMENT,
+    cache_control=_AVATAR_NO_CACHE,
+    raises=[NotFoundException],
+)
+async def get_avatar(
+    user_id: FromPath[int],
+    request: Request,
+    db_session: NamedDependency[AsyncSession],
+    current_user: NamedDependency[User],
+) -> Response[bytes]:
+    """The picture of the caller or of the other member of the caller's
+    Shared Space; anyone else gets the same 404 as for a user without a
+    picture."""
+    if user_id != current_user.id:
+        mine = await space_repo.get_membership(db_session, current_user.id)
+        theirs = await space_repo.get_membership(db_session, user_id)
+        if mine is None or theirs is None or mine.space_id != theirs.space_id:
+            raise NotFoundException(_AVATAR_NOT_FOUND)
+    avatar = await avatar_repo.get_avatar(db_session, user_id)
+    if avatar is None:
+        raise NotFoundException(_AVATAR_NOT_FOUND)
+    etag = f'"{hashlib.sha256(avatar.data).hexdigest()[:32]}"'
+    if request.headers.get("if-none-match") == etag:
+        return Response(content=b"", status_code=HTTP_304_NOT_MODIFIED, headers={"ETag": etag})
+    return Response(content=avatar.data, media_type=avatar.content_type, headers={"ETag": etag})
+
+
 @get("/api/user/by-username/{username:str}")
 async def get_user_by_username(
     username: FromPath[str],
@@ -321,7 +410,15 @@ async def delete_user_admin(
 
 user_router = Router(
     path="",
-    route_handlers=[get_own_user, update_own_user, delete_own_user, get_user_by_username],
+    route_handlers=[
+        get_own_user,
+        update_own_user,
+        delete_own_user,
+        put_own_avatar,
+        delete_own_avatar,
+        get_avatar,
+        get_user_by_username,
+    ],
     dependencies={"current_user": Provide(get_current_user)},
     cache_control=_NO_STORE,
 )

@@ -71,6 +71,7 @@ def _to_schema(model: UserModel) -> User:
         default_sort=model.default_sort,
         theme=model.theme,
         custom_themes=msgspec.convert(model.custom_themes, list[CustomTheme]),
+        avatar_updated_at=model.avatar_updated_at,
     )
 
 

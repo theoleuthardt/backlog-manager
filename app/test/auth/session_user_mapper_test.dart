@@ -96,4 +96,14 @@ void main() {
     expect(plain.steamWishlistAutoSync, isFalse);
     expect(plain.steamWishlistImportedAt, isNull);
   });
+
+  test('carries the id and the version of the profile picture', () {
+    final mapped = sessionUserFrom(
+      user(extra: {'avatar_updated_at': '2026-10-12T10:00:00'}),
+    );
+
+    expect(mapped.id, 1);
+    expect(mapped.avatarUpdatedAt, DateTime.parse('2026-10-12T10:00:00'));
+    expect(sessionUserFrom(user()).avatarUpdatedAt, isNull);
+  });
 }

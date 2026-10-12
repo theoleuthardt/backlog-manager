@@ -29,8 +29,15 @@ CREATE TABLE IF NOT EXISTS "blm-system"."Users"(
     "DefaultSort" VARCHAR(20) NOT NULL DEFAULT 'status',
     "Theme" VARCHAR(50) NOT NULL DEFAULT 'dark',
     "CustomThemes" JSONB NOT NULL DEFAULT '[]'::jsonb,
+    "AvatarUpdatedAt" TIMESTAMP,
     "CreatedAt" TIMESTAMP NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP),
     "UpdatedAt" TIMESTAMP NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP)
+);
+
+CREATE TABLE IF NOT EXISTS "blm-system"."UserAvatars" (
+    "UserID" BIGINT PRIMARY KEY REFERENCES "blm-system"."Users"("UserID") ON UPDATE CASCADE ON DELETE CASCADE,
+    "ContentType" VARCHAR(50) NOT NULL,
+    "Data" BYTEA NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS "blm-system"."UserBackupCodes" (

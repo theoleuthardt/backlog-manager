@@ -230,3 +230,7 @@ checking the build.
 - [`docs/TAURI.md`](TAURI.md) — desktop app build, signing, and CI details.
 - Root [`CLAUDE.md`](../CLAUDE.md) — commands, directory layout, coding
   conventions, and the Claude Code / issue workflow used on this repo.
+
+## Profile pictures
+
+A user can set a profile picture (`PUT /api/user/avatar`, raw `image/png`, `image/jpeg` or `image/webp` body, at most 512 KB, bytes checked against the declared type; `DELETE /api/user/avatar`). The bytes live in `"blm-system"."UserAvatars"`, apart from `Users`, so loading a user never loads a picture; `Users.AvatarUpdatedAt` says whether there is one and is the version a client uses to cache it. `GET /api/user/{id}/avatar` answers the owner and the other member of the same Shared Space and 404 for everyone else (the same answer as for a user without a picture), with an ETag and `Cache-Control: private, no-cache`. The row goes with the account (`ON DELETE CASCADE`). Pictures are not part of backups (`docs/BACKUPS.md`): a restore replaces the backlog content, not the profile.

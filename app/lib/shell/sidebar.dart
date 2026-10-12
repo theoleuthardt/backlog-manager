@@ -13,6 +13,7 @@ import 'package:backlog_manager/design/widgets/toast.dart';
 import 'package:backlog_manager/domain/themes.dart';
 import 'package:backlog_manager/features/appearance/appearance_page.dart';
 import 'package:backlog_manager/features/appearance/theme_actions.dart';
+import 'package:backlog_manager/features/common/user_avatar.dart';
 import 'package:backlog_manager/features/shortcuts/shortcuts_sheet.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/routing/session.dart';
@@ -471,7 +472,14 @@ class _AccountRow extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14),
             child: Row(
               children: [
-                _Avatar(initial: name.isEmpty ? '?' : name[0].toUpperCase()),
+                UserAvatar(
+                  userId: user?.id,
+                  version: user?.avatarUpdatedAt,
+                  size: 32,
+                  fallback: _Avatar(
+                    initial: name.isEmpty ? '?' : name[0].toUpperCase(),
+                  ),
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(

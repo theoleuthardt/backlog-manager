@@ -1,0 +1,20 @@
+meta {
+  name: Delete Profile Picture
+  type: http
+  seq: 17
+}
+
+delete {
+  url: {{backendUrl}}/api/user/avatar
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Removes the logged-in user's profile picture; answers 204 also when
+  there was none. Run auth/Login first.
+}

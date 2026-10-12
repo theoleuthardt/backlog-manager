@@ -116,11 +116,17 @@ class SpaceMember {
     required this.username,
     required this.status,
     required this.isMe,
+    this.userId = 0,
+    this.avatarUpdatedAt,
   });
 
   final String username;
   final String status;
   final bool isMe;
+  final int userId;
+
+  /// The version of the profile picture, null when there is none.
+  final DateTime? avatarUpdatedAt;
 }
 
 /// The Shared Space of the signed-in user, if any.

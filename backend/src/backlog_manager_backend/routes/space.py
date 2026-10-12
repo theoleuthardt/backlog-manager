@@ -42,7 +42,11 @@ async def _space_state(session: AsyncSession, user: User) -> SpaceResponse:
         my_status=membership.status,
         members=[
             SpaceMemberResponse(
-                username=member.username, status=member.status, is_me=member.user_id == user.id
+                username=member.username,
+                status=member.status,
+                is_me=member.user_id == user.id,
+                user_id=member.user_id,
+                avatar_updated_at=member.avatar_updated_at,
             )
             for member in members
         ],

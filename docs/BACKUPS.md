@@ -15,7 +15,7 @@ not database ids, so identical content always hashes identically.
 
 An entry's `steam_wishlist_import` flag is part of the snapshot (older snapshots without it restore as `false`).
 
-Not included: account settings and themes, price-alert state (keyed by Steam
+Not included: account settings, themes and the profile picture, price-alert state (keyed by Steam
 app id, unaffected by a restore), and shared space content, which belongs
 to two people. Shared rows carry their creator's `UserID` plus a `SpaceID`,
 so every query in `repositories/backup_repo.py` - including the deletes a
