@@ -87,7 +87,7 @@ describe("deploy.sh", () => {
     assert.match(result.calls, new RegExp(`pull ${REPO}:${SHA}`));
     assert.match(result.calls, /rm --force --depend --ignore blm_backend/);
     assert.doesNotMatch(result.calls, /rm .*blm_db/);
-    assert.match(result.calls, /up -d --no-deps backend price-check-cron steam-wishlist-sync-cron/);
+    assert.match(result.calls, /up -d --no-deps --no-recreate backend price-check-cron steam-wishlist-sync-cron/);
     assert.ok(existsSync(join(env.dir, "calls-backup")), "backup ran");
   });
 
