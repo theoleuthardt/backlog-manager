@@ -14,6 +14,7 @@ class EntryForm {
     required this.reviewStars,
     required this.review,
     required this.note,
+    this.publisher = '',
     this.playtime,
   });
 
@@ -21,6 +22,7 @@ class EntryForm {
   final double? playtime;
   final String genre;
   final String platform;
+  final String publisher;
   final String status;
   final bool owned;
   final int interest;
@@ -32,6 +34,7 @@ class EntryForm {
     String? imageLink,
     String? genre,
     String? platform,
+    String? publisher,
     String? status,
     bool? owned,
     int? interest,
@@ -46,6 +49,7 @@ class EntryForm {
       playtime: clearPlaytime ? null : playtime ?? this.playtime,
       genre: genre ?? this.genre,
       platform: platform ?? this.platform,
+      publisher: publisher ?? this.publisher,
       status: status ?? this.status,
       owned: owned ?? this.owned,
       interest: interest ?? this.interest,
@@ -63,6 +67,7 @@ class EntryFormChanges {
     this.imageLink,
     this.genre,
     this.platform,
+    this.publisher,
     this.status,
     this.owned,
     this.interest,
@@ -75,6 +80,7 @@ class EntryFormChanges {
   final String? imageLink;
   final List<String>? genre;
   final List<String>? platform;
+  final String? publisher;
   final String? status;
   final bool? owned;
   final int? interest;
@@ -88,6 +94,7 @@ class EntryFormChanges {
       imageLink == null &&
       genre == null &&
       platform == null &&
+      publisher == null &&
       status == null &&
       owned == null &&
       interest == null &&
@@ -106,6 +113,9 @@ EntryFormChanges diffEntryForm(EntryForm form, BacklogEntry entry) {
     genre: form.genre != entry.genre.join(', ') ? splitList(form.genre) : null,
     platform: form.platform != entry.platform.join(', ')
         ? splitList(form.platform)
+        : null,
+    publisher: form.publisher != (entry.publisher ?? '')
+        ? form.publisher.trim()
         : null,
     status: form.status != entry.status ? form.status : null,
     owned: form.owned != entry.owned ? form.owned : null,

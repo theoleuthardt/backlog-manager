@@ -104,13 +104,6 @@ void main() {
       }
       expect(find.byKey(const Key('inspector-genres')), findsOneWidget);
       expect(find.byKey(const Key('inspector-platforms')), findsOneWidget);
-      expect(
-        tester
-            .widget<Text>(find.byKey(const Key('inspector-publisher')))
-            .textSpan!
-            .toPlainText(),
-        'Published by Supergiant Games',
-      );
       expect(find.text('Changes save automatically'), findsOneWidget);
     });
 
@@ -224,6 +217,28 @@ void main() {
 
       expect(app.api.calls, contains('update 1 {playtime: 25.5}'));
       expect(find.text('All changes saved'), findsOneWidget);
+    });
+
+    testWidgets('shows the publisher in the overview and saves an edit', (
+      tester,
+    ) async {
+      final app = await openInspector(tester);
+
+      final field = find.descendant(
+        of: find.byKey(const Key('inspector-publisher')),
+        matching: find.byType(TextField),
+      );
+      await tester.ensureVisible(field);
+      expect(
+        tester.widget<TextField>(field).controller!.text,
+        'Supergiant Games',
+      );
+
+      await tester.enterText(field, 'Supergiant');
+      await tester.pump();
+      await afterAutosave(tester);
+
+      expect(app.api.calls, contains('update 1 {publisher: Supergiant}'));
     });
 
     testWidgets('sends rapid edits as one save of the last value', (

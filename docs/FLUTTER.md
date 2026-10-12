@@ -419,7 +419,7 @@ Third round:
 
 ### Publisher
 
-`BacklogEntry.publisher` (from `publisher` of the entry, #293): the creation tool sends the one of the search result, the "Wrong Game?" replacement carries the one of the chosen game (`WrongGameChanges.publisher`, `EntryUpdate`), and the inspector shows "Published by <name>" under the title while there is one. Entries stay without a publisher until an IGDB sync or a replacement fills it; the sync never overwrites a value the user set. The IGDB `companies` request asks only for fields the endpoint has (`changed_at` is not one; IGDB answered 400 "Invalid Field" and no game got a publisher).
+`BacklogEntry.publisher` (from `publisher` of the entry, #293): the creation tool sends the one of the search result and shows it as a "Publisher" block under the cover, like "About"; the "Wrong Game?" replacement carries the one of the chosen game (`WrongGameChanges.publisher`, `EntryUpdate`); the inspector has a "Publisher" field in the Overview tab below Platform, saved with the other edits (`EntryForm.publisher`). Entries stay without a publisher until an IGDB sync, a replacement or an edit fills it; the sync never overwrites a value the user set. The IGDB `companies` request asks only for fields the endpoint has (`changed_at` is not one; IGDB answered 400 "Invalid Field" and no game got a publisher).
 
 ### Profile picture
 

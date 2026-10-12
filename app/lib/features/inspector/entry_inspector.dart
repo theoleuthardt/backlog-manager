@@ -236,6 +236,7 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
   late final TextEditingController _playtime;
   late final TextEditingController _genre;
   late final TextEditingController _platform;
+  late final TextEditingController _publisher;
   late final TextEditingController _note;
   late final TextEditingController _review;
   late final EntryAutosave _autosave;
@@ -255,6 +256,7 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
     );
     _genre = TextEditingController(text: _form.genre);
     _platform = TextEditingController(text: _form.platform);
+    _publisher = TextEditingController(text: _form.publisher);
     _note = TextEditingController(text: _form.note);
     _review = TextEditingController(text: _form.review);
     _autosave = EntryAutosave(
@@ -277,7 +279,14 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
     _autosave
       ..flush()
       ..dispose();
-    for (final controller in [_playtime, _genre, _platform, _note, _review]) {
+    for (final controller in [
+      _playtime,
+      _genre,
+      _platform,
+      _publisher,
+      _note,
+      _review,
+    ]) {
       controller.dispose();
     }
     super.dispose();
@@ -296,6 +305,7 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
         owned: changes.owned,
         genre: changes.genre,
         platform: changes.platform,
+        publisher: changes.publisher,
         imageLink: changes.imageLink,
       ),
     );
@@ -319,6 +329,7 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
       _base = next;
       _syncText(_genre, _form.genre);
       _syncText(_platform, _form.platform);
+      _syncText(_publisher, _form.publisher);
       _syncText(_note, _form.note);
       _syncText(_review, _form.review);
       if (parsePlaytime(_playtime.text) != _form.playtime) {
@@ -412,9 +423,6 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
     final genres = splitList(_form.genre);
     final platforms = splitList(_form.platform);
     final completedOn = completedOnLabel(entry.completedAt);
-    final publisher = (entry.publisher ?? '').trim().isEmpty
-        ? null
-        : entry.publisher!.trim();
     final dot = colorFromHex(statusColor(_form.status));
     final reviewable = canReview(_form.status);
     final fullscreen = ref.watch(inspectorFullscreenProvider);
@@ -479,31 +487,6 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
                                             fontSize: 22,
                                           ),
                                         ),
-                                        if (publisher != null) ...[
-                                          const SizedBox(height: 6),
-                                          Text.rich(
-                                            TextSpan(
-                                              text: 'Published by ',
-                                              style: style.caption.copyWith(
-                                                color: tokens.muted,
-                                              ),
-                                              children: [
-                                                TextSpan(
-                                                  text: publisher,
-                                                  style: style.caption.copyWith(
-                                                    color: tokens.foreground,
-                                                    fontWeight: FontWeight.w700,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            key: const Key(
-                                              'inspector-publisher',
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ],
                                         if (genres.isNotEmpty) ...[
                                           const SizedBox(height: 12),
                                           FactChips(
@@ -821,6 +804,15 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
           hintText: 'PC, PS5, Xbox',
           controller: _platform,
           onChanged: (value) => _edit((form) => form.copyWith(platform: value)),
+        ),
+        const SizedBox(height: 12),
+        ShelfField(
+          key: const Key('inspector-publisher'),
+          label: 'Publisher',
+          hintText: 'The company that published the game',
+          controller: _publisher,
+          onChanged: (value) =>
+              _edit((form) => form.copyWith(publisher: value)),
         ),
         if (description != null && description.isNotEmpty) ...[
           const SizedBox(height: 14),
