@@ -6,6 +6,7 @@ import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/design/widgets/progress.dart';
 import 'package:backlog_manager/design/widgets/sheet.dart';
+import 'package:backlog_manager/design/widgets/spinner.dart';
 import 'package:backlog_manager/domain/achievements.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,14 +32,7 @@ class AchievementProgressSection extends ConsumerWidget {
       loading: () => Row(
         key: const Key('achievements-loading'),
         children: [
-          SizedBox(
-            width: 14,
-            height: 14,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: tokens.accent,
-            ),
-          ),
+          const ShelfSpinner(size: 22),
           const SizedBox(width: 10),
           Text('Loading achievements...', style: style.caption),
         ],

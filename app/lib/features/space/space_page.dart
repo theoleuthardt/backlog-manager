@@ -29,8 +29,10 @@ class SpacePage extends ConsumerWidget {
       child: space.when(
         skipLoadingOnReload: true,
         skipLoadingOnRefresh: true,
-        loading: () =>
-            const CenteredMessage(text: 'Loading the Shared Space...'),
+        loading: () => const CenteredMessage(
+          text: 'Loading the Shared Space...',
+          busy: true,
+        ),
         error: (error, _) => CenteredMessage(
           text: ApiException.from(
             error,

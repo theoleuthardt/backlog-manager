@@ -5,6 +5,7 @@ import 'package:backlog_manager/app.dart';
 import 'package:backlog_manager/data/backlog_api.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
 import 'package:backlog_manager/design/widgets/cover.dart';
+import 'package:backlog_manager/design/widgets/spinner.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/routing/router.dart';
 import 'package:backlog_manager/routing/routes.dart';
@@ -145,6 +146,8 @@ void main() {
       await pumpLibrary(tester, api, settle: false);
 
       expect(find.text('Loading your backlog...'), findsOneWidget);
+      expect(find.byType(ShelfSpinner), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
       pending.complete(const []);
       await tester.pumpAndSettle();
     });

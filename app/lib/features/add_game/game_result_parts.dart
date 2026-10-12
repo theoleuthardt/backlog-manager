@@ -3,6 +3,7 @@ import 'package:backlog_manager/data/entry_image.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/chips.dart';
+import 'package:backlog_manager/design/widgets/spinner.dart';
 import 'package:backlog_manager/design/widgets/table.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:flutter/material.dart';
@@ -64,14 +65,7 @@ class SheetNote extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (busy) ...[
-            SizedBox(
-              width: 14,
-              height: 14,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: tokens.accent,
-              ),
-            ),
+            const ShelfSpinner(size: 24),
             const SizedBox(width: 10),
           ],
           Flexible(

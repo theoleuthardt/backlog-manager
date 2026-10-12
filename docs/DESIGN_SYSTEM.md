@@ -267,3 +267,7 @@ The web frontend does not use these tokens or this shell yet. If the redesign is
 ## Scale-up (#351)
 
 The first test on a real desktop found the design too small: the type scale (hero 34, page 30, section 18, group title 15, body 15.5, control 14.5, label and caption 13.5, field text 15, eyebrow and sidebar labels 12), the control height (38) and the input height (44) were raised, sheets are 560, 700 and 760 wide, the title bar is 56 px high. Explanations are `ShelfNote`s (info icon on a soft panel) rather than loose muted lines; the side panes can be dragged to another width (kept on the device, a double click restores it).
+
+## Loading spinner (#360)
+
+`ShelfSpinner` (`design/widgets/spinner.dart`) replaces every indeterminate `CircularProgressIndicator`: the planet of the brand mark with a light that circles it, a ring that tilts and opens, a moon that runs round the ring and stars that flash, 2.4 s a turn. It is the accent colour of the theme (or `color`), stands still for `MediaQuery.disableAnimations` and in tests (`atmosphereMotion`), and has the semantics label "Loading". Buttons show it while `busy`; `CenteredMessage(busy: true)` puts it above the text of a loading page. A progress that has a value (the Steam sync ring) stays a determinate ring; `test/design/no_default_spinner_test.dart` fails when a plain `CircularProgressIndicator` comes back.

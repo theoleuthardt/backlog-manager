@@ -18,6 +18,7 @@ import 'package:backlog_manager/design/widgets/fields.dart';
 import 'package:backlog_manager/design/widgets/menu.dart';
 import 'package:backlog_manager/design/widgets/progress.dart';
 import 'package:backlog_manager/design/widgets/select.dart';
+import 'package:backlog_manager/design/widgets/spinner.dart';
 import 'package:backlog_manager/design/widgets/toast.dart';
 import 'package:backlog_manager/design/widgets/toggles.dart';
 import 'package:backlog_manager/domain/creation_form.dart';
@@ -623,9 +624,9 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
                       padding: EdgeInsets.only(right: 8),
                       child: SizedBox(
                         key: Key('creation-playtime-loading'),
-                        width: 12,
-                        height: 12,
-                        child: CircularProgressIndicator(strokeWidth: 1.5),
+                        width: 20,
+                        height: 20,
+                        child: ShelfSpinner(size: 20),
                       ),
                     ),
                   _field(
@@ -715,9 +716,9 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
                       padding: EdgeInsets.only(right: 8),
                       child: SizedBox(
                         key: Key('creation-lookup-loading'),
-                        width: 12,
-                        height: 12,
-                        child: CircularProgressIndicator(strokeWidth: 1.5),
+                        width: 20,
+                        height: 20,
+                        child: ShelfSpinner(size: 20),
                       ),
                     ),
                   _field(

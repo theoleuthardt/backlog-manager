@@ -4,6 +4,7 @@ import 'package:backlog_manager/data/backlog_scope.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
+import 'package:backlog_manager/design/widgets/spinner.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,7 +24,8 @@ class EntriesGate extends ConsumerWidget {
     final entries = ref.watch(entriesProvider(ref.watch(backlogScopeProvider)));
     return entries.when(
       skipLoadingOnRefresh: true,
-      loading: () => const CenteredMessage(text: 'Loading your backlog...'),
+      loading: () =>
+          const CenteredMessage(text: 'Loading your backlog...', busy: true),
       error: (error, _) => CenteredMessage(
         text: ApiException.from(error, 'Could not load your backlog').message,
         action: ShelfButton(
@@ -39,10 +41,18 @@ class EntriesGate extends ConsumerWidget {
 
 /// A line of text in the middle of a page with an optional action below.
 class CenteredMessage extends StatelessWidget {
-  const CenteredMessage({required this.text, this.action, super.key});
+  const CenteredMessage({
+    required this.text,
+    this.action,
+    this.busy = false,
+    super.key,
+  });
 
   final String text;
   final Widget? action;
+
+  /// Shows the loading spinner above the text.
+  final bool busy;
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +62,10 @@ class CenteredMessage extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (busy) ...[
+            const ShelfSpinner(size: 56),
+            const SizedBox(height: 14),
+          ],
           Text(text, style: style.body.copyWith(color: tokens.text2)),
           if (action != null) ...[const SizedBox(height: 14), action!],
         ],

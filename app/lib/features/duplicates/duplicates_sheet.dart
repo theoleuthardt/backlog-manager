@@ -9,6 +9,7 @@ import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/design/widgets/sheet.dart';
+import 'package:backlog_manager/design/widgets/spinner.dart';
 import 'package:backlog_manager/domain/duplicates.dart';
 import 'package:backlog_manager/domain/format.dart';
 import 'package:backlog_manager/domain/models.dart';
@@ -43,7 +44,16 @@ class DuplicatesSheet extends ConsumerWidget {
           'App ID. Delete the entries you do not need.',
       width: ShelfSheetWidth.wide,
       child: entries.isLoading && !entries.hasValue
-          ? Text('Loading...', style: style.body.copyWith(color: tokens.muted))
+          ? Row(
+              children: [
+                const ShelfSpinner(size: 24),
+                const SizedBox(width: 10),
+                Text(
+                  'Loading...',
+                  style: style.body.copyWith(color: tokens.muted),
+                ),
+              ],
+            )
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

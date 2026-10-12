@@ -1,5 +1,6 @@
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
+import 'package:backlog_manager/design/widgets/spinner.dart';
 import 'package:flutter/material.dart';
 
 /// Shown while the stored token is checked at start.
@@ -15,14 +16,7 @@ class LoadingPage extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: tokens.accent,
-            ),
-          ),
+          const ShelfSpinner(size: 56),
           const SizedBox(height: 14),
           Text(
             'Checking your session...',

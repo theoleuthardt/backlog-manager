@@ -8,6 +8,7 @@ import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/design/widgets/sheet.dart';
+import 'package:backlog_manager/design/widgets/spinner.dart';
 import 'package:backlog_manager/design/widgets/toast.dart';
 import 'package:backlog_manager/domain/backups.dart';
 import 'package:backlog_manager/features/settings/settings_widgets.dart';
@@ -149,10 +150,16 @@ class _BackupsTabState extends ConsumerState<BackupsTab> {
         ),
         const SizedBox(height: 16),
         backups.when(
-          loading: () => Text(
-            'Loading...',
+          loading: () => Row(
             key: const Key('backups-loading'),
-            style: style.caption.copyWith(color: tokens.muted),
+            children: [
+              const ShelfSpinner(size: 24),
+              const SizedBox(width: 10),
+              Text(
+                'Loading...',
+                style: style.caption.copyWith(color: tokens.muted),
+              ),
+            ],
           ),
           error: (error, _) => Text(
             'Failed to load backups.',
