@@ -9,9 +9,14 @@ void main() {
       if (entity is! File || !entity.path.endsWith('.dart')) continue;
       if (entity.path.contains('/generated/')) continue;
       final text = entity.readAsStringSync();
-      final plain = RegExp(r'CircularProgressIndicator\((?![^)]*value:)')
-          .hasMatch(text);
-      if (plain) offenders.add(entity.path);
+      final indeterminate = RegExp(r'CircularProgressIndicator\(([^)]*)\)')
+          .allMatches(text)
+          .any((match) {
+            final arguments = match.group(1)!;
+            return !arguments.contains('value:') ||
+                RegExp(r'value:\s*null\b').hasMatch(arguments);
+          });
+      if (indeterminate) offenders.add(entity.path);
     }
 
     expect(
