@@ -1,4 +1,5 @@
 import 'package:backlog_manager/design/widgets/buttons.dart';
+import 'package:backlog_manager/design/widgets/spinner.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -143,7 +144,7 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(ShelfSpinner), findsOneWidget);
       await tester.tap(find.text('Logging in...'));
       expect(taps, 0);
     });

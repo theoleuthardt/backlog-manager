@@ -4,6 +4,7 @@ import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/pressable.dart';
+import 'package:backlog_manager/design/widgets/spinner.dart';
 import 'package:flutter/material.dart';
 
 enum ShelfButtonKind { primary, secondary, quiet, danger }
@@ -65,14 +66,7 @@ class ShelfButton extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (busy) ...[
-                      SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: color,
-                        ),
-                      ),
+                      ShelfSpinner(size: 20, color: color),
                       const SizedBox(width: 8),
                     ] else if (icon != null) ...[
                       Icon(icon, size: 18, color: color),

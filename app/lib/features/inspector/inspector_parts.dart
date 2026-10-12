@@ -5,6 +5,7 @@ import 'package:backlog_manager/design/widgets/chips.dart';
 import 'package:backlog_manager/design/widgets/menu.dart';
 import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/design/widgets/progress.dart';
+import 'package:backlog_manager/design/widgets/spinner.dart';
 import 'package:backlog_manager/domain/inspector_logic.dart';
 import 'package:backlog_manager/features/inspector/entry_autosave.dart';
 import 'package:flutter/material.dart';
@@ -227,14 +228,7 @@ class SaveStatus extends StatelessWidget {
       content = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
-            width: 11,
-            height: 11,
-            child: CircularProgressIndicator(
-              strokeWidth: 1.5,
-              color: tokens.accent,
-            ),
-          ),
+          const ShelfSpinner(size: 18),
           const SizedBox(width: 6),
           Text('Saving...', style: muted),
         ],

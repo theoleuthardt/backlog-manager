@@ -17,6 +17,7 @@ import 'package:backlog_manager/design/widgets/cover.dart';
 import 'package:backlog_manager/design/widgets/fields.dart';
 import 'package:backlog_manager/design/widgets/progress.dart';
 import 'package:backlog_manager/design/widgets/sheet.dart';
+import 'package:backlog_manager/design/widgets/spinner.dart';
 import 'package:backlog_manager/design/widgets/tabs.dart';
 import 'package:backlog_manager/design/widgets/toast.dart';
 import 'package:backlog_manager/design/widgets/toggles.dart';
@@ -71,10 +72,19 @@ class EntryInspector extends ConsumerWidget {
     if (entry == null) {
       return _InspectorFrame(
         child: Center(
-          child: Text(
-            entries.hasError ? 'Could not load the game' : 'Loading...',
-            key: const Key('inspector-loading'),
-          ),
+          child: entries.hasError
+              ? const Text(
+                  'Could not load the game',
+                  key: Key('inspector-loading'),
+                )
+              : const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ShelfSpinner(size: 48),
+                    SizedBox(height: 10),
+                    Text('Loading...', key: Key('inspector-loading')),
+                  ],
+                ),
         ),
       );
     }

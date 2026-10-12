@@ -7,6 +7,7 @@ import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/design/widgets/sheet.dart';
+import 'package:backlog_manager/design/widgets/spinner.dart';
 import 'package:backlog_manager/domain/price_listings.dart';
 import 'package:backlog_manager/domain/safe_url.dart';
 import 'package:backlog_manager/platform/url_opener.dart';
@@ -72,19 +73,11 @@ class _Loading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
     return Row(
       key: const Key('price-loading'),
       children: [
-        SizedBox(
-          width: 14,
-          height: 14,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: tokens.accent,
-          ),
-        ),
+        const ShelfSpinner(size: 22),
         const SizedBox(width: 10),
         Text('Loading price...', style: style.caption),
       ],

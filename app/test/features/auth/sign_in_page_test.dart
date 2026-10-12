@@ -10,6 +10,7 @@ import 'package:backlog_manager/auth/auth_api.dart';
 import 'package:backlog_manager/auth/token_store.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
+import 'package:backlog_manager/design/widgets/spinner.dart';
 import 'package:backlog_manager/routing/router.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/routing/session.dart';
@@ -200,7 +201,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('Logging in...'), findsOneWidget);
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(ShelfSpinner), findsOneWidget);
 
       pending.complete(const LoginNeedsTwoFactor('c'));
       await tester.pumpAndSettle();
