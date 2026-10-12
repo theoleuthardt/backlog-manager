@@ -33,7 +33,8 @@ case "$1" in
   exec)
     case "$*" in
       *alembic*) [ -e "$state/not-at-head" ] && echo "abc123" || echo "abc123 (head)" ;;
-      *) [ -e "$state/unhealthy" ] && exit 1 || exit 0 ;;
+      *127.0.0.1:8000/health\\'*) [ -e "$state/unhealthy" ] && exit 1 || exit 0 ;;
+      *) exit 1 ;;
     esac ;;
   logs) echo "backend log line" ;;
 esac
