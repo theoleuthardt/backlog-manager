@@ -356,7 +356,7 @@ async def get_companies_on_igdb(
     if not company_ids:
         return []
     body = (
-        "fields changed_at,checksum,country,created_at,description,name,slug,"
+        "fields checksum,country,created_at,description,name,slug,"
         f"start_date,updated_at,url; where id = {_id_list(company_ids)}; limit 500;"
     )
     try:

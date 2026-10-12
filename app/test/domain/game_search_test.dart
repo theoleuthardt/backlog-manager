@@ -158,6 +158,7 @@ void main() {
       expect(changes.genre, ['Roguelike', 'Action']);
       expect(changes.imageLink, 'https://img.example/hades.jpg');
       expect(changes.description, 'Defy the god of the dead.');
+      expect(changes.publisher, 'Supergiant Games');
       expect(
         changes.trailerLink,
         'https://www.youtube.com/watch?v=abcdefghijk',

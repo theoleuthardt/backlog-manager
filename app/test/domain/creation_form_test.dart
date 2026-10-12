@@ -242,6 +242,7 @@ void main() {
       final entry = buildNewEntry(input(), prefill);
 
       expect(entry.description, 'Defy the god of the dead.');
+      expect(entry.publisher, 'Supergiant Games');
       expect(entry.trailerLink, 'https://www.youtube.com/watch?v=abcdefghijk');
     });
 

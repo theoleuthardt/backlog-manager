@@ -35,6 +35,7 @@ const hades = BacklogEntry(
   mainPlusExtraTime: 48,
   completionTime: 95,
   description: 'Defy the god of the dead.',
+  publisher: 'Supergiant Games',
   trailerLink: 'https://www.youtube.com/watch?v=abcdefghijk',
   steamAppId: 1145360,
 );
@@ -103,6 +104,13 @@ void main() {
       }
       expect(find.byKey(const Key('inspector-genres')), findsOneWidget);
       expect(find.byKey(const Key('inspector-platforms')), findsOneWidget);
+      expect(
+        tester
+            .widget<Text>(find.byKey(const Key('inspector-publisher')))
+            .textSpan!
+            .toPlainText(),
+        'Published by Supergiant Games',
+      );
       expect(find.text('Changes save automatically'), findsOneWidget);
     });
 

@@ -1,7 +1,7 @@
 """add publisher to backlog entries
 
 Revision ID: a7d2c9e4b1f6
-Revises: f4c9a1d7e3b8
+Revises: c4e8a2d6f1b9
 Create Date: 2026-10-06 22:00:00.000000
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = 'a7d2c9e4b1f6'
-down_revision: Union[str, Sequence[str], None] = 'f4c9a1d7e3b8'
+down_revision: Union[str, Sequence[str], None] = 'c4e8a2d6f1b9'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

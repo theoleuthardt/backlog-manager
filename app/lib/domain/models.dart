@@ -15,6 +15,7 @@ class BacklogEntry {
     this.review,
     this.note,
     this.description,
+    this.publisher,
     this.trailerLink,
     this.mainTime,
     this.mainPlusExtraTime,
@@ -39,6 +40,9 @@ class BacklogEntry {
   final String? review;
   final String? note;
   final String? description;
+
+  /// The company that published the game, when it is known.
+  final String? publisher;
   final String? trailerLink;
   final double? mainTime;
   final double? mainPlusExtraTime;
@@ -75,6 +79,7 @@ class BacklogEntry {
       review: review,
       note: note,
       description: description,
+      publisher: publisher,
       trailerLink: trailerLink,
       mainTime: mainTime,
       mainPlusExtraTime: mainPlusExtraTime,

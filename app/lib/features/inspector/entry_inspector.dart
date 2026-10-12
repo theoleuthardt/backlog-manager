@@ -412,6 +412,9 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
     final genres = splitList(_form.genre);
     final platforms = splitList(_form.platform);
     final completedOn = completedOnLabel(entry.completedAt);
+    final publisher = (entry.publisher ?? '').trim().isEmpty
+        ? null
+        : entry.publisher!.trim();
     final dot = colorFromHex(statusColor(_form.status));
     final reviewable = canReview(_form.status);
     final fullscreen = ref.watch(inspectorFullscreenProvider);
@@ -476,6 +479,31 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
                                             fontSize: 22,
                                           ),
                                         ),
+                                        if (publisher != null) ...[
+                                          const SizedBox(height: 6),
+                                          Text.rich(
+                                            TextSpan(
+                                              text: 'Published by ',
+                                              style: style.caption.copyWith(
+                                                color: tokens.muted,
+                                              ),
+                                              children: [
+                                                TextSpan(
+                                                  text: publisher,
+                                                  style: style.caption.copyWith(
+                                                    color: tokens.foreground,
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            key: const Key(
+                                              'inspector-publisher',
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
                                         if (genres.isNotEmpty) ...[
                                           const SizedBox(height: 12),
                                           FactChips(
