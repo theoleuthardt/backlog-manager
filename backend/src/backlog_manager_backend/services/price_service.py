@@ -1,3 +1,4 @@
+import asyncio
 from datetime import UTC, date, datetime
 from decimal import Decimal
 
@@ -33,11 +34,35 @@ logger = structlog.get_logger()
 
 _STALE_AFTER_SECONDS = 60 * 60
 
+_SWEEP_REQUEST_PAUSE_SECONDS = 0.5
+_RATE_LIMIT_RETRIES = 2
+_RATE_LIMIT_DEFAULT_WAIT_SECONDS = 30.0
+_RATE_LIMIT_MAX_WAIT_SECONDS = 120.0
+
 _store_names: dict[str, str] = {}
 _store_icons: dict[str, str] = {}
 
 _DEAL_REDIRECT_URL = "https://www.cheapshark.com/redirect?dealID="
 _STORE_ICON_BASE_URL = "https://www.cheapshark.com"
+
+
+class _SweepRateLimitedError(Exception):
+    """CheapShark kept answering 429 after the retries of one game."""
+
+
+async def _sleep(seconds: float) -> None:
+    await asyncio.sleep(seconds)
+
+
+def _retry_after_seconds(response: httpx.Response) -> float:
+    """How long to wait after a 429: CheapShark's Retry-After (in seconds)
+    when it sends one, otherwise a default, capped so a bad header cannot
+    stall the sweep."""
+    try:
+        wait = float(response.headers["Retry-After"])
+    except (KeyError, ValueError):
+        wait = _RATE_LIMIT_DEFAULT_WAIT_SECONDS
+    return min(max(wait, 1.0), _RATE_LIMIT_MAX_WAIT_SECONDS)
 
 
 def _now() -> datetime:
@@ -110,6 +135,21 @@ async def _fetch_and_store_price(session: AsyncSession, steam_app_id: int) -> Ga
     )
 
 
+async def _refresh_for_sweep(session: AsyncSession, steam_app_id: int) -> GamePrice:
+    """Refreshes one game for the sweep, waiting out a CheapShark 429 up to
+    _RATE_LIMIT_RETRIES times before giving up with _SweepRateLimitedError."""
+    for attempt in range(_RATE_LIMIT_RETRIES + 1):
+        try:
+            return await _fetch_and_store_price(session, steam_app_id)
+        except httpx.HTTPStatusError as error:
+            if error.response.status_code != 429:
+                raise
+            if attempt == _RATE_LIMIT_RETRIES:
+                raise _SweepRateLimitedError from error
+            await _sleep(_retry_after_seconds(error.response))
+    raise AssertionError("unreachable")
+
+
 async def get_price_info(session: AsyncSession, steam_app_id: int) -> GamePrice:
     """On-demand path powering the BacklogEntry detail view - serves the
     persisted GamePrice row unless it's missing or older than
@@ -168,12 +208,37 @@ async def check_prices_and_alert(session: AsyncSession) -> int:
     alerts_sent = 0
     pairs = await game_price_repo.get_tracked_user_steam_app_id_pairs(session, owned=False)
 
+    steam_app_ids = {steam_app_id for _, steam_app_id in pairs}
+    checked_at = await game_price_repo.get_checked_at_by_steam_app_id(session, steam_app_ids)
+    ordered = sorted(
+        steam_app_ids,
+        key=lambda steam_app_id: (
+            steam_app_id in checked_at,
+            checked_at.get(steam_app_id, _now()),
+            steam_app_id,
+        ),
+    )
+
     prices: dict[int, GamePrice] = {}
-    for steam_app_id in {steam_app_id for _, steam_app_id in pairs}:
+    failed = 0
+    rate_limited = False
+    for index, steam_app_id in enumerate(ordered):
+        if index:
+            await _sleep(_SWEEP_REQUEST_PAUSE_SECONDS)
         try:
-            prices[steam_app_id] = await _fetch_and_store_price(session, steam_app_id)
+            prices[steam_app_id] = await _refresh_for_sweep(session, steam_app_id)
+        except _SweepRateLimitedError:
+            rate_limited = True
+            break
         except httpx.HTTPError:
+            failed += 1
             logger.error("Failed to refresh price for sweep", steam_app_id=steam_app_id)
+    logger.info(
+        "Price sweep refreshed",
+        refreshed=len(prices),
+        failed=failed,
+        skipped_rate_limited=len(ordered) - len(prices) - failed if rate_limited else 0,
+    )
 
     for user_id, steam_app_id in pairs:
         price = prices.get(steam_app_id)

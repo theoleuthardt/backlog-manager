@@ -1,3 +1,4 @@
+from datetime import datetime
 from decimal import Decimal
 
 import msgspec
@@ -32,6 +33,19 @@ def _as_decimal(value: Decimal | None) -> Decimal | None:
 async def get_game_price(session: AsyncSession, steam_app_id: int) -> GamePrice | None:
     model = await session.get(GamePriceModel, steam_app_id)
     return _to_schema(model) if model is not None else None
+
+
+async def get_checked_at_by_steam_app_id(
+    session: AsyncSession, steam_app_ids: set[int]
+) -> dict[int, datetime]:
+    """When each of the given Steam App IDs was last refreshed; IDs without a
+    price row are absent."""
+    result = await session.execute(
+        select(GamePriceModel.steam_app_id, GamePriceModel.checked_at).where(
+            GamePriceModel.steam_app_id.in_(steam_app_ids)
+        )
+    )
+    return {steam_app_id: checked_at for steam_app_id, checked_at in result.all()}
 
 
 async def upsert_game_price(session: AsyncSession, params: UpsertGamePriceParams) -> GamePrice:

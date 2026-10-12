@@ -2,6 +2,7 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from types import ModuleType
 
+import httpx
 import pytest
 from cryptography.fernet import Fernet
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -453,3 +454,144 @@ async def test_resolve_discord_webhook_url_returns_none_for_invalid_configured_f
     )
 
     assert price_service._resolve_discord_webhook_url(user) is None
+
+
+def _rate_limited(retry_after: str | None = None) -> httpx.HTTPStatusError:
+    headers = {"Retry-After": retry_after} if retry_after is not None else {}
+    request = httpx.Request("GET", "https://www.cheapshark.com/api/1.0/games")
+    response = httpx.Response(429, headers=headers, request=request)
+    return httpx.HTTPStatusError("CheapShark API error: 429", request=request, response=response)
+
+
+async def _entries_for(session: AsyncSession, steam_app_ids: list[int]) -> None:
+    user = await _make_user(session, "sweepowner@example.com")
+    for steam_app_id in steam_app_ids:
+        await _make_entry(session, user.id, steam_app_id=steam_app_id, owned=False)
+
+
+async def test_sweep_pauses_between_games(
+    price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
+) -> None:
+    await _entries_for(session, [1, 2, 3])
+    sleeps: list[float] = []
+
+    async def fake_sleep(seconds: float) -> None:
+        sleeps.append(seconds)
+
+    async def fake_find(steam_app_id: int) -> int | None:
+        return None
+
+    _mock_no_stores(price_service, monkeypatch)
+    monkeypatch.setattr(price_service, "_sleep", fake_sleep)
+    monkeypatch.setattr(price_service, "find_cheapshark_game_id", fake_find)
+
+    await price_service.check_prices_and_alert(session)
+
+    assert sleeps == [price_service._SWEEP_REQUEST_PAUSE_SECONDS] * 2
+
+
+async def test_sweep_retries_a_rate_limited_game_after_retry_after(
+    price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
+) -> None:
+    await _entries_for(session, [220])
+    sleeps: list[float] = []
+    calls = 0
+
+    async def fake_sleep(seconds: float) -> None:
+        sleeps.append(seconds)
+
+    async def fake_find(steam_app_id: int) -> int | None:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise _rate_limited("7")
+        return None
+
+    _mock_no_stores(price_service, monkeypatch)
+    monkeypatch.setattr(price_service, "_sleep", fake_sleep)
+    monkeypatch.setattr(price_service, "find_cheapshark_game_id", fake_find)
+
+    await price_service.check_prices_and_alert(session)
+
+    assert sleeps == [7]
+    assert await game_price_repo.get_game_price(session, 220) is not None
+
+
+async def test_sweep_stops_when_rate_limit_persists(
+    price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
+) -> None:
+    await _entries_for(session, [1, 2, 3])
+    looked_up: list[int] = []
+
+    async def fake_sleep(seconds: float) -> None:
+        return None
+
+    async def fake_find(steam_app_id: int) -> int | None:
+        looked_up.append(steam_app_id)
+        raise _rate_limited()
+
+    _mock_no_stores(price_service, monkeypatch)
+    monkeypatch.setattr(price_service, "_sleep", fake_sleep)
+    monkeypatch.setattr(price_service, "find_cheapshark_game_id", fake_find)
+
+    await price_service.check_prices_and_alert(session)
+
+    assert len(looked_up) == price_service._RATE_LIMIT_RETRIES + 1
+
+
+async def test_sweep_clamps_an_excessive_retry_after(
+    price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
+) -> None:
+    await _entries_for(session, [220])
+    sleeps: list[float] = []
+    calls = 0
+
+    async def fake_sleep(seconds: float) -> None:
+        sleeps.append(seconds)
+
+    async def fake_find(steam_app_id: int) -> int | None:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise _rate_limited("86400")
+        return None
+
+    _mock_no_stores(price_service, monkeypatch)
+    monkeypatch.setattr(price_service, "_sleep", fake_sleep)
+    monkeypatch.setattr(price_service, "find_cheapshark_game_id", fake_find)
+
+    await price_service.check_prices_and_alert(session)
+
+    assert sleeps == [price_service._RATE_LIMIT_MAX_WAIT_SECONDS]
+
+
+async def test_sweep_refreshes_the_least_recently_checked_game_first(
+    price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
+) -> None:
+    await _entries_for(session, [1, 2, 3])
+    for steam_app_id, age_hours in ((1, 1), (2, 5)):
+        await game_price_repo.upsert_game_price(
+            session,
+            UpsertGamePriceParams(
+                steam_app_id=steam_app_id,
+                deals=[],
+                on_sale=False,
+                checked_at=datetime.now(UTC).replace(tzinfo=None) - timedelta(hours=age_hours),
+            ),
+        )
+    order: list[int] = []
+
+    async def fake_sleep(seconds: float) -> None:
+        return None
+
+    async def fake_find(steam_app_id: int) -> int | None:
+        order.append(steam_app_id)
+        return None
+
+    _mock_no_stores(price_service, monkeypatch)
+    monkeypatch.setattr(price_service, "_sleep", fake_sleep)
+    monkeypatch.setattr(price_service, "find_cheapshark_game_id", fake_find)
+
+    await price_service.check_prices_and_alert(session)
+
+    assert order == [3, 2, 1]

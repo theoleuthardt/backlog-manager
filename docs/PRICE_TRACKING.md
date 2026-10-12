@@ -51,7 +51,7 @@ New msgspec structs live in `integrations/types.py` alongside the existing `Stea
 These are the first two Alembic migrations in the repo that `create_table` rather than `add_column`/`drop_column` (all prior ones only touched existing columns) — written by hand after autogenerate, since autogenerate also picks up unrelated pre-existing schema drift between the SQLAlchemy models and the baselined DB that has nothing to do with this change.
 
 **New repositories**:
-- `repositories/game_price_repo.py`: `get_game_price`, `upsert_game_price`, `get_tracked_user_steam_app_id_pairs(session, *, owned=None) -> list[tuple[int, int]]` (distinct `(UserID, SteamAppId)` pairs from `BacklogEntries`, `owned=False` for the sweep), `get_title_for_steam_app_id`.
+- `repositories/game_price_repo.py`: `get_game_price`, `upsert_game_price`, `get_tracked_user_steam_app_id_pairs(session, *, owned=None) -> list[tuple[int, int]]` (distinct `(UserID, SteamAppId)` pairs from `BacklogEntries`, `owned=False` for the sweep), `get_title_for_steam_app_id`, `get_checked_at_by_steam_app_id(session, steam_app_ids) -> dict[int, datetime]`.
 - `repositories/user_game_price_alert_repo.py`: `get_last_alerted_price`, `set_last_alerted_price` (upsert).
 
 **New service** — `services/price_service.py`, following `game_service.py`'s style:
@@ -59,6 +59,8 @@ These are the first two Alembic migrations in the repo that `create_table` rathe
 - `_store_names` in-memory cache (unbounded, no TTL — same convention as `_genre_cache`/`_platform_cache`), populated lazily from `get_stores()`.
 - `get_price_info(session, steam_app_id) -> GamePrice` — on-demand path: returns the cached row if `CheckedAt` is fresh, otherwise refreshes from CheapShark, computes `OnSale` (any deal with `savings > 0`), upserts, and returns.
 - `check_prices_and_alert(session) -> int` — the sweep: fetches every distinct `(user_id, steam_app_id)` pair with `owned=False`, refreshes each distinct `steam_app_id`'s price once, then for each pair whose price is on sale: resolves that user's Discord webhook, skips if it hasn't changed since `UserGamePriceAlert.LastAlertedPrice`, otherwise sends one Discord message and updates the dedup row. Returns the alert count.
+
+  Throttling: CheapShark answers `429` after roughly 40 quick requests, so the sweep refreshes the least recently checked games first (never-checked ones before all others), pauses 0.5 s between games, and waits out a `429` (the `Retry-After` header, 30 s without one, capped at 120 s) up to two times per game. When a game is still rate limited the sweep stops instead of failing every remaining game, and the rest is picked up first by the next sweep. One `Price sweep refreshed` log line reports refreshed, failed and rate-limited counts. The sweep can now run for minutes inside one request, so the `price-check-cron` `curl` call allows 1800 s.
 
 **New routes**:
 - `GET /api/games/{steam_app_id:int}/price` — added to `routes/games.py`'s `authenticated_games_router` (JWT-protected; keeps an unused `current_user` parameter since the router's auth dependency only runs for handlers that declare it — see the existing `admin_user_router` comment for the same gotcha). Returns `GamePrice` via `price_service.get_price_info`.
