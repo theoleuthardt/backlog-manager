@@ -233,6 +233,33 @@ void main() {
       expect(taps, 1);
     });
 
+    testWidgets('the orbs repaint at most 30 times per second', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildShelfTheme(tokensOf('freaky')),
+          home: SizedBox(
+            width: 600,
+            height: 400,
+            child: FreakyOrbs(random: Random(3)),
+          ),
+        ),
+      );
+      final painter = tester
+          .widget<CustomPaint>(find.byKey(const Key('freaky-orbs')))
+          .painter!;
+      var repaints = 0;
+      void count() => repaints++;
+      painter.addListener(count);
+
+      for (var frame = 0; frame < 60; frame++) {
+        await tester.pump(const Duration(microseconds: 16667));
+      }
+
+      painter.removeListener(count);
+      expect(repaints, inInclusiveRange(25, 31));
+      await tester.pumpWidget(const SizedBox());
+    });
+
     testWidgets('golden: the orbs over the Freaky atmosphere', tags: 'golden', (
       tester,
     ) async {

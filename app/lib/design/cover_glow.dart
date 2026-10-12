@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:backlog_manager/design/atmosphere.dart';
 import 'package:backlog_manager/design/background_motion.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
+import 'package:backlog_manager/design/throttled_clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -165,13 +166,17 @@ class CoverGlowBackdrop extends ConsumerStatefulWidget {
 
 class _CoverGlowBackdropState extends ConsumerState<CoverGlowBackdrop>
     with SingleTickerProviderStateMixin {
+  static const _loop = Duration(seconds: 20);
+
   late final AnimationController _drift = AnimationController(
     vsync: this,
-    duration: const Duration(seconds: 20),
+    duration: _loop,
   );
+  late final ThrottledClock _clock = ThrottledClock(_drift, period: _loop);
 
   @override
   void dispose() {
+    _clock.dispose();
     _drift.dispose();
     super.dispose();
   }
@@ -215,9 +220,9 @@ class _CoverGlowBackdropState extends ConsumerState<CoverGlowBackdrop>
 
     return IgnorePointer(
       child: AnimatedBuilder(
-        animation: _drift,
+        animation: _clock,
         builder: (context, _) {
-          final t = _drift.value;
+          final t = _clock.value;
           final breath = 1 + 0.18 * math.sin(2 * math.pi * t * 2);
           return ShaderMask(
             blendMode: BlendMode.dstIn,
