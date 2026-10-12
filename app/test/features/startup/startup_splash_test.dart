@@ -2,6 +2,7 @@ import 'package:backlog_manager/design/atmosphere.dart';
 import 'package:backlog_manager/features/startup/startup_splash.dart';
 import 'package:backlog_manager/routing/session.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -92,6 +93,20 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     await tester.tap(find.byKey(const Key('startup-splash')));
+    await tester.pump();
+    await tester.pump(startupSplashFade);
+    await tester.pump(startupSplashFade);
+
+    expect(find.byKey(const Key('startup-splash')), findsNothing);
+  });
+
+  testWidgets('a key press skips it and the key still reaches the app', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.space);
     await tester.pump();
     await tester.pump(startupSplashFade);
     await tester.pump(startupSplashFade);

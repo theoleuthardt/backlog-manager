@@ -423,7 +423,7 @@ Third round:
 
 ### Start animation
 
-`features/startup/startup_splash.dart` (`StartupSplash`, wrapped around the router in `app.dart`) shows the start animation above the app when it starts: the Saturn of the brand mark (`SaturnSpinnerPainter`, the painter of `ShelfSpinner`) arrives over the sky with a glow, and the wordmark "Backlog Manager" appears letter by letter followed by one sweep of light, 3 s in all. It ends when the animation has run and the session check is over (`SessionLoading` holds it), then fades out over 0.5 s into the sign-in page or the shell; a click or a key press skips it. It is shown once per start and not at all while the system asks for less motion, while "Animated Background" is off and in tests (`atmosphereMotion`).
+`features/startup/startup_splash.dart` (`StartupSplash`, wrapped around the router in `app.dart`) shows the start animation above the app when it starts: the Saturn of the brand mark (`SaturnSpinnerPainter`, the painter of `ShelfSpinner`) arrives over the sky with a glow, and the wordmark "Backlog Manager" appears letter by letter followed by one sweep of light, 3 s in all. It ends when the animation has run and the session check is over (`SessionLoading` holds it), then fades out over 0.5 s into the sign-in page or the shell; a click or a key press skips it (the key press is not consumed, no focus moves). It is shown once per start and not at all while the system asks for less motion, while "Animated Background" is off and in tests (`atmosphereMotion`).
 
 ### Profile picture
 

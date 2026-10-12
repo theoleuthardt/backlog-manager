@@ -49,7 +49,21 @@ class _StartupSplashState extends ConsumerState<StartupSplash>
   bool _gone = false;
 
   @override
+  void initState() {
+    super.initState();
+    HardwareKeyboard.instance.addHandler(_onKey);
+  }
+
+  /// A key press skips the animation. The event is left to the rest of the
+  /// window, so no focus moves to or from the splash.
+  bool _onKey(KeyEvent event) {
+    if (event is KeyDownEvent && !_gone) _skip();
+    return false;
+  }
+
+  @override
   void dispose() {
+    HardwareKeyboard.instance.removeHandler(_onKey);
     _run.dispose();
     _fade.dispose();
     super.dispose();
@@ -97,18 +111,11 @@ class _StartupSplashState extends ConsumerState<StartupSplash>
         widget.child,
         FadeTransition(
           opacity: ReverseAnimation(_fade),
-          child: Focus(
-            autofocus: true,
-            onKeyEvent: (_, event) {
-              if (event is KeyDownEvent) _skip();
-              return KeyEventResult.handled;
-            },
-            child: GestureDetector(
-              key: const Key('startup-splash'),
-              behavior: HitTestBehavior.opaque,
-              onTap: _skip,
-              child: _SplashScene(progress: _run),
-            ),
+          child: GestureDetector(
+            key: const Key('startup-splash'),
+            behavior: HitTestBehavior.opaque,
+            onTap: _skip,
+            child: _SplashScene(progress: _run),
           ),
         ),
       ],
