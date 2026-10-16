@@ -5,6 +5,7 @@ import 'package:backlog_manager/domain/models.dart';
 /// The values the inspector form starts with for [entry].
 EntryForm entryFormFrom(BacklogEntry entry) {
   return EntryForm(
+    title: entry.title,
     imageLink: entry.imageLink,
     playtime: entry.playtime,
     genre: entry.genre.join(', '),
@@ -77,6 +78,7 @@ EntryForm rebaseForm({
   T pick<T>(T current, T before, T after) =>
       current == before ? after : current;
   return EntryForm(
+    title: pick(form.title, from.title, to.title),
     imageLink: pick(form.imageLink, from.imageLink, to.imageLink),
     playtime: pick(form.playtime, from.playtime, to.playtime),
     genre: pick(form.genre, from.genre, to.genre),

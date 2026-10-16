@@ -164,6 +164,26 @@ void main() {
     );
     final from = entryFormFrom(base);
 
+    test('the form starts with the stored title', () {
+      expect(from.title, 'Hades');
+    });
+
+    test('follows a title changed outside while the field was untouched', () {
+      final to = from.copyWith(title: 'Hades II');
+
+      expect(rebaseForm(form: from, from: from, to: to).title, 'Hades II');
+    });
+
+    test('keeps a title the user is typing', () {
+      final edited = from.copyWith(title: 'Hades (Demo)');
+      final to = from.copyWith(title: 'Hades II');
+
+      expect(
+        rebaseForm(form: edited, from: from, to: to).title,
+        'Hades (Demo)',
+      );
+    });
+
     test('takes over what changed outside while the field was untouched', () {
       final to = from.copyWith(status: 'Completed');
 
