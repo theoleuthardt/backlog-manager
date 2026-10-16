@@ -21,7 +21,7 @@ void main() {
       'Add Game',
       'Ctrl+N',
       'Focus the search field',
-      '/',
+      'Ctrl+S',
       'Esc',
     ]) {
       expect(

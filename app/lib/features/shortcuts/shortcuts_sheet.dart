@@ -26,7 +26,7 @@ class _ShortcutsSheet extends ConsumerWidget {
       for (final action in ref.watch(paletteRegistryProvider))
         if (action.shortcut != null)
           (action.label, action.shortcut!.display(isMac: isMac)),
-      ('Focus the search field', '/'),
+      ('Focus the search field', '${modifier}S'),
       ('Close the palette, a sheet or the details', 'Esc'),
     ];
 

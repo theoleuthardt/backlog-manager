@@ -17,7 +17,7 @@ This document is the spec a second client (the planned Flutter client, issue #24
 3. **Master and detail.** Selecting a game opens an inspector beside the list instead of covering it. Short tasks (add, export, find the right game) are sheets over the window.
 4. **One accent.** A single accent colour marks the primary action, progress, selection and focus. Everything else is neutral.
 5. **Dense but calm.** 38 px controls, 15.5 px body text, 44 px inputs, hairline dividers between panes, soft filled groups instead of boxes.
-6. **Keyboard first.** Cmd/Ctrl+K opens a command palette, `/` focuses search, context menus show their shortcuts.
+6. **Keyboard first.** Cmd/Ctrl+K opens a command palette, Cmd/Ctrl+S focuses search, context menus show their shortcuts.
 7. **Changes save themselves.** Entry edits and settings autosave; destructive actions ask first.
 8. **Themeable from six colours.** Users keep the six-colour theme model; every other colour is derived.
 9. **A bit of space in every theme.** OLED black fading into deep blue by default, with stars, nebula clouds, blue glow and yellow accents. Every theme has the same atmosphere in its own colours. It stays behind the content and never competes with the covers.
@@ -117,9 +117,9 @@ Reference window 1440 x 900. All sizes are logical pixels.
 
 | Part | Size |
 |---|---|
-| Title bar | 56 high; window controls, sidebar toggle, back and forward, title, search field (340 wide, shows the Cmd/Ctrl+K hint) |
+| Title bar | 56 high; window controls, sidebar toggle, back and forward, title |
 | Sidebar | 232 wide, translucent `surface`, right divider; brand mark on top, navigation, and the account row (avatar, name, email, switcher) pinned to the very bottom on every window that has a sidebar |
-| Toolbar | 48 high under the title bar: title and count on the left, primary actions on the right; turns into a contextual bar (accent-tinted) while a selection is active |
+| Toolbar | 48 high under the title bar: heading with the search field centred beside it (up to 420 wide, 34 high, strong border, accent border on hover, Cmd/Ctrl+S as shortcut hint; on its own line in a pane under 600 px) and the primary action on the right, the controls and counts in a row below; turns into a contextual bar (accent-tinted) while a selection is active |
 | Filter bar | 44 high under the toolbar on list screens: filter tokens on the left, owned-only switch, reset, sort and view toggle on the right |
 | Content | fills the rest, scrolls vertically, 24 px padding |
 | Inspector | 380 wide on the right, `surface`, left divider; closes with its button or Esc |
@@ -141,10 +141,10 @@ Each component lists its parts and states. The "Flutter" column is a suggestion,
 
 | Component | Anatomy and states | Flutter |
 |---|---|---|
-| **Title bar** | Window controls, toggle, back/forward, title, search field with Cmd/Ctrl+K hint | `window_manager` for the frame; custom row |
+| **Title bar** | Window controls, toggle, back/forward, title | `window_manager` for the frame; custom row |
 | **Sidebar** | Brand mark, section labels, items 40 high with icon, label and optional count; active item with a `glow` gradient and a 2 px accent bar | custom `ListView` |
 | **Account row** | 58 high, divider above, always the last element of the sidebar: gradient avatar, name, email, switcher button | custom row |
-| **Toolbar** | Left: view and sort controls; right: counts and primary actions. Selection variant: tinted bar with the count and bulk actions | custom row |
+| **Toolbar** | Left: view and sort controls, the counts and the search field of the game lists; right: primary actions. Selection variant: tinted bar with the count and bulk actions | custom row |
 | **Button** | Radius 8, 38 high. Primary (accent fill, `onAccent` text), secondary (strong border), quiet (no border, muted text), danger (danger text), icon (38 square). Hover lifts to `surface2`; focus ring; disabled 40% | `FilledButton`/`OutlinedButton`/`TextButton` themed |
 | **Chip** | Pill, 24 high. Neutral, active (`foreground` fill), accent (`accentSoft`), ok (success tint), add (dashed border) | `Chip` |
 | **Segmented control** | Track on `surface2`, radius 8, selected segment on `surface3` with a soft shadow | `SegmentedButton` themed |
@@ -176,7 +176,7 @@ Each component lists its parts and states. The "Flutter" column is a suggestion,
 - **Drag and drop:** in the status sort a cover can be dragged onto another status group; in the category sort onto a category group (adds it and removes the first one). Empty groups stay visible as drop targets. A toast offers "Undo" for a status change.
 - **Search more:** the "find the right game" sheet has a "Can't find your game? Search more" button that repeats the search in deep mode (other spellings, bundles) and marks results found that way.
 - **Long operations** (Steam and IGDB sync, CSV import) show a progress bar fed by the server's progress events; the sheet cannot be closed while it runs.
-- **Keyboard:** `/` or Cmd/Ctrl+K focuses search or opens the palette; Tab reaches every control and shows the focus ring; Esc closes sheets, popovers and the inspector.
+- **Keyboard:** Cmd/Ctrl+S focuses the search of the library (and opens the palette on pages without it), Cmd/Ctrl+K opens the palette; Tab reaches every control and shows the focus ring; Esc closes sheets, popovers and the inspector.
 
 ## Screens
 

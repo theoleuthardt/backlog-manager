@@ -315,16 +315,12 @@ void main() {
   });
 
   group('the title bar', () {
-    testWidgets('shows the search field with the shortcut of the platform', (
+    testWidgets('has no search field, the search lives in the library', (
       tester,
     ) async {
       await pumpApp(tester);
-      expect(find.text('⌘K'), findsOneWidget);
-    });
 
-    testWidgets('shows Ctrl K away from macOS', (tester) async {
-      await pumpApp(tester, platform: TargetPlatform.windows);
-      expect(find.text('Ctrl K'), findsOneWidget);
+      expect(find.byKey(const Key('search-field')), findsNothing);
     });
 
     testWidgets(
@@ -475,30 +471,36 @@ void main() {
   });
 
   group('keyboard shortcuts', () {
-    testWidgets('/ focuses the search field', (tester) async {
-      await pumpApp(tester);
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.slash);
-      await tester.pump();
-
-      final field = tester.widget<TextField>(
-        find.byKey(const Key('search-field')),
-      );
-      expect(field.focusNode!.hasFocus, isTrue);
-    });
-
     testWidgets(
-      'typing in the title bar search takes any page to the library',
+      'Cmd+S opens the command palette on a page without the search',
       (tester) async {
-        final app = await pumpApp(tester, location: AppRoutes.home);
-        expect(app.location, AppRoutes.home);
+        final app = await pumpApp(tester);
 
-        await tester.enterText(find.byKey(const Key('search-field')), 'hades');
-        await tester.pumpAndSettle();
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+        await tester.sendKeyEvent(LogicalKeyboardKey.keyS);
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+        await tester.pump();
 
-        expect(app.location, AppRoutes.library);
+        expect(app.container.read(paletteOpenProvider), isTrue);
       },
     );
+
+    testWidgets('Cmd+S does not open the palette before sign-in', (
+      tester,
+    ) async {
+      final app = await pumpApp(
+        tester,
+        session: const SessionLoading(),
+        settle: false,
+      );
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyS);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+      await tester.pump();
+
+      expect(app.container.read(paletteOpenProvider), isFalse);
+    });
 
     testWidgets('Cmd+K opens the command palette on macOS and Esc closes it', (
       tester,

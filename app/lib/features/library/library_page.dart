@@ -31,6 +31,7 @@ import 'package:backlog_manager/features/library/entry_drag.dart';
 import 'package:backlog_manager/features/library/filter_bar.dart';
 import 'package:backlog_manager/features/library/library_actions.dart';
 import 'package:backlog_manager/features/library/library_content.dart';
+import 'package:backlog_manager/features/library/library_search_field.dart';
 import 'package:backlog_manager/features/library/library_view.dart';
 import 'package:backlog_manager/features/library/reveal_entry.dart';
 import 'package:backlog_manager/features/library/selection_bar.dart';
@@ -369,6 +370,10 @@ class _LibraryState extends ConsumerState<_Library> {
   }
 }
 
+/// Below this width of the pane the search leaves the heading line and takes
+/// a line of its own above the controls.
+const _searchBesideHeadingMin = 600.0;
+
 class _Toolbar extends ConsumerWidget {
   const _Toolbar({required this.content, this.space});
 
@@ -408,61 +413,90 @@ class _Toolbar extends ConsumerWidget {
             Text('Co-op backlog', style: style.page.copyWith(fontSize: 18)),
             SpaceControls(space: space),
             selectButton,
+            const SizedBox(width: 320, child: LibrarySearchField()),
             addButton,
           ],
         ),
       );
     }
 
+    final controls = Wrap(
+      spacing: 12,
+      runSpacing: 10,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        selectButton,
+        if (ref.watch(sessionUserProvider)?.hasSteamId ?? false)
+          const SteamSyncButton(),
+        ShelfIconButton(
+          key: const Key('igdb-sync-button'),
+          icon: Icons.storage_outlined,
+          badge: Icons.bolt,
+          tooltip: 'Sync IGDB',
+          onPressed: ref.read(igdbSyncRequestProvider.notifier).request,
+        ),
+        ShelfIconButton(
+          key: const Key('duplicates-button'),
+          icon: Icons.difference_outlined,
+          tooltip: 'Find duplicate games',
+          onPressed: () => unawaited(showDuplicatesSheet(context)),
+        ),
+        const SizedBox(width: 6),
+        Text('${content.shown} of ${content.total} games', style: muted),
+        Text(
+          '${formatCount(content.hoursToBeat.round())} h to beat',
+          style: muted,
+        ),
+      ],
+    );
+    final heading = SizedBox(
+      height: ShelfHeight.control,
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text('Library', style: style.page),
+      ),
+    );
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(_gutter, 22, _gutter, 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Wrap(
-              spacing: 12,
-              runSpacing: 10,
-              crossAxisAlignment: WrapCrossAlignment.center,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < _searchBesideHeadingMin) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                SizedBox(
-                  height: ShelfHeight.control,
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text('Library', style: style.page),
-                  ),
-                ),
-                selectButton,
-                if (ref.watch(sessionUserProvider)?.hasSteamId ?? false)
-                  const SteamSyncButton(),
-                ShelfIconButton(
-                  key: const Key('igdb-sync-button'),
-                  icon: Icons.storage_outlined,
-                  badge: Icons.bolt,
-                  tooltip: 'Sync IGDB',
-                  onPressed: ref.read(igdbSyncRequestProvider.notifier).request,
-                ),
-                ShelfIconButton(
-                  key: const Key('duplicates-button'),
-                  icon: Icons.difference_outlined,
-                  tooltip: 'Find duplicate games',
-                  onPressed: () => unawaited(showDuplicatesSheet(context)),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  '${content.shown} of ${content.total} games',
-                  style: muted,
-                ),
-                Text(
-                  '${formatCount(content.hoursToBeat.round())} h to beat',
-                  style: muted,
-                ),
+                Row(children: [heading, const Spacer(), addButton]),
+                const SizedBox(height: 12),
+                const LibrarySearchField(),
+                const SizedBox(height: 10),
+                controls,
               ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          addButton,
-        ],
+            );
+          }
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  heading,
+                  const SizedBox(width: 24),
+                  Expanded(
+                    child: Align(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 420),
+                        child: const LibrarySearchField(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  addButton,
+                ],
+              ),
+              const SizedBox(height: 10),
+              controls,
+            ],
+          );
+        },
       ),
     );
   }

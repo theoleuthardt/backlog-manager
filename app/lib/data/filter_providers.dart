@@ -7,7 +7,7 @@ import 'package:backlog_manager/domain/status_names.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// The filters of the library for the personal backlog: the search text of the
-/// title bar and the filters of the filter bar. They stay while the user moves
+/// library search field and the filters of the filter bar. They stay while the user moves
 /// between screens and start empty again with the next session.
 class FiltersNotifier extends Notifier<EntryFilters> {
   @override
