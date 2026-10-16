@@ -35,7 +35,12 @@ class _LibrarySearchFieldState extends ConsumerState<LibrarySearchField> {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final text = Theme.of(context).extension<ShelfTextStyles>()!;
     ref.listen(filtersProvider.select((filters) => filters.search), (_, next) {
-      if (_controller.text != next) _controller.text = next;
+      if (_controller.text != next) {
+        _controller.value = TextEditingValue(
+          text: next,
+          selection: TextSelection.collapsed(offset: next.length),
+        );
+      }
     });
 
     OutlineInputBorder border(Color color) => OutlineInputBorder(
