@@ -1,6 +1,7 @@
 import 'package:backlog_manager/data/filter_providers.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/domain/models.dart';
+import 'package:backlog_manager/routing/router.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -149,6 +150,50 @@ void main() {
 
       expect(tester.widget<TextField>(field).focusNode!.hasFocus, isTrue);
     });
+
+    testWidgets('Ctrl+S does not take the focus from another text field', (
+      tester,
+    ) async {
+      final container = await pumpLibrary(
+        tester,
+        FakeBacklogApi(entries: [hades]),
+      );
+      container.read(routerProvider).go('/library?entry=1');
+      await tester.pumpAndSettle();
+      final publisher = find.descendant(
+        of: find.byKey(const Key('inspector-publisher')),
+        matching: find.byType(TextField),
+      );
+      await tester.ensureVisible(publisher);
+      await tester.tap(publisher);
+      await tester.pump();
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyS);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pump();
+
+      final editable = tester.widget<EditableText>(
+        find.descendant(of: publisher, matching: find.byType(EditableText)),
+      );
+      expect(editable.focusNode.hasFocus, isTrue);
+      expect(tester.widget<TextField>(field).focusNode!.hasFocus, isFalse);
+    });
+
+    testWidgets(
+      'keeps the focus when the pane crosses the width of the stack',
+      (tester) async {
+        await pumpLibrary(tester, FakeBacklogApi(entries: [hades]));
+        await tester.tap(field);
+        await tester.pump();
+        expect(tester.widget<TextField>(field).focusNode!.hasFocus, isTrue);
+
+        tester.view.physicalSize = const Size(800, 2400);
+        await tester.pumpAndSettle();
+
+        expect(tester.widget<TextField>(field).focusNode!.hasFocus, isTrue);
+      },
+    );
 
     testWidgets('takes a line of its own above the controls in a narrow pane', (
       tester,

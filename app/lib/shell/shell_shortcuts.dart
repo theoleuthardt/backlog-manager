@@ -28,6 +28,11 @@ class CloseTopLayerIntent extends Intent {
   const CloseTopLayerIntent();
 }
 
+bool _typingInTextField() {
+  final context = FocusManager.instance.primaryFocus?.context;
+  return context?.findAncestorWidgetOfExactType<EditableText>() != null;
+}
+
 bool _focusInPopupRoute() {
   final context = FocusManager.instance.primaryFocus?.context;
   return context != null && ModalRoute.of(context) is PopupRoute;
@@ -35,7 +40,8 @@ bool _focusInPopupRoute() {
 
 /// The keyboard shortcuts of the whole window: Cmd+S on macOS and Ctrl+S
 /// elsewhere focus the search field of the library (on a page without it they
-/// open the command palette), Cmd+K and Ctrl+K open the command palette, Esc closes the palette and then the inspector.
+/// open the command palette; not while typing in a text field and not with a
+/// sheet or popover open), Cmd+K and Ctrl+K open the command palette, Esc closes the palette and then the inspector.
 /// The shortcuts of the palette actions come from the registry.
 class ShellShortcuts extends ConsumerWidget {
   const ShellShortcuts({required this.child, super.key});
@@ -63,7 +69,7 @@ class ShellShortcuts extends ConsumerWidget {
       child: Actions(
         actions: {
           FocusSearchIntent: _Action<FocusSearchIntent>(
-            enabled: () => true,
+            enabled: () => !_typingInTextField() && !_focusInPopupRoute(),
             run: () {
               final node = ref.read(searchFocusNodeProvider);
               if (node.context != null) {
