@@ -75,8 +75,10 @@ fi
 previous=$(cat .deployed-image 2>/dev/null || true)
 
 echo "deploy: replacing the backend and the cron containers"
-podman rm --force --depend --ignore blm_backend >/dev/null 2>&1 || true
-podman rm --force --depend --ignore blm_backend-old >/dev/null 2>&1 || true
+for old in blm_backend blm_backend-old; do
+  podman rm --force --time 30 --depend --ignore "$old" \
+    || { podman ps -a >&2 || true; fail "could not remove $old (see the podman error above), nothing was started"; }
+done
 podman tag "$ref" "$local_image"
 BACKEND_IMAGE="$local_image" podman compose -f compose.prod.yml up -d --no-deps --no-recreate \
   backend price-check-cron steam-wishlist-sync-cron \
