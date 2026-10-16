@@ -459,7 +459,12 @@ class _Toolbar extends ConsumerWidget {
       height: ShelfHeight.control,
       child: Align(
         alignment: Alignment.centerLeft,
-        child: Text('Library', style: style.page),
+        child: Text(
+          'Library',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: style.page,
+        ),
       ),
     );
 
@@ -471,7 +476,13 @@ class _Toolbar extends ConsumerWidget {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Row(children: [heading, const Spacer(), addButton]),
+                Row(
+                  children: [
+                    Expanded(child: heading),
+                    const SizedBox(width: 12),
+                    addButton,
+                  ],
+                ),
                 const SizedBox(height: 12),
                 const LibrarySearchField(),
                 const SizedBox(height: 10),
