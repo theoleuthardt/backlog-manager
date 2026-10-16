@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'package:backlog_manager/data/backlog_api.dart';
+import 'package:backlog_manager/data/backlog_providers.dart';
 import 'package:backlog_manager/data/filter_providers.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/features/random_pull/random_pull_sheet.dart';
@@ -143,7 +145,7 @@ void main() {
     await tester.tap(find.byKey(const Key('random-pull-include-finished')));
     await tester.pumpAndSettle();
 
-    expect(find.text('4 games to choose from'), findsNothing);
+    expect(find.text('3 games to choose from'), findsOneWidget);
   });
 
   testWidgets('chooses only from the games the filters show', (tester) async {
@@ -203,6 +205,21 @@ void main() {
           .toString(),
       '/library?entry=1',
     );
+  });
+
+  testWidgets('pulls another game when the one shown leaves the pool', (
+    tester,
+  ) async {
+    final container = await open(tester, picks: [0]);
+    expect(titleText(tester), 'Celeste');
+
+    await container
+        .read(entriesProvider(null).notifier)
+        .updateEntry(2, const EntryUpdate(status: 'Completed'));
+    await tester.pumpAndSettle();
+
+    expect(titleText(tester), 'Hades');
+    expect(find.text('1 game to choose from'), findsOneWidget);
   });
 
   testWidgets('a request from the palette opens it too', (tester) async {

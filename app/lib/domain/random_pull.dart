@@ -7,7 +7,9 @@ const _finishedStatuses = {'Completed', 'Dropped'};
 
 /// The games a random pull can choose from among [entries]: the games the
 /// user owns, without the completed and dropped ones unless [includeFinished]
-/// is set. A game the user does not own (a wishlist game) is never pulled.
+/// is set. A game the user does not own (a wishlist game) is never pulled;
+/// both the owned flag and the status "Not Owned" count, since an older entry
+/// can carry one without the other.
 List<BacklogEntry> pullCandidates(
   List<BacklogEntry> entries, {
   required bool includeFinished,

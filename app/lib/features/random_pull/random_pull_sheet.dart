@@ -27,6 +27,8 @@ Future<void> showRandomPullSheet(BuildContext context) {
 
 /// Pulls one game at random from the games the library shows (so the filters
 /// and the search narrow it), by default only from the games still to play.
+/// It follows the library while it is open: a game that leaves the pool is
+/// replaced by another pull.
 /// "Pull Again" never gives the same game twice in a row, and "Open Details"
 /// takes the game to the library.
 class RandomPullSheet extends ConsumerStatefulWidget {
@@ -39,6 +41,13 @@ class RandomPullSheet extends ConsumerStatefulWidget {
 class _RandomPullSheetState extends ConsumerState<RandomPullSheet> {
   var _includeFinished = false;
   int? _pulled;
+
+  @override
+  void initState() {
+    super.initState();
+    final entry = pickRandom(_pool(), ref.read(randomProvider));
+    _pulled = entry?.id;
+  }
 
   List<BacklogEntry> _pool() {
     final groups = ref.read(libraryContentProvider)?.groups ?? const [];
@@ -54,13 +63,6 @@ class _RandomPullSheetState extends ConsumerState<RandomPullSheet> {
       exceptId: _pulled,
     );
     setState(() => _pulled = entry?.id);
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    final entry = pickRandom(_pool(), ref.read(randomProvider));
-    _pulled = entry?.id;
   }
 
   void _open(BacklogEntry entry) {
@@ -79,9 +81,15 @@ class _RandomPullSheetState extends ConsumerState<RandomPullSheet> {
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
+    ref.watch(libraryContentProvider);
     final pool = _pool();
     final entry = pool.where((e) => e.id == _pulled).firstOrNull;
     final count = pool.length;
+    if (entry == null && pool.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _pull();
+      });
+    }
 
     return ShelfSheet(
       title: 'Random Pull',
