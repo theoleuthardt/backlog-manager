@@ -24,20 +24,33 @@ InputDecoration decoration(WidgetTester tester) =>
 
 void main() {
   group('the search in the library header', () {
-    testWidgets('stands in the header row, right of the counts', (
-      tester,
-    ) async {
+    testWidgets('stands right of the heading, on its line', (tester) async {
       await pumpLibrary(tester, FakeBacklogApi(entries: [hades]));
 
+      final heading = inLibrary(find.text('Library'));
       expect(inLibrary(field), findsOneWidget);
-      final counts = find.textContaining('games');
       expect(
         tester.getTopLeft(field).dx,
-        greaterThan(tester.getTopRight(counts.first).dx),
+        greaterThan(tester.getTopRight(heading).dx),
       );
       expect(
-        tester.getTopLeft(field).dy,
-        lessThan(tester.getTopLeft(find.text('In Progress').first).dy),
+        (tester.getCenter(field).dy - tester.getCenter(heading).dy).abs(),
+        lessThan(8),
+      );
+      expect(
+        tester.getTopRight(field).dx,
+        lessThan(
+          tester.getTopLeft(find.byKey(const Key('add-game-button'))).dx,
+        ),
+      );
+    });
+
+    testWidgets('is above the controls and the counts', (tester) async {
+      await pumpLibrary(tester, FakeBacklogApi(entries: [hades]));
+
+      expect(
+        tester.getBottomLeft(field).dy,
+        lessThan(tester.getTopLeft(find.byKey(const Key('select-toggle'))).dy),
       );
     });
 
@@ -122,21 +135,22 @@ void main() {
       expect(tester.widget<TextField>(field).focusNode!.hasFocus, isTrue);
     });
 
-    testWidgets('moves below the other controls when the pane is narrow', (
+    testWidgets('takes a line of its own above the controls in a narrow pane', (
       tester,
     ) async {
       await pumpLibrary(tester, FakeBacklogApi(entries: [hades]));
-      final wideTop = tester.getTopLeft(field).dy;
+      final headingTop = tester.getTopLeft(inLibrary(find.text('Library'))).dy;
 
-      tester.view.physicalSize = const Size(1000, 2400);
+      tester.view.physicalSize = const Size(800, 2400);
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
-      expect(tester.getTopLeft(field).dy, greaterThan(wideTop));
+      expect(tester.getTopLeft(field).dy, greaterThan(headingTop + 20));
       expect(
-        tester.getTopRight(field).dx,
-        lessThanOrEqualTo(tester.getSize(find.byType(MaterialApp)).width),
+        tester.getBottomLeft(field).dy,
+        lessThan(tester.getTopLeft(find.byKey(const Key('select-toggle'))).dy),
       );
+      expect(tester.getSize(field).width, greaterThan(300));
     });
   });
 }
