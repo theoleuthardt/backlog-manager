@@ -235,11 +235,11 @@ The IGDB and Steam sync buttons of the toolbar arrive with their features (#268,
 
 ### Filter bar
 
-The 44 px bar under the library toolbar (`features/library/filter_bar.dart`) holds one token per active filter, the dashed "+ Add filter" token, and on the right the owned-only switch, "Reset", the sort menu with its direction button and the grid or list toggle. The filters live in `data/filter_providers.dart` (`filtersProvider`: the search text of the title bar plus the filters; it survives screen changes and starts empty with the next session); `effectiveFiltersProvider` drops selected categories that no longer exist, and `filterOptionsProvider` and `filterBoundsProvider` supply the picker values (the largest value of the data rounded up, at least 10 hours, for the time ranges). The pure part is in `domain/filter_tokens.dart` (`FilterField`, `filterTokens`, `setListFilter`, `setRangeFilter`, `resetFilters`, `filterBounds`) on top of the ported `filterEntries`.
+The 44 px bar under the library toolbar (`features/library/filter_bar.dart`) holds one token per active filter, the dashed "+ Add filter" token, and on the right the owned-only switch, "Reset", the sort menu with its direction button and the grid or list toggle. The filters live in `data/filter_providers.dart` (`filtersProvider`: the search text of the library search field plus the filters; it survives screen changes and starts empty with the next session); `effectiveFiltersProvider` drops selected categories that no longer exist, and `filterOptionsProvider` and `filterBoundsProvider` supply the picker values (the largest value of the data rounded up, at least 10 hours, for the time ranges). The pure part is in `domain/filter_tokens.dart` (`FilterField`, `filterTokens`, `setListFilter`, `setRangeFilter`, `resetFilters`, `filterBounds`) on top of the ported `filterEntries`.
 
 - "+ Add filter" opens a searchable list of the fields (Category only when categories exist) and then the picker of the chosen field; a click on the text of a token opens the same picker, the x removes the filter.
 - A list field is a list of checks; a range has a minimum and a maximum (fields and slider). A range over the whole slider is no filter, and entries without a value are not excluded by a range.
-- The title bar search filters by title, ignoring case, and does not count as a filter. The status bar shows "N of M games" and, when filters are active, the number of filters; each list filter, each range and owned only count once.
+- The library search field filters by title, ignoring case, and does not count as a filter. The status bar shows "N of M games" and, when filters are active, the number of filters; each list filter, each range and owned only count once.
 
 ### Custom statuses
 

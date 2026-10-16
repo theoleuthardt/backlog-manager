@@ -36,8 +36,8 @@ final searchHintSeenProvider =
 
 /// Shows [child] and, the first time the library is open on this device, a
 /// toast that tells how to search: the shortcut of the command palette, which
-/// finds games and runs commands, and `/` for the field of the title bar,
-/// which filters the library.
+/// finds games and runs commands, and `/` for the field in the header of the
+/// library, which filters it.
 class SearchHintPrompt extends ConsumerStatefulWidget {
   const SearchHintPrompt({
     required this.location,

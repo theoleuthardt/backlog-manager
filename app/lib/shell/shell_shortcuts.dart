@@ -70,10 +70,10 @@ class ShellShortcuts extends ConsumerWidget {
             enabled: () => !_typingInTextField(),
             run: () {
               final node = ref.read(searchFocusNodeProvider);
-              if (node.context == null) {
-                ref.read(paletteOpenProvider.notifier).open();
-              } else {
+              if (node.context != null) {
                 node.requestFocus();
+              } else if (ref.read(sessionProvider) is SessionSignedIn) {
+                ref.read(paletteOpenProvider.notifier).open();
               }
             },
           ),

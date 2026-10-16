@@ -6,8 +6,8 @@ import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// The search of the library and of the Shared Space, in the header row of the
-/// page next to the counts, where the games are. It filters the list as you
+/// The search of the library and of the Shared Space, on the heading line of the
+/// header, where the games are. It filters the list as you
 /// type, `/` focuses it, and its border lights up on hover and focus. Its key
 /// hint is `/`; Cmd/Ctrl+K opens the command palette instead.
 class LibrarySearchField extends ConsumerStatefulWidget {

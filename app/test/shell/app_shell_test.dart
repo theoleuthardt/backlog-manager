@@ -482,6 +482,19 @@ void main() {
       expect(app.container.read(paletteOpenProvider), isTrue);
     });
 
+    testWidgets('/ does not open the palette before sign-in', (tester) async {
+      final app = await pumpApp(
+        tester,
+        session: const SessionLoading(),
+        settle: false,
+      );
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.slash);
+      await tester.pump();
+
+      expect(app.container.read(paletteOpenProvider), isFalse);
+    });
+
     testWidgets('Cmd+K opens the command palette on macOS and Esc closes it', (
       tester,
     ) async {
