@@ -64,7 +64,7 @@ abstract class FallbackClient {
 
   /// ProxyImage
   @GET('/api/images/proxy')
-  Future<void> apiImagesProxyProxyImage({@Query('url') required String url});
+  Future<String> apiImagesProxyProxyImage({@Query('url') required String url});
 
   /// Login
   @POST('/api/auth/login')

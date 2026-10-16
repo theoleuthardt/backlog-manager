@@ -76,77 +76,34 @@
         ],
         "responses": {
           "200": {
-            "description": "Request fulfilled, document follows",
-            "headers": {
-              "Strict-Transport-Security": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "Referrer-Policy": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "X-Content-Type-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              },
-              "X-Frame-Options": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": false,
-                "deprecated": false
-              }
-            },
+            "description": "The image, as image/jpeg, image/png, image/webp, image/gif or image/avif: the content type is the one of the upstream image.",
             "content": {
-              "application/json": {
-                "schema": {}
+              "image/*": {
+                "schema": {
+                  "type": "string"
+                }
               }
             }
           },
           "400": {
-            "description": "Bad request syntax or unsupported method",
+            "description": "The URL is not an allowed https URL, or the image is too large or of an unsupported type.",
             "content": {
-              "application/json": {
+              "text/plain": {
                 "schema": {
-                  "properties": {
-                    "status_code": {
-                      "type": "integer"
-                    },
-                    "detail": {
-                      "type": "string"
-                    },
-                    "extra": {
-                      "additionalProperties": {},
-                      "type": [
-                        "null",
-                        "object",
-                        "array"
-                      ]
-                    }
-                  },
-                  "type": "object",
-                  "required": [
-                    "detail",
-                    "status_code"
-                  ],
-                  "description": "Validation Exception",
-                  "examples": [
-                    {
-                      "status_code": 400,
-                      "detail": "Bad Request",
-                      "extra": {}
-                    }
-                  ]
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "The ETag of the image matches If-None-Match."
+          },
+          "404": {
+            "description": "The image was not found.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
                 }
               }
             }

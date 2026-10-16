@@ -40,12 +40,12 @@ class _FallbackClient implements FallbackClient {
   }
 
   @override
-  Future<void> apiImagesProxyProxyImage({required String url}) async {
+  Future<String> apiImagesProxyProxyImage({required String url}) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{r'url': url};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<void>(
+    final _options = _setStreamType<String>(
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -55,7 +55,15 @@ class _FallbackClient implements FallbackClient {
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
-    await _dio.fetch<void>(_options);
+    final _result = await _dio.fetch<String>(_options);
+    late String _value;
+    try {
+      _value = _result.data!;
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options, response: _result);
+      rethrow;
+    }
+    return _value;
   }
 
   @override
