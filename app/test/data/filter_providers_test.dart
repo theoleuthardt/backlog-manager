@@ -176,6 +176,7 @@ void main() {
           'Completed',
           'On Hold',
           'Dropped',
+          'Not Owned',
           'Replaying',
           'Imported',
         ]);

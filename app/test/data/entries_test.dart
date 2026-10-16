@@ -161,6 +161,24 @@ void main() {
       },
     );
 
+    test(
+      'marks the game as not owned at once when it moves to Not Owned',
+      () async {
+        await load();
+        final pending = Completer<void>();
+        api.onUpdate = (id, update) => pending.future;
+
+        final move = notifier().moveToStatus(1, 'Not Owned');
+        await Future<void>.delayed(Duration.zero);
+        final moved = entries().firstWhere((e) => e.id == 1);
+        expect(moved.status, 'Not Owned');
+        expect(moved.owned, isFalse);
+
+        pending.complete();
+        await move;
+      },
+    );
+
     test('puts a failed entry back and reports the message', () async {
       await load();
       api.onUpdate = (id, update) async =>

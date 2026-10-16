@@ -44,12 +44,23 @@ from backlog_manager_backend.schemas.custom_status import (
 )
 from backlog_manager_backend.schemas.user import User
 from backlog_manager_backend.services import backup_service
+from backlog_manager_backend.services.entry_ownership import (
+    NOT_OWNED_STATUS,
+    couple_status_and_ownership,
+)
 
 _ENTRY_NOT_FOUND = "Backlog entry not found"
 _CATEGORY_NOT_FOUND = "Category not found"
 _STATUS_NOT_FOUND = "Custom status not found"
 _SPACE_NOT_FOUND = "Space not found"
-DEFAULT_STATUSES = ("Not Started", "In Progress", "Completed", "On Hold", "Dropped")
+DEFAULT_STATUSES = (
+    "Not Started",
+    "In Progress",
+    "Completed",
+    "On Hold",
+    "Dropped",
+    NOT_OWNED_STATUS,
+)
 _STATUS_NAME_MAX_LENGTH = 20
 
 
@@ -259,9 +270,10 @@ async def update_entry(
 ) -> BacklogEntryResponse:
     """In a shared space, playtime, review_stars and review are the
     caller's own member data and never touch the shared entry row."""
-    await _get_scoped_entry(db_session, entry_id, current_user, space_id)
+    existing = await _get_scoped_entry(db_session, entry_id, current_user, space_id)
     if space_id is not None and data.steam_app_id is None:
         raise ValidationException("Entries in a shared space must stay linked to a Steam game")
+    status, owned = couple_status_and_ownership(existing.status, data.status, data.owned)
 
     review_stars = data.review_stars
     if isinstance(review_stars, float):
@@ -276,8 +288,8 @@ async def update_entry(
             if isinstance(data.platform, list)
             else data.platform
         ),
-        status=data.status,
-        owned=data.owned,
+        status=status,
+        owned=owned,
         interest=data.interest,
         release_date=data.release_date,
         image_link=data.image_link,
