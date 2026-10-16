@@ -14,9 +14,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 const _macTrafficLights = 80.0;
+const _searchMaxWidth = 400.0;
 
 /// The 56 px title bar: sidebar toggle, back and forward, the page title and
-/// the search field with its shortcut hint. It is the drag region of the
+/// the search field with its shortcut hint, right next to the title and up to
+/// [_searchMaxWidth] wide; the window is at least 1000 px wide, so it always
+/// has room. It is the drag region of the
 /// window; Windows and Linux get caption buttons on the right, macOS keeps its
 /// native traffic lights on the left. A [minimal] bar (sign-in, setup) has the
 /// title only.
@@ -107,8 +110,22 @@ class TitleBar extends ConsumerWidget {
                             style: text.windowTitle,
                           ),
                         ),
-                        const Spacer(),
-                        if (!minimal) _SearchField(location: location),
+                        if (minimal)
+                          const Spacer()
+                        else ...[
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  maxWidth: _searchMaxWidth,
+                                ),
+                                child: _SearchField(location: location),
+                              ),
+                            ),
+                          ),
+                        ],
                         SizedBox(width: isMac ? 16 : 12),
                         if (!isMac) ...[
                           _CaptionButton(
@@ -225,6 +242,8 @@ class _SearchField extends ConsumerStatefulWidget {
 }
 
 class _SearchFieldState extends ConsumerState<_SearchField> {
+  var _hovered = false;
+
   void _changed(String value) {
     ref.read(filtersProvider.notifier).setSearch(value);
     final onGameList =
@@ -254,42 +273,54 @@ class _SearchFieldState extends ConsumerState<_SearchField> {
       if (_controller.text != next) _controller.text = next;
     });
 
-    return SizedBox(
-      width: 340,
-      height: 30,
-      child: TextField(
-        key: const Key('search-field'),
-        controller: _controller,
-        onChanged: _changed,
-        focusNode: ref.watch(searchFocusNodeProvider),
-        style: text.fieldText,
-        decoration: InputDecoration(
-          hintText: 'Search your games',
-          prefixIcon: Icon(Icons.search, size: 16, color: tokens.faint),
-          prefixIconConstraints: const BoxConstraints(minWidth: 34),
-          suffixIcon: Center(
-            widthFactor: 1,
-            child: Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: tokens.surface2,
-                  borderRadius: BorderRadius.circular(5),
-                  border: Border.all(color: tokens.borderSubtle),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 1,
+    OutlineInputBorder border(Color color) => OutlineInputBorder(
+      borderRadius: BorderRadius.circular(ShelfRadius.control),
+      borderSide: BorderSide(color: color),
+    );
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: SizedBox(
+        height: 34,
+        child: TextField(
+          key: const Key('search-field'),
+          controller: _controller,
+          onChanged: _changed,
+          focusNode: ref.watch(searchFocusNodeProvider),
+          style: text.fieldText,
+          decoration: InputDecoration(
+            hintText: 'Search your games',
+            prefixIcon: Icon(Icons.search, size: 16, color: tokens.muted),
+            prefixIconConstraints: const BoxConstraints(minWidth: 34),
+            suffixIcon: Center(
+              widthFactor: 1,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: tokens.surface3,
+                    borderRadius: BorderRadius.circular(5),
+                    border: Border.all(color: tokens.borderStrong),
                   ),
-                  child: Text(isMac ? '⌘K' : 'Ctrl K', style: text.keyHint),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 1,
+                    ),
+                    child: Text(isMac ? '⌘K' : 'Ctrl K', style: text.keyHint),
+                  ),
                 ),
               ),
             ),
+            filled: true,
+            fillColor: tokens.surface2,
+            enabledBorder: border(
+              _hovered ? tokens.accent : tokens.borderStrong,
+            ),
+            focusedBorder: border(tokens.glow),
+            contentPadding: const EdgeInsets.symmetric(vertical: 0),
           ),
-          filled: true,
-          fillColor: tokens.surface2.withValues(alpha: 0.6),
-          contentPadding: const EdgeInsets.symmetric(vertical: 0),
         ),
       ),
     );

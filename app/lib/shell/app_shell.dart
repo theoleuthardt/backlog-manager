@@ -7,6 +7,7 @@ import 'package:backlog_manager/features/palette/command_palette.dart';
 import 'package:backlog_manager/features/updates/update_notifier.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/shell/pane_widths.dart';
+import 'package:backlog_manager/shell/search_hint.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:backlog_manager/shell/sidebar.dart';
 import 'package:backlog_manager/shell/status_bar.dart';
@@ -120,7 +121,12 @@ class _AppShellState extends ConsumerState<AppShell> {
                             child: SizedBox.expand(
                               key: const Key('main-content'),
                               child: UpdateNotifier(
-                                child: WishlistSyncPrompt(child: widget.child),
+                                child: WishlistSyncPrompt(
+                                  child: SearchHintPrompt(
+                                    location: location,
+                                    child: widget.child,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
