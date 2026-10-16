@@ -45,6 +45,19 @@ void main() {
       );
     });
 
+    testWidgets('is centred between the heading and the Add Game button', (
+      tester,
+    ) async {
+      await pumpLibrary(tester, FakeBacklogApi(entries: [hades]));
+
+      final heading = inLibrary(find.text('Library'));
+      final add = find.byKey(const Key('add-game-button'));
+      final between =
+          (tester.getTopRight(heading).dx + tester.getTopLeft(add).dx) / 2;
+
+      expect(tester.getCenter(field).dx, closeTo(between, 16));
+    });
+
     testWidgets('is above the controls and the counts', (tester) async {
       await pumpLibrary(tester, FakeBacklogApi(entries: [hades]));
 

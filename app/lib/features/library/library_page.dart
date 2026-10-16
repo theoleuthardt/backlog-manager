@@ -482,7 +482,6 @@ class _Toolbar extends ConsumerWidget {
                   const SizedBox(width: 24),
                   Expanded(
                     child: Align(
-                      alignment: Alignment.centerLeft,
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 420),
                         child: const LibrarySearchField(),

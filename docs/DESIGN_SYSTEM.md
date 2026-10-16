@@ -119,7 +119,7 @@ Reference window 1440 x 900. All sizes are logical pixels.
 |---|---|
 | Title bar | 56 high; window controls, sidebar toggle, back and forward, title |
 | Sidebar | 232 wide, translucent `surface`, right divider; brand mark on top, navigation, and the account row (avatar, name, email, switcher) pinned to the very bottom on every window that has a sidebar |
-| Toolbar | 48 high under the title bar: title, controls and count on the left, the search field (320 wide, 34 high, strong border, accent border on hover, `/` as key hint; it moves to the next line in a narrow pane) next to them, the primary action on the right; turns into a contextual bar (accent-tinted) while a selection is active |
+| Toolbar | 48 high under the title bar: heading with the search field centred beside it (up to 420 wide, 34 high, strong border, accent border on hover, `/` as key hint; on its own line in a pane under 600 px) and the primary action on the right, the controls and counts in a row below; turns into a contextual bar (accent-tinted) while a selection is active |
 | Filter bar | 44 high under the toolbar on list screens: filter tokens on the left, owned-only switch, reset, sort and view toggle on the right |
 | Content | fills the rest, scrolls vertically, 24 px padding |
 | Inspector | 380 wide on the right, `surface`, left divider; closes with its button or Esc |
