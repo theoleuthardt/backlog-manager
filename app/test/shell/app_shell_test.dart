@@ -315,16 +315,12 @@ void main() {
   });
 
   group('the title bar', () {
-    testWidgets('shows the search field with the shortcut of the platform', (
+    testWidgets('has no search field, the search lives in the library', (
       tester,
     ) async {
       await pumpApp(tester);
-      expect(find.text('⌘K'), findsOneWidget);
-    });
 
-    testWidgets('shows Ctrl K away from macOS', (tester) async {
-      await pumpApp(tester, platform: TargetPlatform.windows);
-      expect(find.text('Ctrl K'), findsOneWidget);
+      expect(find.byKey(const Key('search-field')), findsNothing);
     });
 
     testWidgets(
@@ -475,30 +471,16 @@ void main() {
   });
 
   group('keyboard shortcuts', () {
-    testWidgets('/ focuses the search field', (tester) async {
-      await pumpApp(tester);
+    testWidgets('/ opens the command palette on a page without the search', (
+      tester,
+    ) async {
+      final app = await pumpApp(tester);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.slash);
       await tester.pump();
 
-      final field = tester.widget<TextField>(
-        find.byKey(const Key('search-field')),
-      );
-      expect(field.focusNode!.hasFocus, isTrue);
+      expect(app.container.read(paletteOpenProvider), isTrue);
     });
-
-    testWidgets(
-      'typing in the title bar search takes any page to the library',
-      (tester) async {
-        final app = await pumpApp(tester, location: AppRoutes.home);
-        expect(app.location, AppRoutes.home);
-
-        await tester.enterText(find.byKey(const Key('search-field')), 'hades');
-        await tester.pumpAndSettle();
-
-        expect(app.location, AppRoutes.library);
-      },
-    );
 
     testWidgets('Cmd+K opens the command palette on macOS and Esc closes it', (
       tester,

@@ -117,7 +117,7 @@ Reference window 1440 x 900. All sizes are logical pixels.
 
 | Part | Size |
 |---|---|
-| Title bar | 56 high; window controls, sidebar toggle, back and forward, title, search field (right after the title, up to 400 wide, 34 high, strong border, accent border on hover, shows the Cmd/Ctrl+K hint) |
+| Title bar | 56 high; window controls, sidebar toggle, back and forward, title |
 | Sidebar | 232 wide, translucent `surface`, right divider; brand mark on top, navigation, and the account row (avatar, name, email, switcher) pinned to the very bottom on every window that has a sidebar |
 | Toolbar | 48 high under the title bar: title and count on the left, primary actions on the right; turns into a contextual bar (accent-tinted) while a selection is active |
 | Filter bar | 44 high under the toolbar on list screens: filter tokens on the left, owned-only switch, reset, sort and view toggle on the right |
@@ -141,7 +141,7 @@ Each component lists its parts and states. The "Flutter" column is a suggestion,
 
 | Component | Anatomy and states | Flutter |
 |---|---|---|
-| **Title bar** | Window controls, toggle, back/forward, title, search field with Cmd/Ctrl+K hint | `window_manager` for the frame; custom row |
+| **Title bar** | Window controls, toggle, back/forward, title | `window_manager` for the frame; custom row |
 | **Sidebar** | Brand mark, section labels, items 40 high with icon, label and optional count; active item with a `glow` gradient and a 2 px accent bar | custom `ListView` |
 | **Account row** | 58 high, divider above, always the last element of the sidebar: gradient avatar, name, email, switcher button | custom row |
 | **Toolbar** | Left: view and sort controls; right: counts and primary actions. Selection variant: tinted bar with the count and bulk actions | custom row |

@@ -31,6 +31,7 @@ import 'package:backlog_manager/features/library/entry_drag.dart';
 import 'package:backlog_manager/features/library/filter_bar.dart';
 import 'package:backlog_manager/features/library/library_actions.dart';
 import 'package:backlog_manager/features/library/library_content.dart';
+import 'package:backlog_manager/features/library/library_search_field.dart';
 import 'package:backlog_manager/features/library/library_view.dart';
 import 'package:backlog_manager/features/library/reveal_entry.dart';
 import 'package:backlog_manager/features/library/selection_bar.dart';
@@ -369,6 +370,16 @@ class _LibraryState extends ConsumerState<_Library> {
   }
 }
 
+/// The room of the search in the header row: 320 px, which the row wraps to
+/// the next line when the pane is narrower than the other controls and it.
+class _SearchSlot extends StatelessWidget {
+  const _SearchSlot();
+
+  @override
+  Widget build(BuildContext context) =>
+      const SizedBox(width: 320, child: LibrarySearchField());
+}
+
 class _Toolbar extends ConsumerWidget {
   const _Toolbar({required this.content, this.space});
 
@@ -408,6 +419,7 @@ class _Toolbar extends ConsumerWidget {
             Text('Co-op backlog', style: style.page.copyWith(fontSize: 18)),
             SpaceControls(space: space),
             selectButton,
+            const _SearchSlot(),
             addButton,
           ],
         ),
@@ -457,6 +469,7 @@ class _Toolbar extends ConsumerWidget {
                   '${formatCount(content.hoursToBeat.round())} h to beat',
                   style: muted,
                 ),
+                const _SearchSlot(),
               ],
             ),
           ),

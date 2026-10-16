@@ -68,7 +68,14 @@ class ShellShortcuts extends ConsumerWidget {
         actions: {
           FocusSearchIntent: _Action<FocusSearchIntent>(
             enabled: () => !_typingInTextField(),
-            run: () => ref.read(searchFocusNodeProvider).requestFocus(),
+            run: () {
+              final node = ref.read(searchFocusNodeProvider);
+              if (node.context == null) {
+                ref.read(paletteOpenProvider.notifier).open();
+              } else {
+                node.requestFocus();
+              }
+            },
           ),
           RunPaletteActionIntent: _RunPaletteAction(
             enabled: () => ref.read(sessionProvider) is SessionSignedIn,

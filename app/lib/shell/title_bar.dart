@@ -1,11 +1,9 @@
-import 'package:backlog_manager/data/filter_providers.dart';
 import 'package:backlog_manager/design/glass.dart';
 import 'package:backlog_manager/design/glow.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/routing/history.dart';
-import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/shell/navigation.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:backlog_manager/shell/window_controls.dart';
@@ -14,12 +12,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 const _macTrafficLights = 80.0;
-const _searchMaxWidth = 400.0;
 
-/// The 56 px title bar: sidebar toggle, back and forward, the page title and
-/// the search field with its shortcut hint, right next to the title and up to
-/// [_searchMaxWidth] wide; the window is at least 1000 px wide, so it always
-/// has room. It is the drag region of the
+/// The 56 px title bar: sidebar toggle, back and forward and the page title. It is the drag region of the
 /// window; Windows and Linux get caption buttons on the right, macOS keeps its
 /// native traffic lights on the left. A [minimal] bar (sign-in, setup) has the
 /// title only.
@@ -110,22 +104,7 @@ class TitleBar extends ConsumerWidget {
                             style: text.windowTitle,
                           ),
                         ),
-                        if (minimal)
-                          const Spacer()
-                        else ...[
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                  maxWidth: _searchMaxWidth,
-                                ),
-                                child: _SearchField(location: location),
-                              ),
-                            ),
-                          ),
-                        ],
+                        const Spacer(),
                         SizedBox(width: isMac ? 16 : 12),
                         if (!isMac) ...[
                           _CaptionButton(
@@ -224,104 +203,6 @@ class _CaptionButton extends StatelessWidget {
         width: 46,
         height: 56,
         child: Icon(icon, size: 16, color: tokens.muted),
-      ),
-    );
-  }
-}
-
-/// The search field of the title bar. It filters the games of the library and
-/// the Shared Space, so typing on any other page takes the user to the
-/// library, where the result is.
-class _SearchField extends ConsumerStatefulWidget {
-  const _SearchField({required this.location});
-
-  final String location;
-
-  @override
-  ConsumerState<_SearchField> createState() => _SearchFieldState();
-}
-
-class _SearchFieldState extends ConsumerState<_SearchField> {
-  var _hovered = false;
-
-  void _changed(String value) {
-    ref.read(filtersProvider.notifier).setSearch(value);
-    final onGameList =
-        widget.location == AppRoutes.library ||
-        widget.location == AppRoutes.space;
-    if (value.trim().isNotEmpty && !onGameList) {
-      context.go(AppRoutes.library);
-    }
-  }
-
-  late final TextEditingController _controller = TextEditingController(
-    text: ref.read(filtersProvider).search,
-  );
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = Theme.of(context).extension<ShelfTokens>()!;
-    final text = Theme.of(context).extension<ShelfTextStyles>()!;
-    final isMac = Theme.of(context).platform == TargetPlatform.macOS;
-    ref.listen(filtersProvider.select((filters) => filters.search), (_, next) {
-      if (_controller.text != next) _controller.text = next;
-    });
-
-    OutlineInputBorder border(Color color) => OutlineInputBorder(
-      borderRadius: BorderRadius.circular(ShelfRadius.control),
-      borderSide: BorderSide(color: color),
-    );
-
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: SizedBox(
-        height: 34,
-        child: TextField(
-          key: const Key('search-field'),
-          controller: _controller,
-          onChanged: _changed,
-          focusNode: ref.watch(searchFocusNodeProvider),
-          style: text.fieldText,
-          decoration: InputDecoration(
-            hintText: 'Search your games',
-            prefixIcon: Icon(Icons.search, size: 16, color: tokens.muted),
-            prefixIconConstraints: const BoxConstraints(minWidth: 34),
-            suffixIcon: Center(
-              widthFactor: 1,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: tokens.surface3,
-                    borderRadius: BorderRadius.circular(5),
-                    border: Border.all(color: tokens.borderStrong),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 1,
-                    ),
-                    child: Text(isMac ? '⌘K' : 'Ctrl K', style: text.keyHint),
-                  ),
-                ),
-              ),
-            ),
-            filled: true,
-            fillColor: tokens.surface2,
-            enabledBorder: border(
-              _hovered ? tokens.accent : tokens.borderStrong,
-            ),
-            focusedBorder: border(tokens.glow),
-            contentPadding: const EdgeInsets.symmetric(vertical: 0),
-          ),
-        ),
       ),
     );
   }
