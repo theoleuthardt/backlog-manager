@@ -171,6 +171,38 @@ void main() {
       expect(changedFields(changes), {'status': 'Completed', 'note': 'great'});
     });
 
+    test('includes a renamed title, trimmed', () {
+      final changes = diffEntryForm(
+        unchanged.copyWith(title: '  Celeste (Demo) '),
+        entry,
+      );
+
+      expect(changes.title, 'Celeste (Demo)');
+      expect(changes.isEmpty, isFalse);
+    });
+
+    test('leaves the title out when it is the stored one', () {
+      expect(
+        diffEntryForm(unchanged.copyWith(title: 'Celeste'), entry).title,
+        isNull,
+      );
+      expect(
+        diffEntryForm(unchanged.copyWith(title: ' Celeste '), entry).title,
+        isNull,
+      );
+    });
+
+    test('never sends a blank title', () {
+      expect(
+        diffEntryForm(unchanged.copyWith(title: '   '), entry).title,
+        isNull,
+      );
+      expect(
+        diffEntryForm(unchanged.copyWith(title: ''), entry).isEmpty,
+        isTrue,
+      );
+    });
+
     test('splits genre and platform lists', () {
       final changes = diffEntryForm(
         unchanged.copyWith(genre: 'RPG,  Action', platform: 'PC, Switch'),

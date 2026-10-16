@@ -219,6 +219,45 @@ void main() {
       expect(find.text('All changes saved'), findsOneWidget);
     });
 
+    testWidgets('renames the game from the overview and saves it', (
+      tester,
+    ) async {
+      final app = await openInspector(tester);
+
+      final field = find.descendant(
+        of: find.byKey(const Key('inspector-title-field')),
+        matching: find.byType(TextField),
+      );
+      await tester.ensureVisible(field);
+      expect(tester.widget<TextField>(field).controller!.text, 'Hades');
+
+      await tester.enterText(field, 'Hades (Demo)');
+      await tester.pump();
+      await afterAutosave(tester);
+
+      expect(app.api.calls, contains('update 1 {title: Hades (Demo)}'));
+      expect(
+        tester.widget<Text>(find.byKey(const Key('inspector-title'))).data,
+        'Hades (Demo)',
+      );
+    });
+
+    testWidgets('does not save a blank title and says why', (tester) async {
+      final app = await openInspector(tester);
+
+      final field = find.descendant(
+        of: find.byKey(const Key('inspector-title-field')),
+        matching: find.byType(TextField),
+      );
+      await tester.ensureVisible(field);
+      await tester.enterText(field, '   ');
+      await tester.pump();
+      await afterAutosave(tester);
+
+      expect(app.api.calls.where((c) => c.startsWith('update')), isEmpty);
+      expect(find.text('A game needs a title'), findsOneWidget);
+    });
+
     testWidgets('shows the publisher in the overview and saves an edit', (
       tester,
     ) async {
