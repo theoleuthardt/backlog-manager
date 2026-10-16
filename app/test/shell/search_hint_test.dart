@@ -55,7 +55,7 @@ void main() {
     await pumpHint(tester, store: store);
 
     expect(find.textContaining('Ctrl+K'), findsOneWidget);
-    expect(find.textContaining('/'), findsWidgets);
+    expect(find.textContaining('Ctrl+S'), findsOneWidget);
     expect(store.seen, isTrue);
     await tester.pump(const Duration(seconds: 30));
   });
@@ -68,6 +68,7 @@ void main() {
     );
 
     expect(find.textContaining('⌘K'), findsOneWidget);
+    expect(find.textContaining('⌘S'), findsOneWidget);
     await tester.pump(const Duration(seconds: 30));
   });
 

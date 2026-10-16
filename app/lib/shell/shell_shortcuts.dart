@@ -33,14 +33,9 @@ bool _focusInPopupRoute() {
   return context != null && ModalRoute.of(context) is PopupRoute;
 }
 
-bool _typingInTextField() {
-  final context = FocusManager.instance.primaryFocus?.context;
-  return context?.findAncestorWidgetOfExactType<EditableText>() != null;
-}
-
-/// The keyboard shortcuts of the whole window: `/` focuses the search field
-/// (not while typing in a text field), Cmd+K on macOS and Ctrl+K elsewhere
-/// opens the command palette, Esc closes the palette and then the inspector.
+/// The keyboard shortcuts of the whole window: Cmd+S on macOS and Ctrl+S
+/// elsewhere focus the search field of the library (on a page without it they
+/// open the command palette), Cmd+K and Ctrl+K open the command palette, Esc closes the palette and then the inspector.
 /// The shortcuts of the palette actions come from the registry.
 class ShellShortcuts extends ConsumerWidget {
   const ShellShortcuts({required this.child, super.key});
@@ -58,7 +53,8 @@ class ShellShortcuts extends ConsumerWidget {
             action.shortcut!.activator(isMac: isMac): RunPaletteActionIntent(
               action,
             ),
-        const CharacterActivator('/'): const FocusSearchIntent(),
+        SingleActivator(LogicalKeyboardKey.keyS, meta: isMac, control: !isMac):
+            const FocusSearchIntent(),
         SingleActivator(LogicalKeyboardKey.keyK, meta: isMac, control: !isMac):
             const OpenPaletteIntent(),
         const SingleActivator(LogicalKeyboardKey.escape):
@@ -67,7 +63,7 @@ class ShellShortcuts extends ConsumerWidget {
       child: Actions(
         actions: {
           FocusSearchIntent: _Action<FocusSearchIntent>(
-            enabled: () => !_typingInTextField(),
+            enabled: () => true,
             run: () {
               final node = ref.read(searchFocusNodeProvider);
               if (node.context != null) {

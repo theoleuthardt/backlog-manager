@@ -36,8 +36,8 @@ final searchHintSeenProvider =
 
 /// Shows [child] and, the first time the library is open on this device, a
 /// toast that tells how to search: the shortcut of the command palette, which
-/// finds games and runs commands, and `/` for the field in the header of the
-/// library, which filters it.
+/// finds games and runs commands, and Cmd/Ctrl+S for the field in the header
+/// of the library, which filters it.
 class SearchHintPrompt extends ConsumerStatefulWidget {
   const SearchHintPrompt({
     required this.location,
@@ -72,7 +72,7 @@ class _SearchHintPromptState extends ConsumerState<SearchHintPrompt> {
       showShelfToast(
         context,
         'Press ${isMac ? '⌘K' : 'Ctrl+K'} to search games and run commands, '
-        'or / to filter your library.',
+        'or ${isMac ? '⌘S' : 'Ctrl+S'} to filter your library.',
         actionLabel: 'Got It',
         onAction: () {},
         duration: const Duration(seconds: 15),

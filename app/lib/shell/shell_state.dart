@@ -92,7 +92,8 @@ final igdbSyncRequestProvider = NotifierProvider<IgdbSyncRequestNotifier, int>(
   IgdbSyncRequestNotifier.new,
 );
 
-/// The focus node of the search field in the title bar, so `/` can reach it.
+/// The focus node of the search field of the library, so Cmd/Ctrl+S can reach
+/// it.
 final searchFocusNodeProvider = Provider<FocusNode>((ref) {
   final node = FocusNode(debugLabel: 'search');
   ref.onDispose(node.dispose);

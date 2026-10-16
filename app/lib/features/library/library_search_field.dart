@@ -8,8 +8,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// The search of the library and of the Shared Space, on the heading line of the
 /// header, where the games are. It filters the list as you
-/// type, `/` focuses it, and its border lights up on hover and focus. Its key
-/// hint is `/`; Cmd/Ctrl+K opens the command palette instead.
+/// type, Cmd/Ctrl+S focuses it, and its border lights up on hover and focus. Its
+/// shortcut hint is Cmd/Ctrl+S; Cmd/Ctrl+K opens the command palette instead.
 class LibrarySearchField extends ConsumerStatefulWidget {
   const LibrarySearchField({super.key});
 
@@ -34,6 +34,7 @@ class _LibrarySearchFieldState extends ConsumerState<LibrarySearchField> {
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final text = Theme.of(context).extension<ShelfTextStyles>()!;
+    final isMac = Theme.of(context).platform == TargetPlatform.macOS;
     ref.listen(filtersProvider.select((filters) => filters.search), (_, next) {
       if (_controller.text != next) {
         _controller.value = TextEditingValue(
@@ -78,7 +79,7 @@ class _LibrarySearchFieldState extends ConsumerState<LibrarySearchField> {
                       horizontal: 7,
                       vertical: 1,
                     ),
-                    child: Text('/', style: text.keyHint),
+                    child: Text(isMac ? '⌘S' : 'Ctrl S', style: text.keyHint),
                   ),
                 ),
               ),

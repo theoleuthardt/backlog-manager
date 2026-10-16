@@ -118,11 +118,11 @@ void main() {
       );
     });
 
-    testWidgets('shows the key that focuses it', (tester) async {
+    testWidgets('shows the shortcut that focuses it', (tester) async {
       await pumpLibrary(tester, FakeBacklogApi(entries: [hades]));
 
       expect(
-        find.descendant(of: field, matching: find.text('/')),
+        find.descendant(of: field, matching: find.text('Ctrl S')),
         findsOneWidget,
       );
     });
@@ -139,10 +139,12 @@ void main() {
       expect(container.read(filtersProvider).search, 'had');
     });
 
-    testWidgets('is focused by the / key', (tester) async {
+    testWidgets('is focused by Ctrl+S', (tester) async {
       await pumpLibrary(tester, FakeBacklogApi(entries: [hades]));
 
-      await tester.sendKeyEvent(LogicalKeyboardKey.slash);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyS);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
       await tester.pump();
 
       expect(tester.widget<TextField>(field).focusNode!.hasFocus, isTrue);

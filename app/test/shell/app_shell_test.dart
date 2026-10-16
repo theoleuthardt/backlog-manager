@@ -471,25 +471,32 @@ void main() {
   });
 
   group('keyboard shortcuts', () {
-    testWidgets('/ opens the command palette on a page without the search', (
+    testWidgets(
+      'Cmd+S opens the command palette on a page without the search',
+      (tester) async {
+        final app = await pumpApp(tester);
+
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+        await tester.sendKeyEvent(LogicalKeyboardKey.keyS);
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+        await tester.pump();
+
+        expect(app.container.read(paletteOpenProvider), isTrue);
+      },
+    );
+
+    testWidgets('Cmd+S does not open the palette before sign-in', (
       tester,
     ) async {
-      final app = await pumpApp(tester);
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.slash);
-      await tester.pump();
-
-      expect(app.container.read(paletteOpenProvider), isTrue);
-    });
-
-    testWidgets('/ does not open the palette before sign-in', (tester) async {
       final app = await pumpApp(
         tester,
         session: const SessionLoading(),
         settle: false,
       );
 
-      await tester.sendKeyEvent(LogicalKeyboardKey.slash);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyS);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
       await tester.pump();
 
       expect(app.container.read(paletteOpenProvider), isFalse);
