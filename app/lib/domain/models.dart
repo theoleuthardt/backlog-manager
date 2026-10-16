@@ -1,3 +1,5 @@
+import 'package:backlog_manager/domain/status_names.dart';
+
 /// A game of the backlog as the app uses it; the generated API model is
 /// mapped to this at the boundary.
 class BacklogEntry {
@@ -63,7 +65,8 @@ class BacklogEntry {
   final int? steamAppId;
   final DateTime? completedAt;
 
-  /// This entry in another status.
+  /// This entry in another status; moving to or out of "Not Owned" changes
+  /// the owned flag with it, as the server does.
   BacklogEntry withStatus(String newStatus) {
     return BacklogEntry(
       id: id,
@@ -73,7 +76,11 @@ class BacklogEntry {
       genre: genre,
       platform: platform,
       status: newStatus,
-      owned: owned,
+      owned: newStatus == notOwnedStatus
+          ? false
+          : status == notOwnedStatus
+          ? true
+          : owned,
       interest: interest,
       reviewStars: reviewStars,
       review: review,

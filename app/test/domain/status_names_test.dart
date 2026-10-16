@@ -3,18 +3,26 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('defaultStatuses', () {
-    test('are the five built-in statuses in their order', () {
+    test('are the six built-in statuses in their order', () {
       expect(defaultStatuses, [
         'Not Started',
         'In Progress',
         'Completed',
         'On Hold',
         'Dropped',
+        'Not Owned',
       ]);
     });
   });
 
   group('statusNameError', () {
+    test('rejects Not Owned as a custom status', () {
+      expect(
+        statusNameError('Not Owned', const []),
+        "That's already a default status",
+      );
+    });
+
     test('has no message for an empty or blank name', () {
       expect(statusNameError('', const []), '');
       expect(statusNameError('   ', const []), '');

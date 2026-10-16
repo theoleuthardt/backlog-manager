@@ -1,10 +1,16 @@
-/// The five statuses every backlog has, in the order they are listed.
+/// The status of a game the user does not own (a wishlist game). It goes with
+/// the owned flag: moving a game to it marks the game as not owned, moving it
+/// out marks it as owned.
+const notOwnedStatus = 'Not Owned';
+
+/// The six statuses every backlog has, in the order they are listed.
 const defaultStatuses = [
   'Not Started',
   'In Progress',
   'Completed',
   'On Hold',
   'Dropped',
+  notOwnedStatus,
 ];
 
 const statusNameMaxLength = 20;

@@ -234,3 +234,7 @@ checking the build.
 ## Profile pictures
 
 A user can set a profile picture (`PUT /api/user/avatar`, raw `image/png`, `image/jpeg` or `image/webp` body, at most 512 KB, bytes checked against the declared type; `DELETE /api/user/avatar`). The bytes live in `"blm-system"."UserAvatars"`, apart from `Users`, so loading a user never loads a picture; `Users.AvatarUpdatedAt` says whether there is one and is the version a client uses to cache it. `GET /api/user/{id}/avatar` answers the owner and the other member of the same Shared Space and 404 for everyone else (the same answer as for a user without a picture), with an ETag and `Cache-Control: private, no-cache`. The row goes with the account (`ON DELETE CASCADE`). Pictures are not part of backups (`docs/BACKUPS.md`): a restore replaces the backlog content, not the profile.
+
+## Status and ownership
+
+"Not Owned" is one of the six built-in statuses and goes with `BacklogEntries.Owned`: `PUT /api/backlog/entries/{id}` keeps the two in step when a user changes only one of them (`services/entry_ownership.py`), so a drag between status groups, the ownership switch and a bulk status change all end in the same state, in every client. Imports (Steam, CSV) set both fields themselves and do not go through it.
