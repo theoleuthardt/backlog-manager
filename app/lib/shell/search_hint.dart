@@ -63,10 +63,12 @@ class _SearchHintPromptState extends ConsumerState<SearchHintPrompt> {
       return;
     }
     _shown = true;
-    ref.read(searchHintSeenProvider.notifier).markSeen();
     final isMac = Theme.of(context).platform == TargetPlatform.macOS;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
+      if (!mounted || widget.location != AppRoutes.library) {
+        _shown = false;
+        return;
+      }
       showShelfToast(
         context,
         'Press ${isMac ? '⌘K' : 'Ctrl+K'} to search games and run commands, '
@@ -75,6 +77,7 @@ class _SearchHintPromptState extends ConsumerState<SearchHintPrompt> {
         onAction: () {},
         duration: const Duration(seconds: 15),
       );
+      ref.read(searchHintSeenProvider.notifier).markSeen();
     });
   }
 
