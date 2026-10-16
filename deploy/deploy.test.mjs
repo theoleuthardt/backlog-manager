@@ -25,7 +25,9 @@ case "$1" in
     else
       [ -e "$state/image-id" ] && cat "$state/image-id" || exit 1
     fi ;;
-  rm) rm -f "$state/running-blm_backend" "$state/running-blm_price-check-cron" "$state/running-blm_steam-wishlist-sync-cron"; rm -f "$state/image-id" ;;
+  rm)
+    if [ -e "$state/rm-fails" ]; then echo "Error: cannot remove blm_backend: container is busy" >&2; exit 125; fi
+    rm -f "$state/running-blm_backend" "$state/running-blm_price-check-cron" "$state/running-blm_steam-wishlist-sync-cron"; rm -f "$state/image-id" ;;
   compose)
     if [ -e "$state/compose-fails-silently" ]; then exit 0; fi
     touch "$state/running-blm_backend" "$state/running-blm_price-check-cron" "$state/running-blm_steam-wishlist-sync-cron"
@@ -87,7 +89,7 @@ describe("deploy.sh", () => {
     assert.match(result.stdout, /is live/);
     assert.equal(readFileSync(join(env.server, ".deployed-image"), "utf8").trim(), `${REPO}:${SHA}`);
     assert.match(result.calls, new RegExp(`pull ${REPO}:${SHA}`));
-    assert.match(result.calls, /rm --force --depend --ignore blm_backend/);
+    assert.match(result.calls, /rm --force --time 30 --depend --ignore blm_backend/);
     assert.doesNotMatch(result.calls, /rm .*blm_db/);
     assert.match(result.calls, /up -d --no-deps --no-recreate backend price-check-cron steam-wishlist-sync-cron/);
     assert.ok(existsSync(join(env.dir, "calls-backup")), "backup ran");
@@ -152,6 +154,15 @@ describe("deploy.sh", () => {
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /blm_db is not running/);
     assert.doesNotMatch(result.calls, /compose|rm /);
+  });
+
+  it("stops and shows the podman error when the old backend cannot be removed", () => {
+    writeFileSync(join(env.state, "rm-fails"), "");
+    const result = run(env);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /cannot remove blm_backend: container is busy/);
+    assert.match(result.stderr, /could not remove blm_backend/);
+    assert.doesNotMatch(result.calls, /compose/);
   });
 
   it("trusts the containers, not the exit code of compose up", () => {
