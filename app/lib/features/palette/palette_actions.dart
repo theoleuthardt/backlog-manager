@@ -40,6 +40,13 @@ void registerShellPaletteActions(ProviderContainer ref) {
     )
     ..register(
       PaletteAction(
+        id: 'random-pull',
+        label: 'Pull a random game',
+        run: () => ref.read(randomPullRequestProvider.notifier).request(),
+      ),
+    )
+    ..register(
+      PaletteAction(
         id: 'open-settings',
         label: 'Open Settings',
         shortcut: const PaletteShortcut(LogicalKeyboardKey.comma),

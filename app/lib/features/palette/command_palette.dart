@@ -13,6 +13,7 @@ import 'package:backlog_manager/features/add_game/add_game_sheet.dart';
 import 'package:backlog_manager/features/igdb_sync/igdb_sync_sheet.dart';
 import 'package:backlog_manager/features/library/reveal_entry.dart';
 import 'package:backlog_manager/features/palette/palette_actions.dart';
+import 'package:backlog_manager/features/random_pull/random_pull_sheet.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/shell/palette_registry.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
@@ -38,6 +39,7 @@ class _PaletteHostState extends ConsumerState<PaletteHost> {
   bool _showing = false;
   bool _addOpen = false;
   bool _syncOpen = false;
+  bool _pullOpen = false;
 
   @override
   void initState() {
@@ -75,6 +77,11 @@ class _PaletteHostState extends ConsumerState<PaletteHost> {
       if (_syncOpen) return;
       _syncOpen = true;
       showIgdbSyncSheet(context).whenComplete(() => _syncOpen = false);
+    });
+    ref.listen(randomPullRequestProvider, (_, _) {
+      if (_pullOpen) return;
+      _pullOpen = true;
+      showRandomPullSheet(context).whenComplete(() => _pullOpen = false);
     });
     ref.listen(paletteOpenProvider, (_, open) {
       if (open) {

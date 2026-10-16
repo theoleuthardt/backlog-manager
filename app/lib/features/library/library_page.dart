@@ -436,6 +436,12 @@ class _Toolbar extends ConsumerWidget {
           onPressed: ref.read(igdbSyncRequestProvider.notifier).request,
         ),
         ShelfIconButton(
+          key: const Key('random-pull-button'),
+          icon: Icons.casino_outlined,
+          tooltip: 'Pull a random game',
+          onPressed: ref.read(randomPullRequestProvider.notifier).request,
+        ),
+        ShelfIconButton(
           key: const Key('duplicates-button'),
           icon: Icons.difference_outlined,
           tooltip: 'Find duplicate games',

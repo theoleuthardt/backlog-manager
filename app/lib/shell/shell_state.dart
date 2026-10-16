@@ -92,6 +92,19 @@ final igdbSyncRequestProvider = NotifierProvider<IgdbSyncRequestNotifier, int>(
   IgdbSyncRequestNotifier.new,
 );
 
+/// Counts requests to open the random pull sheet (toolbar button, palette).
+class RandomPullRequestNotifier extends Notifier<int> {
+  @override
+  int build() => 0;
+
+  void request() => state = state + 1;
+}
+
+final randomPullRequestProvider =
+    NotifierProvider<RandomPullRequestNotifier, int>(
+      RandomPullRequestNotifier.new,
+    );
+
 /// The focus node of the search field of the library, so Cmd/Ctrl+S can reach
 /// it.
 final searchFocusNodeProvider = Provider<FocusNode>((ref) {
