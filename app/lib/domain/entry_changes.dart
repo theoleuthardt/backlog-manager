@@ -14,12 +14,14 @@ class EntryForm {
     required this.reviewStars,
     required this.review,
     required this.note,
+    this.title = '',
     this.publisher = '',
     this.playtime,
   });
 
   final String imageLink;
   final double? playtime;
+  final String title;
   final String genre;
   final String platform;
   final String publisher;
@@ -32,6 +34,7 @@ class EntryForm {
 
   EntryForm copyWith({
     String? imageLink,
+    String? title,
     String? genre,
     String? platform,
     String? publisher,
@@ -47,6 +50,7 @@ class EntryForm {
     return EntryForm(
       imageLink: imageLink ?? this.imageLink,
       playtime: clearPlaytime ? null : playtime ?? this.playtime,
+      title: title ?? this.title,
       genre: genre ?? this.genre,
       platform: platform ?? this.platform,
       publisher: publisher ?? this.publisher,
@@ -65,6 +69,7 @@ class EntryForm {
 class EntryFormChanges {
   const EntryFormChanges({
     this.imageLink,
+    this.title,
     this.genre,
     this.platform,
     this.publisher,
@@ -78,6 +83,7 @@ class EntryFormChanges {
   });
 
   final String? imageLink;
+  final String? title;
   final List<String>? genre;
   final List<String>? platform;
   final String? publisher;
@@ -92,6 +98,7 @@ class EntryFormChanges {
   /// True when there is nothing to save.
   bool get isEmpty =>
       imageLink == null &&
+      title == null &&
       genre == null &&
       platform == null &&
       publisher == null &&
@@ -104,9 +111,17 @@ class EntryFormChanges {
       note == null;
 }
 
+/// The title as it would be stored: a blank title is never a change, the game
+/// keeps the one it has.
+String? _changedTitle(String typed, String stored) {
+  final title = typed.trim();
+  return title.isEmpty || title == stored ? null : title;
+}
+
 EntryFormChanges diffEntryForm(EntryForm form, BacklogEntry entry) {
   return EntryFormChanges(
     imageLink: form.imageLink != entry.imageLink ? form.imageLink : null,
+    title: _changedTitle(form.title, entry.title),
     playtime: form.playtime != null && form.playtime != entry.playtime
         ? form.playtime
         : null,

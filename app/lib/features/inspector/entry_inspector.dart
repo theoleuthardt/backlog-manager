@@ -234,6 +234,7 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
   late BacklogEntry _stored;
   late final EntriesNotifier _entries;
   late final TextEditingController _playtime;
+  late final TextEditingController _title;
   late final TextEditingController _genre;
   late final TextEditingController _platform;
   late final TextEditingController _publisher;
@@ -254,6 +255,7 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
     _playtime = TextEditingController(
       text: _form.playtime == null ? '' : formatHours(_form.playtime!),
     );
+    _title = TextEditingController(text: _form.title);
     _genre = TextEditingController(text: _form.genre);
     _platform = TextEditingController(text: _form.platform);
     _publisher = TextEditingController(text: _form.publisher);
@@ -281,6 +283,7 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
       ..dispose();
     for (final controller in [
       _playtime,
+      _title,
       _genre,
       _platform,
       _publisher,
@@ -307,6 +310,7 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
         platform: changes.platform,
         publisher: changes.publisher,
         imageLink: changes.imageLink,
+        title: changes.title,
       ),
     );
   }
@@ -327,6 +331,7 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
       _stored = entry;
       _form = rebaseForm(form: _form, from: _base, to: next);
       _base = next;
+      _syncText(_title, _form.title);
       _syncText(_genre, _form.genre);
       _syncText(_platform, _form.platform);
       _syncText(_publisher, _form.publisher);
@@ -792,6 +797,15 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        ShelfField(
+          key: const Key('inspector-title-field'),
+          label: 'Title',
+          hintText: 'The name of the game',
+          controller: _title,
+          error: _form.title.trim().isEmpty ? 'A game needs a title' : null,
+          onChanged: (value) => _edit((form) => form.copyWith(title: value)),
+        ),
+        const SizedBox(height: 12),
         ShelfField(
           label: 'Genre (comma-separated)',
           hintText: 'RPG, Action, Adventure',
