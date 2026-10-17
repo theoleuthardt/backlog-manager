@@ -17,7 +17,15 @@ echo "$*" >> "$FAKE_DIR/calls"
 case "$1" in
   pull) exit 0 ;;
   tag) exit 0 ;;
-  image) echo "$(cat "$state/new-id")" ;;
+  image)
+    case "$2" in
+      inspect) echo "$(cat "$state/new-id")" ;;
+      list) [ -e "$state/images" ] && cat "$state/images" ;;
+      prune) exit 0 ;;
+    esac ;;
+  rmi)
+    [ -e "$state/rmi-fails" ] && exit 1
+    exit 0 ;;
   inspect)
     format="$3"; name="$4"
     if [ "$format" = "{{.State.Running}}" ]; then
@@ -53,6 +61,7 @@ case "$1" in
     case "$*" in
       *alembic*) [ -e "$state/not-at-head" ] && echo "abc123" || echo "abc123 (head)" ;;
       *127.0.0.1:8000/health\\'*) [ -e "$state/unhealthy" ] && exit 1 || exit 0 ;;
+      *127.0.0.1:8000/api/auth/login*) [ -e "$state/smoke-fails" ] && exit 1 || exit 0 ;;
       *) exit 1 ;;
     esac ;;
   logs) echo "backend log line" ;;
@@ -281,5 +290,62 @@ describe("deploy.sh", () => {
     const result = run(env);
     assert.equal(result.status, 0, result.stderr);
     assert.equal(readFileSync(join(env.server, ".previous-image"), "utf8").trim(), `${REPO}:old`);
+  });
+
+  it("removes the backend images it no longer needs and keeps the deployed and the previous one", () => {
+    writeFileSync(join(env.server, ".deployed-image"), `${REPO}:previous\n`);
+    writeFileSync(
+      join(env.state, "images"),
+      [`${REPO}:old-one`, `${REPO}:previous`, `${REPO}:${SHA}`, `${REPO}:old-two`].join("\n") + "\n",
+    );
+    const result = run(env);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.calls, new RegExp(`rmi ${REPO}:old-one`));
+    assert.match(result.calls, new RegExp(`rmi ${REPO}:old-two`));
+    assert.doesNotMatch(result.calls, new RegExp(`rmi ${REPO}:previous`));
+    assert.doesNotMatch(result.calls, new RegExp(`rmi ${REPO}:${SHA}`));
+    assert.match(result.calls, /image prune/);
+  });
+
+  it("leaves the images of another repository that only starts with the same name alone", () => {
+    writeFileSync(
+      join(env.state, "images"),
+      [`${REPO}:old-one`, `${REPO}-staging:old`, `${REPO}x:old`].join("\n") + "\n",
+    );
+    const result = run(env);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.calls, new RegExp(`rmi ${REPO}:old-one`));
+    assert.doesNotMatch(result.calls, /rmi [^\n]*-staging/);
+    assert.doesNotMatch(result.calls, new RegExp(`rmi ${REPO}x`));
+  });
+
+  it("does not fail the deployment when an old image cannot be removed", () => {
+    writeFileSync(join(env.state, "images"), `${REPO}:old-one\n`);
+    writeFileSync(join(env.state, "rmi-fails"), "");
+    const result = run(env);
+    assert.equal(result.status, 0, result.stderr);
+  });
+
+  it("does not clean up images after a failed deployment", () => {
+    writeFileSync(join(env.state, "images"), `${REPO}:old-one\n`);
+    writeFileSync(join(env.state, "unhealthy"), "");
+    const result = run(env);
+    assert.equal(result.status, 1);
+    assert.doesNotMatch(result.calls, /rmi /);
+  });
+
+  it("asks the backend for a login with wrong credentials, which it must answer with a 401", () => {
+    const result = run(env);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.calls, /exec blm_backend python -c [\s\S]*api\/auth\/login/);
+    assert.match(result.stdout, /functional check passed/);
+  });
+
+  it("fails the deployment when the functional check fails", () => {
+    writeFileSync(join(env.state, "smoke-fails"), "");
+    const result = run(env);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /functional check failed/);
+    assert.equal(existsSync(join(env.server, ".deployed-image")), false);
   });
 });

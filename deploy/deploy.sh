@@ -6,7 +6,8 @@
 # backend image, or an explicit ghcr.io/theoleuthardt/backlog-manager-backend
 # tag or digest. Order: validate, database must run, backup, pull, replace only
 # the backend and the two cron containers (never the database), verify the
-# containers, health and Alembic head. A failed deploy does not roll back on its
+# containers, health, Alembic head and a functional check, then remove the
+# backend images that are neither the deployed nor the previous one. A failed deploy does not roll back on its
 # own: the new code may already have migrated the schema and an older image
 # cannot start on an Alembic revision it does not know; it prints the previous
 # image and the backup instead. podman-compose 1.x tries to create the database
@@ -76,6 +77,28 @@ remove_container() {
   return 1
 }
 
+smoke_check() {
+  podman exec blm_backend python -c "import json, sys, urllib.error, urllib.request
+request = urllib.request.Request('http://127.0.0.1:8000/api/auth/login', data=json.dumps({'email': 'deploy-check@invalid.example', 'password': 'not-a-real-password'}).encode(), headers={'Content-Type': 'application/json'})
+try:
+    urllib.request.urlopen(request, timeout=10)
+except urllib.error.HTTPError as error:
+    sys.exit(0 if error.code == 401 else 1)
+sys.exit(1)" > /dev/null 2>&1
+}
+
+prune_images() {
+  local image kept
+  while read -r image; do
+    [[ "$image" == "$image_repo:"* ]] || continue
+    for kept in "$ref" "$previous"; do
+      [ "$image" = "$kept" ] && continue 2
+    done
+    podman rmi "$image" > /dev/null 2>&1 || true
+  done < <(podman image list --filter "reference=$image_repo" --format '{{.Repository}}:{{.Tag}}' 2>/dev/null || true)
+  podman image prune --force > /dev/null 2>&1 || true
+}
+
 running() {
   [ "$(podman inspect --format '{{.State.Running}}' "$1" 2>/dev/null || true)" = true ]
 }
@@ -133,6 +156,15 @@ while [ "$healthy" = 0 ]; do
   waited=$((waited + health_interval))
 done
 
+if [ "$healthy" = 0 ]; then
+  if smoke_check; then
+    echo "deploy: functional check passed (a login with wrong credentials is answered with 401)"
+  else
+    echo "deploy: functional check failed: a login with wrong credentials was not answered with 401" >&2
+    healthy=1
+  fi
+fi
+
 if [ "$healthy" != 0 ]; then
   podman logs --tail 50 blm_backend >&2 || true
   echo "deploy: FAILED. Previous image: ${previous:-unknown}. The pre-deploy backup is the newest dump in the backup directory." >&2
@@ -141,4 +173,5 @@ fi
 
 [ -z "$previous" ] || echo "$previous" > .previous-image
 echo "$ref" > .deployed-image
+prune_images
 echo "deploy: $ref is live"

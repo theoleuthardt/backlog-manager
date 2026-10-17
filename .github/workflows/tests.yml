@@ -99,4 +99,4 @@ jobs:
           node-version: "22"
 
       - name: Run release script tests
-        run: node --test scripts/updater-manifest.test.mjs scripts/release-version.test.mjs scripts/app-update-manifest.test.mjs deploy/deploy.test.mjs
+        run: node --test scripts/updater-manifest.test.mjs scripts/release-version.test.mjs scripts/app-update-manifest.test.mjs deploy/deploy.test.mjs deploy/backup.test.mjs deploy/crons.test.mjs

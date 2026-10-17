@@ -47,9 +47,12 @@ services:
       - sh
       - -c
       - |
+        trap 'exit 0' TERM INT
         while true; do
-        curl --fail --connect-timeout 10 --max-time 1800 --retry 5 --retry-delay 5 --retry-connrefused -X POST http://backend:8000/api/prices/check -H "X-Cron-Secret: $${PRICE_CHECK_CRON_SECRET}" || true
-        sleep 21600
+        (curl --fail --connect-timeout 10 --max-time 1800 --retry 5 --retry-delay 5 --retry-connrefused -X POST http://backend:8000/api/prices/check -H "X-Cron-Secret: $${PRICE_CHECK_CRON_SECRET}" || true) &
+        wait $$!
+        sleep 21600 &
+        wait $$!
         done
     depends_on:
       - backend
@@ -64,9 +67,12 @@ services:
       - sh
       - -c
       - |
+        trap 'exit 0' TERM INT
         while true; do
-        curl --fail --connect-timeout 10 --max-time 900 --retry 5 --retry-delay 5 --retry-connrefused -X POST http://backend:8000/api/steam/wishlist/auto-sync -H "X-Cron-Secret: $${PRICE_CHECK_CRON_SECRET}" || true
-        sleep 3600
+        (curl --fail --connect-timeout 10 --max-time 900 --retry 5 --retry-delay 5 --retry-connrefused -X POST http://backend:8000/api/steam/wishlist/auto-sync -H "X-Cron-Secret: $${PRICE_CHECK_CRON_SECRET}" || true) &
+        wait $$!
+        sleep 3600 &
+        wait $$!
         done
     depends_on:
       - backend
