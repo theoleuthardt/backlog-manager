@@ -11,13 +11,16 @@ never deploys.
 
 Installed next to `compose.prod.yml` on the host. Argument (or
 `SSH_ORIGINAL_COMMAND`, last word): a full git SHA, or a tag or digest of the
-backend image; anything else is refused.
+backend image, optionally after the words `deploy` and `force`; any other word
+before it, and any other image, is refused.
 
 1. refuses to run when another deployment holds the lock, the backup script is
    missing or the database container `blm_db` is not running
-2. runs `backup.sh`; a failing backup aborts before anything is changed
-3. pulls the image; when it is the one already running the script stops
-   (`BLM_FORCE=1` redeploys it)
+2. pulls the image (a pull changes nothing); when it is the one already running
+   the script stops here, without a backup (`BLM_FORCE=1`, in the workflow the
+   **force** input, redeploys it, for example to roll out a changed
+   `compose.prod.yml`)
+3. runs `backup.sh`; a failing backup aborts before anything is changed
 4. tags the pulled image as `localhost/backlog-manager-backend:deployed`,
    removes only `blm_backend` (with its dependents, the two cron containers,
    which podman ties to it) and recreates the backend and the cron containers

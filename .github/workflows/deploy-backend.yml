@@ -8,6 +8,11 @@ on:
         required: false
         type: string
         default: ""
+      force:
+        description: Deploy even when that image already runs (to roll out a changed compose.prod.yml; the database restarts once if its config changed)
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -29,17 +34,18 @@ jobs:
         env:
           DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
           IMAGE_REF: ${{ inputs.image_ref || github.sha }}
+          FORCE: ${{ inputs.force && 'force ' || '' }}
         run: |
           test -n "$DEPLOY_HOST"
           started=$(date +%s)
           set +e
-          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$DEPLOY_HOST" "deploy $IMAGE_REF" 2>&1 | tee deploy.log
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$DEPLOY_HOST" "deploy ${FORCE}${IMAGE_REF}" 2>&1 | tee deploy.log
           status=${PIPESTATUS[0]}
           set -e
           {
             echo "### Backend deployment"
             echo
-            echo "- image: \`$IMAGE_REF\`"
+            echo "- image: \`$IMAGE_REF\`${FORCE:+ (forced)}"
             echo "- duration: $(( $(date +%s) - started )) s"
             echo "- result: $([ "$status" = 0 ] && echo succeeded || echo "failed (exit $status)")"
             echo

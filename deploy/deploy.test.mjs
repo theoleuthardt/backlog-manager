@@ -167,6 +167,7 @@ describe("deploy.sh", () => {
     assert.equal(result.status, 0, result.stderr);
     assert.match(result.stdout, /already running/);
     assert.doesNotMatch(result.calls, /compose/);
+    assert.equal(existsSync(join(env.dir, "calls-backup")), false, "no backup for a no-op");
   });
 
   it("aborts before changing anything when the backup fails", () => {
@@ -174,7 +175,7 @@ describe("deploy.sh", () => {
     const result = run(env);
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /backup failed/);
-    assert.doesNotMatch(result.calls, /pull|compose|rm /);
+    assert.doesNotMatch(result.calls, /compose|rm /);
   });
 
   it("aborts when the backup script is missing", () => {
@@ -348,4 +349,48 @@ describe("deploy.sh", () => {
     assert.match(result.stderr, /functional check failed/);
     assert.equal(existsSync(join(env.server, ".deployed-image")), false);
   });
+
+  it("takes the backup after the pull, so a no-op costs none, and still aborts before a change when it fails", () => {
+    writeFileSync(join(env.server, "backup.sh"), "#!/usr/bin/env bash\nexit 3\n");
+    const result = run(env);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /backup failed/);
+    assert.doesNotMatch(result.calls, /compose|rm /);
+    assert.match(result.calls, /pull /);
+  });
+
+  it("redeploys the running image when the request starts with force", () => {
+    startStack(env);
+    writeFileSync(join(env.state, "image-id"), "sha256:new");
+    const result = run(env, [], { SSH_ORIGINAL_COMMAND: `deploy force ${SHA}` });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.calls, /compose/);
+    assert.match(result.stdout, /is live/);
+    assert.doesNotMatch(result.stdout, /already running/);
+  });
+
+  it("does not force a deployment that was not asked to be forced", () => {
+    startStack(env);
+    writeFileSync(join(env.state, "image-id"), "sha256:new");
+    const result = run(env, [], { SSH_ORIGINAL_COMMAND: `deploy ${SHA}` });
+    assert.match(result.stdout, /already running/);
+  });
+
+  it("refuses words before the image other than deploy and force", () => {
+    for (const bad of [`deploy rm ${SHA}`, `deploy forced ${SHA}`, `force deploy force --x ${SHA}`]) {
+      const result = run(env, [], { SSH_ORIGINAL_COMMAND: bad });
+      assert.notEqual(result.status, 0, bad);
+      assert.match(result.stderr, /refusing/, bad);
+      assert.equal(result.calls, "", `${bad} must not reach podman`);
+    }
+  });
+
+  it("does not let a glob in the request stand for a word that a file name would spell", () => {
+    writeFileSync(join(env.server, "force"), "");
+    const result = run(env, [], { SSH_ORIGINAL_COMMAND: `deploy f* ${SHA}` });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /refusing/);
+    assert.equal(result.calls, "");
+  });
 });
+

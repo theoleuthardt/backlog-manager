@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 # Production deployment of the backend on the homelab host (podman with
 # podman-compose). Installed next to compose.prod.yml, normally run through the
-# forced command of the deploy SSH key (docs/DEPLOYMENT.md) with the image as
-# argument or as SSH_ORIGINAL_COMMAND: a full git SHA of this repository's
-# backend image, or an explicit ghcr.io/theoleuthardt/backlog-manager-backend
-# tag or digest. Order: validate, database must run, backup, pull, replace only
-# the backend and the two cron containers (never the database), verify the
-# containers, health, Alembic head and a functional check, then remove the
-# backend images that are neither the deployed nor the previous one. A failed deploy does not roll back on its
+# forced command of the deploy SSH key (docs/DEPLOYMENT.md). The request is the
+# argument or SSH_ORIGINAL_COMMAND: a full git SHA of this repository's backend
+# image, or an explicit ghcr.io/theoleuthardt/backlog-manager-backend tag or
+# digest, optionally after the words `deploy` and `force` (force redeploys the
+# image that already runs, for a changed compose file); any other word is
+# refused. Order: validate, the database must run, pull, stop when that image
+# already runs, backup, replace only the backend and the two cron containers
+# (never the database), verify the containers, /health, the Alembic head and a
+# functional check, then remove the backend images that are neither the
+# deployed nor the previous one. A failed deploy does not roll back on its
 # own: the new code may already have migrated the schema and an older image
 # cannot start on an Alembic revision it does not know; it prints the previous
 # image and the backup instead. podman-compose 1.x tries to create the database
@@ -43,6 +46,16 @@ fail() {
 
 request="${1:-${SSH_ORIGINAL_COMMAND:-}}"
 ref="${request##* }"
+words="${request% *}"
+[ "$words" != "$request" ] || words=""
+read -ra word_list <<< "$words"
+for word in "${word_list[@]}"; do
+  case "$word" in
+    deploy) ;;
+    force) BLM_FORCE=1 ;;
+    *) fail "refusing the request '$request': only the words deploy and force may come before the image" ;;
+  esac
+done
 if [[ "$ref" =~ ^[0-9a-f]{40}$ ]]; then
   ref="$image_repo:$ref"
 fi
@@ -105,9 +118,6 @@ running() {
 
 running blm_db || fail "the database container blm_db is not running, not touching anything"
 
-echo "deploy: backing up the database"
-"$backup_script" || fail "backup failed, nothing was changed"
-
 echo "deploy: pulling $ref"
 podman pull "$ref" >/dev/null
 new_id=$(podman image inspect --format '{{.Id}}' "$ref")
@@ -116,6 +126,9 @@ if [ "$new_id" = "$current_id" ] && [ "${BLM_FORCE:-0}" != 1 ] && running blm_ba
   echo "deploy: $ref is already running, nothing to do"
   exit 0
 fi
+
+echo "deploy: backing up the database"
+"$backup_script" || fail "backup failed, nothing was changed"
 
 previous=$(cat .deployed-image 2>/dev/null || true)
 
