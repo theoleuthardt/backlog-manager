@@ -457,7 +457,7 @@ Settings > General > Account > "Profile Picture" (`features/settings/profile_pic
 
 - **On start:** `UpdateNotifier` (in `AppShell`) checks quietly in release builds only (`automaticUpdateCheckProvider`, so development and tests make no request); offline and rate-limit failures change nothing. A newer release shows the toast "Backlog Manager <version> is available" with "View release" once per session; the toast stays for a day unless another toast replaces it.
 - **Settings > About > App Updates:** "Check for updates" ("Checking..."), then "You are on the latest version.", "Version <x> is available." with the release notes and "View release", or "The update check failed. Try again later." The manual check reports failures.
-- Releases published as pre-releases (the Flutter release workflow's default until the cutover) are not offered, so Flutter pre-releases never prompt the Tauri client or each other.
+- Releases published as pre-releases (the Flutter release workflow's default until the cutover) are offered on the **Preview** channel only, which is the default until the cutover; on **Stable** they are skipped. The Tauri client has its own updater and is not prompted by them.
 
 ### Duplicate games
 
