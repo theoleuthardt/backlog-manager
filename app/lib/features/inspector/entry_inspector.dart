@@ -239,6 +239,9 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
   late final EntriesNotifier _entries;
   late final TextEditingController _playtime;
   late final TextEditingController _title;
+  late final FocusNode _titleFocus = FocusNode()
+    ..addListener(_titleFocusChanged);
+  var _editingTitle = false;
   late final TextEditingController _genre;
   late final TextEditingController _platform;
   late final TextEditingController _publisher;
@@ -282,6 +285,7 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
 
   @override
   void dispose() {
+    _titleFocus.dispose();
     _autosave
       ..flush()
       ..dispose();
@@ -376,6 +380,35 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
   void _edit(EntryForm Function(EntryForm form) change) {
     setState(() => _form = change(_form));
     _autosave.changed();
+  }
+
+  void _startTitleEdit() {
+    if (_editingTitle) return;
+    setState(() => _editingTitle = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _titleFocus.requestFocus();
+      _title.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: _title.text.length,
+      );
+    });
+  }
+
+  /// Leaves the editing of the title: the typed title stays (the autosave
+  /// saves it), except when [revert] is set or the title is blank, which
+  /// brings the stored one back.
+  void _finishTitleEdit({bool revert = false}) {
+    if (!_editingTitle) return;
+    if (revert || _title.text.trim().isEmpty) {
+      _title.text = _stored.title;
+      _edit((form) => form.copyWith(title: _stored.title));
+    }
+    setState(() => _editingTitle = false);
+  }
+
+  void _titleFocusChanged() {
+    if (!_titleFocus.hasFocus) _finishTitleEdit();
   }
 
   void _setPlaytime(String text) {
@@ -505,15 +538,7 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          entry.title,
-                                          key: const Key('inspector-title'),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: style.page.copyWith(
-                                            fontSize: 22,
-                                          ),
-                                        ),
+                                        _titleHeading(entry, tokens, style),
                                         if (genres.isNotEmpty) ...[
                                           const SizedBox(height: 12),
                                           FactChips(
@@ -810,6 +835,78 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
     );
   }
 
+  /// The title in the heading: text with a pencil, and a text field at the same
+  /// spot while it is edited (Enter or leaving it keeps the edit, Esc discards
+  /// it, a blank title is not kept).
+  Widget _titleHeading(
+    BacklogEntry entry,
+    ShelfTokens tokens,
+    ShelfTextStyles style,
+  ) {
+    final titleStyle = style.page.copyWith(fontSize: 22);
+    if (_editingTitle) {
+      final blank = _form.title.trim().isEmpty;
+      return CallbackShortcuts(
+        bindings: {
+          const SingleActivator(LogicalKeyboardKey.escape): () =>
+              _finishTitleEdit(revert: true),
+        },
+        child: TextField(
+          key: const Key('inspector-title-input'),
+          controller: _title,
+          focusNode: _titleFocus,
+          maxLines: 1,
+          style: titleStyle,
+          textInputAction: TextInputAction.done,
+          onChanged: (value) => _edit((form) => form.copyWith(title: value)),
+          onSubmitted: (_) => _finishTitleEdit(),
+          decoration: InputDecoration(
+            isDense: true,
+            filled: false,
+            contentPadding: const EdgeInsets.only(bottom: 4),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(
+                color: blank ? tokens.danger : tokens.glow,
+              ),
+            ),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(
+                color: blank ? tokens.danger : tokens.glow,
+              ),
+            ),
+            helperText: blank ? 'A game needs a title' : null,
+            helperStyle: style.caption.copyWith(color: tokens.danger),
+          ),
+        ),
+      );
+    }
+    return ShelfPressable(
+      key: const Key('inspector-title-edit'),
+      borderRadius: 6,
+      semanticLabel: 'Edit the title',
+      onPressed: _startTitleEdit,
+      builder: (context, state) => Row(
+        children: [
+          Flexible(
+            child: Text(
+              entry.title,
+              key: const Key('inspector-title'),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: titleStyle,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Icon(
+            Icons.edit_outlined,
+            size: 15,
+            color: state.hovered ? tokens.foreground : tokens.faint,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _overview(
     BacklogEntry entry,
     ShelfTokens tokens,
@@ -819,15 +916,6 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ShelfField(
-          key: const Key('inspector-title-field'),
-          label: 'Title',
-          hintText: 'The name of the game',
-          controller: _title,
-          error: _form.title.trim().isEmpty ? 'A game needs a title' : null,
-          onChanged: (value) => _edit((form) => form.copyWith(title: value)),
-        ),
-        const SizedBox(height: 12),
         ShelfField(
           label: 'Genre (comma-separated)',
           hintText: 'RPG, Action, Adventure',
