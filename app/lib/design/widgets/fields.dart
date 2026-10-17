@@ -21,6 +21,7 @@ class ShelfField extends StatefulWidget {
     this.enabled = true,
     this.autofocus = false,
     this.keyboardType,
+    this.labelAction,
     super.key,
   });
 
@@ -36,6 +37,9 @@ class ShelfField extends StatefulWidget {
   final bool enabled;
   final bool autofocus;
   final TextInputType? keyboardType;
+
+  /// A small control at the right end of the label line, for example "Manage".
+  final Widget? labelAction;
 
   @override
   State<ShelfField> createState() => _ShelfFieldState();
@@ -61,7 +65,17 @@ class _ShelfFieldState extends State<ShelfField> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(widget.label, style: text.label.copyWith(color: tokens.muted)),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                widget.label,
+                style: text.label.copyWith(color: tokens.muted),
+              ),
+            ),
+            if (widget.labelAction != null) widget.labelAction!,
+          ],
+        ),
         const SizedBox(height: 6),
         SizedBox(
           height: ShelfHeight.input,

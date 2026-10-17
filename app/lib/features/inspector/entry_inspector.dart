@@ -6,6 +6,7 @@ import 'package:backlog_manager/data/backlog_api.dart';
 import 'package:backlog_manager/data/backlog_providers.dart';
 import 'package:backlog_manager/data/backlog_scope.dart';
 import 'package:backlog_manager/data/entry_image.dart';
+import 'package:backlog_manager/data/filter_providers.dart';
 import 'package:backlog_manager/data/space_api.dart';
 import 'package:backlog_manager/design/color_math.dart';
 import 'package:backlog_manager/design/cover_glow.dart';
@@ -15,6 +16,7 @@ import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/design/widgets/cover.dart';
 import 'package:backlog_manager/design/widgets/fields.dart';
+import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/design/widgets/progress.dart';
 import 'package:backlog_manager/design/widgets/sheet.dart';
 import 'package:backlog_manager/design/widgets/spinner.dart';
@@ -26,6 +28,7 @@ import 'package:backlog_manager/domain/format.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/inspector_logic.dart';
 import 'package:backlog_manager/domain/models.dart';
+import 'package:backlog_manager/domain/platform_choices.dart';
 import 'package:backlog_manager/domain/safe_url.dart';
 import 'package:backlog_manager/domain/split_list.dart';
 import 'package:backlog_manager/domain/status_style.dart';
@@ -37,6 +40,7 @@ import 'package:backlog_manager/features/common/category_picker.dart';
 import 'package:backlog_manager/features/common/status_select.dart';
 import 'package:backlog_manager/features/inspector/entry_autosave.dart';
 import 'package:backlog_manager/features/inspector/inspector_parts.dart';
+import 'package:backlog_manager/features/inspector/manage_platforms_sheet.dart';
 import 'package:backlog_manager/features/inspector/trailer_sheet.dart';
 import 'package:backlog_manager/features/library/library_actions.dart';
 import 'package:backlog_manager/features/prices/price_sheet.dart';
@@ -313,6 +317,24 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
         title: changes.title,
       ),
     );
+  }
+
+  Future<void> _managePlatforms() async {
+    final initial = splitList(_platform.text);
+    final chosen = await showManagePlatformsSheet(
+      context,
+      initial: initial,
+      inBacklog: ref.read(filterOptionsProvider).platforms,
+    );
+    if (chosen == null || !mounted) return;
+    final text = applyPlatformChanges(
+      current: splitList(_platform.text),
+      initial: initial,
+      chosen: chosen,
+    ).join(', ');
+    if (text == _platform.text) return;
+    _platform.text = text;
+    _edit((form) => form.copyWith(platform: text));
   }
 
   void _onSaveError(Object error) {
@@ -814,10 +836,23 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
         ),
         const SizedBox(height: 12),
         ShelfField(
+          key: const Key('inspector-platform'),
           label: 'Platform (comma-separated)',
           hintText: 'PC, PS5, Xbox',
           controller: _platform,
           onChanged: (value) => _edit((form) => form.copyWith(platform: value)),
+          labelAction: ShelfPressable(
+            key: const Key('inspector-platform-manage'),
+            borderRadius: 4,
+            semanticLabel: 'Manage platforms',
+            onPressed: _managePlatforms,
+            builder: (context, state) => Text(
+              'Manage',
+              style: style.label.copyWith(
+                color: state.hovered ? tokens.foreground : tokens.glow,
+              ),
+            ),
+          ),
         ),
         const SizedBox(height: 12),
         ShelfField(
