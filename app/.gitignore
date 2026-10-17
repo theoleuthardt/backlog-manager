@@ -46,3 +46,6 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Test bundles written by tool/test/bundles.dart for a run
+/test/bundles/

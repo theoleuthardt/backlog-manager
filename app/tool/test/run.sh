@@ -5,9 +5,15 @@
 # passed to flutter test.
 #
 # The suite runs as one `flutter test` with one worker per core
-# (TEST_CONCURRENCY). On a machine with little memory (the compiler of one run
-# for the whole suite grows to 2 GB and more) set TEST_SHARD=1 to run one
-# `flutter test` per test directory instead, one worker at a time.
+# (TEST_CONCURRENCY). Without test files in the arguments the tests of every
+# file except the golden ones run in as many bundles as there are workers
+# (TEST_BUNDLES, tool/test/bundles.dart): `flutter test` starts a process per
+# file and each pays its warm-up, a bundle pays it once. TEST_BUNDLES=0 runs
+# every file on its own, as `flutter test` does. A run without `--tags` or
+# `--exclude-tags` then runs the golden tests from their own files. On a
+# machine with little memory (the compiler of one run for the whole suite grows
+# to 2 GB and more) set TEST_SHARD=1 to run one `flutter test` per test
+# directory instead, one worker at a time.
 set -u
 cd "$(dirname "$0")/../.."
 
@@ -37,7 +43,7 @@ reap() {
 }
 release() {
   reap
-  rm -rf "$lock"
+  rm -rf "$lock" test/bundles
 }
 trap release EXIT INT TERM
 
@@ -65,17 +71,42 @@ run_flutter() {
 }
 
 explicit=0
+goldens_only=0
+filtered=0
 for arg in "$@"; do
-  case "$arg" in test/*|*_test.dart) explicit=1 ;; esac
+  case "$arg" in
+    test/*|*_test.dart) explicit=1 ;;
+    --update-goldens) goldens_only=1 ;;
+    --tags|--tags=*) goldens_only=1 ;;
+    --exclude-tags|--exclude-tags=*) filtered=1 ;;
+  esac
 done
 
-if [ "$explicit" = 1 ] || [ "${TEST_SHARD:-0}" != 1 ]; then
+bundles="${TEST_BUNDLES:-$workers}"
+
+if [ "$explicit" = 1 ]; then
+  run_flutter "$workers" "$@"
+  exit $?
+fi
+
+if [ "$goldens_only" = 0 ] && [ "$bundles" != 0 ]; then
+  files=$(dart run tool/test/bundles.dart "$bundles" | grep '^test/') || exit 1
+  failed=0
+  # shellcheck disable=SC2086
+  run_flutter "$workers" --exclude-tags golden "$@" $files || failed=1
+  if [ "$filtered" = 0 ]; then
+    run_flutter "$workers" --tags golden "$@" || failed=1
+  fi
+  exit "$failed"
+fi
+
+if [ "${TEST_SHARD:-0}" != 1 ]; then
   run_flutter "$workers" "$@"
   exit $?
 fi
 
 failed=0
-for dir in $(find test -name '*_test.dart' -exec dirname {} + | sort -u); do
+for dir in $(find test -name '*_test.dart' -not -path 'test/bundles/*' -exec dirname {} + | sort -u); do
   files=$(ls "$dir"/*_test.dart)
   echo "== $dir"
   # shellcheck disable=SC2086
