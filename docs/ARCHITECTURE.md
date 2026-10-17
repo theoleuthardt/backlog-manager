@@ -110,6 +110,15 @@ redirect chain re-validated against the same allowlist on every hop — since
 it's an unauthenticated, public endpoint, none of this can rely on the
 caller being trusted.
 
+The route returns a plain `Response` whose content type is the one of the
+upstream image, so Litestar cannot infer it; the OpenAPI contract is stated
+with `responses=` instead: 200 as `image/*` (the description names the five
+supported types; Litestar cannot mark bytes as binary, so a generated client
+types the body as a string and must not be used to fetch images), 304 for a
+matching ETag, and 400 and 404 as `text/plain`. `generate_examples=False` is
+needed because Litestar's generated example for bytes cannot be written as
+JSON (`task backend:openapi` would fail).
+
 ### Database
 
 The schema (`postgres/backlogmanagerdb-init.sql`) predates the Litestar

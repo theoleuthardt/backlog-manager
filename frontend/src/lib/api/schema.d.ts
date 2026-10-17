@@ -476,6 +476,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/user/avatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set the profile picture
+         * @description The body is the raw image: Content-Type image/png, image/jpeg or image/webp, at most 512 KB, and the bytes must be that format. Answers 400 for another type or other bytes and 413 above the limit.
+         */
+        put: operations["ApiUserAvatarPutOwnAvatar"];
+        post?: never;
+        /** DeleteOwnAvatar */
+        delete: operations["ApiUserAvatarDeleteOwnAvatar"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/user/{user_id}/avatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GetAvatar */
+        get: operations["ApiUserUserIdAvatarGetAvatar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/user/by-username/{username}": {
         parameters: {
             query?: never;
@@ -1399,6 +1437,7 @@ export interface components {
             /** @default shelfOled */
             theme?: string;
             custom_themes?: components["schemas"]["CustomTheme"][];
+            avatar_updated_at?: string | null;
         };
         /** PublicUsername */
         PublicUsername: {
@@ -1420,6 +1459,9 @@ export interface components {
             username: string;
             status: string;
             is_me: boolean;
+            /** @default 0 */
+            user_id?: number;
+            avatar_updated_at?: string | null;
         };
         /** SpaceResponse */
         SpaceResponse: {
@@ -1633,32 +1675,38 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Request fulfilled, document follows */
+            /** @description The image, as image/jpeg, image/png, image/webp, image/gif or image/avif: the content type is the one of the upstream image. */
             200: {
                 headers: {
-                    "Strict-Transport-Security"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
-                    "X-Frame-Options"?: string;
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "image/*": string;
                 };
             };
-            /** @description Bad request syntax or unsupported method */
+            /** @description The ETag of the image matches If-None-Match. */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The URL is not an allowed https URL, or the image is too large or of an unsupported type. */
             400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
+                    "text/plain": string;
+                };
+            };
+            /** @description The image was not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
                 };
             };
         };
@@ -3511,6 +3559,124 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    ApiUserAvatarPutOwnAvatar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    "cache-control"?: string;
+                    "X-Frame-Options"?: string;
+                    "Referrer-Policy"?: string;
+                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiUserAvatarDeleteOwnAvatar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    "cache-control"?: string;
+                    "X-Frame-Options"?: string;
+                    "Referrer-Policy"?: string;
+                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ApiUserUserIdAvatarGetAvatar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    "cache-control"?: string;
+                    "X-Frame-Options"?: string;
+                    "Referrer-Policy"?: string;
+                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
             };
         };
     };

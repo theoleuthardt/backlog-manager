@@ -8,8 +8,10 @@ from urllib.parse import urlparse
 import httpx
 import structlog
 from litestar import Request, Response, get
+from litestar.openapi import ResponseSpec
 from litestar.params import FromQuery
 from litestar.status_codes import (
+    HTTP_200_OK,
     HTTP_304_NOT_MODIFIED,
     HTTP_400_BAD_REQUEST,
     HTTP_404_NOT_FOUND,
@@ -224,7 +226,35 @@ async def _fetch_following_allowed_redirects(
     return None
 
 
-@get("/api/images/proxy")
+@get(
+    "/api/images/proxy",
+    responses={
+        HTTP_200_OK: ResponseSpec(
+            data_container=bytes,
+            media_type="image/*",
+            generate_examples=False,
+            description=(
+                "The image, as image/jpeg, image/png, image/webp, image/gif or "
+                "image/avif: the content type is the one of the upstream image."
+            ),
+        ),
+        HTTP_304_NOT_MODIFIED: ResponseSpec(
+            data_container=None, description="The ETag of the image matches If-None-Match."
+        ),
+        HTTP_400_BAD_REQUEST: ResponseSpec(
+            data_container=str,
+            media_type="text/plain",
+            generate_examples=False,
+            description="The URL is not an allowed https URL, or the image is too large or of an unsupported type.",
+        ),
+        HTTP_404_NOT_FOUND: ResponseSpec(
+            data_container=str,
+            media_type="text/plain",
+            generate_examples=False,
+            description="The image was not found.",
+        ),
+    },
+)
 async def proxy_image(url: FromQuery[str], request: Request) -> Response:
     parsed = urlparse(url)
     if parsed.scheme != "https" or not _is_allowed_host(parsed.hostname):
