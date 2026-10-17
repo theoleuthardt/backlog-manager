@@ -46,12 +46,15 @@ class FilterBar extends ConsumerWidget {
             builder: (context, constraints) => Row(
               children: [
                 Icon(Icons.filter_alt_outlined, size: 14, color: tokens.muted),
-                const SizedBox(width: 6),
-                Text(
-                  'Filter',
-                  style: style.label.copyWith(color: tokens.muted),
-                ),
-                const SizedBox(width: 12),
+                if (constraints.maxWidth >= _tightMaxWidth) ...[
+                  const SizedBox(width: 6),
+                  Text(
+                    'Filter',
+                    style: style.label.copyWith(color: tokens.muted),
+                  ),
+                  const SizedBox(width: 12),
+                ] else
+                  const SizedBox(width: 8),
                 Expanded(
                   child: ScrollConfiguration(
                     behavior: ScrollConfiguration.of(context)
@@ -94,7 +97,10 @@ class FilterBar extends ConsumerWidget {
                   ),
                 ],
                 const SizedBox(width: 12),
-                _SortAndView(compact: constraints.maxWidth < _compactMaxWidth),
+                _SortAndView(
+                  compact: constraints.maxWidth < _compactMaxWidth,
+                  tight: constraints.maxWidth < _tightMaxWidth,
+                ),
               ],
             ),
           ),
@@ -107,14 +113,20 @@ class FilterBar extends ConsumerWidget {
 /// Below this width the filter bar drops the caption of the owned-only switch.
 const _ownedLabelMinWidth = 900.0;
 
-/// Below this width the bar drops its "Filter" label and the sort menu shrinks
-/// to an icon, so a window with the details open still fits the controls.
+/// Below this width the sort menu shrinks to an icon, so a window with the
+/// details open still fits the controls.
 const _compactMaxWidth = 700.0;
 
+/// Below this width, the pane of the smallest window with the details open,
+/// the bar also drops its "Filter" word and the grid and list toggle becomes
+/// one icon button, so the tokens keep room for the add button.
+const _tightMaxWidth = 520.0;
+
 class _SortAndView extends ConsumerWidget {
-  const _SortAndView({required this.compact});
+  const _SortAndView({required this.compact, required this.tight});
 
   final bool compact;
+  final bool tight;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -155,15 +167,31 @@ class _SortAndView extends ConsumerWidget {
           tooltip: 'Sort Direction',
           onPressed: notifier.toggleDirection,
         ),
-        const SizedBox(width: 12),
-        ShelfSegmented<LibraryLayout>(
-          segments: const [
-            ShelfSegment(value: LibraryLayout.grid, label: 'Grid'),
-            ShelfSegment(value: LibraryLayout.list, label: 'List'),
-          ],
-          value: view.layout,
-          onChanged: notifier.setLayout,
-        ),
+        SizedBox(width: tight ? 4 : 12),
+        if (tight)
+          ShelfIconButton(
+            key: const Key('layout-toggle'),
+            icon: view.layout == LibraryLayout.grid
+                ? Icons.view_list_outlined
+                : Icons.grid_view_outlined,
+            tooltip: view.layout == LibraryLayout.grid
+                ? 'Show as list'
+                : 'Show as grid',
+            onPressed: () => notifier.setLayout(
+              view.layout == LibraryLayout.grid
+                  ? LibraryLayout.list
+                  : LibraryLayout.grid,
+            ),
+          )
+        else
+          ShelfSegmented<LibraryLayout>(
+            segments: const [
+              ShelfSegment(value: LibraryLayout.grid, label: 'Grid'),
+              ShelfSegment(value: LibraryLayout.list, label: 'List'),
+            ],
+            value: view.layout,
+            onChanged: notifier.setLayout,
+          ),
       ],
     );
   }
