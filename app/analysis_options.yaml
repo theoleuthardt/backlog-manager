@@ -6,6 +6,7 @@ analyzer:
     - windows/**
     - macos/**
     - linux/**
+    - test/bundles/**
   language:
     strict-casts: true
     strict-inference: true
