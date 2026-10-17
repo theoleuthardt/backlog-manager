@@ -307,6 +307,18 @@ describe("deploy.sh", () => {
     assert.match(result.calls, /image prune/);
   });
 
+  it("leaves the images of another repository that only starts with the same name alone", () => {
+    writeFileSync(
+      join(env.state, "images"),
+      [`${REPO}:old-one`, `${REPO}-staging:old`, `${REPO}x:old`].join("\n") + "\n",
+    );
+    const result = run(env);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.calls, new RegExp(`rmi ${REPO}:old-one`));
+    assert.doesNotMatch(result.calls, /rmi [^\n]*-staging/);
+    assert.doesNotMatch(result.calls, new RegExp(`rmi ${REPO}x`));
+  });
+
   it("does not fail the deployment when an old image cannot be removed", () => {
     writeFileSync(join(env.state, "images"), `${REPO}:old-one\n`);
     writeFileSync(join(env.state, "rmi-fails"), "");

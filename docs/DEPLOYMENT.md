@@ -55,8 +55,10 @@ not backward compatible.
 ## Backups
 
 `deploy/backup.sh` (the host runs a copy of it, called by `deploy.sh`) dumps the
-database with `pg_dump -Fc`, checks that the result is a readable archive
-(`pg_restore --list`) and keeps it; a failed, empty or unreadable dump is
+database with `pg_dump -Fc`, checks that the whole archive can be read
+(`pg_restore --file=/dev/null`, which reads every data entry and not only the
+table of contents) and keeps it; a backup is never replaced by a later one with
+the same timestamp; a failed, empty or unreadable dump is
 removed and the script fails, so a deployment never goes on with a backup it
 cannot restore from. Afterwards it prunes the backup directory: the newest 14
 dumps stay and the newest dump of each of the last 8 weeks. Only files named

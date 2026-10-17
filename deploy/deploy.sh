@@ -90,7 +90,7 @@ sys.exit(1)" > /dev/null 2>&1
 prune_images() {
   local image kept
   while read -r image; do
-    [ -n "$image" ] || continue
+    [[ "$image" == "$image_repo:"* ]] || continue
     for kept in "$ref" "$previous"; do
       [ "$image" = "$kept" ] && continue 2
     done

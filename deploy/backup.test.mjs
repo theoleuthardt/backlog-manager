@@ -28,6 +28,7 @@ case "$*" in
     printf 'PGDMP-%s' "$FAKE_STAMP" ;;
   *pg_restore*)
     cat > /dev/null
+    echo "$*" >> "$FAKE_DIR/restore-args"
     [ -e "$state/restore-fails" ] && { echo "pg_restore: error: not a valid archive" >&2; exit 1; }
     exit 0 ;;
 esac
@@ -113,6 +114,23 @@ describe("backup.sh", () => {
     assert.deepEqual(names(env), []);
   });
 
+  it("reads the whole archive, not only its table of contents", () => {
+    const result = run(env);
+    assert.equal(result.status, 0, result.stderr);
+    const args = readFileSync(join(env.dir, "restore-args"), "utf8");
+    assert.match(args, /pg_restore --file=\/dev\/null/);
+    assert.doesNotMatch(args, /--list/);
+  });
+
+  it("never replaces a backup that has the same timestamp", () => {
+    writeFileSync(join(env.backups, "blm-20261017-120000.dump"), "the first one");
+    const result = run(env);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /already exists/);
+    assert.equal(readFileSync(join(env.backups, "blm-20261017-120000.dump"), "utf8"), "the first one");
+    assert.deepEqual(names(env), ["blm-20261017-120000.dump"]);
+  });
+
   it("does not prune anything when the new dump failed", () => {
     for (const day of ["20260101", "20260102", "20260103"]) {
       writeFileSync(join(env.backups, `blm-${day}-000000.dump`), "old");
@@ -148,6 +166,13 @@ describe("backup.sh", () => {
       run(env, { BLM_BACKUP_KEEP_LATEST: "5", BLM_BACKUP_KEEP_WEEKS: "0" });
       assert.equal(names(env).length, 5);
       assert.ok(names(env).includes("blm-20261017-120000.dump"));
+    });
+
+    it("ignores a name that only looks like a dump instead of failing", () => {
+      writeFileSync(join(env.backups, "blm-abcdefgh-uvwxyz.dump"), "x");
+      const result = run(env, { BLM_BACKUP_KEEP_LATEST: "1", BLM_BACKUP_KEEP_WEEKS: "0" });
+      assert.equal(result.status, 0, result.stderr);
+      assert.ok(names(env).includes("blm-abcdefgh-uvwxyz.dump"));
     });
 
     it("leaves files that are not dumps of this script alone", () => {
