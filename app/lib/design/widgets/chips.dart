@@ -7,7 +7,8 @@ import 'package:flutter/material.dart';
 enum ShelfChipKind { neutral, active, accent, info, ok, add }
 
 /// A 24 px pill for tags and filter tokens. [onPressed] makes it clickable,
-/// [onRemove] adds a small x on its right.
+/// [onRemove] adds a small x on its right. In a space too narrow for the
+/// label the label is cut with an ellipsis.
 class ShelfChip extends StatelessWidget {
   const ShelfChip({
     required this.label,
@@ -35,7 +36,14 @@ class ShelfChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(label, style: text.label.copyWith(color: foreground)),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: text.label.copyWith(color: foreground),
+              ),
+            ),
             if (onRemove != null) ...[
               const SizedBox(width: 4),
               ShelfPressable(
