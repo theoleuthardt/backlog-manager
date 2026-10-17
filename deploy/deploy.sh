@@ -65,11 +65,13 @@ fi
 [ -x "$backup_script" ] || fail "backup script $backup_script is missing or not executable"
 
 remove_container() {
-  local name="$1" attempt
+  local name="$1" attempt code
   for attempt in 1 2 3 4 5 6; do
     podman rm --force --time 10 --depend --ignore "$name" \
       || echo "deploy: removing $name reported an error (attempt $attempt), checking whether it is gone" >&2
-    podman container exists "$name" || return 0
+    code=0
+    podman container exists "$name" || code=$?
+    [ "$code" -eq 1 ] && return 0
   done
   return 1
 }

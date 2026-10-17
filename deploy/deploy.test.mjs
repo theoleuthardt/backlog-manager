@@ -40,6 +40,7 @@ case "$1" in
     fi
     rm -f "$state/running-blm_backend" "$state/running-blm_price-check-cron" "$state/running-blm_steam-wishlist-sync-cron"; rm -f "$state/image-id" ;;
   container)
+    if [ -e "$state/exists-fails" ]; then echo "Error: cannot read the container storage" >&2; exit 125; fi
     [ "$2" = exists ] && [ -e "$state/running-$3" ] && exit 0
     exit 1 ;;
   compose)
@@ -207,6 +208,15 @@ describe("deploy.sh", () => {
       .split("\n")
       .filter((line) => line === "rm --force --time 10 --depend --ignore blm_backend");
     assert.equal(attempts.length, 3);
+  });
+
+  it("does not take an error of the existence check for a removed container", () => {
+    startStack(env);
+    writeFileSync(join(env.state, "exists-fails"), "");
+    const result = run(env);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /could not remove blm_backend/);
+    assert.doesNotMatch(result.calls, /compose/);
   });
 
   it("does not repeat the removal when it worked at once", () => {
