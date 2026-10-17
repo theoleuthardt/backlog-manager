@@ -48,7 +48,8 @@ request="${1:-${SSH_ORIGINAL_COMMAND:-}}"
 ref="${request##* }"
 words="${request% *}"
 [ "$words" != "$request" ] || words=""
-for word in $words; do
+read -ra word_list <<< "$words"
+for word in "${word_list[@]}"; do
   case "$word" in
     deploy) ;;
     force) BLM_FORCE=1 ;;

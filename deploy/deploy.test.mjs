@@ -384,5 +384,13 @@ describe("deploy.sh", () => {
       assert.equal(result.calls, "", `${bad} must not reach podman`);
     }
   });
+
+  it("does not let a glob in the request stand for a word that a file name would spell", () => {
+    writeFileSync(join(env.server, "force"), "");
+    const result = run(env, [], { SSH_ORIGINAL_COMMAND: `deploy f* ${SHA}` });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /refusing/);
+    assert.equal(result.calls, "");
+  });
 });
 
