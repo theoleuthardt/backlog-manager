@@ -2,19 +2,11 @@ import 'package:backlog_manager/data/filter_providers.dart';
 import 'package:backlog_manager/features/library/library_view.dart';
 import 'package:backlog_manager/routing/router.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/app_font.dart';
 import 'filter_bar_test.dart' show backlog, pumpLibrary;
-
-Future<void> loadAppFont() async {
-  final loader = FontLoader('PlusJakartaSans');
-  for (final file in ['Regular', 'Medium', 'SemiBold', 'Bold', 'ExtraBold']) {
-    loader.addFont(rootBundle.load('assets/fonts/PlusJakartaSans-$file.ttf'));
-  }
-  await loader.load();
-}
 
 void main() {
   setUpAll(loadAppFont);

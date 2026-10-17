@@ -989,6 +989,10 @@ class _SharedBadge extends StatelessWidget {
   }
 }
 
+/// Below this width a row of the list leaves out the genre and narrows the
+/// playtime, so the title and the status keep their room.
+const _listCompactMaxWidth = 480.0;
+
 class _Row extends StatelessWidget {
   const _Row({
     required this.entry,
@@ -1017,49 +1021,61 @@ class _Row extends StatelessWidget {
         ),
         child: SizedBox(
           height: 44,
-          child: Row(
-            children: [
-              if (selecting) ...[
-                Icon(
-                  selected ? Icons.check_circle : Icons.radio_button_unchecked,
-                  key: const Key('row-check'),
-                  size: 18,
-                  color: selected ? tokens.accent : tokens.muted,
-                ),
-                const SizedBox(width: 12),
-              ],
-              Expanded(
-                flex: 3,
-                child: Text(
-                  entry.title,
-                  style: style.body,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: ShelfChip(label: entry.status),
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  entry.genre.firstOrNull ?? '',
-                  style: style.caption.copyWith(color: tokens.muted),
-                ),
-              ),
-              SizedBox(
-                width: 110,
-                child: Text(
-                  _playtimeLabel(entry) ?? '',
-                  textAlign: TextAlign.right,
-                  style: style.caption.copyWith(color: tokens.text2),
-                ),
-              ),
-            ],
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final narrow = constraints.maxWidth < _listCompactMaxWidth;
+              return Row(
+                children: [
+                  if (selecting) ...[
+                    Icon(
+                      selected
+                          ? Icons.check_circle
+                          : Icons.radio_button_unchecked,
+                      key: const Key('row-check'),
+                      size: 18,
+                      color: selected ? tokens.accent : tokens.muted,
+                    ),
+                    const SizedBox(width: 12),
+                  ],
+                  Expanded(
+                    flex: 3,
+                    child: Text(
+                      entry.title,
+                      style: style.body,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: ShelfChip(label: entry.status),
+                    ),
+                  ),
+                  if (!narrow)
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        entry.genre.firstOrNull ?? '',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: style.caption.copyWith(color: tokens.muted),
+                      ),
+                    ),
+                  SizedBox(
+                    width: narrow ? 72 : 110,
+                    child: Text(
+                      _playtimeLabel(entry) ?? '',
+                      textAlign: TextAlign.right,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: style.caption.copyWith(color: tokens.text2),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),
