@@ -889,7 +889,7 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
         children: [
           Flexible(
             child: Text(
-              entry.title,
+              _form.title.trim().isEmpty ? entry.title : _form.title.trim(),
               key: const Key('inspector-title'),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,

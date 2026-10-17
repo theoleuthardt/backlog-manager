@@ -91,6 +91,20 @@ void main() {
     expect(app.api.calls, contains('update 1 {title: Hades (Demo)}'));
   });
 
+  testWidgets('shows the new title at once, before the save is done', (
+    tester,
+  ) async {
+    await open(tester);
+    await edit(tester);
+
+    await tester.enterText(input, 'Hades (Demo)');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+
+    expect(shownTitle(tester), 'Hades (Demo)');
+    await afterAutosave(tester);
+  });
+
   testWidgets('losing the focus keeps the edit and saves it', (tester) async {
     final app = await open(tester);
     await edit(tester);
