@@ -35,6 +35,14 @@ backend image; anything else is refused.
    `/health` answers and Alembic is at the head; the exit code of
    `podman-compose up` is not trusted because 1.x also complains about the
    already existing database container
+6. runs a functional check: a login with the unknown address
+   `deploy-check@invalid.example` must be answered with a 401, which only
+   happens when the backend, its database query and the auth stack work (it
+   locks no account, since none exists); a health check alone does not show
+   that
+7. removes the backend images that are neither the one just deployed nor the
+   previous one (kept for a rollback) and dangling images; a failure to remove
+   one does not fail the deployment
 
 There is no automatic rollback: the new image may already have migrated the
 schema and an older image cannot start on an Alembic revision it does not
@@ -43,6 +51,32 @@ know. A failed deploy prints the log tail, the previous image
 pre-deploy dump in the backup directory. To go back deploy the previous image
 with `deploy.sh <previous>`, restoring the dump first when the migration is
 not backward compatible.
+
+## Backups
+
+`deploy/backup.sh` (the host runs a copy of it, called by `deploy.sh`) dumps the
+database with `pg_dump -Fc`, checks that the result is a readable archive
+(`pg_restore --list`) and keeps it; a failed, empty or unreadable dump is
+removed and the script fails, so a deployment never goes on with a backup it
+cannot restore from. Afterwards it prunes the backup directory: the newest 14
+dumps stay and the newest dump of each of the last 8 weeks. Only files named
+`blm-YYYYMMDD-HHMMSS.dump` are removed. Settings by environment variable:
+`BLM_BACKUP_DIR` (`~/blm-backups`), `BLM_DB_CONTAINER` (`blm_db`), `BLM_DB_USER`
+(`blm`), `BLM_DB_NAME` (`backlog-manager-db`), `BLM_BACKUP_KEEP_LATEST`,
+`BLM_BACKUP_KEEP_WEEKS`, and `BLM_BACKUP_VERIFY=0` to skip the archive check.
+
+## The job summary
+
+The workflow writes a summary to the job page: image, duration, result and
+the `deploy:` lines of the log.
+
+## The cron containers
+
+The two cron containers (`compose.prod.yml`) run a shell loop as PID 1. The
+loop traps SIGTERM and waits for `curl` and `sleep` in the background, so a
+stop ends them at once; before that they ignored SIGTERM and every container
+cost the full stop timeout. A test (`deploy/crons.test.mjs`) runs the real
+entrypoints of both compose files and checks that.
 
 Changes to `compose.prod.yml` and `deploy.sh` itself are **not** transferred
 by the workflow (a compromised runner must not be able to inject a compose
@@ -55,6 +89,7 @@ commit that needs them.
 
 ```bash
 install -m 0755 deploy/deploy.sh /root/blm/deploy.sh
+install -m 0755 deploy/backup.sh /root/blm/backup.sh
 ```
 
 Create a key pair on the **runner** (below) and add the public key on the host

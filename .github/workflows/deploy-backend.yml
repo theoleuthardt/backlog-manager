@@ -31,4 +31,20 @@ jobs:
           IMAGE_REF: ${{ inputs.image_ref || github.sha }}
         run: |
           test -n "$DEPLOY_HOST"
-          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$DEPLOY_HOST" "deploy $IMAGE_REF"
+          started=$(date +%s)
+          set +e
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$DEPLOY_HOST" "deploy $IMAGE_REF" 2>&1 | tee deploy.log
+          status=${PIPESTATUS[0]}
+          set -e
+          {
+            echo "### Backend deployment"
+            echo
+            echo "- image: \`$IMAGE_REF\`"
+            echo "- duration: $(( $(date +%s) - started )) s"
+            echo "- result: $([ "$status" = 0 ] && echo succeeded || echo "failed (exit $status)")"
+            echo
+            echo '```'
+            grep '^deploy:' deploy.log || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
