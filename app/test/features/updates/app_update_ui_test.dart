@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:backlog_manager/data/release_source.dart';
+import 'package:backlog_manager/data/update_channel.dart';
 import 'package:backlog_manager/data/update_download.dart';
 import 'package:backlog_manager/domain/app_update.dart';
 import 'package:backlog_manager/features/updates/app_update_state.dart';
@@ -12,6 +13,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../data/fakes.dart';
+import '../../data/update_channel_test.dart' show MemoryChannelStore;
 import '../library/library_page_test.dart' show backlog, pumpLibrary;
 import '../settings/settings_page_test.dart' show openSettings;
 import 'app_update_install_test.dart'
@@ -23,9 +25,11 @@ class FakeSource implements ReleaseSource {
   AppRelease? release;
   bool fail;
   Completer<void>? gate;
+  var calls = 0;
 
   @override
   Future<AppRelease?> latest() async {
+    calls++;
     await gate?.future;
     if (fail) throw Exception('offline');
     return release;
@@ -49,6 +53,57 @@ List<Override> updateOverrides(
 ];
 
 void main() {
+  group('the update channel', () {
+    List<Override> overrides(FakeSource source, MemoryChannelStore store) => [
+      ...updateOverrides(source),
+      updateChannelStoreProvider.overrideWithValue(store),
+    ];
+
+    testWidgets('offers Stable and Preview, Preview being the default', (
+      tester,
+    ) async {
+      await openSettings(
+        tester,
+        location: '/settings?tab=about',
+        overrides: overrides(FakeSource(), MemoryChannelStore()),
+      );
+
+      expect(find.text('Update Channel'), findsOneWidget);
+      expect(find.text('Stable'), findsOneWidget);
+      expect(find.text('Preview'), findsOneWidget);
+    });
+
+    testWidgets('choosing Stable keeps it and checks for an update again', (
+      tester,
+    ) async {
+      final source = FakeSource(release: releaseOf('0.9.3'));
+      final store = MemoryChannelStore();
+      await openSettings(
+        tester,
+        location: '/settings?tab=about',
+        overrides: overrides(source, store),
+      );
+      expect(source.calls, 0);
+
+      await tester.tap(find.text('Stable'));
+      await tester.pumpAndSettle();
+
+      expect(store.saved, UpdateChannel.stable);
+      expect(source.calls, 1);
+      expect(find.text('You are on the latest version.'), findsOneWidget);
+    });
+
+    testWidgets('says what the channels are', (tester) async {
+      await openSettings(
+        tester,
+        location: '/settings?tab=about',
+        overrides: overrides(FakeSource(), MemoryChannelStore()),
+      );
+
+      expect(find.textContaining('pre-releases'), findsOneWidget);
+    });
+  });
+
   group('the About tab', () {
     testWidgets('reports that the app is up to date', (tester) async {
       await openSettings(

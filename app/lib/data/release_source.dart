@@ -1,10 +1,11 @@
+import 'package:backlog_manager/data/update_channel.dart';
 import 'package:backlog_manager/domain/app_update.dart';
 import 'package:backlog_manager/domain/update_manifest.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
-/// Where the app learns about its newest stable release.
+/// Where the app learns about its newest release of the chosen channel.
 abstract interface class ReleaseSource {
   /// The newest published release, or null when there is none (or it is not
   /// a plain version). Throws when the answer could not be fetched.
@@ -20,9 +21,11 @@ const _manifestAsset = 'app-update.json';
 /// pre-releases until the cutover and `releases/latest` does not return those,
 /// so the list is read first; without a manifest anywhere the answer is
 /// `releases/latest`, which GitHub already answers without drafts and
-/// pre-releases, and the app only points at the release page.
+/// pre-releases, and the app only points at the release page. On the stable
+/// channel the pre-releases of the list are skipped, on the preview channel
+/// they count.
 class GithubReleaseSource implements ReleaseSource {
-  GithubReleaseSource([Dio? dio])
+  GithubReleaseSource([Dio? dio, this.channel = UpdateChannel.preview])
     : _dio =
           dio ??
           Dio(
@@ -34,6 +37,7 @@ class GithubReleaseSource implements ReleaseSource {
           );
 
   final Dio _dio;
+  final UpdateChannel channel;
 
   @override
   Future<AppRelease?> latest() async {
@@ -59,6 +63,9 @@ class GithubReleaseSource implements ReleaseSource {
       );
       for (final item in response.data ?? const <dynamic>[]) {
         if (item is! Map || item['draft'] == true) continue;
+        if (channel == UpdateChannel.stable && item['prerelease'] == true) {
+          continue;
+        }
         final assets = item['assets'];
         if (assets is! List) continue;
         for (final asset in assets) {
@@ -96,7 +103,7 @@ class GithubReleaseSource implements ReleaseSource {
 }
 
 final releaseSourceProvider = Provider<ReleaseSource>(
-  (ref) => GithubReleaseSource(),
+  (ref) => GithubReleaseSource(null, ref.watch(updateChannelProvider)),
 );
 
 /// The installed version as `1.2.3`, from the build.

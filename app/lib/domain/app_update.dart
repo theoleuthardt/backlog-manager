@@ -1,5 +1,24 @@
 import 'package:backlog_manager/domain/update_manifest.dart';
 
+/// Which releases the app updates itself from: the normal ones, or also the
+/// pre-releases, which come earlier and can have bugs.
+enum UpdateChannel {
+  stable('Stable'),
+  preview('Preview');
+
+  const UpdateChannel(this.label);
+
+  final String label;
+
+  /// The channel of a stored [name], or null when it is none.
+  static UpdateChannel? fromName(String? name) {
+    for (final channel in values) {
+      if (channel.name == name) return channel;
+    }
+    return null;
+  }
+}
+
 /// A published release of the app that is newer than the installed one.
 class AppRelease {
   const AppRelease({
