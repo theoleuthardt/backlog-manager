@@ -9,7 +9,7 @@
 # file except the golden ones run in as many bundles as there are workers
 # (TEST_BUNDLES, tool/test/bundles.dart): `flutter test` starts a process per
 # file and each pays its warm-up, a bundle pays it once. TEST_BUNDLES=0 runs
-# every file on its own, as `flutter test` does. A run without `--tags` or
+# every file on its own, as `flutter test` does (TEST_SHARD=1 does so too). A run without `--tags` or
 # `--exclude-tags` then runs the golden tests from their own files. On a
 # machine with little memory (the compiler of one run for the whole suite grows
 # to 2 GB and more) set TEST_SHARD=1 to run one `flutter test` per test
@@ -73,13 +73,15 @@ run_flutter() {
 explicit=0
 goldens_only=0
 filtered=0
+previous=""
 for arg in "$@"; do
   case "$arg" in
     test/*|*_test.dart) explicit=1 ;;
-    --update-goldens) goldens_only=1 ;;
-    --tags|--tags=*) goldens_only=1 ;;
-    --exclude-tags|--exclude-tags=*) filtered=1 ;;
+    --update-goldens|--tags|--tags=*) goldens_only=1 ;;
+    --exclude-tags=*golden*) filtered=1 ;;
+    *golden*) [ "$previous" = "--exclude-tags" ] && filtered=1 ;;
   esac
+  previous="$arg"
 done
 
 bundles="${TEST_BUNDLES:-$workers}"
@@ -89,7 +91,7 @@ if [ "$explicit" = 1 ]; then
   exit $?
 fi
 
-if [ "$goldens_only" = 0 ] && [ "$bundles" != 0 ]; then
+if [ "$goldens_only" = 0 ] && [ "$bundles" != 0 ] && [ "${TEST_SHARD:-0}" != 1 ]; then
   files=$(dart run tool/test/bundles.dart "$bundles" | grep '^test/') || exit 1
   failed=0
   # shellcheck disable=SC2086
