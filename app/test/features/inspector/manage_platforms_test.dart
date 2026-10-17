@@ -1,3 +1,5 @@
+import 'package:backlog_manager/data/backlog_api.dart';
+import 'package:backlog_manager/data/backlog_providers.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -127,6 +129,44 @@ void main() {
 
     expect(platformText(tester), 'PC');
     expect(app.api.calls.where((String c) => c.startsWith('update')), isEmpty);
+  });
+
+  testWidgets('Done keeps a platform that arrived while the sheet was open', (
+    tester,
+  ) async {
+    final app = await open(tester);
+    await app.container
+        .read(entriesProvider(null).notifier)
+        .updateEntry(1, const EntryUpdate(platform: ['PC', 'Mac']));
+    await tester.pumpAndSettle();
+
+    await tester.tap(choice('Switch'));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('platforms-done')));
+    await tester.pumpAndSettle();
+    await afterAutosave(tester);
+
+    expect(platformText(tester), 'PC, Mac, Switch');
+    expect(app.api.calls, contains('update 1 {platform: [PC, Mac, Switch]}'));
+  });
+
+  testWidgets('Done without a change does not write the old platforms back', (
+    tester,
+  ) async {
+    final app = await open(tester);
+    await app.container
+        .read(entriesProvider(null).notifier)
+        .updateEntry(1, const EntryUpdate(platform: ['PC', 'Mac']));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('platforms-done')));
+    await tester.pumpAndSettle();
+    await afterAutosave(tester);
+
+    expect(platformText(tester), 'PC, Mac');
+    expect(app.api.calls.where((String c) => c.startsWith('update')), [
+      'update 1 {platform: [PC, Mac]}',
+    ]);
   });
 
   testWidgets('the text field still works for a quick edit', (tester) async {

@@ -49,3 +49,29 @@ List<String> addPlatform(List<String> selected, String typed) {
   }
   return [...selected, name];
 }
+
+/// The platforms after the user's choice in the sheet, applied to [current],
+/// the platforms the game has by then: what the user added ([chosen] but not
+/// [initial]) is added and what they removed is removed, everything else stays,
+/// also a change that came in while the sheet was open.
+List<String> applyPlatformChanges({
+  required List<String> current,
+  required List<String> initial,
+  required List<String> chosen,
+}) {
+  bool has(List<String> list, String name) =>
+      list.any((known) => _same(known, name));
+  var result = current;
+  for (final name in chosen) {
+    if (!has(initial, name) && !has(result, name)) result = [...result, name];
+  }
+  for (final name in initial) {
+    if (!has(chosen, name)) {
+      result = [
+        for (final known in result)
+          if (!_same(known, name)) known,
+      ];
+    }
+  }
+  return result;
+}

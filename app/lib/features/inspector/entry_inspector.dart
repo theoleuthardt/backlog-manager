@@ -28,6 +28,7 @@ import 'package:backlog_manager/domain/format.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/inspector_logic.dart';
 import 'package:backlog_manager/domain/models.dart';
+import 'package:backlog_manager/domain/platform_choices.dart';
 import 'package:backlog_manager/domain/safe_url.dart';
 import 'package:backlog_manager/domain/split_list.dart';
 import 'package:backlog_manager/domain/status_style.dart';
@@ -319,13 +320,19 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
   }
 
   Future<void> _managePlatforms() async {
-    final platforms = await showManagePlatformsSheet(
+    final initial = splitList(_platform.text);
+    final chosen = await showManagePlatformsSheet(
       context,
-      initial: splitList(_platform.text),
+      initial: initial,
       inBacklog: ref.read(filterOptionsProvider).platforms,
     );
-    if (platforms == null || !mounted) return;
-    final text = platforms.join(', ');
+    if (chosen == null || !mounted) return;
+    final text = applyPlatformChanges(
+      current: splitList(_platform.text),
+      initial: initial,
+      chosen: chosen,
+    ).join(', ');
+    if (text == _platform.text) return;
     _platform.text = text;
     _edit((form) => form.copyWith(platform: text));
   }

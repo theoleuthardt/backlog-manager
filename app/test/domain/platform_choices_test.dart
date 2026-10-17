@@ -63,4 +63,61 @@ void main() {
       expect(addPlatform(['PC'], 'Atari, 2600'), ['PC']);
     });
   });
+
+  group('applyPlatformChanges', () {
+    test(
+      'applies what the user added and removed to the current platforms',
+      () {
+        expect(
+          applyPlatformChanges(
+            current: ['PC', 'Switch'],
+            initial: ['PC', 'Switch'],
+            chosen: ['PC', 'PS5'],
+          ),
+          ['PC', 'PS5'],
+        );
+      },
+    );
+
+    test('keeps a platform that was added meanwhile', () {
+      expect(
+        applyPlatformChanges(
+          current: ['PC', 'Mac'],
+          initial: ['PC'],
+          chosen: ['PC', 'Switch'],
+        ),
+        ['PC', 'Mac', 'Switch'],
+      );
+    });
+
+    test('changes nothing when the user changed nothing', () {
+      expect(
+        applyPlatformChanges(
+          current: ['PC', 'Mac'],
+          initial: ['PC'],
+          chosen: ['PC'],
+        ),
+        ['PC', 'Mac'],
+      );
+    });
+
+    test('does not remove a platform twice or add one that is there', () {
+      expect(
+        applyPlatformChanges(
+          current: ['PC', 'Switch'],
+          initial: ['PC'],
+          chosen: ['PC', 'switch'],
+        ),
+        ['PC', 'Switch'],
+      );
+      expect(
+        applyPlatformChanges(
+          current: ['Switch'],
+          initial: ['PC'],
+          chosen: const [],
+        ),
+        ['Switch'],
+      );
+    });
+  });
 }
