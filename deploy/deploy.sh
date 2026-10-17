@@ -12,6 +12,10 @@
 # image and the backup instead. podman-compose 1.x tries to create the database
 # container again on `up` and reports an error although the service started, so
 # the result of `up` is not trusted and the containers are verified instead.
+# Removing a container whose network namespace file is gone (it lived in the
+# runtime directory of a login session that ended) makes podman report an
+# error and stop after the container it was working on, so the removal is
+# repeated until each container is really gone; lingering keeps the directory.
 # `up` of podman-compose tears every container of the project down when the
 # config hash of an existing one differs. 1.3 ignores `--no-deps` when it picks
 # those containers, so the database is stopped and recreated (seen in
@@ -51,8 +55,24 @@ if [[ "$ref" == "$image_repo@sha256:"* && "${ref#"$image_repo"@sha256:}" =~ $dig
 exec 9>.deploy.lock
 flock -n 9 || fail "another deployment is running"
 
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+if command -v loginctl >/dev/null 2>&1 \
+  && [ "$(loginctl show-user "$(id -un)" --property=Linger --value 2>/dev/null || true)" = no ]; then
+  echo "deploy: warning: lingering is off for $(id -un), the network namespaces of the containers vanish when the last login session ends and a later removal then reports errors; run 'loginctl enable-linger $(id -un)' once" >&2
+fi
+
 [ -f compose.prod.yml ] || fail "compose.prod.yml not found in $PWD"
 [ -x "$backup_script" ] || fail "backup script $backup_script is missing or not executable"
+
+remove_container() {
+  local name="$1" attempt
+  for attempt in 1 2 3 4 5 6; do
+    podman rm --force --time 10 --depend --ignore "$name" \
+      || echo "deploy: removing $name reported an error (attempt $attempt), checking whether it is gone" >&2
+    podman container exists "$name" || return 0
+  done
+  return 1
+}
 
 running() {
   [ "$(podman inspect --format '{{.State.Running}}' "$1" 2>/dev/null || true)" = true ]
@@ -76,7 +96,7 @@ previous=$(cat .deployed-image 2>/dev/null || true)
 
 echo "deploy: replacing the backend and the cron containers"
 for old in blm_backend blm_backend-old; do
-  podman rm --force --time 30 --depend --ignore "$old" \
+  remove_container "$old" \
     || { podman ps -a >&2 || true; fail "could not remove $old (see the podman error above), nothing was started"; }
 done
 podman tag "$ref" "$local_image"

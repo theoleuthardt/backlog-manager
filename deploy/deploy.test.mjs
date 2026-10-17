@@ -13,7 +13,7 @@ const SHA = "0123456789abcdef0123456789abcdef01234567";
 const FAKE_PODMAN = `#!/usr/bin/env bash
 state="$FAKE_DIR/state"
 echo "$*" >> "$FAKE_DIR/calls"
-[ "$1" = compose ] && echo "BACKEND_IMAGE=$BACKEND_IMAGE" >> "$FAKE_DIR/calls"
+[ "$1" = compose ] && echo "BACKEND_IMAGE=$BACKEND_IMAGE XDG=$XDG_RUNTIME_DIR" >> "$FAKE_DIR/calls"
 case "$1" in
   pull) exit 0 ;;
   tag) exit 0 ;;
@@ -27,7 +27,21 @@ case "$1" in
     fi ;;
   rm)
     if [ -e "$state/rm-fails" ]; then echo "Error: cannot remove blm_backend: container is busy" >&2; exit 125; fi
+    if [ -e "$state/rm-partial" ]; then
+      left=$(cat "$state/rm-partial")
+      if [ "$left" -gt 0 ]; then
+        echo $((left - 1)) > "$state/rm-partial"
+        for name in blm_price-check-cron blm_steam-wishlist-sync-cron blm_backend; do
+          if [ -e "$state/running-$name" ]; then rm -f "$state/running-$name"; break; fi
+        done
+        echo "Error: cleaning up container: removing container network: netavark: open container netns: No such file or directory" >&2
+        exit 125
+      fi
+    fi
     rm -f "$state/running-blm_backend" "$state/running-blm_price-check-cron" "$state/running-blm_steam-wishlist-sync-cron"; rm -f "$state/image-id" ;;
+  container)
+    [ "$2" = exists ] && [ -e "$state/running-$3" ] && exit 0
+    exit 1 ;;
   compose)
     if [ -e "$state/compose-fails-silently" ]; then exit 0; fi
     touch "$state/running-blm_backend" "$state/running-blm_price-check-cron" "$state/running-blm_steam-wishlist-sync-cron"
@@ -52,6 +66,11 @@ function setup() {
   for (const d of [bin, state, server]) mkdirSync(d);
   writeFileSync(join(bin, "podman"), FAKE_PODMAN);
   chmodSync(join(bin, "podman"), 0o755);
+  writeFileSync(
+    join(bin, "loginctl"),
+    `#!/usr/bin/env bash\n[ -e "${state}/linger-off" ] && echo no || echo yes\n`,
+  );
+  chmodSync(join(bin, "loginctl"), 0o755);
   copyFileSync(deployScript, join(server, "deploy.sh"));
   chmodSync(join(server, "deploy.sh"), 0o755);
   writeFileSync(join(server, "compose.prod.yml"), "services: {}\n");
@@ -77,6 +96,13 @@ function run(env, args = [SHA], extraEnv = {}) {
   return { ...result, calls };
 }
 
+function startStack(env) {
+  for (const name of ["blm_backend", "blm_price-check-cron", "blm_steam-wishlist-sync-cron"]) {
+    writeFileSync(join(env.state, `running-${name}`), "");
+  }
+  writeFileSync(join(env.state, "image-id"), "sha256:old");
+}
+
 describe("deploy.sh", () => {
   let env;
   beforeEach(() => {
@@ -89,7 +115,7 @@ describe("deploy.sh", () => {
     assert.match(result.stdout, /is live/);
     assert.equal(readFileSync(join(env.server, ".deployed-image"), "utf8").trim(), `${REPO}:${SHA}`);
     assert.match(result.calls, new RegExp(`pull ${REPO}:${SHA}`));
-    assert.match(result.calls, /rm --force --time 30 --depend --ignore blm_backend/);
+    assert.match(result.calls, /rm --force --time 10 --depend --ignore blm_backend/);
     assert.doesNotMatch(result.calls, /rm .*blm_db/);
     assert.match(result.calls, /up -d --no-deps --no-recreate backend price-check-cron steam-wishlist-sync-cron/);
     assert.ok(existsSync(join(env.dir, "calls-backup")), "backup ran");
@@ -157,12 +183,57 @@ describe("deploy.sh", () => {
   });
 
   it("stops and shows the podman error when the old backend cannot be removed", () => {
+    startStack(env);
     writeFileSync(join(env.state, "rm-fails"), "");
     const result = run(env);
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /cannot remove blm_backend: container is busy/);
     assert.match(result.stderr, /could not remove blm_backend/);
     assert.doesNotMatch(result.calls, /compose/);
+    const attempts = result.calls
+      .split("\n")
+      .filter((line) => line === "rm --force --time 10 --depend --ignore blm_backend");
+    assert.equal(attempts.length, 6);
+  });
+
+  it("repeats the removal until every container is gone, as podman stops at a network cleanup error", () => {
+    startStack(env);
+    writeFileSync(join(env.state, "rm-partial"), "3");
+    const result = run(env);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /is live/);
+    assert.match(result.stderr, /removing blm_backend reported an error \(attempt 1\)/);
+    const attempts = result.calls
+      .split("\n")
+      .filter((line) => line === "rm --force --time 10 --depend --ignore blm_backend");
+    assert.equal(attempts.length, 3);
+  });
+
+  it("does not repeat the removal when it worked at once", () => {
+    startStack(env);
+    const result = run(env);
+    assert.equal(result.status, 0, result.stderr);
+    const attempts = result.calls
+      .split("\n")
+      .filter((line) => line === "rm --force --time 10 --depend --ignore blm_backend");
+    assert.equal(attempts.length, 1);
+  });
+
+  it("warns when lingering is off but goes on", () => {
+    writeFileSync(join(env.state, "linger-off"), "");
+    const result = run(env);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stderr, /loginctl enable-linger/);
+  });
+
+  it("does not warn when lingering is on", () => {
+    const result = run(env);
+    assert.doesNotMatch(result.stderr, /enable-linger/);
+  });
+
+  it("gives podman the runtime directory of the user when the session has none", () => {
+    const result = run(env);
+    assert.match(result.calls, new RegExp(`XDG=/run/user/${process.getuid()}`));
   });
 
   it("trusts the containers, not the exit code of compose up", () => {

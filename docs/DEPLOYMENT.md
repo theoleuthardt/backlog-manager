@@ -67,6 +67,14 @@ restrict,command="/root/blm/deploy.sh" ssh-ed25519 AAAA... blm-deploy-runner
 `restrict` disables shell, port forwarding and agent forwarding; the forced
 command means the key can only ever start the deploy script.
 
+Switch on lingering for the user that runs podman, once:
+
+```bash
+loginctl enable-linger root
+```
+
+Podman keeps the network namespaces of the containers in the runtime directory of the user (`/run/user/0`). Without lingering `systemd-logind` removes that directory when the last login session of the user ends, and the containers created in that session can no longer be cleaned up properly (`removing container network: netavark: open container netns: ... No such file or directory`). `deploy.sh` warns when lingering is off.
+
 ### Runner (separate small Debian LXC, outbound connections only)
 
 Follow GitHub's instructions (Settings → Actions → Runners → New self-hosted
@@ -96,6 +104,10 @@ enough CPU and RAM for that.
   restrict deployment branches to `main`.
 - Environment variable `DEPLOY_HOST` = the SSH host name of the production
   host as configured on the runner.
+
+## When a removal reports `open container netns ... No such file or directory`
+
+The namespace file of a container is gone (see the lingering note above). Podman removes the container it was working on but stops with that error, so one `podman rm` removes one container of the stack. `deploy.sh` therefore repeats the removal (up to six times per container, with a stop timeout of 10 s: the cron containers run `sh -c` as PID 1 and ignore SIGTERM, so each of them costs the full timeout) until the container is gone, and only then goes on. If it still fails, the log shows the podman error and `podman ps -a`, and nothing has been started. Containers created by a deployment while lingering is on do not have the problem.
 
 ## Security model
 
