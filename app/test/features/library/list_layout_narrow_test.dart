@@ -24,9 +24,10 @@ void main() {
     await openNarrowList(tester);
 
     expect(tester.takeException(), isNull);
-    final rows = find.byWidgetPredicate(
-      (w) => w.key.toString().contains('library-row-'),
-    );
+    final rows = find.byWidgetPredicate((w) {
+      final key = w.key;
+      return key is ValueKey<String> && key.value.startsWith('library-row-');
+    });
     expect(rows, findsWidgets);
     final pane = tester.getRect(find.byKey(const Key('page-library')));
     for (final row in rows.evaluate()) {

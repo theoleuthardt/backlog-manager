@@ -2,9 +2,12 @@ import 'package:backlog_manager/design/widgets/chips.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/app_font.dart';
 import 'harness.dart';
 
 void main() {
+  setUpAll(loadAppFont);
+
   testWidgets(
     'a chip in a narrow space shortens its label instead of overflowing',
     (tester) async {
