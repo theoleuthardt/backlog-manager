@@ -1,8 +1,13 @@
+import 'dart:async';
+
+import 'package:backlog_manager/data/update_channel.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/design/widgets/fields.dart';
 import 'package:backlog_manager/design/widgets/progress.dart';
+import 'package:backlog_manager/design/widgets/segmented.dart';
+import 'package:backlog_manager/domain/app_update.dart';
 import 'package:backlog_manager/features/updates/app_update_state.dart';
 import 'package:backlog_manager/platform/url_opener.dart';
 import 'package:flutter/material.dart';
@@ -42,6 +47,24 @@ class AppUpdateGroup extends ConsumerWidget {
             'Backlog Manager checks for a new version when it starts. You can '
             'also check manually.',
         rows: [
+          ShelfFormRow(
+            label: 'Update Channel',
+            description:
+                'Stable gets the normal releases. Preview also gets the '
+                'pre-releases, which come earlier and can have bugs. Kept on '
+                'this device.',
+            control: ShelfSegmented<UpdateChannel>(
+              segments: [
+                for (final channel in UpdateChannel.values)
+                  ShelfSegment(value: channel, label: channel.label),
+              ],
+              value: ref.watch(updateChannelProvider),
+              onChanged: (channel) {
+                ref.read(updateChannelProvider.notifier).select(channel);
+                unawaited(notifier.check());
+              },
+            ),
+          ),
           ShelfFormRow(
             label: 'Updates',
             control: Row(

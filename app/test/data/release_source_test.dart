@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:backlog_manager/data/release_source.dart';
+import 'package:backlog_manager/domain/app_update.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -169,5 +170,95 @@ void main() {
         expect(found.manifest, isNull);
       },
     );
+  });
+
+  group('the update channel', () {
+    const base = '/theoleuthardt/backlog-manager/releases';
+    const preview = '$base/download/v1.2.0/app-update.json';
+    const stable = '$base/download/v1.1.0/app-update.json';
+
+    Map<String, Object?> manifestOf(String version) => {
+      'version': version,
+      'notes': 'Notes $version',
+      'page_url':
+          'https://github.com/theoleuthardt/backlog-manager/releases/tag/v$version',
+      'payloads': {
+        'linux-x64-appimage': {
+          'url':
+              'https://github.com/theoleuthardt/backlog-manager/releases/download/v$version/a.AppImage',
+          'sha256': 'a' * 64,
+          'size': 10,
+          'signature': 'c2ln',
+        },
+      },
+    };
+
+    Map<String, Object?> release(
+      String tag,
+      String manifestUrl, {
+      required bool prerelease,
+    }) => {
+      'tag_name': tag,
+      'prerelease': prerelease,
+      'draft': false,
+      'assets': [
+        {
+          'name': 'app-update.json',
+          'browser_download_url': 'https://github.com$manifestUrl',
+        },
+      ],
+    };
+
+    ReleaseAdapter adapter() => ReleaseAdapter(
+      routes: {
+        '/repos$base': [
+          release('v1.2.0', preview, prerelease: true),
+          release('v1.1.0', stable, prerelease: false),
+        ],
+        preview: manifestOf('1.2.0'),
+        stable: manifestOf('1.1.0'),
+      },
+    );
+
+    GithubReleaseSource sourceOf(
+      ReleaseAdapter adapter,
+      UpdateChannel channel,
+    ) => GithubReleaseSource(Dio()..httpClientAdapter = adapter, channel);
+
+    test('preview takes the newest release, a pre-release too', () async {
+      final found = await sourceOf(adapter(), UpdateChannel.preview).latest();
+
+      expect(found!.version, '1.2.0');
+    });
+
+    test('stable skips pre-releases and takes the newest normal one', () async {
+      final found = await sourceOf(adapter(), UpdateChannel.stable).latest();
+
+      expect(found!.version, '1.1.0');
+    });
+
+    test('stable falls back to the latest release when only pre-releases carry a manifest', () async {
+      final only = ReleaseAdapter(
+        routes: {
+          '/repos$base': [release('v1.2.0', preview, prerelease: true)],
+          preview: manifestOf('1.2.0'),
+          '/repos$base/latest': {
+            'tag_name': 'v0.9.2',
+            'draft': false,
+            'prerelease': false,
+            'html_url': 'https://github.com/theoleuthardt/backlog-manager/releases/tag/v0.9.2',
+          },
+        },
+      );
+
+      final found = await sourceOf(only, UpdateChannel.stable).latest();
+
+      expect(found!.version, '0.9.2');
+      expect(found.manifest, isNull);
+    });
+
+    test('the default channel is preview, like before there was a choice', () {
+      expect(GithubReleaseSource().channel, UpdateChannel.preview);
+    });
   });
 }

@@ -37,6 +37,10 @@ and opens its page.
    notify-only. A failure while applying removes the download and leaves the
    running version in place.
 
+## Update channel
+
+Settings, About, App Updates has an **Update Channel** switch (`Stable` or `Preview`, `data/update_channel.dart`, kept on the device, not in the account). Stable only takes releases that are not marked as a pre-release; Preview takes the newest release with an `app-update.json` whatever its mark, so it also gets the pre-releases. The check uses the channel (`releaseSourceProvider` follows `updateChannelProvider`), and choosing a channel checks again at once. The default is **Preview** while every release of the Flutter client is a pre-release (before the cutover, #287): a Stable default would find nothing to update to. At the cutover the default flips to Stable (`UpdateChannelNotifier.build`).
+
 ## Keys
 
 The payloads are signed with an Ed25519 key pair that only the project has.
