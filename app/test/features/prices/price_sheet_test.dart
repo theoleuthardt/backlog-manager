@@ -108,6 +108,20 @@ void main() {
     expect(find.byKey(const Key('keyforsteam-row')), findsOneWidget);
   });
 
+  testWidgets('the Keyforsteam row opens their search for the title', (
+    tester,
+  ) async {
+    final opened = await pumpSheet(tester, FakeGamesApi(), title: 'Hades II');
+
+    await tester.tap(find.byKey(const Key('keyforsteam-row')));
+    await tester.pump();
+
+    expect(
+      opened.single.toString(),
+      'https://www.keyforsteam.de/katalog/search-Hades%20II',
+    );
+  });
+
   testWidgets('falls back to the Keyforsteam search when GG.deals is down', (
     tester,
   ) async {
@@ -122,7 +136,7 @@ void main() {
     await tester.pump();
     expect(
       opened.single.toString(),
-      'https://www.google.com/search?q=site%3Akeyforsteam.de+Hades+II',
+      'https://www.keyforsteam.de/katalog/search-Hades%20II',
     );
   });
 

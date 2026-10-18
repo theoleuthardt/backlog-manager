@@ -1,4 +1,5 @@
 import 'package:backlog_manager/domain/price_listings.dart';
+import 'package:backlog_manager/domain/safe_url.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 KeyShopOffer offer(
@@ -162,6 +163,27 @@ void main() {
     test('is empty without offers', () {
       expect(buildListings(null), isEmpty);
       expect(buildListings(const []), isEmpty);
+    });
+  });
+
+  group('keyforsteamSearchUrl', () {
+    test('is the catalog search of Keyforsteam with the title as the term', () {
+      expect(
+        keyforsteamSearchUrl('Hades II'),
+        'https://www.keyforsteam.de/katalog/search-Hades%20II',
+      );
+    });
+
+    test('escapes characters that would end the path segment', () {
+      expect(
+        keyforsteamSearchUrl('Half-Life 2: Episode/Two?'),
+        'https://www.keyforsteam.de/katalog/search-'
+        'Half-Life%202%3A%20Episode%2FTwo%3F',
+      );
+    });
+
+    test('is a link that is safe to open', () {
+      expect(isHttpUrl(keyforsteamSearchUrl("Baldur's Gate 3")), isTrue);
     });
   });
 
