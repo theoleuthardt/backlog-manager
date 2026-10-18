@@ -10,6 +10,7 @@ import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/features/add_game/wrong_game_sheet.dart';
 import 'package:backlog_manager/platform/browser_window.dart';
 import 'package:backlog_manager/platform/trailer_player.dart';
+import 'package:backlog_manager/platform/trailer_window.dart';
 import 'package:backlog_manager/platform/url_opener.dart';
 import 'package:backlog_manager/routing/router.dart';
 import 'package:backlog_manager/routing/routes.dart';
@@ -492,20 +493,32 @@ void main() {
       expect(app.api.calls, contains('update 1 {note: Try the hammer}'));
     });
 
-    testWidgets('trailer opens the video on YouTube', (tester) async {
+    testWidgets('trailer plays in a window where there is no embedded player', (
+      tester,
+    ) async {
       final opened = <Uri>[];
+      final windows = <Uri>[];
       await openInspector(
         tester,
-        overrides: [urlOpenerProvider.overrideWithValue(opened.add)],
+        overrides: [
+          urlOpenerProvider.overrideWithValue(opened.add),
+          trailerWindowOpenerProvider.overrideWithValue((
+            embedUrl,
+            watchUrl,
+          ) async {
+            windows.add(embedUrl);
+          }),
+        ],
       );
 
       await openTab(tester, 'Trailer');
       await tester.tap(find.byKey(const Key('trailer-card')));
       await tester.pump();
 
-      expect(opened, [
-        Uri.parse('https://www.youtube.com/watch?v=abcdefghijk'),
+      expect(windows, [
+        Uri.parse('https://www.youtube-nocookie.com/embed/abcdefghijk'),
       ]);
+      expect(opened, isEmpty);
     });
 
     testWidgets('trailer plays in a sheet where the platform has a player', (

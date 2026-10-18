@@ -6,13 +6,14 @@ import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/design/widgets/sheet.dart';
 import 'package:backlog_manager/domain/trailer.dart';
 import 'package:backlog_manager/platform/trailer_player.dart';
+import 'package:backlog_manager/platform/trailer_window.dart';
 import 'package:backlog_manager/platform/url_opener.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Plays the trailer of a game in a sheet over the window, in the largest
-/// 16:9 area that fits. Where the platform has no embedded player the trailer
-/// opens in the browser instead. [link] must be a canonical YouTube watch
+/// 16:9 area that fits. Where the platform has no embedded player (Linux) the
+/// trailer plays in a window of its own. [link] must be a canonical YouTube watch
 /// address (`youtubeEmbedUrl`); anything else is ignored.
 Future<void> showTrailer(
   BuildContext context,
@@ -26,7 +27,7 @@ Future<void> showTrailer(
   final embedUrl = Uri.parse(embed);
   final player = ref.read(trailerPlayerBuilderProvider)(context, embedUrl);
   if (player == null) {
-    ref.read(urlOpenerProvider)(watch);
+    await ref.read(trailerWindowOpenerProvider)(embedUrl, watch);
     return;
   }
   await showShelfSheet<void>(

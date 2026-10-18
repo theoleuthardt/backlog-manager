@@ -6,8 +6,8 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Builds the widget that plays [embedUrl] inside the app, or null on a
-/// platform that has no embedded player (the trailer then opens in the
-/// browser). Tests replace it with a placeholder, because a web view needs a
+/// platform that has no embedded player (the trailer then plays in a window of
+/// its own, see `trailer_window.dart`). Tests replace it with a placeholder, because a web view needs a
 /// real window.
 typedef TrailerPlayerBuilder = Widget? Function(
   BuildContext context,
@@ -15,7 +15,8 @@ typedef TrailerPlayerBuilder = Widget? Function(
 );
 
 /// The player of the app: the system web view (WKWebView, WebView2) on macOS
-/// and Windows; the web view plugin has no Linux implementation. Navigation
+/// and Windows; the web view plugin has no Linux implementation, Linux plays
+/// the trailer in a window. Navigation
 /// stays on the YouTube hosts, every other address is cancelled.
 Widget? systemTrailerPlayer(BuildContext context, Uri embedUrl) {
   final supported =
@@ -54,13 +55,14 @@ Widget? systemTrailerPlayer(BuildContext context, Uri embedUrl) {
 const trailerOrigin = 'https://dev.theocloud.blm';
 
 /// The page the web view loads: the embed in a frame that fills the view,
-/// told which origin embeds it.
-String trailerPage(Uri embedUrl) {
+/// told which [origin] embeds it (the one the page really comes from, the
+/// app's own for a page the web view builds itself).
+String trailerPage(Uri embedUrl, {String origin = trailerOrigin}) {
   final withOrigin = embedUrl.replace(
     queryParameters: {
       ...embedUrl.queryParameters,
-      'origin': trailerOrigin,
-      'widget_referrer': trailerOrigin,
+      'origin': origin,
+      'widget_referrer': origin,
     },
   );
   final src = const HtmlEscape(HtmlEscapeMode.attribute).convert('$withOrigin');
