@@ -160,6 +160,52 @@ void main() {
       },
     );
 
+    test(
+      'lets the page load the player frame of the video and its blank frames',
+      () async {
+        bool Function(Uri)? decide;
+        final container = ProviderContainer(
+          overrides: [
+            browserWindowOpenerProvider.overrideWithValue((
+              url, {
+              required stays,
+            }) async {
+              decide = stays;
+            }),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        await container.read(trailerWindowOpenerProvider)(
+          Uri.parse(_embed),
+          Uri.parse(_watch),
+        );
+
+        expect(
+          decide!(
+            Uri.parse(
+              '$_embed?origin=http%3A%2F%2F127.0.0.1%3A1&rel=0&autoplay=1',
+            ),
+          ),
+          isTrue,
+        );
+        expect(
+          decide!(Uri.parse('https://www.youtube.com/embed/abcdefghijk')),
+          isTrue,
+        );
+        expect(decide!(Uri.parse('about:blank')), isTrue);
+        expect(decide!(Uri.parse('https://www.youtube.com/embed/')), isFalse);
+        expect(
+          decide!(Uri.parse('https://example.com/embed/abcdefghijk')),
+          isFalse,
+        );
+        expect(
+          decide!(Uri.parse('https://www.youtube.com/watch?v=abcdefghijk')),
+          isFalse,
+        );
+      },
+    );
+
     test('opens the video on YouTube when the page cannot be served', () async {
       final externally = <Uri>[];
       final container = ProviderContainer(
