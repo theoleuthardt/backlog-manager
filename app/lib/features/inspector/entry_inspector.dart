@@ -41,6 +41,7 @@ import 'package:backlog_manager/features/common/status_select.dart';
 import 'package:backlog_manager/features/inspector/entry_autosave.dart';
 import 'package:backlog_manager/features/inspector/inspector_parts.dart';
 import 'package:backlog_manager/features/inspector/manage_platforms_sheet.dart';
+import 'package:backlog_manager/features/inspector/mods_section.dart';
 import 'package:backlog_manager/features/inspector/trailer_sheet.dart';
 import 'package:backlog_manager/features/library/library_actions.dart';
 import 'package:backlog_manager/features/prices/price_sheet.dart';
@@ -653,6 +654,7 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
                           'Overview',
                           'Progress',
                           'Review',
+                          'Mods',
                           'Trailer',
                         ],
                         index: _tab,
@@ -664,6 +666,10 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
                       0 => _overview(entry, tokens, style),
                       1 => _progress(entry),
                       2 => _reviewTab(reviewable),
+                      3 => ModsSection(
+                        entryId: entry.id,
+                        spaceId: ref.watch(backlogScopeProvider),
+                      ),
                       _ => _trailer(entry, tokens, style),
                     },
                   ],

@@ -12,11 +12,13 @@ import '../models/category_response.dart';
 import '../models/create_backlog_entry_request.dart';
 import '../models/create_category_request.dart';
 import '../models/create_custom_status_request.dart';
+import '../models/create_entry_mod_request.dart';
 import '../models/create_user_request.dart';
 import '../models/csv_headers_request.dart';
 import '../models/csv_headers_response.dart';
 import '../models/custom_status_response.dart';
 import '../models/enriched_result.dart';
+import '../models/entry_mod_response.dart';
 import '../models/game_price.dart';
 import '../models/igdb_cover.dart';
 import '../models/igdb_game_data.dart';
@@ -49,6 +51,7 @@ import '../models/two_factor_verify_enrollment_response.dart';
 import '../models/update_backlog_entry_request.dart';
 import '../models/update_category_request.dart';
 import '../models/update_custom_status_request.dart';
+import '../models/update_entry_mod_request.dart';
 import '../models/update_own_user_request.dart';
 import '../models/update_user_admin_request.dart';
 
@@ -233,6 +236,38 @@ abstract class FallbackClient {
   @DELETE('/api/backlog/statuses/{status_id}')
   Future<void> apiBacklogStatusesStatusIdDeleteCustomStatus({
     @Path('status_id') required int statusId,
+    @Query('space_id') int? spaceId,
+  });
+
+  /// ListEntryMods
+  @GET('/api/backlog/entries/{entry_id}/mods')
+  Future<List<EntryModResponse>> apiBacklogEntriesEntryIdModsListEntryMods({
+    @Path('entry_id') required int entryId,
+    @Query('space_id') int? spaceId,
+  });
+
+  /// CreateEntryMod
+  @POST('/api/backlog/entries/{entry_id}/mods')
+  Future<EntryModResponse> apiBacklogEntriesEntryIdModsCreateEntryMod({
+    @Path('entry_id') required int entryId,
+    @Body() required CreateEntryModRequest body,
+    @Query('space_id') int? spaceId,
+  });
+
+  /// UpdateEntryMod
+  @PUT('/api/backlog/entries/{entry_id}/mods/{mod_id}')
+  Future<EntryModResponse> apiBacklogEntriesEntryIdModsModIdUpdateEntryMod({
+    @Path('entry_id') required int entryId,
+    @Path('mod_id') required int modId,
+    @Body() required UpdateEntryModRequest body,
+    @Query('space_id') int? spaceId,
+  });
+
+  /// DeleteEntryMod
+  @DELETE('/api/backlog/entries/{entry_id}/mods/{mod_id}')
+  Future<void> apiBacklogEntriesEntryIdModsModIdDeleteEntryMod({
+    @Path('entry_id') required int entryId,
+    @Path('mod_id') required int modId,
     @Query('space_id') int? spaceId,
   });
 

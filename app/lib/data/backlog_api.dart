@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:backlog_manager/api/api_providers.dart';
 import 'package:backlog_manager/api/generated/export.dart' as wire;
 import 'package:backlog_manager/api/mappers.dart';
+import 'package:backlog_manager/domain/entry_mod.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:dio/dio.dart';
@@ -142,6 +143,27 @@ abstract interface class BacklogApi {
 
   Future<wire.AchievementProgress> achievements(int steamAppId);
 
+  /// The mods of a game (`GET /api/backlog/entries/{id}/mods`).
+  Future<List<EntryMod>> entryMods(int entryId, int? spaceId);
+
+  Future<EntryMod> addEntryMod(
+    int entryId,
+    String name,
+    String? url,
+    int? spaceId,
+  );
+
+  /// Changes a mod; a null [url] removes the link.
+  Future<EntryMod> updateEntryMod(
+    int entryId,
+    int modId,
+    String name,
+    String? url,
+    int? spaceId,
+  );
+
+  Future<void> deleteEntryMod(int entryId, int modId, int? spaceId);
+
   /// The entries that look like a new one with this title or Steam App ID
   /// (`GET /api/backlog/entries/duplicates`).
   Future<List<BacklogEntry>> duplicates(
@@ -203,6 +225,57 @@ class ApiBacklogApi implements BacklogApi {
   Future<void> deleteEntry(int entryId, int? spaceId) async {
     await (await _client()).apiBacklogEntriesEntryIdDeleteEntry(
       entryId: entryId,
+      spaceId: spaceId,
+    );
+  }
+
+  @override
+  Future<List<EntryMod>> entryMods(int entryId, int? spaceId) async {
+    final mods = await (await _client())
+        .apiBacklogEntriesEntryIdModsListEntryMods(
+          entryId: entryId,
+          spaceId: spaceId,
+        );
+    return mods.map(entryModFromResponse).toList();
+  }
+
+  @override
+  Future<EntryMod> addEntryMod(
+    int entryId,
+    String name,
+    String? url,
+    int? spaceId,
+  ) async {
+    final created = await (await _client())
+        .apiBacklogEntriesEntryIdModsCreateEntryMod(
+          entryId: entryId,
+          body: wire.CreateEntryModRequest(name: name, url: url),
+          spaceId: spaceId,
+        );
+    return entryModFromResponse(created);
+  }
+
+  @override
+  Future<EntryMod> updateEntryMod(
+    int entryId,
+    int modId,
+    String name,
+    String? url,
+    int? spaceId,
+  ) async {
+    final response = await (await _dio()).put<Map<String, dynamic>>(
+      '/api/backlog/entries/$entryId/mods/$modId',
+      data: {'name': name, 'url': url},
+      queryParameters: {'space_id': ?spaceId},
+    );
+    return entryModFromResponse(wire.EntryModResponse.fromJson(response.data!));
+  }
+
+  @override
+  Future<void> deleteEntryMod(int entryId, int modId, int? spaceId) async {
+    await (await _client()).apiBacklogEntriesEntryIdModsModIdDeleteEntryMod(
+      entryId: entryId,
+      modId: modId,
       spaceId: spaceId,
     );
   }

@@ -13,8 +13,16 @@ from typing import Annotated
 import msgspec
 
 from backlog_manager_backend.schemas.backlog_entry import Publisher
+from backlog_manager_backend.schemas.types import WebUrl
 
 PAYLOAD_VERSION = 1
+
+
+class BackupMod(msgspec.Struct):
+    name: Annotated[str, msgspec.Meta(min_length=1, max_length=120)]
+    created_at: datetime
+    updated_at: datetime
+    url: WebUrl | None = None
 
 
 class BackupEntry(msgspec.Struct):
@@ -42,6 +50,7 @@ class BackupEntry(msgspec.Struct):
     review: str | None = None
     note: str | None = None
     completed_at: datetime | None = None
+    mods: list[BackupMod] = msgspec.field(default_factory=list)
 
 
 class BackupCategory(msgspec.Struct):

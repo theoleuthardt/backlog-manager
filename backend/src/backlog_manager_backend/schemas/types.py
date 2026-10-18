@@ -14,3 +14,7 @@ YouTubeWatchUrl = Annotated[
 form IGDB's game_videos ids are stored as. The client turns it into an
 embedded player, so anything else (other hosts, javascript: URLs) is
 rejected at the boundary."""
+
+WebUrl = Annotated[str, msgspec.Meta(pattern=r"^https?://\S+$", max_length=2000)]
+"""An http(s) link. Links are opened by the client, so other schemes
+(javascript:, file:, ...) are rejected at the boundary."""

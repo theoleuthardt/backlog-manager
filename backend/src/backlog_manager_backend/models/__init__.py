@@ -22,6 +22,7 @@ from backlog_manager_backend.models.category_backlog_entry import (
     CategoryBacklogEntry,
 )
 from backlog_manager_backend.models.custom_status import CustomStatus
+from backlog_manager_backend.models.entry_mod import EntryMod
 from backlog_manager_backend.models.game_price import GamePrice
 from backlog_manager_backend.models.space import Space, SpaceMember
 from backlog_manager_backend.models.space_entry_member_data import SpaceEntryMemberData
@@ -38,6 +39,7 @@ __all__ = [
     "Category",
     "CategoryBacklogEntry",
     "CustomStatus",
+    "EntryMod",
     "GamePrice",
     "Space",
     "SpaceEntryMemberData",

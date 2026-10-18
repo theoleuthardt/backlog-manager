@@ -319,6 +319,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/backlog/entries/{entry_id}/mods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** ListEntryMods */
+        get: operations["ApiBacklogEntriesEntryIdModsListEntryMods"];
+        put?: never;
+        /** CreateEntryMod */
+        post: operations["ApiBacklogEntriesEntryIdModsCreateEntryMod"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/backlog/entries/{entry_id}/mods/{mod_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** UpdateEntryMod */
+        put: operations["ApiBacklogEntriesEntryIdModsModIdUpdateEntryMod"];
+        post?: never;
+        /** DeleteEntryMod */
+        delete: operations["ApiBacklogEntriesEntryIdModsModIdDeleteEntryMod"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/backups": {
         parameters: {
             query?: never;
@@ -1183,6 +1219,11 @@ export interface components {
         CreateCustomStatusRequest: {
             name: string;
         };
+        /** CreateEntryModRequest */
+        CreateEntryModRequest: {
+            name: string;
+            url?: string | null;
+        };
         /** CreateUserRequest */
         CreateUserRequest: {
             username: string;
@@ -1233,6 +1274,12 @@ export interface components {
             description?: string | null;
             publisher?: string | null;
             trailer_url?: string | null;
+        };
+        /** EntryModResponse */
+        EntryModResponse: {
+            id: number;
+            name: string;
+            url?: string | null;
         };
         /** GamePrice */
         GamePrice: {
@@ -1591,6 +1638,11 @@ export interface components {
         /** UpdateCustomStatusRequest */
         UpdateCustomStatusRequest: {
             name: string;
+        };
+        /** UpdateEntryModRequest */
+        UpdateEntryModRequest: {
+            name?: string;
+            url?: string | null;
         };
         /** UpdateOwnUserRequest */
         UpdateOwnUserRequest: {
@@ -3046,6 +3098,246 @@ export interface operations {
             header?: never;
             path: {
                 status_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    "Strict-Transport-Security"?: string;
+                    "Referrer-Policy"?: string;
+                    "X-Content-Type-Options"?: string;
+                    "X-Frame-Options"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBacklogEntriesEntryIdModsListEntryMods: {
+        parameters: {
+            query?: {
+                space_id?: number | null;
+            };
+            header?: never;
+            path: {
+                entry_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    "Strict-Transport-Security"?: string;
+                    "Referrer-Policy"?: string;
+                    "X-Content-Type-Options"?: string;
+                    "X-Frame-Options"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntryModResponse"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBacklogEntriesEntryIdModsCreateEntryMod: {
+        parameters: {
+            query?: {
+                space_id?: number | null;
+            };
+            header?: never;
+            path: {
+                entry_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateEntryModRequest"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    "Strict-Transport-Security"?: string;
+                    "Referrer-Policy"?: string;
+                    "X-Content-Type-Options"?: string;
+                    "X-Frame-Options"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntryModResponse"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBacklogEntriesEntryIdModsModIdUpdateEntryMod: {
+        parameters: {
+            query?: {
+                space_id?: number | null;
+            };
+            header?: never;
+            path: {
+                entry_id: number;
+                mod_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateEntryModRequest"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    "Strict-Transport-Security"?: string;
+                    "Referrer-Policy"?: string;
+                    "X-Content-Type-Options"?: string;
+                    "X-Frame-Options"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntryModResponse"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBacklogEntriesEntryIdModsModIdDeleteEntryMod: {
+        parameters: {
+            query?: {
+                space_id?: number | null;
+            };
+            header?: never;
+            path: {
+                entry_id: number;
+                mod_id: number;
             };
             cookie?: never;
         };

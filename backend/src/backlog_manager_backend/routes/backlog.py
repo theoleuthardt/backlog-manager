@@ -13,6 +13,7 @@ from backlog_manager_backend.repositories import (
     category_backlog_entry_repo,
     category_repo,
     custom_status_repo,
+    entry_mod_repo,
     space_entry_member_repo,
     space_repo,
 )
@@ -42,6 +43,13 @@ from backlog_manager_backend.schemas.custom_status import (
     UpdateCustomStatusParams,
     UpdateCustomStatusRequest,
 )
+from backlog_manager_backend.schemas.entry_mod import (
+    MAX_MOD_NAME_LENGTH,
+    MAX_MODS_PER_ENTRY,
+    CreateEntryModRequest,
+    EntryModResponse,
+    UpdateEntryModRequest,
+)
 from backlog_manager_backend.schemas.user import User
 from backlog_manager_backend.services import backup_service
 from backlog_manager_backend.services.entry_ownership import (
@@ -53,6 +61,7 @@ _ENTRY_NOT_FOUND = "Backlog entry not found"
 _CATEGORY_NOT_FOUND = "Category not found"
 _STATUS_NOT_FOUND = "Custom status not found"
 _SPACE_NOT_FOUND = "Space not found"
+_MOD_NOT_FOUND = "Mod not found"
 DEFAULT_STATUSES = (
     "Not Started",
     "In Progress",
@@ -585,6 +594,85 @@ async def delete_custom_status(
     await custom_status_repo.delete_custom_status(db_session, status_id)
 
 
+def _validated_mod_name(raw_name: str) -> str:
+    name = raw_name.strip()
+    if not name:
+        raise ValidationException("Mod name must not be empty")
+    if len(name) > MAX_MOD_NAME_LENGTH:
+        raise ValidationException(f"Mod name must be at most {MAX_MOD_NAME_LENGTH} characters")
+    return name
+
+
+@get("/api/backlog/entries/{entry_id:int}/mods", raises=[NotFoundException])
+async def list_entry_mods(
+    entry_id: FromPath[int],
+    db_session: NamedDependency[AsyncSession],
+    current_user: NamedDependency[User],
+    space_id: FromQuery[int | None] = None,
+) -> list[EntryModResponse]:
+    """The mods of an entry, oldest first. In a shared space they belong to
+    the entry and both members see and edit the same list."""
+    await _get_scoped_entry(db_session, entry_id, current_user, space_id)
+    mods = await entry_mod_repo.get_mods_by_entry(db_session, entry_id)
+    return [EntryModResponse.from_mod(mod) for mod in mods]
+
+
+@post(
+    "/api/backlog/entries/{entry_id:int}/mods",
+    status_code=201,
+    raises=[NotFoundException, ValidationException],
+)
+async def create_entry_mod(
+    entry_id: FromPath[int],
+    data: CreateEntryModRequest,
+    db_session: NamedDependency[AsyncSession],
+    current_user: NamedDependency[User],
+    space_id: FromQuery[int | None] = None,
+) -> EntryModResponse:
+    await _get_scoped_entry(db_session, entry_id, current_user, space_id)
+    name = _validated_mod_name(data.name)
+    if await entry_mod_repo.count_mods(db_session, entry_id) >= MAX_MODS_PER_ENTRY:
+        raise ValidationException(f"An entry has at most {MAX_MODS_PER_ENTRY} mods")
+    mod = await entry_mod_repo.create_mod(db_session, entry_id, name, data.url)
+    return EntryModResponse.from_mod(mod)
+
+
+@put(
+    "/api/backlog/entries/{entry_id:int}/mods/{mod_id:int}",
+    raises=[NotFoundException, ValidationException],
+)
+async def update_entry_mod(
+    entry_id: FromPath[int],
+    mod_id: FromPath[int],
+    data: UpdateEntryModRequest,
+    db_session: NamedDependency[AsyncSession],
+    current_user: NamedDependency[User],
+    space_id: FromQuery[int | None] = None,
+) -> EntryModResponse:
+    await _get_scoped_entry(db_session, entry_id, current_user, space_id)
+    name = data.name if isinstance(data.name, msgspec.UnsetType) else _validated_mod_name(data.name)
+    try:
+        mod = await entry_mod_repo.update_mod(db_session, entry_id, mod_id, name, data.url)
+    except NotFoundError as error:
+        raise NotFoundException(_MOD_NOT_FOUND) from error
+    return EntryModResponse.from_mod(mod)
+
+
+@delete("/api/backlog/entries/{entry_id:int}/mods/{mod_id:int}", raises=[NotFoundException])
+async def delete_entry_mod(
+    entry_id: FromPath[int],
+    mod_id: FromPath[int],
+    db_session: NamedDependency[AsyncSession],
+    current_user: NamedDependency[User],
+    space_id: FromQuery[int | None] = None,
+) -> None:
+    await _get_scoped_entry(db_session, entry_id, current_user, space_id)
+    try:
+        await entry_mod_repo.delete_mod(db_session, entry_id, mod_id)
+    except NotFoundError as error:
+        raise NotFoundException(_MOD_NOT_FOUND) from error
+
+
 backlog_router = Router(
     path="",
     route_handlers=[
@@ -607,6 +695,10 @@ backlog_router = Router(
         list_custom_statuses,
         update_custom_status,
         delete_custom_status,
+        list_entry_mods,
+        create_entry_mod,
+        update_entry_mod,
+        delete_entry_mod,
     ],
     dependencies={"current_user": Provide(get_current_user)},
     security=BEARER_SECURITY_REQUIREMENT,
