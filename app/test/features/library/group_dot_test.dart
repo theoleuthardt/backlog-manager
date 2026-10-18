@@ -40,7 +40,7 @@ void main() {
     expect(dotOf(tester, 'category:Cozy'), const Color(0xff0000ff));
   });
 
-  testWidgets('games without a category and other sorts keep the accent', (
+  testWidgets('games without a category keep the accent of the theme', (
     tester,
   ) async {
     await pumpLibrary(tester, categorized(), defaultSort: 'category');
