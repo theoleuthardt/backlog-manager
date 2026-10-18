@@ -55,7 +55,6 @@ Map<String, Object?> userJson({bool setupCompleted = true}) => {
   'has_steam_api_key': false,
   'has_igdb_credentials': false,
   'has_steamgriddb_api_key': false,
-  'has_discord_webhook_url': false,
   'steam_auto_import_enabled': false,
   'setup_completed': setupCompleted,
   'default_sort': 'status',

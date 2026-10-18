@@ -1012,40 +1012,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/games/{steam_app_id}/price": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** GetGamePrice */
-        get: operations["ApiGamesSteamAppIdPriceGetGamePrice"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/games/key-shop-prices": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** GetKeyShopPrices */
-        get: operations["ApiGamesKeyShopPricesGetKeyShopPrices"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/games/steam-app-id": {
         parameters: {
             query?: never;
@@ -1057,23 +1023,6 @@ export interface paths {
         get: operations["ApiGamesSteamAppIdGetSteamAppId"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/prices/check": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** CheckPrices */
-        post: operations["ApiPricesCheckCheckPrices"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1281,18 +1230,6 @@ export interface components {
             name: string;
             url?: string | null;
         };
-        /** GamePrice */
-        GamePrice: {
-            steam_app_id: number;
-            /** Format: date-time */
-            checked_at: string;
-            currency?: string | null;
-            current_retail?: string | null;
-            current_keyshops?: string | null;
-            historical_retail?: string | null;
-            historical_keyshops?: string | null;
-            url?: string | null;
-        };
         /** IGDBCover */
         IGDBCover: {
             id: number;
@@ -1408,17 +1345,6 @@ export interface components {
         InviteToSpaceRequest: {
             username: string;
         };
-        /** KeyShopOffer */
-        KeyShopOffer: {
-            shop: string;
-            title: string;
-            price: number;
-            currency: string;
-            url: string;
-            /** Format: date-time */
-            fetched_at: string;
-            discount_pct?: number | null;
-        };
         /** LoginParams */
         LoginParams: {
             email: string;
@@ -1462,10 +1388,6 @@ export interface components {
             has_igdb_credentials?: boolean;
             /** @default false */
             has_steamgriddb_api_key?: boolean;
-            /** @default false */
-            has_ggdeals_api_key?: boolean;
-            /** @default false */
-            has_discord_webhook_url?: boolean;
             /** @default false */
             steam_auto_import_enabled?: boolean;
             steam_wishlist_imported_at?: string | null;
@@ -1649,8 +1571,6 @@ export interface components {
             igdb_client_id?: string | null;
             igdb_client_secret?: string | null;
             steamgriddb_api_key?: string | null;
-            ggdeals_api_key?: string | null;
-            discord_webhook_url?: string | null;
             steam_auto_import_enabled?: boolean;
             steam_wishlist_auto_sync?: boolean;
             steam_family_ids?: string | null;
@@ -1669,8 +1589,6 @@ export interface components {
             igdb_client_id?: string | null;
             igdb_client_secret?: string | null;
             steamgriddb_api_key?: string | null;
-            ggdeals_api_key?: string | null;
-            discord_webhook_url?: string | null;
             steam_auto_import_enabled?: boolean;
             steam_wishlist_auto_sync?: boolean;
             steam_family_ids?: string | null;
@@ -5162,88 +5080,6 @@ export interface operations {
             };
         };
     };
-    ApiGamesSteamAppIdPriceGetGamePrice: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                steam_app_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    "Strict-Transport-Security"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
-                    "X-Frame-Options"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GamePrice"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
-    };
-    ApiGamesKeyShopPricesGetKeyShopPrices: {
-        parameters: {
-            query: {
-                title: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    "Strict-Transport-Security"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
-                    "X-Frame-Options"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["KeyShopOffer"][];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
-    };
     ApiGamesSteamAppIdGetSteamAppId: {
         parameters: {
             query: {
@@ -5270,64 +5106,6 @@ export interface operations {
             };
             /** @description Bad request syntax or unsupported method */
             400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-        };
-    };
-    ApiPricesCheckCheckPrices: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Cron-Secret"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    "Strict-Transport-Security"?: string;
-                    "Referrer-Policy"?: string;
-                    "X-Content-Type-Options"?: string;
-                    "X-Frame-Options"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: number;
-                    };
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        status_code: number;
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                    };
-                };
-            };
-            /** @description No permission -- see authorization schemes */
-            401: {
                 headers: {
                     [name: string]: unknown;
                 };

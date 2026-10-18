@@ -38,26 +38,6 @@ services:
       - db
     restart: unless-stopped
 
-  price-check-cron:
-    container_name: blm_price-check-cron
-    image: docker.io/curlimages/curl:latest
-    environment:
-      PRICE_CHECK_CRON_SECRET: ${PRICE_CHECK_CRON_SECRET}
-    entrypoint:
-      - sh
-      - -c
-      - |
-        trap 'exit 0' TERM INT
-        while true; do
-        (curl --fail --connect-timeout 10 --max-time 1800 --retry 5 --retry-delay 5 --retry-connrefused -X POST http://backend:8000/api/prices/check -H "X-Cron-Secret: $${PRICE_CHECK_CRON_SECRET}" || true) &
-        wait $$!
-        sleep 21600 &
-        wait $$!
-        done
-    depends_on:
-      - backend
-    restart: unless-stopped
-
   steam-wishlist-sync-cron:
     container_name: blm_steam-wishlist-sync-cron
     image: docker.io/curlimages/curl:latest

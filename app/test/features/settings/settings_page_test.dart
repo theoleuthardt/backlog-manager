@@ -1,6 +1,5 @@
 import 'dart:ui' as ui;
 
-import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/app.dart';
 import 'package:backlog_manager/auth/auth_api.dart';
 import 'package:backlog_manager/auth/token_store.dart';
@@ -48,7 +47,6 @@ SessionUser applied(SessionUser user, UserUpdate update) {
     hasSteamApiKey: has('steam_api_key', user.hasSteamApiKey),
     hasIgdbCredentials: has('igdb_client_id', user.hasIgdbCredentials),
     hasSteamgriddbApiKey: has('steamgriddb_api_key', user.hasSteamgriddbApiKey),
-    hasDiscordWebhookUrl: has('discord_webhook_url', user.hasDiscordWebhookUrl),
     steamWishlistAutoSync: json.containsKey('steam_wishlist_auto_sync')
         ? json['steam_wishlist_auto_sync']! as bool
         : user.steamWishlistAutoSync,
@@ -595,46 +593,6 @@ void main() {
       await tester.pumpAndSettle();
       expect(settings.users.updates.last.steamgriddbApiKey, '');
       expect(find.text('SteamGridDB API key removed'), findsOneWidget);
-      await tester.pump(const Duration(seconds: 6));
-    });
-  });
-
-  group('Discord', () {
-    testWidgets('saves a webhook', (tester) async {
-      final settings = await openSettings(tester, location: integrations);
-
-      await commit(
-        tester,
-        const Key('settings-discord'),
-        'https://discord.com/api/webhooks/1/abc',
-      );
-
-      expect(
-        settings.users.updates.single.discordWebhookUrl,
-        'https://discord.com/api/webhooks/1/abc',
-      );
-      expect(find.text('Discord webhook URL saved'), findsOneWidget);
-      await tester.pump(const Duration(seconds: 6));
-    });
-
-    testWidgets('shows the message of the backend when it refuses', (
-      tester,
-    ) async {
-      await openSettings(
-        tester,
-        location: integrations,
-        onUpdate: (update) async =>
-            throw const ApiException('Not a Discord webhook URL'),
-      );
-
-      await commit(
-        tester,
-        const Key('settings-discord'),
-        'https://evil.example',
-      );
-
-      expect(find.text('Not a Discord webhook URL'), findsOneWidget);
-      expect(find.text('Not saved'), findsOneWidget);
       await tester.pump(const Duration(seconds: 6));
     });
   });

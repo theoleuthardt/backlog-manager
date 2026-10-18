@@ -53,13 +53,11 @@ void main() {
         const UserUpdate(
           steamFamilyIds: '1, 2',
           steamgriddbApiKey: 'grid',
-          discordWebhookUrl: 'https://discord.com/api/webhooks/1/x',
           steamWishlistAutoSync: true,
         ).toJson(),
         {
           'steam_family_ids': '1, 2',
           'steamgriddb_api_key': 'grid',
-          'discord_webhook_url': 'https://discord.com/api/webhooks/1/x',
           'steam_wishlist_auto_sync': true,
         },
       );
@@ -72,7 +70,6 @@ void main() {
           igdbClientId: '',
           igdbClientSecret: '',
           steamgriddbApiKey: '',
-          discordWebhookUrl: '',
           steamFamilyIds: '',
         ).toJson(),
         {
@@ -80,7 +77,6 @@ void main() {
           'igdb_client_id': '',
           'igdb_client_secret': '',
           'steamgriddb_api_key': '',
-          'discord_webhook_url': '',
           'steam_family_ids': '',
         },
       );

@@ -231,17 +231,14 @@ void main() {
       return app;
     }
 
-    testWidgets(
-      'says that two-factor and Discord alerts live in the settings',
-      (tester) async {
-        await toDone(tester);
+    testWidgets('says that two-factor lives in the settings', (tester) async {
+      await toDone(tester);
 
-        expect(find.text('All set'), findsOneWidget);
-        expect(find.textContaining('two-factor'), findsOneWidget);
-        expect(find.textContaining('Discord'), findsOneWidget);
-        expect(find.text('Skip Setup'), findsNothing);
-      },
-    );
+      expect(find.text('All set'), findsOneWidget);
+      expect(find.textContaining('two-factor'), findsOneWidget);
+      expect(find.textContaining('Discord'), findsNothing);
+      expect(find.text('Skip Setup'), findsNothing);
+    });
 
     testWidgets('finishes and goes to Home', (tester) async {
       final app = await toDone(tester);

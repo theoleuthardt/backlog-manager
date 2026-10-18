@@ -39,21 +39,21 @@ case "$1" in
       left=$(cat "$state/rm-partial")
       if [ "$left" -gt 0 ]; then
         echo $((left - 1)) > "$state/rm-partial"
-        for name in blm_price-check-cron blm_steam-wishlist-sync-cron blm_backend; do
+        for name in blm_steam-wishlist-sync-cron blm_backend; do
           if [ -e "$state/running-$name" ]; then rm -f "$state/running-$name"; break; fi
         done
         echo "Error: cleaning up container: removing container network: netavark: open container netns: No such file or directory" >&2
         exit 125
       fi
     fi
-    rm -f "$state/running-blm_backend" "$state/running-blm_price-check-cron" "$state/running-blm_steam-wishlist-sync-cron"; rm -f "$state/image-id" ;;
+    rm -f "$state/running-blm_backend" "$state/running-blm_steam-wishlist-sync-cron"; rm -f "$state/image-id" ;;
   container)
     if [ -e "$state/exists-fails" ]; then echo "Error: cannot read the container storage" >&2; exit 125; fi
     [ "$2" = exists ] && [ -e "$state/running-$3" ] && exit 0
     exit 1 ;;
   compose)
     if [ -e "$state/compose-fails-silently" ]; then exit 0; fi
-    touch "$state/running-blm_backend" "$state/running-blm_price-check-cron" "$state/running-blm_steam-wishlist-sync-cron"
+    touch "$state/running-blm_backend" "$state/running-blm_steam-wishlist-sync-cron"
     cp "$state/new-id" "$state/image-id"
     [ -e "$state/compose-exits-nonzero" ] && exit 1
     exit 0 ;;
@@ -107,7 +107,7 @@ function run(env, args = [SHA], extraEnv = {}) {
 }
 
 function startStack(env) {
-  for (const name of ["blm_backend", "blm_price-check-cron", "blm_steam-wishlist-sync-cron"]) {
+  for (const name of ["blm_backend", "blm_steam-wishlist-sync-cron"]) {
     writeFileSync(join(env.state, `running-${name}`), "");
   }
   writeFileSync(join(env.state, "image-id"), "sha256:old");
@@ -127,7 +127,7 @@ describe("deploy.sh", () => {
     assert.match(result.calls, new RegExp(`pull ${REPO}:${SHA}`));
     assert.match(result.calls, /rm --force --time 10 --depend --ignore blm_backend/);
     assert.doesNotMatch(result.calls, /rm .*blm_db/);
-    assert.match(result.calls, /up -d --no-deps --no-recreate backend price-check-cron steam-wishlist-sync-cron/);
+    assert.match(result.calls, /up -d --no-deps --no-recreate backend steam-wishlist-sync-cron/);
     assert.ok(existsSync(join(env.dir, "calls-backup")), "backup ran");
   });
 
@@ -209,7 +209,7 @@ describe("deploy.sh", () => {
 
   it("repeats the removal until every container is gone, as podman stops at a network cleanup error", () => {
     startStack(env);
-    writeFileSync(join(env.state, "rm-partial"), "3");
+    writeFileSync(join(env.state, "rm-partial"), "2");
     const result = run(env);
     assert.equal(result.status, 0, result.stderr);
     assert.match(result.stdout, /is live/);
@@ -217,7 +217,7 @@ describe("deploy.sh", () => {
     const attempts = result.calls
       .split("\n")
       .filter((line) => line === "rm --force --time 10 --depend --ignore blm_backend");
-    assert.equal(attempts.length, 3);
+    assert.equal(attempts.length, 2);
   });
 
   it("does not take an error of the existence check for a removed container", () => {

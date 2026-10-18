@@ -45,7 +45,7 @@ Built from `frontend/src/app/`, `frontend/src/hooks/` and `frontend/src/lib/` fo
 | `FreakyBackground` | `design/freaky_orbs.dart` | done (#340) |
 | `UniverseBackground`, `lib/starfield` | `design/atmosphere.dart` | done |
 | `GameImage` | cover widgets with the image proxy (`data/entry_image.dart`) | done |
-| `GamePriceSection` | `features/prices/` | done |
+| `GamePriceSection` | the Prices button opens Keyforsteam in a browser window (#421, the price sheet was removed in #436) | done |
 | `IgdbSyncButton` | `features/igdb_sync/` | done |
 | `Navbar`, `SpaceNavLink` | `shell/sidebar.dart`, `shell/title_bar.dart` (the space entry has the invitation dot) | done |
 | `SetupWizard` | `features/setup/` | done |

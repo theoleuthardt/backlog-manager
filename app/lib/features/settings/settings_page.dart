@@ -491,7 +491,6 @@ class _IntegrationsTabState extends ConsumerState<_IntegrationsTab> {
   final _igdbId = TextEditingController();
   final _igdbSecret = TextEditingController();
   final _gridKey = TextEditingController();
-  final _discord = TextEditingController();
   final _steamIdDebounce = Debouncer(_autosaveDelay);
   final _familyDebounce = Debouncer(_autosaveDelay);
   late final SettingsController _controller;
@@ -531,7 +530,6 @@ class _IntegrationsTabState extends ConsumerState<_IntegrationsTab> {
       _igdbId,
       _igdbSecret,
       _gridKey,
-      _discord,
     ]) {
       controller.dispose();
     }
@@ -799,40 +797,6 @@ class _IntegrationsTabState extends ConsumerState<_IntegrationsTab> {
               onOpen: open,
             ),
           ),
-        ),
-        const SizedBox(height: 18),
-        ShelfFormGroup(
-          title: 'Discord price alerts',
-          rows: [
-            ShelfFormRow(
-              label: 'Webhook URL',
-              description: user.hasDiscordWebhookUrl
-                  ? 'Your own webhook is set and used for price alerts.'
-                  : 'Message when a game you want reaches its lowest price ever. Falls back to '
-                        "the server's webhook.",
-              control: SecretControl(
-                fieldKey: const Key('settings-discord'),
-                removeKey: const Key('settings-discord-remove'),
-                controller: _discord,
-                placeholder: user.hasDiscordWebhookUrl
-                    ? 'Enter a new webhook URL to replace it'
-                    : 'https://discord.com/api/webhooks/...',
-                isSet: user.hasDiscordWebhookUrl,
-                onCommit: (text) => _commitSecret(
-                  _discord,
-                  text,
-                  (value) => UserUpdate(discordWebhookUrl: value),
-                  'Discord webhook URL saved',
-                ),
-                onRemove: () => unawaited(
-                  _save(
-                    const UserUpdate(discordWebhookUrl: ''),
-                    'Discord webhook URL removed',
-                  ),
-                ),
-              ),
-            ),
-          ],
         ),
       ],
     );

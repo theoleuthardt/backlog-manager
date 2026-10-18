@@ -21,8 +21,6 @@ class PublicUser {
     this.hasSteamApiKey = false,
     this.hasIgdbCredentials = false,
     this.hasSteamgriddbApiKey = false,
-    this.hasGgdealsApiKey = false,
-    this.hasDiscordWebhookUrl = false,
     this.steamAutoImportEnabled = false,
     this.steamWishlistAutoSync = false,
     this.setupCompleted = false,
@@ -57,10 +55,6 @@ class PublicUser {
   final bool hasIgdbCredentials;
   @JsonKey(name: 'has_steamgriddb_api_key')
   final bool hasSteamgriddbApiKey;
-  @JsonKey(name: 'has_ggdeals_api_key')
-  final bool hasGgdealsApiKey;
-  @JsonKey(name: 'has_discord_webhook_url')
-  final bool hasDiscordWebhookUrl;
   @JsonKey(name: 'steam_auto_import_enabled')
   final bool steamAutoImportEnabled;
   @JsonKey(name: 'steam_wishlist_imported_at')
