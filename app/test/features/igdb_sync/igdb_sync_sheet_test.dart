@@ -16,18 +16,22 @@ class FakeIgdbSyncApi implements IgdbSyncApi {
   int pending;
   bool countFails = false;
   int syncs = 0;
+  final countedFor = <int?>[];
+  final syncedFor = <int?>[];
   late StreamController<SseEvent> controller;
   Object? openError;
 
   @override
-  Future<int> pendingCount() async {
+  Future<int> pendingCount({int? spaceId}) async {
+    countedFor.add(spaceId);
     if (countFails) throw Exception('offline');
     return pending;
   }
 
   @override
-  Stream<SseEvent> sync() {
+  Stream<SseEvent> sync({int? spaceId}) {
     syncs++;
+    syncedFor.add(spaceId);
     controller = StreamController<SseEvent>();
     if (openError != null) {
       controller.addError(openError!);

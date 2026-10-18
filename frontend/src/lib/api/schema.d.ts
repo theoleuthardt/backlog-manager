@@ -4507,7 +4507,9 @@ export interface operations {
     };
     ApiIgdbSyncPendingCountGetPendingCount: {
         parameters: {
-            query?: never;
+            query?: {
+                space_id?: number | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -4528,11 +4530,43 @@ export interface operations {
                     "application/json": number;
                 };
             };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
         };
     };
     ApiIgdbSyncStreamSyncIgdbDataStream: {
         parameters: {
-            query?: never;
+            query?: {
+                space_id?: number | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -4551,6 +4585,36 @@ export interface operations {
                 };
                 content: {
                     "text/event-stream": unknown;
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
                 };
             };
         };

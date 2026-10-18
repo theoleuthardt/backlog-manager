@@ -1741,9 +1741,10 @@ class _FallbackClient implements FallbackClient {
   }
 
   @override
-  Future<int> apiIgdbSyncPendingCountGetPendingCount() async {
+  Future<int> apiIgdbSyncPendingCountGetPendingCount({int? spaceId}) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{r'space_id': spaceId};
+    queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
     final _options = _setStreamType<int>(
@@ -1768,9 +1769,10 @@ class _FallbackClient implements FallbackClient {
   }
 
   @override
-  Future<void> apiIgdbSyncStreamSyncIgdbDataStream() async {
+  Future<void> apiIgdbSyncStreamSyncIgdbDataStream({int? spaceId}) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{r'space_id': spaceId};
+    queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
     final _options = _setStreamType<void>(

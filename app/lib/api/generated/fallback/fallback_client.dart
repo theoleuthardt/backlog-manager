@@ -434,11 +434,15 @@ abstract class FallbackClient {
 
   /// GetPendingCount
   @GET('/api/igdb-sync/pending-count')
-  Future<int> apiIgdbSyncPendingCountGetPendingCount();
+  Future<int> apiIgdbSyncPendingCountGetPendingCount({
+    @Query('space_id') int? spaceId,
+  });
 
   /// SyncIgdbDataStream
   @POST('/api/igdb-sync/stream')
-  Future<void> apiIgdbSyncStreamSyncIgdbDataStream();
+  Future<void> apiIgdbSyncStreamSyncIgdbDataStream({
+    @Query('space_id') int? spaceId,
+  });
 
   /// GetCsvHeaders
   @POST('/api/csv/headers')

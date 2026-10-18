@@ -175,8 +175,10 @@ class SpaceControls extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         ShelfPopover(
           content: _SpaceInfoCard(space: space),
@@ -186,7 +188,6 @@ class SpaceControls extends ConsumerWidget {
             onPressed: () => menu.isOpen ? menu.close() : menu.open(),
           ),
         ),
-        const SizedBox(width: 8),
         ShelfButton(
           key: const Key('space-leave'),
           label: space.waitingForPartner ? 'Cancel Invitation' : 'Leave',

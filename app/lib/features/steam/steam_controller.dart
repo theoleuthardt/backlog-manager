@@ -2,6 +2,7 @@ import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/api/sse_runner.dart';
 import 'package:backlog_manager/auth/auth_controller.dart';
 import 'package:backlog_manager/data/backlog_providers.dart';
+import 'package:backlog_manager/data/space_api.dart';
 import 'package:backlog_manager/data/steam_api.dart';
 import 'package:backlog_manager/domain/steam_sync.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -266,6 +267,8 @@ class PlaytimeSyncController extends Notifier<PlaytimeSyncState> {
       );
       if (!ref.mounted) return null;
       ref.invalidate(entriesProvider(null));
+      final spaceId = ref.read(activeSpaceIdProvider);
+      if (spaceId != null) ref.invalidate(entriesProvider(spaceId));
       return playtimeSyncMessage((data! as List<dynamic>).length);
     } on Object catch (error) {
       return ApiException.from(error, 'Failed to sync Steam playtimes').message;
