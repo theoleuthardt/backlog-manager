@@ -31,7 +31,10 @@ class TrailerPageServer {
         random.nextInt(256).toRadixString(16).padLeft(2, '0'),
     ].join();
     final result = TrailerPageServer._(server, secret);
-    server.listen((request) => unawaited(result._answer(request)));
+    server.listen(
+      (request) => unawaited(result._answer(request).catchError((Object _) {})),
+      onError: (Object _) {},
+    );
     return result;
   }
 
@@ -50,6 +53,8 @@ class TrailerPageServer {
 
   Future<void> close() => _server.close(force: true);
 
+  /// Answers one request; a client that goes away while it is answered (the
+  /// window was closed) is not an error of the app, [start] ignores it.
   Future<void> _answer(HttpRequest request) async {
     final response = request.response;
     final segments = request.uri.pathSegments;

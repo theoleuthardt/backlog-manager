@@ -327,7 +327,7 @@ The Platform field of the Overview tab has a **Manage** link (`inspector-platfor
 
 ### Trailer player
 
-Decision (#351, replaces the browser-only decision of #325): "Watch trailer" opens a sheet (`features/inspector/trailer_sheet.dart`) with the player, like the old Tauri client. The player is `flutter_inappwebview` (WKWebView on macOS, WebView2 on Windows); it has no Linux implementation, so there the sheet offers the browser link only. `platform/trailer_player.dart` holds the builder behind `trailerPlayerBuilderProvider` (it returns `null` where there is no player, and tests override it), so nothing else knows about the plugin. YouTube refuses some embeds without a referrer, so the sheet always has the "Watch it on YouTube" link.
+Decision (#351, replaces the browser-only decision of #325): "Watch trailer" opens a sheet (`features/inspector/trailer_sheet.dart`) with the player, like the old Tauri client. The player is `flutter_inappwebview` (WKWebView on macOS, WebView2 on Windows); it has no Linux implementation, so there the trailer plays in a window of its own (see "Linux (#423)" below). `platform/trailer_player.dart` holds the builder behind `trailerPlayerBuilderProvider` (it returns `null` where there is no player, and tests override it), so nothing else knows about the plugin. YouTube refuses some embeds without a referrer, so the sheet always has the "Watch it on YouTube" link.
 
 `domain/trailer.dart` (`youtubeEmbedUrl`) accepts only canonical YouTube watch URLs, and the inspector opens the sheet only after a link passed, so nothing else can ever become the source of the web view.
 
