@@ -390,63 +390,38 @@ class AchievementProgress(msgspec.Struct):
     achievements: list[AchievementInfo]
 
 
-class CheapSharkGameLookup(msgspec.Struct):
-    """One entry from GET /games?steamAppID= - gameID is CheapShark's own
-    numeric ID, sent as a string like every price/id field in this API."""
+class GgDealsPrices(msgspec.Struct, rename="camel"):
+    """The four prices GG.deals reports for one game, as decimal strings
+    (null where there is no such price): the current lowest price in the
+    official stores and in keyshops, and the lowest each ever was."""
 
-    gameID: str
-    steamAppID: str
-
-
-class CheapSharkDeal(msgspec.Struct):
-    """dealID (already URL-encoded by CheapShark) identifies this exact
-    deal at https://www.cheapshark.com/redirect?dealID= - CheapShark's
-    own click-through link to the store, used to let a user buy
-    directly from the price dialog."""
-
-    storeID: str
-    dealID: str
-    price: str
-    retailPrice: str
-    savings: str
+    currency: str | None = None
+    current_retail: str | None = None
+    current_keyshops: str | None = None
+    historical_retail: str | None = None
+    historical_keyshops: str | None = None
 
 
-class CheapSharkPriceEver(msgspec.Struct):
-    price: str
-    date: int = 0
+class GgDealsGame(msgspec.Struct):
+    """One game of a prices answer; url is the GG.deals page of the game,
+    which has to be linked as it is (it carries their referral)."""
 
-
-class CheapSharkGameInfo(msgspec.Struct):
     title: str
-    steamAppID: str | None = None
+    url: str
+    prices: GgDealsPrices
 
 
-class CheapSharkGameDetail(msgspec.Struct):
-    info: CheapSharkGameInfo
-    cheapestPriceEver: CheapSharkPriceEver
-    deals: list[CheapSharkDeal] = []
+class GgDealsPricesAnswer(msgspec.Struct):
+    """data is keyed by Steam App ID, null for an id GG.deals does not know."""
 
-
-class CheapSharkStoreImages(msgspec.Struct):
-    """Paths (not full URLs) relative to https://www.cheapshark.com."""
-
-    icon: str
-    logo: str
-    banner: str
-
-
-class CheapSharkStore(msgspec.Struct):
-    storeID: str
-    storeName: str
-    images: CheapSharkStoreImages
-
-    isActive: int = 0
+    success: bool
+    data: dict[str, GgDealsGame | None] = {}
 
 
 class KeyShopOffer(msgspec.Struct):
     """One matched product from a key-shop adapter (see
-    integrations/key_shops/) - shop names not covered by CheapShark's
-    official-distributor list, see docs/KEY_SHOP_SCRAPING.md. discount_pct
+    integrations/key_shops/) - shops outside the GG.deals prices, see
+    docs/KEY_SHOP_SCRAPING.md. discount_pct
     is None rather than 0 when the shop reports no compare-at (original)
     price at all, distinguishing "not on sale" from "no sale info
     available"."""

@@ -92,43 +92,36 @@ void main() {
   });
 
   group('priceInfoFromResponse', () {
-    final response = GamePrice(
-      steamAppId: 1145360,
-      onSale: true,
-      checkedAt: DateTime.utc(2026),
-      cheapestPriceEver: '9.99',
-      deals: const [
-        GamePriceDeal(
-          store: 'Steam',
-          icon: '/icons/steam.png',
-          price: 12.5,
-          retailPrice: 24.99,
-          url: 'https://store.steampowered.com/app/1145360',
-        ),
-      ],
-    );
-
-    test('maps the deals and the all-time low', () {
-      final info = priceInfoFromResponse(response);
-
-      expect(info.onSale, isTrue);
-      expect(info.cheapestPriceEver, 9.99);
-      expect(info.deals.single.store, 'Steam');
-      expect(info.deals.single.price, 12.5);
-      expect(info.deals.single.retailPrice, 24.99);
-    });
-
-    test('has no all-time low when CheapShark knows none', () {
+    test('maps the four prices, the currency and the link', () {
       final info = priceInfoFromResponse(
         GamePrice(
-          steamAppId: 1,
-          onSale: false,
+          steamAppId: 1145360,
           checkedAt: DateTime.utc(2026),
-          deals: const [],
+          currency: 'EUR',
+          currentRetail: '9.99',
+          currentKeyshops: '4.50',
+          historicalRetail: '1.99',
+          historicalKeyshops: '1.50',
+          url: 'https://gg.deals/game/hades/',
         ),
       );
 
-      expect(info.cheapestPriceEver, isNull);
+      expect(info.currency, 'EUR');
+      expect(info.currentRetail, 9.99);
+      expect(info.currentKeyshops, 4.5);
+      expect(info.historicalRetail, 1.99);
+      expect(info.historicalKeyshops, 1.5);
+      expect(info.url, 'https://gg.deals/game/hades/');
+    });
+
+    test('keeps a price GG.deals does not have as null', () {
+      final info = priceInfoFromResponse(
+        GamePrice(steamAppId: 1, checkedAt: DateTime.utc(2026)),
+      );
+
+      expect(info.hasPrices, isFalse);
+      expect(info.currentRetail, isNull);
+      expect(info.url, isNull);
     });
   });
 

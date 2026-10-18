@@ -24,7 +24,6 @@ _ALLOWED_HOSTS = {
     "images.igdb.com",
     "media.steampowered.com",
     "steamcdn-a.akamaihd.net",
-    "www.cheapshark.com",
 }
 """Only these hosts are ever proxied: this is a public, unauthenticated
 passthrough, so an open allowlist would turn it into a generic anonymizing

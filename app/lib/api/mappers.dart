@@ -95,18 +95,12 @@ WishlistSyncReport wishlistSyncReportFromResponse(
 
 price.PriceInfo priceInfoFromResponse(GamePrice response) {
   return price.PriceInfo(
-    deals: [
-      for (final deal in response.deals)
-        price.PriceDeal(
-          store: deal.store,
-          iconUrl: deal.icon,
-          price: deal.price.toDouble(),
-          retailPrice: deal.retailPrice.toDouble(),
-          url: deal.url,
-        ),
-    ],
-    onSale: response.onSale,
-    cheapestPriceEver: toNumber(response.cheapestPriceEver),
+    currency: response.currency,
+    currentRetail: toNumber(response.currentRetail),
+    currentKeyshops: toNumber(response.currentKeyshops),
+    historicalRetail: toNumber(response.historicalRetail),
+    historicalKeyshops: toNumber(response.historicalKeyshops),
+    url: response.url,
   );
 }
 

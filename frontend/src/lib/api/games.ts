@@ -98,21 +98,19 @@ export async function searchSteamGridDb(
   return data;
 }
 
-interface GamePriceDeal {
-  store: string;
-  iconUrl: string;
-  price: number;
-  retailPrice: number;
-  url: string;
-}
-
 export interface GamePriceInfo {
   steamAppId: number;
-  deals: GamePriceDeal[];
-  onSale: boolean;
   checkedAt: string;
-  cheapestPriceEver: number | null;
-  cheapestPriceEverDate: string | null;
+  currency: string | null;
+  currentRetail: number | null;
+  currentKeyshops: number | null;
+  historicalRetail: number | null;
+  historicalKeyshops: number | null;
+  url: string | null;
+}
+
+function priceOrNull(value: string | null | undefined): number | null {
+  return value === null || value === undefined ? null : Number(value);
 }
 
 export async function getGamePrice(steamAppId: number): Promise<GamePriceInfo> {
@@ -126,21 +124,13 @@ export async function getGamePrice(steamAppId: number): Promise<GamePriceInfo> {
     throw new Error(apiErrorMessage(error, "Failed to load price info"));
   return {
     steamAppId: data.steam_app_id,
-    deals: data.deals
-      .filter((deal) => isHttpUrl(String(deal.url)))
-      .map((deal) => ({
-        store: String(deal.store),
-        iconUrl: String(deal.icon),
-        price: Number(deal.price),
-        retailPrice: Number(deal.retail_price),
-        url: String(deal.url),
-      })),
-    onSale: data.on_sale,
     checkedAt: data.checked_at,
-    cheapestPriceEver: data.cheapest_price_ever
-      ? Number(data.cheapest_price_ever)
-      : null,
-    cheapestPriceEverDate: data.cheapest_price_ever_date ?? null,
+    currency: data.currency ?? null,
+    currentRetail: priceOrNull(data.current_retail),
+    currentKeyshops: priceOrNull(data.current_keyshops),
+    historicalRetail: priceOrNull(data.historical_retail),
+    historicalKeyshops: priceOrNull(data.historical_keyshops),
+    url: data.url && isHttpUrl(data.url) ? data.url : null,
   };
 }
 

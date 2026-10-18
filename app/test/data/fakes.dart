@@ -324,7 +324,7 @@ class FakeGamesApi implements GamesApi {
     calls.add('price $steamAppId');
     final custom = onPrice;
     if (custom != null) return custom(steamAppId);
-    return const PriceInfo(deals: [], onSale: false);
+    return const PriceInfo();
   }
 
   @override

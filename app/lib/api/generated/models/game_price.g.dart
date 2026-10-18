@@ -8,24 +8,22 @@ part of 'game_price.dart';
 
 GamePrice _$GamePriceFromJson(Map<String, dynamic> json) => GamePrice(
   steamAppId: (json['steam_app_id'] as num).toInt(),
-  deals: (json['deals'] as List<dynamic>)
-      .map((e) => GamePriceDeal.fromJson(e as Map<String, dynamic>))
-      .toList(),
-  onSale: json['on_sale'] as bool,
   checkedAt: DateTime.parse(json['checked_at'] as String),
-  cheapsharkGameId: (json['cheapshark_game_id'] as num?)?.toInt(),
-  cheapestPriceEver: json['cheapest_price_ever'] as String?,
-  cheapestPriceEverDate: json['cheapest_price_ever_date'] == null
-      ? null
-      : DateTime.parse(json['cheapest_price_ever_date'] as String),
+  currency: json['currency'] as String?,
+  currentRetail: json['current_retail'] as String?,
+  currentKeyshops: json['current_keyshops'] as String?,
+  historicalRetail: json['historical_retail'] as String?,
+  historicalKeyshops: json['historical_keyshops'] as String?,
+  url: json['url'] as String?,
 );
 
 Map<String, dynamic> _$GamePriceToJson(GamePrice instance) => <String, dynamic>{
   'steam_app_id': instance.steamAppId,
-  'deals': instance.deals,
-  'on_sale': instance.onSale,
   'checked_at': instance.checkedAt.toIso8601String(),
-  'cheapshark_game_id': instance.cheapsharkGameId,
-  'cheapest_price_ever': instance.cheapestPriceEver,
-  'cheapest_price_ever_date': instance.cheapestPriceEverDate?.toIso8601String(),
+  'currency': instance.currency,
+  'current_retail': instance.currentRetail,
+  'current_keyshops': instance.currentKeyshops,
+  'historical_retail': instance.historicalRetail,
+  'historical_keyshops': instance.historicalKeyshops,
+  'url': instance.url,
 };

@@ -15,6 +15,7 @@ class SessionUser {
     this.hasSteamApiKey = false,
     this.hasIgdbCredentials = false,
     this.hasSteamgriddbApiKey = false,
+    this.hasGgdealsApiKey = false,
     this.hasDiscordWebhookUrl = false,
     this.steamWishlistAutoSync = false,
     this.steamWishlistImportedAt,
@@ -43,6 +44,7 @@ class SessionUser {
   final bool hasSteamApiKey;
   final bool hasIgdbCredentials;
   final bool hasSteamgriddbApiKey;
+  final bool hasGgdealsApiKey;
   final bool hasDiscordWebhookUrl;
 
   /// The automatic wishlist sync, which needs the first wishlist import.

@@ -15,8 +15,12 @@ auth:bearer {
 }
 
 docs {
-  Current per-store deals and the all-time-low price for a Steam App ID,
-  from CheapShark - see docs/PRICE_TRACKING.md. Serves a cached row
-  (refreshed at most once an hour) rather than always hitting CheapShark
-  live. Run auth/Login first.
+  The GG.deals prices of a Steam App ID: the lowest current and the
+  lowest ever price in the official stores (retail) and in keyshops, with
+  their currency and the GG.deals page of the game (see
+  docs/PRICE_TRACKING.md). Serves a cached row (refreshed at most every
+  three hours) rather than always asking GG.deals, with the caller's own
+  GG.deals key or else the server's. 503 when there is no key and no
+  cached row, or GG.deals fails and there is no cached row. Run
+  auth/Login first.
 }

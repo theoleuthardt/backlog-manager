@@ -16,9 +16,11 @@ headers {
 
 docs {
   Triggers the price-check sweep: refreshes every tracked (not-yet-owned)
-  Steam App ID's price from CheapShark and posts a Discord alert (per
-  user, to their own webhook or the server-wide DISCORD_WEBHOOK_URL
-  fallback) for anything newly on sale. Not gated by the shared
+  Steam App ID's price from GG.deals (with the server's GGDEALS_API_KEY,
+  in batches that keep to the rate limit; nothing happens without the
+  key) and posts a Discord alert (per user, to their own webhook or the
+  server-wide DISCORD_WEBHOOK_URL fallback) for anything that reached its
+  lowest price ever. Not gated by the shared
   authToken - unlike every other request in this collection, it's meant
   to be called on a schedule rather than by a logged-in user (see
   compose.yml's price-check-cron service, which does exactly this every

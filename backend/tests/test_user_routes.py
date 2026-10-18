@@ -724,6 +724,33 @@ async def test_update_own_user_sets_discord_webhook_url(
     assert me_response.json()["has_discord_webhook_url"] is True
 
 
+async def test_update_own_user_sets_and_clears_the_ggdeals_api_key(
+    postgres_url: str, create_and_login, monkeypatch
+) -> None:
+    from backlog_manager_backend.app import create_app
+    from backlog_manager_backend.routes import user as user_routes
+
+    monkeypatch.setattr(
+        user_routes.settings, "steam_api_key_encryption_key", Fernet.generate_key().decode()
+    )
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "ggdealskeyuser@example.com")
+
+        set_response = client.put(
+            "/api/user/me", headers=headers, json={"ggdeals_api_key": "my-secret-key"}
+        )
+        me_response = client.get("/api/user/me", headers=headers)
+        clear_response = client.put("/api/user/me", headers=headers, json={"ggdeals_api_key": ""})
+
+    assert set_response.status_code == 200
+    assert set_response.json()["has_ggdeals_api_key"] is True
+    assert "my-secret-key" not in set_response.text
+    assert "ggdeals_api_key_encrypted" not in set_response.json()
+    assert me_response.json()["has_ggdeals_api_key"] is True
+    assert clear_response.json()["has_ggdeals_api_key"] is False
+
+
 async def test_update_own_user_clears_discord_webhook_url_with_empty_string(
     postgres_url: str, create_and_login, monkeypatch
 ) -> None:

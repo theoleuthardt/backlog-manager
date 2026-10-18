@@ -49,6 +49,7 @@ class Settings(BaseSettings):
     steam_web_api_key: str | None = None
     steam_api_key_encryption_key: str | None = None
     steamgriddb_api_key: str | None = None
+    ggdeals_api_key: str | None = None
     discord_webhook_url: str | None = None
     price_check_cron_secret: str | None = None
     initial_admin_email: str | None = None

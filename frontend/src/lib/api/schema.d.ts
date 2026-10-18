@@ -1284,21 +1284,14 @@ export interface components {
         /** GamePrice */
         GamePrice: {
             steam_app_id: number;
-            deals: components["schemas"]["GamePriceDeal"][];
-            on_sale: boolean;
             /** Format: date-time */
             checked_at: string;
-            cheapshark_game_id?: number | null;
-            cheapest_price_ever?: string | null;
-            cheapest_price_ever_date?: string | null;
-        };
-        /** GamePriceDeal */
-        GamePriceDeal: {
-            store: string;
-            icon: string;
-            price: number;
-            retail_price: number;
-            url: string;
+            currency?: string | null;
+            current_retail?: string | null;
+            current_keyshops?: string | null;
+            historical_retail?: string | null;
+            historical_keyshops?: string | null;
+            url?: string | null;
         };
         /** IGDBCover */
         IGDBCover: {
@@ -1469,6 +1462,8 @@ export interface components {
             has_igdb_credentials?: boolean;
             /** @default false */
             has_steamgriddb_api_key?: boolean;
+            /** @default false */
+            has_ggdeals_api_key?: boolean;
             /** @default false */
             has_discord_webhook_url?: boolean;
             /** @default false */
@@ -1654,6 +1649,7 @@ export interface components {
             igdb_client_id?: string | null;
             igdb_client_secret?: string | null;
             steamgriddb_api_key?: string | null;
+            ggdeals_api_key?: string | null;
             discord_webhook_url?: string | null;
             steam_auto_import_enabled?: boolean;
             steam_wishlist_auto_sync?: boolean;
@@ -1673,6 +1669,7 @@ export interface components {
             igdb_client_id?: string | null;
             igdb_client_secret?: string | null;
             steamgriddb_api_key?: string | null;
+            ggdeals_api_key?: string | null;
             discord_webhook_url?: string | null;
             steam_auto_import_enabled?: boolean;
             steam_wishlist_auto_sync?: boolean;

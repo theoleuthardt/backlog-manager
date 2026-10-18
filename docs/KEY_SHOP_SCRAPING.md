@@ -3,7 +3,7 @@
 ## Context
 
 Issue #179 asks for a scraper layer covering ~40 key marketplaces/resellers
-not in CheapShark's official-distributor list (Eneba, G2A, Kinguin, Gamivo,
+outside the GG.deals prices (Eneba, G2A, Kinguin, Gamivo,
 Instant Gaming, Loaded/CDKeys for Phase 1; a long tail for Phase 2), gated by
 one hard constraint from the issue itself: **no bypassing bot protection, no
 scraping pages requiring login, respect robots.txt**.
@@ -150,7 +150,7 @@ this repo's existing games routes - no unauthenticated internal endpoint was
 introduced since, unlike `/api/prices/check`, this isn't machine-to-machine
 cron traffic).
 
-No caching/scheduling layer, no new DB table: unlike CheapShark's price
+No caching/scheduling layer, no new DB table: unlike the GG.deals price
 tracking, this endpoint is called on-demand from the entry dialog exactly
 like `search_game`/`enriched_search` already are, and two Shopify storefronts
 at interactive, human-driven request volume don't need a background sweep.
@@ -161,7 +161,7 @@ following the pattern already established in `services/price_service.py`.
 ## Verification
 
 - `task test` — `test_key_shops_shopify.py` (mocked `httpx` responses,
-  following `test_cheapshark.py`'s `_MockAsyncClient` pattern): parses a
+  following `test_ggdeals.py`'s `_MockAsyncClient` pattern): parses a
   representative `/search/suggest.json` payload correctly, computes
   `discount_pct` from `compare_at_price_max` vs `price`, returns `[]` on no
   match. `test_key_shop_price_service.py`: a failing adapter doesn't prevent

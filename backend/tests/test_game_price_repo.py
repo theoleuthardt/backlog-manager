@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.repositories import backlog_entry_repo, game_price_repo, user_repo
 from backlog_manager_backend.schemas.backlog_entry import CreateBacklogEntryParams
-from backlog_manager_backend.schemas.game_price import GamePriceDeal, UpsertGamePriceParams
+from backlog_manager_backend.schemas.game_price import UpsertGamePriceParams
 from backlog_manager_backend.schemas.user import CreateUserParams
 
 
@@ -44,41 +44,31 @@ async def test_upsert_game_price_creates_and_updates(session: AsyncSession) -> N
         session,
         UpsertGamePriceParams(
             steam_app_id=220,
-            deals=[
-                GamePriceDeal(
-                    store="Steam", icon="", price=9.99, retail_price=19.99, url="https://x"
-                )
-            ],
-            on_sale=True,
             checked_at=checked_at,
-            cheapshark_game_id=612,
-            cheapest_price_ever=Decimal("2.99"),
+            currency="EUR",
+            current_retail=Decimal("9.99"),
+            current_keyshops=Decimal("4.50"),
+            historical_retail=Decimal("1.99"),
+            historical_keyshops=Decimal("1.50"),
+            url="https://gg.deals/game/half-life-2/",
         ),
     )
     assert created.steam_app_id == 220
-    assert created.on_sale is True
-    assert created.deals == [
-        GamePriceDeal(store="Steam", icon="", price=9.99, retail_price=19.99, url="https://x")
-    ]
+    assert created.currency == "EUR"
+    assert created.current_retail == Decimal("9.99")
+    assert created.historical_keyshops == Decimal("1.50")
+    assert created.url == "https://gg.deals/game/half-life-2/"
 
     updated = await game_price_repo.upsert_game_price(
         session,
-        UpsertGamePriceParams(
-            steam_app_id=220,
-            deals=[
-                GamePriceDeal(
-                    store="Steam", icon="", price=19.99, retail_price=19.99, url="https://x"
-                )
-            ],
-            on_sale=False,
-            checked_at=checked_at,
-        ),
+        UpsertGamePriceParams(steam_app_id=220, checked_at=checked_at, currency="EUR"),
     )
-    assert updated.on_sale is False
+    assert updated.current_retail is None
+    assert updated.url is None
 
     fetched = await game_price_repo.get_game_price(session, 220)
     assert fetched is not None
-    assert fetched.on_sale is False
+    assert fetched.current_keyshops is None
 
 
 async def test_get_tracked_user_steam_app_id_pairs_filters_by_owned(
