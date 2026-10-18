@@ -443,11 +443,11 @@ class _Toolbar extends ConsumerWidget {
         ],
       ],
     );
-    final heading = SizedBox(
-      key: const Key('library-heading'),
-      height: ShelfHeight.control,
-      child: space == null
-          ? Align(
+    final heading = space == null
+        ? SizedBox(
+            key: const Key('library-heading'),
+            height: ShelfHeight.control,
+            child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
                 'Library',
@@ -455,25 +455,22 @@ class _Toolbar extends ConsumerWidget {
                 overflow: TextOverflow.ellipsis,
                 style: style.page,
               ),
-            )
-          : Row(
-              mainAxisSize: MainAxisSize.min,
+            ),
+          )
+        : ConstrainedBox(
+            key: const Key('library-heading'),
+            constraints: const BoxConstraints(minHeight: ShelfHeight.control),
+            child: Wrap(
+              spacing: 14,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 MemberAvatars(space: space),
-                const SizedBox(width: 14),
-                Flexible(
-                  child: Text(
-                    'Co-op backlog',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: style.page.copyWith(fontSize: 18),
-                  ),
-                ),
-                const SizedBox(width: 14),
+                Text('Co-op backlog', maxLines: 1, style: style.section),
                 SpaceControls(space: space),
               ],
             ),
-    );
+          );
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(_gutter, 22, _gutter, 8),

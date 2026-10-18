@@ -101,6 +101,19 @@ void main() {
     );
   });
 
+  testWidgets('stays usable in a narrow window', (tester) async {
+    await openSpace(tester);
+    tester.view.physicalSize = const Size(760, 1100);
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    final pane = tester.getRect(find.byKey(const Key('main-content')));
+    final add = rectOf(tester, 'add-game-button');
+    expect(add.right, lessThanOrEqualTo(pane.right));
+    expect(find.byKey(const Key('search-field')), findsOneWidget);
+    expect(find.byKey(const Key('igdb-sync-button')), findsOneWidget);
+  });
+
   testWidgets('the library header keeps the same gutter and centre', (
     tester,
   ) async {
