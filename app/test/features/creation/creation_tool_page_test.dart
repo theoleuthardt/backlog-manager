@@ -584,6 +584,20 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('the toggle works from the keyboard', (tester) async {
+      await openTool(tester, location: creationToolLocation(long));
+      await tester.ensureVisible(
+        find.byKey(const Key('creation-about-toggle')),
+      );
+
+      Focus.of(tester.element(find.text('Show more'))).requestFocus();
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Show less'), findsOneWidget);
+    });
+
     testWidgets('a short text has no toggle', (tester) async {
       await openTool(tester);
 

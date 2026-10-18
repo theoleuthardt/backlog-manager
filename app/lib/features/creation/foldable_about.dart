@@ -65,9 +65,8 @@ class _FoldableAboutState extends State<FoldableAbout> {
               ),
             ),
             if (overflows)
-              GestureDetector(
+              InkWell(
                 key: const Key('creation-about-toggle'),
-                behavior: HitTestBehavior.opaque,
                 onTap: () => setState(() => _unfolded = !_unfolded),
                 child: Padding(
                   padding: const EdgeInsets.only(top: 4),
