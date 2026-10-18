@@ -185,9 +185,7 @@ async def create_entry(
         )
     except ConflictError as error:
         raise _ConflictException("This game is already in that backlog") from error
-    if space_id is not None and (
-        data.playtime is not None or review_stars is not None or data.review is not None
-    ):
+    if space_id is not None:
         await space_entry_member_repo.upsert_member_data(
             db_session,
             entry.backlog_entry_id,
@@ -195,6 +193,7 @@ async def create_entry(
             playtime=data.playtime,
             review_stars=review_stars,
             review=data.review,
+            owned=data.owned,
         )
     return (await _present(db_session, [entry], current_user))[0]
 
@@ -265,10 +264,14 @@ async def update_entry(
     current_user: NamedDependency[User],
     space_id: FromQuery[int | None] = None,
 ) -> BacklogEntryResponse:
-    """In a shared space, playtime, review_stars and review are the
-    caller's own member data and never touch the shared entry row."""
+    """In a shared space, playtime, review_stars, review and owned are the
+    caller's own member data and never touch the shared entry row; the
+    status is not coupled to ownership there."""
     existing = await _get_scoped_entry(db_session, entry_id, current_user, space_id)
-    status, owned = couple_status_and_ownership(existing.status, data.status, data.owned)
+    if space_id is None:
+        status, owned = couple_status_and_ownership(existing.status, data.status, data.owned)
+    else:
+        status, owned = data.status, msgspec.UNSET
 
     review_stars = data.review_stars
     if isinstance(review_stars, float):
@@ -312,6 +315,7 @@ async def update_entry(
             playtime=data.playtime,
             review_stars=review_stars,
             review=data.review,
+            owned=data.owned,
         )
     return (await _present(db_session, [entry], current_user))[0]
 

@@ -109,7 +109,9 @@ class EntriesNotifier extends AsyncNotifier<List<BacklogEntry>> {
     if (entries == null) return;
     state = AsyncData([
       for (final entry in entries)
-        entry.id == entryId ? entry.withStatus(status) : entry,
+        entry.id == entryId
+            ? entry.withStatus(status, ownershipFollows: spaceId == null)
+            : entry,
     ]);
   }
 }

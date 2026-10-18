@@ -568,7 +568,7 @@ async def test_updating_to_a_taken_steam_app_id_is_a_conflict(
     assert response.status_code == 409
 
 
-async def test_space_entry_without_member_data_creates_no_member_row(
+async def test_space_entry_creates_only_the_creators_member_row(
     postgres_url: str, create_and_login
 ) -> None:
     from sqlalchemy import func, select
@@ -590,7 +590,7 @@ async def test_space_entry_without_member_data_creates_no_member_row(
                 select(func.count()).where(SpaceEntryMemberData.backlog_entry_id == entry["id"])
             )
 
-    assert rows == 0
+    assert rows == 1
 
 
 async def test_invalid_space_update_does_not_persist_member_data(
@@ -691,6 +691,57 @@ async def test_personal_entry_without_steam_id_is_flagged_by_its_title(
 
     assert personal["Slay the Spire II"]["in_shared_space"] is True
     assert personal["Other Game"]["in_shared_space"] is False
+
+
+async def test_ownership_in_a_space_belongs_to_each_member(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        owner = await create_and_login(client, "spaceownedowner@example.com")
+        guest = await create_and_login(client, "spaceownedguest@example.com")
+        space_id = _make_space(client, owner, guest, "spaceownedguest")
+        entry = client.post(
+            f"/api/backlog/entries?space_id={space_id}",
+            headers=owner,
+            json=_entry_payload(owned=True),
+        ).json()
+        url = f"/api/backlog/entries/{entry['id']}?space_id={space_id}"
+
+        def owned_by(headers: dict) -> bool:
+            return client.get(url, headers=headers).json()["owned"]
+
+        assert owned_by(owner) is True
+        assert owned_by(guest) is False
+
+        client.put(url, headers=guest, json={"owned": True})
+        client.put(url, headers=owner, json={"owned": False})
+
+        assert owned_by(owner) is False
+        assert owned_by(guest) is True
+
+
+async def test_ownership_in_a_space_does_not_change_the_shared_status(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        owner = await create_and_login(client, "spaceownedstatusowner@example.com")
+        guest = await create_and_login(client, "spaceownedstatusguest@example.com")
+        space_id = _make_space(client, owner, guest, "spaceownedstatusguest")
+        entry = client.post(
+            f"/api/backlog/entries?space_id={space_id}",
+            headers=owner,
+            json=_entry_payload(status="In Progress"),
+        ).json()
+        url = f"/api/backlog/entries/{entry['id']}?space_id={space_id}"
+
+        client.put(url, headers=guest, json={"owned": False})
+        status = client.get(url, headers=owner).json()["status"]
+
+    assert status == "In Progress"
 
 
 async def test_personal_entries_are_never_flagged_without_a_space(

@@ -66,8 +66,9 @@ class BacklogEntry {
   final DateTime? completedAt;
 
   /// This entry in another status; moving to or out of "Not Owned" changes
-  /// the owned flag with it, as the server does.
-  BacklogEntry withStatus(String newStatus) {
+  /// the owned flag with it, as the server does, unless [ownershipFollows] is
+  /// off (in a shared space ownership is the member's own).
+  BacklogEntry withStatus(String newStatus, {bool ownershipFollows = true}) {
     return BacklogEntry(
       id: id,
       title: title,
@@ -76,7 +77,9 @@ class BacklogEntry {
       genre: genre,
       platform: platform,
       status: newStatus,
-      owned: newStatus == notOwnedStatus
+      owned: !ownershipFollows
+          ? owned
+          : newStatus == notOwnedStatus
           ? false
           : status == notOwnedStatus
           ? true

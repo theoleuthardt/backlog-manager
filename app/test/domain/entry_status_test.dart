@@ -33,6 +33,23 @@ void main() {
       expect(moved.owned, isTrue);
     });
 
+    test('in a shared space the ownership stays with the member', () {
+      expect(
+        entry(
+          status: 'In Progress',
+          owned: true,
+        ).withStatus(notOwnedStatus, ownershipFollows: false).owned,
+        isTrue,
+      );
+      expect(
+        entry(
+          status: notOwnedStatus,
+          owned: false,
+        ).withStatus('In Progress', ownershipFollows: false).owned,
+        isFalse,
+      );
+    });
+
     test('moving between ordinary statuses leaves the ownership alone', () {
       expect(
         entry(status: 'In Progress', owned: true).withStatus('Dropped').owned,
