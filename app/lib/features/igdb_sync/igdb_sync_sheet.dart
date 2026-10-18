@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/api/sse.dart';
 import 'package:backlog_manager/data/backlog_providers.dart';
+import 'package:backlog_manager/data/backlog_scope.dart';
 import 'package:backlog_manager/data/igdb_sync_api.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
@@ -49,7 +50,8 @@ class _IgdbSyncSheetState extends ConsumerState<IgdbSyncSheet> {
 
   void _start() {
     final api = ref.read(igdbSyncApiProvider);
-    final entries = entriesProvider(null);
+    final scope = ref.read(backlogScopeProvider);
+    final entries = entriesProvider(scope);
     final container = ProviderScope.containerOf(context);
     final navigator = Navigator.of(context);
     setState(() {
@@ -71,41 +73,45 @@ class _IgdbSyncSheetState extends ConsumerState<IgdbSyncSheet> {
       }
     }
 
-    _subscription = api.sync().listen(
-      (event) {
-        switch (event) {
-          case SseProgress(:final processed, :final total):
-            if (mounted) {
-              setState(() {
-                _processed = processed;
-                _total = total;
-              });
+    _subscription = api
+        .sync(spaceId: scope)
+        .listen(
+          (event) {
+            switch (event) {
+              case SseProgress(:final processed, :final total):
+                if (mounted) {
+                  setState(() {
+                    _processed = processed;
+                    _total = total;
+                  });
+                }
+              case SseDone(:final data):
+                container.invalidate(entries);
+                finish(
+                  syncResultMessage(data is List ? data.length : 0),
+                  close: true,
+                );
+              case SseError(:final message):
+                finish(message);
             }
-          case SseDone(:final data):
-            container.invalidate(entries);
-            finish(
-              syncResultMessage(data is List ? data.length : 0),
-              close: true,
-            );
-          case SseError(:final message):
-            finish(message);
-        }
-      },
-      onError: (Object error) {
-        final api = ApiException.from(error, _failed);
-        finish(api.statusCode == 503 ? _notConfigured : api.message);
-      },
-      onDone: () {
-        if (_running) finish(_failed);
-      },
-    );
+          },
+          onError: (Object error) {
+            final api = ApiException.from(error, _failed);
+            finish(api.statusCode == 503 ? _notConfigured : api.message);
+          },
+          onDone: () {
+            if (_running) finish(_failed);
+          },
+        );
   }
 
   @override
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
-    final pending = ref.watch(igdbPendingCountProvider);
+    final pending = ref.watch(
+      igdbPendingCountProvider(ref.watch(backlogScopeProvider)),
+    );
     final count = pending.value;
 
     return PopScope(

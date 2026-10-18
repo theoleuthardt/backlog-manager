@@ -309,6 +309,31 @@ async def sync_space_playtimes(
         )
 
 
+async def sync_partner_space_playtimes(session: AsyncSession, user: User, api_key: str) -> None:
+    """Also writes the other active member of the user's shared space their
+    Steam playtime, so one sync on the space page brings both of them up to
+    date. The library of the partner is read by their Steam ID with the key of
+    the request (an API key reads any public library, so none of the partner's
+    own secrets is used); a partner without a Steam ID, or whose library cannot
+    be read (private profile, Steam down), is skipped and never fails the sync
+    of the user."""
+    membership = await space_repo.get_membership(session, user.id)
+    if membership is None or membership.status != "active":
+        return
+    for member in await space_repo.get_members(session, membership.space_id):
+        if member.user_id == user.id or member.status != "active":
+            continue
+        partner = await user_repo.get_user_by_id(session, member.user_id)
+        if not partner.steam_id:
+            continue
+        try:
+            partner_games = await get_owned_games(partner.steam_id, api_key)
+        except httpx.HTTPError:
+            logger.warning("Could not read the Steam library of a space partner")
+            continue
+        await sync_space_playtimes(session, partner, partner_games)
+
+
 async def _try_get_cover(steam_app_id: int, steamgriddb_api_key: str | None) -> str | None:
     """Cover lookup for one freshly-imported game: Steam's official
     600x900 library cover first (deterministic, correct by appid), then
@@ -566,7 +591,9 @@ async def sync_playtimes_and_import(
     reporting progress for. `family_steam_ids` only affects
     import_library too - sync_playtimes only ever updates entries
     already linked to the user's own steam_app_id, and family members'
-    playtime isn't the user's own (see _merge_family_games)."""
+    playtime isn't the user's own (see _merge_family_games). The entries
+    of a shared space get the playtime of both members
+    (sync_partner_space_playtimes)."""
     if not user.steam_id:
         raise ValidationError(_STEAM_NOT_LINKED)
     owned_games = await get_owned_games(user.steam_id, api_key)
@@ -575,6 +602,7 @@ async def sync_playtimes_and_import(
 
     updated = await sync_playtimes(session, user, api_key, owned_games)
     await sync_space_playtimes(session, user, owned_games)
+    await sync_partner_space_playtimes(session, user, api_key)
     if auto_import:
         updated = updated + await import_library(
             session,

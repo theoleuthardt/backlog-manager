@@ -374,6 +374,11 @@ class _LibraryState extends ConsumerState<_Library> {
 /// a line of its own above the controls.
 const _searchBesideHeadingMin = 600.0;
 
+/// How much wider the heading of the Shared Space is than "Library": the
+/// avatars, the title and the space controls, so the search needs that much
+/// more room before it sits beside the heading.
+const _spaceHeadingExtra = 330.0;
+
 class _Toolbar extends ConsumerWidget {
   const _Toolbar({required this.content, this.space});
 
@@ -400,31 +405,6 @@ class _Toolbar extends ConsumerWidget {
       kind: ShelfButtonKind.primary,
       onPressed: ref.read(addGameRequestProvider.notifier).request,
     );
-
-    if (space != null) {
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(_gutter, 22, _gutter, 8),
-        child: Wrap(
-          spacing: 14,
-          runSpacing: 10,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            MemberAvatars(space: space),
-            Text('Co-op backlog', style: style.page.copyWith(fontSize: 18)),
-            SpaceControls(space: space),
-            selectButton,
-            ShelfIconButton(
-              key: const Key('random-pull-button'),
-              icon: Icons.casino_outlined,
-              tooltip: 'Pull a random game',
-              onPressed: ref.read(randomPullRequestProvider.notifier).request,
-            ),
-            const SizedBox(width: 320, child: LibrarySearchField()),
-            addButton,
-          ],
-        ),
-      );
-    }
 
     final controls = Wrap(
       spacing: 12,
@@ -453,32 +433,56 @@ class _Toolbar extends ConsumerWidget {
           tooltip: 'Find duplicate games',
           onPressed: () => unawaited(showDuplicatesSheet(context)),
         ),
-        const SizedBox(width: 6),
-        Text('${content.shown} of ${content.total} games', style: muted),
-        Text(
-          '${formatCount(content.hoursToBeat.round())} h to beat',
-          style: muted,
-        ),
+        if (space == null) ...[
+          const SizedBox(width: 6),
+          Text('${content.shown} of ${content.total} games', style: muted),
+          Text(
+            '${formatCount(content.hoursToBeat.round())} h to beat',
+            style: muted,
+          ),
+        ],
       ],
     );
     final heading = SizedBox(
+      key: const Key('library-heading'),
       height: ShelfHeight.control,
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          'Library',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: style.page,
-        ),
-      ),
+      child: space == null
+          ? Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Library',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: style.page,
+              ),
+            )
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                MemberAvatars(space: space),
+                const SizedBox(width: 14),
+                Flexible(
+                  child: Text(
+                    'Co-op backlog',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: style.page.copyWith(fontSize: 18),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                SpaceControls(space: space),
+              ],
+            ),
     );
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(_gutter, 22, _gutter, 8),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          if (constraints.maxWidth < _searchBesideHeadingMin) {
+          final besideMin =
+              _searchBesideHeadingMin +
+              (space == null ? 0 : _spaceHeadingExtra);
+          if (constraints.maxWidth < besideMin) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

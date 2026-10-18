@@ -6,8 +6,9 @@ import asyncio
 import msgspec
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backlog_manager_backend.errors import NotFoundError
 from backlog_manager_backend.integrations.types import EnrichedResult
-from backlog_manager_backend.repositories import backlog_entry_repo
+from backlog_manager_backend.repositories import backlog_entry_repo, space_repo
 from backlog_manager_backend.schemas.backlog_entry import (
     MAX_PUBLISHER_LENGTH,
     BacklogEntry,
@@ -68,8 +69,23 @@ def _build_update(entry: BacklogEntry, match: EnrichedResult | None) -> UpdateBa
     return UpdateBacklogEntryParams(backlog_entry_id=entry.backlog_entry_id, **changes)
 
 
-async def count_entries_needing_sync(session: AsyncSession, user_id: int) -> int:
-    entries = await backlog_entry_repo.get_backlog_entries_by_user(session, user_id)
+async def _entries_in_scope(
+    session: AsyncSession, user_id: int, space_id: int | None
+) -> list[BacklogEntry]:
+    """The user's personal entries, or with `space_id` the entries of that
+    shared space; NotFoundError unless the user is an active member of it."""
+    if space_id is None:
+        return await backlog_entry_repo.get_backlog_entries_by_user(session, user_id)
+    membership = await space_repo.get_membership(session, user_id)
+    if membership is None or membership.space_id != space_id or membership.status != "active":
+        raise NotFoundError("Space", space_id)
+    return await backlog_entry_repo.get_backlog_entries_by_space(session, space_id)
+
+
+async def count_entries_needing_sync(
+    session: AsyncSession, user_id: int, space_id: int | None = None
+) -> int:
+    entries = await _entries_in_scope(session, user_id, space_id)
     return sum(1 for entry in entries if _needs_sync(entry))
 
 
@@ -78,8 +94,10 @@ async def sync_igdb_data(
     user: User,
     igdb_credentials: tuple[str, str],
     on_progress: ProgressCallback | None = None,
+    space_id: int | None = None,
 ) -> list[BacklogEntry]:
-    """Looks up the top IGDB match for every personal entry that lacks a
+    """Looks up the top IGDB match for every entry (the user's personal
+    ones, or those of the shared space `space_id`) that lacks a
     genre, description or publisher (or carries trademark symbols in its title) and
     fills in what is missing, returning the entries that changed.
     Lookups run concurrently (bounded by _LOOKUP_CONCURRENCY) and report
@@ -87,9 +105,7 @@ async def sync_igdb_data(
     since one AsyncSession is not safe across coroutines. An entry whose
     lookup fails or finds nothing is left as it was."""
     candidates = [
-        entry
-        for entry in await backlog_entry_repo.get_backlog_entries_by_user(session, user.id)
-        if _needs_sync(entry)
+        entry for entry in await _entries_in_scope(session, user.id, space_id) if _needs_sync(entry)
     ]
     semaphore = asyncio.Semaphore(_LOOKUP_CONCURRENCY)
     processed = 0

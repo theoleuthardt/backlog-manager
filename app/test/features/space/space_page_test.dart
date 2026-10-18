@@ -300,7 +300,7 @@ void main() {
         findsNothing,
       );
       expect(find.text('+ Add game'), findsOneWidget);
-      expect(find.byKey(const Key('igdb-sync-button')), findsNothing);
+      expect(find.byKey(const Key('igdb-sync-button')), findsOneWidget);
     });
 
     testWidgets('covers show the progress of both members', (tester) async {
