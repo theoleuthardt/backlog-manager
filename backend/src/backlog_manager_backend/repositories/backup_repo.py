@@ -8,12 +8,14 @@ from backlog_manager_backend.models.backlog_entry import BacklogEntry
 from backlog_manager_backend.models.category import Category
 from backlog_manager_backend.models.category_backlog_entry import CategoryBacklogEntry
 from backlog_manager_backend.models.custom_status import CustomStatus
+from backlog_manager_backend.models.entry_mod import EntryMod
 from backlog_manager_backend.models.user_backup import UserBackup
 from backlog_manager_backend.schemas.backup import (
     PAYLOAD_VERSION,
     BackupCategory,
     BackupCustomStatus,
     BackupEntry,
+    BackupMod,
     BackupPayload,
     BackupSummary,
 )
@@ -70,6 +72,21 @@ async def load_user_content(session: AsyncSession, user_id: int) -> BackupPayloa
     ).all()
     refs = {model.id: position for position, model in enumerate(entry_models, start=1)}
 
+    mod_models = (
+        await session.scalars(
+            select(EntryMod)
+            .where(EntryMod.backlog_entry_id.in_(refs))
+            .order_by(EntryMod.backlog_entry_id, EntryMod.id)
+        )
+    ).all()
+    mods_by_entry: dict[int, list[BackupMod]] = {}
+    for mod in mod_models:
+        mods_by_entry.setdefault(mod.backlog_entry_id, []).append(
+            BackupMod(
+                name=mod.name, url=mod.url, created_at=mod.created_at, updated_at=mod.updated_at
+            )
+        )
+
     links = (
         await session.execute(
             select(CategoryBacklogEntry.category_id, CategoryBacklogEntry.backlog_entry_id)
@@ -100,7 +117,9 @@ async def load_user_content(session: AsyncSession, user_id: int) -> BackupPayloa
         version=PAYLOAD_VERSION,
         entries=[
             BackupEntry(
-                ref=refs[model.id], **{field: getattr(model, field) for field in _ENTRY_FIELDS}
+                ref=refs[model.id],
+                mods=mods_by_entry.get(model.id, []),
+                **{field: getattr(model, field) for field in _ENTRY_FIELDS},
             )
             for model in entry_models
         ],
@@ -154,6 +173,18 @@ async def replace_user_content(session: AsyncSession, user_id: int, payload: Bac
         }
         session.add_all(entry_models.values())
         await session.flush()
+
+        session.add_all(
+            EntryMod(
+                backlog_entry_id=entry_models[entry.ref].id,
+                name=mod.name,
+                url=mod.url,
+                created_at=mod.created_at,
+                updated_at=mod.updated_at,
+            )
+            for entry in payload.entries
+            for mod in entry.mods
+        )
 
         for category in payload.categories:
             category_model = Category(

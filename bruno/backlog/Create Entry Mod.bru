@@ -1,0 +1,38 @@
+meta {
+  name: Create Entry Mod
+  type: http
+  seq: 33
+}
+
+post {
+  url: {{backendUrl}}/api/backlog/entries/{{entryId}}/mods
+  body: json
+  auth: bearer
+}
+
+params:query {
+  ~space_id: {{spaceId}}
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "name": "Better Co-op",
+    "url": "https://www.nexusmods.com/mod/1"
+  }
+}
+
+script:post-response {
+  if (res.body.id) {
+    bru.setEnvVar("modId", res.body.id);
+  }
+}
+
+docs {
+  Adds a mod (a name of up to 120 characters and an optional http(s) link)
+  to the entry in entryId and stores its id in modId. At most 100 mods per
+  entry (400 beyond that). 404 when the entry is not in the requested scope.
+}

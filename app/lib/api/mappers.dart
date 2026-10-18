@@ -1,6 +1,7 @@
 import 'package:backlog_manager/api/generated/export.dart';
 import 'package:backlog_manager/domain/achievements.dart';
 import 'package:backlog_manager/domain/creation_form.dart';
+import 'package:backlog_manager/domain/entry_mod.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/domain/price_listings.dart' as price;
@@ -49,6 +50,10 @@ Category categoryFromResponse(CategoryResponse category) {
     color: category.color,
     description: category.description,
   );
+}
+
+EntryMod entryModFromResponse(EntryModResponse mod) {
+  return EntryMod(id: mod.id, name: mod.name, url: mod.url);
 }
 
 CustomStatus customStatusFromResponse(CustomStatusResponse status) {

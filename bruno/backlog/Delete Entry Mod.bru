@@ -1,0 +1,24 @@
+meta {
+  name: Delete Entry Mod
+  type: http
+  seq: 35
+}
+
+delete {
+  url: {{backendUrl}}/api/backlog/entries/{{entryId}}/mods/{{modId}}
+  body: none
+  auth: bearer
+}
+
+params:query {
+  ~space_id: {{spaceId}}
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Removes one mod of the entry. 404 when the mod does not belong to the
+  entry. Run "Create Entry Mod" first so modId is set.
+}

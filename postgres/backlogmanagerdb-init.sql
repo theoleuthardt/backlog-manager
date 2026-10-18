@@ -134,6 +134,17 @@ CREATE TABLE IF NOT EXISTS "blm-system"."SpaceEntryMemberData" (
         ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS "blm-system"."BacklogEntryMods" (
+    "ModID"          BIGSERIAL PRIMARY KEY,
+    "BacklogEntryID" BIGINT NOT NULL,
+    "Name"           VARCHAR(120) NOT NULL,
+    "Url"            TEXT,
+    "CreatedAt"      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP),
+    "UpdatedAt"      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP),
+    FOREIGN KEY ("BacklogEntryID") REFERENCES "blm-system"."BacklogEntries"("BacklogEntryID")
+        ON DELETE CASCADE ON UPDATE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS "blm-system"."CategoryBacklogEntries" (
     "CategoryID" BIGINT     NOT NULL,
     "BacklogEntryID" BIGINT NOT NULL,
@@ -209,6 +220,7 @@ CREATE INDEX IF NOT EXISTS idx_userbackups_userid ON "blm-system"."UserBackups"(
 
 CREATE INDEX IF NOT EXISTS idx_backlogentries_userid ON "blm-system"."BacklogEntries"("UserID");
 CREATE INDEX IF NOT EXISTS idx_backlogentries_spaceid ON "blm-system"."BacklogEntries"("SpaceID");
+CREATE INDEX IF NOT EXISTS idx_backlogentrymods_entryid ON "blm-system"."BacklogEntryMods"("BacklogEntryID");
 CREATE INDEX IF NOT EXISTS idx_backlogentries_status ON "blm-system"."BacklogEntries"("Status");
 
 -- set CompletedAt automatically if status is set to 'Completed'

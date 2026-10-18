@@ -1,0 +1,27 @@
+meta {
+  name: Get Entry Mods
+  type: http
+  seq: 32
+}
+
+get {
+  url: {{backendUrl}}/api/backlog/entries/{{entryId}}/mods
+  body: none
+  auth: bearer
+}
+
+params:query {
+  ~space_id: {{spaceId}}
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Lists the mods of the entry in entryId, oldest first. With space_id they
+  are the shared list of that space entry. Run auth/Login and "Create
+  Backlog Entry" first.
+
+  404 when the entry is not in the requested scope.
+}

@@ -1,6 +1,7 @@
 import 'package:backlog_manager/api/generated/export.dart' as wire;
 import 'package:backlog_manager/data/backlog_api.dart';
 import 'package:backlog_manager/data/games_api.dart';
+import 'package:backlog_manager/domain/entry_mod.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/domain/price_listings.dart';
@@ -24,6 +25,62 @@ class FakeBacklogApi implements BacklogApi {
   Map<int, List<BacklogEntry>> entriesByCategory = const {};
   List<CustomStatus> statusList = const [];
   Future<wire.AchievementProgress> Function(int steamAppId)? onAchievements;
+  Map<int, List<EntryMod>> mods = {};
+  int _nextModId = 500;
+
+  @override
+  Future<List<EntryMod>> entryMods(int entryId, int? spaceId) async {
+    calls.add('mods $entryId ${spaceId ?? 'personal'}');
+    return [...?mods[entryId]];
+  }
+
+  @override
+  Future<EntryMod> addEntryMod(
+    int entryId,
+    String name,
+    String? url,
+    int? spaceId,
+  ) async {
+    calls.add('add-mod $entryId $name $url');
+    final mod = EntryMod(id: _nextModId++, name: name, url: url);
+    mods = {
+      ...mods,
+      entryId: [...?mods[entryId], mod],
+    };
+    return mod;
+  }
+
+  @override
+  Future<EntryMod> updateEntryMod(
+    int entryId,
+    int modId,
+    String name,
+    String? url,
+    int? spaceId,
+  ) async {
+    calls.add('update-mod $entryId $modId $name $url');
+    final mod = EntryMod(id: modId, name: name, url: url);
+    mods = {
+      ...mods,
+      entryId: [
+        for (final m in mods[entryId] ?? const <EntryMod>[])
+          m.id == modId ? mod : m,
+      ],
+    };
+    return mod;
+  }
+
+  @override
+  Future<void> deleteEntryMod(int entryId, int modId, int? spaceId) async {
+    calls.add('delete-mod $entryId $modId');
+    mods = {
+      ...mods,
+      entryId: [
+        for (final m in mods[entryId] ?? const <EntryMod>[])
+          if (m.id != modId) m,
+      ],
+    };
+  }
 
   @override
   Future<List<BacklogEntry>> entries(int? spaceId) async {

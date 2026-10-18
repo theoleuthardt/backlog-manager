@@ -7,7 +7,7 @@ backlog should go back.
 
 ## What is backed up
 
-A snapshot holds one user's personal backlog content: entries, categories
+A snapshot holds one user's personal backlog content: entries (with their mods), categories
 with their entry links, and custom statuses - as a versioned JSON payload
 (`schemas/backup.py`, `PAYLOAD_VERSION`). It never contains account data,
 credentials or API keys. Entry references inside the payload are positions,

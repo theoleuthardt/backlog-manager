@@ -1,0 +1,32 @@
+meta {
+  name: Update Entry Mod
+  type: http
+  seq: 34
+}
+
+put {
+  url: {{backendUrl}}/api/backlog/entries/{{entryId}}/mods/{{modId}}
+  body: json
+  auth: bearer
+}
+
+params:query {
+  ~space_id: {{spaceId}}
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "name": "Better Co-op 2",
+    "url": null
+  }
+}
+
+docs {
+  Changes a mod. An omitted field stays as it is, a null url removes the
+  link. 404 when the mod does not belong to the entry. Run "Create Entry
+  Mod" first so modId is set.
+}
