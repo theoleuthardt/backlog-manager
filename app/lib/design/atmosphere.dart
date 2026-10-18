@@ -215,7 +215,11 @@ final _nebulae = [
   _Nebula((t) => t.nebula1, 900, 640, 0.96, -0.12),
 ];
 
-/// Draws one nebula; [strength] scales its colour, [shift] moves it.
+/// Draws one nebula as an oval with its own elliptical gradient; [strength]
+/// scales its colour, [shift] moves it. The ellipse is part of the shader
+/// matrix and the canvas stays unscaled: some GPU drivers (seen on Linux with
+/// the AppImage) filled the whole bounding box of a gradient that was drawn
+/// through a non-uniformly scaled canvas.
 void _paintNebula(
   Canvas canvas,
   Size size,
@@ -225,19 +229,29 @@ void _paintNebula(
   Offset shift,
 ) {
   final tinted = color.withValues(alpha: color.a * strength.clamp(0, 1.4));
-  final shader = RadialGradient(
-    colors: [tinted, tinted.withValues(alpha: 0)],
-    stops: const [0, 0.7],
-  ).createShader(Rect.fromCircle(center: Offset.zero, radius: nebula.radiusX));
-  canvas
-    ..save()
-    ..translate(
-      size.width * nebula.x + shift.dx,
-      size.height * nebula.y + shift.dy,
-    )
-    ..scale(1, nebula.radiusY / nebula.radiusX)
-    ..drawCircle(Offset.zero, nebula.radiusX, Paint()..shader = shader)
-    ..restore();
+  final center = Offset(size.width * nebula.x, size.height * nebula.y) + shift;
+  final squash = nebula.radiusY / nebula.radiusX;
+  final shader = ui.Gradient.radial(
+    Offset.zero,
+    nebula.radiusX,
+    [tinted, tinted.withValues(alpha: 0), tinted.withValues(alpha: 0)],
+    const [0, 0.7, 1],
+    TileMode.clamp,
+    Float64List.fromList([
+      1, 0, 0, 0, //
+      0, squash, 0, 0,
+      0, 0, 1, 0,
+      center.dx, center.dy, 0, 1,
+    ]),
+  );
+  canvas.drawOval(
+    Rect.fromCenter(
+      center: center,
+      width: nebula.radiusX * 2,
+      height: nebula.radiusY * 2,
+    ),
+    Paint()..shader = shader,
+  );
 }
 
 /// Whether the sky of the window moves: the bright stars twinkle, the dust
