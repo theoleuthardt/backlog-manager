@@ -1,4 +1,5 @@
 import 'package:backlog_manager/design/glow.dart';
+import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -122,11 +123,13 @@ class _ShelfIndeterminateBarState extends State<ShelfIndeterminateBar>
   }
 }
 
-/// Ten segments for how much a game interests the player; [value] of them are
-/// filled. Tapping segment n sets the value to n, tapping the current value
-/// clears it. Without [onChanged] it only shows the value.
-class InterestSegments extends StatelessWidget {
-  const InterestSegments({required this.value, this.onChanged, super.key});
+/// How much a game interests the player: the numbers 1 to 10 in a row, the
+/// ones up to [value] filled and the current one ringed. Tapping a number
+/// sets the value to it; the value is never cleared (an entry always has an
+/// interest from 1 to 10). The arrow keys and the accessibility actions step by
+/// one. Without [onChanged] it only shows the value.
+class InterestPicker extends StatelessWidget {
+  const InterestPicker({required this.value, this.onChanged, super.key});
 
   static const count = 10;
 
@@ -136,10 +139,12 @@ class InterestSegments extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
+    final text = Theme.of(context).extension<ShelfTextStyles>()!;
 
     return _Adjustable(
       label: 'Interest: $value of $count',
       value: value,
+      min: 1,
       max: count,
       onChanged: onChanged,
       child: Row(
@@ -149,19 +154,30 @@ class InterestSegments extends StatelessWidget {
             Expanded(
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: onChanged == null
+                onTap: onChanged == null || n == value
                     ? null
-                    : () => onChanged!(n == value ? 0 : n),
-                child: SizedBox(
-                  height: 28,
-                  child: Center(
-                    child: DecoratedBox(
-                      key: Key('interest-$n'),
-                      decoration: BoxDecoration(
-                        color: n <= value ? tokens.accent : tokens.surface3,
-                        borderRadius: BorderRadius.circular(3),
+                    : () => onChanged!(n),
+                child: DecoratedBox(
+                  key: Key('interest-$n'),
+                  decoration: BoxDecoration(
+                    color: n <= value ? tokens.accent : tokens.surface3,
+                    borderRadius: BorderRadius.circular(6),
+                    border: n == value
+                        ? Border.all(color: tokens.foreground, width: 1.5)
+                        : null,
+                  ),
+                  child: SizedBox(
+                    height: 30,
+                    child: Center(
+                      child: Text(
+                        '$n',
+                        maxLines: 1,
+                        style: text.caption.copyWith(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: n <= value ? tokens.onAccent : tokens.muted,
+                        ),
                       ),
-                      child: const SizedBox(height: 9, width: double.infinity),
                     ),
                   ),
                 ),
@@ -224,7 +240,7 @@ class StarRating extends StatelessWidget {
 
 /// One focusable control for a row of tappable steps: the arrow keys and the
 /// accessibility increase and decrease actions move [value] by one between 0
-/// and [max], the single steps inside [child] stay out of the semantics tree.
+/// and [max] (from [min]), the single steps inside [child] stay out of the semantics tree.
 class _Adjustable extends StatelessWidget {
   const _Adjustable({
     required this.label,
@@ -232,16 +248,18 @@ class _Adjustable extends StatelessWidget {
     required this.max,
     required this.onChanged,
     required this.child,
+    this.min = 0,
   });
 
   final String label;
   final int value;
+  final int min;
   final int max;
   final ValueChanged<int>? onChanged;
   final Widget child;
 
   void _step(int delta) {
-    final next = (value + delta).clamp(0, max);
+    final next = (value + delta).clamp(min, max);
     if (next != value) onChanged!(next);
   }
 

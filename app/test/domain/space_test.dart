@@ -14,6 +14,44 @@ Space space(String? myStatus, List<SpaceMember> members, {int? id = 4}) =>
     Space(spaceId: id, myStatus: myStatus, members: members);
 
 void main() {
+  group('spaceEntryFor', () {
+    const personal = BacklogEntry(id: 1, title: 'Portal 2', steamAppId: 620);
+
+    test('is the entry of the space with the same Steam App ID', () {
+      final found = spaceEntryFor(personal, const [
+        BacklogEntry(id: 7, title: 'Other', steamAppId: 5),
+        BacklogEntry(id: 8, title: 'Portal Two', steamAppId: 620),
+      ]);
+
+      expect(found?.id, 8);
+    });
+
+    test('matches a game without Steam App ID by its title', () {
+      final found = spaceEntryFor(
+        const BacklogEntry(id: 1, title: 'Custom Game'),
+        const [
+          BacklogEntry(id: 3, title: 'Another'),
+          BacklogEntry(id: 4, title: '  custom GAME '),
+        ],
+      );
+
+      expect(found?.id, 4);
+    });
+
+    test('does not match by title when the game has a Steam App ID', () {
+      expect(
+        spaceEntryFor(personal, const [
+          BacklogEntry(id: 3, title: 'Portal 2', steamAppId: 5),
+        ]),
+        isNull,
+      );
+    });
+
+    test('is null when the space does not have the game', () {
+      expect(spaceEntryFor(personal, const []), isNull);
+    });
+  });
+
   group('stage', () {
     test('no space, invited and active', () {
       expect(space(null, const [], id: null).stage, SpaceStage.none);

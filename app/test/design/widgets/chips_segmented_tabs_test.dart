@@ -262,6 +262,37 @@ void main() {
       expect(chipTextColor(tester, 'Overview'), tokens.muted);
     });
 
+    testWidgets('can share the full width between the tabs', (tester) async {
+      await pumpThemed(
+        tester,
+        SizedBox(
+          width: 400,
+          child: ShelfTabs(
+            labels: const [
+              'Overview',
+              'Progress',
+              'Notes',
+              'Review',
+              'Trailer',
+            ],
+            index: 0,
+            expand: true,
+            onChanged: (_) {},
+          ),
+        ),
+      );
+
+      final widths = [
+        for (var i = 0; i < 5; i++)
+          tester.getSize(find.byKey(Key('tab-$i'))).width,
+      ];
+      expect(
+        widths.every((w) => (w - 80).abs() < 0.5),
+        isTrue,
+        reason: '$widths',
+      );
+    });
+
     testWidgets('reports the tapped tab', (tester) async {
       int? changed;
       await pumpThemed(

@@ -579,24 +579,10 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
             _row(
               'Interest',
               SizedBox(
-                width: 220,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: InterestSegments(
-                        value: _interest,
-                        onChanged: (value) => setState(() => _interest = value),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '$_interest',
-                      key: const Key('creation-interest'),
-                      style: Theme.of(context)
-                          .extension<ShelfTextStyles>()!
-                          .control,
-                    ),
-                  ],
+                width: 300,
+                child: InterestPicker(
+                  value: _interest,
+                  onChanged: (value) => setState(() => _interest = value),
                 ),
               ),
             ),

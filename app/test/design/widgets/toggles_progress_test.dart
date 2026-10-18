@@ -172,47 +172,59 @@ void main() {
     });
   });
 
-  group('InterestSegments', () {
-    Color segment(WidgetTester tester, int index) {
+  group('InterestPicker', () {
+    Color cell(WidgetTester tester, int index) {
       final box = tester.widget<DecoratedBox>(
         find.byKey(Key('interest-$index')),
       );
       return (box.decoration as BoxDecoration).color!;
     }
 
-    testWidgets('fills as many of the ten segments as the value', (
+    testWidgets('shows the numbers 1 to 10 and fills up to the value', (
       tester,
     ) async {
-      await pumpThemed(tester, InterestSegments(value: 4, onChanged: (_) {}));
+      await pumpThemed(tester, InterestPicker(value: 4, onChanged: (_) {}));
 
-      expect(find.byType(InterestSegments), findsOneWidget);
       for (var n = 1; n <= 10; n++) {
+        expect(find.text('$n'), findsOneWidget, reason: '$n');
         expect(
-          segment(tester, n),
+          cell(tester, n),
           n <= 4 ? tokens.accent : tokens.surface3,
           reason: '$n',
         );
       }
     });
 
+    testWidgets('marks the current value', (tester) async {
+      await pumpThemed(tester, InterestPicker(value: 4, onChanged: (_) {}));
+
+      BoxDecoration decoration(int n) =>
+          tester.widget<DecoratedBox>(find.byKey(Key('interest-$n'))).decoration
+              as BoxDecoration;
+      expect(decoration(4).border, isNotNull);
+      expect(decoration(3).border, isNull);
+      expect(decoration(5).border, isNull);
+    });
+
     testWidgets(
-      'sets the value to the tapped segment and clears on a second tap',
+      'sets the value to the tapped number and keeps the current one',
       (tester) async {
         final values = <int>[];
         await pumpThemed(
           tester,
-          InterestSegments(value: 3, onChanged: values.add),
+          InterestPicker(value: 3, onChanged: values.add),
         );
 
         await tester.tap(find.byKey(const Key('interest-7')));
+        await tester.tap(find.byKey(const Key('interest-10')));
         await tester.tap(find.byKey(const Key('interest-3')));
 
-        expect(values, [7, 0]);
+        expect(values, [7, 10]);
       },
     );
 
     testWidgets('is read-only without onChanged', (tester) async {
-      await pumpThemed(tester, const InterestSegments(value: 3));
+      await pumpThemed(tester, const InterestPicker(value: 3));
 
       await tester.tap(find.byKey(const Key('interest-7')));
       expect(tester.takeException(), isNull);
@@ -273,20 +285,28 @@ void main() {
       expect(values, [9]);
     });
 
-    testWidgets('arrow keys step the interest segments and stop at zero', (
+    testWidgets('arrow keys step the interest and stop at 1 and 10', (
       tester,
     ) async {
       final values = <int>[];
-      await pumpThemed(
-        tester,
-        InterestSegments(value: 0, onChanged: values.add),
-      );
+      await pumpThemed(tester, InterestPicker(value: 1, onChanged: values.add));
       await focusFirst(tester, const Key('interest-1'));
 
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
 
-      expect(values, [1]);
+      expect(values, [2]);
+
+      values.clear();
+      await pumpThemed(
+        tester,
+        InterestPicker(value: 10, onChanged: values.add),
+      );
+      await focusFirst(tester, const Key('interest-1'));
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+
+      expect(values, [9]);
     });
 
     testWidgets('the star rating is one control with increase and decrease', (
@@ -303,23 +323,19 @@ void main() {
       handle.dispose();
     });
 
-    testWidgets(
-      'the interest segments are one control with increase/decrease',
-      (tester) async {
-        final handle = tester.ensureSemantics();
-        final values = <int>[];
-        await pumpThemed(
-          tester,
-          InterestSegments(value: 6, onChanged: values.add),
-        );
+    testWidgets('the interest picker is one control with increase/decrease', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      final values = <int>[];
+      await pumpThemed(tester, InterestPicker(value: 6, onChanged: values.add));
 
-        tester.semantics.increase(find.semantics.byLabel(RegExp('Interest')));
-        tester.semantics.decrease(find.semantics.byLabel(RegExp('Interest')));
+      tester.semantics.increase(find.semantics.byLabel(RegExp('Interest')));
+      tester.semantics.decrease(find.semantics.byLabel(RegExp('Interest')));
 
-        expect(values, [7, 5]);
-        handle.dispose();
-      },
-    );
+      expect(values, [7, 5]);
+      handle.dispose();
+    });
   });
 
   goldenInBothThemes(
@@ -343,7 +359,7 @@ void main() {
         const SizedBox(height: 18),
         const ShelfProgressBar(value: 0.62),
         const SizedBox(height: 18),
-        InterestSegments(value: 6, onChanged: (_) {}),
+        InterestPicker(value: 6, onChanged: (_) {}),
         const SizedBox(height: 14),
         StarRating(value: 7, onChanged: (_) {}),
       ],

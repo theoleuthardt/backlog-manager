@@ -120,12 +120,14 @@ Future<Opened> open(
   List<BacklogEntry>? entries,
   String location = AppRoutes.space,
   void Function(FakeSpaceApi api)? setUp,
+  void Function(FakeBacklogApi api)? setUpBacklog,
 }) async {
   final api = FakeSpaceApi(space);
   setUp?.call(api);
   final backlog = FakeBacklogApi(
     entries: entries ?? [shared(1, 'It Takes Two'), shared(2, 'Portal 2')],
   );
+  setUpBacklog?.call(backlog);
   final games = FakeGamesApi();
   final container = await pumpLibrary(
     tester,
@@ -525,7 +527,9 @@ void main() {
       await dismissToast(tester);
     });
 
-    testWidgets('a game that is in the space links to it', (tester) async {
+    testWidgets('a game that is in the space opens its entry there', (
+      tester,
+    ) async {
       final opened = await open(
         tester,
         together,
@@ -538,12 +542,80 @@ void main() {
           ),
         ],
         location: '/library?entry=1',
+        setUpBacklog: (api) =>
+            api.onEntries = (spaceId) async => spaceId == null
+            ? api.stored.values.toList()
+            : [
+                const BacklogEntry(
+                  id: 9,
+                  title: 'Portal 2 (shared)',
+                  steamAppId: 620,
+                ),
+                const BacklogEntry(id: 8, title: 'Other', steamAppId: 5),
+              ],
+      );
+
+      expect(find.text('Open in Shared Space'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('inspector-in-space')));
+      await tester.pumpAndSettle();
+
+      expect(opened.location, '/space?entry=9');
+    });
+
+    testWidgets(
+      'a game without Steam App ID is found in the space by its title',
+      (tester) async {
+        final opened = await open(
+          tester,
+          together,
+          entries: [
+            const BacklogEntry(
+              id: 1,
+              title: 'Custom Game',
+              inSharedSpace: true,
+            ),
+          ],
+          location: '/library?entry=1',
+          setUpBacklog: (api) => api.onEntries = (spaceId) async =>
+              spaceId == null
+              ? api.stored.values.toList()
+              : [
+                  const BacklogEntry(id: 4, title: '  custom game '),
+                  const BacklogEntry(id: 5, title: 'Another'),
+                ],
+        );
+
+        await tester.tap(find.byKey(const Key('inspector-in-space')));
+        await tester.pumpAndSettle();
+
+        expect(opened.location, '/space?entry=4');
+      },
+    );
+
+    testWidgets('goes to the space page when the entry is not found there', (
+      tester,
+    ) async {
+      final opened = await open(
+        tester,
+        together,
+        entries: [
+          const BacklogEntry(
+            id: 1,
+            title: 'Portal 2',
+            steamAppId: 620,
+            inSharedSpace: true,
+          ),
+        ],
+        location: '/library?entry=1',
+        setUpBacklog: (api) =>
+            api.onEntries = (spaceId) async =>
+                spaceId == null ? api.stored.values.toList() : const [],
       );
 
       await tester.tap(find.byKey(const Key('inspector-in-space')));
       await tester.pumpAndSettle();
 
-      expect(opened.location, startsWith(AppRoutes.space));
+      expect(opened.location, AppRoutes.space);
     });
 
     testWidgets('is not offered without an active space', (tester) async {

@@ -56,7 +56,8 @@ import 'package:go_router/go_router.dart';
 
 /// The inspector slot content for the game with [entryId]: it waits for the
 /// entries, closes itself when the game is gone (deleted, or an unknown id in
-/// the address) and otherwise shows the form of the game. The form is built
+/// the address; not when the address already points to another game, as after
+/// a jump from the personal backlog into the space) and otherwise shows the form of the game. The form is built
 /// again for every game and every time the inspector opens, so it always
 /// starts from the stored entry.
 class EntryInspector extends ConsumerWidget {
@@ -72,7 +73,13 @@ class EntryInspector extends ConsumerWidget {
 
     if (list != null && entry == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (context.mounted) context.go(ref.read(currentPathProvider));
+        if (!context.mounted) return;
+        final address = GoRouter.of(context)
+            .routerDelegate
+            .currentConfiguration
+            .uri;
+        final shown = int.tryParse(address.queryParameters['entry'] ?? '');
+        if (shown == entryId) context.go(ref.read(currentPathProvider));
       });
     }
     if (entry == null) {
@@ -649,26 +656,26 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
                     _stats(context, entry, tokens, style),
                   ],
                   right: [
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: ShelfTabs(
-                        labels: const [
-                          'Overview',
-                          'Progress',
-                          'Review',
-                          'Mods',
-                          'Trailer',
-                        ],
-                        index: _tab,
-                        onChanged: (index) => setState(() => _tab = index),
-                      ),
+                    ShelfTabs(
+                      labels: const [
+                        'Overview',
+                        'Progress',
+                        'Notes',
+                        'Review',
+                        'Mods',
+                        'Trailer',
+                      ],
+                      index: _tab,
+                      expand: true,
+                      onChanged: (index) => setState(() => _tab = index),
                     ),
                     const SizedBox(height: 14),
                     switch (_tab) {
                       0 => _overview(entry, tokens, style),
                       1 => _progress(entry),
-                      2 => _reviewTab(reviewable),
-                      3 => ModsSection(
+                      2 => _notesTab(),
+                      3 => _reviewTab(reviewable),
+                      4 => ModsSection(
                         entryId: entry.id,
                         spaceId: ref.watch(backlogScopeProvider),
                       ),
@@ -800,21 +807,10 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
         StatTile(
           icon: Icons.local_fire_department_outlined,
           label: 'Interest',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              InterestSegments(
-                value: _form.interest,
-                onChanged: (value) =>
-                    _edit((form) => form.copyWith(interest: value)),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                '${_form.interest} / ${InterestSegments.count}',
-                key: const Key('inspector-interest'),
-                style: style.caption.copyWith(color: tokens.muted),
-              ),
-            ],
+          child: InterestPicker(
+            value: _form.interest,
+            onChanged: (value) =>
+                _edit((form) => form.copyWith(interest: value)),
           ),
         ),
         const SizedBox(height: 10),
@@ -1003,20 +999,23 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
     );
   }
 
+  Widget _notesTab() {
+    return ShelfTextArea(
+      label: 'Notes',
+      fieldKey: const Key('inspector-note'),
+      controller: _note,
+      minLines: 8,
+      hintText: 'Add any notes...',
+      onChanged: (value) => _edit((form) => form.copyWith(note: value)),
+    );
+  }
+
   Widget _reviewTab(bool reviewable) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ShelfTextArea(
-          label: 'Note',
-          fieldKey: const Key('inspector-note'),
-          controller: _note,
-          hintText: 'Add any notes...',
-          onChanged: (value) => _edit((form) => form.copyWith(note: value)),
-        ),
-        const SizedBox(height: 14),
         Text('Review', style: style.label.copyWith(color: tokens.muted)),
         const SizedBox(height: 6),
         Opacity(

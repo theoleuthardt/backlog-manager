@@ -15,7 +15,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 /// The inspector action of a personal game: it copies the game into the
-/// Shared Space, or, once it is there, links to the space. Nothing shows in
+/// Shared Space, or, once it is there, opens its entry in the space. Nothing shows in
 /// the space itself or without an active space.
 class ShareToSpaceButton extends ConsumerStatefulWidget {
   const ShareToSpaceButton({required this.entry, super.key});
@@ -62,11 +62,22 @@ class _ShareToSpaceButtonState extends ConsumerState<ShareToSpaceButton> {
     final entry = widget.entry;
 
     if (entry.inSharedSpace) {
+      final inSpace = spaceEntryFor(
+        entry,
+        ref.watch(entriesProvider(spaceId)).value ?? const [],
+      );
       return ShelfButton(
         key: const Key('inspector-in-space'),
-        label: 'In Shared Space',
+        label: 'Open in Shared Space',
         icon: Icons.people_outline,
-        onPressed: () => context.go(AppRoutes.space),
+        onPressed: () => context.go(
+          inSpace == null
+              ? AppRoutes.space
+              : Uri(
+                  path: AppRoutes.space,
+                  queryParameters: {'entry': '${inSpace.id}'},
+                ).toString(),
+        ),
       );
     }
     return ShelfButton(
