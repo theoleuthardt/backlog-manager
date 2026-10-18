@@ -96,20 +96,28 @@ final trailerPageServerProvider = FutureProvider<TrailerPageServer>((
 /// [watchUrl] is where it opens instead when that cannot be done.
 typedef TrailerWindowOpener = Future<void> Function(Uri embedUrl, Uri watchUrl);
 
+/// Whether [url] is a frame of the player page: the YouTube embed, which the
+/// window reports as a navigation like any other, or a blank frame of the
+/// player (`about:blank`, `blob:`).
+bool _isPlayerFrame(Uri url) {
+  if (url.scheme != 'http' && url.scheme != 'https') return true;
+  return url.scheme == 'https' && _isEmbedOfVideo(url);
+}
+
+bool _isEmbedOfVideo(Uri url) =>
+    (url.host == 'www.youtube-nocookie.com' || url.host == 'www.youtube.com') &&
+    url.pathSegments.length == 2 &&
+    url.pathSegments.first == 'embed' &&
+    _videoId.hasMatch(url.pathSegments.last);
+
 /// The trailer window for platforms without an embedded player: the player
 /// page of the video from the loopback server, in a browser window that stays
-/// on that page (a link of the player, "Watch on YouTube" for one, opens in
-/// the system browser). Anything that is not a YouTube embed, or any failure,
+/// on that page and the player frame inside it (any other link, "Watch on
+/// YouTube" for one, opens in the system browser). Anything that is not a YouTube embed, or any failure,
 /// opens the video on YouTube in the system browser. Tests replace it.
 final trailerWindowOpenerProvider = Provider<TrailerWindowOpener>(
   (ref) => (embedUrl, watchUrl) async {
-    final host = embedUrl.host;
-    final isEmbed =
-        (host == 'www.youtube-nocookie.com' || host == 'www.youtube.com') &&
-        embedUrl.pathSegments.length == 2 &&
-        embedUrl.pathSegments.first == 'embed' &&
-        _videoId.hasMatch(embedUrl.pathSegments.last);
-    if (!isEmbed) {
+    if (!_isEmbedOfVideo(embedUrl)) {
       ref.read(urlOpenerProvider)(watchUrl);
       return;
     }
@@ -117,7 +125,7 @@ final trailerWindowOpenerProvider = Provider<TrailerWindowOpener>(
       final server = await ref.read(trailerPageServerProvider.future);
       await ref.read(browserWindowOpenerProvider)(
         server.addressFor(embedUrl.pathSegments.last),
-        stays: server.owns,
+        stays: (url) => server.owns(url) || _isPlayerFrame(url),
       );
     } on Object {
       ref.read(urlOpenerProvider)(watchUrl);
