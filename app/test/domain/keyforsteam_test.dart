@@ -4,18 +4,18 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('keyforsteamSearchUrl', () {
-    test('is the catalog search of Keyforsteam with the title as the term', () {
+    test('is the catalog with the title as the search term', () {
       expect(
         keyforsteamSearchUrl('Hades II'),
-        'https://www.keyforsteam.de/katalog/search-Hades%20II',
+        'https://www.keyforsteam.de/katalog/?search_name=Hades+II',
       );
     });
 
-    test('escapes characters that would end the path segment', () {
+    test('escapes characters that would end the query value', () {
       expect(
-        keyforsteamSearchUrl('Half-Life 2: Episode/Two?'),
-        'https://www.keyforsteam.de/katalog/search-'
-        'Half-Life%202%3A%20Episode%2FTwo%3F',
+        keyforsteamSearchUrl('Half-Life 2: Episode & Two?'),
+        'https://www.keyforsteam.de/katalog/'
+        '?search_name=Half-Life+2%3A+Episode+%26+Two%3F',
       );
     });
 

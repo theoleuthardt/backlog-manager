@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:backlog_manager/domain/safe_url.dart';
 import 'package:backlog_manager/platform/url_opener.dart';
@@ -12,6 +13,16 @@ typedef BrowserWindowOpener = Future<void> Function(
   Uri url, {
   required bool Function(Uri url) stays,
 });
+
+/// The folder WebView2 keeps its profile in on Windows: the plugin puts it
+/// next to the executable by default, which fails where the app is installed
+/// in a folder that is not writable. Null without a local application data
+/// folder.
+String? windowsWebviewProfileFolder(Map<String, String> environment) {
+  final base = environment['LOCALAPPDATA'];
+  if (base == null || base.isEmpty) return null;
+  return '$base\\Backlog Manager\\WebView2';
+}
 
 /// The browser window of the app: the system web view (WebKitGTK, WebView2,
 /// WKWebView) in a window of its own, one at a time (a second call closes the
@@ -29,10 +40,16 @@ final browserWindowOpenerProvider = Provider<BrowserWindowOpener>((ref) {
         return;
       }
       await current?.close();
+      final profile = Platform.isWindows
+          ? windowsWebviewProfileFolder(Platform.environment)
+          : null;
       final window = await WebviewWindow.create(
-        configuration: const CreateConfiguration(
+        configuration: CreateConfiguration(
           windowWidth: 1100,
           windowHeight: 800,
+          windows: profile == null
+              ? const WindowsWebviewOptions()
+              : WindowsWebviewOptions(userDataFolder: profile),
         ),
       );
       current = window;

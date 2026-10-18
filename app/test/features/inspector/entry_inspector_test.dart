@@ -587,7 +587,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(opened, [
-        Uri.parse('https://www.keyforsteam.de/katalog/search-Hades'),
+        Uri.parse('https://www.keyforsteam.de/katalog/?search_name=Hades'),
       ]);
       expect(decide!(Uri.parse('https://www.keyforsteam.de/x')), isTrue);
       expect(decide!(Uri.parse('https://www.kinguin.net/x')), isFalse);

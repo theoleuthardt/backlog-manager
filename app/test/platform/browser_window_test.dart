@@ -6,6 +6,22 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  group('windowsWebviewProfileFolder', () {
+    test('is a folder of the app in the local application data', () {
+      expect(
+        windowsWebviewProfileFolder({
+          'LOCALAPPDATA': r'C:\Users\a\AppData\Local',
+        }),
+        r'C:\Users\a\AppData\Local\Backlog Manager\WebView2',
+      );
+    });
+
+    test('is null without it, which leaves the default of the plugin', () {
+      expect(windowsWebviewProfileFolder({}), isNull);
+      expect(windowsWebviewProfileFolder({'LOCALAPPDATA': ''}), isNull);
+    });
+  });
+
   test('opens the address in the system browser without a web view', () async {
     final opened = <Uri>[];
     final container = ProviderContainer(

@@ -1,7 +1,9 @@
-/// The search of Keyforsteam for [title], the address its own site search
-/// uses (`/katalog/search-<term>`).
+/// The catalog of Keyforsteam searched for [title], the address its own
+/// search form sends (`/katalog/?search_name=<term>`). The address of its
+/// `SearchAction` (`/katalog/search-<term>`) only shows the empty catalog.
 String keyforsteamSearchUrl(String title) =>
-    'https://www.keyforsteam.de/katalog/search-${Uri.encodeComponent(title)}';
+    'https://www.keyforsteam.de/katalog/'
+    '?search_name=${Uri.encodeQueryComponent(title)}';
 
 /// Whether the window that shows Keyforsteam may load [url] itself: an https
 /// page of keyforsteam.de or one of its subdomains. Everything else, the shops
