@@ -15,7 +15,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 /// The inspector action of a personal game: it copies the game into the
-/// Shared Space, or, once it is there, links to the space. Nothing shows in
+/// Shared Space, or, once it is there, opens its entry in the space. Nothing shows in
 /// the space itself or without an active space.
 class ShareToSpaceButton extends ConsumerStatefulWidget {
   const ShareToSpaceButton({required this.entry, super.key});
@@ -53,6 +53,29 @@ class _ShareToSpaceButtonState extends ConsumerState<ShareToSpaceButton> {
     }
   }
 
+  /// Goes to the entry of [entry] in the space, found once the entries of the
+  /// space are loaded; the space page when it is not there or cannot be read.
+  Future<void> _openInSpace(int spaceId, BacklogEntry entry) async {
+    BacklogEntry? inSpace;
+    try {
+      inSpace = spaceEntryFor(
+        entry,
+        await ref.read(entriesProvider(spaceId).future),
+      );
+    } on Object {
+      inSpace = null;
+    }
+    if (!mounted) return;
+    context.go(
+      inSpace == null
+          ? AppRoutes.space
+          : Uri(
+              path: AppRoutes.space,
+              queryParameters: {'entry': '${inSpace.id}'},
+            ).toString(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final spaceId = ref.watch(activeSpaceIdProvider);
@@ -64,9 +87,9 @@ class _ShareToSpaceButtonState extends ConsumerState<ShareToSpaceButton> {
     if (entry.inSharedSpace) {
       return ShelfButton(
         key: const Key('inspector-in-space'),
-        label: 'In Shared Space',
+        label: 'Open in Shared Space',
         icon: Icons.people_outline,
-        onPressed: () => context.go(AppRoutes.space),
+        onPressed: () => unawaited(_openInSpace(spaceId, entry)),
       );
     }
     return ShelfButton(

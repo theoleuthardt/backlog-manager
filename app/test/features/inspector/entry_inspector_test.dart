@@ -370,16 +370,25 @@ void main() {
   });
 
   group('the stat tiles', () {
-    testWidgets('interest is clickable and clears on the current level', (
+    testWidgets('interest is picked from the numbers 1 to 10 and saves', (
       tester,
     ) async {
       final app = await openInspector(tester);
-      expect(find.text('6 / 10'), findsOneWidget);
+      expect(find.bySemanticsLabel('Interest: 6 of 10'), findsOneWidget);
 
-      await tester.tap(find.bySemanticsLabel('Interest: 6 of 10').first);
+      await tester.tap(find.byKey(const Key('interest-8')));
       await tester.pump();
+      await afterAutosave(tester);
 
-      expect(find.byKey(const Key('inspector-interest')), findsOneWidget);
+      expect(app.api.calls, contains('update 1 {interest: 8}'));
+    });
+
+    testWidgets('tapping the current interest changes nothing', (tester) async {
+      final app = await openInspector(tester);
+
+      await tester.tap(find.byKey(const Key('interest-6')));
+      await afterAutosave(tester);
+
       expect(app.api.calls.where((c) => c.startsWith('update')), isEmpty);
     });
 
@@ -450,6 +459,54 @@ void main() {
       expect(find.text('--'), findsNWidgets(3));
     });
 
+    testWidgets(
+      'the tabs are Overview, Progress, Notes, Review, Mods, Trailer',
+      (tester) async {
+        await openInspector(tester);
+
+        final shown = [
+          for (final label in [
+            'Overview',
+            'Progress',
+            'Notes',
+            'Review',
+            'Mods',
+            'Trailer',
+          ])
+            tester.getTopLeft(find.text(label)).dx,
+        ];
+        expect(shown, orderedEquals([...shown]..sort()));
+      },
+    );
+
+    testWidgets('the tabs fill the width of the inspector', (tester) async {
+      await openInspector(tester);
+
+      final tabs = [
+        for (var i = 0; i < 6; i++) tester.getRect(find.byKey(Key('tab-$i'))),
+      ];
+      final slot = tester.getRect(find.byKey(const Key('inspector')));
+      expect(tabs.first.left - slot.left, lessThan(24));
+      expect(slot.right - tabs.last.right, lessThan(24));
+      for (var i = 1; i < tabs.length; i++) {
+        expect(tabs[i].left, closeTo(tabs[i - 1].right, 0.5));
+      }
+    });
+
+    testWidgets('the note is in the Notes tab and not in the Review tab', (
+      tester,
+    ) async {
+      await openInspector(tester);
+
+      await openTab(tester, 'Review');
+      expect(find.byKey(const Key('inspector-note')), findsNothing);
+      expect(find.byKey(const Key('inspector-review')), findsOneWidget);
+
+      await openTab(tester, 'Notes');
+      expect(find.byKey(const Key('inspector-note')), findsOneWidget);
+      expect(find.byKey(const Key('inspector-review')), findsNothing);
+    });
+
     testWidgets('review needs the status Completed', (tester) async {
       await openInspector(tester);
       await openTab(tester, 'Review');
@@ -482,7 +539,7 @@ void main() {
 
     testWidgets('the note saves for every status', (tester) async {
       final app = await openInspector(tester);
-      await openTab(tester, 'Review');
+      await openTab(tester, 'Notes');
 
       await tester.enterText(
         find.byKey(const Key('inspector-note')),

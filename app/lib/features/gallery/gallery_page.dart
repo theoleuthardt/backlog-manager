@@ -202,7 +202,7 @@ class _GalleryPageState extends State<GalleryPage> {
             const SizedBox(height: 16),
             SizedBox(
               width: 360,
-              child: InterestSegments(
+              child: InterestPicker(
                 value: _interest,
                 onChanged: (value) => setState(() => _interest = value),
               ),

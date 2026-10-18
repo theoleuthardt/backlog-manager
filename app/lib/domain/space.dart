@@ -77,6 +77,26 @@ const leaveWarning =
     'You lose access to its entries. They stay with your partner; once '
     'nobody is left they are deleted.';
 
+/// The entry of the Shared Space that is the same game as [entry] of the
+/// personal backlog: the one with the same Steam App ID or, for a game without
+/// one, the same title (case and outer spaces ignored, as the server matches),
+/// or null.
+BacklogEntry? spaceEntryFor(
+  BacklogEntry entry,
+  List<BacklogEntry> spaceEntries,
+) {
+  final appId = entry.steamAppId;
+  final title = entry.title.trim().toLowerCase();
+  for (final candidate in spaceEntries) {
+    final same = appId != null
+        ? candidate.steamAppId == appId
+        : candidate.steamAppId == null &&
+              candidate.title.trim().toLowerCase() == title;
+    if (same) return candidate;
+  }
+  return null;
+}
+
 /// The copy of a personal game that goes into the space, with all its fields.
 NewEntry sharedCopyOf(BacklogEntry entry) {
   return NewEntry(
