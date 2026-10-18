@@ -52,7 +52,6 @@ void main() {
           'has_steam_api_key': true,
           'has_igdb_credentials': true,
           'has_steamgriddb_api_key': true,
-          'has_ggdeals_api_key': true,
           'has_discord_webhook_url': true,
         },
       ),
@@ -61,13 +60,11 @@ void main() {
     expect(mapped.hasSteamApiKey, isTrue);
     expect(mapped.hasIgdbCredentials, isTrue);
     expect(mapped.hasSteamgriddbApiKey, isTrue);
-    expect(mapped.hasGgdealsApiKey, isTrue);
     expect(mapped.hasDiscordWebhookUrl, isTrue);
     final plain = sessionUserFrom(user());
     expect(plain.hasSteamApiKey, isFalse);
     expect(plain.hasIgdbCredentials, isFalse);
     expect(plain.hasSteamgriddbApiKey, isFalse);
-    expect(plain.hasGgdealsApiKey, isFalse);
     expect(plain.hasDiscordWebhookUrl, isFalse);
   });
 

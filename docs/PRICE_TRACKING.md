@@ -1,5 +1,7 @@
 # Game Price Tracking (Issues #102, #411)
 
+> The Flutter app no longer shows these prices: its Prices button opens Keyforsteam in a browser window (#421, `docs/FLUTTER.md`). What is described here is still served by the backend (price route for the web client, the sweep and the Discord alerts), and `GGDEALS_API_KEY` is still what the sweep needs.
+
 Prices come from the [GG.deals API](https://gg.deals/api/), which covers the official stores and keyshops and replaced CheapShark in #411 (CheapShark never had keyshops, and the GG.deals terms are one source to follow instead of two). Scraping is not an option: GG.deals blocks it.
 
 ## What the API gives

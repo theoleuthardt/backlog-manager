@@ -27,6 +27,7 @@ import 'package:backlog_manager/domain/entry_changes.dart';
 import 'package:backlog_manager/domain/format.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/inspector_logic.dart';
+import 'package:backlog_manager/domain/keyforsteam.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/domain/platform_choices.dart';
 import 'package:backlog_manager/domain/safe_url.dart';
@@ -44,8 +45,8 @@ import 'package:backlog_manager/features/inspector/manage_platforms_sheet.dart';
 import 'package:backlog_manager/features/inspector/mods_section.dart';
 import 'package:backlog_manager/features/inspector/trailer_sheet.dart';
 import 'package:backlog_manager/features/library/library_actions.dart';
-import 'package:backlog_manager/features/prices/price_sheet.dart';
 import 'package:backlog_manager/features/space/share_to_space_button.dart';
+import 'package:backlog_manager/platform/browser_window.dart';
 import 'package:backlog_manager/routing/current_path.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:flutter/material.dart';
@@ -627,10 +628,11 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
                           key: const Key('inspector-prices'),
                           label: 'Prices',
                           icon: Icons.sell_outlined,
-                          onPressed: () => showPriceSheet(
-                            context,
-                            title: entry.title,
-                            steamAppId: entry.steamAppId,
+                          onPressed: () => unawaited(
+                            ref.read(browserWindowOpenerProvider)(
+                              Uri.parse(keyforsteamSearchUrl(entry.title)),
+                              stays: staysOnKeyforsteam,
+                            ),
                           ),
                         ),
                         if (ref.watch(backlogScopeProvider) == null &&

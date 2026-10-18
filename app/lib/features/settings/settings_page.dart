@@ -489,7 +489,6 @@ class _IntegrationsTabState extends ConsumerState<_IntegrationsTab> {
   final _igdbId = TextEditingController();
   final _igdbSecret = TextEditingController();
   final _gridKey = TextEditingController();
-  final _ggdealsKey = TextEditingController();
   final _discord = TextEditingController();
   final _steamIdDebounce = Debouncer(_autosaveDelay);
   final _familyDebounce = Debouncer(_autosaveDelay);
@@ -530,7 +529,6 @@ class _IntegrationsTabState extends ConsumerState<_IntegrationsTab> {
       _igdbId,
       _igdbSecret,
       _gridKey,
-      _ggdealsKey,
       _discord,
     ]) {
       controller.dispose();
@@ -795,53 +793,6 @@ class _IntegrationsTabState extends ConsumerState<_IntegrationsTab> {
                   url: 'https://dev.twitch.tv/console/apps',
                 ),
                 LinkPart(' to get an IGDB Client ID and Client Secret.'),
-              ],
-              onOpen: open,
-            ),
-          ),
-        ),
-        const SizedBox(height: 18),
-        ShelfFormGroup(
-          title: 'Game prices',
-          description: "Without your own key the server's is used.",
-          rows: [
-            ShelfFormRow(
-              label: 'GG.deals Key',
-              description: user.hasGgdealsApiKey
-                  ? 'Your own key is set and used for game prices.'
-                  : 'Prices in the official stores and keyshops',
-              control: SecretControl(
-                fieldKey: const Key('settings-ggdeals-key'),
-                removeKey: const Key('settings-ggdeals-remove'),
-                controller: _ggdealsKey,
-                placeholder: user.hasGgdealsApiKey
-                    ? 'Enter a new key to replace it'
-                    : 'GG.deals API key',
-                isSet: user.hasGgdealsApiKey,
-                onCommit: (text) => _commitSecret(
-                  _ggdealsKey,
-                  text,
-                  (value) => UserUpdate(ggdealsApiKey: value),
-                  'GG.deals API key saved',
-                ),
-                onRemove: () => unawaited(
-                  _save(
-                    const UserUpdate(ggdealsApiKey: ''),
-                    'GG.deals API key removed',
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        Padding(
-          padding: const EdgeInsets.only(top: 10),
-          child: ShelfNote(
-            child: LinkText(
-              parts: const [
-                LinkPart('Create a key in your account settings at '),
-                LinkPart('gg.deals/api', url: 'https://gg.deals/api/'),
-                LinkPart('. The free key is for personal use.'),
               ],
               onOpen: open,
             ),

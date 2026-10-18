@@ -2,20 +2,11 @@ import 'package:backlog_manager/api/api_providers.dart';
 import 'package:backlog_manager/api/generated/export.dart' as wire;
 import 'package:backlog_manager/api/mappers.dart';
 import 'package:backlog_manager/domain/game_search.dart';
-import 'package:backlog_manager/domain/price_listings.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// The price lookups of the server.
+/// The game lookups of the server: search, Steam App IDs and covers.
 abstract interface class GamesApi {
-  /// The GG.deals prices of a Steam game
-  /// (`GET /api/games/{steam_app_id}/price`).
-  Future<PriceInfo> price(int steamAppId);
-
-  /// The offers of the key shops for a title
-  /// (`GET /api/games/key-shop-prices`).
-  Future<List<KeyShopOffer>> keyShopPrices(String title);
-
   /// The games for a search term (`GET /api/games/enriched-search`); [deep]
   /// also tries other spellings and bundles.
   Future<List<GameSearchResult>> search(String term, {bool deep = false});
@@ -41,20 +32,6 @@ class ApiGamesApi implements GamesApi {
 
   Future<wire.FallbackClient> _client() async =>
       wire.RestClient(await _dio()).fallback;
-
-  @override
-  Future<PriceInfo> price(int steamAppId) async {
-    final response = await (await _client())
-        .apiGamesSteamAppIdPriceGetGamePrice(steamAppId: steamAppId);
-    return priceInfoFromResponse(response);
-  }
-
-  @override
-  Future<List<KeyShopOffer>> keyShopPrices(String title) async {
-    final offers = await (await _client())
-        .apiGamesKeyShopPricesGetKeyShopPrices(title: title);
-    return offers.map(keyShopOfferFromResponse).toList();
-  }
 
   @override
   Future<List<GameSearchResult>> search(

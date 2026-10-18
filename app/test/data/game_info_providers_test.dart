@@ -15,7 +15,6 @@ ProviderContainer container(
     overrides: [
       gamesApiProvider.overrideWithValue(games),
       backlogApiProvider.overrideWithValue(backlog),
-      priceCacheTtlProvider.overrideWithValue(ttl),
       achievementsCacheTtlProvider.overrideWithValue(ttl),
       searchCacheTtlProvider.overrideWithValue(ttl),
       lookupCacheTtlProvider.overrideWithValue(ttl),
@@ -26,48 +25,6 @@ ProviderContainer container(
 }
 
 void main() {
-  test('a price is asked for once while it is cached', () async {
-    final games = FakeGamesApi();
-    final c = container(games, FakeBacklogApi());
-
-    final first = c.listen(gamePriceProvider(1), (_, _) {});
-    await c.read(gamePriceProvider(1).future);
-    first.close();
-    final second = c.listen(gamePriceProvider(1), (_, _) {});
-    await c.read(gamePriceProvider(1).future);
-    second.close();
-
-    expect(games.calls, ['price 1']);
-  });
-
-  test('a price is asked for again once the cache ran out', () async {
-    final games = FakeGamesApi();
-    final c = container(games, FakeBacklogApi(), ttl: Duration.zero);
-
-    final first = c.listen(gamePriceProvider(1), (_, _) {});
-    await c.read(gamePriceProvider(1).future);
-    first.close();
-    await Future<void>.delayed(const Duration(milliseconds: 20));
-    final second = c.listen(gamePriceProvider(1), (_, _) {});
-    await c.read(gamePriceProvider(1).future);
-    second.close();
-
-    expect(games.calls, ['price 1', 'price 1']);
-  });
-
-  test('key shop offers are cached per title', () async {
-    final games = FakeGamesApi();
-    final c = container(games, FakeBacklogApi());
-
-    for (final title in ['Hades', 'Hades', 'Celeste']) {
-      final sub = c.listen(keyShopPricesProvider(title), (_, _) {});
-      await c.read(keyShopPricesProvider(title).future);
-      sub.close();
-    }
-
-    expect(games.calls, ['keys Hades', 'keys Celeste']);
-  });
-
   test('achievements come from the backlog api, mapped', () async {
     final backlog = FakeBacklogApi();
     final c = container(FakeGamesApi(), backlog);

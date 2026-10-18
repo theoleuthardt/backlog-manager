@@ -7,8 +7,8 @@ import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/models.dart';
-import 'package:backlog_manager/domain/price_listings.dart';
 import 'package:backlog_manager/features/add_game/wrong_game_sheet.dart';
+import 'package:backlog_manager/platform/browser_window.dart';
 import 'package:backlog_manager/platform/trailer_player.dart';
 import 'package:backlog_manager/platform/url_opener.dart';
 import 'package:backlog_manager/routing/router.dart';
@@ -565,31 +565,32 @@ void main() {
   });
 
   group('the header', () {
-    testWidgets('opens the price sheet of the game', (tester) async {
-      final games = FakeGamesApi();
-      games.onKeyShops = (_) async => const [
-        KeyShopOffer(
-          shop: 'RoyalCDKeys',
-          title: 'Hades',
-          price: 9,
-          currency: 'EUR',
-          url: 'https://royal.example/hades',
-        ),
-      ];
+    testWidgets('opens Keyforsteam for the game in a browser window', (
+      tester,
+    ) async {
+      final opened = <Uri>[];
+      bool Function(Uri)? decide;
       await openInspector(
         tester,
-        overrides: [gamesApiProvider.overrideWithValue(games)],
+        overrides: [
+          browserWindowOpenerProvider.overrideWithValue((
+            url, {
+            required stays,
+          }) async {
+            opened.add(url);
+            decide = stays;
+          }),
+        ],
       );
 
       await tester.tap(find.byKey(const Key('inspector-prices')));
       await tester.pumpAndSettle();
 
-      expect(find.text('Price'), findsOneWidget);
-      expect(
-        find.byKey(const Key('price-keyshop-RoyalCDKeys')),
-        findsOneWidget,
-      );
-      expect(games.calls, containsAll(['price 1145360', 'keys Hades']));
+      expect(opened, [
+        Uri.parse('https://www.keyforsteam.de/katalog/?search_name=Hades'),
+      ]);
+      expect(decide!(Uri.parse('https://www.keyforsteam.de/x')), isTrue);
+      expect(decide!(Uri.parse('https://www.kinguin.net/x')), isFalse);
     });
 
     testWidgets('update image applies an http address and saves it', (

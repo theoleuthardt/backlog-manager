@@ -9,7 +9,7 @@ Summary: Game backlog manager
 License: Proprietary
 URL: https://github.com/theoleuthardt/backlog-manager
 BuildArch: x86_64
-Requires: gtk3, libsecret
+Requires: gtk3, libsecret, webkit2gtk4.1, libsoup3
 
 %description
 Backlog Manager desktop client: track and organise a game backlog with data from HowLongToBeat, IGDB and Steam.

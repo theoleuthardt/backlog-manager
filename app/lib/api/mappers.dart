@@ -4,7 +4,6 @@ import 'package:backlog_manager/domain/creation_form.dart';
 import 'package:backlog_manager/domain/entry_mod.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/models.dart';
-import 'package:backlog_manager/domain/price_listings.dart' as price;
 import 'package:backlog_manager/domain/wishlist_sync_report.dart';
 
 /// Parses the backend's decimal strings (playtime, HowLongToBeat times);
@@ -90,28 +89,6 @@ WishlistSyncReport wishlistSyncReportFromResponse(
     updatedAt: report.updatedAt,
     added: (report.added ?? const []).map(change).toList(),
     removed: (report.removed ?? const []).map(change).toList(),
-  );
-}
-
-price.PriceInfo priceInfoFromResponse(GamePrice response) {
-  return price.PriceInfo(
-    currency: response.currency,
-    currentRetail: toNumber(response.currentRetail),
-    currentKeyshops: toNumber(response.currentKeyshops),
-    historicalRetail: toNumber(response.historicalRetail),
-    historicalKeyshops: toNumber(response.historicalKeyshops),
-    url: response.url,
-  );
-}
-
-price.KeyShopOffer keyShopOfferFromResponse(KeyShopOffer offer) {
-  return price.KeyShopOffer(
-    shop: offer.shop,
-    title: offer.title,
-    price: offer.price.toDouble(),
-    currency: offer.currency,
-    url: offer.url,
-    discountPct: offer.discountPct,
   );
 }
 
