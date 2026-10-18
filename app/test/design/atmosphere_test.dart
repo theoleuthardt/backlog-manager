@@ -132,9 +132,12 @@ void main() {
       final image = await tester.runAsync(() async {
         final recorder = ui.PictureRecorder();
         AtmospherePainter(tokens).paint(Canvas(recorder), size);
-        return recorder.endRecording().toImage(2400, 1200);
+        final picture = recorder.endRecording();
+        addTearDown(picture.dispose);
+        return picture.toImage(2400, 1200);
       });
-      final bytes = (await tester.runAsync(() => image!.toByteData()))!;
+      addTearDown(image!.dispose);
+      final bytes = (await tester.runAsync(image.toByteData))!;
 
       const cornerOfBox = Offset(2278, 986);
       var strongest = 0;
