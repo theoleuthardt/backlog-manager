@@ -194,8 +194,26 @@ void _rings(Canvas canvas, Size size, ShelfTokens tokens) {
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1.5;
   for (final (center, radius) in _ringShapes(size)) {
-    canvas.drawCircle(center, radius, paint);
+    _circleOutline(canvas, center, radius, paint);
   }
+}
+
+/// Strokes a circle as a closed polygon of short segments. The GPU backend
+/// of some Linux drivers filled the whole bounding box of a large stroked
+/// circle (and of the path and ring variants of it), segments are drawn
+/// correctly everywhere.
+void _circleOutline(Canvas canvas, Offset center, double radius, Paint paint) {
+  const segments = 180;
+  final points = [
+    for (var i = 0; i <= segments; i++)
+      center +
+          Offset(
+                math.cos(i / segments * 2 * math.pi),
+                math.sin(i / segments * 2 * math.pi),
+              ) *
+              radius,
+  ];
+  canvas.drawPoints(ui.PointMode.polygon, points, paint);
 }
 
 class _Nebula {
@@ -472,7 +490,8 @@ class AtmosphereMotionPainter extends CustomPainter {
     final t = (seconds % period) / 9;
     if (t > 1) return;
     final radius = 120 + 1100 * Curves.easeOut.transform(t);
-    canvas.drawCircle(
+    _circleOutline(
+      canvas,
       Offset(size.width * 1.04, size.height * 1.08),
       radius,
       Paint()

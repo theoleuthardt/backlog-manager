@@ -158,6 +158,26 @@ void main() {
 
       expect(strongest, lessThan(24));
     });
+    testWidgets('draws the orbit rings as lines, not as filled boxes', (
+      tester,
+    ) async {
+      final tokens = tokensOf('shelfOled');
+      final image = await tester.runAsync(() async {
+        final recorder = ui.PictureRecorder();
+        AtmospherePainter(tokens)
+            .paint(Canvas(recorder), const Size(1440, 900));
+        final picture = recorder.endRecording();
+        addTearDown(picture.dispose);
+        return picture.toImage(1440, 900);
+      });
+      addTearDown(image!.dispose);
+      final bytes = (await tester.runAsync(image.toByteData))!;
+
+      int blueAt(int x, int y) => bytes.getUint8((y * 1440 + x) * 4 + 2);
+      for (final (x, y) in [(1090, 560), (870, 340), (1090, 800)]) {
+        expect((blueAt(x, y) - blueAt(x - 40, y)).abs(), lessThan(8));
+      }
+    });
   });
 
   group('AtmosphereBackground', () {
