@@ -131,6 +131,14 @@ jobs:
       - name: Build
         run: flutter build linux --release
 
+      - name: Package the AppImage
+        run: |
+          sudo curl -fsSL -o /usr/local/bin/appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          sudo chmod +x /usr/local/bin/appimagetool
+          export APPIMAGE_EXTRACT_AND_RUN=1
+          bash tool/package/appimage.sh
+          bash tool/package/check_appimage.sh
+
   integration:
     name: App Integration Tests
     runs-on: ubuntu-latest
