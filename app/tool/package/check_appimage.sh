@@ -15,7 +15,7 @@ trap 'rm -rf "$work"' EXIT
 
 (cd "$work" && APPIMAGE_EXTRACT_AND_RUN=1 "$image" --appimage-extract > /dev/null)
 if ! extra=$(diff -r \
-  -x AppRun -x backlog_manager.desktop -x backlog_manager.png \
+  -x AppRun -x backlog_manager.desktop -x backlog_manager.png -x .DirIcon \
   "$bundle" "$work/squashfs-root" 2>&1); then
   echo "the AppImage differs from the release bundle:" >&2
   echo "$extra" >&2
