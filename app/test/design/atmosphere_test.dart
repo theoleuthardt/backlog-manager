@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui' as ui;
 
 import 'package:backlog_manager/design/atmosphere.dart';
 import 'package:backlog_manager/design/freaky_orbs.dart';
@@ -123,6 +124,36 @@ void main() {
         false,
       );
       expect(painter.shouldRepaint(AtmospherePainter(tokensOf('light'))), true);
+    });
+
+    testWidgets('keeps every nebula inside its ellipse', (tester) async {
+      final tokens = tokensOf('shelfOled');
+      const size = Size(2400, 1200);
+      final image = await tester.runAsync(() async {
+        final recorder = ui.PictureRecorder();
+        AtmospherePainter(tokens).paint(Canvas(recorder), size);
+        return recorder.endRecording().toImage(2400, 1200);
+      });
+      final bytes = (await tester.runAsync(() => image!.toByteData()))!;
+
+      const cornerOfBox = Offset(2278, 986);
+      var strongest = 0;
+      for (var dx = 0; dx < 6; dx++) {
+        for (var dy = 0; dy < 6; dy++) {
+          final at =
+              ((cornerOfBox.dy.toInt() + dy) * 2400 +
+                  cornerOfBox.dx.toInt() +
+                  dx) *
+              4;
+          final blue = bytes.getUint8(at + 2);
+          strongest = max(
+            strongest,
+            blue - (tokens.background.b * 255).round(),
+          );
+        }
+      }
+
+      expect(strongest, lessThan(24));
     });
   });
 
