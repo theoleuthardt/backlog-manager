@@ -398,10 +398,9 @@ class _KeyforsteamRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
-    final query = Uri.encodeQueryComponent('site:keyforsteam.de $title');
     return _RowShell(
       rowKey: const Key('keyforsteam-row'),
-      url: 'https://www.google.com/search?q=$query',
+      url: keyforsteamSearchUrl(title),
       leading: Icon(Icons.search, size: 20, color: tokens.muted),
       name: 'Keyforsteam',
       trailing: Text(

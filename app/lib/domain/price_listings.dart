@@ -77,6 +77,11 @@ class KeyShopOffer {
   final int? discountPct;
 }
 
+/// The search of Keyforsteam for [title], the address its own site search
+/// uses (`/katalog/search-<term>`).
+String keyforsteamSearchUrl(String title) =>
+    'https://www.keyforsteam.de/katalog/search-${Uri.encodeComponent(title)}';
+
 /// One row of the key shop list.
 class PriceListing {
   const PriceListing({
