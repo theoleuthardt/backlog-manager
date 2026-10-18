@@ -9,7 +9,8 @@ from backlog_manager_backend.models import Base
 
 class SpaceEntryMemberData(Base):
     """The fields of a shared-space entry that belong to one member
-    rather than the whole space: their own playtime, rating and review."""
+    rather than the whole space: their own playtime, rating, review and
+    whether they own the game (NULL counts as not owned)."""
 
     __tablename__ = "SpaceEntryMemberData"
     __table_args__: ClassVar[dict[str, str]] = {"schema": "blm-system"}
@@ -33,3 +34,4 @@ class SpaceEntryMemberData(Base):
     playtime: Mapped[Decimal | None] = mapped_column("Playtime")
     review_stars: Mapped[int | None] = mapped_column("ReviewStars")
     review: Mapped[str | None] = mapped_column("Review")
+    owned: Mapped[bool | None] = mapped_column("Owned")

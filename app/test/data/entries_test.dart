@@ -179,6 +179,24 @@ void main() {
       },
     );
 
+    test('in a shared space the ownership does not move with it', () async {
+      api.onEntries = (spaceId) async => [
+        const BacklogEntry(id: 1, title: 'Game 1', owned: true),
+      ];
+      await load(7);
+      final pending = Completer<void>();
+      api.onUpdate = (id, update) => pending.future;
+
+      final move = notifier(7).moveToStatus(1, 'Not Owned');
+      await Future<void>.delayed(Duration.zero);
+      final moved = entries(7).single;
+      expect(moved.status, 'Not Owned');
+      expect(moved.owned, isTrue);
+
+      pending.complete();
+      await move;
+    });
+
     test('puts a failed entry back and reports the message', () async {
       await load();
       api.onUpdate = (id, update) async =>

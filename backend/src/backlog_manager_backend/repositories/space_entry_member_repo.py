@@ -44,6 +44,7 @@ async def apply_member_data(
                 playtime=mine.playtime if mine else None,
                 review_stars=mine.review_stars if mine else None,
                 review=mine.review if mine else None,
+                owned=bool(mine and mine.owned),
                 partner_playtime=partner_playtime.get(entry.backlog_entry_id),
             )
         )
@@ -99,10 +100,11 @@ async def upsert_member_data(
     playtime: Decimal | None | msgspec.UnsetType = msgspec.UNSET,
     review_stars: int | None | msgspec.UnsetType = msgspec.UNSET,
     review: str | None | msgspec.UnsetType = msgspec.UNSET,
+    owned: bool | msgspec.UnsetType = msgspec.UNSET,
 ) -> None:
     """Same UNSET-vs-None semantics as UpdateBacklogEntryParams: an
     omitted field is left unchanged, an explicit None clears it."""
-    if playtime is msgspec.UNSET and review_stars is msgspec.UNSET and review is msgspec.UNSET:
+    if all(value is msgspec.UNSET for value in (playtime, review_stars, review, owned)):
         return
     row = await session.get(SpaceEntryMemberData, (backlog_entry_id, user_id))
     if row is None:
@@ -114,4 +116,6 @@ async def upsert_member_data(
         row.review_stars = review_stars
     if review is not msgspec.UNSET:
         row.review = review
+    if owned is not msgspec.UNSET:
+        row.owned = owned
     await session.commit()

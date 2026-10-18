@@ -126,6 +126,7 @@ CREATE TABLE IF NOT EXISTS "blm-system"."SpaceEntryMemberData" (
     "Playtime"       NUMERIC(10,2),
     "ReviewStars"    INTEGER,
     "Review"         TEXT,
+    "Owned"          BOOLEAN,
     PRIMARY KEY ("BacklogEntryID", "UserID"),
     FOREIGN KEY ("BacklogEntryID") REFERENCES "blm-system"."BacklogEntries"("BacklogEntryID")
         ON DELETE CASCADE ON UPDATE CASCADE,
