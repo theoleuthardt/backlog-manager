@@ -7,43 +7,70 @@ import pytest
 from cryptography.fernet import Fernet
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backlog_manager_backend.integrations.types import (
-    CheapSharkDeal,
-    CheapSharkGameDetail,
-    CheapSharkGameInfo,
-    CheapSharkPriceEver,
-    CheapSharkStore,
-    CheapSharkStoreImages,
-)
+from backlog_manager_backend.integrations.types import GgDealsGame, GgDealsPrices
 from backlog_manager_backend.models.user_game_price_alert import UserGamePriceAlert
-from backlog_manager_backend.repositories import (
-    backlog_entry_repo,
-    game_price_repo,
-    user_repo,
-)
+from backlog_manager_backend.repositories import backlog_entry_repo, game_price_repo, user_repo
 from backlog_manager_backend.schemas.backlog_entry import CreateBacklogEntryParams
-from backlog_manager_backend.schemas.game_price import GamePriceDeal, UpsertGamePriceParams
+from backlog_manager_backend.schemas.game_price import UpsertGamePriceParams
 from backlog_manager_backend.schemas.user import CreateUserParams
 
 _REAL_WEBHOOK_URL = "https://discord.com/api/webhooks/123456789012345678/token-abc"
 _OTHER_REAL_WEBHOOK_URL = "https://discord.com/api/webhooks/987654321098765432/token-xyz"
+_KEY = "server-key"
 
 
 @pytest.fixture
 def price_service(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
+    from backlog_manager_backend.config import settings
     from backlog_manager_backend.services import price_service as module
 
-    monkeypatch.setattr(module, "_store_names", {})
-    monkeypatch.setattr(module, "_store_icons", {})
+    monkeypatch.setattr(settings, "ggdeals_api_key", _KEY)
     return module
 
 
-async def _fake_stores() -> list[CheapSharkStore]:
-    return []
+def _game(
+    *,
+    retail: str | None = "9.99",
+    keyshops: str | None = "4.50",
+    historical_retail: str | None = "1.99",
+    historical_keyshops: str | None = "1.50",
+) -> GgDealsGame:
+    return GgDealsGame(
+        title="Half-Life 2",
+        url="https://gg.deals/game/half-life-2/",
+        prices=GgDealsPrices(
+            currency="EUR",
+            current_retail=retail,
+            current_keyshops=keyshops,
+            historical_retail=historical_retail,
+            historical_keyshops=historical_keyshops,
+        ),
+    )
 
 
-def _mock_no_stores(price_service: ModuleType, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(price_service, "get_stores", _fake_stores)
+def _at_historical_low() -> GgDealsGame:
+    return _game(retail="1.99", keyshops="2.50")
+
+
+def _serve(
+    price_service: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    answers: dict[int, GgDealsGame | None] | None = None,
+    game: GgDealsGame | None = None,
+) -> list[list[int]]:
+    """Replaces the GG.deals client: every id gets `game` unless `answers`
+    says otherwise; returns the list of requested id batches."""
+    batches: list[list[int]] = []
+
+    async def fake_get(steam_app_ids: list[int], api_key: str) -> dict[int, GgDealsGame | None]:
+        assert api_key == _KEY
+        batches.append(list(steam_app_ids))
+        if answers is not None:
+            return {i: answers.get(i) for i in steam_app_ids}
+        return dict.fromkeys(steam_app_ids, game)
+
+    monkeypatch.setattr(price_service, "get_prices_by_steam_app_ids", fake_get)
+    return batches
 
 
 async def _make_user(session: AsyncSession, email: str = "priceowner@example.com") -> object:
@@ -71,24 +98,6 @@ async def _make_entry(
     )
 
 
-def _detail(
-    *, price: str = "9.99", retail_price: str = "19.99", savings: str = "50.0"
-) -> CheapSharkGameDetail:
-    return CheapSharkGameDetail(
-        info=CheapSharkGameInfo(title="Half-Life 2", steamAppID="220"),
-        cheapestPriceEver=CheapSharkPriceEver(price="2.99", date=1234567890),
-        deals=[
-            CheapSharkDeal(
-                storeID="1",
-                dealID="deal-abc",
-                price=price,
-                retailPrice=retail_price,
-                savings=savings,
-            )
-        ],
-    )
-
-
 async def _last_alerted_price(
     session: AsyncSession, user_id: int, steam_app_id: int
 ) -> Decimal | None:
@@ -96,119 +105,105 @@ async def _last_alerted_price(
     return model.last_alerted_price if model is not None else None
 
 
-async def test_get_price_info_uses_fresh_cache_without_refetching(
-    price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
-) -> None:
+async def _store(session: AsyncSession, steam_app_id: int, age: timedelta) -> None:
     await game_price_repo.upsert_game_price(
         session,
         UpsertGamePriceParams(
-            steam_app_id=220,
-            deals=[
-                GamePriceDeal(
-                    store="Steam", icon="", price=9.99, retail_price=19.99, url="https://x"
-                )
-            ],
-            on_sale=True,
-            checked_at=datetime.now(UTC).replace(tzinfo=None),
+            steam_app_id=steam_app_id,
+            checked_at=datetime.now(UTC).replace(tzinfo=None) - age,
+            currency="EUR",
+            current_retail=Decimal("5.00"),
         ),
     )
 
-    async def _fail(*args: object, **kwargs: object) -> None:
-        raise AssertionError("should not refetch a fresh price")
 
-    monkeypatch.setattr(price_service, "find_cheapshark_game_id", _fail)
-
-    info = await price_service.get_price_info(session, 220)
-    assert info.on_sale is True
-
-
-async def test_get_price_info_refetches_when_stale(
+async def test_get_price_info_uses_a_fresh_cache_without_asking_gg_deals(
     price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
 ) -> None:
-    stale_checked_at = datetime.now(UTC).replace(tzinfo=None) - timedelta(hours=2)
-    await game_price_repo.upsert_game_price(
-        session,
-        UpsertGamePriceParams(
-            steam_app_id=220,
-            deals=[
-                GamePriceDeal(
-                    store="Steam", icon="", price=19.99, retail_price=19.99, url="https://x"
-                )
-            ],
-            on_sale=False,
-            checked_at=stale_checked_at,
-        ),
-    )
+    await _store(session, 220, timedelta(minutes=10))
+    batches = _serve(price_service, monkeypatch, game=_game())
 
-    async def fake_find(steam_app_id: int) -> int:
-        return 612
+    info = await price_service.get_price_info(session, 220, _KEY)
 
-    async def fake_detail(cheapshark_game_id: int) -> CheapSharkGameDetail:
-        return _detail()
+    assert info.current_retail == Decimal("5.00")
+    assert batches == []
 
-    async def fake_stores() -> list[CheapSharkStore]:
-        return [
-            CheapSharkStore(
-                storeID="1",
-                storeName="Steam",
-                isActive=1,
-                images=CheapSharkStoreImages(
-                    icon="/img/stores/icons/0.png",
-                    logo="/img/stores/logos/0.png",
-                    banner="/img/stores/banners/0.png",
-                ),
-            )
-        ]
 
-    monkeypatch.setattr(price_service, "find_cheapshark_game_id", fake_find)
-    monkeypatch.setattr(price_service, "get_cheapshark_game_detail", fake_detail)
-    monkeypatch.setattr(price_service, "get_stores", fake_stores)
+async def test_get_price_info_refreshes_a_stale_row(
+    price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
+) -> None:
+    await _store(session, 220, timedelta(hours=4))
+    _serve(price_service, monkeypatch, game=_game())
 
-    info = await price_service.get_price_info(session, 220)
+    info = await price_service.get_price_info(session, 220, _KEY)
 
-    assert info.on_sale is True
-    assert info.deals == [
-        GamePriceDeal(
-            store="Steam",
-            icon="https://www.cheapshark.com/img/stores/icons/0.png",
-            price=9.99,
-            retail_price=19.99,
-            url="https://www.cheapshark.com/redirect?dealID=deal-abc",
+    assert info.current_retail == Decimal("9.99")
+    assert info.current_keyshops == Decimal("4.50")
+    assert info.historical_retail == Decimal("1.99")
+    assert info.historical_keyshops == Decimal("1.50")
+    assert info.currency == "EUR"
+    assert info.url == "https://gg.deals/game/half-life-2/"
+    stored = await game_price_repo.get_game_price(session, 220)
+    assert stored is not None
+    assert stored.current_retail == Decimal("9.99")
+
+
+async def test_get_price_info_remembers_a_game_gg_deals_does_not_know(
+    price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
+) -> None:
+    batches = _serve(price_service, monkeypatch, answers={})
+
+    first = await price_service.get_price_info(session, 999999, _KEY)
+    second = await price_service.get_price_info(session, 999999, _KEY)
+
+    assert first.current_retail is None
+    assert first.url is None
+    assert second.steam_app_id == 999999
+    assert batches == [[999999]]
+
+
+async def test_get_price_info_without_a_key_serves_a_stale_row_or_raises(
+    price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
+) -> None:
+    await _store(session, 220, timedelta(hours=9))
+    batches = _serve(price_service, monkeypatch, game=_game())
+
+    stale = await price_service.get_price_info(session, 220, None)
+
+    assert stale.current_retail == Decimal("5.00")
+    with pytest.raises(price_service.PriceSourceNotConfiguredError):
+        await price_service.get_price_info(session, 221, None)
+    assert batches == []
+
+
+@pytest.mark.parametrize("status", [429, 500])
+async def test_get_price_info_serves_the_stale_row_when_gg_deals_fails(
+    status: int, price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
+) -> None:
+    await _store(session, 220, timedelta(hours=9))
+
+    async def failing(steam_app_ids: list[int], api_key: str) -> dict:
+        request = httpx.Request("GET", "https://api.gg.deals/v1/prices/by-steam-app-id/")
+        raise httpx.HTTPStatusError(
+            "error", request=request, response=httpx.Response(status, request=request)
         )
-    ]
-    assert info.cheapest_price_ever == Decimal("2.99")
+
+    monkeypatch.setattr(price_service, "get_prices_by_steam_app_ids", failing)
+
+    info = await price_service.get_price_info(session, 220, _KEY)
+    assert info.current_retail == Decimal("5.00")
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await price_service.get_price_info(session, 555, _KEY)
 
 
-async def test_get_price_info_handles_no_cheapshark_match(
-    price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
-) -> None:
-    _mock_no_stores(price_service, monkeypatch)
-
-    async def fake_find(steam_app_id: int) -> None:
-        return None
-
-    monkeypatch.setattr(price_service, "find_cheapshark_game_id", fake_find)
-
-    info = await price_service.get_price_info(session, 999999)
-
-    assert info.deals == []
-    assert info.on_sale is False
-
-
-async def test_check_prices_and_alert_sends_discord_message_when_newly_on_sale(
+async def test_the_sweep_alerts_when_a_price_is_at_its_historical_low(
     price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
 ) -> None:
     from backlog_manager_backend.config import settings
 
     user = await _make_user(session)
     await _make_entry(session, user.id, steam_app_id=220, owned=False)
-
-    async def fake_find(steam_app_id: int) -> int:
-        return 612
-
-    async def fake_detail(cheapshark_game_id: int) -> CheapSharkGameDetail:
-        return _detail()
-
     sent: list[tuple[str, str]] = []
 
     async def fake_send(webhook_url: str, content: str) -> bool:
@@ -216,9 +211,7 @@ async def test_check_prices_and_alert_sends_discord_message_when_newly_on_sale(
         return True
 
     monkeypatch.setattr(settings, "discord_webhook_url", _REAL_WEBHOOK_URL)
-    _mock_no_stores(price_service, monkeypatch)
-    monkeypatch.setattr(price_service, "find_cheapshark_game_id", fake_find)
-    monkeypatch.setattr(price_service, "get_cheapshark_game_detail", fake_detail)
+    _serve(price_service, monkeypatch, game=_at_historical_low())
     monkeypatch.setattr(price_service, "send_discord_webhook_message", fake_send)
 
     alerts_sent = await price_service.check_prices_and_alert(session)
@@ -226,74 +219,18 @@ async def test_check_prices_and_alert_sends_discord_message_when_newly_on_sale(
     assert alerts_sent == 1
     assert sent[0][0] == _REAL_WEBHOOK_URL
     assert "Half-Life 2" in sent[0][1]
-
-    last_alerted = await _last_alerted_price(session, user.id, 220)
-    assert last_alerted == Decimal("9.99")
-
-
-async def test_check_prices_and_alert_skips_owned_games(
-    price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
-) -> None:
-    from backlog_manager_backend.config import settings
-
-    user = await _make_user(session)
-    await _make_entry(session, user.id, steam_app_id=220, owned=True)
-
-    async def _fail(*args: object, **kwargs: object) -> None:
-        raise AssertionError("owned games must not be swept")
-
-    monkeypatch.setattr(settings, "discord_webhook_url", _REAL_WEBHOOK_URL)
-    monkeypatch.setattr(price_service, "find_cheapshark_game_id", _fail)
-
-    alerts_sent = await price_service.check_prices_and_alert(session)
-    assert alerts_sent == 0
+    assert "1.99 EUR" in sent[0][1]
+    assert "https://gg.deals/game/half-life-2/" in sent[0][1]
+    assert await _last_alerted_price(session, user.id, 220) == Decimal("1.99")
 
 
-async def test_check_prices_and_alert_noop_without_webhook(
+async def test_the_sweep_alerts_for_a_keyshop_price_at_its_historical_low(
     price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
 ) -> None:
     from backlog_manager_backend.config import settings
 
     user = await _make_user(session)
     await _make_entry(session, user.id, steam_app_id=220, owned=False)
-
-    async def fake_find(steam_app_id: int) -> int:
-        return 612
-
-    async def fake_detail(cheapshark_game_id: int) -> CheapSharkGameDetail:
-        return _detail()
-
-    async def _fail_send(*args: object, **kwargs: object) -> None:
-        raise AssertionError("must not call Discord without a configured webhook")
-
-    monkeypatch.setattr(settings, "discord_webhook_url", None)
-    _mock_no_stores(price_service, monkeypatch)
-    monkeypatch.setattr(price_service, "find_cheapshark_game_id", fake_find)
-    monkeypatch.setattr(price_service, "get_cheapshark_game_detail", fake_detail)
-    monkeypatch.setattr(price_service, "send_discord_webhook_message", _fail_send)
-
-    alerts_sent = await price_service.check_prices_and_alert(session)
-
-    assert alerts_sent == 0
-    price = await game_price_repo.get_game_price(session, 220)
-    assert price is not None
-    assert price.on_sale is True
-
-
-async def test_check_prices_and_alert_does_not_repeat_same_price(
-    price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
-) -> None:
-    from backlog_manager_backend.config import settings
-
-    user = await _make_user(session)
-    await _make_entry(session, user.id, steam_app_id=220, owned=False)
-
-    async def fake_find(steam_app_id: int) -> int:
-        return 612
-
-    async def fake_detail(cheapshark_game_id: int) -> CheapSharkGameDetail:
-        return _detail()
-
     sent: list[str] = []
 
     async def fake_send(webhook_url: str, content: str) -> bool:
@@ -301,35 +238,124 @@ async def test_check_prices_and_alert_does_not_repeat_same_price(
         return True
 
     monkeypatch.setattr(settings, "discord_webhook_url", _REAL_WEBHOOK_URL)
-    _mock_no_stores(price_service, monkeypatch)
-    monkeypatch.setattr(price_service, "find_cheapshark_game_id", fake_find)
-    monkeypatch.setattr(price_service, "get_cheapshark_game_detail", fake_detail)
+    _serve(price_service, monkeypatch, game=_game(retail="9.99", keyshops="1.50"))
+    monkeypatch.setattr(price_service, "send_discord_webhook_message", fake_send)
+
+    assert await price_service.check_prices_and_alert(session) == 1
+    assert "1.50 EUR" in sent[0]
+    assert "keyshop" in sent[0]
+
+
+@pytest.mark.parametrize(
+    "game",
+    [
+        _game(),
+        _game(retail=None, keyshops=None),
+        _game(historical_retail=None, historical_keyshops=None),
+        _game(retail="0.00", keyshops=None, historical_retail="0.00", historical_keyshops=None),
+    ],
+)
+async def test_the_sweep_does_not_alert_without_a_historical_low(
+    game: GgDealsGame,
+    price_service: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    session: AsyncSession,
+) -> None:
+    from backlog_manager_backend.config import settings
+
+    user = await _make_user(session)
+    await _make_entry(session, user.id, steam_app_id=220, owned=False)
+
+    async def fail_send(*args: object, **kwargs: object) -> None:
+        raise AssertionError("no alert expected")
+
+    monkeypatch.setattr(settings, "discord_webhook_url", _REAL_WEBHOOK_URL)
+    _serve(price_service, monkeypatch, game=game)
+    monkeypatch.setattr(price_service, "send_discord_webhook_message", fail_send)
+
+    assert await price_service.check_prices_and_alert(session) == 0
+
+
+async def test_the_sweep_skips_owned_games(
+    price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
+) -> None:
+    from backlog_manager_backend.config import settings
+
+    user = await _make_user(session)
+    await _make_entry(session, user.id, steam_app_id=220, owned=True)
+    monkeypatch.setattr(settings, "discord_webhook_url", _REAL_WEBHOOK_URL)
+    batches = _serve(price_service, monkeypatch, game=_at_historical_low())
+
+    assert await price_service.check_prices_and_alert(session) == 0
+    assert batches == []
+
+
+async def test_the_sweep_does_nothing_without_a_server_key(
+    price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
+) -> None:
+    from backlog_manager_backend.config import settings
+
+    user = await _make_user(session)
+    await _make_entry(session, user.id, steam_app_id=220, owned=False)
+    monkeypatch.setattr(settings, "ggdeals_api_key", None)
+    batches = _serve(price_service, monkeypatch, game=_at_historical_low())
+
+    assert await price_service.check_prices_and_alert(session) == 0
+    assert batches == []
+
+
+async def test_the_sweep_stores_prices_without_a_webhook(
+    price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
+) -> None:
+    from backlog_manager_backend.config import settings
+
+    user = await _make_user(session)
+    await _make_entry(session, user.id, steam_app_id=220, owned=False)
+
+    async def fail_send(*args: object, **kwargs: object) -> None:
+        raise AssertionError("must not call Discord without a configured webhook")
+
+    monkeypatch.setattr(settings, "discord_webhook_url", None)
+    _serve(price_service, monkeypatch, game=_at_historical_low())
+    monkeypatch.setattr(price_service, "send_discord_webhook_message", fail_send)
+
+    assert await price_service.check_prices_and_alert(session) == 0
+    stored = await game_price_repo.get_game_price(session, 220)
+    assert stored is not None
+    assert stored.current_retail == Decimal("1.99")
+
+
+async def test_the_sweep_does_not_repeat_the_same_price(
+    price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
+) -> None:
+    from backlog_manager_backend.config import settings
+
+    user = await _make_user(session)
+    await _make_entry(session, user.id, steam_app_id=220, owned=False)
+    sent: list[str] = []
+
+    async def fake_send(webhook_url: str, content: str) -> bool:
+        sent.append(content)
+        return True
+
+    monkeypatch.setattr(settings, "discord_webhook_url", _REAL_WEBHOOK_URL)
+    _serve(price_service, monkeypatch, game=_at_historical_low())
     monkeypatch.setattr(price_service, "send_discord_webhook_message", fake_send)
 
     await price_service.check_prices_and_alert(session)
-    second_run_alerts = await price_service.check_prices_and_alert(session)
+    second = await price_service.check_prices_and_alert(session)
 
-    assert second_run_alerts == 0
+    assert second == 0
     assert len(sent) == 1
 
 
-async def test_check_prices_and_alert_notifies_each_user_independently(
+async def test_the_sweep_notifies_each_user_independently(
     price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
 ) -> None:
-    """Two users tracking the same on-sale game must each be notified,
-    even if one of them was already alerted in a previous sweep - dedup
-    is per (user, steam_app_id), not global on the shared GamePrice row."""
     from backlog_manager_backend.config import settings
 
     user1 = await _make_user(session, "priceowner1@example.com")
     await _make_entry(session, user1.id, steam_app_id=220, owned=False)
-
-    async def fake_find(steam_app_id: int) -> int:
-        return 612
-
-    async def fake_detail(cheapshark_game_id: int) -> CheapSharkGameDetail:
-        return _detail()
-
     sent: list[str] = []
 
     async def fake_send(webhook_url: str, content: str) -> bool:
@@ -337,57 +363,38 @@ async def test_check_prices_and_alert_notifies_each_user_independently(
         return True
 
     monkeypatch.setattr(settings, "discord_webhook_url", _REAL_WEBHOOK_URL)
-    _mock_no_stores(price_service, monkeypatch)
-    monkeypatch.setattr(price_service, "find_cheapshark_game_id", fake_find)
-    monkeypatch.setattr(price_service, "get_cheapshark_game_detail", fake_detail)
+    _serve(price_service, monkeypatch, game=_at_historical_low())
     monkeypatch.setattr(price_service, "send_discord_webhook_message", fake_send)
 
-    first_run_alerts = await price_service.check_prices_and_alert(session)
-    assert first_run_alerts == 1
+    assert await price_service.check_prices_and_alert(session) == 1
 
     user2 = await _make_user(session, "priceowner2@example.com")
     await _make_entry(session, user2.id, steam_app_id=220, owned=False)
 
-    second_run_alerts = await price_service.check_prices_and_alert(session)
-
-    assert second_run_alerts == 1
+    assert await price_service.check_prices_and_alert(session) == 1
     assert sent == [_REAL_WEBHOOK_URL, _REAL_WEBHOOK_URL]
 
 
-async def test_check_prices_and_alert_reverts_dedup_when_delivery_fails(
+async def test_the_sweep_reverts_the_dedup_when_delivery_fails(
     price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
 ) -> None:
-    """A failed Discord send must not permanently block future alerts
-    for this price - the claim is reverted so the next sweep retries."""
     from backlog_manager_backend.config import settings
 
     user = await _make_user(session)
     await _make_entry(session, user.id, steam_app_id=220, owned=False)
-
-    async def fake_find(steam_app_id: int) -> int:
-        return 612
-
-    async def fake_detail(cheapshark_game_id: int) -> CheapSharkGameDetail:
-        return _detail()
-
     attempts: list[bool] = [False, True]
 
     async def flaky_send(webhook_url: str, content: str) -> bool:
         return attempts.pop(0)
 
     monkeypatch.setattr(settings, "discord_webhook_url", _REAL_WEBHOOK_URL)
-    _mock_no_stores(price_service, monkeypatch)
-    monkeypatch.setattr(price_service, "find_cheapshark_game_id", fake_find)
-    monkeypatch.setattr(price_service, "get_cheapshark_game_detail", fake_detail)
+    _serve(price_service, monkeypatch, game=_at_historical_low())
     monkeypatch.setattr(price_service, "send_discord_webhook_message", flaky_send)
 
-    first_run_alerts = await price_service.check_prices_and_alert(session)
-    assert first_run_alerts == 0
+    assert await price_service.check_prices_and_alert(session) == 0
     assert await _last_alerted_price(session, user.id, 220) is None
-
-    second_run_alerts = await price_service.check_prices_and_alert(session)
-    assert second_run_alerts == 1
-    assert await _last_alerted_price(session, user.id, 220) == Decimal("9.99")
+    assert await price_service.check_prices_and_alert(session) == 1
+    assert await _last_alerted_price(session, user.id, 220) == Decimal("1.99")
 
 
 async def test_resolve_discord_webhook_url_prefers_users_own_webhook(
@@ -456,11 +463,13 @@ async def test_resolve_discord_webhook_url_returns_none_for_invalid_configured_f
     assert price_service._resolve_discord_webhook_url(user) is None
 
 
-def _rate_limited(retry_after: str | None = None) -> httpx.HTTPStatusError:
+def _status_error(status: int, retry_after: str | None = None) -> httpx.HTTPStatusError:
     headers = {"Retry-After": retry_after} if retry_after is not None else {}
-    request = httpx.Request("GET", "https://www.cheapshark.com/api/1.0/games")
-    response = httpx.Response(429, headers=headers, request=request)
-    return httpx.HTTPStatusError("CheapShark API error: 429", request=request, response=response)
+    request = httpx.Request("GET", "https://api.gg.deals/v1/prices/by-steam-app-id/")
+    response = httpx.Response(status, headers=headers, request=request)
+    return httpx.HTTPStatusError(
+        f"GG.deals API error: {status}", request=request, response=response
+    )
 
 
 async def _entries_for(session: AsyncSession, steam_app_ids: list[int]) -> None:
@@ -469,47 +478,47 @@ async def _entries_for(session: AsyncSession, steam_app_ids: list[int]) -> None:
         await _make_entry(session, user.id, steam_app_id=steam_app_id, owned=False)
 
 
-async def test_sweep_pauses_between_games(
-    price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
-) -> None:
-    await _entries_for(session, [1, 2, 3])
+def _patch_sleep(price_service: ModuleType, monkeypatch: pytest.MonkeyPatch) -> list[float]:
     sleeps: list[float] = []
 
     async def fake_sleep(seconds: float) -> None:
         sleeps.append(seconds)
 
-    async def fake_find(steam_app_id: int) -> int | None:
-        return None
-
-    _mock_no_stores(price_service, monkeypatch)
     monkeypatch.setattr(price_service, "_sleep", fake_sleep)
-    monkeypatch.setattr(price_service, "find_cheapshark_game_id", fake_find)
+    return sleeps
+
+
+async def test_the_sweep_asks_in_batches_and_pauses_between_them(
+    price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
+) -> None:
+    size = price_service._SWEEP_BATCH_SIZE
+    ids = list(range(1, size * 2 + 2))
+    await _entries_for(session, ids)
+    sleeps = _patch_sleep(price_service, monkeypatch)
+    batches = _serve(price_service, monkeypatch, game=_game())
 
     await price_service.check_prices_and_alert(session)
 
-    assert sleeps == [price_service._SWEEP_REQUEST_PAUSE_SECONDS] * 2
+    assert [len(batch) for batch in batches] == [size, size, 1]
+    assert sorted(i for batch in batches for i in batch) == ids
+    assert sleeps == [price_service._SWEEP_BATCH_PAUSE_SECONDS] * 2
 
 
-async def test_sweep_retries_a_rate_limited_game_after_retry_after(
+async def test_the_sweep_waits_out_a_rate_limit_and_asks_again(
     price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
 ) -> None:
     await _entries_for(session, [220])
-    sleeps: list[float] = []
+    sleeps = _patch_sleep(price_service, monkeypatch)
     calls = 0
 
-    async def fake_sleep(seconds: float) -> None:
-        sleeps.append(seconds)
-
-    async def fake_find(steam_app_id: int) -> int | None:
+    async def fake_get(steam_app_ids: list[int], api_key: str) -> dict:
         nonlocal calls
         calls += 1
         if calls == 1:
-            raise _rate_limited("7")
-        return None
+            raise _status_error(429, "7")
+        return dict.fromkeys(steam_app_ids, _game())
 
-    _mock_no_stores(price_service, monkeypatch)
-    monkeypatch.setattr(price_service, "_sleep", fake_sleep)
-    monkeypatch.setattr(price_service, "find_cheapshark_game_id", fake_find)
+    monkeypatch.setattr(price_service, "get_prices_by_steam_app_ids", fake_get)
 
     await price_service.check_prices_and_alert(session)
 
@@ -517,81 +526,102 @@ async def test_sweep_retries_a_rate_limited_game_after_retry_after(
     assert await game_price_repo.get_game_price(session, 220) is not None
 
 
-async def test_sweep_stops_when_rate_limit_persists(
+async def test_the_sweep_stops_when_the_rate_limit_persists(
     price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
 ) -> None:
-    await _entries_for(session, [1, 2, 3])
-    looked_up: list[int] = []
+    size = price_service._SWEEP_BATCH_SIZE
+    await _entries_for(session, list(range(1, size * 2 + 1)))
+    _patch_sleep(price_service, monkeypatch)
+    calls = 0
 
-    async def fake_sleep(seconds: float) -> None:
-        return None
+    async def fake_get(steam_app_ids: list[int], api_key: str) -> dict:
+        nonlocal calls
+        calls += 1
+        raise _status_error(429)
 
-    async def fake_find(steam_app_id: int) -> int | None:
-        looked_up.append(steam_app_id)
-        raise _rate_limited()
-
-    _mock_no_stores(price_service, monkeypatch)
-    monkeypatch.setattr(price_service, "_sleep", fake_sleep)
-    monkeypatch.setattr(price_service, "find_cheapshark_game_id", fake_find)
+    monkeypatch.setattr(price_service, "get_prices_by_steam_app_ids", fake_get)
 
     await price_service.check_prices_and_alert(session)
 
-    assert len(looked_up) == price_service._RATE_LIMIT_RETRIES + 1
+    assert calls == price_service._RATE_LIMIT_RETRIES + 1
 
 
-async def test_sweep_clamps_an_excessive_retry_after(
-    price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
+@pytest.mark.parametrize("status", [401, 403])
+async def test_the_sweep_stops_when_the_key_is_rejected(
+    status: int,
+    price_service: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    session: AsyncSession,
 ) -> None:
-    await _entries_for(session, [220])
-    sleeps: list[float] = []
+    size = price_service._SWEEP_BATCH_SIZE
+    await _entries_for(session, list(range(1, size * 2 + 1)))
+    _patch_sleep(price_service, monkeypatch)
     calls = 0
 
-    async def fake_sleep(seconds: float) -> None:
-        sleeps.append(seconds)
+    async def fake_get(steam_app_ids: list[int], api_key: str) -> dict:
+        nonlocal calls
+        calls += 1
+        raise _status_error(status)
 
-    async def fake_find(steam_app_id: int) -> int | None:
+    monkeypatch.setattr(price_service, "get_prices_by_steam_app_ids", fake_get)
+
+    await price_service.check_prices_and_alert(session)
+
+    assert calls == 1
+
+
+async def test_the_sweep_goes_on_after_a_failed_batch(
+    price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
+) -> None:
+    size = price_service._SWEEP_BATCH_SIZE
+    await _entries_for(session, list(range(1, size + 2)))
+    _patch_sleep(price_service, monkeypatch)
+    calls = 0
+
+    async def fake_get(steam_app_ids: list[int], api_key: str) -> dict:
         nonlocal calls
         calls += 1
         if calls == 1:
-            raise _rate_limited("86400")
-        return None
+            raise _status_error(500)
+        return dict.fromkeys(steam_app_ids, _game())
 
-    _mock_no_stores(price_service, monkeypatch)
-    monkeypatch.setattr(price_service, "_sleep", fake_sleep)
-    monkeypatch.setattr(price_service, "find_cheapshark_game_id", fake_find)
+    monkeypatch.setattr(price_service, "get_prices_by_steam_app_ids", fake_get)
+
+    await price_service.check_prices_and_alert(session)
+
+    assert calls == 2
+
+
+async def test_the_sweep_clamps_an_excessive_retry_after(
+    price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
+) -> None:
+    await _entries_for(session, [220])
+    sleeps = _patch_sleep(price_service, monkeypatch)
+    calls = 0
+
+    async def fake_get(steam_app_ids: list[int], api_key: str) -> dict:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise _status_error(429, "86400")
+        return dict.fromkeys(steam_app_ids, _game())
+
+    monkeypatch.setattr(price_service, "get_prices_by_steam_app_ids", fake_get)
 
     await price_service.check_prices_and_alert(session)
 
     assert sleeps == [price_service._RATE_LIMIT_MAX_WAIT_SECONDS]
 
 
-async def test_sweep_refreshes_the_least_recently_checked_game_first(
+async def test_the_sweep_refreshes_the_least_recently_checked_games_first(
     price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
 ) -> None:
     await _entries_for(session, [1, 2, 3])
-    for steam_app_id, age_hours in ((1, 1), (2, 5)):
-        await game_price_repo.upsert_game_price(
-            session,
-            UpsertGamePriceParams(
-                steam_app_id=steam_app_id,
-                deals=[],
-                on_sale=False,
-                checked_at=datetime.now(UTC).replace(tzinfo=None) - timedelta(hours=age_hours),
-            ),
-        )
-    order: list[int] = []
-
-    async def fake_sleep(seconds: float) -> None:
-        return None
-
-    async def fake_find(steam_app_id: int) -> int | None:
-        order.append(steam_app_id)
-        return None
-
-    _mock_no_stores(price_service, monkeypatch)
-    monkeypatch.setattr(price_service, "_sleep", fake_sleep)
-    monkeypatch.setattr(price_service, "find_cheapshark_game_id", fake_find)
+    await _store(session, 1, timedelta(hours=1))
+    await _store(session, 2, timedelta(hours=5))
+    _patch_sleep(price_service, monkeypatch)
+    batches = _serve(price_service, monkeypatch, game=_game())
 
     await price_service.check_prices_and_alert(session)
 
-    assert order == [3, 2, 1]
+    assert batches == [[3, 2, 1]]

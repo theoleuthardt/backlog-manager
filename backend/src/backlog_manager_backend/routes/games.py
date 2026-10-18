@@ -9,6 +9,7 @@ from litestar.params import FromPath, FromQuery, QueryParameter
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.auth.dependencies import BEARER_SECURITY_REQUIREMENT, get_current_user
+from backlog_manager_backend.config import settings
 from backlog_manager_backend.integrations.igdb import (
     get_cover_on_igdb,
     get_game_on_igdb,
@@ -33,6 +34,7 @@ from backlog_manager_backend.schemas.user import User
 from backlog_manager_backend.services import game_service, key_shop_price_service, price_service
 from backlog_manager_backend.services.credentials import (
     StoredCredentialError,
+    resolve_ggdeals_api_key,
     resolve_igdb_credentials,
     resolve_steamgriddb_api_key,
 )
@@ -43,7 +45,8 @@ _IGDB_REJECTED = "IGDB rejected the configured credentials"
 _CREDENTIAL_STATUSES = frozenset({400, 401, 403})
 _STEAMGRIDDB_NOT_CONFIGURED = "SteamGridDB integration is not configured"
 _STEAMGRIDDB_UNAVAILABLE = "SteamGridDB is currently unreachable"
-_CHEAPSHARK_UNAVAILABLE = "CheapShark is currently unreachable"
+_GGDEALS_NOT_CONFIGURED = "GG.deals prices are not configured"
+_GGDEALS_UNAVAILABLE = "GG.deals is currently unreachable"
 
 
 def _resolve_igdb_credentials(user: User) -> tuple[str, str]:
@@ -221,15 +224,21 @@ async def get_game_price(
     db_session: NamedDependency[AsyncSession],
     current_user: NamedDependency[User],
 ) -> GamePrice:
-    """current_user is unused (price data isn't user-specific) but must
-    stay declared - see authenticated_games_router's dependencies: a
-    router-level dependency only runs for handlers that declare it as a
-    parameter, so dropping this would silently leave the route
-    unauthenticated."""
+    """The GG.deals prices of a game, cached for a few hours. They are asked
+    for with the user's own GG.deals key or else the server's; a game
+    already in the cache is served even when GG.deals cannot be asked.
+    Without any key and without a cached answer, or when GG.deals fails,
+    this is a 503 and the client falls back to its search links."""
     try:
-        return await price_service.get_price_info(db_session, steam_app_id)
+        api_key = resolve_ggdeals_api_key(current_user)
+    except StoredCredentialError:
+        api_key = settings.ggdeals_api_key
+    try:
+        return await price_service.get_price_info(db_session, steam_app_id, api_key)
+    except price_service.PriceSourceNotConfiguredError as error:
+        raise ServiceUnavailableException(_GGDEALS_NOT_CONFIGURED) from error
     except httpx.HTTPError as error:
-        raise ServiceUnavailableException(_CHEAPSHARK_UNAVAILABLE) from error
+        raise ServiceUnavailableException(_GGDEALS_UNAVAILABLE) from error
 
 
 @get("/api/games/key-shop-prices")

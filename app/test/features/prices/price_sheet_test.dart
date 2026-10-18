@@ -15,23 +15,23 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../data/fakes.dart';
 
-PriceInfo prices(List<PriceDeal> deals, {bool onSale = false, double? ever}) =>
-    PriceInfo(deals: deals, onSale: onSale, cheapestPriceEver: ever);
+const ggDeals = 'https://gg.deals/game/hades/';
 
-const steam = PriceDeal(
-  store: 'Steam',
-  iconUrl: 'https://cdn.example/steam.png',
-  price: 12.5,
-  retailPrice: 25,
-  url: 'https://store.steampowered.com/app/1',
+PriceInfo prices({
+  double? retail = 12.5,
+  double? keyshops = 8,
+  double? historicalRetail = 7.99,
+  double? historicalKeyshops = 6,
+  String? url = ggDeals,
+}) => PriceInfo(
+  currency: 'EUR',
+  currentRetail: retail,
+  currentKeyshops: keyshops,
+  historicalRetail: historicalRetail,
+  historicalKeyshops: historicalKeyshops,
+  url: url,
 );
-const gog = PriceDeal(
-  store: 'GOG',
-  iconUrl: 'https://cdn.example/gog.png',
-  price: 10,
-  retailPrice: 25,
-  url: 'https://www.gog.com/game/1',
-);
+
 const royal = KeyShopOffer(
   shop: 'RoyalCDKeys',
   title: 'Hades',
@@ -48,7 +48,7 @@ Future<List<Uri>> pumpSheet(
   String title = 'Hades',
 }) async {
   final opened = <Uri>[];
-  tester.view.physicalSize = const Size(600, 560);
+  tester.view.physicalSize = const Size(600, 900);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
@@ -94,110 +94,194 @@ void main() {
     await tester.pump();
 
     expect(find.byKey(const Key('price-loading')), findsOneWidget);
-    pending.complete(prices([]));
+    pending.complete(prices());
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('price-loading')), findsNothing);
   });
 
-  testWidgets('says so when there is no price data', (tester) async {
+  testWidgets('says so when there is no price data and offers the search', (
+    tester,
+  ) async {
     await pumpSheet(tester, FakeGamesApi());
 
     expect(find.text('No price data available.'), findsOneWidget);
+    expect(find.byKey(const Key('keyforsteam-row')), findsOneWidget);
   });
 
-  testWidgets('says so when both lookups fail', (tester) async {
+  testWidgets('falls back to the Keyforsteam search when GG.deals is down', (
+    tester,
+  ) async {
     final api = FakeGamesApi();
     api.onPrice = (_) async => throw const ApiException('down');
     api.onKeyShops = (_) async => throw const ApiException('down');
 
-    await pumpSheet(tester, api);
-
-    expect(find.text('No price data available.'), findsOneWidget);
-  });
-
-  testWidgets('lists the deals and offers cheapest first', (tester) async {
-    final api = FakeGamesApi();
-    api.onPrice = (_) async => prices([steam, gog]);
-    api.onKeyShops = (_) async => [royal];
-
-    await pumpSheet(tester, api);
-
-    final tops = [
-      for (final key in [
-        'price-keyshop-RoyalCDKeys',
-        'price-cheapshark-GOG',
-        'price-cheapshark-Steam',
-      ])
-        tester.getTopLeft(find.byKey(Key(key))).dy,
-    ];
-    expect(tops, orderedEquals([...tops]..sort()));
-    expect(find.textContaining(r'$10.00'), findsOneWidget);
-    expect(find.textContaining('€8.00'), findsOneWidget);
-    expect(find.textContaining('-35%'), findsOneWidget);
-    expect(find.textContaining(r'$25.00'), findsNWidgets(2));
-  });
-
-  testWidgets('shows the sale banner and the all-time low', (tester) async {
-    final api = FakeGamesApi()
-      ..onPrice = (_) async => prices([steam, gog], onSale: true, ever: 7.99);
-
-    await pumpSheet(tester, api);
-
-    expect(find.byKey(const Key('sale-banner')), findsOneWidget);
-    expect(find.text('ON SALE NOW -60%'), findsOneWidget);
-    expect(find.textContaining('at GOG'), findsOneWidget);
-    expect(find.byKey(const Key('all-time-low-banner')), findsOneWidget);
-    expect(find.textContaining(r'$7.99'), findsOneWidget);
-  });
-
-  testWidgets('has no banners for a game that is not on sale', (tester) async {
-    final api = FakeGamesApi()..onPrice = (_) async => prices([steam]);
-
-    await pumpSheet(tester, api);
-
-    expect(find.byKey(const Key('sale-banner')), findsNothing);
-    expect(find.byKey(const Key('all-time-low-banner')), findsNothing);
-  });
-
-  testWidgets('a row opens its link in the browser', (tester) async {
-    final api = FakeGamesApi()..onPrice = (_) async => prices([gog]);
-    final opened = await pumpSheet(tester, api);
-
-    await tester.tap(find.byKey(const Key('price-cheapshark-GOG')));
-    await tester.pump();
-
-    expect(opened, [Uri.parse('https://www.gog.com/game/1')]);
-  });
-
-  testWidgets('the Keyforsteam row opens a Google site search', (tester) async {
-    final api = FakeGamesApi()..onPrice = (_) async => prices([gog]);
     final opened = await pumpSheet(tester, api, title: 'Hades II');
 
+    expect(find.text('No price data available.'), findsOneWidget);
     await tester.tap(find.byKey(const Key('keyforsteam-row')));
     await tester.pump();
-
     expect(
       opened.single.toString(),
       'https://www.google.com/search?q=site%3Akeyforsteam.de+Hades+II',
     );
   });
 
-  testWidgets('never opens a link that is not http or https', (tester) async {
-    final api = FakeGamesApi()
-      ..onPrice = (_) async => prices([
-        const PriceDeal(
-          store: 'Evil',
-          iconUrl: '',
-          price: 1,
-          retailPrice: 2,
-          url: 'javascript:alert(1)',
-        ),
-        gog,
-      ]);
+  testWidgets('keeps official store and keyshop prices apart', (tester) async {
+    final api = FakeGamesApi()..onPrice = (_) async => prices();
+
     await pumpSheet(tester, api);
 
-    expect(find.byKey(const Key('price-cheapshark-Evil')), findsNothing);
-    expect(find.byKey(const Key('price-cheapshark-GOG')), findsOneWidget);
+    expect(find.byKey(const Key('price-section-official')), findsOneWidget);
+    expect(find.byKey(const Key('price-section-keyshops')), findsOneWidget);
+    final official = tester.getTopLeft(
+      find.byKey(const Key('price-official-now')),
+    );
+    final keyshops = tester.getTopLeft(
+      find.byKey(const Key('price-keyshops-now')),
+    );
+    expect(
+      official.dy,
+      lessThan(
+        tester.getTopLeft(find.byKey(const Key('price-section-keyshops'))).dy,
+      ),
+    );
+    expect(keyshops.dy, greaterThan(official.dy));
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('price-official-now')),
+        matching: find.text('€12.50'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('price-official-ever')),
+        matching: find.text('€7.99'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('price-keyshops-now')),
+        matching: find.text('€8.00'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('price-keyshops-ever')),
+        matching: find.text('€6.00'),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('leaves out a price GG.deals does not have', (tester) async {
+    final api = FakeGamesApi()
+      ..onPrice = (_) async => prices(retail: null, historicalRetail: null);
+
+    await pumpSheet(tester, api);
+
+    expect(find.byKey(const Key('price-section-official')), findsNothing);
+    expect(find.byKey(const Key('price-keyshops-now')), findsOneWidget);
+  });
+
+  testWidgets('shows the banner when a price is at its lowest ever', (
+    tester,
+  ) async {
+    final api = FakeGamesApi()
+      ..onPrice = (_) async => prices(keyshops: 6, historicalKeyshops: 6);
+
+    await pumpSheet(tester, api);
+
+    expect(find.byKey(const Key('lowest-ever-banner')), findsOneWidget);
+    expect(find.text('LOWEST PRICE EVER'), findsOneWidget);
+    expect(find.textContaining('€6.00'), findsWidgets);
+    expect(find.textContaining('keyshop'), findsWidgets);
+  });
+
+  testWidgets('has no banner while the prices are above the lowest', (
+    tester,
+  ) async {
+    final api = FakeGamesApi()..onPrice = (_) async => prices();
+
+    await pumpSheet(tester, api);
+
+    expect(find.byKey(const Key('lowest-ever-banner')), findsNothing);
+  });
+
+  testWidgets('the rows and the attribution open the GG.deals page', (
+    tester,
+  ) async {
+    final api = FakeGamesApi()..onPrice = (_) async => prices();
+    final opened = await pumpSheet(tester, api);
+
+    await tester.tap(find.byKey(const Key('price-official-now')));
+    await tester.pump();
+    await tester.ensureVisible(find.byKey(const Key('gg-deals-attribution')));
+    await tester.tap(find.byKey(const Key('gg-deals-attribution')));
+    await tester.pump();
+
+    expect(opened, [Uri.parse(ggDeals), Uri.parse(ggDeals)]);
+  });
+
+  testWidgets('credits GG.deals as the source of the prices', (tester) async {
+    final api = FakeGamesApi()..onPrice = (_) async => prices();
+
+    await pumpSheet(tester, api);
+
+    expect(find.text('Prices by GG.deals'), findsOneWidget);
+  });
+
+  testWidgets('never opens a link that is not http or https', (tester) async {
+    final api = FakeGamesApi()
+      ..onPrice = (_) async => prices(url: 'javascript:alert(1)');
+    final opened = await pumpSheet(tester, api);
+
+    await tester.tap(find.byKey(const Key('price-official-now')));
+    await tester.pump();
+
+    expect(opened, isEmpty);
+  });
+
+  testWidgets('lists the key shop offers with the keyshops, cheapest first', (
+    tester,
+  ) async {
+    final api = FakeGamesApi();
+    api.onPrice = (_) async => prices();
+    api.onKeyShops = (_) async => [
+      royal,
+      const KeyShopOffer(
+        shop: 'PremiumCDKeys',
+        title: 'Hades',
+        price: 7,
+        currency: 'EUR',
+        url: 'https://premium.example/hades',
+      ),
+    ];
+
+    await pumpSheet(tester, api);
+
+    final tops = [
+      for (final key in [
+        'price-section-keyshops',
+        'price-keyshop-PremiumCDKeys',
+        'price-keyshop-RoyalCDKeys',
+      ])
+        tester.getTopLeft(find.byKey(Key(key))).dy,
+    ];
+    expect(tops, orderedEquals([...tops]..sort()));
+    expect(find.textContaining('-35%'), findsOneWidget);
+  });
+
+  testWidgets('an offer row opens its link in the browser', (tester) async {
+    final api = FakeGamesApi()..onKeyShops = (_) async => [royal];
+    final opened = await pumpSheet(tester, api);
+
+    await tester.tap(find.byKey(const Key('price-keyshop-RoyalCDKeys')));
+    await tester.pump();
+
+    expect(opened, [Uri.parse('https://royal.example/hades')]);
   });
 
   testWidgets('a game without a Steam App ID only asks the key shops', (
@@ -209,11 +293,12 @@ void main() {
 
     expect(api.calls, ['keys Hades']);
     expect(find.byKey(const Key('price-keyshop-RoyalCDKeys')), findsOneWidget);
+    expect(find.byKey(const Key('gg-deals-attribution')), findsNothing);
   });
 
   testWidgets('golden: the price sheet', tags: 'golden', (tester) async {
     final api = FakeGamesApi();
-    api.onPrice = (_) async => prices([steam, gog], onSale: true, ever: 7.99);
+    api.onPrice = (_) async => prices(keyshops: 6, historicalKeyshops: 6);
     api.onKeyShops = (_) async => [royal];
     await pumpSheet(tester, api);
     await tester.runAsync(

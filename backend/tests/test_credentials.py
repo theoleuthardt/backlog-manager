@@ -17,6 +17,7 @@ def credentials(postgres_url: str, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(settings, "igdb_client_id", None)
     monkeypatch.setattr(settings, "igdb_client_secret", None)
     monkeypatch.setattr(settings, "steamgriddb_api_key", None)
+    monkeypatch.setattr(settings, "ggdeals_api_key", None)
     return module
 
 
@@ -139,3 +140,37 @@ def test_stored_credentials_are_ignored_without_an_encryption_key(credentials, m
     monkeypatch.setattr(settings, "steamgriddb_api_key", "global-key")
 
     assert credentials.resolve_steamgriddb_api_key(user) == "global-key"
+
+
+def test_ggdeals_key_prefers_the_users_own_key(credentials, monkeypatch) -> None:
+    from backlog_manager_backend.config import settings
+
+    monkeypatch.setattr(settings, "ggdeals_api_key", "global-key")
+    user = _user(ggdeals_api_key_encrypted=_encrypt("own-key"))
+
+    assert credentials.resolve_ggdeals_api_key(user) == "own-key"
+
+
+def test_ggdeals_key_falls_back_to_the_server_wide_key(credentials, monkeypatch) -> None:
+    from backlog_manager_backend.config import settings
+
+    monkeypatch.setattr(settings, "ggdeals_api_key", "global-key")
+
+    assert credentials.resolve_ggdeals_api_key(_user()) == "global-key"
+
+
+def test_ggdeals_key_is_none_when_nothing_is_configured(credentials) -> None:
+    assert credentials.resolve_ggdeals_api_key(_user()) is None
+
+
+def test_ggdeals_key_raises_for_an_undecryptable_stored_key(credentials) -> None:
+    user = _user(ggdeals_api_key_encrypted="not-a-valid-token")
+
+    with pytest.raises(credentials.StoredCredentialError):
+        credentials.resolve_ggdeals_api_key(user)
+
+
+def test_ggdeals_key_or_none_treats_a_broken_stored_key_as_not_set(credentials) -> None:
+    user = _user(ggdeals_api_key_encrypted="not-a-valid-token")
+
+    assert credentials.resolve_ggdeals_api_key_or_none(user) is None

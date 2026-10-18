@@ -42,7 +42,7 @@ void _cacheFor(Ref ref, Duration ttl) {
   ref.onDispose(timer.cancel);
 }
 
-/// The CheapShark prices of a Steam game, cached for an hour.
+/// The GG.deals prices of a Steam game, cached for an hour.
 final gamePriceProvider = FutureProvider.autoDispose.family<PriceInfo, int>((
   ref,
   steamAppId,

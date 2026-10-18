@@ -17,6 +17,7 @@ PublicUser _$PublicUserFromJson(Map<String, dynamic> json) => PublicUser(
   hasSteamApiKey: json['has_steam_api_key'] as bool? ?? false,
   hasIgdbCredentials: json['has_igdb_credentials'] as bool? ?? false,
   hasSteamgriddbApiKey: json['has_steamgriddb_api_key'] as bool? ?? false,
+  hasGgdealsApiKey: json['has_ggdeals_api_key'] as bool? ?? false,
   hasDiscordWebhookUrl: json['has_discord_webhook_url'] as bool? ?? false,
   steamAutoImportEnabled: json['steam_auto_import_enabled'] as bool? ?? false,
   steamWishlistAutoSync: json['steam_wishlist_auto_sync'] as bool? ?? false,
@@ -49,6 +50,7 @@ Map<String, dynamic> _$PublicUserToJson(PublicUser instance) =>
       'has_steam_api_key': instance.hasSteamApiKey,
       'has_igdb_credentials': instance.hasIgdbCredentials,
       'has_steamgriddb_api_key': instance.hasSteamgriddbApiKey,
+      'has_ggdeals_api_key': instance.hasGgdealsApiKey,
       'has_discord_webhook_url': instance.hasDiscordWebhookUrl,
       'steam_auto_import_enabled': instance.steamAutoImportEnabled,
       'steam_wishlist_imported_at': instance.steamWishlistImportedAt

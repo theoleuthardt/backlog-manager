@@ -10450,30 +10450,11 @@
           "steam_app_id": {
             "type": "integer"
           },
-          "deals": {
-            "items": {
-              "$ref": "#/components/schemas/GamePriceDeal"
-            },
-            "type": "array"
-          },
-          "on_sale": {
-            "type": "boolean"
-          },
           "checked_at": {
             "type": "string",
             "format": "date-time"
           },
-          "cheapshark_game_id": {
-            "oneOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "cheapest_price_ever": {
+          "currency": {
             "oneOf": [
               {
                 "type": "string"
@@ -10483,11 +10464,50 @@
               }
             ]
           },
-          "cheapest_price_ever_date": {
+          "current_retail": {
             "oneOf": [
               {
-                "type": "string",
-                "format": "date"
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "current_keyshops": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "historical_retail": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "historical_keyshops": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "url": {
+            "oneOf": [
+              {
+                "type": "string"
               },
               {
                 "type": "null"
@@ -10498,39 +10518,9 @@
         "type": "object",
         "required": [
           "checked_at",
-          "deals",
-          "on_sale",
           "steam_app_id"
         ],
         "title": "GamePrice"
-      },
-      "GamePriceDeal": {
-        "properties": {
-          "store": {
-            "type": "string"
-          },
-          "icon": {
-            "type": "string"
-          },
-          "price": {
-            "type": "number"
-          },
-          "retail_price": {
-            "type": "number"
-          },
-          "url": {
-            "type": "string"
-          }
-        },
-        "type": "object",
-        "required": [
-          "icon",
-          "price",
-          "retail_price",
-          "store",
-          "url"
-        ],
-        "title": "GamePriceDeal"
       },
       "IGDBCover": {
         "properties": {
@@ -11774,6 +11764,10 @@
             "type": "boolean",
             "default": false
           },
+          "has_ggdeals_api_key": {
+            "type": "boolean",
+            "default": false
+          },
           "has_discord_webhook_url": {
             "type": "boolean",
             "default": false
@@ -12708,6 +12702,16 @@
               }
             ]
           },
+          "ggdeals_api_key": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "discord_webhook_url": {
             "oneOf": [
               {
@@ -12854,6 +12858,16 @@
             ]
           },
           "steamgriddb_api_key": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ggdeals_api_key": {
             "oneOf": [
               {
                 "type": "string"

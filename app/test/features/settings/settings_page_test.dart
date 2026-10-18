@@ -48,6 +48,7 @@ SessionUser applied(SessionUser user, UserUpdate update) {
     hasSteamApiKey: has('steam_api_key', user.hasSteamApiKey),
     hasIgdbCredentials: has('igdb_client_id', user.hasIgdbCredentials),
     hasSteamgriddbApiKey: has('steamgriddb_api_key', user.hasSteamgriddbApiKey),
+    hasGgdealsApiKey: has('ggdeals_api_key', user.hasGgdealsApiKey),
     hasDiscordWebhookUrl: has('discord_webhook_url', user.hasDiscordWebhookUrl),
     steamWishlistAutoSync: json.containsKey('steam_wishlist_auto_sync')
         ? json['steam_wishlist_auto_sync']! as bool
@@ -596,6 +597,41 @@ void main() {
       expect(settings.users.updates.last.steamgriddbApiKey, '');
       expect(find.text('SteamGridDB API key removed'), findsOneWidget);
       await tester.pump(const Duration(seconds: 6));
+    });
+  });
+
+  group('GG.deals', () {
+    testWidgets('saves and removes the GG.deals key', (tester) async {
+      final settings = await openSettings(tester, location: integrations);
+
+      await commit(tester, const Key('settings-ggdeals-key'), 'gg-secret');
+      expect(settings.users.updates.single.ggdealsApiKey, 'gg-secret');
+      expect(find.text('GG.deals API key saved'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 6));
+
+      await tester.tap(find.byKey(const Key('settings-ggdeals-remove')));
+      await tester.pumpAndSettle();
+      expect(settings.users.updates.last.ggdealsApiKey, '');
+      expect(find.text('GG.deals API key removed'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('says when the own key is set', (tester) async {
+      await openSettings(
+        tester,
+        location: integrations,
+        user: const SessionUser(
+          name: 'Theo',
+          email: 'theo@example.com',
+          setupCompleted: true,
+          hasGgdealsApiKey: true,
+        ),
+      );
+
+      expect(
+        find.text('Your own key is set and used for game prices.'),
+        findsOneWidget,
+      );
     });
   });
 

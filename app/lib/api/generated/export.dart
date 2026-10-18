@@ -22,7 +22,6 @@ export 'models/custom_theme.dart';
 export 'models/enriched_result.dart';
 export 'models/entry_mod_response.dart';
 export 'models/game_price.dart';
-export 'models/game_price_deal.dart';
 export 'models/igdb_cover.dart';
 export 'models/igdb_game_data.dart';
 export 'models/igdb_game_time_to_beat.dart';

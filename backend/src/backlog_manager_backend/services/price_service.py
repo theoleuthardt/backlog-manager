@@ -1,5 +1,5 @@
 import asyncio
-from datetime import UTC, date, datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 
 import httpx
@@ -9,45 +9,43 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.auth.encryption import decrypt
 from backlog_manager_backend.config import settings
-from backlog_manager_backend.integrations.cheapshark import (
-    find_cheapshark_game_id,
-    get_cheapshark_game_detail,
-    get_stores,
-)
 from backlog_manager_backend.integrations.discord import (
     is_valid_discord_webhook_url,
     send_discord_webhook_message,
 )
+from backlog_manager_backend.integrations.ggdeals import get_prices_by_steam_app_ids
+from backlog_manager_backend.integrations.types import GgDealsGame
 from backlog_manager_backend.repositories import (
     game_price_repo,
     user_game_price_alert_repo,
     user_repo,
 )
-from backlog_manager_backend.schemas.game_price import (
-    GamePrice,
-    GamePriceDeal,
-    UpsertGamePriceParams,
-)
+from backlog_manager_backend.schemas.game_price import GamePrice, UpsertGamePriceParams
 from backlog_manager_backend.schemas.user import User
 
 logger = structlog.get_logger()
 
-_STALE_AFTER_SECONDS = 60 * 60
+_STALE_AFTER_SECONDS = 3 * 60 * 60
 
-_SWEEP_REQUEST_PAUSE_SECONDS = 0.5
+_SWEEP_BATCH_SIZE = 25
+_SWEEP_BATCH_PAUSE_SECONDS = 20.0
+"""GG.deals allows 100 records per minute and 1000 per hour for one key and
+counts every id of a request: 25 ids every 20 seconds is 75 a minute."""
+
 _RATE_LIMIT_RETRIES = 2
-_RATE_LIMIT_DEFAULT_WAIT_SECONDS = 30.0
+_RATE_LIMIT_DEFAULT_WAIT_SECONDS = 60.0
 _RATE_LIMIT_MAX_WAIT_SECONDS = 120.0
-
-_store_names: dict[str, str] = {}
-_store_icons: dict[str, str] = {}
-
-_DEAL_REDIRECT_URL = "https://www.cheapshark.com/redirect?dealID="
-_STORE_ICON_BASE_URL = "https://www.cheapshark.com"
+_KEY_REJECTED_STATUSES = (401, 403)
 
 
-class _SweepRateLimitedError(Exception):
-    """CheapShark kept answering 429 after the retries of one game."""
+class PriceSourceNotConfiguredError(Exception):
+    """No GG.deals API key is configured for the user or the server, and
+    there is no earlier answer to serve."""
+
+
+class _SweepAbortedError(Exception):
+    """The sweep cannot go on: the rate limit persisted after the retries
+    of one batch, or GG.deals rejected the key."""
 
 
 async def _sleep(seconds: float) -> None:
@@ -55,9 +53,9 @@ async def _sleep(seconds: float) -> None:
 
 
 def _retry_after_seconds(response: httpx.Response) -> float:
-    """How long to wait after a 429: CheapShark's Retry-After (in seconds)
-    when it sends one, otherwise a default, capped so a bad header cannot
-    stall the sweep."""
+    """How long to wait after a 429: GG.deals' Retry-After (in seconds) when
+    it sends one, otherwise a default, capped so a bad header cannot stall
+    the sweep."""
     try:
         wait = float(response.headers["Retry-After"])
     except (KeyError, ValueError):
@@ -73,96 +71,83 @@ def _is_stale(checked_at: datetime) -> bool:
     return (_now() - checked_at).total_seconds() > _STALE_AFTER_SECONDS
 
 
-async def _ensure_stores_cached() -> None:
-    """Populates _store_names/_store_icons at most once per process -
-    unbounded and never expired, like game_service's
-    _genre_cache/_platform_cache, since CheapShark's store list changes
-    rarely."""
-    if _store_names:
-        return
-    try:
-        for store in await get_stores():
-            _store_names[store.storeID] = store.storeName
-            _store_icons[store.storeID] = f"{_STORE_ICON_BASE_URL}{store.images.icon}"
-    except httpx.HTTPError:
-        logger.error("Failed to fetch CheapShark store list")
+def _decimal(value: str | None) -> Decimal | None:
+    return None if value is None else Decimal(value)
 
 
-def _cheapest_price_ever_date(timestamp: int) -> date | None:
-    return datetime.fromtimestamp(timestamp, tz=UTC).date() if timestamp else None
-
-
-async def _fetch_and_store_price(session: AsyncSession, steam_app_id: int) -> GamePrice:
-    """Refreshes one game's price data from CheapShark and persists it."""
-    await _ensure_stores_cached()
-
-    cheapshark_game_id = await find_cheapshark_game_id(steam_app_id)
-    if cheapshark_game_id is None:
-        return await game_price_repo.upsert_game_price(
+async def _fetch_and_store_prices(
+    session: AsyncSession, steam_app_ids: list[int], api_key: str
+) -> dict[int, GamePrice]:
+    """Refreshes the given games from GG.deals and persists them in one go.
+    A game GG.deals does not know is stored without prices, so it is not
+    asked for again before the cache runs out."""
+    games: dict[int, GgDealsGame | None] = await get_prices_by_steam_app_ids(steam_app_ids, api_key)
+    checked_at = _now()
+    stored: dict[int, GamePrice] = {}
+    for steam_app_id, game in games.items():
+        prices = game.prices if game is not None else None
+        stored[steam_app_id] = await game_price_repo.upsert_game_price(
             session,
             UpsertGamePriceParams(
-                steam_app_id=steam_app_id, deals=[], on_sale=False, checked_at=_now()
+                steam_app_id=steam_app_id,
+                checked_at=checked_at,
+                currency=prices.currency if prices else None,
+                current_retail=_decimal(prices.current_retail) if prices else None,
+                current_keyshops=_decimal(prices.current_keyshops) if prices else None,
+                historical_retail=_decimal(prices.historical_retail) if prices else None,
+                historical_keyshops=_decimal(prices.historical_keyshops) if prices else None,
+                url=game.url if game else None,
             ),
         )
-
-    detail = await get_cheapshark_game_detail(cheapshark_game_id)
-    deals = [
-        GamePriceDeal(
-            store=_store_names.get(deal.storeID, deal.storeID),
-            icon=_store_icons.get(deal.storeID, ""),
-            price=float(deal.price),
-            retail_price=float(deal.retailPrice),
-            url=f"{_DEAL_REDIRECT_URL}{deal.dealID}",
-        )
-        for deal in detail.deals
-    ]
-    on_sale = any(float(deal.savings) > 0 for deal in detail.deals)
-    cheapest_price_ever = (
-        Decimal(detail.cheapestPriceEver.price) if detail.cheapestPriceEver.price else None
-    )
-
-    return await game_price_repo.upsert_game_price(
-        session,
-        UpsertGamePriceParams(
-            steam_app_id=steam_app_id,
-            deals=deals,
-            on_sale=on_sale,
-            checked_at=_now(),
-            cheapshark_game_id=cheapshark_game_id,
-            cheapest_price_ever=cheapest_price_ever,
-            cheapest_price_ever_date=_cheapest_price_ever_date(detail.cheapestPriceEver.date),
-        ),
-    )
+    return stored
 
 
-async def _refresh_for_sweep(session: AsyncSession, steam_app_id: int) -> GamePrice:
-    """Refreshes one game for the sweep, waiting out a CheapShark 429 up to
-    _RATE_LIMIT_RETRIES times before giving up with _SweepRateLimitedError."""
-    for attempt in range(_RATE_LIMIT_RETRIES + 1):
-        try:
-            return await _fetch_and_store_price(session, steam_app_id)
-        except httpx.HTTPStatusError as error:
-            if error.response.status_code != 429:
-                raise
-            if attempt == _RATE_LIMIT_RETRIES:
-                raise _SweepRateLimitedError from error
-            await _sleep(_retry_after_seconds(error.response))
-    raise AssertionError("unreachable")
-
-
-async def get_price_info(session: AsyncSession, steam_app_id: int) -> GamePrice:
-    """On-demand path powering the BacklogEntry detail view - serves the
-    persisted GamePrice row unless it's missing or older than
-    _STALE_AFTER_SECONDS, in which case it refreshes from CheapShark
-    first."""
+async def get_price_info(
+    session: AsyncSession, steam_app_id: int, api_key: str | None
+) -> GamePrice:
+    """On-demand path behind GET /api/games/{id}/price: serves the persisted
+    row unless it is missing or older than _STALE_AFTER_SECONDS, in which
+    case it asks GG.deals with [api_key] (the user's own key or the
+    server's). When GG.deals cannot be asked (no key) or fails, an older
+    row is still better than nothing and is served; without one this
+    raises PriceSourceNotConfiguredError or the httpx error."""
     existing = await game_price_repo.get_game_price(session, steam_app_id)
     if existing is not None and not _is_stale(existing.checked_at):
         return existing
-    return await _fetch_and_store_price(session, steam_app_id)
+    if api_key is None:
+        if existing is not None:
+            return existing
+        raise PriceSourceNotConfiguredError
+    try:
+        return (await _fetch_and_store_prices(session, [steam_app_id], api_key))[steam_app_id]
+    except httpx.HTTPError:
+        if existing is not None:
+            return existing
+        raise
 
 
-def _format_alert_message(title: str, price: float, store: str, retail_price: float) -> str:
-    return f"🔥 **{title}** is on sale for ${price:.2f} at {store} (was ${retail_price:.2f})!"
+def _lowest_ever_price(price: GamePrice) -> tuple[Decimal, str] | None:
+    """The price (and where: "official store" or "keyshop") that is at the
+    lowest it has ever been, the cheaper one when both are; None when
+    neither is. A price of 0 is never one (a free game is always at its
+    lowest)."""
+    candidates = [
+        (current, channel)
+        for current, historical, channel in (
+            (price.current_retail, price.historical_retail, "official store"),
+            (price.current_keyshops, price.historical_keyshops, "keyshop"),
+        )
+        if current is not None and historical is not None and 0 < current <= historical
+    ]
+    return min(candidates, key=lambda candidate: candidate[0]) if candidates else None
+
+
+def _format_alert_message(
+    title: str, amount: Decimal, currency: str | None, channel: str, url: str | None
+) -> str:
+    price = f"{amount:.2f} {currency}" if currency else f"{amount:.2f}"
+    message = f"🔥 **{title}** is at its lowest price ever: {price} ({channel})"
+    return f"{message} - {url}" if url else message
 
 
 def _resolve_discord_webhook_url(user: User) -> str | None:
@@ -192,19 +177,47 @@ def _resolve_discord_webhook_url(user: User) -> str | None:
     return settings.discord_webhook_url
 
 
+async def _refresh_batch_for_sweep(
+    session: AsyncSession, steam_app_ids: list[int], api_key: str
+) -> dict[int, GamePrice]:
+    """Refreshes one batch, waiting out a 429 up to _RATE_LIMIT_RETRIES times
+    before giving up with _SweepAbortedError; a rejected key aborts at once."""
+    for attempt in range(_RATE_LIMIT_RETRIES + 1):
+        try:
+            return await _fetch_and_store_prices(session, steam_app_ids, api_key)
+        except httpx.HTTPStatusError as error:
+            status = error.response.status_code
+            if status in _KEY_REJECTED_STATUSES:
+                logger.error("GG.deals rejected the API key", status=status)
+                raise _SweepAbortedError from error
+            if status != 429:
+                raise
+            if attempt == _RATE_LIMIT_RETRIES:
+                raise _SweepAbortedError from error
+            await _sleep(_retry_after_seconds(error.response))
+    raise AssertionError("unreachable")
+
+
 async def check_prices_and_alert(session: AsyncSession) -> int:
     """The periodic sweep behind POST /api/prices/check: refreshes every
-    tracked-but-not-yet-owned Steam App ID's price once, then sends one
-    Discord message per (user, game) pair that is newly on sale for that
-    user - see docs/PRICE_TRACKING.md. Dedup (UserGamePriceAlert) and the
-    webhook to notify are both per user, since two users tracking the
-    same game may have different webhooks (their own, or the global
-    fallback) and must each be notified independently.
+    tracked-but-not-yet-owned Steam App ID once with the server's GG.deals
+    key (nothing happens without one), in batches with a pause that keeps
+    to the rate limit, then sends one Discord message per (user, game)
+    pair whose price is at its lowest ever - see docs/PRICE_TRACKING.md.
+    Dedup (UserGamePriceAlert) and the webhook to notify are both per
+    user, since two users tracking the same game may have different
+    webhooks (their own, or the global fallback) and must each be
+    notified independently.
 
     Alert-dedup is claimed atomically (try_claim_alert) before sending,
     so two overlapping sweeps can't both deliver the same alert; a
     failed send reverts the claim so a later sweep retries instead of
     the price going permanently unalerted."""
+    api_key = settings.ggdeals_api_key
+    if not api_key:
+        logger.warning("Price sweep skipped: GGDEALS_API_KEY is not set")
+        return 0
+
     alerts_sent = 0
     pairs = await game_price_repo.get_tracked_user_steam_app_id_pairs(session, owned=False)
 
@@ -221,39 +234,40 @@ async def check_prices_and_alert(session: AsyncSession) -> int:
 
     prices: dict[int, GamePrice] = {}
     failed = 0
-    rate_limited = False
-    for index, steam_app_id in enumerate(ordered):
-        if index:
-            await _sleep(_SWEEP_REQUEST_PAUSE_SECONDS)
+    aborted = False
+    for start in range(0, len(ordered), _SWEEP_BATCH_SIZE):
+        batch = ordered[start : start + _SWEEP_BATCH_SIZE]
+        if start:
+            await _sleep(_SWEEP_BATCH_PAUSE_SECONDS)
         try:
-            prices[steam_app_id] = await _refresh_for_sweep(session, steam_app_id)
-        except _SweepRateLimitedError:
-            rate_limited = True
+            prices.update(await _refresh_batch_for_sweep(session, batch, api_key))
+        except _SweepAbortedError:
+            aborted = True
             break
         except httpx.HTTPError:
-            failed += 1
-            logger.error("Failed to refresh price for sweep", steam_app_id=steam_app_id)
+            failed += len(batch)
+            logger.error("Failed to refresh prices for sweep", games=len(batch))
     logger.info(
         "Price sweep refreshed",
         refreshed=len(prices),
         failed=failed,
-        skipped_rate_limited=len(ordered) - len(prices) - failed if rate_limited else 0,
+        skipped=len(ordered) - len(prices) - failed if aborted else 0,
     )
 
     for user_id, steam_app_id in pairs:
         price = prices.get(steam_app_id)
-        if price is None or not price.on_sale or not price.deals:
+        lowest = _lowest_ever_price(price) if price is not None else None
+        if price is None or lowest is None:
             continue
+        amount, channel = lowest
 
         user = await user_repo.get_user_by_id(session, user_id)
         webhook_url = _resolve_discord_webhook_url(user)
         if webhook_url is None:
             continue
 
-        cheapest_deal = min(price.deals, key=lambda deal: deal.price)
-        current_price = Decimal(str(cheapest_deal.price))
         claimed = await user_game_price_alert_repo.try_claim_alert(
-            session, user_id, steam_app_id, current_price
+            session, user_id, steam_app_id, amount
         )
         if not claimed:
             continue
@@ -264,10 +278,7 @@ async def check_prices_and_alert(session: AsyncSession) -> int:
         delivered = await send_discord_webhook_message(
             webhook_url,
             _format_alert_message(
-                title or f"Steam App {steam_app_id}",
-                cheapest_deal.price,
-                cheapest_deal.store,
-                cheapest_deal.retail_price,
+                title or f"Steam App {steam_app_id}", amount, price.currency, channel, price.url
             ),
         )
         if not delivered:

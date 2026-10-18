@@ -24,6 +24,7 @@ class UserUpdate {
     this.igdbClientSecret,
     this.steamFamilyIds,
     this.steamgriddbApiKey,
+    this.ggdealsApiKey,
     this.discordWebhookUrl,
     this.steamWishlistAutoSync,
     this.setupCompleted,
@@ -38,6 +39,7 @@ class UserUpdate {
   final String? igdbClientSecret;
   final String? steamFamilyIds;
   final String? steamgriddbApiKey;
+  final String? ggdealsApiKey;
   final String? discordWebhookUrl;
   final bool? steamWishlistAutoSync;
   final bool? setupCompleted;
@@ -52,6 +54,7 @@ class UserUpdate {
     'igdb_client_secret': ?igdbClientSecret,
     'steam_family_ids': ?steamFamilyIds,
     'steamgriddb_api_key': ?steamgriddbApiKey,
+    'ggdeals_api_key': ?ggdealsApiKey,
     'discord_webhook_url': ?discordWebhookUrl,
     'steam_wishlist_auto_sync': ?steamWishlistAutoSync,
     'setup_completed': ?setupCompleted,

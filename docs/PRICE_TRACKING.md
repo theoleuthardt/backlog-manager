@@ -1,89 +1,33 @@
-# Game Price Tracking (Issue #102)
+# Game Price Tracking (Issues #102, #411)
 
-## Context
+Prices come from the [GG.deals API](https://gg.deals/api/), which covers the official stores and keyshops and replaced CheapShark in #411 (CheapShark never had keyshops, and the GG.deals terms are one source to follow instead of two). Scraping is not an option: GG.deals blocks it.
 
-Issue #102 asks for three things: current price across Steam/GOG/retailers, all-time-low price, and a sale-alert system. Research before implementing surfaced two facts that reshape scope:
+## What the API gives
 
-- **SteamDB has no public API** (its ToS explicitly disallows scraping/unofficial API use), so "all-time low from SteamDB" isn't buildable on a legitimate API. **CheapShark's own `/games?id=` endpoint already returns a `cheapestPriceEver` field**, which covers the all-time-low requirement without SteamDB.
-- **The backend has no background job/scheduler at all** — everything today is on-demand HTTP. A real periodic price-check needs a new externally-triggered endpoint (e.g. a scheduled GitHub Actions workflow hitting the backend), not a new in-process scheduler.
+`GET https://api.gg.deals/v1/prices/by-steam-app-id/?ids=<id,id,...>&key=<key>` answers with `{"success": true, "data": {"<steam app id>": {"title", "url", "prices": {...}} | null}}`. `prices` has `currentRetail`, `currentKeyshops`, `historicalRetail`, `historicalKeyshops` (decimal strings, null where there is none) and `currency`; an id GG.deals does not know is `null`. The cheapest price **per channel** is all there is: no list of stores, no regular price (so no "on sale" or discount, only "at its lowest ever"). The key is a query parameter, so `integrations/ggdeals.py` never puts the URL into an error message or log line and keeps the `httpx` logger at WARNING (it prints every request URL at INFO).
 
-Scoping decisions made with the repo owner:
-- Scope = price display (current + all-time-low) **and** a lightweight alert mechanism (not full job-scheduler infra).
-- "Alert system" means **a Discord webhook message**, not an in-app notification.
-- The Discord webhook is **per-user, set in Account settings**, falling back to a server-wide `DISCORD_WEBHOOK_URL` env var for users who haven't set their own — the same per-user-credential-with-server-wide-fallback pattern as the Steam/IGDB/SteamGridDB keys.
+Limits of a free key: 100 records per minute and 1000 per hour, every id of a request is one record, and a request over the limit is a 429 without data. Free keys are for personal, hobby and open-source use, **with an active link to GG.deals wherever the data is shown** and the `url` of a game left as it is (it carries their referral). The Flutter price sheet has the "Prices by GG.deals" link and opens the `url` unchanged.
 
-CheapShark (`https://www.cheapshark.com/api/1.0/`) needs no API key. Relevant endpoints: `GET /games?steamAppID=<id>` (resolve CheapShark's internal `gameID` for a Steam App ID) and `GET /games?id=<gameID>` (per-store `deals` with `price`/`retailPrice`/`savings`, plus `cheapestPriceEver`).
+## Keys
 
-## Backend design
+The key is the server's `GGDEALS_API_KEY` (`.env`) or the user's own (`Users.GgDealsApiKeyEncrypted`, Fernet like the other keys, `PUT /api/user/me` with `ggdeals_api_key`, `has_ggdeals_api_key` in the user; `services/credentials.py::resolve_ggdeals_api_key`, the user's key first). The on-demand route uses that resolution. The sweep has no user and uses the server's key only: without it nothing is refreshed (a log line says so).
 
-**New integration** — `backend/src/backlog_manager_backend/integrations/cheapshark.py`, following the shape of `integrations/steamgriddb.py` (fresh `httpx.AsyncClient` per call, `msgspec.json.decode`, raise on transport/HTTP/decode error since this isn't a best-effort enrichment step):
-- `find_cheapshark_game_id(steam_app_id: int) -> int | None` — `GET /games?steamAppID=`, returns the first match's `gameID` (CheapShark returns this as a numeric string in JSON — modeled as `str` and parsed with `int()`).
-- `get_cheapshark_game_detail(cheapshark_game_id: int) -> CheapSharkGameDetail` — `GET /games?id=`, decodes `deals` (list of `{storeID, price, retailPrice, savings}`) and `cheapestPriceEver` (`{price, date}`).
-- `get_stores() -> list[CheapSharkStore]` — `GET /stores`, for mapping `storeID` → display name (`storeID`, `storeName`, `isActive`).
+## Backend
 
-New msgspec structs live in `integrations/types.py` alongside the existing `SteamGridDB*`/`IGDB*` structs: `CheapSharkDeal`, `CheapSharkPriceEver`, `CheapSharkGameInfo`, `CheapSharkGameDetail`, `CheapSharkStore`, `CheapSharkGameLookup`.
+- `GamePrices` (one row per Steam App ID, shared by all users): `Currency`, `CurrentRetail`, `CurrentKeyshops`, `HistoricalRetail`, `HistoricalKeyshops`, `Url`, `CheckedAt`. A game GG.deals does not know is stored with all prices empty, so it is asked for again only when the cache runs out.
+- `price_service.get_price_info(session, steam_app_id, api_key)`: serves the row while it is younger than three hours, else asks GG.deals with `api_key`. Without a key, or when GG.deals fails, an older row is still served; without any row it raises (`PriceSourceNotConfiguredError`, `httpx.HTTPError`) and `GET /api/games/{steam_app_id}/price` answers 503, so the client falls back to its search link.
+- `price_service.check_prices_and_alert`: the sweep behind `POST /api/prices/check` (`X-Cron-Secret`, the `price-check-cron` container every 6 hours). It refreshes every tracked, not yet owned Steam App ID, least recently checked first, in batches of 25 ids with 20 seconds between them (75 records a minute); a 429 is waited out (`Retry-After`, 60 s without one, at most 120 s) up to twice per batch, a persistent 429 or a rejected key (401/403) stops the sweep and the rest is picked up first next time, any other error skips that batch. Then it sends one Discord message per (user, game) whose current price is **at its lowest ever** (the retail or the keyshop price is at or below its historical one, never 0), quoting the price, the channel and the GG.deals link. Dedup per user and price (`UserGamePriceAlerts`) and the per-user webhook with the server fallback are unchanged.
 
-**New Discord integration** — `backend/src/backlog_manager_backend/integrations/discord.py`:
-- `send_discord_webhook_message(webhook_url: str, content: str) -> None` — plain `httpx.AsyncClient().post(webhook_url, json={"content": content})`. Best-effort: catches `httpx.HTTPError`, logs via `structlog`, swallows (mirrors `_try_get_steamgriddb_covers`'s best-effort convention) — a Discord outage must not break the price sweep.
+The old alert was "on sale" (a CheapShark deal with a saving); GG.deals does not report a regular price, so the alert is now "lowest price ever".
 
-**Per-user Discord webhook** — a new `User.discord_webhook_url_encrypted` column (Fernet-encrypted, same shared key as the Steam/SteamGridDB columns), wired through `schemas/user.py`, `repositories/user_repo.py` and `routes/user.py` exactly like `steamgriddb_api_key` (reuses the existing `_encrypt_api_key_if_present` helper). Resolution (`price_service._resolve_discord_webhook_url`) checks the user's own decrypted webhook first, falling back to `settings.discord_webhook_url`.
+## Keyshop scrapers
 
-**New models + migrations**, both under `schema="blm-system"`:
-- `models/game_price.py` — `GamePrice`, one row per tracked `steam_app_id` (shared cache across all users, since the CheapShark data itself doesn't vary by who's tracking it):
-  ```
-  SteamAppId            BigInteger, PK
-  CheapsharkGameId      BigInteger, nullable   -- cached steamAppID -> CheapShark gameID mapping
-  Deals                 JSON, nullable          -- [{"store": "Steam", "price": 9.99, "retail_price": 19.99}, ...]
-  CheapestPriceEver     Numeric(10,2), nullable
-  CheapestPriceEverDate Date, nullable
-  OnSale                Boolean, server_default false
-  CheckedAt             Timestamp, not null
-  ```
-- `models/user_game_price_alert.py` — `UserGamePriceAlert`, per-**user** alert-dedup state (composite PK `UserID`+`SteamAppId`, FK to `Users` with cascade delete):
-  ```
-  UserID           BigInteger, PK, FK -> Users
-  SteamAppId       BigInteger, PK
-  LastAlertedPrice Numeric(10,2), not null
-  UpdatedAt        Timestamp, server_default
-  ```
-  This has to be per-user, not shared on `GamePrice`, because two users tracking the same game can have different Discord webhooks and must each be notified independently — a global "already alerted" flag would silently skip the second user.
-
-These are the first two Alembic migrations in the repo that `create_table` rather than `add_column`/`drop_column` (all prior ones only touched existing columns) — written by hand after autogenerate, since autogenerate also picks up unrelated pre-existing schema drift between the SQLAlchemy models and the baselined DB that has nothing to do with this change.
-
-**New repositories**:
-- `repositories/game_price_repo.py`: `get_game_price`, `upsert_game_price`, `get_tracked_user_steam_app_id_pairs(session, *, owned=None) -> list[tuple[int, int]]` (distinct `(UserID, SteamAppId)` pairs from `BacklogEntries`, `owned=False` for the sweep), `get_title_for_steam_app_id`, `get_checked_at_by_steam_app_id(session, steam_app_ids) -> dict[int, datetime]`.
-- `repositories/user_game_price_alert_repo.py`: `get_last_alerted_price`, `set_last_alerted_price` (upsert).
-
-**New service** — `services/price_service.py`, following `game_service.py`'s style:
-- `_STALE_AFTER_SECONDS = 3600` (1 hour).
-- `_store_names` in-memory cache (unbounded, no TTL — same convention as `_genre_cache`/`_platform_cache`), populated lazily from `get_stores()`.
-- `get_price_info(session, steam_app_id) -> GamePrice` — on-demand path: returns the cached row if `CheckedAt` is fresh, otherwise refreshes from CheapShark, computes `OnSale` (any deal with `savings > 0`), upserts, and returns.
-- `check_prices_and_alert(session) -> int` — the sweep: fetches every distinct `(user_id, steam_app_id)` pair with `owned=False`, refreshes each distinct `steam_app_id`'s price once, then for each pair whose price is on sale: resolves that user's Discord webhook, skips if it hasn't changed since `UserGamePriceAlert.LastAlertedPrice`, otherwise sends one Discord message and updates the dedup row. Returns the alert count.
-
-  Throttling: CheapShark answers `429` after roughly 40 quick requests, so the sweep refreshes the least recently checked games first (never-checked ones before all others), pauses 0.5 s between games, and waits out a `429` (the `Retry-After` header, 30 s without one, capped at 120 s) up to two times per game. When a game is still rate limited the sweep stops instead of failing every remaining game, and the rest is picked up first by the next sweep. One `Price sweep refreshed` log line reports refreshed, failed and rate-limited counts. The sweep can now run for minutes inside one request, so the `price-check-cron` `curl` call allows 1800 s.
-
-**New routes**:
-- `GET /api/games/{steam_app_id:int}/price` — added to `routes/games.py`'s `authenticated_games_router` (JWT-protected; keeps an unused `current_user` parameter since the router's auth dependency only runs for handlers that declare it — see the existing `admin_user_router` comment for the same gotcha). Returns `GamePrice` via `price_service.get_price_info`.
-- `POST /api/prices/check` — new `backend/src/backlog_manager_backend/routes/prices.py`. Not JWT-protected — this is the repo's only machine-to-machine endpoint, meant for an external scheduler rather than a logged-in user. Gated by a static shared-secret header (`X-Cron-Secret`, compared with `secrets.compare_digest` against `settings.price_check_cron_secret`). Registered as `price_check_router` in `app.py`.
-
-**Config** (`config.py`): `discord_webhook_url: str | None` (server-wide fallback, same pattern as `steam_web_api_key`) and `price_check_cron_secret: str | None` (global/ops-only, gates the cron endpoint). Both added to `.env.example`.
-
-## Frontend design
-
-- `frontend/src/lib/api/games.ts`: `getGamePrice(steamAppId)` calling `GET /api/games/{steam_app_id}/price`, mapping snake_case → camelCase.
-- `frontend/src/hooks/useGameSearch.ts`: `useGamePrice(steamAppId, enabled = true)`, a `useQuery` mirroring `useSteamAchievements`'s default-enabled style — since it's mounted inside `BacklogEntry`'s `DialogContent`, which Radix unmounts when the dialog is closed, mounting alone already gates the fetch to "the entry dialog is open."
-- `frontend/src/app/_components/GamePriceSection.tsx`: new component (mirrors `AchievementProgress.tsx`'s loading/empty-state handling) showing each store's current price (struck-through retail price when discounted), an "on sale" line, and the all-time low. Mounted in `BacklogEntry.tsx` as a `price-section` block next to `hltb-section`/`achievements-section`.
-- `frontend/src/lib/api/user.ts` / `auth.ts`: `discordWebhookUrl` on `UpdateCurrentUserInput`, `hasDiscordWebhookUrl` on `CurrentUser`.
-- `frontend/src/app/_components/AccountContent.tsx`: new "Discord Price Alerts" card, mirroring the SteamGridDB API key card's set/remove UI exactly.
+`GET /api/games/key-shop-prices?title=` (RoyalCDKeys, PremiumCDKeys, see `docs/KEY_SHOP_SCRAPING.md`) is unchanged and is shown with the keyshops.
 
 ## Triggering the sweep
 
-There's no in-process scheduler (see Context above), so a `price-check-cron` service in `compose.yml` runs alongside `backend` in the same Compose stack: a plain `curlimages/curl` container looping `curl -X POST http://backend:8000/api/prices/check` (container-to-container, over the Compose network) every 6 hours, using the `X-Cron-Secret` header from `PRICE_CHECK_CRON_SECRET`. The production stack (`compose.prod.yml`) runs the same service, so it covers local dev and production alike - no separate scheduler infra (GitHub Actions cron, etc.) needed. `PRICE_CHECK_CRON_SECRET` (and, if a server-wide fallback webhook is wanted, `DISCORD_WEBHOOK_URL`) still need to be set in the `.env` of each environment.
+There is no in-process scheduler, so a `price-check-cron` service in `compose.yml` and `compose.prod.yml` calls `curl -X POST http://backend:8000/api/prices/check` every 6 hours with the `X-Cron-Secret` header from `PRICE_CHECK_CRON_SECRET`. For prices and alerts the `.env` of each environment needs `GGDEALS_API_KEY`, `PRICE_CHECK_CRON_SECRET` and, for a server-wide fallback webhook, `DISCORD_WEBHOOK_URL`.
 
-## Verification
+## Tests
 
-- Backend: `task test` (pytest + testcontainers, written test-first) — `test_cheapshark.py`, `test_discord.py`, `test_game_price_repo.py`, `test_price_service.py` (staleness, on-sale detection, per-user dedup, per-user webhook fallback, no-webhook no-op), `test_game_price_routes.py`, `test_prices_routes.py` (secret header enforcement).
-- `task backend:migrate` locally against `task db:up`'s Postgres, confirmed to apply and roll back cleanly.
-- `task lint` (ruff + eslint), `npm run typecheck`, `npm run format:check` on the touched files.
-- Frontend: `task dev`, open an entry with a `steam_app_id` set and confirm the price section loads on dialog open with no request firing for entries without one; set/remove a Discord webhook URL in Account settings.
-- Manually `curl -X POST /api/prices/check` locally with a real test Discord webhook and a tracked on-sale `steam_app_id` to confirm a message actually arrives end-to-end.
+`test_ggdeals.py` (request, answer, errors, no key in messages or logs), `test_price_service.py` (cache, fallbacks, batches, pauses, rate limit, alerts), `test_game_price_repo.py`, `test_game_price_routes.py`, `test_prices_routes.py`, `test_credentials.py` and `test_user_routes.py` (the key), and in the app `price_listings_test.dart`, `price_sheet_test.dart`, `mappers_test.dart`, the settings tests.

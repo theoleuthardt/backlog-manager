@@ -1,5 +1,3 @@
-import 'package:backlog_manager/api/api_providers.dart';
-import 'package:backlog_manager/data/entry_image.dart';
 import 'package:backlog_manager/data/game_info_providers.dart';
 import 'package:backlog_manager/design/color_math.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
@@ -14,9 +12,9 @@ import 'package:backlog_manager/platform/url_opener.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Opens the price sheet of a game: the CheapShark deals (when it has a Steam
-/// App ID) and the key shop offers in one list, only loaded while the sheet
-/// is open.
+/// Opens the price sheet of a game: the GG.deals prices (when it has a Steam
+/// App ID) kept apart as official stores and keyshops, the offers of the key
+/// shops, and a search link, only loaded while the sheet is open.
 Future<void> showPriceSheet(
   BuildContext context, {
   required String title,
@@ -43,7 +41,10 @@ class PriceSheet extends ConsumerWidget {
         : ref.watch(keyShopPricesProvider(title));
     final loading = (price?.isLoading ?? false) || (offers?.isLoading ?? false);
     final info = price?.value;
-    final listings = buildListings(info, offers?.value);
+    final hasPrices = info != null && info.hasPrices;
+    final listings = buildListings(offers?.value);
+    final currency = info?.currency;
+    final link = info?.url ?? '';
 
     return ShelfSheet(
       title: 'Price',
@@ -51,17 +52,65 @@ class PriceSheet extends ConsumerWidget {
       width: ShelfSheetWidth.compact,
       child: loading
           ? const _Loading()
-          : listings.isEmpty
-          ? const _Message('No price data available.')
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (saleBanner(info) case final banner?)
-                  _SaleBanner(banner: banner),
-                if (info?.cheapestPriceEver case final low?)
-                  _AllTimeLow(price: low),
+                if (lowestEver(info) case final low?)
+                  _LowestEverBanner(low: low, currency: currency),
+                if (!hasPrices && listings.isEmpty)
+                  const _Message('No price data available.'),
+                if (info != null &&
+                    (info.currentRetail != null ||
+                        info.historicalRetail != null)) ...[
+                  const _SectionLabel(
+                    'Official stores',
+                    key: Key('price-section-official'),
+                  ),
+                  if (info.currentRetail case final now?)
+                    _PriceRow(
+                      rowKey: 'price-official-now',
+                      label: 'Lowest now',
+                      currency: currency,
+                      amount: now,
+                      url: link,
+                    ),
+                  if (info.historicalRetail case final ever?)
+                    _PriceRow(
+                      rowKey: 'price-official-ever',
+                      label: 'Lowest ever',
+                      currency: currency,
+                      amount: ever,
+                      url: link,
+                    ),
+                ],
+                if (info != null &&
+                        (info.currentKeyshops != null ||
+                            info.historicalKeyshops != null) ||
+                    listings.isNotEmpty) ...[
+                  const _SectionLabel(
+                    'Keyshops',
+                    key: Key('price-section-keyshops'),
+                  ),
+                  if (info?.currentKeyshops case final now?)
+                    _PriceRow(
+                      rowKey: 'price-keyshops-now',
+                      label: 'Lowest now',
+                      currency: currency,
+                      amount: now,
+                      url: link,
+                    ),
+                  if (info?.historicalKeyshops case final ever?)
+                    _PriceRow(
+                      rowKey: 'price-keyshops-ever',
+                      label: 'Lowest ever',
+                      currency: currency,
+                      amount: ever,
+                      url: link,
+                    ),
+                  for (final listing in listings) _ListingRow(listing: listing),
+                ],
                 _KeyforsteamRow(title: title),
-                for (final listing in listings) _ListingRow(listing: listing),
+                if (hasPrices) _Attribution(url: link),
               ],
             ),
     );
@@ -171,40 +220,103 @@ class _Banner extends StatelessWidget {
   }
 }
 
-class _SaleBanner extends StatelessWidget {
-  const _SaleBanner({required this.banner});
+class _LowestEverBanner extends StatelessWidget {
+  const _LowestEverBanner({required this.low, required this.currency});
 
-  final SaleBanner banner;
+  final LowestEver low;
+  final String? currency;
 
   @override
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
-    final discount = banner.discountPercent;
     return _Banner(
-      bannerKey: const Key('sale-banner'),
+      bannerKey: const Key('lowest-ever-banner'),
       color: tokens.success,
       icon: Icons.local_fire_department_outlined,
-      label: 'On Sale Now${discount > 0 ? ' -$discount%' : ''}',
-      value: formatMoney('USD', banner.price),
-      suffix: 'at ${banner.store}',
+      label: 'Lowest price ever',
+      value: formatMoney(currency, low.price),
+      suffix: low.channel == PriceChannel.keyshop
+          ? 'in keyshops'
+          : 'in the official stores',
     );
   }
 }
 
-class _AllTimeLow extends StatelessWidget {
-  const _AllTimeLow({required this.price});
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text, {super.key});
 
-  final double price;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
-    return _Banner(
-      bannerKey: const Key('all-time-low-banner'),
-      color: tokens.accent,
-      icon: Icons.trending_down,
-      label: 'All-Time Low',
-      value: formatMoney('USD', price),
+    final style = Theme.of(context).extension<ShelfTextStyles>()!;
+    return Padding(
+      padding: const EdgeInsets.only(top: 6, bottom: 8),
+      child: Text(
+        text.toUpperCase(),
+        style: style.keyHint.copyWith(color: tokens.muted),
+      ),
+    );
+  }
+}
+
+class _PriceRow extends StatelessWidget {
+  const _PriceRow({
+    required this.rowKey,
+    required this.label,
+    required this.currency,
+    required this.amount,
+    required this.url,
+  });
+
+  final String rowKey;
+  final String label;
+  final String? currency;
+  final double amount;
+  final String url;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = Theme.of(context).extension<ShelfTokens>()!;
+    final style = Theme.of(context).extension<ShelfTextStyles>()!;
+    return _RowShell(
+      rowKey: Key(rowKey),
+      url: url,
+      leading: Icon(Icons.sell_outlined, size: 20, color: tokens.muted),
+      name: label,
+      trailing: Text(formatMoney(currency, amount), style: style.control),
+    );
+  }
+}
+
+class _Attribution extends ConsumerWidget {
+  const _Attribution({required this.url});
+
+  final String url;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = Theme.of(context).extension<ShelfTokens>()!;
+    final style = Theme.of(context).extension<ShelfTextStyles>()!;
+    final target = Uri.parse(isHttpUrl(url) ? url : 'https://gg.deals');
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: InkWell(
+          key: const Key('gg-deals-attribution'),
+          onTap: () => ref.read(urlOpenerProvider)(target),
+          child: Text(
+            'Prices by GG.deals',
+            style: style.caption.copyWith(
+              color: tokens.accent,
+              decoration: TextDecoration.underline,
+              decorationColor: tokens.accent,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -309,7 +421,6 @@ class _ListingRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
-    final crossedOut = listing.crossedOutPrice;
     final discount = listing.discountPct;
     return _RowShell(
       rowKey: Key('price-${listing.key}'),
@@ -321,14 +432,6 @@ class _ListingRow extends ConsumerWidget {
           text: formatMoney(listing.currency, listing.price),
           style: style.control,
           children: [
-            if (crossedOut != null)
-              TextSpan(
-                text: ' ${formatMoney(listing.currency, crossedOut)}',
-                style: style.caption.copyWith(
-                  color: tokens.faint,
-                  decoration: TextDecoration.lineThrough,
-                ),
-              ),
             if (discount != null)
               TextSpan(
                 text: ' -$discount%',
@@ -341,13 +444,13 @@ class _ListingRow extends ConsumerWidget {
   }
 }
 
-class _StoreIcon extends ConsumerWidget {
+class _StoreIcon extends StatelessWidget {
   const _StoreIcon({required this.listing});
 
   final PriceListing listing;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final placeholder = DecoratedBox(
       decoration: BoxDecoration(
@@ -356,19 +459,13 @@ class _StoreIcon extends ConsumerWidget {
       ),
     );
     final local = listing.localIcon;
-    final remote = listing.iconUrl;
-    final image = local != null
-        ? AssetImage(local)
-        : remote == null
-        ? null
-        : entryImage(ref.watch(serverUrlProvider).value, remote);
     return SizedBox(
       width: 20,
       height: 20,
-      child: image == null
+      child: local == null
           ? placeholder
           : Image(
-              image: image,
+              image: AssetImage(local),
               fit: BoxFit.contain,
               errorBuilder: (_, _, _) => placeholder,
             ),

@@ -85,6 +85,7 @@ def _encrypt_api_key_if_present(
 
 _STEAM_API_KEY_NOT_CONFIGURED = "Steam API key storage is not configured"
 _STEAMGRIDDB_API_KEY_NOT_CONFIGURED = "SteamGridDB API key storage is not configured"
+_GGDEALS_API_KEY_NOT_CONFIGURED = "GG.deals API key storage is not configured"
 _DISCORD_WEBHOOK_URL_NOT_CONFIGURED = "Discord webhook URL storage is not configured"
 _DISCORD_WEBHOOK_URL_INVALID = (
     "Discord webhook URL must be a valid https://discord.com/api/webhooks/... URL"
@@ -184,6 +185,10 @@ async def update_own_user(
                 steamgriddb_api_key_encrypted=_encrypt_api_key_if_present(
                     data.steamgriddb_api_key,
                     not_configured_message=_STEAMGRIDDB_API_KEY_NOT_CONFIGURED,
+                ),
+                ggdeals_api_key_encrypted=_encrypt_api_key_if_present(
+                    data.ggdeals_api_key,
+                    not_configured_message=_GGDEALS_API_KEY_NOT_CONFIGURED,
                 ),
                 discord_webhook_url_encrypted=_encrypt_discord_webhook_url_if_present(
                     data.discord_webhook_url
@@ -371,6 +376,10 @@ async def update_user_admin(
                 steamgriddb_api_key_encrypted=_encrypt_api_key_if_present(
                     data.steamgriddb_api_key,
                     not_configured_message=_STEAMGRIDDB_API_KEY_NOT_CONFIGURED,
+                ),
+                ggdeals_api_key_encrypted=_encrypt_api_key_if_present(
+                    data.ggdeals_api_key,
+                    not_configured_message=_GGDEALS_API_KEY_NOT_CONFIGURED,
                 ),
                 discord_webhook_url_encrypted=_encrypt_discord_webhook_url_if_present(
                     data.discord_webhook_url

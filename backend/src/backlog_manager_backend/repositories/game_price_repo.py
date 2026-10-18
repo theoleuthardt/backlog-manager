@@ -1,33 +1,24 @@
 from datetime import datetime
-from decimal import Decimal
 
-import msgspec
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.models.backlog_entry import BacklogEntry as BacklogEntryModel
 from backlog_manager_backend.models.game_price import GamePrice as GamePriceModel
-from backlog_manager_backend.schemas.game_price import (
-    GamePrice,
-    GamePriceDeal,
-    UpsertGamePriceParams,
-)
+from backlog_manager_backend.schemas.game_price import GamePrice, UpsertGamePriceParams
 
 
 def _to_schema(model: GamePriceModel) -> GamePrice:
     return GamePrice(
         steam_app_id=model.steam_app_id,
-        deals=[GamePriceDeal(**deal) for deal in (model.deals or [])],
-        on_sale=model.on_sale,
         checked_at=model.checked_at,
-        cheapshark_game_id=model.cheapshark_game_id,
-        cheapest_price_ever=model.cheapest_price_ever,
-        cheapest_price_ever_date=model.cheapest_price_ever_date,
+        currency=model.currency,
+        current_retail=model.current_retail,
+        current_keyshops=model.current_keyshops,
+        historical_retail=model.historical_retail,
+        historical_keyshops=model.historical_keyshops,
+        url=model.url,
     )
-
-
-def _as_decimal(value: Decimal | None) -> Decimal | None:
-    return value if value is None else Decimal(str(value))
 
 
 async def get_game_price(session: AsyncSession, steam_app_id: int) -> GamePrice | None:
@@ -54,11 +45,12 @@ async def upsert_game_price(session: AsyncSession, params: UpsertGamePriceParams
         model = GamePriceModel(steam_app_id=params.steam_app_id)
         session.add(model)
 
-    model.cheapshark_game_id = params.cheapshark_game_id
-    model.deals = msgspec.to_builtins(params.deals)
-    model.cheapest_price_ever = _as_decimal(params.cheapest_price_ever)
-    model.cheapest_price_ever_date = params.cheapest_price_ever_date
-    model.on_sale = params.on_sale
+    model.currency = params.currency
+    model.current_retail = params.current_retail
+    model.current_keyshops = params.current_keyshops
+    model.historical_retail = params.historical_retail
+    model.historical_keyshops = params.historical_keyshops
+    model.url = params.url
     model.checked_at = params.checked_at
 
     await session.commit()

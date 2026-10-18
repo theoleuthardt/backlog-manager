@@ -1,16 +1,7 @@
 import { ExternalAnchor } from "components/ExternalAnchor";
 import { useState } from "react";
-import {
-  ExternalLink,
-  Flame,
-  Loader2,
-  Search,
-  Tag,
-  TrendingDown,
-  XIcon,
-} from "lucide-react";
+import { ExternalLink, Flame, Loader2, Search, Tag, XIcon } from "lucide-react";
 import { useGamePrice, useKeyShopPrices } from "~/hooks/useGameSearch";
-import { env } from "~/env";
 import { Button } from "shadcn_components/ui/button";
 import {
   Dialog,
@@ -40,32 +31,69 @@ const EUR_PER_UNIT: Record<string, number> = {
   EUR: 1,
 };
 
-function StoreIcon({
-  iconUrl,
-  alt,
-  local = false,
-}: {
-  iconUrl: string | null;
-  alt: string;
-  local?: boolean;
-}) {
+function StoreIcon({ iconUrl, alt }: { iconUrl: string | null; alt: string }) {
   const [hasError, setHasError] = useState(false);
   if (!iconUrl || hasError) {
     return <div className="h-5 w-5 shrink-0 rounded bg-white/10" />;
   }
   return (
     <img
-      src={
-        local
-          ? iconUrl
-          : `${env.NEXT_PUBLIC_API_URL}/api/images/proxy?url=${encodeURIComponent(iconUrl)}`
-      }
+      src={iconUrl}
       alt={alt}
       width={20}
       height={20}
       className="h-5 w-5 shrink-0 rounded object-contain"
       onError={() => setHasError(true)}
     />
+  );
+}
+
+function formatMoney(currency: string | null, amount: number): string {
+  const text = amount.toFixed(2);
+  if (currency === null) return text;
+  const symbol = CURRENCY_SYMBOLS[currency];
+  return symbol ? symbol + text : `${text} ${currency}`;
+}
+
+const ROW_CLASS =
+  "group flex items-center justify-between gap-3 rounded-lg border border-white/20 bg-black px-3 py-2.5 transition-colors hover:border-white/50 hover:bg-white/5";
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="pt-1 text-xs tracking-wide text-gray-400 uppercase">
+      {children}
+    </p>
+  );
+}
+
+function GgDealsRow({
+  label,
+  currency,
+  amount,
+  url,
+}: {
+  label: string;
+  currency: string | null;
+  amount: number;
+  url: string | null;
+}) {
+  const content = (
+    <>
+      <span className="flex min-w-0 items-center gap-2">
+        <Tag className="h-5 w-5 shrink-0 text-gray-400" />
+        <span className="truncate text-sm text-white">{label}</span>
+      </span>
+      <span className="text-sm font-semibold text-white">
+        {formatMoney(currency, amount)}
+      </span>
+    </>
+  );
+  return url ? (
+    <ExternalAnchor href={url} className={ROW_CLASS}>
+      {content}
+    </ExternalAnchor>
+  ) : (
+    <div className={ROW_CLASS}>{content}</div>
   );
 }
 
@@ -77,48 +105,53 @@ export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
     open,
   );
 
-  const hasCheapSharkDeals = !isError && !!data && data.deals.length > 0;
-  const hasKeyShopOffers = !!keyShopOffers && keyShopOffers.length > 0;
-
-  interface PriceListing {
-    key: string;
-    store: string;
-    iconUrl: string | null;
-    iconIsLocal: boolean;
-    price: number;
-    currency: string;
-    retailPrice: number | null;
-    discountPct: number | null;
-    url: string;
-  }
-
-  const listings: PriceListing[] = [
-    ...(data?.deals.map((deal) => ({
-      key: `cheapshark-${deal.store}`,
-      store: deal.store,
-      iconUrl: deal.iconUrl,
-      iconIsLocal: false,
-      price: deal.price,
-      currency: "USD",
-      retailPrice: deal.retailPrice,
-      discountPct: null,
-      url: deal.url,
-    })) ?? []),
-    ...(keyShopOffers?.map((offer) => ({
-      key: `keyshop-${offer.shop}`,
-      store: offer.shop,
-      iconUrl: KEY_SHOP_ICONS[offer.shop] ?? null,
-      iconIsLocal: true,
-      price: offer.price,
-      currency: offer.currency,
-      retailPrice: null,
-      discountPct: offer.discountPct,
-      url: offer.url,
-    })) ?? []),
-  ].sort(
+  const info = isError ? undefined : data;
+  const hasPrices =
+    !!info &&
+    (info.currentRetail !== null ||
+      info.currentKeyshops !== null ||
+      info.historicalRetail !== null ||
+      info.historicalKeyshops !== null);
+  const hasKeyshopPrices =
+    !!info &&
+    (info.currentKeyshops !== null || info.historicalKeyshops !== null);
+  const offers = [...(keyShopOffers ?? [])].sort(
     (a, b) =>
       a.price * (EUR_PER_UNIT[a.currency] ?? 1) -
       b.price * (EUR_PER_UNIT[b.currency] ?? 1),
+  );
+
+  const lowestEver = [
+    info?.currentRetail != null &&
+    info.historicalRetail != null &&
+    info.currentRetail > 0 &&
+    info.currentRetail <= info.historicalRetail
+      ? { price: info.currentRetail, where: "in the official stores" }
+      : null,
+    info?.currentKeyshops != null &&
+    info.historicalKeyshops != null &&
+    info.currentKeyshops > 0 &&
+    info.currentKeyshops <= info.historicalKeyshops
+      ? { price: info.currentKeyshops, where: "in keyshops" }
+      : null,
+  ]
+    .filter((low) => low !== null)
+    .sort((a, b) => a.price - b.price)[0];
+
+  const keyforsteamRow = (
+    <ExternalAnchor
+      href={`https://www.google.com/search?q=${encodeURIComponent(`site:keyforsteam.de ${title}`)}`}
+      className={ROW_CLASS}
+    >
+      <span className="flex min-w-0 items-center gap-2">
+        <Search className="h-5 w-5 shrink-0 text-gray-400" />
+        <span className="truncate text-sm text-white">Keyforsteam</span>
+      </span>
+      <span className="flex shrink-0 items-center gap-2">
+        <span className="text-sm text-gray-400">Compare prices</span>
+        <ExternalLink className="h-3.5 w-3.5 shrink-0 text-gray-500 opacity-0 transition-opacity group-hover:opacity-100" />
+      </span>
+    </ExternalAnchor>
   );
 
   let content: React.ReactNode;
@@ -129,101 +162,108 @@ export function GamePriceSection({ steamAppId, title }: GamePriceSectionProps) {
         Loading price...
       </div>
     );
-  } else if (!hasCheapSharkDeals && !hasKeyShopOffers) {
-    content = <p className="text-sm text-gray-400">No price data available.</p>;
   } else {
-    const cheapest =
-      hasCheapSharkDeals && data
-        ? data.deals.reduce((lowest, deal) =>
-            deal.price < lowest.price ? deal : lowest,
-          )
-        : null;
-    const discountPercent = cheapest
-      ? Math.round((1 - cheapest.price / cheapest.retailPrice) * 100)
-      : 0;
     content = (
       <div className="space-y-3 overflow-y-auto pr-1">
-        {data?.onSale && cheapest && (
+        {lowestEver && (
           <div className="flex items-center gap-3 rounded-lg border border-emerald-400/40 bg-emerald-400/10 px-3 py-2.5">
             <Flame className="h-5 w-5 shrink-0 text-emerald-400" />
             <div>
               <p className="text-xs tracking-wide text-emerald-200/80 uppercase">
-                On Sale Now{discountPercent > 0 && ` -${discountPercent}%`}
+                Lowest price ever
               </p>
               <p className="text-lg font-bold text-emerald-300">
-                ${cheapest.price.toFixed(2)}{" "}
+                {formatMoney(info?.currency ?? null, lowestEver.price)}{" "}
                 <span className="text-sm font-normal text-emerald-200/70">
-                  at {cheapest.store}
+                  {lowestEver.where}
                 </span>
               </p>
             </div>
           </div>
         )}
-        {data?.cheapestPriceEver != null && (
-          <div className="flex items-center gap-3 rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-2.5">
-            <TrendingDown className="h-5 w-5 shrink-0 text-amber-400" />
-            <div>
-              <p className="text-xs tracking-wide text-amber-200/80 uppercase">
-                All-Time Low
-              </p>
-              <p className="text-lg font-bold text-amber-300">
-                ${data.cheapestPriceEver.toFixed(2)}
-              </p>
-            </div>
-          </div>
+        {!hasPrices && offers.length === 0 && (
+          <p className="text-sm text-gray-400">No price data available.</p>
         )}
-        <div className="space-y-2">
-          <ExternalAnchor
-            href={`https://www.google.com/search?q=${encodeURIComponent(`site:keyforsteam.de ${title}`)}`}
-            className="group flex items-center justify-between gap-3 rounded-lg border border-white/20 bg-black px-3 py-2.5 transition-colors hover:border-white/50 hover:bg-white/5"
-          >
-            <span className="flex min-w-0 items-center gap-2">
-              <Search className="h-5 w-5 shrink-0 text-gray-400" />
-              <span className="truncate text-sm text-white">Keyforsteam</span>
-            </span>
-            <span className="flex shrink-0 items-center gap-2">
-              <span className="text-sm text-gray-400">Compare prices</span>
-              <ExternalLink className="h-3.5 w-3.5 shrink-0 text-gray-500 opacity-0 transition-opacity group-hover:opacity-100" />
-            </span>
-          </ExternalAnchor>
-          {listings.map((listing) => (
-            <ExternalAnchor
-              key={listing.key}
-              href={listing.url}
-              className="group flex items-center justify-between gap-3 rounded-lg border border-white/20 bg-black px-3 py-2.5 transition-colors hover:border-white/50 hover:bg-white/5"
-            >
-              <span className="flex min-w-0 items-center gap-2">
-                <StoreIcon
-                  iconUrl={listing.iconUrl}
-                  alt={listing.store}
-                  local={listing.iconIsLocal}
+        {info &&
+          (info.currentRetail !== null || info.historicalRetail !== null) && (
+            <div className="space-y-2">
+              <SectionLabel>Official stores</SectionLabel>
+              {info.currentRetail !== null && (
+                <GgDealsRow
+                  label="Lowest now"
+                  currency={info.currency}
+                  amount={info.currentRetail}
+                  url={info.url}
                 />
-                <span className="truncate text-sm text-white">
-                  {listing.store}
+              )}
+              {info.historicalRetail !== null && (
+                <GgDealsRow
+                  label="Lowest ever"
+                  currency={info.currency}
+                  amount={info.historicalRetail}
+                  url={info.url}
+                />
+              )}
+            </div>
+          )}
+        {(hasKeyshopPrices || offers.length > 0) && (
+          <div className="space-y-2">
+            <SectionLabel>Keyshops</SectionLabel>
+            {info?.currentKeyshops != null && (
+              <GgDealsRow
+                label="Lowest now"
+                currency={info.currency}
+                amount={info.currentKeyshops}
+                url={info.url}
+              />
+            )}
+            {info?.historicalKeyshops != null && (
+              <GgDealsRow
+                label="Lowest ever"
+                currency={info.currency}
+                amount={info.historicalKeyshops}
+                url={info.url}
+              />
+            )}
+            {offers.map((offer) => (
+              <ExternalAnchor
+                key={offer.shop}
+                href={offer.url}
+                className={ROW_CLASS}
+              >
+                <span className="flex min-w-0 items-center gap-2">
+                  <StoreIcon
+                    iconUrl={KEY_SHOP_ICONS[offer.shop] ?? null}
+                    alt={offer.shop}
+                  />
+                  <span className="truncate text-sm text-white">
+                    {offer.shop}
+                  </span>
                 </span>
-              </span>
-              <span className="flex shrink-0 items-center gap-2">
-                <span className="text-sm font-semibold text-white">
-                  {(CURRENCY_SYMBOLS[listing.currency] ?? listing.currency) +
-                    listing.price.toFixed(2)}
-                  {listing.retailPrice !== null &&
-                    listing.retailPrice > listing.price && (
-                      <span className="ml-1.5 text-xs font-normal text-gray-500 line-through">
-                        {(CURRENCY_SYMBOLS[listing.currency] ??
-                          listing.currency) + listing.retailPrice.toFixed(2)}
+                <span className="flex shrink-0 items-center gap-2">
+                  <span className="text-sm font-semibold text-white">
+                    {formatMoney(offer.currency, offer.price)}
+                    {offer.discountPct !== null && offer.discountPct > 0 && (
+                      <span className="ml-1.5 text-xs font-normal text-emerald-400">
+                        -{offer.discountPct}%
                       </span>
                     )}
-                  {listing.discountPct !== null && listing.discountPct > 0 && (
-                    <span className="ml-1.5 text-xs font-normal text-emerald-400">
-                      -{listing.discountPct}%
-                    </span>
-                  )}
+                  </span>
+                  <ExternalLink className="h-3.5 w-3.5 shrink-0 text-gray-500 opacity-0 transition-opacity group-hover:opacity-100" />
                 </span>
-                <ExternalLink className="h-3.5 w-3.5 shrink-0 text-gray-500 opacity-0 transition-opacity group-hover:opacity-100" />
-              </span>
-            </ExternalAnchor>
-          ))}
-        </div>
+              </ExternalAnchor>
+            ))}
+          </div>
+        )}
+        <div className="space-y-2">{keyforsteamRow}</div>
+        {hasPrices && (
+          <ExternalAnchor
+            href={info?.url ?? "https://gg.deals"}
+            className="text-xs text-gray-400 underline"
+          >
+            Prices by GG.deals
+          </ExternalAnchor>
+        )}
       </div>
     );
   }

@@ -51,6 +51,15 @@ def resolve_steamgriddb_api_key(user: User) -> str | None:
     return settings.steamgriddb_api_key
 
 
+def resolve_ggdeals_api_key(user: User) -> str | None:
+    if user.ggdeals_api_key_encrypted and settings.steam_api_key_encryption_key:
+        try:
+            return decrypt(user.ggdeals_api_key_encrypted, settings.steam_api_key_encryption_key)
+        except (InvalidToken, ValueError) as error:
+            raise StoredCredentialError from error
+    return settings.ggdeals_api_key
+
+
 def resolve_igdb_credentials_or_none(user: User) -> tuple[str, str] | None:
     """For callers that degrade gracefully (e.g. a CSV preview that falls
     back to HowLongToBeat-only matching): a broken stored pair counts as
@@ -66,5 +75,14 @@ def resolve_steamgriddb_api_key_or_none(user: User) -> str | None:
     counts as not configured."""
     try:
         return resolve_steamgriddb_api_key(user)
+    except StoredCredentialError:
+        return None
+
+
+def resolve_ggdeals_api_key_or_none(user: User) -> str | None:
+    """For callers that degrade gracefully: a broken stored key counts as
+    not configured."""
+    try:
+        return resolve_ggdeals_api_key(user)
     except StoredCredentialError:
         return None

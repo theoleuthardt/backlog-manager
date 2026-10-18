@@ -8,7 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// The price lookups of the server.
 abstract interface class GamesApi {
-  /// The CheapShark deals of a Steam game
+  /// The GG.deals prices of a Steam game
   /// (`GET /api/games/{steam_app_id}/price`).
   Future<PriceInfo> price(int steamAppId);
 

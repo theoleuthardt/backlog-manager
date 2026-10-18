@@ -20,6 +20,7 @@ class UpdateOwnUserRequest {
     this.igdbClientId,
     this.igdbClientSecret,
     this.steamgriddbApiKey,
+    this.ggdealsApiKey,
     this.discordWebhookUrl,
     this.steamAutoImportEnabled,
     this.steamWishlistAutoSync,
@@ -46,6 +47,8 @@ class UpdateOwnUserRequest {
   final String? igdbClientSecret;
   @JsonKey(name: 'steamgriddb_api_key')
   final String? steamgriddbApiKey;
+  @JsonKey(name: 'ggdeals_api_key')
+  final String? ggdealsApiKey;
   @JsonKey(name: 'discord_webhook_url')
   final String? discordWebhookUrl;
   @JsonKey(name: 'steam_auto_import_enabled')

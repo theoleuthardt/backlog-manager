@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS "blm-system"."Users"(
     "SteamFamilyIds" TEXT,
     "IgdbCredentialsEncrypted" TEXT,
     "SteamGridDbApiKeyEncrypted" TEXT,
+    "GgDealsApiKeyEncrypted" TEXT,
     "DiscordWebhookUrlEncrypted" TEXT,
     "SteamAutoImportEnabled" BOOLEAN NOT NULL DEFAULT FALSE,
     "SteamWishlistImportedAt" TIMESTAMP,
@@ -165,13 +166,14 @@ CREATE TABLE IF NOT EXISTS "blm-system"."SteamAppInfo" (
 );
 
 CREATE TABLE IF NOT EXISTS "blm-system"."GamePrices" (
-    "SteamAppId"            BIGINT PRIMARY KEY,
-    "CheapsharkGameId"      BIGINT,
-    "Deals"                 JSON,
-    "CheapestPriceEver"     NUMERIC(10,2),
-    "CheapestPriceEverDate" DATE,
-    "OnSale"                BOOLEAN NOT NULL DEFAULT FALSE,
-    "CheckedAt"             TIMESTAMP WITHOUT TIME ZONE NOT NULL
+    "SteamAppId"         BIGINT PRIMARY KEY,
+    "Currency"           VARCHAR(3),
+    "CurrentRetail"      NUMERIC(10,2),
+    "CurrentKeyshops"    NUMERIC(10,2),
+    "HistoricalRetail"   NUMERIC(10,2),
+    "HistoricalKeyshops" NUMERIC(10,2),
+    "Url"                TEXT,
+    "CheckedAt"          TIMESTAMP WITHOUT TIME ZONE NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS "blm-system"."UserGamePriceAlerts" (
