@@ -691,133 +691,6 @@ async def test_update_own_user_clears_steam_family_ids_with_null(
     assert clear_response.json()["steam_family_ids"] is None
 
 
-async def test_update_own_user_sets_discord_webhook_url(
-    postgres_url: str, create_and_login, monkeypatch
-) -> None:
-    from backlog_manager_backend.app import create_app
-    from backlog_manager_backend.routes import user as user_routes
-
-    monkeypatch.setattr(
-        user_routes.settings, "steam_api_key_encryption_key", Fernet.generate_key().decode()
-    )
-
-    app = create_app()
-
-    with TestClient(app=app) as client:
-        headers = await create_and_login(client, "discordwebhookuser@example.com")
-
-        update_response = client.put(
-            "/api/user/me",
-            headers=headers,
-            json={
-                "discord_webhook_url": (
-                    "https://discord.com/api/webhooks/123456789012345678/abcDEF-123_token"
-                )
-            },
-        )
-        me_response = client.get("/api/user/me", headers=headers)
-
-    assert update_response.status_code == 200
-    assert update_response.json()["has_discord_webhook_url"] is True
-    assert "discord_webhook_url" not in update_response.json()
-    assert "discord_webhook_url_encrypted" not in update_response.json()
-    assert me_response.json()["has_discord_webhook_url"] is True
-
-
-async def test_update_own_user_sets_and_clears_the_ggdeals_api_key(
-    postgres_url: str, create_and_login, monkeypatch
-) -> None:
-    from backlog_manager_backend.app import create_app
-    from backlog_manager_backend.routes import user as user_routes
-
-    monkeypatch.setattr(
-        user_routes.settings, "steam_api_key_encryption_key", Fernet.generate_key().decode()
-    )
-
-    with TestClient(app=create_app()) as client:
-        headers = await create_and_login(client, "ggdealskeyuser@example.com")
-
-        set_response = client.put(
-            "/api/user/me", headers=headers, json={"ggdeals_api_key": "my-secret-key"}
-        )
-        me_response = client.get("/api/user/me", headers=headers)
-        clear_response = client.put("/api/user/me", headers=headers, json={"ggdeals_api_key": ""})
-
-    assert set_response.status_code == 200
-    assert set_response.json()["has_ggdeals_api_key"] is True
-    assert "my-secret-key" not in set_response.text
-    assert "ggdeals_api_key_encrypted" not in set_response.json()
-    assert me_response.json()["has_ggdeals_api_key"] is True
-    assert clear_response.json()["has_ggdeals_api_key"] is False
-
-
-async def test_update_own_user_clears_discord_webhook_url_with_empty_string(
-    postgres_url: str, create_and_login, monkeypatch
-) -> None:
-    from backlog_manager_backend.app import create_app
-    from backlog_manager_backend.routes import user as user_routes
-
-    monkeypatch.setattr(
-        user_routes.settings, "steam_api_key_encryption_key", Fernet.generate_key().decode()
-    )
-
-    app = create_app()
-
-    with TestClient(app=app) as client:
-        headers = await create_and_login(client, "cleardiscordwebhook@example.com")
-        client.put(
-            "/api/user/me",
-            headers=headers,
-            json={
-                "discord_webhook_url": (
-                    "https://discord.com/api/webhooks/123456789012345678/abcDEF-123_token"
-                )
-            },
-        )
-
-        clear_response = client.put(
-            "/api/user/me", headers=headers, json={"discord_webhook_url": ""}
-        )
-
-    assert clear_response.status_code == 200
-    assert clear_response.json()["has_discord_webhook_url"] is False
-
-
-async def test_update_own_user_rejects_invalid_discord_webhook_url(
-    postgres_url: str, create_and_login, monkeypatch
-) -> None:
-    from backlog_manager_backend.app import create_app
-    from backlog_manager_backend.routes import user as user_routes
-
-    monkeypatch.setattr(
-        user_routes.settings, "steam_api_key_encryption_key", Fernet.generate_key().decode()
-    )
-
-    with TestClient(app=create_app()) as client:
-        headers = await create_and_login(client, "invaliddiscordwebhook@example.com")
-
-        response = client.put(
-            "/api/user/me",
-            headers=headers,
-            json={"discord_webhook_url": "http://internal.example/steal-alerts"},
-        )
-
-    assert response.status_code == 400
-
-
-def _custom_theme(theme_id: str = "neon-1", name: str = "Neon Night") -> dict[str, str]:
-    return {
-        "id": theme_id,
-        "name": name,
-        "background": "#0a0014",
-        "surface": "#1a0033",
-        "foreground": "#f5e9ff",
-        "accent": "#ff2bd6",
-        "border": "#5b2a86",
-        "glow": "#00e5ff",
-    }
-
-
 async def test_new_user_has_default_dashboard_preferences(
     postgres_url: str, create_and_login
 ) -> None:
@@ -916,6 +789,19 @@ async def test_update_own_user_rejects_overlong_theme_name(
         response = client.put("/api/user/me", headers=headers, json={"theme": "x" * 51})
 
     assert response.status_code == 400
+
+
+def _custom_theme(theme_id: str = "neon-1", name: str = "Neon Night") -> dict[str, str]:
+    return {
+        "id": theme_id,
+        "name": name,
+        "background": "#0a0014",
+        "surface": "#1a0033",
+        "foreground": "#f5e9ff",
+        "accent": "#ff2bd6",
+        "border": "#5b2a86",
+        "glow": "#00e5ff",
+    }
 
 
 async def test_update_own_user_round_trips_custom_themes(

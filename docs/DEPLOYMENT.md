@@ -22,8 +22,8 @@ before it, and any other image, is refused.
    `compose.prod.yml`)
 3. runs `backup.sh`; a failing backup aborts before anything is changed
 4. tags the pulled image as `localhost/backlog-manager-backend:deployed`,
-   removes only `blm_backend` (with its dependents, the two cron containers,
-   which podman ties to it) and recreates the backend and the cron containers
+   removes only `blm_backend` (with its dependent, the wishlist sync cron container,
+   which podman ties to it) and recreates the backend and the cron container
    with `up -d --no-deps --no-recreate`. The constant local name matters:
    podman-compose tears every container of the project down when the config
    hash of an existing one differs, and the image reference is part of that
@@ -77,11 +77,14 @@ the `deploy:` lines of the log.
 
 ## The cron containers
 
-The two cron containers (`compose.prod.yml`) run a shell loop as PID 1. The
-loop traps SIGTERM and waits for `curl` and `sleep` in the background, so a
-stop ends them at once; before that they ignored SIGTERM and every container
-cost the full stop timeout. A test (`deploy/crons.test.mjs`) runs the real
-entrypoints of both compose files and checks that.
+The cron container of the Steam wishlist sync (`compose.prod.yml`) runs a shell
+loop as PID 1. The loop traps SIGTERM and waits for `curl` and `sleep` in the
+background, so a stop ends it at once; before that it ignored SIGTERM and the
+container cost the full stop timeout. A test (`deploy/crons.test.mjs`) runs the
+real entrypoint of both compose files and checks that. The container of the
+removed price sweep (`blm_price-check-cron`) is removed by the first deployment
+after #436, because podman removes the dependents of `blm_backend` with it; a
+run by hand does the same: `podman rm --force blm_price-check-cron`.
 
 Changes to `compose.prod.yml` and `deploy.sh` itself are **not** transferred
 by the workflow (a compromised runner must not be able to inject a compose

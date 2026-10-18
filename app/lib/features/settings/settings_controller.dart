@@ -18,8 +18,7 @@ class SettingsController extends Notifier<SettingsSave> {
   }
 
   /// Saves [update]; the result is the message of the error, or null when it
-  /// worked. The messages of the backend are kept, for example the one for a
-  /// Discord address that is not a webhook.
+  /// worked. The messages of the backend are kept.
   ///
   /// Saves can overlap; only the latest one sets the status, so an old one that
   /// ends late cannot turn "Saved" into "Not saved" or the other way round.

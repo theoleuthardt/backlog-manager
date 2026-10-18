@@ -37,7 +37,7 @@ backup_script="${BLM_BACKUP_SCRIPT:-./backup.sh}"
 health_timeout="${BLM_HEALTH_TIMEOUT:-120}"
 health_interval="${BLM_HEALTH_INTERVAL:-3}"
 local_image="localhost/backlog-manager-backend:deployed"
-services=(blm_backend blm_price-check-cron blm_steam-wishlist-sync-cron)
+services=(blm_backend blm_steam-wishlist-sync-cron)
 
 fail() {
   echo "deploy: $*" >&2
@@ -139,7 +139,7 @@ for old in blm_backend blm_backend-old; do
 done
 podman tag "$ref" "$local_image"
 BACKEND_IMAGE="$local_image" podman compose -f compose.prod.yml up -d --no-deps --no-recreate \
-  backend price-check-cron steam-wishlist-sync-cron \
+  backend steam-wishlist-sync-cron \
   || echo "deploy: compose reported errors, verifying the containers instead"
 
 healthy=0

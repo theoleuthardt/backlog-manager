@@ -642,7 +642,7 @@ export function CreationToolForm() {
                           onChange={(e) => setSteamAppIdInput(e.target.value)}
                           placeholder={
                             isCustomGame
-                              ? "e.g. 504230 - enables cover picker and price tracking"
+                              ? "e.g. 504230 - enables the cover picker"
                               : isLookingUpSteamAppId
                                 ? "Looking up on Steam..."
                                 : "No Steam App ID found - enter one manually"

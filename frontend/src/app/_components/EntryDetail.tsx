@@ -17,7 +17,6 @@ import { CategoryPicker } from "components/CategoryPicker";
 import { CoverPickerDialog } from "components/CoverPickerDialog";
 import { GameImage } from "components/GameImage";
 import { AchievementProgress } from "components/AchievementProgress";
-import { GamePriceSection } from "components/GamePriceSection";
 import { StatusSelect } from "components/StatusSelect";
 import { TrailerDialog } from "components/TrailerDialog";
 import { WrongGameDialog } from "components/WrongGameDialog";
@@ -393,7 +392,6 @@ const EntryDetailBody = (props: BacklogEntryProps) => {
                   Wrong Game
                 </Button>
               )}
-              <GamePriceSection steamAppId={steamAppId} title={title} />
               <div className="flex flex-wrap items-center gap-2 sm:ml-6">
                 <CategoryPicker entryId={props.id} />
                 <ShareToSpaceButton entry={props} />

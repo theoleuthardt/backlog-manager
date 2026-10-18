@@ -14,9 +14,9 @@ async def test_auto_sync_requires_the_cron_secret(
     monkeypatch: pytest.MonkeyPatch, postgres_url: str
 ) -> None:
     from backlog_manager_backend.app import create_app
-    from backlog_manager_backend.routes import prices as prices_routes
+    from backlog_manager_backend.config import settings
 
-    monkeypatch.setattr(prices_routes.settings, "price_check_cron_secret", "shh")
+    monkeypatch.setattr(settings, "cron_secret", "shh")
 
     with TestClient(app=create_app()) as client:
         missing = client.post("/api/steam/wishlist/auto-sync")
@@ -30,11 +30,11 @@ async def test_auto_sync_runs_for_opted_in_users_with_the_secret(
     monkeypatch: pytest.MonkeyPatch, postgres_url: str
 ) -> None:
     from backlog_manager_backend.app import create_app
-    from backlog_manager_backend.routes import prices as prices_routes
+    from backlog_manager_backend.config import settings
     from backlog_manager_backend.routes import steam_wishlist_sync as sync_routes
     from backlog_manager_backend.services import steam_wishlist_sync_service
 
-    monkeypatch.setattr(prices_routes.settings, "price_check_cron_secret", "shh")
+    monkeypatch.setattr(settings, "cron_secret", "shh")
 
     async def fake_sync_all(session: object, credentials_for: object) -> object:
         return steam_wishlist_sync_service.SyncSummary(users=2, added=3, removed=1)

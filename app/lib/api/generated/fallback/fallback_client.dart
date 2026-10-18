@@ -19,7 +19,6 @@ import '../models/csv_headers_response.dart';
 import '../models/custom_status_response.dart';
 import '../models/enriched_result.dart';
 import '../models/entry_mod_response.dart';
-import '../models/game_price.dart';
 import '../models/igdb_cover.dart';
 import '../models/igdb_game_data.dart';
 import '../models/igdb_game_time_to_beat.dart';
@@ -27,7 +26,6 @@ import '../models/igdb_genre.dart';
 import '../models/igdb_platform.dart';
 import '../models/igdb_search_result.dart';
 import '../models/invite_to_space_request.dart';
-import '../models/key_shop_offer.dart';
 import '../models/login_params.dart';
 import '../models/login_result.dart';
 import '../models/match_csv_request.dart';
@@ -524,28 +522,10 @@ abstract class FallbackClient {
     @Query('search_term') required String searchTerm,
   });
 
-  /// GetGamePrice
-  @GET('/api/games/{steam_app_id}/price')
-  Future<GamePrice> apiGamesSteamAppIdPriceGetGamePrice({
-    @Path('steam_app_id') required int steamAppId,
-  });
-
-  /// GetKeyShopPrices
-  @GET('/api/games/key-shop-prices')
-  Future<List<KeyShopOffer>> apiGamesKeyShopPricesGetKeyShopPrices({
-    @Query('title') required String title,
-  });
-
   /// GetSteamAppId
   @GET('/api/games/steam-app-id')
   Future<int?> apiGamesSteamAppIdGetSteamAppId({
     @Query('title') required String title,
-  });
-
-  /// CheckPrices
-  @POST('/api/prices/check')
-  Future<Map<String, int>> apiPricesCheckCheckPrices({
-    @Header('X-Cron-Secret') String? xCronSecret,
   });
 
   /// RunWishlistAutoSync

@@ -11,7 +11,7 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 function entrypoints(file) {
   const text = readFileSync(join(root, file), "utf8");
   const found = {};
-  for (const service of ["price-check-cron", "steam-wishlist-sync-cron"]) {
+  for (const service of ["steam-wishlist-sync-cron"]) {
     const start = text.indexOf(`\n  ${service}:`);
     const block = text.slice(start + 1, text.indexOf("\n\n", start + 1));
     const script = block.split("\n- |\n")[0] === block ? null : null;

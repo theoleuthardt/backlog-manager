@@ -247,7 +247,7 @@ class _SetupPageState extends ConsumerState<SetupPage> {
         return [
           heading(
             'All set',
-            "You're ready to go. Everything here can be changed any time in the settings, where you can also enable two-factor authentication and set up Discord price alerts.",
+            "You're ready to go. Everything here can be changed any time in the settings, where you can also enable two-factor authentication.",
           ),
         ];
     }

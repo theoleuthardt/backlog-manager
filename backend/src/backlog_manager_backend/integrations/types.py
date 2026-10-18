@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import msgspec
 
 
@@ -388,48 +386,3 @@ class AchievementProgress(msgspec.Struct):
     unlocked: int
     total: int
     achievements: list[AchievementInfo]
-
-
-class GgDealsPrices(msgspec.Struct, rename="camel"):
-    """The four prices GG.deals reports for one game, as decimal strings
-    (null where there is no such price): the current lowest price in the
-    official stores and in keyshops, and the lowest each ever was."""
-
-    currency: str | None = None
-    current_retail: str | None = None
-    current_keyshops: str | None = None
-    historical_retail: str | None = None
-    historical_keyshops: str | None = None
-
-
-class GgDealsGame(msgspec.Struct):
-    """One game of a prices answer; url is the GG.deals page of the game,
-    which has to be linked as it is (it carries their referral)."""
-
-    title: str
-    url: str
-    prices: GgDealsPrices
-
-
-class GgDealsPricesAnswer(msgspec.Struct):
-    """data is keyed by Steam App ID, null for an id GG.deals does not know."""
-
-    success: bool
-    data: dict[str, GgDealsGame | None] = {}
-
-
-class KeyShopOffer(msgspec.Struct):
-    """One matched product from a key-shop adapter (see
-    integrations/key_shops/) - shops outside the GG.deals prices, see
-    docs/KEY_SHOP_SCRAPING.md. discount_pct
-    is None rather than 0 when the shop reports no compare-at (original)
-    price at all, distinguishing "not on sale" from "no sale info
-    available"."""
-
-    shop: str
-    title: str
-    price: float
-    currency: str
-    url: str
-    fetched_at: datetime
-    discount_pct: int | None = None

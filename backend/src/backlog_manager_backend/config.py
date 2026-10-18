@@ -1,7 +1,7 @@
 import ipaddress
 
 from cryptography.fernet import Fernet
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 MIN_AUTH_SECRET_LENGTH = 32
@@ -19,12 +19,8 @@ class Settings(BaseSettings):
     print(Fernet.generate_key().decode())"`. They are separate from
     `auth_secret`, which signs JWTs.
 
-    `discord_webhook_url` is the server-wide fallback for users who have not
-    set their own webhook in Account settings, the same per-user-with-fallback
-    pattern as the IGDB, Steam and SteamGridDB keys (see
-    docs/PRICE_TRACKING.md). `price_check_cron_secret` gates
-    POST /api/prices/check, the only endpoint not meant for a logged-in user
-    (routes/prices.py).
+    `cron_secret` (environment variable `PRICE_CHECK_CRON_SECRET`, see
+    auth/cron_secret.py) gates the endpoints a scheduler calls.
 
     There is no public self-registration: when `initial_admin_email` and
     `initial_admin_password` are set and no users exist yet, the first admin
@@ -49,9 +45,7 @@ class Settings(BaseSettings):
     steam_web_api_key: str | None = None
     steam_api_key_encryption_key: str | None = None
     steamgriddb_api_key: str | None = None
-    ggdeals_api_key: str | None = None
-    discord_webhook_url: str | None = None
-    price_check_cron_secret: str | None = None
+    cron_secret: str | None = Field(default=None, validation_alias="PRICE_CHECK_CRON_SECRET")
     initial_admin_email: str | None = None
     initial_admin_password: str | None = None
     cors_allowed_origins: str = "http://localhost:3000"

@@ -14,8 +14,6 @@ CREATE TABLE IF NOT EXISTS "blm-system"."Users"(
     "SteamFamilyIds" TEXT,
     "IgdbCredentialsEncrypted" TEXT,
     "SteamGridDbApiKeyEncrypted" TEXT,
-    "GgDealsApiKeyEncrypted" TEXT,
-    "DiscordWebhookUrlEncrypted" TEXT,
     "SteamAutoImportEnabled" BOOLEAN NOT NULL DEFAULT FALSE,
     "SteamWishlistImportedAt" TIMESTAMP,
     "SteamWishlistAutoSync" BOOLEAN NOT NULL DEFAULT FALSE,
@@ -163,27 +161,6 @@ CREATE TABLE IF NOT EXISTS "blm-system"."SteamAppInfo" (
     "Name"        VARCHAR(255) NOT NULL,
     "HeaderImage" TEXT,
     "ResolvedAt"  TIMESTAMP WITHOUT TIME ZONE NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS "blm-system"."GamePrices" (
-    "SteamAppId"         BIGINT PRIMARY KEY,
-    "Currency"           VARCHAR(3),
-    "CurrentRetail"      NUMERIC(10,2),
-    "CurrentKeyshops"    NUMERIC(10,2),
-    "HistoricalRetail"   NUMERIC(10,2),
-    "HistoricalKeyshops" NUMERIC(10,2),
-    "Url"                TEXT,
-    "CheckedAt"          TIMESTAMP WITHOUT TIME ZONE NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS "blm-system"."UserGamePriceAlerts" (
-    "UserID"           BIGINT NOT NULL,
-    "SteamAppId"       BIGINT NOT NULL,
-    "LastAlertedPrice" NUMERIC(10,2) NOT NULL,
-    "UpdatedAt"        TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP),
-    PRIMARY KEY ("UserID", "SteamAppId"),
-    FOREIGN KEY ("UserID") REFERENCES "blm-system"."Users"("UserID")
-        ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS "blm-system"."CustomStatuses" (

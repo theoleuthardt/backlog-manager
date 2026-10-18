@@ -1,5 +1,4 @@
 import { apiClient, apiErrorMessage } from "./client";
-import { isHttpUrl } from "~/lib/safeUrl";
 
 export interface GameSearchResult {
   id: number;
@@ -96,67 +95,4 @@ export async function searchSteamGridDb(
   if (error)
     throw new Error(apiErrorMessage(error, "SteamGridDB search failed"));
   return data;
-}
-
-export interface GamePriceInfo {
-  steamAppId: number;
-  checkedAt: string;
-  currency: string | null;
-  currentRetail: number | null;
-  currentKeyshops: number | null;
-  historicalRetail: number | null;
-  historicalKeyshops: number | null;
-  url: string | null;
-}
-
-function priceOrNull(value: string | null | undefined): number | null {
-  return value === null || value === undefined ? null : Number(value);
-}
-
-export async function getGamePrice(steamAppId: number): Promise<GamePriceInfo> {
-  const { data, error } = await apiClient.GET(
-    "/api/games/{steam_app_id}/price",
-    {
-      params: { path: { steam_app_id: steamAppId } },
-    },
-  );
-  if (error)
-    throw new Error(apiErrorMessage(error, "Failed to load price info"));
-  return {
-    steamAppId: data.steam_app_id,
-    checkedAt: data.checked_at,
-    currency: data.currency ?? null,
-    currentRetail: priceOrNull(data.current_retail),
-    currentKeyshops: priceOrNull(data.current_keyshops),
-    historicalRetail: priceOrNull(data.historical_retail),
-    historicalKeyshops: priceOrNull(data.historical_keyshops),
-    url: data.url && isHttpUrl(data.url) ? data.url : null,
-  };
-}
-
-export interface KeyShopOffer {
-  shop: string;
-  title: string;
-  price: number;
-  currency: string;
-  url: string;
-  discountPct: number | null;
-}
-
-export async function getKeyShopPrices(title: string): Promise<KeyShopOffer[]> {
-  const { data, error } = await apiClient.GET("/api/games/key-shop-prices", {
-    params: { query: { title } },
-  });
-  if (error)
-    throw new Error(apiErrorMessage(error, "Failed to load key shop prices"));
-  return data
-    .filter((offer) => isHttpUrl(offer.url))
-    .map((offer) => ({
-      shop: offer.shop,
-      title: offer.title,
-      price: Number(offer.price),
-      currency: offer.currency,
-      url: offer.url,
-      discountPct: offer.discount_pct ?? null,
-    }));
 }

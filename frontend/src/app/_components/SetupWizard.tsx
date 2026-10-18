@@ -254,7 +254,7 @@ export function SetupWizard() {
           <p className="text-sm text-gray-300">
             You&apos;re ready to go. Everything here can be changed any time in
             your account settings, where you can also enable two-factor
-            authentication and set up Discord price alerts.
+            authentication.
           </p>
         )}
 

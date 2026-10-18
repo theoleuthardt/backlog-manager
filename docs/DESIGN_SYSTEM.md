@@ -199,7 +199,7 @@ Routes are the current web routes; the Flutter client can use the same names. Ev
 | CSV export | sheet | Download the backlog as CSV | Sheet, form group | `GET /api/backlog/entries` (CSV built client-side) |
 | Appearance | main window pane | Built-in and custom themes with live preview | Theme list, form group, preview window | `PUT /api/user/me` |
 | Shared space | main window pane | Two-person shared backlog, invitations | Toolbar with members, banner, covers with per-member progress | `GET /api/space`, `POST /api/space/invitations*`, `DELETE /api/space/membership` |
-| Settings | window | Default sort, two-factor, Steam, IGDB/SteamGridDB keys, Discord alerts, backups, app updates | Tab list, form groups | `GET/PUT/DELETE /api/user/me`, `/api/auth/2fa/*`, `/api/backups*` |
+| Settings | window | Default sort, two-factor, Steam, IGDB/SteamGridDB keys, backups, app updates | Tab list, form groups | `GET/PUT/DELETE /api/user/me`, `/api/auth/2fa/*`, `/api/backups*` |
 
 The canvas draws the Settings window on its Integrations tab; the other tabs (General, Security, Backups, App updates, About) use the same form-group layout.
 

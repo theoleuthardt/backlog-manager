@@ -23,7 +23,6 @@ from backlog_manager_backend.models.category_backlog_entry import (
 )
 from backlog_manager_backend.models.custom_status import CustomStatus
 from backlog_manager_backend.models.entry_mod import EntryMod
-from backlog_manager_backend.models.game_price import GamePrice
 from backlog_manager_backend.models.space import Space, SpaceMember
 from backlog_manager_backend.models.space_entry_member_data import SpaceEntryMemberData
 from backlog_manager_backend.models.steam_app_info import SteamAppInfo
@@ -31,7 +30,6 @@ from backlog_manager_backend.models.user import User
 from backlog_manager_backend.models.user_avatar import UserAvatar
 from backlog_manager_backend.models.user_backup import UserBackup
 from backlog_manager_backend.models.user_backup_code import UserBackupCode
-from backlog_manager_backend.models.user_game_price_alert import UserGamePriceAlert
 
 __all__ = [
     "BacklogEntry",
@@ -40,7 +38,6 @@ __all__ = [
     "CategoryBacklogEntry",
     "CustomStatus",
     "EntryMod",
-    "GamePrice",
     "Space",
     "SpaceEntryMemberData",
     "SpaceMember",
@@ -49,5 +46,4 @@ __all__ = [
     "UserAvatar",
     "UserBackup",
     "UserBackupCode",
-    "UserGamePriceAlert",
 ]

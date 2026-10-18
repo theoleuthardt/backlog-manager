@@ -79,11 +79,11 @@ Litestar (async, uv-managed) with a layered structure:
   intentionally separate from `models/`: a model can gain internal columns
   (e.g. an encrypted API key) without that leaking into a response schema.
 - `integrations/` — thin clients for external APIs (IGDB, HowLongToBeat,
-  Steam Web API, SteamGridDB, GG.deals), isolated so a provider's quirks don't spread
+  Steam Web API, SteamGridDB), isolated so a provider's quirks don't spread
   into `services/`.
 - `auth/` — password hashing, JWT issuing/verification, TOTP 2FA, and the
   Fernet-based encryption used for per-user API keys (Steam, SteamGridDB,
-  GG.deals, IGDB) and Steam IDs at rest.
+  IGDB) and Steam IDs at rest.
 
 ### Per-user credentials with a server-wide fallback
 

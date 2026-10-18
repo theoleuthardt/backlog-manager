@@ -13,11 +13,11 @@ from litestar.params import FromQuery, HeaderParameter
 from litestar.status_codes import HTTP_200_OK
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backlog_manager_backend.auth.dependencies import BEARER_SECURITY_REQUIREMENT, get_current_user
-from backlog_manager_backend.routes.prices import (
+from backlog_manager_backend.auth.cron_secret import (
     CRON_SECRET_SECURITY_REQUIREMENT,
     require_valid_cron_secret,
 )
+from backlog_manager_backend.auth.dependencies import BEARER_SECURITY_REQUIREMENT, get_current_user
 from backlog_manager_backend.schemas.steam_wishlist_sync import SteamWishlistSyncReport
 from backlog_manager_backend.schemas.user import User
 from backlog_manager_backend.services import steam_wishlist_sync_service
