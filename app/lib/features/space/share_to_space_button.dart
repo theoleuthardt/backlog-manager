@@ -53,6 +53,29 @@ class _ShareToSpaceButtonState extends ConsumerState<ShareToSpaceButton> {
     }
   }
 
+  /// Goes to the entry of [entry] in the space, found once the entries of the
+  /// space are loaded; the space page when it is not there or cannot be read.
+  Future<void> _openInSpace(int spaceId, BacklogEntry entry) async {
+    BacklogEntry? inSpace;
+    try {
+      inSpace = spaceEntryFor(
+        entry,
+        await ref.read(entriesProvider(spaceId).future),
+      );
+    } on Object {
+      inSpace = null;
+    }
+    if (!mounted) return;
+    context.go(
+      inSpace == null
+          ? AppRoutes.space
+          : Uri(
+              path: AppRoutes.space,
+              queryParameters: {'entry': '${inSpace.id}'},
+            ).toString(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final spaceId = ref.watch(activeSpaceIdProvider);
@@ -62,22 +85,11 @@ class _ShareToSpaceButtonState extends ConsumerState<ShareToSpaceButton> {
     final entry = widget.entry;
 
     if (entry.inSharedSpace) {
-      final inSpace = spaceEntryFor(
-        entry,
-        ref.watch(entriesProvider(spaceId)).value ?? const [],
-      );
       return ShelfButton(
         key: const Key('inspector-in-space'),
         label: 'Open in Shared Space',
         icon: Icons.people_outline,
-        onPressed: () => context.go(
-          inSpace == null
-              ? AppRoutes.space
-              : Uri(
-                  path: AppRoutes.space,
-                  queryParameters: {'entry': '${inSpace.id}'},
-                ).toString(),
-        ),
+        onPressed: () => unawaited(_openInSpace(spaceId, entry)),
       );
     }
     return ShelfButton(
