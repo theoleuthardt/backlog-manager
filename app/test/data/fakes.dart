@@ -4,7 +4,6 @@ import 'package:backlog_manager/data/games_api.dart';
 import 'package:backlog_manager/domain/entry_mod.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/models.dart';
-import 'package:backlog_manager/domain/price_listings.dart';
 
 class FakeBacklogApi implements BacklogApi {
   FakeBacklogApi({List<BacklogEntry>? entries})
@@ -311,29 +310,11 @@ class FakeBacklogApi implements BacklogApi {
 
 class FakeGamesApi implements GamesApi {
   final calls = <String>[];
-  Future<PriceInfo> Function(int steamAppId)? onPrice;
-  Future<List<KeyShopOffer>> Function(String title)? onKeyShops;
   Future<List<GameSearchResult>> Function(String term, bool deep)? onSearch;
   Future<int?> Function(String title)? onSteamAppId;
   Future<List<String>> Function(int steamAppId)? onCovers;
   Future<List<SteamGridDbMatch>> Function(String term)? onGridSearch;
   Future<List<String>> Function(int gameId)? onCoversById;
-
-  @override
-  Future<PriceInfo> price(int steamAppId) async {
-    calls.add('price $steamAppId');
-    final custom = onPrice;
-    if (custom != null) return custom(steamAppId);
-    return const PriceInfo();
-  }
-
-  @override
-  Future<List<KeyShopOffer>> keyShopPrices(String title) async {
-    calls.add('keys $title');
-    final custom = onKeyShops;
-    if (custom != null) return custom(title);
-    return const [];
-  }
 
   @override
   Future<List<GameSearchResult>> search(

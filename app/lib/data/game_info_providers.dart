@@ -6,13 +6,7 @@ import 'package:backlog_manager/data/backlog_api.dart';
 import 'package:backlog_manager/data/games_api.dart';
 import 'package:backlog_manager/domain/achievements.dart';
 import 'package:backlog_manager/domain/game_search.dart';
-import 'package:backlog_manager/domain/price_listings.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-/// How long a price answer is kept before the server is asked again.
-final priceCacheTtlProvider = Provider<Duration>(
-  (ref) => const Duration(hours: 1),
-);
 
 /// How long the Steam playtime of a game is kept.
 final playtimeCacheTtlProvider = Provider<Duration>(
@@ -41,28 +35,6 @@ void _cacheFor(Ref ref, Duration ttl) {
   final timer = Timer(ttl, link.close);
   ref.onDispose(timer.cancel);
 }
-
-/// The GG.deals prices of a Steam game, cached for an hour.
-final gamePriceProvider = FutureProvider.autoDispose.family<PriceInfo, int>((
-  ref,
-  steamAppId,
-) async {
-  final api = ref.watch(gamesApiProvider);
-  final ttl = ref.read(priceCacheTtlProvider);
-  final price = await api.price(steamAppId);
-  if (ref.mounted) _cacheFor(ref, ttl);
-  return price;
-});
-
-/// The key shop offers for a title, cached for an hour.
-final keyShopPricesProvider = FutureProvider.autoDispose
-    .family<List<KeyShopOffer>, String>((ref, title) async {
-      final api = ref.watch(gamesApiProvider);
-      final ttl = ref.read(priceCacheTtlProvider);
-      final offers = await api.keyShopPrices(title);
-      if (ref.mounted) _cacheFor(ref, ttl);
-      return offers;
-    });
 
 /// The achievements of the signed-in account for a Steam game, cached for a
 /// few minutes.

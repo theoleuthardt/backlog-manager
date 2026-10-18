@@ -18,7 +18,6 @@ SessionUser sessionUserFrom(wire.PublicUser user) {
     hasSteamApiKey: user.hasSteamApiKey,
     hasIgdbCredentials: user.hasIgdbCredentials,
     hasSteamgriddbApiKey: user.hasSteamgriddbApiKey,
-    hasGgdealsApiKey: user.hasGgdealsApiKey,
     hasDiscordWebhookUrl: user.hasDiscordWebhookUrl,
     steamWishlistAutoSync: user.steamWishlistAutoSync,
     steamWishlistImportedAt: user.steamWishlistImportedAt,

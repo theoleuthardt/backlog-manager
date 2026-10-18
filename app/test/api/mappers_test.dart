@@ -1,7 +1,6 @@
 import 'package:backlog_manager/api/generated/export.dart';
 import 'package:backlog_manager/api/mappers.dart';
 import 'package:backlog_manager/domain/creation_form.dart';
-import 'package:backlog_manager/domain/price_listings.dart' as price;
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -89,59 +88,6 @@ void main() {
       expect(space.members.map((m) => m.username), ['me', 'friend']);
       expect(space.members.first.isMe, isTrue);
     });
-  });
-
-  group('priceInfoFromResponse', () {
-    test('maps the four prices, the currency and the link', () {
-      final info = priceInfoFromResponse(
-        GamePrice(
-          steamAppId: 1145360,
-          checkedAt: DateTime.utc(2026),
-          currency: 'EUR',
-          currentRetail: '9.99',
-          currentKeyshops: '4.50',
-          historicalRetail: '1.99',
-          historicalKeyshops: '1.50',
-          url: 'https://gg.deals/game/hades/',
-        ),
-      );
-
-      expect(info.currency, 'EUR');
-      expect(info.currentRetail, 9.99);
-      expect(info.currentKeyshops, 4.5);
-      expect(info.historicalRetail, 1.99);
-      expect(info.historicalKeyshops, 1.5);
-      expect(info.url, 'https://gg.deals/game/hades/');
-    });
-
-    test('keeps a price GG.deals does not have as null', () {
-      final info = priceInfoFromResponse(
-        GamePrice(steamAppId: 1, checkedAt: DateTime.utc(2026)),
-      );
-
-      expect(info.hasPrices, isFalse);
-      expect(info.currentRetail, isNull);
-      expect(info.url, isNull);
-    });
-  });
-
-  test('keyShopOfferFromResponse maps an offer', () {
-    final offer = keyShopOfferFromResponse(
-      KeyShopOffer(
-        shop: 'RoyalCDKeys',
-        title: 'Hades',
-        price: 9,
-        currency: 'EUR',
-        url: 'https://keys.example/hades',
-        fetchedAt: DateTime.utc(2026),
-        discountPct: 40,
-      ),
-    );
-
-    expect(offer, isA<price.KeyShopOffer>());
-    expect(offer.shop, 'RoyalCDKeys');
-    expect(offer.price, 9);
-    expect(offer.discountPct, 40);
   });
 
   test('achievementsFromResponse maps the progress and every achievement', () {
