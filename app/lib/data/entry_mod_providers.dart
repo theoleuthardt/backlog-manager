@@ -7,15 +7,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// one, else the Shared Space).
 typedef ModsScope = ({int entryId, int? spaceId});
 
-/// The mods of one game; dropped when the session changes so the next user
-/// never sees them.
-final entryModsProvider = FutureProvider.family<List<EntryMod>, ModsScope>((
-  ref,
-  scope,
-) {
-  ref.watch(sessionGenerationProvider);
-  return ref.watch(backlogApiProvider).entryMods(scope.entryId, scope.spaceId);
-});
+/// The mods of one game, read again every time the tab is opened (in a Shared
+/// Space the partner may have changed them); dropped when the session changes
+/// so the next user never sees them.
+final entryModsProvider = FutureProvider.autoDispose
+    .family<List<EntryMod>, ModsScope>((ref, scope) {
+      ref.watch(sessionGenerationProvider);
+      return ref
+          .watch(backlogApiProvider)
+          .entryMods(scope.entryId, scope.spaceId);
+    });
 
 /// Adds, changes and removes the mods of one game; the list is read again
 /// after every change.

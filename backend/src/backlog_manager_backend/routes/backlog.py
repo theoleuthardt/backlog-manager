@@ -7,7 +7,7 @@ from litestar.status_codes import HTTP_409_CONFLICT
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.auth.dependencies import BEARER_SECURITY_REQUIREMENT, get_current_user
-from backlog_manager_backend.errors import ConflictError, NotFoundError
+from backlog_manager_backend.errors import ConflictError, NotFoundError, ValidationError
 from backlog_manager_backend.repositories import (
     backlog_entry_repo,
     category_backlog_entry_repo,
@@ -45,7 +45,6 @@ from backlog_manager_backend.schemas.custom_status import (
 )
 from backlog_manager_backend.schemas.entry_mod import (
     MAX_MOD_NAME_LENGTH,
-    MAX_MODS_PER_ENTRY,
     CreateEntryModRequest,
     EntryModResponse,
     UpdateEntryModRequest,
@@ -631,9 +630,10 @@ async def create_entry_mod(
 ) -> EntryModResponse:
     await _get_scoped_entry(db_session, entry_id, current_user, space_id)
     name = _validated_mod_name(data.name)
-    if await entry_mod_repo.count_mods(db_session, entry_id) >= MAX_MODS_PER_ENTRY:
-        raise ValidationException(f"An entry has at most {MAX_MODS_PER_ENTRY} mods")
-    mod = await entry_mod_repo.create_mod(db_session, entry_id, name, data.url)
+    try:
+        mod = await entry_mod_repo.create_mod(db_session, entry_id, name, data.url)
+    except ValidationError as error:
+        raise ValidationException(str(error)) from error
     return EntryModResponse.from_mod(mod)
 
 

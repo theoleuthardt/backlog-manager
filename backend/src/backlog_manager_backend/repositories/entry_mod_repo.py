@@ -2,9 +2,10 @@ import msgspec
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backlog_manager_backend.errors import NotFoundError
+from backlog_manager_backend.errors import NotFoundError, ValidationError
+from backlog_manager_backend.models.backlog_entry import BacklogEntry as BacklogEntryModel
 from backlog_manager_backend.models.entry_mod import EntryMod as EntryModModel
-from backlog_manager_backend.schemas.entry_mod import EntryMod
+from backlog_manager_backend.schemas.entry_mod import MAX_MODS_PER_ENTRY, EntryMod
 from backlog_manager_backend.utils import now_truncated_to_minute
 
 
@@ -26,18 +27,23 @@ async def get_mods_by_entry(session: AsyncSession, backlog_entry_id: int) -> lis
     return [_to_schema(row) for row in result.scalars().all()]
 
 
-async def count_mods(session: AsyncSession, backlog_entry_id: int) -> int:
-    return (
-        await session.scalar(
-            select(func.count()).where(EntryModModel.backlog_entry_id == backlog_entry_id)
-        )
-        or 0
-    )
-
-
 async def create_mod(
     session: AsyncSession, backlog_entry_id: int, name: str, url: str | None
 ) -> EntryMod:
+    """Adds a mod unless the entry already has MAX_MODS_PER_ENTRY of them
+    (ValidationError). The entry row is locked while counting, so two members
+    of a shared space adding at once cannot both pass the limit."""
+    await session.execute(
+        select(BacklogEntryModel.id)
+        .where(BacklogEntryModel.id == backlog_entry_id)
+        .with_for_update()
+    )
+    count = await session.scalar(
+        select(func.count()).where(EntryModModel.backlog_entry_id == backlog_entry_id)
+    )
+    if (count or 0) >= MAX_MODS_PER_ENTRY:
+        await session.rollback()
+        raise ValidationError(f"An entry has at most {MAX_MODS_PER_ENTRY} mods")
     model = EntryModModel(backlog_entry_id=backlog_entry_id, name=name, url=url)
     session.add(model)
     await session.commit()
