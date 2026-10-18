@@ -300,14 +300,18 @@ tasks:
       - bash tool/icons/generate.sh
 
   app:package:
-    desc: 'Package the Flutter app for this OS (Fastforge: AppImage and DEB, DMG, EXE installer; RPM through tool/package/rpm.sh) into app/dist; default server: task app:package API_URL=https://api.example.com'
+    desc: 'Package the Flutter app for this OS (Fastforge: DEB, DMG, EXE installer; AppImage and RPM through tool/package/appimage.sh and rpm.sh) into app/dist; default server: task app:package API_URL=https://api.example.com'
     dir: "{{.APP_DIR}}"
     vars:
-      PACKAGE_TARGETS: '{{if eq OS "darwin"}}dmg{{else if eq OS "windows"}}exe{{else}}appimage,deb{{end}}'
+      PACKAGE_TARGETS: '{{if eq OS "darwin"}}dmg{{else if eq OS "windows"}}exe{{else}}deb{{end}}'
       PACKAGE_ARCH: '{{if eq OS "darwin"}}universal{{else}}x64{{end}}'
     cmds:
       - dart pub global activate fastforge 0.6.12
       - dart pub global run fastforge:main package --platform {{.APP_PLATFORM}} --targets {{.PACKAGE_TARGETS}} --artifact-name "Backlog-Manager_{{`{{build_name}}`}}_{{.APP_PLATFORM}}_{{.PACKAGE_ARCH}}.{{`{{ext}}`}}"{{if .API_URL}} --build-dart-define=API_URL={{.API_URL}}{{end}}
+      - cmd: bash tool/package/appimage.sh
+        platforms: [linux]
+      - cmd: bash tool/package/check_appimage.sh
+        platforms: [linux]
       - cmd: bash tool/package/rpm.sh
         platforms: [linux]
 

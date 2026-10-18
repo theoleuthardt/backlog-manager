@@ -118,7 +118,7 @@ A build for another OS cannot be made on this one (Flutter has no cross-compilat
 
 | OS | Formats | Tool | Needs |
 | --- | --- | --- | --- |
-| Linux | `.AppImage`, `.deb`, `.rpm` | Fastforge (AppImage, DEB), `tool/package/rpm.sh` (RPM) | `clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev`, `rpm` (rpmbuild), `file`, `appimagetool` on the PATH (set `APPIMAGE_EXTRACT_AND_RUN=1` without FUSE) |
+| Linux | `.AppImage`, `.deb`, `.rpm` | Fastforge (DEB), `tool/package/appimage.sh` (AppImage), `tool/package/rpm.sh` (RPM) | `clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev`, `rpm` (rpmbuild), `file`, `appimagetool` on the PATH (set `APPIMAGE_EXTRACT_AND_RUN=1` without FUSE) |
 | macOS | `.dmg` | Fastforge | Xcode, `npm install -g appdmg` |
 | Windows | `.exe` installer | Fastforge with Inno Setup | Visual Studio C++ workload, Inno Setup 6 (`choco install innosetup`) |
 
@@ -132,6 +132,8 @@ Decisions (#277):
 - **Artifact names:** `Backlog-Manager_<version>_<os>_<arch>.<ext>`, for example `Backlog-Manager_0.9.3_linux_x64.AppImage`, `Backlog-Manager_0.9.3_macos_universal.dmg`, `Backlog-Manager_0.9.3_windows_x64.exe`.
 - **Icons:** `tool/icons/icon.svg` is the single source (a ringed planet in the colours of the Shelf theme); `task app:icons` renders the macOS icon set, the Windows `.ico` and the Linux PNG (needs `rsvg-convert` and ImageMagick).
 - **Install locations** (what the in-place updater of #279 has to know): DEB puts the app in `/opt/backlog_manager` with a symlink in `/usr/bin`, RPM in `/usr/share/backlog-manager`, an AppImage is the file the user keeps, the DMG holds `backlog_manager.app` for `/Applications` and the Windows installer uses `%LOCALAPPDATA%\Programs\Backlog Manager`.
+
+**The AppImage is assembled by `tool/package/appimage.sh` (#438), not by Fastforge:** Fastforge puts every library `ldd` finds into it, and since the WebKit plugin that was the whole WebKitGTK tree of the Ubuntu build machine (76 MB instead of 19 MB), which does not run on a Fedora based system (v0.9.6 on Bazzite: `libjpeg.so.8` missing, Fedora has `.so.62`; `AppRun` also put the bundled libraries first with `LD_LIBRARY_PATH`). The script copies only the Flutter release bundle (about 11 MB) into an AppDir with a plain `AppRun` and runs `appimagetool`; WebKitGTK 4.1 and libsoup 3 are a requirement of the system like for the deb and rpm. `tool/package/check_appimage.sh` fails when the AppImage holds anything but the bundle and the files of the AppImage itself (it runs in `task app:package` and in the Linux build job of CI).
 
 Verified so far: the three Linux packages are built locally (an AppImage starts under Xvfb); the macOS and Windows packages only run in the release workflow's dry run.
 
