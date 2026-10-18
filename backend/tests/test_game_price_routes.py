@@ -112,13 +112,14 @@ async def test_get_game_price_is_503_when_gg_deals_is_unreachable(
     assert response.status_code == 503
 
 
+@pytest.mark.parametrize("no_key", [None, ""])
 async def test_get_game_price_is_503_without_any_key(
-    monkeypatch: pytest.MonkeyPatch, postgres_url: str, create_and_login
+    no_key: str | None, monkeypatch: pytest.MonkeyPatch, postgres_url: str, create_and_login
 ) -> None:
     from backlog_manager_backend.app import create_app
     from backlog_manager_backend.config import settings
 
-    monkeypatch.setattr(settings, "ggdeals_api_key", None)
+    monkeypatch.setattr(settings, "ggdeals_api_key", no_key)
 
     with TestClient(app=create_app()) as client:
         headers = await create_and_login(client, "pricenokey@example.com")

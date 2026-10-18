@@ -9,7 +9,6 @@ from litestar.params import FromPath, FromQuery, QueryParameter
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backlog_manager_backend.auth.dependencies import BEARER_SECURITY_REQUIREMENT, get_current_user
-from backlog_manager_backend.config import settings
 from backlog_manager_backend.integrations.igdb import (
     get_cover_on_igdb,
     get_game_on_igdb,
@@ -34,7 +33,7 @@ from backlog_manager_backend.schemas.user import User
 from backlog_manager_backend.services import game_service, key_shop_price_service, price_service
 from backlog_manager_backend.services.credentials import (
     StoredCredentialError,
-    resolve_ggdeals_api_key,
+    resolve_ggdeals_api_key_with_fallback,
     resolve_igdb_credentials,
     resolve_steamgriddb_api_key,
 )
@@ -229,10 +228,7 @@ async def get_game_price(
     already in the cache is served even when GG.deals cannot be asked.
     Without any key and without a cached answer, or when GG.deals fails,
     this is a 503 and the client falls back to its search links."""
-    try:
-        api_key = resolve_ggdeals_api_key(current_user)
-    except StoredCredentialError:
-        api_key = settings.ggdeals_api_key
+    api_key = resolve_ggdeals_api_key_with_fallback(current_user)
     try:
         return await price_service.get_price_info(db_session, steam_app_id, api_key)
     except price_service.PriceSourceNotConfiguredError as error:

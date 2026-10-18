@@ -79,10 +79,11 @@ def resolve_steamgriddb_api_key_or_none(user: User) -> str | None:
         return None
 
 
-def resolve_ggdeals_api_key_or_none(user: User) -> str | None:
-    """For callers that degrade gracefully: a broken stored key counts as
-    not configured."""
+def resolve_ggdeals_api_key_with_fallback(user: User) -> str | None:
+    """For the price lookup, which can be served by either key: a stored key
+    that cannot be used (the encryption key changed) counts as not set, so
+    the server's key is used instead."""
     try:
         return resolve_ggdeals_api_key(user)
     except StoredCredentialError:
-        return None
+        return settings.ggdeals_api_key

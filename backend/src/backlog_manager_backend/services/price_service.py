@@ -1,6 +1,6 @@
 import asyncio
 from datetime import UTC, datetime
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 import httpx
 import structlog
@@ -36,6 +36,7 @@ _RATE_LIMIT_RETRIES = 2
 _RATE_LIMIT_DEFAULT_WAIT_SECONDS = 60.0
 _RATE_LIMIT_MAX_WAIT_SECONDS = 120.0
 _KEY_REJECTED_STATUSES = (401, 403)
+_INVALID_PRICE = "GG.deals API returned an invalid price"
 
 
 class PriceSourceNotConfiguredError(Exception):
@@ -72,7 +73,17 @@ def _is_stale(checked_at: datetime) -> bool:
 
 
 def _decimal(value: str | None) -> Decimal | None:
-    return None if value is None else Decimal(value)
+    """A price from GG.deals as a number; anything that is not a finite
+    number is a bad answer (httpx.DecodingError), like an unreadable body."""
+    if value is None:
+        return None
+    try:
+        parsed = Decimal(value)
+    except InvalidOperation as error:
+        raise httpx.DecodingError(_INVALID_PRICE) from error
+    if not parsed.is_finite():
+        raise httpx.DecodingError(_INVALID_PRICE)
+    return parsed
 
 
 async def _fetch_and_store_prices(
@@ -83,11 +94,10 @@ async def _fetch_and_store_prices(
     asked for again before the cache runs out."""
     games: dict[int, GgDealsGame | None] = await get_prices_by_steam_app_ids(steam_app_ids, api_key)
     checked_at = _now()
-    stored: dict[int, GamePrice] = {}
+    rows: list[UpsertGamePriceParams] = []
     for steam_app_id, game in games.items():
         prices = game.prices if game is not None else None
-        stored[steam_app_id] = await game_price_repo.upsert_game_price(
-            session,
+        rows.append(
             UpsertGamePriceParams(
                 steam_app_id=steam_app_id,
                 checked_at=checked_at,
@@ -97,9 +107,9 @@ async def _fetch_and_store_prices(
                 historical_retail=_decimal(prices.historical_retail) if prices else None,
                 historical_keyshops=_decimal(prices.historical_keyshops) if prices else None,
                 url=game.url if game else None,
-            ),
+            )
         )
-    return stored
+    return {row.steam_app_id: await game_price_repo.upsert_game_price(session, row) for row in rows}
 
 
 async def get_price_info(
@@ -114,7 +124,7 @@ async def get_price_info(
     existing = await game_price_repo.get_game_price(session, steam_app_id)
     if existing is not None and not _is_stale(existing.checked_at):
         return existing
-    if api_key is None:
+    if not api_key:
         if existing is not None:
             return existing
         raise PriceSourceNotConfiguredError

@@ -162,18 +162,61 @@ async def test_get_price_info_remembers_a_game_gg_deals_does_not_know(
     assert batches == [[999999]]
 
 
+@pytest.mark.parametrize("no_key", [None, ""])
 async def test_get_price_info_without_a_key_serves_a_stale_row_or_raises(
-    price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
+    no_key: str | None,
+    price_service: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    session: AsyncSession,
 ) -> None:
     await _store(session, 220, timedelta(hours=9))
     batches = _serve(price_service, monkeypatch, game=_game())
 
-    stale = await price_service.get_price_info(session, 220, None)
+    stale = await price_service.get_price_info(session, 220, no_key)
 
     assert stale.current_retail == Decimal("5.00")
     with pytest.raises(price_service.PriceSourceNotConfiguredError):
-        await price_service.get_price_info(session, 221, None)
+        await price_service.get_price_info(session, 221, no_key)
     assert batches == []
+
+
+@pytest.mark.parametrize("bad", ["N/A", "", "NaN", "Infinity"])
+async def test_a_malformed_price_is_a_decoding_error_and_stores_nothing(
+    bad: str, price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
+) -> None:
+    _serve(
+        price_service,
+        monkeypatch,
+        answers={220: _game(), 221: _game(retail=bad)},
+    )
+
+    async def ask() -> None:
+        await price_service._fetch_and_store_prices(session, [220, 221], _KEY)
+
+    with pytest.raises(httpx.DecodingError):
+        await ask()
+    assert await game_price_repo.get_game_price(session, 220) is None
+
+
+async def test_the_sweep_goes_on_after_a_batch_with_a_malformed_price(
+    price_service: ModuleType, monkeypatch: pytest.MonkeyPatch, session: AsyncSession
+) -> None:
+    size = price_service._SWEEP_BATCH_SIZE
+    await _entries_for(session, list(range(1, size + 2)))
+    _patch_sleep(price_service, monkeypatch)
+    calls = 0
+
+    async def fake_get(steam_app_ids: list[int], api_key: str) -> dict:
+        nonlocal calls
+        calls += 1
+        bad = _game(retail="N/A") if calls == 1 else _game()
+        return dict.fromkeys(steam_app_ids, bad)
+
+    monkeypatch.setattr(price_service, "get_prices_by_steam_app_ids", fake_get)
+
+    await price_service.check_prices_and_alert(session)
+
+    assert calls == 2
 
 
 @pytest.mark.parametrize("status", [429, 500])
