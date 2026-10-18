@@ -53,11 +53,12 @@ async def apply_member_data(
 async def flag_games_in_shared_space(
     session: AsyncSession, entries: list[BacklogEntry], viewer_id: int
 ) -> list[BacklogEntry]:
-    """Marks the viewer's personal entries whose Steam game is also
-    tracked in the shared space they are an active member of, so the
-    personal backlog can point at the shared one. Entries without a
-    Steam app id, and entries of the space itself, are never flagged."""
-    candidates = [e for e in entries if e.space_id is None and e.steam_app_id is not None]
+    """Marks the viewer's personal entries whose game is also tracked in
+    the shared space they are an active member of, so the personal
+    backlog can point at the shared one. A game matches by Steam app id;
+    one without a Steam app id matches by its title, ignoring case and
+    surrounding spaces. Entries of the space itself are never flagged."""
+    candidates = [e for e in entries if e.space_id is None]
     if not candidates:
         return entries
     space_ids = await session.scalars(
@@ -68,20 +69,25 @@ async def flag_games_in_shared_space(
     space_id = space_ids.first()
     if space_id is None:
         return entries
-    shared_app_ids = set(
-        (
-            await session.scalars(
-                select(BacklogEntryModel.steam_app_id).where(
-                    BacklogEntryModel.space_id == space_id,
-                    BacklogEntryModel.steam_app_id.is_not(None),
-                )
+    shared = (
+        await session.execute(
+            select(BacklogEntryModel.steam_app_id, BacklogEntryModel.title).where(
+                BacklogEntryModel.space_id == space_id
             )
-        ).all()
-    )
+        )
+    ).all()
+    shared_app_ids = {app_id for app_id, _ in shared if app_id is not None}
+    shared_titles = {title.strip().lower() for _, title in shared}
+
+    def in_space(entry: BacklogEntry) -> bool:
+        if entry.space_id is not None:
+            return False
+        if entry.steam_app_id is not None:
+            return entry.steam_app_id in shared_app_ids
+        return entry.title.strip().lower() in shared_titles
+
     return [
-        msgspec.structs.replace(entry, in_shared_space=True)
-        if entry.space_id is None and entry.steam_app_id in shared_app_ids
-        else entry
+        msgspec.structs.replace(entry, in_shared_space=True) if in_space(entry) else entry
         for entry in entries
     ]
 

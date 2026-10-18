@@ -77,11 +77,6 @@ const leaveWarning =
     'You lose access to its entries. They stay with your partner; once '
     'nobody is left they are deleted.';
 
-const shareToSpaceHint = 'Only Steam games can be added to the Shared Space';
-
-/// Only Steam games can live in a space.
-bool canShareToSpace(BacklogEntry entry) => entry.steamAppId != null;
-
 /// The copy of a personal game that goes into the space, with all its fields.
 NewEntry sharedCopyOf(BacklogEntry entry) {
   return NewEntry(

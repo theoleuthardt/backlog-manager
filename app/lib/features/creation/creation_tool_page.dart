@@ -28,6 +28,7 @@ import 'package:backlog_manager/features/add_game/cover_picker_sheet.dart';
 import 'package:backlog_manager/features/add_game/game_result_parts.dart';
 import 'package:backlog_manager/features/common/status_select.dart';
 import 'package:backlog_manager/features/creation/duplicate_sheet.dart';
+import 'package:backlog_manager/features/creation/foldable_about.dart';
 import 'package:backlog_manager/features/inspector/inspector_parts.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
@@ -82,9 +83,7 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
         value == value.roundToDouble() ? '${value.toInt()}' : '$value';
     _title = TextEditingController(text: _prefill.title);
     _genre = TextEditingController(text: _prefill.genres);
-    _platform = TextEditingController(
-      text: _prefill.platformOptions.firstOrNull ?? '',
-    );
+    _platform = TextEditingController(text: _prefill.defaultPlatform);
     _imageUrl = TextEditingController(text: _prefill.imageUrl);
     _playtime = TextEditingController(text: '0');
     _steamAppId = TextEditingController();
@@ -185,7 +184,7 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
       return;
     }
     final input = _input;
-    final problem = validateCreation(input, toSpace: _toSpace);
+    final problem = validateCreation(input);
     if (problem != null) {
       _toast(problem);
       return;
@@ -416,11 +415,7 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
             const SizedBox(height: 12),
             Text('About', style: style.label),
             const SizedBox(height: 4),
-            Text(
-              _prefill.description,
-              key: const Key('creation-about'),
-              style: style.caption.copyWith(color: tokens.text2, height: 1.5),
-            ),
+            FoldableAbout(text: _prefill.description),
           ],
         ],
       ),
@@ -646,8 +641,6 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
   }
 
   Widget _rightColumn(bool custom) {
-    final tokens = Theme.of(context).extension<ShelfTokens>()!;
-    final style = Theme.of(context).extension<ShelfTextStyles>()!;
     final lookingUp = _lookupApplies && _lookup.isLoading;
     final reviewable = canReview(_status);
     return Column(
@@ -740,28 +733,34 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
           rows: [
             _row(
               'Review Stars',
-              Opacity(
-                opacity: reviewable ? 1 : 0.5,
-                child: StarRating(
-                  value: _reviewStars,
-                  onChanged: reviewable
-                      ? (value) => setState(() => _reviewStars = value)
-                      : null,
+              Tooltip(
+                message: reviewable ? '' : _needsCompleted,
+                child: Opacity(
+                  opacity: reviewable ? 1 : 0.5,
+                  child: StarRating(
+                    value: _reviewStars,
+                    onChanged: reviewable
+                        ? (value) => setState(() => _reviewStars = value)
+                        : null,
+                  ),
                 ),
               ),
             ),
             Padding(
               padding: const EdgeInsets.all(16),
-              child: ShelfTextArea(
-                label: 'Review',
-                fieldKey: const Key('creation-review'),
-                controller: _review,
-                enabled: reviewable,
-                minLines: 3,
-                hintText: reviewable
-                    ? 'Write your review here...'
-                    : 'Set the status to Completed to write a review',
-                onChanged: (_) {},
+              child: Tooltip(
+                message: reviewable ? '' : _needsCompleted,
+                child: ShelfTextArea(
+                  label: 'Review',
+                  fieldKey: const Key('creation-review'),
+                  controller: _review,
+                  enabled: reviewable,
+                  minLines: 3,
+                  hintText: reviewable
+                      ? 'Write your review here...'
+                      : 'Set the status to Completed to write a review',
+                  onChanged: (_) {},
+                ),
               ),
             ),
             Padding(
@@ -777,18 +776,12 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
             ),
           ],
         ),
-        if (!reviewable)
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Text(
-              'Stars and review need the status Completed.',
-              style: style.caption.copyWith(color: tokens.faint),
-            ),
-          ),
       ],
     );
   }
 }
+
+const _needsCompleted = 'Stars and review need the status Completed';
 
 class _WarningBanner extends StatelessWidget {
   const _WarningBanner({required this.message});

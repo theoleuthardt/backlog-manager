@@ -542,7 +542,113 @@ void main() {
     });
   });
 
+  group('the About text', () {
+    final long = GameSearchResult(
+      id: 2,
+      title: 'Long',
+      imageUrl: 'https://img.example/l.jpg',
+      genres: ['Action'],
+      platforms: ['PC'],
+      mainStory: 1,
+      mainStoryWithExtras: 1,
+      completionist: 1,
+      description:
+          'A very long description that goes on and on about the game. '
+          'It keeps going so that it needs far more than four lines in the '
+          'narrow side column of the creation tool. '
+          '${'More and more words follow here. ' * 30}',
+    );
+
+    testWidgets('has a fixed height and folds out on request', (tester) async {
+      await openTool(tester, location: creationToolLocation(long));
+      final about = find.byKey(const Key('creation-about'));
+      final folded = tester.getSize(about).height;
+
+      expect(find.byKey(const Key('creation-about-toggle')), findsOneWidget);
+      expect(find.text('Show more'), findsOneWidget);
+
+      await tester.ensureVisible(
+        find.byKey(const Key('creation-about-toggle')),
+      );
+      await tester.tap(find.byKey(const Key('creation-about-toggle')));
+      await tester.pumpAndSettle();
+
+      expect(tester.getSize(about).height, greaterThan(folded));
+      expect(tester.getSize(about).height, lessThanOrEqualTo(260));
+      expect(find.text('Show less'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('creation-about-toggle')));
+      await tester.pumpAndSettle();
+
+      expect(tester.getSize(about).height, folded);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('the toggle works from the keyboard', (tester) async {
+      await openTool(tester, location: creationToolLocation(long));
+      await tester.ensureVisible(
+        find.byKey(const Key('creation-about-toggle')),
+      );
+
+      Focus.of(tester.element(find.text('Show more'))).requestFocus();
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Show less'), findsOneWidget);
+    });
+
+    testWidgets('a short text has no toggle', (tester) async {
+      await openTool(tester);
+
+      expect(find.byKey(const Key('creation-about')), findsOneWidget);
+      expect(find.byKey(const Key('creation-about-toggle')), findsNothing);
+    });
+  });
+
+  group('the platform', () {
+    testWidgets('PC (Microsoft Windows) is preselected when offered', (
+      tester,
+    ) async {
+      const multi = GameSearchResult(
+        id: 3,
+        title: 'Multi',
+        imageUrl: '',
+        genres: ['Action'],
+        platforms: ['PlayStation 5', 'PC (Microsoft Windows)', 'Switch'],
+        mainStory: 1,
+        mainStoryWithExtras: 1,
+        completionist: 1,
+      );
+      await openTool(tester, location: creationToolLocation(multi));
+
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('creation-platform')),
+          matching: find.text('PC (Microsoft Windows)'),
+        ),
+        findsOneWidget,
+      );
+    });
+  });
+
   group('review and notes', () {
+    testWidgets('explain on hover why they are disabled', (tester) async {
+      await openTool(tester);
+
+      expect(
+        find.byTooltip('Stars and review need the status Completed'),
+        findsWidgets,
+      );
+
+      await chooseStatus(tester, 'Completed');
+
+      expect(
+        find.byTooltip('Stars and review need the status Completed'),
+        findsNothing,
+      );
+    });
+
     testWidgets('need the status Completed', (tester) async {
       await openTool(tester);
 
@@ -638,23 +744,26 @@ void main() {
       );
     });
 
-    testWidgets('a game without Steam App ID cannot go to the space', (
+    testWidgets('a game without Steam App ID can go to the space', (
       tester,
     ) async {
+      final createdIn = <int?>[];
       final tool = await openTool(
         tester,
         overrides: withSpace(),
         location: creationToolLocation(hades, inSpace: true),
+        setUp: (api, games) {
+          api.onCreate = (request, spaceId) async => createdIn.add(spaceId);
+        },
       );
 
       await chooseStatus(tester, 'In Progress');
       await submit(tester);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
 
-      expect(
-        find.text('Only Steam games can be added to the Shared Space'),
-        findsOneWidget,
-      );
-      expect(tool.api.created, isEmpty);
+      expect(createdIn, [4]);
+      expect(tool.location, AppRoutes.space);
       await tester.pump(const Duration(seconds: 6));
     });
 

@@ -151,13 +151,10 @@ async def create_entry(
     current_user: NamedDependency[User],
     space_id: FromQuery[int | None] = None,
 ) -> BacklogEntryResponse:
-    """With `space_id` the entry is created in that shared space, which
-    only tracks Steam games (steam_app_id is required). Its playtime,
-    rating and review are stored as the creator's own member data rather
-    than on the shared entry row."""
+    """With `space_id` the entry is created in that shared space. Its
+    playtime, rating and review are stored as the creator's own member
+    data rather than on the shared entry row."""
     await _require_space_access(db_session, current_user, space_id)
-    if space_id is not None and data.steam_app_id is None:
-        raise ValidationException("Entries in a shared space must be Steam games")
     review_stars = round(data.review_stars) if data.review_stars is not None else None
     try:
         entry = await backlog_entry_repo.create_backlog_entry(
@@ -271,8 +268,6 @@ async def update_entry(
     """In a shared space, playtime, review_stars and review are the
     caller's own member data and never touch the shared entry row."""
     existing = await _get_scoped_entry(db_session, entry_id, current_user, space_id)
-    if space_id is not None and data.steam_app_id is None:
-        raise ValidationException("Entries in a shared space must stay linked to a Steam game")
     status, owned = couple_status_and_ownership(existing.status, data.status, data.owned)
 
     review_stars = data.review_stars
