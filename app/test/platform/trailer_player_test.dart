@@ -26,6 +26,19 @@ void main() {
       );
     });
 
+    test('names another origin when the page comes from one', () {
+      final local = trailerPage(
+        Uri.parse('https://www.youtube-nocookie.com/embed/abc123'),
+        origin: 'http://127.0.0.1:4000',
+      );
+
+      expect(
+        local,
+        contains('origin=${Uri.encodeQueryComponent('http://127.0.0.1:4000')}'),
+      );
+      expect(local, isNot(contains(Uri.encodeQueryComponent(trailerOrigin))));
+    });
+
     test('escapes the address so it cannot leave the attribute', () {
       final hostile = trailerPage(
         Uri.parse('https://www.youtube.com/embed/a"onload="x'),
