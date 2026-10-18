@@ -37,6 +37,7 @@ enum SettingsTab {
   security('security', 'Security', Icons.shield_outlined),
   integrations('integrations', 'Integrations', Icons.link),
   backups('backups', 'Backups', Icons.storage_outlined),
+  updates('updates', 'Updates', Icons.system_update_alt),
   about('about', 'About', Icons.info_outline);
 
   const SettingsTab(this.id, this.label, this.icon);
@@ -145,6 +146,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                               user: user,
                             ),
                             SettingsTab.backups => const BackupsTab(),
+                            SettingsTab.updates => const _UpdatesTab(),
                             SettingsTab.about => const _AboutTab(),
                           },
                         ),
@@ -875,7 +877,25 @@ class _AboutTab extends ConsumerWidget {
             ),
           ],
         ),
-        const AppUpdateGroup(),
+      ],
+    );
+  }
+}
+
+class _UpdatesTab extends StatelessWidget {
+  const _UpdatesTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SettingsTabTitle(
+          title: 'Updates',
+          subtitle:
+              'Check for a new version of the app and choose the channel.',
+        ),
+        AppUpdateGroup(),
       ],
     );
   }

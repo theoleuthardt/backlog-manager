@@ -64,7 +64,7 @@ void main() {
     ) async {
       await openSettings(
         tester,
-        location: '/settings?tab=about',
+        location: '/settings?tab=updates',
         overrides: overrides(FakeSource(), MemoryChannelStore()),
       );
 
@@ -80,7 +80,7 @@ void main() {
       final store = MemoryChannelStore();
       await openSettings(
         tester,
-        location: '/settings?tab=about',
+        location: '/settings?tab=updates',
         overrides: overrides(source, store),
       );
       expect(source.calls, 0);
@@ -96,7 +96,7 @@ void main() {
     testWidgets('says what the channels are', (tester) async {
       await openSettings(
         tester,
-        location: '/settings?tab=about',
+        location: '/settings?tab=updates',
         overrides: overrides(FakeSource(), MemoryChannelStore()),
       );
 
@@ -108,7 +108,7 @@ void main() {
     testWidgets('reports that the app is up to date', (tester) async {
       await openSettings(
         tester,
-        location: '/settings?tab=about',
+        location: '/settings?tab=updates',
         overrides: updateOverrides(FakeSource(release: releaseOf('0.9.3'))),
       );
 
@@ -123,7 +123,7 @@ void main() {
         ..gate = Completer<void>();
       await openSettings(
         tester,
-        location: '/settings?tab=about',
+        location: '/settings?tab=updates',
         overrides: updateOverrides(source),
       );
 
@@ -139,7 +139,7 @@ void main() {
     testWidgets('offers the new release with its notes', (tester) async {
       final settings = await openSettings(
         tester,
-        location: '/settings?tab=about',
+        location: '/settings?tab=updates',
         overrides: updateOverrides(
           FakeSource(release: releaseOf('0.9.4', notes: 'New: group order')),
         ),
@@ -159,7 +159,7 @@ void main() {
     testWidgets('reports a failed check', (tester) async {
       await openSettings(
         tester,
-        location: '/settings?tab=about',
+        location: '/settings?tab=updates',
         overrides: updateOverrides(FakeSource(fail: true)),
       );
 
@@ -237,7 +237,7 @@ void main() {
       var exited = 0;
       await openSettings(
         tester,
-        location: '/settings?tab=about',
+        location: '/settings?tab=updates',
         overrides: [
           ...updateOverrides(FakeSource(release: signed.release)),
           updateInstallerProvider.overrideWithValue(installer),

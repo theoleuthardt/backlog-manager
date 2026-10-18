@@ -174,7 +174,7 @@ void main() {
       await openSettings(tester);
 
       expect(find.byKey(const Key('page-settings')), findsOneWidget);
-      for (final tab in ['General', 'Integrations', 'About']) {
+      for (final tab in ['General', 'Integrations', 'Updates', 'About']) {
         expect(find.text(tab), findsWidgets);
       }
       expect(
@@ -658,6 +658,32 @@ void main() {
         Uri.parse('https://steamcommunity.com/dev/apikey'),
         Uri.parse('https://dev.twitch.tv/console/apps'),
       ]);
+    });
+
+    testWidgets('the tabs end with Backups, Updates and About in that order', (
+      tester,
+    ) async {
+      await openSettings(tester);
+
+      final tops = [
+        for (final tab in ['backups', 'updates', 'about'])
+          tester.getTopLeft(find.byKey(Key('settings-tab-$tab'))).dy,
+      ];
+      expect(tops, orderedEquals([...tops]..sort()));
+      expect(tops.toSet(), hasLength(3));
+    });
+
+    testWidgets('the app updates are in their own tab and not in About', (
+      tester,
+    ) async {
+      await openSettings(tester, location: '/settings?tab=updates');
+      expect(find.text('Update Channel'), findsOneWidget);
+      expect(find.byKey(const Key('settings-version')), findsNothing);
+
+      await tester.tap(find.byKey(const Key('settings-tab-about')));
+      await tester.pumpAndSettle();
+      expect(find.text('Update Channel'), findsNothing);
+      expect(find.byKey(const Key('settings-version')), findsOneWidget);
     });
 
     testWidgets('About opens the source code', (tester) async {
