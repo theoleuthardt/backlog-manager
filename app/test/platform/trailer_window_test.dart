@@ -9,25 +9,32 @@ import 'package:flutter_test/flutter_test.dart';
 const _embed = 'https://www.youtube-nocookie.com/embed/abcdefghijk';
 const _watch = 'https://www.youtube.com/watch?v=abcdefghijk';
 
+/// Plain overrides: they hand out the real `HttpClient`, where a test binding
+/// (another file of the same bundled run may have installed one) would answer
+/// every request with a 400.
+class _RealHttp extends HttpOverrides {}
+
 Future<({int status, String body, String type})> fetch(
   Uri url, {
   String method = 'GET',
-}) async {
-  final client = HttpClient();
-  try {
-    final request = await client.openUrl(method, url);
-    final response = await request.close();
-    final body = await response
-        .transform(const SystemEncoding().decoder)
-        .join();
-    return (
-      status: response.statusCode,
-      body: body,
-      type: response.headers.contentType?.mimeType ?? '',
-    );
-  } finally {
-    client.close(force: true);
-  }
+}) {
+  return HttpOverrides.runWithHttpOverrides(() async {
+    final client = HttpClient();
+    try {
+      final request = await client.openUrl(method, url);
+      final response = await request.close();
+      final body = await response
+          .transform(const SystemEncoding().decoder)
+          .join();
+      return (
+        status: response.statusCode,
+        body: body,
+        type: response.headers.contentType?.mimeType ?? '',
+      );
+    } finally {
+      client.close(force: true);
+    }
+  }, _RealHttp());
 }
 
 void main() {
