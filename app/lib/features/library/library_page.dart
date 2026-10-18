@@ -413,6 +413,12 @@ class _Toolbar extends ConsumerWidget {
             Text('Co-op backlog', style: style.page.copyWith(fontSize: 18)),
             SpaceControls(space: space),
             selectButton,
+            ShelfIconButton(
+              key: const Key('random-pull-button'),
+              icon: Icons.casino_outlined,
+              tooltip: 'Pull a random game',
+              onPressed: ref.read(randomPullRequestProvider.notifier).request,
+            ),
             const SizedBox(width: 320, child: LibrarySearchField()),
             addButton,
           ],

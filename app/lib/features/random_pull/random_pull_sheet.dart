@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:backlog_manager/api/api_providers.dart';
+import 'package:backlog_manager/data/backlog_scope.dart';
 import 'package:backlog_manager/data/entry_image.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
@@ -27,6 +28,8 @@ Future<void> showRandomPullSheet(BuildContext context) {
 
 /// Pulls one game at random from the games the library shows (so the filters
 /// and the search narrow it), by default only from the games still to play.
+/// In the Shared Space that is the games of the space the user owns: the pull
+/// opens the game there.
 /// It follows the library while it is open: a game that leaves the pool is
 /// replaced by another pull.
 /// "Pull Again" never gives the same game twice in a row, and "Open Details"
@@ -65,13 +68,15 @@ class _RandomPullSheetState extends ConsumerState<RandomPullSheet> {
     setState(() => _pulled = entry?.id);
   }
 
+  bool get shared => ref.read(backlogScopeProvider) != null;
+
   void _open(BacklogEntry entry) {
     final router = GoRouter.of(context);
     Navigator.of(context).pop();
     ref.read(revealRequestProvider.notifier).request(entry.id);
     router.go(
       Uri(
-        path: AppRoutes.library,
+        path: shared ? AppRoutes.space : AppRoutes.library,
         queryParameters: {'entry': '${entry.id}'},
       ).toString(),
     );
@@ -94,7 +99,8 @@ class _RandomPullSheetState extends ConsumerState<RandomPullSheet> {
     return ShelfSheet(
       title: 'Random Pull',
       description:
-          'One game of your library at random, from what your filters show.',
+          'One game of your ${shared ? 'Shared Space' : 'library'} at random, '
+          'from what your filters show.',
       width: ShelfSheetWidth.compact,
       footer: entry == null
           ? null
