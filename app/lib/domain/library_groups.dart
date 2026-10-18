@@ -11,6 +11,7 @@ class LibraryGroup {
     required this.label,
     required this.entries,
     this.status,
+    this.color,
     this.droppable = false,
   });
 
@@ -19,6 +20,10 @@ class LibraryGroup {
   final String label;
   final List<BacklogEntry> entries;
   final String? status;
+
+  /// The hex colour of the category of a group of the category sort, for its
+  /// dot; null for every other group.
+  final String? color;
 
   /// Whether a game can be dropped on the group: the status groups of the
   /// status sort and the categories of the category sort, not the games
@@ -31,12 +36,15 @@ class LibraryGroup {
 /// order of [SortConfig.statusOrder] (reversed for a descending sort); a
 /// non-empty [statusFilter] limits the groups to those statuses. Sorted by
 /// category the categories without a game ([categoryNames]) follow the others,
-/// ordered by name. Every other option groups like [groupSortedEntries].
+/// ordered by name, and a group has the colour of its category from
+/// [categoryColors] (by name). Every other option groups like
+/// [groupSortedEntries].
 List<LibraryGroup> buildLibraryGroups({
   required List<BacklogEntry> entries,
   required SortConfig config,
   Set<String>? statusFilter,
   List<String> categoryNames = const [],
+  Map<String, String> categoryColors = const {},
 }) {
   final sorted = sortEntries(entries, config);
   final sortBy = config.sortBy;
@@ -71,6 +79,9 @@ List<LibraryGroup> buildLibraryGroups({
         key: '${sortBy.value}:${group.label}',
         label: group.label,
         entries: group.entries,
+        color: sortBy == SortOption.category
+            ? categoryColors[group.label]
+            : null,
         droppable:
             sortBy == SortOption.category && group.label != uncategorizedLabel,
       ),
@@ -87,6 +98,7 @@ List<LibraryGroup> buildLibraryGroups({
         key: 'category:$name',
         label: name,
         entries: const [],
+        color: categoryColors[name],
         droppable: true,
       ),
   ];

@@ -539,9 +539,11 @@ class _GroupHeader extends ConsumerWidget {
         (v) => v.isCollapsed(group.key) || v.reorderingGroups,
       ),
     );
-    final dot = group.status == null
-        ? tokens.accent
-        : colorFromHex(statusColor(group.status!));
+    final dot = group.status != null
+        ? colorFromHex(statusColor(group.status!))
+        : group.color != null
+        ? colorFromHex(group.color!)
+        : tokens.accent;
     final dropTarget = ref.watch(
       dragProvider.select((drag) => drag.overGroupKey == group.key),
     );

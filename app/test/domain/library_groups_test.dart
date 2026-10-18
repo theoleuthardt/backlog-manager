@@ -163,6 +163,30 @@ void main() {
       },
     );
 
+    test('gives a category group the colour of its category', () {
+      final groups = buildLibraryGroups(
+        entries: [game(1, 'A'), game(2, 'B')],
+        config: config(SortOption.category, categories: {1: 'Co-op'}),
+        categoryNames: ['Co-op', 'Backlog'],
+        categoryColors: {'Co-op': '#ff0000', 'Backlog': '#00ff00'},
+      );
+
+      expect(labels(groups), ['Co-op', 'Uncategorized', 'Backlog']);
+      expect(groups.map((g) => g.color), ['#ff0000', null, '#00ff00']);
+    });
+
+    test('has no group colour in the other sorts', () {
+      final groups = buildLibraryGroups(
+        entries: [
+          game(1, 'A', genre: ['RPG']),
+        ],
+        config: config(SortOption.genre),
+        categoryColors: {'RPG': '#ff0000'},
+      );
+
+      expect(groups.single.color, isNull);
+    });
+
     test('has no groups for no entries', () {
       expect(
         buildLibraryGroups(entries: const [], config: config(SortOption.genre)),

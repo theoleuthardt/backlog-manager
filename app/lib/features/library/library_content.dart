@@ -58,6 +58,7 @@ final libraryContentProvider = Provider<LibraryContent?>((ref) {
   }
   Map<int, String>? firstCategory;
   var categoryNames = const <String>[];
+  var categoryColors = const <String, String>{};
   if (sortBy == SortOption.category) {
     firstCategory = {
       for (final item in categoriesByEntry.entries)
@@ -67,6 +68,9 @@ final libraryContentProvider = Provider<LibraryContent?>((ref) {
         ref.watch(categoriesProvider(ref.watch(backlogScopeProvider))).value ??
         <Category>[];
     categoryNames = [for (final category in categories) category.name];
+    categoryColors = {
+      for (final category in categories) category.name: category.color,
+    };
   }
 
   final visible = filterEntries(entries, filters, {
@@ -89,6 +93,7 @@ final libraryContentProvider = Provider<LibraryContent?>((ref) {
         ),
         statusFilter: filters.statuses.toSet(),
         categoryNames: categoryNames,
+        categoryColors: categoryColors,
       ),
       groupOrder,
     ),
