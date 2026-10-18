@@ -113,7 +113,7 @@ class _NoSpaceCard extends StatelessWidget {
       text:
           'Invite a friend by username to keep a co-op backlog together. '
           'Status and categories are shared, ratings and playtime stay your '
-          'own, and only Steam games can be added.',
+          'own.',
       child: InviteForm(),
     );
   }

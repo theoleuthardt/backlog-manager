@@ -163,10 +163,7 @@ void main() {
 
       expect(find.byKey(const Key('page-space')), findsOneWidget);
       expect(find.text('Start a Shared Space'), findsOneWidget);
-      expect(
-        find.textContaining('only Steam games can be added'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('playtime stay your own'), findsOneWidget);
       expect(find.byKey(const Key('space-invite-name')), findsOneWidget);
     });
 

@@ -90,7 +90,7 @@ class _EmptyLibrary extends ConsumerWidget {
           const SizedBox(height: 6),
           Text(
             shared
-                ? 'Add a Steam game to start your co-op backlog.'
+                ? 'Add a game to start your co-op backlog.'
                 : 'Start by adding your first game!',
             style: style.caption.copyWith(color: tokens.muted),
           ),
