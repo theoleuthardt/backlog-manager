@@ -174,6 +174,11 @@ void main() {
       final bytes = (await tester.runAsync(image.toByteData))!;
 
       int blueAt(int x, int y) => bytes.getUint8((y * 1440 + x) * 4 + 2);
+      var onRing = 0;
+      for (var y = 468; y <= 474; y++) {
+        onRing = max(onRing, blueAt(1100, y));
+      }
+      expect(onRing, greaterThan(blueAt(1100, 520)));
       for (final (x, y) in [(1090, 560), (870, 340), (1090, 800)]) {
         expect((blueAt(x, y) - blueAt(x - 40, y)).abs(), lessThan(8));
       }
