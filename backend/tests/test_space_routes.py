@@ -175,7 +175,9 @@ async def test_both_members_share_entries_and_personal_list_stays_separate(
     assert guest_personal == []
 
 
-async def test_space_entries_require_steam_app_id(postgres_url: str, create_and_login) -> None:
+async def test_space_accepts_games_without_a_steam_app_id(
+    postgres_url: str, create_and_login
+) -> None:
     from backlog_manager_backend.app import create_app
 
     with TestClient(app=create_app()) as client:
@@ -183,13 +185,19 @@ async def test_space_entries_require_steam_app_id(postgres_url: str, create_and_
         guest = await create_and_login(client, "spacesteamguest@example.com")
         space_id = _make_space(client, owner, guest, "spacesteamguest")
 
-        response = client.post(
+        first = client.post(
             f"/api/backlog/entries?space_id={space_id}",
             headers=owner,
-            json=_entry_payload(steam_app_id=None),
+            json=_entry_payload(title="Slay the Spire II", steam_app_id=None),
+        )
+        second = client.post(
+            f"/api/backlog/entries?space_id={space_id}",
+            headers=guest,
+            json=_entry_payload(title="Another Game", steam_app_id=None),
         )
 
-    assert response.status_code == 400
+    assert first.status_code == 201
+    assert second.status_code == 201
 
 
 async def test_same_steam_game_cannot_be_added_twice_to_a_space(
@@ -512,7 +520,7 @@ async def test_duplicate_check_is_scoped_to_the_space(postgres_url: str, create_
     assert personal == []
 
 
-async def test_space_entry_cannot_lose_its_steam_app_id(
+async def test_space_entry_can_be_unlinked_from_steam(
     postgres_url: str, create_and_login
 ) -> None:
     from backlog_manager_backend.app import create_app
@@ -531,7 +539,8 @@ async def test_space_entry_cannot_lose_its_steam_app_id(
             json={"steam_app_id": None},
         )
 
-    assert response.status_code == 400
+    assert response.status_code == 200
+    assert response.json()["steam_app_id"] is None
 
 
 async def test_updating_to_a_taken_steam_app_id_is_a_conflict(

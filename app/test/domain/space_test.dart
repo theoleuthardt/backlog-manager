@@ -151,15 +151,6 @@ void main() {
       steamAppId: 1426210,
     );
 
-    test('only Steam games can be shared', () {
-      expect(canShareToSpace(steam), isTrue);
-      expect(canShareToSpace(const BacklogEntry(id: 2, title: 'x')), isFalse);
-      expect(
-        shareToSpaceHint,
-        'Only Steam games can be added to the Shared Space',
-      );
-    });
-
     test('the copy keeps every field of the game', () {
       final copy = sharedCopyOf(steam);
 

@@ -1,7 +1,6 @@
 import 'package:backlog_manager/data/games_api.dart';
 import 'package:backlog_manager/data/space_api.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
-import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/routing/router.dart';
@@ -301,7 +300,7 @@ void main() {
         find.text('with alex - ratings and playtime stay your own'),
         findsNothing,
       );
-      expect(find.text('+ Add Steam game'), findsOneWidget);
+      expect(find.text('+ Add game'), findsOneWidget);
       expect(find.byKey(const Key('igdb-sync-button')), findsNothing);
     });
 
@@ -510,26 +509,23 @@ void main() {
       await dismissToast(tester);
     });
 
-    testWidgets('games without Steam App ID cannot be shared', (tester) async {
+    testWidgets('games without Steam App ID can be shared', (tester) async {
       final opened = await open(
         tester,
         together,
         entries: [shared(1, 'Custom', steamAppId: null)],
         location: '/library?entry=1',
       );
+      final created = <String>[];
+      opened.backlog.onCreate = (request, spaceId) async {
+        created.add('${request.title} $spaceId ${request.steamAppId}');
+      };
 
-      final button = tester.widget<ShelfButton>(
-        find.byKey(const Key('inspector-add-to-space')),
-      );
       await tester.tap(find.byKey(const Key('inspector-add-to-space')));
       await tester.pumpAndSettle();
 
-      expect(button.onPressed, isNull);
-      expect(opened.backlog.created, isEmpty);
-      expect(
-        find.byTooltip('Only Steam games can be added to the Shared Space'),
-        findsOneWidget,
-      );
+      expect(created, ['Custom 4 null']);
+      await dismissToast(tester);
     });
 
     testWidgets('a game that is in the space links to it', (tester) async {
@@ -566,7 +562,7 @@ void main() {
   });
 
   group('adding games', () {
-    testWidgets('+ Add Steam game targets the space', (tester) async {
+    testWidgets('+ Add game targets the space', (tester) async {
       final opened = await open(tester, together);
       opened.games.onSearch = (term, deep) async => const [
         GameSearchResult(
@@ -581,7 +577,7 @@ void main() {
         ),
       ];
 
-      await tester.tap(find.text('+ Add Steam game'));
+      await tester.tap(find.text('+ Add game'));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField).last, 'Portal');
       await tester.pump(const Duration(milliseconds: 900));

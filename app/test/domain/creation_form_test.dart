@@ -83,6 +83,23 @@ void main() {
       expect(read.publisher, 'Supergiant Games');
     });
 
+    test('preselects PC (Microsoft Windows) when the game has it', () {
+      final read = CreationPrefill.fromQuery({
+        'platforms': 'PlayStation 5, PC (Microsoft Windows), Switch',
+      });
+
+      expect(read.defaultPlatform, 'PC (Microsoft Windows)');
+    });
+
+    test('preselects the first platform when PC is not offered', () {
+      final read = CreationPrefill.fromQuery({
+        'platforms': 'PlayStation 5, Switch',
+      });
+
+      expect(read.defaultPlatform, 'PlayStation 5');
+      expect(CreationPrefill.fromQuery({}).defaultPlatform, '');
+    });
+
     test('knows the custom mode', () {
       final read = CreationPrefill.fromQuery({'title': 'Mine', 'custom': '1'});
 
@@ -166,14 +183,6 @@ void main() {
         );
       },
     );
-
-    test('lets only Steam games into the Shared Space', () {
-      expect(
-        validateCreation(input(), toSpace: true),
-        'Only Steam games can be added to the Shared Space',
-      );
-      expect(validateCreation(input(steamAppId: '620'), toSpace: true), isNull);
-    });
   });
 
   group('resolvedSteamAppId', () {

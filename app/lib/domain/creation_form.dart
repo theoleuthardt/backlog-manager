@@ -51,6 +51,16 @@ class CreationPrefill {
 
   List<String> get platformOptions => splitList(platforms);
 
+  /// PC (Microsoft Windows) when the game is offered for it, else the first
+  /// platform, else nothing.
+  String get defaultPlatform {
+    final options = platformOptions;
+    return options.firstWhere(
+      (option) => option == 'PC (Microsoft Windows)',
+      orElse: () => options.firstOrNull ?? '',
+    );
+  }
+
   bool get hasHltbData =>
       mainStory > 0 || mainStoryWithExtras > 0 || completionist > 0;
 
@@ -103,16 +113,12 @@ class CreationInput {
 }
 
 /// The message of the first thing missing from the form, in the words of the
-/// web client, or null when the entry can be created. [toSpace] is set for an
-/// entry of the Shared Space, which needs a Steam App ID.
-String? validateCreation(CreationInput input, {bool toSpace = false}) {
+/// web client, or null when the entry can be created.
+String? validateCreation(CreationInput input) {
   if (input.title.trim().isEmpty) return 'Please enter a title';
   if (splitList(input.genre).isEmpty) return 'Please enter at least one genre';
   if (splitList(input.platform).isEmpty) return 'Please select a platform';
   if (input.status.isEmpty) return 'Please select a status';
-  if (toSpace && resolvedSteamAppId(input.steamAppId) == null) {
-    return 'Only Steam games can be added to the Shared Space';
-  }
   return null;
 }
 

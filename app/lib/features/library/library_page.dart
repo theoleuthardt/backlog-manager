@@ -97,7 +97,7 @@ class _EmptyLibrary extends ConsumerWidget {
           const SizedBox(height: 18),
           ShelfButton(
             key: const Key('library-empty-add'),
-            label: shared ? 'Add Steam game' : 'Add a game',
+            label: 'Add a game',
             kind: ShelfButtonKind.primary,
             onPressed: ref.read(addGameRequestProvider.notifier).request,
           ),
@@ -395,7 +395,7 @@ class _Toolbar extends ConsumerWidget {
     );
     final addButton = ShelfButton(
       key: const Key('add-game-button'),
-      label: space == null ? 'Add Game' : '+ Add Steam game',
+      label: space == null ? 'Add Game' : '+ Add game',
       icon: space == null ? Icons.add : null,
       kind: ShelfButtonKind.primary,
       onPressed: ref.read(addGameRequestProvider.notifier).request,
