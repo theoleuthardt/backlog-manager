@@ -1,0 +1,20 @@
+meta {
+  name: Delete Space Backup
+  type: http
+  seq: 13
+}
+
+delete {
+  url: {{backendUrl}}/api/space/backups/{{spaceBackupId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Removes a backup (and the restore request waiting for it). Either member
+  can do it. 404 for an unknown or foreign backup.
+}

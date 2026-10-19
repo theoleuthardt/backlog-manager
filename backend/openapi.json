@@ -5413,6 +5413,1300 @@
         ]
       }
     },
+    "/api/space/backups": {
+      "get": {
+        "summary": "ListSpaceBackups",
+        "operationId": "ApiSpaceBackupsListSpaceBackups",
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {
+              "cache-control": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "Strict-Transport-Security": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpaceBackupList"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "CreateSpaceBackup",
+        "operationId": "ApiSpaceBackupsCreateSpaceBackup",
+        "responses": {
+          "201": {
+            "description": "Document created, URL follows",
+            "headers": {
+              "cache-control": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "Strict-Transport-Security": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpaceBackupSummary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/space/backups/{backup_id}/download": {
+      "get": {
+        "summary": "DownloadSpaceBackup",
+        "operationId": "ApiSpaceBackupsBackupIdDownloadDownloadSpaceBackup",
+        "parameters": [
+          {
+            "name": "backup_id",
+            "in": "path",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true,
+            "deprecated": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {
+              "cache-control": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "Strict-Transport-Security": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request syntax or unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "properties": {
+                        "status_code": {
+                          "type": "integer"
+                        },
+                        "detail": {
+                          "type": "string"
+                        },
+                        "extra": {
+                          "additionalProperties": {},
+                          "type": [
+                            "null",
+                            "object",
+                            "array"
+                          ]
+                        }
+                      },
+                      "type": "object",
+                      "required": [
+                        "detail",
+                        "status_code"
+                      ],
+                      "description": "Client Exception",
+                      "examples": [
+                        {
+                          "status_code": 400,
+                          "detail": "Bad Request",
+                          "extra": {}
+                        }
+                      ]
+                    },
+                    {
+                      "properties": {
+                        "status_code": {
+                          "type": "integer"
+                        },
+                        "detail": {
+                          "type": "string"
+                        },
+                        "extra": {
+                          "additionalProperties": {},
+                          "type": [
+                            "null",
+                            "object",
+                            "array"
+                          ]
+                        }
+                      },
+                      "type": "object",
+                      "required": [
+                        "detail",
+                        "status_code"
+                      ],
+                      "description": "Validation Exception",
+                      "examples": [
+                        {
+                          "status_code": 400,
+                          "detail": "Bad Request",
+                          "extra": {}
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/space/export": {
+      "get": {
+        "summary": "ExportSpace",
+        "operationId": "ApiSpaceExportExportSpace",
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {
+              "cache-control": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "Strict-Transport-Security": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/space/backups/{backup_id}": {
+      "put": {
+        "summary": "RenameSpaceBackup",
+        "operationId": "ApiSpaceBackupsBackupIdRenameSpaceBackup",
+        "parameters": [
+          {
+            "name": "backup_id",
+            "in": "path",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true,
+            "deprecated": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenameBackupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {
+              "cache-control": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "Strict-Transport-Security": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupSummary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request syntax or unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "properties": {
+                        "status_code": {
+                          "type": "integer"
+                        },
+                        "detail": {
+                          "type": "string"
+                        },
+                        "extra": {
+                          "additionalProperties": {},
+                          "type": [
+                            "null",
+                            "object",
+                            "array"
+                          ]
+                        }
+                      },
+                      "type": "object",
+                      "required": [
+                        "detail",
+                        "status_code"
+                      ],
+                      "description": "Client Exception",
+                      "examples": [
+                        {
+                          "status_code": 400,
+                          "detail": "Bad Request",
+                          "extra": {}
+                        }
+                      ]
+                    },
+                    {
+                      "properties": {
+                        "status_code": {
+                          "type": "integer"
+                        },
+                        "detail": {
+                          "type": "string"
+                        },
+                        "extra": {
+                          "additionalProperties": {},
+                          "type": [
+                            "null",
+                            "object",
+                            "array"
+                          ]
+                        }
+                      },
+                      "type": "object",
+                      "required": [
+                        "detail",
+                        "status_code"
+                      ],
+                      "description": "Validation Exception",
+                      "examples": [
+                        {
+                          "status_code": 400,
+                          "detail": "Bad Request",
+                          "extra": {}
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "DeleteSpaceBackup",
+        "operationId": "ApiSpaceBackupsBackupIdDeleteSpaceBackup",
+        "parameters": [
+          {
+            "name": "backup_id",
+            "in": "path",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true,
+            "deprecated": false
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Request fulfilled, nothing follows",
+            "headers": {
+              "cache-control": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "Strict-Transport-Security": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request syntax or unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Validation Exception",
+                  "examples": [
+                    {
+                      "status_code": 400,
+                      "detail": "Bad Request",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/space/backups/{backup_id}/restore": {
+      "post": {
+        "summary": "RestoreSpaceBackup",
+        "operationId": "ApiSpaceBackupsBackupIdRestoreRestoreSpaceBackup",
+        "parameters": [
+          {
+            "name": "backup_id",
+            "in": "path",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true,
+            "deprecated": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {
+              "cache-control": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "Strict-Transport-Security": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpaceRestoreResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request syntax or unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "properties": {
+                        "status_code": {
+                          "type": "integer"
+                        },
+                        "detail": {
+                          "type": "string"
+                        },
+                        "extra": {
+                          "additionalProperties": {},
+                          "type": [
+                            "null",
+                            "object",
+                            "array"
+                          ]
+                        }
+                      },
+                      "type": "object",
+                      "required": [
+                        "detail",
+                        "status_code"
+                      ],
+                      "description": "Client Exception",
+                      "examples": [
+                        {
+                          "status_code": 400,
+                          "detail": "Bad Request",
+                          "extra": {}
+                        }
+                      ]
+                    },
+                    {
+                      "properties": {
+                        "status_code": {
+                          "type": "integer"
+                        },
+                        "detail": {
+                          "type": "string"
+                        },
+                        "extra": {
+                          "additionalProperties": {},
+                          "type": [
+                            "null",
+                            "object",
+                            "array"
+                          ]
+                        }
+                      },
+                      "type": "object",
+                      "required": [
+                        "detail",
+                        "status_code"
+                      ],
+                      "description": "Validation Exception",
+                      "examples": [
+                        {
+                          "status_code": 400,
+                          "detail": "Bad Request",
+                          "extra": {}
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "_ Space Backup Conflict Exception",
+                  "examples": [
+                    {
+                      "status_code": 409,
+                      "detail": "Conflict",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/space/restore-request/approve": {
+      "post": {
+        "summary": "ApproveSpaceRestore",
+        "operationId": "ApiSpaceRestoreRequestApproveApproveSpaceRestore",
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {
+              "cache-control": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "Strict-Transport-Security": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestoreResult"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request syntax or unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Client Exception",
+                  "examples": [
+                    {
+                      "status_code": 400,
+                      "detail": "Bad Request",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "_ Space Backup Conflict Exception",
+                  "examples": [
+                    {
+                      "status_code": 409,
+                      "detail": "Conflict",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/space/restore-request": {
+      "delete": {
+        "summary": "WithdrawSpaceRestoreRequest",
+        "operationId": "ApiSpaceRestoreRequestWithdrawSpaceRestoreRequest",
+        "responses": {
+          "204": {
+            "description": "Request fulfilled, nothing follows",
+            "headers": {
+              "cache-control": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              },
+              "Strict-Transport-Security": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": false,
+                "deprecated": false
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing matches the given URI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Not Found Exception",
+                  "examples": [
+                    {
+                      "status_code": 404,
+                      "detail": "Not Found",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/user/me": {
       "get": {
         "summary": "GetOwnUser",
@@ -11578,6 +12872,55 @@
         "required": [],
         "title": "RenameBackupRequest"
       },
+      "RestoreRequestResponse": {
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "backup_id": {
+            "type": "integer"
+          },
+          "backup_created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "requested_by": {
+            "type": "string"
+          },
+          "requested_by_me": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "backup_name": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "backup_created_at",
+          "backup_id",
+          "created_at",
+          "expires_at",
+          "id",
+          "requested_by",
+          "requested_by_me"
+        ],
+        "title": "RestoreRequestResponse"
+      },
       "RestoreResult": {
         "properties": {
           "entry_count": {
@@ -11603,6 +12946,80 @@
           "entry_count"
         ],
         "title": "RestoreResult"
+      },
+      "SpaceBackupList": {
+        "properties": {
+          "backups": {
+            "items": {
+              "$ref": "#/components/schemas/SpaceBackupSummary"
+            },
+            "type": "array"
+          },
+          "restore_request": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RestoreRequestResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "backups"
+        ],
+        "title": "SpaceBackupList"
+      },
+      "SpaceBackupSummary": {
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "entry_count": {
+            "type": "integer"
+          },
+          "category_count": {
+            "type": "integer"
+          },
+          "name": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_by": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "category_count",
+          "created_at",
+          "entry_count",
+          "id",
+          "kind"
+        ],
+        "title": "SpaceBackupSummary"
       },
       "SpaceMemberResponse": {
         "properties": {
@@ -11675,6 +13092,38 @@
           "space_id"
         ],
         "title": "SpaceResponse"
+      },
+      "SpaceRestoreResponse": {
+        "properties": {
+          "restored": {
+            "type": "boolean"
+          },
+          "request": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RestoreRequestResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "result": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RestoreResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "restored"
+        ],
+        "title": "SpaceRestoreResponse"
       },
       "SteamGridDBSearchResult": {
         "properties": {

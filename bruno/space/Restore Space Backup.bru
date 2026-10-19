@@ -1,0 +1,23 @@
+meta {
+  name: Restore Space Backup
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{backendUrl}}/api/space/backups/{{spaceBackupId}}/restore
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Asks for the restore of a snapshot. A restore needs both members: the
+  response has restored false and the open request, and the other member
+  approves it. Only a space with a single active member restores at once
+  (restored true with the result). 409 while another restore waits, 404 for
+  an unknown backup, 400 for a corrupt one.
+}

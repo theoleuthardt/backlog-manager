@@ -1,0 +1,22 @@
+meta {
+  name: Approve Space Restore
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{backendUrl}}/api/space/restore-request/approve
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  The member who did not ask for the restore approves it and it runs in one
+  transaction. A pre-restore snapshot of the current state is taken first
+  (safety_backup_id). 409 for the member who asked, 404 when no restore
+  waits or it expired (24 hours).
+}

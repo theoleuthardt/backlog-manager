@@ -1,3 +1,5 @@
+from collections.abc import Sequence
+
 import msgspec
 from sqlalchemy import delete, select
 from sqlalchemy.exc import DBAPIError
@@ -9,6 +11,8 @@ from backlog_manager_backend.models.category import Category
 from backlog_manager_backend.models.category_backlog_entry import CategoryBacklogEntry
 from backlog_manager_backend.models.custom_status import CustomStatus
 from backlog_manager_backend.models.entry_mod import EntryMod
+from backlog_manager_backend.models.space import SpaceMember
+from backlog_manager_backend.models.space_entry_member_data import SpaceEntryMemberData
 from backlog_manager_backend.models.user_backup import UserBackup
 from backlog_manager_backend.schemas.backup import (
     PAYLOAD_VERSION,
@@ -19,6 +23,7 @@ from backlog_manager_backend.schemas.backup import (
     BackupPayload,
     BackupSummary,
 )
+from backlog_manager_backend.schemas.space_backup import SpaceBackupMemberData
 
 _ENTRY_FIELDS = [
     "title",
@@ -47,6 +52,15 @@ _ENTRY_FIELDS = [
 ]
 
 
+def _scope(model: type, user_id: int, space_id: int | None) -> tuple:
+    """The rows of one backlog: a user's personal rows (SpaceID IS NULL -
+    shared space rows carry their creator's UserID but belong to two
+    people) or, with `space_id`, every row of that space."""
+    if space_id is None:
+        return (model.user_id == user_id, model.space_id.is_(None))
+    return (model.space_id == space_id,)
+
+
 def _to_summary(model: UserBackup) -> BackupSummary:
     return BackupSummary(
         id=model.id,
@@ -58,15 +72,16 @@ def _to_summary(model: UserBackup) -> BackupSummary:
     )
 
 
-async def load_user_content(session: AsyncSession, user_id: int) -> BackupPayload:
-    """Reads the user's whole personal backlog content (SpaceID IS NULL -
-    shared space rows carry their creator's UserID but belong to two
-    people) into a snapshot payload, ordered by id so the same content always serialises the
-    same way."""
+async def load_content(
+    session: AsyncSession, user_id: int, space_id: int | None = None
+) -> tuple[BackupPayload, dict[int, int]]:
+    """Reads one backlog's whole content (see `_scope`) into a snapshot
+    payload, ordered by id so the same content always serialises the same
+    way. The second value maps the database id of every entry to its ref."""
     entry_models = (
         await session.scalars(
             select(BacklogEntry)
-            .where(BacklogEntry.user_id == user_id, BacklogEntry.space_id.is_(None))
+            .where(*_scope(BacklogEntry, user_id, space_id))
             .order_by(BacklogEntry.id)
         )
     ).all()
@@ -91,7 +106,7 @@ async def load_user_content(session: AsyncSession, user_id: int) -> BackupPayloa
         await session.execute(
             select(CategoryBacklogEntry.category_id, CategoryBacklogEntry.backlog_entry_id)
             .join(Category, Category.id == CategoryBacklogEntry.category_id)
-            .where(Category.user_id == user_id, Category.space_id.is_(None))
+            .where(*_scope(Category, user_id, space_id))
         )
     ).all()
     refs_by_category: dict[int, list[int]] = {}
@@ -100,20 +115,18 @@ async def load_user_content(session: AsyncSession, user_id: int) -> BackupPayloa
 
     category_models = (
         await session.scalars(
-            select(Category)
-            .where(Category.user_id == user_id, Category.space_id.is_(None))
-            .order_by(Category.id)
+            select(Category).where(*_scope(Category, user_id, space_id)).order_by(Category.id)
         )
     ).all()
     status_models = (
         await session.scalars(
             select(CustomStatus)
-            .where(CustomStatus.user_id == user_id, CustomStatus.space_id.is_(None))
+            .where(*_scope(CustomStatus, user_id, space_id))
             .order_by(CustomStatus.id)
         )
     ).all()
 
-    return BackupPayload(
+    payload = BackupPayload(
         version=PAYLOAD_VERSION,
         entries=[
             BackupEntry(
@@ -141,32 +154,39 @@ async def load_user_content(session: AsyncSession, user_id: int) -> BackupPayloa
             for model in status_models
         ],
     )
+    return payload, refs
 
 
-async def replace_user_content(session: AsyncSession, user_id: int, payload: BackupPayload) -> None:
-    """Swaps the user's whole personal backlog content (never shared space
-    rows) for the payload in one transaction: any failure (a payload the database rejects, e.g.
-    two entries sharing a Steam app id) rolls back to the untouched
-    previous content. Rows are re-created with fresh ids - category links
-    are rebuilt from the payload's refs."""
+async def load_user_content(session: AsyncSession, user_id: int) -> BackupPayload:
+    """The user's whole personal backlog content as a snapshot payload."""
+    payload, _ = await load_content(session, user_id)
+    return payload
+
+
+async def replace_content(
+    session: AsyncSession,
+    user_id: int,
+    payload: BackupPayload,
+    space_id: int | None = None,
+    member_data: Sequence[SpaceBackupMemberData] = (),
+) -> None:
+    """Swaps one backlog's whole content (a user's personal backlog, or the
+    space `space_id`, never both) for the payload in one transaction: any
+    failure (a payload the database rejects, e.g. two entries sharing a
+    Steam app id) rolls back to the untouched previous content. Rows are
+    re-created with fresh ids - category links are rebuilt from the
+    payload's refs, `user_id` becomes the creator of every row, and
+    `member_data` (a space's per-member fields, by entry ref) is stored
+    for the members that are still active."""
     try:
-        await session.execute(
-            delete(BacklogEntry).where(
-                BacklogEntry.user_id == user_id, BacklogEntry.space_id.is_(None)
-            )
-        )
-        await session.execute(
-            delete(Category).where(Category.user_id == user_id, Category.space_id.is_(None))
-        )
-        await session.execute(
-            delete(CustomStatus).where(
-                CustomStatus.user_id == user_id, CustomStatus.space_id.is_(None)
-            )
-        )
+        await session.execute(delete(BacklogEntry).where(*_scope(BacklogEntry, user_id, space_id)))
+        await session.execute(delete(Category).where(*_scope(Category, user_id, space_id)))
+        await session.execute(delete(CustomStatus).where(*_scope(CustomStatus, user_id, space_id)))
 
         entry_models = {
             entry.ref: BacklogEntry(
                 user_id=user_id,
+                space_id=space_id,
                 **{field: getattr(entry, field) for field in _ENTRY_FIELDS},
             )
             for entry in payload.entries
@@ -189,6 +209,7 @@ async def replace_user_content(session: AsyncSession, user_id: int, payload: Bac
         for category in payload.categories:
             category_model = Category(
                 user_id=user_id,
+                space_id=space_id,
                 name=category.name,
                 color=category.color,
                 description=category.description,
@@ -210,19 +231,47 @@ async def replace_user_content(session: AsyncSession, user_id: int, payload: Bac
         session.add_all(
             CustomStatus(
                 user_id=user_id,
+                space_id=space_id,
                 name=status.name,
                 created_at=status.created_at,
                 updated_at=status.updated_at,
             )
             for status in payload.custom_statuses
         )
+        if member_data:
+            active = set(
+                (
+                    await session.scalars(
+                        select(SpaceMember.user_id).where(
+                            SpaceMember.space_id == space_id, SpaceMember.status == "active"
+                        )
+                    )
+                ).all()
+            )
+            session.add_all(
+                SpaceEntryMemberData(
+                    backlog_entry_id=entry_models[row.ref].id,
+                    user_id=row.user_id,
+                    playtime=row.playtime,
+                    review_stars=row.review_stars,
+                    review=row.review,
+                    owned=row.owned,
+                )
+                for row in member_data
+                if row.user_id in active and row.ref in entry_models
+            )
         await session.commit()
     except DBAPIError as error:
         await session.rollback()
-        handle_database_error(error, "replace_user_content")
+        handle_database_error(error, "replace_content")
     except Exception:
         await session.rollback()
         raise
+
+
+async def replace_user_content(session: AsyncSession, user_id: int, payload: BackupPayload) -> None:
+    """Swaps the user's whole personal backlog content for the payload."""
+    await replace_content(session, user_id, payload)
 
 
 async def create_backup(

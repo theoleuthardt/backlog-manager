@@ -1,0 +1,20 @@
+meta {
+  name: Export Space
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{backendUrl}}/api/space/export
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  The current content of the space as a JSON file, in the format of a
+  backup download, with the caller's own per-member fields only.
+}

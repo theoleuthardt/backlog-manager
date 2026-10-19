@@ -1,0 +1,21 @@
+meta {
+  name: Download Space Backup
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{backendUrl}}/api/space/backups/{{spaceBackupId}}/download
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  The snapshot as a JSON file. It only holds the caller's own per-member
+  fields (playtime, rating, review, ownership), never the partner's.
+  404 for an unknown or foreign backup.
+}

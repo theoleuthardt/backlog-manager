@@ -1,0 +1,20 @@
+meta {
+  name: Withdraw Space Restore Request
+  type: http
+  seq: 12
+}
+
+delete {
+  url: {{backendUrl}}/api/space/restore-request
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  Ends the open restore request: the member who asked takes it back, the
+  other one declines it. 204 also when none is open.
+}

@@ -1,0 +1,21 @@
+meta {
+  name: List Space Backups
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{backendUrl}}/api/space/backups
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  The backups of the caller's space, newest first, and the restore waiting
+  for approval (restore_request, null when none). 404 without an active
+  membership.
+}

@@ -1,5 +1,6 @@
 import 'package:backlog_manager/data/games_api.dart';
 import 'package:backlog_manager/data/space_api.dart';
+import 'package:backlog_manager/data/space_backups_api.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/models.dart';
@@ -8,6 +9,7 @@ import 'package:backlog_manager/routing/routes.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../data/fakes.dart';
@@ -121,6 +123,8 @@ Future<Opened> open(
   String location = AppRoutes.space,
   void Function(FakeSpaceApi api)? setUp,
   void Function(FakeBacklogApi api)? setUpBacklog,
+  FakeSpaceBackupsApi? backupsApi,
+  List<Override> overrides = const [],
 }) async {
   final api = FakeSpaceApi(space);
   setUp?.call(api);
@@ -135,7 +139,11 @@ Future<Opened> open(
     height: 1100,
     overrides: [
       spaceApiProvider.overrideWithValue(api),
+      spaceBackupsApiProvider.overrideWithValue(
+        backupsApi ?? FakeSpaceBackupsApi(),
+      ),
       gamesApiProvider.overrideWithValue(games),
+      ...overrides,
     ],
   );
   container.read(routerProvider).go(location);

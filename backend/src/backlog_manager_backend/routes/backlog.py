@@ -50,7 +50,7 @@ from backlog_manager_backend.schemas.entry_mod import (
     UpdateEntryModRequest,
 )
 from backlog_manager_backend.schemas.user import User
-from backlog_manager_backend.services import backup_service
+from backlog_manager_backend.services import backup_service, space_backup_service
 from backlog_manager_backend.services.entry_ownership import (
     NOT_OWNED_STATUS,
     couple_status_and_ownership,
@@ -350,10 +350,13 @@ async def delete_all_entries(
     `space_id` is given and the caller is an active member (category
     associations cascade). Without `space_id` a space's entries are
     never touched. Returns the number of entries removed. A personal wipe
-    takes a "pre-delete" backup first so it can be reverted from the
-    backups list; shared space content is not part of backups."""
+    and a space wipe each take a "pre-delete" backup first so they can be
+    reverted from the backups list (of the account, or of the space)."""
     await _require_space_access(db_session, current_user, space_id)
     if space_id is not None:
+        await space_backup_service.create_backup(
+            db_session, space_id, space_backup_service.PRE_DELETE, current_user.id
+        )
         return await backlog_entry_repo.delete_backlog_entries_by_space(db_session, space_id)
     await backup_service.create_backup(db_session, current_user.id, backup_service.PRE_DELETE)
     return await backlog_entry_repo.delete_backlog_entries_by_user(db_session, current_user.id)
