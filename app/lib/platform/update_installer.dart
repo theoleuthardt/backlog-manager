@@ -38,8 +38,21 @@ bool _writable(Directory directory) {
   }
 }
 
-/// An AppImage replaces its own file: the new file is moved over it (the old
-/// one keeps running from its open inode) and started.
+final _versionInName = RegExp(r'[_-]v?\d+\.\d+\.\d+');
+
+/// The file name an updated AppImage gets: a release file such as
+/// `Backlog-Manager_0.9.9_linux_x64.AppImage` becomes
+/// `Backlog-Manager.AppImage`, so the name (and a desktop entry that starts
+/// it) does not carry a version that is out of date after the next update. A
+/// name without a version is the user's own choice and is kept.
+String stableAppImageName(String fileName) =>
+    _versionInName.hasMatch(fileName) ? 'Backlog-Manager.AppImage' : fileName;
+
+/// An AppImage replaces itself: the new file is moved to the stable name next
+/// to the old one (the old one keeps running from its open inode) and
+/// started. When the old file had a version in its name, its path becomes a
+/// link to the new file, so desktop entries and shortcuts that point at it
+/// keep working.
 class AppImageInstaller implements UpdateInstaller {
   AppImageInstaller({required this.appImagePath, this._start = _startDetached});
 
@@ -61,8 +74,16 @@ class AppImageInstaller implements UpdateInstaller {
     if (chmod.exitCode != 0) {
       throw const FileSystemException('The update could not be made runnable');
     }
-    await payload.rename(appImagePath);
-    await _start(appImagePath, const []);
+    final directory = stagingDirectory.path;
+    final oldName = appImagePath.substring(appImagePath.lastIndexOf('/') + 1);
+    final stableName = stableAppImageName(oldName);
+    final target = '$directory/$stableName';
+    await payload.rename(target);
+    if (stableName != oldName) {
+      await File(appImagePath).delete();
+      await Link(appImagePath).create(stableName);
+    }
+    await _start(target, const []);
   }
 }
 
