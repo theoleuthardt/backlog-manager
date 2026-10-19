@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:backlog_manager/domain/library_groups.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/domain/random_pull.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -98,5 +99,128 @@ void main() {
         }
       },
     );
+  });
+
+  group('pullPool', () {
+    final groups = [
+      LibraryGroup(
+        key: 'status:In Progress',
+        label: 'In Progress',
+        entries: [
+          game(1, status: 'In Progress'),
+          game(2, status: 'In Progress'),
+        ],
+      ),
+      LibraryGroup(
+        key: 'status:Completed',
+        label: 'Completed',
+        entries: [game(3, status: 'Completed')],
+      ),
+      LibraryGroup(
+        key: 'status:Backlog',
+        label: 'Backlog',
+        entries: [game(4), game(5, owned: false)],
+      ),
+    ];
+
+    List<int> ids({
+      Set<String> excluded = const {},
+      bool includeFinished = false,
+    }) => [
+      for (final e in pullPool(
+        groups,
+        excluded: excluded,
+        includeFinished: includeFinished,
+      ))
+        e.id,
+    ];
+
+    test('takes the games of every group without an exclusion', () {
+      expect(ids(), [1, 2, 4]);
+    });
+
+    test('leaves out the games of an excluded group', () {
+      expect(ids(excluded: {'status:In Progress'}), [4]);
+    });
+
+    test('still applies the rules of pullCandidates', () {
+      expect(ids(includeFinished: true), [1, 2, 3, 4]);
+      expect(ids(excluded: {'status:Backlog'}, includeFinished: true), [
+        1,
+        2,
+        3,
+      ]);
+    });
+
+    test('is empty when every group is left out', () {
+      expect(
+        ids(
+          excluded: {
+            'status:In Progress',
+            'status:Completed',
+            'status:Backlog',
+          },
+        ),
+        isEmpty,
+      );
+    });
+
+    test('counts the games a group offers', () {
+      expect(groupPullCount(groups[0], includeFinished: false), 2);
+      expect(groupPullCount(groups[1], includeFinished: false), 0);
+      expect(groupPullCount(groups[1], includeFinished: true), 1);
+      expect(groupPullCount(groups[2], includeFinished: false), 1);
+    });
+  });
+
+  group('reelStrip', () {
+    final pool = [for (var i = 1; i <= 5; i++) game(i)];
+
+    test('ends on the game that was pulled', () {
+      final strip = reelStrip(pool, pool[2], length: 20, random: Random(1));
+
+      expect(strip, hasLength(20));
+      expect(strip.last.id, 3);
+    });
+
+    test('only shows games of the pool', () {
+      final strip = reelStrip(pool, pool[0], length: 30, random: Random(2));
+
+      expect(strip.every((e) => pool.any((p) => p.id == e.id)), isTrue);
+    });
+
+    test('never shows the same game twice in a row', () {
+      for (var seed = 0; seed < 20; seed++) {
+        final strip = reelStrip(
+          pool,
+          pool[4],
+          length: 25,
+          random: Random(seed),
+        );
+        for (var i = 1; i < strip.length; i++) {
+          expect(strip[i].id, isNot(strip[i - 1].id), reason: 'seed $seed');
+        }
+      }
+    });
+
+    test('is the same for the same seed', () {
+      List<int> ids(int seed) => [
+        for (final e in reelStrip(
+          pool,
+          pool[1],
+          length: 12,
+          random: Random(seed),
+        ))
+          e.id,
+      ];
+
+      expect(ids(7), ids(7));
+    });
+
+    test('repeats the only game of a pool of one', () {
+      final strip = reelStrip([pool[0]], pool[0], length: 6, random: Random(3));
+
+      expect(strip.map((e) => e.id), [1, 1, 1, 1, 1, 1]);
+    });
   });
 }
