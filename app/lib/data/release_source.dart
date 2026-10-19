@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:backlog_manager/data/update_channel.dart';
 import 'package:backlog_manager/domain/app_update.dart';
 import 'package:backlog_manager/domain/update_manifest.dart';
@@ -93,12 +95,19 @@ class GithubReleaseSource implements ReleaseSource {
     return null;
   }
 
+  /// Reads the manifest as text and decodes it here: GitHub serves a release
+  /// asset as `application/octet-stream`, which a JSON response type would
+  /// hand over undecoded. Text that is not JSON is no manifest.
   Future<UpdateManifest?> _readManifest(Uri url) async {
-    final response = await _dio.getUri<Object?>(
+    final response = await _dio.getUri<String>(
       url,
-      options: Options(responseType: ResponseType.json),
+      options: Options(responseType: ResponseType.plain),
     );
-    return parseUpdateManifest(response.data);
+    try {
+      return parseUpdateManifest(jsonDecode(response.data ?? ''));
+    } on FormatException {
+      return null;
+    }
   }
 }
 
