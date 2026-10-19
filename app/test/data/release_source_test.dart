@@ -11,6 +11,7 @@ class ReleaseAdapter implements HttpClientAdapter {
     this.status = 200,
     this.body = const {},
     this.routes = const {},
+    this.octetStreamPaths = const {},
   });
 
   final int status;
@@ -18,6 +19,10 @@ class ReleaseAdapter implements HttpClientAdapter {
 
   /// Answers by request path (and `status` for the rest).
   final Map<String, Object?> routes;
+
+  /// Paths answered as `application/octet-stream`, which is how GitHub
+  /// serves a release asset such as `app-update.json`.
+  final Set<String> octetStreamPaths;
   final requests = <RequestOptions>[];
 
   @override
@@ -32,7 +37,11 @@ class ReleaseAdapter implements HttpClientAdapter {
       jsonEncode(routed ?? body),
       routed != null ? 200 : status,
       headers: {
-        Headers.contentTypeHeader: [Headers.jsonContentType],
+        Headers.contentTypeHeader: [
+          octetStreamPaths.contains(options.uri.path)
+              ? 'application/octet-stream'
+              : Headers.jsonContentType,
+        ],
       },
     );
   }
@@ -112,6 +121,41 @@ void main() {
           },
       ],
     };
+
+    test('is read when GitHub serves the manifest as octet-stream', () async {
+      final adapter = ReleaseAdapter(
+        routes: {
+          '/repos/theoleuthardt/backlog-manager/releases': [release()],
+          manifestPath: manifest,
+        },
+        octetStreamPaths: {manifestPath},
+      );
+
+      final found = await sourceFor(adapter).latest();
+
+      expect(found!.version, '1.2.0');
+      expect(found.manifest!.payloads.keys, ['linux-x64-appimage']);
+    });
+
+    test('a manifest that is not JSON is skipped, not fatal', () async {
+      final adapter = ReleaseAdapter(
+        routes: {
+          '/repos/theoleuthardt/backlog-manager/releases': [release()],
+          manifestPath: 'not json',
+          '/repos/theoleuthardt/backlog-manager/releases/latest': {
+            'tag_name': 'v1.1.0',
+            'prerelease': false,
+            'draft': false,
+            'html_url': 'https://github.com/theoleuthardt/backlog-manager/releases/tag/v1.1.0',
+          },
+        },
+        octetStreamPaths: {manifestPath},
+      );
+
+      final found = await sourceFor(adapter).latest();
+
+      expect(found!.version, '1.1.0');
+    });
 
     test('is found among the pre-releases and carries its payloads', () async {
       final adapter = ReleaseAdapter(
