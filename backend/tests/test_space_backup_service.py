@@ -444,3 +444,41 @@ async def test_retention_keeps_the_newest_per_kind(
     kinds = [item.kind for item in (await service.list_backups(session, first)).backups]
     assert kinds.count("manual") == service.RETENTION["manual"]
     assert kinds.count("pre-delete") == 1
+
+
+async def test_leaving_removes_the_leavers_data_from_every_snapshot(
+    service: ModuleType, session: AsyncSession
+) -> None:
+    space_id, first, second = await _make_space(session, "erase")
+    await _seed(session, space_id, first, second)
+    manual = await service.create_manual_backup(session, first)
+    await service.create_backup(session, space_id, "pre-delete", first.id)
+
+    await space_repo.remove_member(session, space_id, second.id)
+
+    stored = [
+        await service.space_backup_repo.get_backup(session, space_id, item.id)
+        for item in await service.space_backup_repo.list_backups(session, space_id)
+    ]
+    assert len(stored) == 2
+    for backup in stored:
+        assert {row["user_id"] for row in backup.payload["member_data"]} == {first.id}
+        assert "Too grindy" not in str(backup.payload)
+    assert manual.id in {backup.id for backup in stored}
+
+
+async def test_listing_the_backups_does_not_load_their_payloads(
+    service: ModuleType, session: AsyncSession
+) -> None:
+    from sqlalchemy import inspect
+
+    space_id, first, second = await _make_space(session, "defer")
+    await _seed(session, space_id, first, second)
+    await service.create_manual_backup(session, first)
+    session.expunge_all()
+
+    await service.space_backup_repo.list_backups(session, space_id)
+    latest = await service.space_backup_repo.get_latest_backup(session, space_id)
+
+    assert latest is not None
+    assert "payload" in inspect(latest).unloaded

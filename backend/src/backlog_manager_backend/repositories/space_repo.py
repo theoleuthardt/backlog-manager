@@ -11,6 +11,7 @@ from backlog_manager_backend.models.space import SpaceMember as SpaceMemberModel
 from backlog_manager_backend.models.space_backup import SpaceRestoreRequest
 from backlog_manager_backend.models.space_entry_member_data import SpaceEntryMemberData
 from backlog_manager_backend.models.user import User as UserModel
+from backlog_manager_backend.repositories import space_backup_repo
 from backlog_manager_backend.schemas.space import SpaceMemberRecord
 from backlog_manager_backend.utils import now_truncated_to_minute
 
@@ -91,12 +92,13 @@ async def remove_member(session: AsyncSession, space_id: int, user_id: int) -> N
     """Removes one member and deletes the space (with its entries,
     categories and statuses, via ON DELETE CASCADE) once no active
     member is left - a space holding only a pending invitation is
-    meaningless. The leaver's per-member data (playtime, rating, review)
-    on the space's entries is deleted with them, and so is the open restore
-    request (the remaining member must not be able to approve it alone), so the remaining member
-    no longer sees their playtime. The entries, categories and statuses
-    the leaver created are handed over to the remaining member, so they
-    outlive the leaver's account instead of cascading away with it."""
+    meaningless. The leaver's per-member data (playtime, rating, review) on
+    the space's entries is deleted with them, so the remaining member no
+    longer sees their playtime, and so are their fields in the space's
+    backups. The open restore request is deleted too: the remaining member
+    must not be able to approve it alone. The entries, categories and
+    statuses the leaver created are handed over to the remaining member, so
+    they outlive the leaver's account instead of cascading away with it."""
     space_entry_ids = select(BacklogEntryModel.id).where(BacklogEntryModel.space_id == space_id)
     await session.execute(
         delete(SpaceEntryMemberData).where(
@@ -104,6 +106,7 @@ async def remove_member(session: AsyncSession, space_id: int, user_id: int) -> N
             SpaceEntryMemberData.backlog_entry_id.in_(space_entry_ids),
         )
     )
+    await space_backup_repo.remove_member_data(session, space_id, user_id)
     await session.execute(
         delete(SpaceRestoreRequest).where(SpaceRestoreRequest.space_id == space_id)
     )

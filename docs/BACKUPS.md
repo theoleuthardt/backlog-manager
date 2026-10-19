@@ -92,7 +92,9 @@ one is open is refused (409), and deleting the backup, a member leaving
 (`space_repo.remove_member`) or the space going away removes the request, so
 the remaining member can never approve alone. A space with a single active
 member restores at once: nobody else could approve. The per-member fields of
-a member who is no longer active are not restored. `GET /api/space/backups`
+a member who is no longer active are not restored, and when a member leaves or
+deletes the account their fields are also removed from every stored snapshot of
+the space (`space_backup_repo.remove_member_data`). `GET /api/space/backups`
 returns the list together with the open request, which is how the client
 notices a request of the partner.
 

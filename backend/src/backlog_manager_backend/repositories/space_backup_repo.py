@@ -4,6 +4,7 @@ import msgspec
 from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import defer
 
 from backlog_manager_backend.errors import ConflictError, NotFoundError
 from backlog_manager_backend.models.space import Space, SpaceMember
@@ -103,6 +104,7 @@ async def _username(session: AsyncSession, user_id: int | None) -> str | None:
 async def list_backups(session: AsyncSession, space_id: int) -> list[SpaceBackupSummary]:
     result = await session.execute(
         select(SpaceBackup, User.username)
+        .options(defer(SpaceBackup.payload))
         .outerjoin(User, User.id == SpaceBackup.created_by)
         .where(SpaceBackup.space_id == space_id)
         .order_by(SpaceBackup.id.desc())
@@ -122,7 +124,11 @@ async def get_backup(session: AsyncSession, space_id: int, backup_id: int) -> Sp
 async def get_latest_backup(
     session: AsyncSession, space_id: int, kind: str | None = None
 ) -> SpaceBackup | None:
-    query = select(SpaceBackup).where(SpaceBackup.space_id == space_id)
+    query = (
+        select(SpaceBackup)
+        .options(defer(SpaceBackup.payload))
+        .where(SpaceBackup.space_id == space_id)
+    )
     if kind is not None:
         query = query.where(SpaceBackup.kind == kind)
     return await session.scalar(query.order_by(SpaceBackup.id.desc()).limit(1))
@@ -229,3 +235,18 @@ async def delete_requests(session: AsyncSession, space_id: int) -> None:
         delete(SpaceRestoreRequest).where(SpaceRestoreRequest.space_id == space_id)
     )
     await session.commit()
+
+
+async def remove_member_data(session: AsyncSession, space_id: int, user_id: int) -> None:
+    """Deletes the per-member fields of `user_id` (playtime, rating, review,
+    ownership) from every snapshot of the space, so a member who leaves or
+    deletes the account leaves nothing of that behind. The stored content
+    hashes are not recomputed: the next safety snapshot is simply stored
+    instead of being skipped as a duplicate."""
+    models = (
+        await session.scalars(select(SpaceBackup).where(SpaceBackup.space_id == space_id))
+    ).all()
+    for model in models:
+        kept = [row for row in model.payload.get("member_data", []) if row["user_id"] != user_id]
+        model.payload = {**model.payload, "member_data": kept}
+    await session.flush()
