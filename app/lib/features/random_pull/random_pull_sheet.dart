@@ -48,7 +48,7 @@ class RandomPullSheet extends ConsumerStatefulWidget {
 enum _Stage { choosing, spinning, result }
 
 /// Games on a reel while it spins.
-const _reelLength = 28;
+const _reelLength = 40;
 
 class _RandomPullSheetState extends ConsumerState<RandomPullSheet> {
   var _includeFinished = false;
