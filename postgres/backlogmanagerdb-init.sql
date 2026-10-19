@@ -133,6 +133,39 @@ CREATE TABLE IF NOT EXISTS "blm-system"."SpaceEntryMemberData" (
         ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS "blm-system"."SpaceBackups" (
+    "BackupID"      BIGSERIAL PRIMARY KEY,
+    "SpaceID"       BIGINT NOT NULL,
+    "CreatedBy"     BIGINT,
+    "Kind"          VARCHAR(20) NOT NULL,
+    "Name"          VARCHAR(60),
+    "ContentHash"   VARCHAR(64) NOT NULL,
+    "EntryCount"    INTEGER NOT NULL,
+    "CategoryCount" INTEGER NOT NULL,
+    "Payload"       JSONB NOT NULL,
+    "CreatedAt"     TIMESTAMP NOT NULL DEFAULT timezone('utc', clock_timestamp()),
+    FOREIGN KEY ("SpaceID") REFERENCES "blm-system"."Spaces"("SpaceID")
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY ("CreatedBy") REFERENCES "blm-system"."Users"("UserID")
+        ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_spacebackups_spaceid ON "blm-system"."SpaceBackups"("SpaceID");
+
+CREATE TABLE IF NOT EXISTS "blm-system"."SpaceRestoreRequests" (
+    "RequestID"   BIGSERIAL PRIMARY KEY,
+    "SpaceID"     BIGINT NOT NULL UNIQUE,
+    "BackupID"    BIGINT NOT NULL,
+    "RequestedBy" BIGINT NOT NULL,
+    "CreatedAt"   TIMESTAMP NOT NULL DEFAULT timezone('utc', clock_timestamp()),
+    FOREIGN KEY ("SpaceID") REFERENCES "blm-system"."Spaces"("SpaceID")
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY ("BackupID") REFERENCES "blm-system"."SpaceBackups"("BackupID")
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY ("RequestedBy") REFERENCES "blm-system"."Users"("UserID")
+        ON DELETE CASCADE ON UPDATE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS "blm-system"."BacklogEntryMods" (
     "ModID"          BIGSERIAL PRIMARY KEY,
     "BacklogEntryID" BIGINT NOT NULL,

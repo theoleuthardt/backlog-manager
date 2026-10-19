@@ -1,9 +1,15 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:backlog_manager/api/generated/export.dart' as wire;
 import 'package:backlog_manager/data/backlog_api.dart';
 import 'package:backlog_manager/data/games_api.dart';
+import 'package:backlog_manager/data/space_backups_api.dart';
+import 'package:backlog_manager/domain/backups.dart';
 import 'package:backlog_manager/domain/entry_mod.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/models.dart';
+import 'package:backlog_manager/domain/space_backups.dart';
 
 class FakeBacklogApi implements BacklogApi {
   FakeBacklogApi({List<BacklogEntry>? entries})
@@ -352,5 +358,119 @@ class FakeGamesApi implements GamesApi {
     calls.add('covers-by-id $gameId');
     final custom = onCoversById;
     return custom == null ? const [] : custom(gameId);
+  }
+}
+
+class FakeSpaceBackupsApi implements SpaceBackupsApi {
+  FakeSpaceBackupsApi({List<SpaceBackup>? backups, this.request})
+    : backups = [...?backups];
+
+  List<SpaceBackup> backups;
+  RestoreRequest? request;
+  final calls = <String>[];
+
+  /// Whether asking for a restore runs it at once, like in a space with one
+  /// active member.
+  bool restoresAtOnce = false;
+  Object? error;
+
+  @override
+  Future<SpaceBackups> list() async {
+    calls.add('list');
+    if (error != null) throw error!;
+    return SpaceBackups(backups: [...backups], restoreRequest: request);
+  }
+
+  @override
+  Future<SpaceBackup> create() async {
+    calls.add('create');
+    final backup = SpaceBackup(
+      id: backups.length + 10,
+      kind: 'manual',
+      name: null,
+      createdAt: DateTime.utc(2026, 10, 19, 12),
+      entryCount: 3,
+      categoryCount: 1,
+      createdBy: 'theo',
+    );
+    backups = [backup, ...backups];
+    return backup;
+  }
+
+  @override
+  Future<void> rename(int id, String? name) async {
+    calls.add('rename $id ${name ?? '-'}');
+    backups = [
+      for (final b in backups)
+        b.id == id
+            ? SpaceBackup(
+                id: id,
+                kind: b.kind,
+                name: name,
+                createdAt: b.createdAt,
+                entryCount: b.entryCount,
+                categoryCount: b.categoryCount,
+                createdBy: b.createdBy,
+              )
+            : b,
+    ];
+  }
+
+  @override
+  Future<SpaceRestoreOutcome> requestRestore(int id) async {
+    calls.add('request-restore $id');
+    if (error != null) throw error!;
+    if (restoresAtOnce) return const SpaceRestoreOutcome.restored();
+    final backup = backups.firstWhere((b) => b.id == id);
+    request = RestoreRequest(
+      id: 70,
+      backupId: id,
+      backupName: backup.name,
+      backupCreatedAt: backup.createdAt,
+      requestedBy: 'theo',
+      requestedByMe: true,
+      createdAt: DateTime.utc(2026, 10, 19, 12),
+      expiresAt: DateTime.utc(2026, 10, 20, 12),
+    );
+    return SpaceRestoreOutcome.waiting(request!);
+  }
+
+  @override
+  Future<RestoreResult> approveRestore() async {
+    calls.add('approve-restore');
+    if (error != null) throw error!;
+    request = null;
+    return const RestoreResult(
+      entryCount: 5,
+      categoryCount: 2,
+      safetyBackupId: 99,
+    );
+  }
+
+  @override
+  Future<void> withdrawRestoreRequest() async {
+    calls.add('withdraw-restore');
+    request = null;
+  }
+
+  @override
+  Future<void> delete(int id) async {
+    calls.add('delete $id');
+    backups = [
+      for (final b in backups)
+        if (b.id != id) b,
+    ];
+  }
+
+  @override
+  Future<Uint8List> download(int id) async {
+    calls.add('download $id');
+    return Uint8List.fromList(utf8.encode('{"entries":[]}'));
+  }
+
+  @override
+  Future<Uint8List> export() async {
+    calls.add('export');
+    return Uint8List.fromList(utf8.encode('{"entries":[]}'));
   }
 }

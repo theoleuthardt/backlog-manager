@@ -24,6 +24,7 @@ from backlog_manager_backend.models.category_backlog_entry import (
 from backlog_manager_backend.models.custom_status import CustomStatus
 from backlog_manager_backend.models.entry_mod import EntryMod
 from backlog_manager_backend.models.space import Space, SpaceMember
+from backlog_manager_backend.models.space_backup import SpaceBackup, SpaceRestoreRequest
 from backlog_manager_backend.models.space_entry_member_data import SpaceEntryMemberData
 from backlog_manager_backend.models.steam_app_info import SteamAppInfo
 from backlog_manager_backend.models.user import User
@@ -39,8 +40,10 @@ __all__ = [
     "CustomStatus",
     "EntryMod",
     "Space",
+    "SpaceBackup",
     "SpaceEntryMemberData",
     "SpaceMember",
+    "SpaceRestoreRequest",
     "SteamAppInfo",
     "User",
     "UserAvatar",

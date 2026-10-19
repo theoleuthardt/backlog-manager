@@ -1,0 +1,26 @@
+meta {
+  name: Rename Space Backup
+  type: http
+  seq: 9
+}
+
+put {
+  url: {{backendUrl}}/api/space/backups/{{spaceBackupId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "name": "Before the sale"
+  }
+}
+
+docs {
+  Sets or clears the label of a backup (null or blank clears it, at most
+  60 characters). Either member can do it.
+}

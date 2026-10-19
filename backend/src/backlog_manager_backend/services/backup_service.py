@@ -29,6 +29,7 @@ from backlog_manager_backend.schemas.backup import (
     BackupSummary,
     RestoreResult,
 )
+from backlog_manager_backend.services import space_backup_service
 
 logger = structlog.get_logger()
 
@@ -159,6 +160,7 @@ async def run_scheduler(interval_seconds: float) -> None:
         try:
             async with async_session() as session:
                 await create_due_auto_backups(session)
+                await space_backup_service.create_due_auto_backups(session)
         except Exception:
             logger.exception("auto_backup_tick_failed")
         await asyncio.sleep(interval_seconds)

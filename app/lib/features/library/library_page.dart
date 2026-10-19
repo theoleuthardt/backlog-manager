@@ -9,6 +9,7 @@ import 'package:backlog_manager/data/entry_image.dart';
 import 'package:backlog_manager/data/filter_providers.dart';
 import 'package:backlog_manager/data/group_order_store.dart';
 import 'package:backlog_manager/data/selection_providers.dart';
+import 'package:backlog_manager/data/space_backups_api.dart';
 import 'package:backlog_manager/design/color_math.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
@@ -36,6 +37,7 @@ import 'package:backlog_manager/features/library/library_view.dart';
 import 'package:backlog_manager/features/library/reveal_entry.dart';
 import 'package:backlog_manager/features/library/selection_bar.dart';
 import 'package:backlog_manager/features/space/member_progress.dart';
+import 'package:backlog_manager/features/space/space_backups_sheet.dart';
 import 'package:backlog_manager/features/space/space_toolbar.dart';
 import 'package:backlog_manager/features/steam/steam_sync_button.dart';
 import 'package:backlog_manager/routing/session.dart';
@@ -374,6 +376,42 @@ class _LibraryState extends ConsumerState<_Library> {
 /// a line of its own above the controls.
 const _searchBesideHeadingMin = 600.0;
 
+/// The backups of the Shared Space, with a dot while a restore the partner
+/// asked for waits for the member's approval.
+class _SpaceBackupsButton extends ConsumerWidget {
+  const _SpaceBackupsButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = Theme.of(context).extension<ShelfTokens>()!;
+    final waiting = ref.watch(restoreWaitsForMeProvider);
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        ShelfIconButton(
+          key: const Key('space-backups-button'),
+          icon: Icons.history,
+          tooltip: 'Space backups',
+          onPressed: () => unawaited(showSpaceBackupsSheet(context)),
+        ),
+        if (waiting)
+          Positioned(
+            top: 4,
+            right: 4,
+            child: DecoratedBox(
+              key: const Key('space-backups-waiting'),
+              decoration: BoxDecoration(
+                color: tokens.accent,
+                shape: BoxShape.circle,
+              ),
+              child: const SizedBox(width: 9, height: 9),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 /// How much wider the heading of the Shared Space is than "Library": the
 /// avatars, the title and the space controls, so the search needs that much
 /// more room before it sits beside the heading.
@@ -427,6 +465,7 @@ class _Toolbar extends ConsumerWidget {
           tooltip: 'Pull a random game',
           onPressed: ref.read(randomPullRequestProvider.notifier).request,
         ),
+        if (space != null) const _SpaceBackupsButton(),
         ShelfIconButton(
           key: const Key('duplicates-button'),
           icon: Icons.difference_outlined,

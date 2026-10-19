@@ -33,7 +33,10 @@ import '../models/public_user.dart';
 import '../models/public_username.dart';
 import '../models/rename_backup_request.dart';
 import '../models/restore_result.dart';
+import '../models/space_backup_list.dart';
+import '../models/space_backup_summary.dart';
 import '../models/space_response.dart';
+import '../models/space_restore_response.dart';
 import '../models/steam_grid_db_search_result.dart';
 import '../models/steam_preview_item.dart';
 import '../models/steam_wishlist_item.dart';
@@ -319,6 +322,52 @@ abstract class FallbackClient {
   /// LeaveSpace
   @DELETE('/api/space/membership')
   Future<void> apiSpaceMembershipLeaveSpace();
+
+  /// ListSpaceBackups
+  @GET('/api/space/backups')
+  Future<SpaceBackupList> apiSpaceBackupsListSpaceBackups();
+
+  /// CreateSpaceBackup
+  @POST('/api/space/backups')
+  Future<SpaceBackupSummary> apiSpaceBackupsCreateSpaceBackup();
+
+  /// DownloadSpaceBackup
+  @GET('/api/space/backups/{backup_id}/download')
+  Future<void> apiSpaceBackupsBackupIdDownloadDownloadSpaceBackup({
+    @Path('backup_id') required int backupId,
+  });
+
+  /// ExportSpace
+  @GET('/api/space/export')
+  Future<void> apiSpaceExportExportSpace();
+
+  /// RenameSpaceBackup
+  @PUT('/api/space/backups/{backup_id}')
+  Future<BackupSummary> apiSpaceBackupsBackupIdRenameSpaceBackup({
+    @Path('backup_id') required int backupId,
+    @Body() required RenameBackupRequest body,
+  });
+
+  /// DeleteSpaceBackup
+  @DELETE('/api/space/backups/{backup_id}')
+  Future<void> apiSpaceBackupsBackupIdDeleteSpaceBackup({
+    @Path('backup_id') required int backupId,
+  });
+
+  /// RestoreSpaceBackup
+  @POST('/api/space/backups/{backup_id}/restore')
+  Future<SpaceRestoreResponse>
+  apiSpaceBackupsBackupIdRestoreRestoreSpaceBackup({
+    @Path('backup_id') required int backupId,
+  });
+
+  /// ApproveSpaceRestore
+  @POST('/api/space/restore-request/approve')
+  Future<RestoreResult> apiSpaceRestoreRequestApproveApproveSpaceRestore();
+
+  /// WithdrawSpaceRestoreRequest
+  @DELETE('/api/space/restore-request')
+  Future<void> apiSpaceRestoreRequestWithdrawSpaceRestoreRequest();
 
   /// GetOwnUser
   @GET('/api/user/me')

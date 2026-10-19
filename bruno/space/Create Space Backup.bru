@@ -1,0 +1,29 @@
+meta {
+  name: Create Space Backup
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{backendUrl}}/api/space/backups
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+script:post-response {
+  if (res.body.id) {
+    bru.setEnvVar("spaceBackupId", res.body.id);
+  }
+}
+
+docs {
+  Takes a manual snapshot of the shared space (entries, categories, custom
+  statuses, mods and the per-member fields of both members) and stores its
+  id in the spaceBackupId environment variable. Either member can do it.
+  Oldest manual snapshots beyond the retention limit (20) are dropped.
+  201 on success, 404 without an active membership.
+}

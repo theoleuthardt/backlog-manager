@@ -23,6 +23,7 @@ from backlog_manager_backend.routes.health import health
 from backlog_manager_backend.routes.igdb_sync import igdb_sync_router
 from backlog_manager_backend.routes.images import proxy_image
 from backlog_manager_backend.routes.space import space_router
+from backlog_manager_backend.routes.space_backups import space_backup_router
 from backlog_manager_backend.routes.steam import steam_router
 from backlog_manager_backend.routes.steam_wishlist_sync import (
     steam_wishlist_sync_cron_router,
@@ -105,6 +106,7 @@ def create_app() -> Litestar:
             backlog_router,
             backup_router,
             space_router,
+            space_backup_router,
             user_router,
             admin_user_router,
             steam_router,

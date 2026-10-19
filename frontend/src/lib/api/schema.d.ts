@@ -493,6 +493,127 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/space/backups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** ListSpaceBackups */
+        get: operations["ApiSpaceBackupsListSpaceBackups"];
+        put?: never;
+        /** CreateSpaceBackup */
+        post: operations["ApiSpaceBackupsCreateSpaceBackup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/space/backups/{backup_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** DownloadSpaceBackup */
+        get: operations["ApiSpaceBackupsBackupIdDownloadDownloadSpaceBackup"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/space/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** ExportSpace */
+        get: operations["ApiSpaceExportExportSpace"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/space/backups/{backup_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** RenameSpaceBackup */
+        put: operations["ApiSpaceBackupsBackupIdRenameSpaceBackup"];
+        post?: never;
+        /** DeleteSpaceBackup */
+        delete: operations["ApiSpaceBackupsBackupIdDeleteSpaceBackup"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/space/backups/{backup_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** RestoreSpaceBackup */
+        post: operations["ApiSpaceBackupsBackupIdRestoreRestoreSpaceBackup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/space/restore-request/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** ApproveSpaceRestore */
+        post: operations["ApiSpaceRestoreRequestApproveApproveSpaceRestore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/space/restore-request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** WithdrawSpaceRestoreRequest */
+        delete: operations["ApiSpaceRestoreRequestWithdrawSpaceRestoreRequest"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/user/me": {
         parameters: {
             query?: never;
@@ -1412,11 +1533,41 @@ export interface components {
         RenameBackupRequest: {
             name?: string | null;
         };
+        /** RestoreRequestResponse */
+        RestoreRequestResponse: {
+            id: number;
+            backup_id: number;
+            /** Format: date-time */
+            backup_created_at: string;
+            requested_by: string;
+            requested_by_me: boolean;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            expires_at: string;
+            backup_name?: string | null;
+        };
         /** RestoreResult */
         RestoreResult: {
             entry_count: number;
             category_count: number;
             safety_backup_id?: number | null;
+        };
+        /** SpaceBackupList */
+        SpaceBackupList: {
+            backups: components["schemas"]["SpaceBackupSummary"][];
+            restore_request?: components["schemas"]["RestoreRequestResponse"] | null;
+        };
+        /** SpaceBackupSummary */
+        SpaceBackupSummary: {
+            id: number;
+            kind: string;
+            /** Format: date-time */
+            created_at: string;
+            entry_count: number;
+            category_count: number;
+            name?: string | null;
+            created_by?: string | null;
         };
         /** SpaceMemberResponse */
         SpaceMemberResponse: {
@@ -1432,6 +1583,12 @@ export interface components {
             space_id: number | null;
             my_status: string | null;
             members: components["schemas"]["SpaceMemberResponse"][];
+        };
+        /** SpaceRestoreResponse */
+        SpaceRestoreResponse: {
+            restored: boolean;
+            request?: components["schemas"]["RestoreRequestResponse"] | null;
+            result?: components["schemas"]["RestoreResult"] | null;
         };
         /** SteamGridDBSearchResult */
         SteamGridDBSearchResult: {
@@ -3674,6 +3831,497 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    ApiSpaceBackupsListSpaceBackups: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    "cache-control"?: string;
+                    "X-Frame-Options"?: string;
+                    "Referrer-Policy"?: string;
+                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpaceBackupList"];
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiSpaceBackupsCreateSpaceBackup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    "cache-control"?: string;
+                    "X-Frame-Options"?: string;
+                    "Referrer-Policy"?: string;
+                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpaceBackupSummary"];
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiSpaceBackupsBackupIdDownloadDownloadSpaceBackup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                backup_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    "cache-control"?: string;
+                    "X-Frame-Options"?: string;
+                    "Referrer-Policy"?: string;
+                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    } | {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiSpaceExportExportSpace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    "cache-control"?: string;
+                    "X-Frame-Options"?: string;
+                    "Referrer-Policy"?: string;
+                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiSpaceBackupsBackupIdRenameSpaceBackup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                backup_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenameBackupRequest"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    "cache-control"?: string;
+                    "X-Frame-Options"?: string;
+                    "Referrer-Policy"?: string;
+                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupSummary"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    } | {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiSpaceBackupsBackupIdDeleteSpaceBackup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                backup_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    "cache-control"?: string;
+                    "X-Frame-Options"?: string;
+                    "Referrer-Policy"?: string;
+                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiSpaceBackupsBackupIdRestoreRestoreSpaceBackup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                backup_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    "cache-control"?: string;
+                    "X-Frame-Options"?: string;
+                    "Referrer-Policy"?: string;
+                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpaceRestoreResponse"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    } | {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Request conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiSpaceRestoreRequestApproveApproveSpaceRestore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    "cache-control"?: string;
+                    "X-Frame-Options"?: string;
+                    "Referrer-Policy"?: string;
+                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RestoreResult"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Nothing matches the given URI */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+            /** @description Request conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiSpaceRestoreRequestWithdrawSpaceRestoreRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    "cache-control"?: string;
+                    "X-Frame-Options"?: string;
+                    "Referrer-Policy"?: string;
+                    "X-Content-Type-Options"?: string;
+                    "Strict-Transport-Security"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Nothing matches the given URI */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
             };
         };
     };
