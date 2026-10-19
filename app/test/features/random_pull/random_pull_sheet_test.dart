@@ -358,6 +358,45 @@ void main() {
     expect(find.byKey(const Key('random-pull-pointer')), findsNothing);
   });
 
+  testWidgets('a reel of many games only builds the rows it shows', (
+    tester,
+  ) async {
+    await pumpLibrary(
+      tester,
+      FakeBacklogApi(
+        entries: [
+          for (var i = 1; i <= 120; i++)
+            BacklogEntry(
+              id: i,
+              title: 'Game $i',
+              status: 'Not Started',
+              owned: true,
+              interest: 5,
+            ),
+        ],
+      ),
+      height: 1100,
+      overrides: [
+        randomProvider.overrideWithValue(SequenceRandom([5])),
+      ],
+    );
+    await tester.tap(find.byKey(const Key('random-pull-button')));
+    await tester.pumpAndSettle();
+    expect(find.text('120 games to choose from'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('random-pull-start')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+
+    final rows = find.descendant(
+      of: find.byKey(const Key('random-pull-reel')),
+      matching: find.textContaining('Game '),
+    );
+    expect(rows.evaluate().length, lessThan(12));
+    await tester.pumpAndSettle();
+    expect(sheetTitle, findsOneWidget);
+  });
+
   testWidgets('Pull Again spins the reel again', (tester) async {
     await open(tester, picks: [0, 0, 0]);
 
