@@ -1,8 +1,12 @@
+import 'dart:math';
+
 import 'package:backlog_manager/api/api_providers.dart';
 import 'package:backlog_manager/data/entry_image.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/domain/models.dart';
+import 'package:backlog_manager/domain/random_pull.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -142,6 +146,18 @@ class _SlotReelState extends ConsumerState<SlotReel>
                       ),
                     ),
                   ),
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: CustomPaint(
+                        key: const Key('random-pull-pointer'),
+                        painter: _PointerPainter(
+                          progress: _controller,
+                          rows: last,
+                          sparkColor: tokens.accent,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -150,6 +166,106 @@ class _SlotReelState extends ConsumerState<SlotReel>
       ),
     );
   }
+}
+
+/// The metal arrow at the right edge of the reel, pointing at the middle
+/// row, and the sparks it throws while the reel runs past it.
+class _PointerPainter extends CustomPainter {
+  _PointerPainter({
+    required this.progress,
+    required this.rows,
+    required this.sparkColor,
+  }) : super(repaint: progress);
+
+  final Animation<double> progress;
+  final int rows;
+  final Color sparkColor;
+
+  static const _width = 30.0;
+  static const _height = 34.0;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final tip = Offset(size.width - _width - 4, size.height / 2);
+    _sparks(canvas, tip);
+    _arrow(canvas, size, tip);
+  }
+
+  void _sparks(Canvas canvas, Offset tip) {
+    final power = reelSparks(
+      progress.value,
+      rows: rows,
+      seconds: slotReelDuration.inMilliseconds / 1000,
+    );
+    if (power == 0) return;
+    final passed = Curves.easeOutCubic.transform(progress.value) * rows;
+    final age = passed - passed.floorToDouble();
+    final paint = Paint()
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 2.4;
+    for (var burst = 0; burst < 2; burst++) {
+      final row = passed.floor() - burst;
+      final burstAge = age + burst;
+      if (burstAge > 1.6) continue;
+      for (var spark = 0; spark < 14; spark++) {
+        final random = Random(row * 31 + spark);
+        final angle = pi + (random.nextDouble() - 0.5) * 2.2;
+        final distance = (6 + burstAge * 26) * (0.5 + random.nextDouble());
+        final fade = (1 - burstAge / 1.6) * power;
+        final from = tip + Offset(cos(angle), sin(angle)) * distance;
+        final to = tip + Offset(cos(angle), sin(angle)) * (distance + 10);
+        paint.color = Color.lerp(
+          const Color(0xFFFFFFFF),
+          sparkColor,
+          random.nextDouble(),
+        )!.withValues(alpha: fade.clamp(0, 1));
+        canvas.drawLine(from, to, paint);
+      }
+    }
+  }
+
+  void _arrow(Canvas canvas, Size size, Offset tip) {
+    final path = Path()
+      ..moveTo(tip.dx, tip.dy)
+      ..lineTo(tip.dx + _width, tip.dy - _height / 2)
+      ..lineTo(tip.dx + _width, tip.dy + _height / 2)
+      ..close();
+    canvas
+      ..drawShadow(path, const Color(0xFF000000), 4, true)
+      ..drawPath(
+        path,
+        Paint()
+          ..shader = const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFF4F7FA),
+              Color(0xFF9CA6B1),
+              Color(0xFFE9EDF1),
+              Color(0xFF626B75),
+            ],
+            stops: [0, 0.38, 0.6, 1],
+          ).createShader(path.getBounds()),
+      )
+      ..drawPath(
+        path,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.2
+          ..color = const Color(0xFF3A4048),
+      )
+      ..drawLine(
+        Offset(tip.dx + 5, tip.dy - 2),
+        Offset(tip.dx + _width - 3, tip.dy - _height / 2 + 4),
+        Paint()
+          ..strokeWidth = 1.2
+          ..color = const Color(0xCCFFFFFF),
+      );
+  }
+
+  @override
+  bool shouldRepaint(_PointerPainter oldDelegate) =>
+      oldDelegate.rows != rows || oldDelegate.sparkColor != sparkColor;
 }
 
 class _ReelRow extends StatelessWidget {
@@ -166,7 +282,7 @@ class _ReelRow extends StatelessWidget {
     return SizedBox(
       height: _rowHeight,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        padding: const EdgeInsets.fromLTRB(14, 6, 44, 6),
         child: Row(
           children: [
             ClipRRect(

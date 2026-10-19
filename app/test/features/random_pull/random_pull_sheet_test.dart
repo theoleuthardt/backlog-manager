@@ -344,6 +344,20 @@ void main() {
     expect(sheetTitle, findsOneWidget);
   });
 
+  testWidgets('the reel has a pointer that throws sparks while it spins', (
+    tester,
+  ) async {
+    await openChoosing(tester);
+
+    await tester.tap(find.byKey(const Key('random-pull-start')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.byKey(const Key('random-pull-pointer')), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('random-pull-pointer')), findsNothing);
+  });
+
   testWidgets('Pull Again spins the reel again', (tester) async {
     await open(tester, picks: [0, 0, 0]);
 
@@ -416,7 +430,7 @@ void main() {
     await openChoosing(tester);
     await tester.tap(find.byKey(const Key('random-pull-start')));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 900));
+    await tester.pump(const Duration(milliseconds: 500));
 
     await expectLater(
       find.byType(MaterialApp),

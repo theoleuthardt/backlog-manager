@@ -74,3 +74,17 @@ List<BacklogEntry> reelStrip(
   }
   return backwards.reversed.toList();
 }
+
+/// How strong the sparks at the pointer of the slot machine reel are, from 0
+/// to 1, at [progress] (0 to 1) of a spin that moves the reel by [rows] rows
+/// in [seconds] with an ease-out cubic curve: they follow the speed of the reel, so they
+/// are full while it is fast, die down as it slows and are gone before it
+/// stops.
+double reelSparks(
+  double progress, {
+  required int rows,
+  required double seconds,
+}) {
+  final rowsPerSecond = rows / seconds * 3 * pow(1 - progress.clamp(0, 1), 2);
+  return ((rowsPerSecond - 2) / 6).clamp(0, 1).toDouble();
+}

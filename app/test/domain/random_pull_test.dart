@@ -223,4 +223,29 @@ void main() {
       expect(strip.map((e) => e.id), [1, 1, 1, 1, 1, 1]);
     });
   });
+
+  group('reelSparks', () {
+    test('are strongest while the reel is fast', () {
+      expect(reelSparks(0, rows: 27, seconds: 2.6), 1);
+      expect(reelSparks(0.2, rows: 27, seconds: 2.6), 1);
+    });
+
+    test('die down as the reel slows and stop with it', () {
+      expect(
+        reelSparks(0.6, rows: 27, seconds: 2.6),
+        inInclusiveRange(0.1, 0.9),
+      );
+      expect(reelSparks(0.95, rows: 27, seconds: 2.6), 0);
+      expect(reelSparks(1, rows: 27, seconds: 2.6), 0);
+    });
+
+    test('never grow while the reel slows down', () {
+      var previous = reelSparks(0, rows: 27, seconds: 2.6);
+      for (var t = 0.05; t <= 1; t += 0.05) {
+        final now = reelSparks(t, rows: 27, seconds: 2.6);
+        expect(now, lessThanOrEqualTo(previous));
+        previous = now;
+      }
+    });
+  });
 }
