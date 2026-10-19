@@ -29,7 +29,7 @@ and opens its page.
 
    | Platform | How |
    |---|---|
-   | Linux AppImage | the new file is made executable, moved over the running AppImage (`$APPIMAGE`) and started; the old process keeps its open inode and exits |
+   | Linux AppImage | the new file is made executable and moved next to the running AppImage (`$APPIMAGE`) under a name without a version (`stableAppImageName`: `Backlog-Manager_0.9.9_linux_x64.AppImage` becomes `Backlog-Manager.AppImage`, a name without a version is kept as it is), and started; when the old file had a version in its name, its path becomes a relative link to the new file so desktop entries and shortcuts that point at it keep working (the AppImage runtime resolves `$APPIMAGE`, so the next update finds the real file); the old process keeps its open inode and exits. The release files keep the version in their names (#450) |
    | macOS | a detached shell script waits for the app to exit, mounts the disk image, copies the app over the bundle with `ditto` and opens it; the file is not quarantined because the app downloaded it itself |
    | Windows | a detached `cmd` runs a small batch file next to the download: it waits a moment, runs the Inno Setup installer silently over the install, starts the app and deletes itself |
 

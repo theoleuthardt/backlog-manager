@@ -56,6 +56,109 @@ void main() {
     });
   });
 
+  group('stableAppImageName', () {
+    test('drops the version from the name of a release file', () {
+      expect(
+        stableAppImageName('Backlog-Manager_0.9.9_linux_x64.AppImage'),
+        'Backlog-Manager.AppImage',
+      );
+      expect(
+        stableAppImageName('Backlog-Manager_0.9.10_linux_x64.AppImage'),
+        'Backlog-Manager.AppImage',
+      );
+      expect(
+        stableAppImageName('Backlog-Manager-1.0.0-x86_64.AppImage'),
+        'Backlog-Manager.AppImage',
+      );
+    });
+
+    test('keeps a name the user chose without a version', () {
+      expect(
+        stableAppImageName('Backlog-Manager.AppImage'),
+        'Backlog-Manager.AppImage',
+      );
+      expect(stableAppImageName('Backlog.AppImage'), 'Backlog.AppImage');
+      expect(stableAppImageName('blm'), 'blm');
+    });
+  });
+
+  group('AppImageInstaller with a version in the file name', () {
+    const versioned = 'Backlog-Manager_0.9.9_linux_x64.AppImage';
+
+    test('installs under the name without a version and starts that', () async {
+      File('${dir.path}/$versioned').writeAsStringSync('old');
+      final payload = File('${dir.path}/.update')..writeAsStringSync('new');
+      final installer = AppImageInstaller(
+        appImagePath: '${dir.path}/$versioned',
+        start: record,
+      );
+
+      await installer.apply(payload);
+
+      final stable = File('${dir.path}/Backlog-Manager.AppImage');
+      expect(stable.readAsStringSync(), 'new');
+      expect(payload.existsSync(), isFalse);
+      expect(started.single.$1, stable.path);
+      expect(stable.statSync().mode & 0x40, isNonZero);
+    });
+
+    test('leaves a link at the old path so shortcuts keep working', () async {
+      File('${dir.path}/$versioned').writeAsStringSync('old');
+      final payload = File('${dir.path}/.update')..writeAsStringSync('new');
+      final installer = AppImageInstaller(
+        appImagePath: '${dir.path}/$versioned',
+        start: record,
+      );
+
+      await installer.apply(payload);
+
+      final old = Link('${dir.path}/$versioned');
+      expect(old.existsSync(), isTrue);
+      expect(old.targetSync(), 'Backlog-Manager.AppImage');
+      expect(File(old.path).readAsStringSync(), 'new');
+    });
+
+    test('replaces an earlier file of the stable name', () async {
+      File('${dir.path}/$versioned').writeAsStringSync('old');
+      File('${dir.path}/Backlog-Manager.AppImage').writeAsStringSync('stale');
+      final payload = File('${dir.path}/.update')..writeAsStringSync('new');
+      final installer = AppImageInstaller(
+        appImagePath: '${dir.path}/$versioned',
+        start: record,
+      );
+
+      await installer.apply(payload);
+
+      expect(
+        File('${dir.path}/Backlog-Manager.AppImage').readAsStringSync(),
+        'new',
+      );
+    });
+
+    test(
+      'a file that already has the stable name stays and gets no link',
+      () async {
+        final stable = File('${dir.path}/Backlog-Manager.AppImage')
+          ..writeAsStringSync('old');
+        final payload = File('${dir.path}/.update')..writeAsStringSync('new');
+        final installer = AppImageInstaller(
+          appImagePath: stable.path,
+          start: record,
+        );
+
+        await installer.apply(payload);
+
+        expect(stable.readAsStringSync(), 'new');
+        expect(FileSystemEntity.isLinkSync(stable.path), isFalse);
+        expect(
+          dir.listSync().map((e) => e.path.split('/').last).toList()..sort(),
+          ['Backlog-Manager.AppImage'],
+        );
+        expect(started.single.$1, stable.path);
+      },
+    );
+  });
+
   group('systemUpdateInstaller', () {
     test('Linux outside an AppImage cannot update in place', () {
       expect(
