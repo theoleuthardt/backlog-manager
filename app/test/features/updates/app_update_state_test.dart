@@ -67,6 +67,18 @@ void main() {
     expect(state().release, isNull);
   });
 
+  test(
+    'a newest release that is older than the installed one is offered',
+    () async {
+      source.release = releaseOf('0.9.2');
+
+      await container.read(appUpdateProvider.notifier).check();
+
+      expect(state().check, UpdateCheck.older);
+      expect(state().release!.version, '0.9.2');
+    },
+  );
+
   test('no release at all is up to date', () async {
     source.release = null;
 

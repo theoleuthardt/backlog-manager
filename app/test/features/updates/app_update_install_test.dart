@@ -25,6 +25,15 @@ class FixedSource implements ReleaseSource {
   Future<AppRelease?> latest() async => release;
 }
 
+class MutableSource implements ReleaseSource {
+  MutableSource(this.release);
+
+  AppRelease? release;
+
+  @override
+  Future<AppRelease?> latest() async => release;
+}
+
 class FakeDownloader implements UpdateDownloader {
   FakeDownloader(this.bytes, {this.fail = false});
 
@@ -127,10 +136,11 @@ void main() {
     UpdateInstaller? installer,
     UpdateVerifier? verifierOverride,
     bool noVerifier = false,
+    ReleaseSource? source,
   }) {
     final container = ProviderContainer(
       overrides: [
-        releaseSourceProvider.overrideWithValue(FixedSource(release)),
+        releaseSourceProvider.overrideWithValue(source ?? FixedSource(release)),
         installedVersionProvider.overrideWith((ref) async => '0.9.3'),
         updateDownloaderProvider.overrideWithValue(downloader),
         updateInstallerProvider.overrideWithValue(
@@ -181,6 +191,46 @@ void main() {
     expect(state.installError, contains('could not be verified'));
     expect(staged('0.9.4').existsSync(), isFalse);
     expect(state.staged, isNull);
+  });
+
+  test(
+    'a check that finds another release drops the update that was ready',
+    () async {
+      final source = MutableSource(release);
+      final container = await checked(
+        containerFor(downloader: FakeDownloader(_content), source: source),
+      );
+      final notifier = container.read(appUpdateProvider.notifier);
+      await notifier.install();
+      expect(container.read(appUpdateProvider).install, UpdateInstall.ready);
+      expect(staged('0.9.4').existsSync(), isTrue);
+
+      source.release = AppRelease(
+        version: '0.9.2',
+        pageUrl: Uri.parse('https://github.com/o/r/releases/tag/v0.9.2'),
+      );
+      await notifier.check();
+
+      final state = container.read(appUpdateProvider);
+      expect(state.check, UpdateCheck.older);
+      expect(state.install, UpdateInstall.none);
+      expect(state.staged, isNull);
+      expect(staged('0.9.4').existsSync(), isFalse);
+    },
+  );
+
+  test('a check that finds the same release keeps the update ready', () async {
+    final container = await checked(
+      containerFor(downloader: FakeDownloader(_content)),
+    );
+    final notifier = container.read(appUpdateProvider.notifier);
+    await notifier.install();
+
+    await notifier.check();
+
+    final state = container.read(appUpdateProvider);
+    expect(state.install, UpdateInstall.ready);
+    expect(staged('0.9.4').existsSync(), isTrue);
   });
 
   test('a failed download keeps the version and removes the part', () async {
