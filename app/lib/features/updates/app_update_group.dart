@@ -16,7 +16,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// The "App Updates" group of the About tab: a manual check and its result.
 /// A newer release shows its notes and, where the install can update itself,
 /// a button that downloads and checks it and then restarts into it; elsewhere
-/// a button to its page in the browser.
+/// a button to its page in the browser. When the newest release of the
+/// channel is older than the installed version (Stable while a pre-release is
+/// installed) the same two buttons offer to go back to it.
 class AppUpdateGroup extends ConsumerWidget {
   const AppUpdateGroup({super.key});
 
@@ -99,6 +101,11 @@ class AppUpdateGroup extends ConsumerWidget {
                     UpdateCheck.available when release != null => note(
                       'Version ${release.version} is available.',
                     ),
+                    UpdateCheck.older when release != null => note(
+                      'You are ahead of the newest '
+                      '${ref.watch(updateChannelProvider).label} release '
+                      '(${release.version}).',
+                    ),
                     _ => const SizedBox.shrink(),
                   },
                 },
@@ -122,12 +129,26 @@ class AppUpdateGroup extends ConsumerWidget {
                     kind: ShelfButtonKind.primary,
                     onPressed: notifier.install,
                   )
+                else if (inPlace &&
+                    state.check == UpdateCheck.older &&
+                    !installing &&
+                    state.install != UpdateInstall.installing)
+                  ShelfButton(
+                    key: const Key('downgrade-update'),
+                    label: state.install == UpdateInstall.failed
+                        ? 'Try Again'
+                        : 'Switch to ${release.version}',
+                    onPressed: notifier.install,
+                  )
                 else if (release != null &&
-                    state.check == UpdateCheck.available &&
+                    (state.check == UpdateCheck.available ||
+                        state.check == UpdateCheck.older) &&
                     !installing)
                   ShelfButton(
                     key: const Key('view-release'),
-                    label: 'View Release',
+                    label: state.check == UpdateCheck.older
+                        ? 'View ${release.version}'
+                        : 'View Release',
                     kind: ShelfButtonKind.primary,
                     onPressed: () =>
                         ref.read(urlOpenerProvider)(release.pageUrl),

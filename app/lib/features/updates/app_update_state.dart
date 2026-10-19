@@ -10,7 +10,9 @@ import 'package:backlog_manager/platform/update_installer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-enum UpdateCheck { idle, checking, available, upToDate, failed }
+/// [older] is the answer when the newest release of the channel is older than
+/// the installed version, as on Stable while a pre-release is installed.
+enum UpdateCheck { idle, checking, available, older, upToDate, failed }
 
 /// Where an in-place update is: nothing started, the installer is loading,
 /// it is being checked, it is ready to be applied by a restart, or it failed
@@ -40,7 +42,8 @@ class AppUpdateState {
   /// The verified installer while [install] is [UpdateInstall.ready].
   final File? staged;
 
-  /// The newer release while [check] is [UpdateCheck.available].
+  /// The newer release while [check] is [UpdateCheck.available], the older
+  /// newest one while it is [UpdateCheck.older].
   final AppRelease? release;
 
   /// Whether the notification of this session was shown already.
@@ -88,8 +91,12 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
       final installed = await ref.read(installedVersionProvider.future);
       final release = await ref.read(releaseSourceProvider).latest();
       if (!ref.mounted) return;
+      _dropStaleInstall(release);
       if (release != null && isNewerVersion(release.version, than: installed)) {
         state = state.copyWith(check: UpdateCheck.available, release: release);
+      } else if (release != null &&
+          isNewerVersion(installed, than: release.version)) {
+        state = state.copyWith(check: UpdateCheck.older, release: release);
       } else {
         state = state.copyWith(check: UpdateCheck.upToDate, clearRelease: true);
       }
@@ -97,6 +104,21 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
       if (!ref.mounted) return;
       state = quiet ? before : state.copyWith(check: UpdateCheck.failed);
     }
+  }
+
+  /// A ready or failed install belongs to the release it was started for: a
+  /// check that finds another release (after a change of channel, say) removes
+  /// the downloaded file and its state, so the buttons never apply to a
+  /// version they do not name.
+  void _dropStaleInstall(AppRelease? found) {
+    final install = state.install;
+    if (install != UpdateInstall.ready && install != UpdateInstall.failed) {
+      return;
+    }
+    if (state.release?.version == found?.version) return;
+    final file = state.staged;
+    if (file != null && file.existsSync()) file.deleteSync();
+    state = state.copyWith(clearInstall: true);
   }
 
   void markAnnounced() => state = state.copyWith(announced: true);
