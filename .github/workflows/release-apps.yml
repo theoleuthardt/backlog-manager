@@ -75,7 +75,7 @@ jobs:
         with:
           tag_name: ${{ needs.version.outputs.tag }}
           target_commitish: ${{ github.sha }}
-          name: Backlog Manager ${{ needs.version.outputs.tag }}
+          name: ${{ needs.version.outputs.version }}
           generate_release_notes: true
           fail_on_unmatched_files: true
           files: dist/**/*
