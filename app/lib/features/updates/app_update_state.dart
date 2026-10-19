@@ -91,6 +91,7 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
       final installed = await ref.read(installedVersionProvider.future);
       final release = await ref.read(releaseSourceProvider).latest();
       if (!ref.mounted) return;
+      _dropStaleInstall(release);
       if (release != null && isNewerVersion(release.version, than: installed)) {
         state = state.copyWith(check: UpdateCheck.available, release: release);
       } else if (release != null &&
@@ -103,6 +104,21 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
       if (!ref.mounted) return;
       state = quiet ? before : state.copyWith(check: UpdateCheck.failed);
     }
+  }
+
+  /// A ready or failed install belongs to the release it was started for: a
+  /// check that finds another release (after a change of channel, say) removes
+  /// the downloaded file and its state, so the buttons never apply to a
+  /// version they do not name.
+  void _dropStaleInstall(AppRelease? found) {
+    final install = state.install;
+    if (install != UpdateInstall.ready && install != UpdateInstall.failed) {
+      return;
+    }
+    if (state.release?.version == found?.version) return;
+    final file = state.staged;
+    if (file != null && file.existsSync()) file.deleteSync();
+    state = state.copyWith(clearInstall: true);
   }
 
   void markAnnounced() => state = state.copyWith(announced: true);

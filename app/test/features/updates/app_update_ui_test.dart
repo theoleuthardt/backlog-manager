@@ -317,7 +317,7 @@ void main() {
     });
 
     testWidgets('is not announced when the app starts', (tester) async {
-      await pumpLibrary(
+      final container = await pumpLibrary(
         tester,
         FakeBacklogApi(entries: backlog),
         overrides: [
@@ -326,8 +326,47 @@ void main() {
         ],
       );
 
+      expect(
+        container.read(appUpdateProvider).check,
+        UpdateCheck.older,
+        reason: 'the check has finished and found the older release',
+      );
       expect(find.textContaining('is available'), findsNothing);
       expect(find.textContaining('0.9.2'), findsNothing);
+    });
+
+    testWidgets('a failed switch says so and can be tried again', (
+      tester,
+    ) async {
+      final signed = (await tester.runAsync(
+        () => signedRelease(version: '0.9.2'),
+      ))!;
+      final dir = Directory.systemTemp.createTempSync('blm-ui-downgrade-');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      await openSettings(
+        tester,
+        location: '/settings?tab=updates',
+        overrides: [
+          ...updateOverrides(FakeSource(release: signed.release)),
+          updateInstallerProvider.overrideWithValue(FakeInstaller(dir)),
+          updateVerifierProvider.overrideWithValue(signed.verifier),
+          updateDownloaderProvider.overrideWithValue(
+            FakeDownloader([1, 2, 3], fail: true),
+          ),
+        ],
+      );
+      await tester.tap(find.byKey(const Key('check-for-updates')));
+      await tester.pumpAndSettle();
+
+      await tester.runAsync(() async {
+        await tester.tap(find.byKey(const Key('downgrade-update')));
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+      });
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('update-error')), findsOneWidget);
+      expect(find.text('Try Again'), findsOneWidget);
+      expect(find.byKey(const Key('downgrade-update')), findsOneWidget);
     });
   });
 

@@ -39,7 +39,7 @@ and opens its page.
 
 The manifest is read as text and decoded in the app (`GithubReleaseSource._readManifest`): GitHub serves a release asset as `application/octet-stream`, so a JSON response type returned the undecoded string, the manifest was never read and the check fell back to `releases/latest`. Versions up to 0.9.10 have this bug and cannot find an update by themselves; the first version with the fix (#452) has to be installed by hand once.
 
-**Going back (#458).** When the newest release of the chosen channel is older than the installed version (Stable while a pre-release is installed), the check does not say "latest version" but `UpdateCheck.older`: "You are ahead of the newest Stable release (0.9.2)" with "Switch to 0.9.2" when that release has a manifest and the install can update itself (the same download, verification and restart as an update; `downgrade-update`), or "View 0.9.2" (the release page) otherwise. It is not announced when the app starts.
+**Going back (#458).** When the newest release of the chosen channel is older than the installed version (Stable while a pre-release is installed), the check does not say "latest version" but `UpdateCheck.older`: "You are ahead of the newest Stable release (0.9.2)" with "Switch to 0.9.2" when that release has a manifest and the install can update itself (the same download, verification and restart as an update; `downgrade-update`), or "View 0.9.2" (the release page) otherwise. It is not announced when the app starts. A check that finds another release than the one a ready or failed install was started for (after a change of channel) drops that install and its downloaded file, so the buttons never apply to a version they do not name.
 
 ## Update channel
 
