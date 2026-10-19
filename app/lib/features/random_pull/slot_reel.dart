@@ -11,7 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// How long the reel spins before it stops on the pulled game.
-const slotReelDuration = Duration(milliseconds: 2600);
+const slotReelDuration = Duration(milliseconds: 3800);
 
 const _rowHeight = 64.0;
 
