@@ -51,7 +51,8 @@ String stableAppImageName(String fileName) =>
 /// An AppImage replaces itself: the new file is moved to the stable name next
 /// to the old one (the old one keeps running from its open inode) and
 /// started. When the old file had a version in its name, its path becomes a
-/// link to the new file, so desktop entries and shortcuts that point at it
+/// link to the new file (made under a temporary name and renamed over the old
+/// path, so the path never goes missing), so desktop entries and shortcuts that point at it
 /// keep working.
 class AppImageInstaller implements UpdateInstaller {
   AppImageInstaller({required this.appImagePath, this._start = _startDetached});
@@ -80,8 +81,9 @@ class AppImageInstaller implements UpdateInstaller {
     final target = '$directory/$stableName';
     await payload.rename(target);
     if (stableName != oldName) {
-      await File(appImagePath).delete();
-      await Link(appImagePath).create(stableName);
+      final link = Link('$appImagePath.blm-link-$pid');
+      await link.create(stableName);
+      await link.rename(appImagePath);
     }
     await _start(target, const []);
   }
