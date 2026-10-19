@@ -329,8 +329,9 @@ void main() {
     ) async {
       await pumpHome(tester, FakeBacklogApi(entries: backlog));
 
-      expect(inHome(find.byKey(const Key('home-random-pull'))), findsOneWidget);
-      await tester.tap(find.byKey(const Key('home-random-pull')));
+      final button = inHome(find.byKey(const Key('home-random-pull')));
+      expect(button, findsOneWidget);
+      await tester.tap(button);
       await tester.pumpAndSettle();
 
       expect(find.text('Random Pull'), findsWidgets);
