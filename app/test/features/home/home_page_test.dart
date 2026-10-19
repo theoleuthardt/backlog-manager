@@ -147,6 +147,7 @@ void main() {
       expect(find.text('Your backlog is empty'), findsOneWidget);
       expect(find.text('Add a game'), findsOneWidget);
       expect(find.text('Sync Steam'), findsOneWidget);
+      expect(find.byKey(const Key('home-random-pull')), findsNothing);
     });
   });
 
@@ -321,6 +322,20 @@ void main() {
         ),
         findsOneWidget,
       );
+    });
+
+    testWidgets('has a Random Pull button that opens the random pull', (
+      tester,
+    ) async {
+      await pumpHome(tester, FakeBacklogApi(entries: backlog));
+
+      expect(inHome(find.byKey(const Key('home-random-pull'))), findsOneWidget);
+      await tester.tap(find.byKey(const Key('home-random-pull')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Random Pull'), findsWidgets);
+      expect(find.byKey(const Key('random-pull-start')), findsOneWidget);
+      expect(find.text('Groups that take part'), findsOneWidget);
     });
 
     testWidgets('keeps the shelves out when there is nothing for them', (

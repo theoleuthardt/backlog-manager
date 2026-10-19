@@ -148,6 +148,8 @@ class _Content extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _StatTiles(stats: stats),
+          const SizedBox(height: 16),
+          const _RandomPullBar(),
           if (playing != null) ...[
             const SizedBox(height: 22),
             _Hero(
@@ -181,6 +183,44 @@ class _Content extends ConsumerWidget {
                   : '${entry.reviewStars}/10',
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// "Can't decide?" with the random pull, the same one as in the library.
+class _RandomPullBar extends ConsumerWidget {
+  const _RandomPullBar();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = Theme.of(context).extension<ShelfTokens>()!;
+    final style = Theme.of(context).extension<ShelfTextStyles>()!;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: tokens.surface,
+        border: Border.all(color: tokens.borderSubtle),
+        borderRadius: BorderRadius.circular(ShelfRadius.control),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            Icon(Icons.casino_outlined, size: 18, color: tokens.accent),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                "Can't decide what to play next?",
+                style: style.body.copyWith(color: tokens.text2),
+              ),
+            ),
+            ShelfButton(
+              key: const Key('home-random-pull'),
+              label: 'Random Pull',
+              onPressed: ref.read(randomPullRequestProvider.notifier).request,
+            ),
+          ],
+        ),
       ),
     );
   }
