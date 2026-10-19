@@ -39,6 +39,8 @@ and opens its page.
 
 The manifest is read as text and decoded in the app (`GithubReleaseSource._readManifest`): GitHub serves a release asset as `application/octet-stream`, so a JSON response type returned the undecoded string, the manifest was never read and the check fell back to `releases/latest`. Versions up to 0.9.10 have this bug and cannot find an update by themselves; the first version with the fix (#452) has to be installed by hand once.
 
+**Going back (#458).** When the newest release of the chosen channel is older than the installed version (Stable while a pre-release is installed), the check does not say "latest version" but `UpdateCheck.older`: "You are ahead of the newest Stable release (0.9.2)" with "Switch to 0.9.2" when that release has a manifest and the install can update itself (the same download, verification and restart as an update; `downgrade-update`), or "View 0.9.2" (the release page) otherwise. It is not announced when the app starts.
+
 ## Update channel
 
 Settings, Updates (a tab of its own between Backups and About, #430) has an **Update Channel** switch (`Stable` or `Preview`, `data/update_channel.dart`, kept on the device, not in the account). Stable only takes releases that are not marked as a pre-release; Preview takes the newest release with an `app-update.json` whatever its mark, so it also gets the pre-releases. The check uses the channel (`releaseSourceProvider` follows `updateChannelProvider`), and choosing a channel checks again at once. The default is **Preview** while every release of the Flutter client is a pre-release (before the cutover, #287): a Stable default would find nothing to update to. At the cutover the default flips to Stable (`UpdateChannelNotifier.build`).

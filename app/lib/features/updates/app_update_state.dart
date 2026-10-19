@@ -10,7 +10,9 @@ import 'package:backlog_manager/platform/update_installer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-enum UpdateCheck { idle, checking, available, upToDate, failed }
+/// [older] is the answer when the newest release of the channel is older than
+/// the installed version, as on Stable while a pre-release is installed.
+enum UpdateCheck { idle, checking, available, older, upToDate, failed }
 
 /// Where an in-place update is: nothing started, the installer is loading,
 /// it is being checked, it is ready to be applied by a restart, or it failed
@@ -40,7 +42,8 @@ class AppUpdateState {
   /// The verified installer while [install] is [UpdateInstall.ready].
   final File? staged;
 
-  /// The newer release while [check] is [UpdateCheck.available].
+  /// The newer release while [check] is [UpdateCheck.available], the older
+  /// newest one while it is [UpdateCheck.older].
   final AppRelease? release;
 
   /// Whether the notification of this session was shown already.
@@ -90,6 +93,9 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
       if (!ref.mounted) return;
       if (release != null && isNewerVersion(release.version, than: installed)) {
         state = state.copyWith(check: UpdateCheck.available, release: release);
+      } else if (release != null &&
+          isNewerVersion(installed, than: release.version)) {
+        state = state.copyWith(check: UpdateCheck.older, release: release);
       } else {
         state = state.copyWith(check: UpdateCheck.upToDate, clearRelease: true);
       }
