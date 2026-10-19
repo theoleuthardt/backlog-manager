@@ -88,7 +88,13 @@ class _SlotReelState extends ConsumerState<SlotReel>
                 children: [
                   AnimatedBuilder(
                     animation: _position,
-                    builder: (context, _) => OverflowBox(
+                    child: Column(
+                      children: [
+                        for (final entry in widget.strip)
+                          _ReelRow(entry: entry, server: server),
+                      ],
+                    ),
+                    builder: (context, child) => OverflowBox(
                       alignment: Alignment.topCenter,
                       minHeight: 0,
                       maxHeight: double.infinity,
@@ -97,12 +103,7 @@ class _SlotReelState extends ConsumerState<SlotReel>
                           0,
                           _rowHeight - _position.value * last * _rowHeight,
                         ),
-                        child: Column(
-                          children: [
-                            for (final entry in widget.strip)
-                              _ReelRow(entry: entry, server: server),
-                          ],
-                        ),
+                        child: child,
                       ),
                     ),
                   ),
