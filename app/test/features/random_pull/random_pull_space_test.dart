@@ -67,6 +67,8 @@ void main() {
 
     await tester.tap(find.byKey(const Key('random-pull-button')));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('random-pull-start')));
+    await tester.pumpAndSettle();
 
     expect(find.text('Random Pull'), findsOneWidget);
     expect(
@@ -100,6 +102,8 @@ void main() {
     );
 
     await tester.tap(find.byKey(const Key('random-pull-button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('random-pull-start')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('random-pull-open')));
     await tester.pumpAndSettle();
