@@ -175,52 +175,114 @@ void main() {
 
   group('reelStrip', () {
     final pool = [for (var i = 1; i <= 5; i++) game(i)];
+    final big = [for (var i = 1; i <= 80; i++) game(i)];
 
-    test('ends on the game that was pulled', () {
-      final strip = reelStrip(pool, pool[2], length: 20, random: Random(1));
+    ReelStrip strip({
+      List<BacklogEntry>? from,
+      int pick = 2,
+      int minLength = 12,
+      int trailing = 3,
+      int seed = 1,
+    }) {
+      final games = from ?? pool;
+      return reelStrip(
+        games,
+        games[pick],
+        minLength: minLength,
+        trailing: trailing,
+        random: Random(seed),
+      );
+    }
 
-      expect(strip, hasLength(20));
-      expect(strip.last.id, 3);
+    List<int> ids(ReelStrip result) => [for (final e in result.games) e.id];
+
+    test('stops on the game that was pulled', () {
+      final result = strip(from: big, pick: 41);
+
+      expect(result.games[result.stopIndex].id, 42);
+    });
+
+    test('shows every game of a large pool once before it stops', () {
+      final result = strip(from: big, pick: 10, minLength: 12);
+      final before = ids(result).sublist(0, result.stopIndex + 1);
+
+      expect(before, hasLength(80));
+      expect(before.toSet(), {for (final e in big) e.id});
+    });
+
+    test('is not longer than the pool when the pool is long enough', () {
+      final result = strip(from: big, minLength: 30, trailing: 3);
+
+      expect(result.stopIndex, 79);
+      expect(result.games, hasLength(83));
+    });
+
+    test('repeats a small pool in whole rounds, every game equally often', () {
+      final result = strip(minLength: 12);
+      final before = ids(result).sublist(0, result.stopIndex + 1);
+
+      expect(before, hasLength(15));
+      for (final e in pool) {
+        expect(
+          before.where((id) => id == e.id),
+          hasLength(3),
+          reason: 'game ${e.id}',
+        );
+      }
+      expect(result.games[result.stopIndex].id, 3);
+    });
+
+    test('does not repeat a pool that is long enough on its own', () {
+      final result = strip(from: pool, minLength: 5);
+
+      expect(result.stopIndex, 4);
+    });
+
+    test('goes on after the game it stops on, like an endless spin', () {
+      final result = strip(trailing: 3);
+
+      expect(result.games.length - 1 - result.stopIndex, 3);
     });
 
     test('only shows games of the pool', () {
-      final strip = reelStrip(pool, pool[0], length: 30, random: Random(2));
+      final result = strip(from: big, seed: 2);
 
-      expect(strip.every((e) => pool.any((p) => p.id == e.id)), isTrue);
+      expect(result.games.every((e) => big.any((p) => p.id == e.id)), isTrue);
     });
 
-    test('never shows the same game twice in a row', () {
-      for (var seed = 0; seed < 20; seed++) {
-        final strip = reelStrip(
-          pool,
-          pool[4],
-          length: 25,
-          random: Random(seed),
-        );
-        for (var i = 1; i < strip.length; i++) {
-          expect(strip[i].id, isNot(strip[i - 1].id), reason: 'seed $seed');
+    test('never shows the same game twice in a row, before or after', () {
+      for (var seed = 0; seed < 30; seed++) {
+        for (final from in [pool, big, pool.sublist(0, 2)]) {
+          final games = strip(
+            from: from,
+            pick: 1,
+            minLength: 30,
+            seed: seed,
+          ).games;
+          for (var i = 1; i < games.length; i++) {
+            expect(
+              games[i].id,
+              isNot(games[i - 1].id),
+              reason: 'seed $seed, ${from.length} games',
+            );
+          }
         }
       }
     });
 
-    test('is the same for the same seed', () {
-      List<int> ids(int seed) => [
-        for (final e in reelStrip(
-          pool,
-          pool[1],
-          length: 12,
-          random: Random(seed),
-        ))
-          e.id,
-      ];
-
-      expect(ids(7), ids(7));
+    test('is shuffled, and the same for the same seed', () {
+      expect(ids(strip(from: big, seed: 7)), ids(strip(from: big, seed: 7)));
+      expect(
+        ids(strip(from: big, seed: 7)),
+        isNot(ids(strip(from: big, seed: 8))),
+      );
     });
 
     test('repeats the only game of a pool of one', () {
-      final strip = reelStrip([pool[0]], pool[0], length: 6, random: Random(3));
+      final result = strip(from: [pool[0]], pick: 0, minLength: 4, trailing: 2);
 
-      expect(strip.map((e) => e.id), [1, 1, 1, 1, 1, 1]);
+      expect(ids(result), [1, 1, 1, 1, 1, 1]);
+      expect(result.stopIndex, 3);
     });
   });
 

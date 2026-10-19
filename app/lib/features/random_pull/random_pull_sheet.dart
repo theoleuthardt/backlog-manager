@@ -47,8 +47,11 @@ class RandomPullSheet extends ConsumerStatefulWidget {
 
 enum _Stage { choosing, spinning, result }
 
-/// Games on a reel while it spins.
-const _reelLength = 40;
+/// The fewest games on a reel: a pool with fewer is repeated.
+const _reelMinRows = 30;
+
+/// Games below the one the reel stops on.
+const _reelTrailing = 3;
 
 class _RandomPullSheetState extends ConsumerState<RandomPullSheet> {
   var _includeFinished = false;
@@ -56,7 +59,7 @@ class _RandomPullSheetState extends ConsumerState<RandomPullSheet> {
   final _excluded = <String>{};
   int? _pulled;
   var _pulls = 0;
-  List<BacklogEntry> _strip = const [];
+  ReelStrip? _strip;
 
   List<LibraryGroup> get _groups =>
       ref.read(libraryContentProvider)?.groups ?? const [];
@@ -72,7 +75,8 @@ class _RandomPullSheetState extends ConsumerState<RandomPullSheet> {
     _strip = reelStrip(
       pool,
       entry,
-      length: _reelLength,
+      minLength: _reelMinRows,
+      trailing: _reelTrailing,
       random: Random(_pulls++),
     );
   }
@@ -175,7 +179,7 @@ class _RandomPullSheetState extends ConsumerState<RandomPullSheet> {
         ),
         _Stage.spinning => SlotReel(
           key: ValueKey(_pulls),
-          strip: _strip,
+          strip: _strip!,
           onDone: () {
             if (mounted) setState(() => _stage = _Stage.result);
           },

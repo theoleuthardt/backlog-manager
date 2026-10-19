@@ -59,20 +59,69 @@ int groupPullCount(LibraryGroup group, {required bool includeFinished}) {
   return pullCandidates(group.entries, includeFinished: includeFinished).length;
 }
 
-/// The games a slot machine reel shows while it spins: [length] games of
-/// [pool] drawn with [random], never the same game twice in a row (unless the
-/// pool has one), and ending on [picked]; it is drawn backwards from it.
-List<BacklogEntry> reelStrip(
+/// The games of a slot machine reel and the one it stops on.
+class ReelStrip {
+  const ReelStrip({required this.games, required this.stopIndex});
+
+  final List<BacklogEntry> games;
+
+  /// The position in [games] of the pulled game.
+  final int stopIndex;
+}
+
+/// The games a slot machine reel shows while it spins: every game of [pool]
+/// once, shuffled with [random], ending on [picked]. A pool that gives fewer
+/// than [minLength] games is repeated in front by whole rounds (every game
+/// once per round, shuffled each time), so every game is on the reel equally
+/// often, and [trailing] more games follow the picked one, so the reel looks
+/// as if it could have stopped on any game. Never the same game twice in a
+/// row (unless the pool has only one).
+ReelStrip reelStrip(
   List<BacklogEntry> pool,
   BacklogEntry picked, {
-  required int length,
+  required int minLength,
+  required int trailing,
   required Random random,
 }) {
-  final backwards = <BacklogEntry>[picked];
-  for (var i = 1; i < length; i++) {
-    backwards.add(pickRandom(pool, random, exceptId: backwards.last.id)!);
+  final backwards = <BacklogEntry>[
+    picked,
+    ...[
+      for (final entry in pool)
+        if (entry.id != picked.id) entry,
+    ]..shuffle(random),
+  ];
+  while (backwards.length < minLength) {
+    backwards.addAll(_round(pool, random, backwards.last.id));
   }
-  return backwards.reversed.toList();
+  final games = backwards.reversed.toList();
+  final stopIndex = games.length - 1;
+  final after = <BacklogEntry>[];
+  while (after.length < trailing) {
+    after.addAll(
+      _round(pool, random, after.isEmpty ? picked.id : after.last.id),
+    );
+  }
+  return ReelStrip(
+    games: [...games, ...after.take(trailing)],
+    stopIndex: stopIndex,
+  );
+}
+
+/// Every game of [pool] once in random order, not starting with the game
+/// with [previousId] (when the pool has another).
+List<BacklogEntry> _round(
+  List<BacklogEntry> pool,
+  Random random,
+  int previousId,
+) {
+  final round = [...pool]..shuffle(random);
+  if (round.length > 1 && round.first.id == previousId) {
+    final swap = 1 + random.nextInt(round.length - 1);
+    final first = round.first;
+    round[0] = round[swap];
+    round[swap] = first;
+  }
+  return round;
 }
 
 /// How strong the sparks at the pointer of the slot machine reel are, from 0

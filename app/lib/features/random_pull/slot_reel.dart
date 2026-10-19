@@ -11,18 +11,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// How long the reel spins before it stops on the pulled game.
-const slotReelDuration = Duration(milliseconds: 3800);
+const slotReelDuration = Duration(milliseconds: 5000);
 
 const _rowHeight = 64.0;
 
 /// A slot machine reel: [strip] runs through a window of three rows, quickly
-/// at first and slower and slower, and stops with its last game on the
-/// highlighted middle row. [onDone] is called once it has stopped, at once
+/// at first and slower and slower, and stops with its [ReelStrip.stopIndex]
+/// game on the highlighted middle row, with more games below it. [onDone] is called once it has stopped, at once
 /// when the system asks for less motion.
 class SlotReel extends ConsumerStatefulWidget {
   const SlotReel({required this.strip, required this.onDone, super.key});
 
-  final List<BacklogEntry> strip;
+  final ReelStrip strip;
   final VoidCallback onDone;
 
   @override
@@ -39,7 +39,22 @@ class _SlotReelState extends ConsumerState<SlotReel>
     parent: _controller,
     curve: Curves.easeOutCubic,
   );
+  final _scroll = ScrollController();
   bool _started = false;
+
+  /// How many rows the reel runs through: the pulled game ends on the middle
+  /// row of three, so the first game is already in the window.
+  int get _distance => max(0, widget.strip.stopIndex - 1);
+
+  @override
+  void initState() {
+    super.initState();
+    _position.addListener(() {
+      if (_scroll.hasClients) {
+        _scroll.jumpTo(_position.value * _distance * _rowHeight);
+      }
+    });
+  }
 
   @override
   void didChangeDependencies() {
@@ -61,6 +76,7 @@ class _SlotReelState extends ConsumerState<SlotReel>
   @override
   void dispose() {
     _controller.dispose();
+    _scroll.dispose();
     super.dispose();
   }
 
@@ -68,7 +84,6 @@ class _SlotReelState extends ConsumerState<SlotReel>
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final server = ref.watch(serverUrlProvider).value;
-    final last = widget.strip.length - 1;
 
     return Semantics(
       label: 'Pulling a random game',
@@ -86,25 +101,14 @@ class _SlotReelState extends ConsumerState<SlotReel>
               borderRadius: BorderRadius.circular(11),
               child: Stack(
                 children: [
-                  AnimatedBuilder(
-                    animation: _position,
-                    child: Column(
-                      children: [
-                        for (final entry in widget.strip)
-                          _ReelRow(entry: entry, server: server),
-                      ],
-                    ),
-                    builder: (context, child) => OverflowBox(
-                      alignment: Alignment.topCenter,
-                      minHeight: 0,
-                      maxHeight: double.infinity,
-                      child: Transform.translate(
-                        offset: Offset(
-                          0,
-                          _rowHeight - _position.value * last * _rowHeight,
-                        ),
-                        child: child,
-                      ),
+                  ListView.builder(
+                    controller: _scroll,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemExtent: _rowHeight,
+                    itemCount: widget.strip.games.length,
+                    itemBuilder: (context, index) => _ReelRow(
+                      entry: widget.strip.games[index],
+                      server: server,
                     ),
                   ),
                   Positioned.fill(
@@ -153,7 +157,7 @@ class _SlotReelState extends ConsumerState<SlotReel>
                         key: const Key('random-pull-pointer'),
                         painter: _PointerPainter(
                           progress: _controller,
-                          rows: last,
+                          rows: _distance,
                           sparkColor: tokens.accent,
                         ),
                       ),
