@@ -83,6 +83,7 @@ ReelStrip reelStrip(
   required int trailing,
   required Random random,
 }) {
+  if (pool.isEmpty) return ReelStrip(games: [picked], stopIndex: 0);
   final backwards = <BacklogEntry>[
     picked,
     ...[

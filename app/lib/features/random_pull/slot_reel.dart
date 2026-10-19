@@ -17,8 +17,9 @@ const _rowHeight = 64.0;
 
 /// A slot machine reel: [strip] runs through a window of three rows, quickly
 /// at first and slower and slower, and stops with its [ReelStrip.stopIndex]
-/// game on the highlighted middle row, with more games below it. [onDone] is called once it has stopped, at once
-/// when the system asks for less motion.
+/// game on the highlighted middle row, with more games below it. [onDone] is
+/// called once it has stopped, at once when the system asks for less motion.
+/// A new spin needs a new key: the state starts the animation once.
 class SlotReel extends ConsumerStatefulWidget {
   const SlotReel({required this.strip, required this.onDone, super.key});
 
@@ -35,7 +36,7 @@ class _SlotReelState extends ConsumerState<SlotReel>
     vsync: this,
     duration: slotReelDuration,
   );
-  late final Animation<double> _position = CurvedAnimation(
+  late final CurvedAnimation _position = CurvedAnimation(
     parent: _controller,
     curve: Curves.easeOutCubic,
   );
@@ -75,6 +76,7 @@ class _SlotReelState extends ConsumerState<SlotReel>
 
   @override
   void dispose() {
+    _position.dispose();
     _controller.dispose();
     _scroll.dispose();
     super.dispose();

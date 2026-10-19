@@ -142,10 +142,7 @@ class _RandomPullSheetState extends ConsumerState<RandomPullSheet> {
                       key: const Key('random-pull-again'),
                       label: 'Pull Again',
                       icon: Icons.casino_outlined,
-                      onPressed: () => setState(() {
-                        _pick();
-                        _stage = _Stage.spinning;
-                      }),
+                      onPressed: _start,
                     ),
                   ShelfButton(
                     key: const Key('random-pull-open'),
