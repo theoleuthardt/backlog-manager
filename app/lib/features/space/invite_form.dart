@@ -8,7 +8,6 @@ import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/design/widgets/toast.dart';
 import 'package:backlog_manager/domain/space.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// The username of the partner to invite and the button that sends the
@@ -65,9 +64,6 @@ class _InviteFormState extends ConsumerState<InviteForm> {
             controller: _controller,
             style: style.fieldText,
             textAlignVertical: TextAlignVertical.center,
-            inputFormatters: [
-              LengthLimitingTextInputFormatter(maxInviteNameLength),
-            ],
             onChanged: (_) => setState(() {}),
             onSubmitted: (_) => unawaited(_send()),
             decoration: const InputDecoration(
