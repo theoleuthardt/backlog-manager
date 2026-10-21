@@ -10,6 +10,8 @@
 /// since Dart has no built-in normalizer.
 library;
 
+import 'dart:typed_data';
+
 const _invisible = {
   0x061C,
   0x200B,
@@ -30,15 +32,27 @@ const _invisible = {
 
 const _keptControls = {0x09, 0x0A, 0x0D};
 
-bool _isRemoved(int rune) {
-  if (_invisible.contains(rune)) return true;
-  if (_keptControls.contains(rune)) return false;
-  return rune < 0x20 || (rune >= 0x7F && rune <= 0x9F);
+bool _isRemoved(int unit) {
+  if (unit < 0x20) return !_keptControls.contains(unit);
+  if (unit < 0x7F) return false;
+  if (unit <= 0x9F) return true;
+  return _invisible.contains(unit);
 }
 
-/// [value] without invisible and control characters, trimmed.
-String sanitizeText(String value) =>
-    String.fromCharCodes(value.runes.where((rune) => !_isRemoved(rune))).trim();
+/// [value] without invisible and control characters, trimmed. Every removed
+/// character is a single UTF-16 code unit, so the code units are checked
+/// directly, and text with nothing to remove (the usual case) is returned
+/// after one pass; a 10 MB CSV import does not hold up the UI.
+String sanitizeText(String value) {
+  final units = value.codeUnits;
+  if (!units.any(_isRemoved)) return value.trim();
+  final kept = Uint16List(units.length);
+  var length = 0;
+  for (final unit in units) {
+    if (!_isRemoved(unit)) kept[length++] = unit;
+  }
+  return String.fromCharCodes(kept, 0, length).trim();
+}
 
 /// Every string in the JSON [value] passed through [sanitizeText]; object
 /// keys and the value of any `password` key are left as they are.
