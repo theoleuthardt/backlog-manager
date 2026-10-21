@@ -36,7 +36,7 @@ RestoreRequest fromPartner() => RestoreRequest(
   requestedBy: 'alex',
   requestedByMe: false,
   createdAt: DateTime.utc(2026, 10, 19, 9),
-  expiresAt: DateTime.utc(2026, 10, 20, 9),
+  expiresAt: DateTime.now().toUtc().add(const Duration(hours: 20, minutes: 30)),
 );
 
 Future<({FakeSpaceBackupsApi api, FakeFileSaver saver, Opened opened})>
