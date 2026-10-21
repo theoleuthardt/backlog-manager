@@ -2,6 +2,8 @@ from datetime import datetime
 
 import msgspec
 
+from backlog_manager_backend.schemas.types import UsernameQuery
+
 
 class SpaceMemberRecord(msgspec.Struct):
     space_id: int
@@ -12,7 +14,7 @@ class SpaceMemberRecord(msgspec.Struct):
 
 
 class InviteToSpaceRequest(msgspec.Struct):
-    username: str
+    username: UsernameQuery
 
 
 class SpaceMemberResponse(msgspec.Struct):

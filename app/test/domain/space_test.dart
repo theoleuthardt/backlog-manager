@@ -158,6 +158,13 @@ void main() {
       expect(inviteName('   '), isNull);
     });
 
+    test('refuses a name longer than the server accepts', () {
+      expect(maxInviteNameLength, 50);
+      expect(inviteName('a' * 50), 'a' * 50);
+      expect(inviteName(' ${'a' * 50} '), 'a' * 50);
+      expect(inviteName('a' * 51), isNull);
+    });
+
     test('the confirmation of leaving', () {
       expect(
         leaveWarning,
