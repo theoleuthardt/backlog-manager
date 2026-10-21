@@ -62,6 +62,32 @@ Map<String, Object?> entryJson({int id = 1}) => {
 
 void main() {
   group('createApiDio', () {
+    test(
+      'sanitizes JSON bodies before they are sent, but not passwords',
+      () async {
+        final server = FakeServer(
+          (_) => (status: 200, body: <String, Object?>{}),
+        );
+        final rlo = String.fromCharCode(0x202E);
+        final zwsp = String.fromCharCode(0x200B);
+
+        await buildDio(server).post<Object?>(
+          '/api/backlog/entries',
+          data: {
+            'title': ' ${rlo}Half-Life 2$zwsp ',
+            'genre': [' Shooter '],
+            'password': ' as typed$zwsp ',
+          },
+        );
+
+        expect(server.requests.single.data, {
+          'title': 'Half-Life 2',
+          'genre': ['Shooter'],
+          'password': ' as typed$zwsp ',
+        });
+      },
+    );
+
     test('sends the stored token as a Bearer header', () async {
       final server = FakeServer((_) => (status: 200, body: <Object?>[]));
       final client = RestClient(buildDio(server, token: 'abc123'));

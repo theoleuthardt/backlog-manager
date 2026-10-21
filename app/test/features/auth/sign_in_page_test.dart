@@ -126,6 +126,29 @@ void main() {
       );
     });
 
+    testWidgets('refuses an email address without an @ before sending', (
+      tester,
+    ) async {
+      final harness = await pumpSignIn(tester);
+
+      await tester.enterText(fieldWithLabel('Email'), 'theo');
+      await tester.enterText(
+        fieldWithLabel('Password'),
+        'correct-horse-battery',
+      );
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('sign-in-submit')));
+      await tester.pump();
+
+      expect(find.text('Enter a valid email address'), findsOneWidget);
+      expect(harness.api.calls, isEmpty);
+
+      await tester.enterText(fieldWithLabel('Email'), 'theo@example.com');
+      await tester.pump();
+
+      expect(find.text('Enter a valid email address'), findsNothing);
+    });
+
     testWidgets('keeps the button off until both fields are filled', (
       tester,
     ) async {

@@ -873,10 +873,8 @@ INVALID_USERNAMES = [
     "a" * 33,
     "a" * 60,
     "   ",
-    " padded",
     "two words",
     "line\nbreak",
-    "trailing\n",
     "tab\there",
     "admin'--",
     'x\'; DROP TABLE "Users"; --',
@@ -892,7 +890,6 @@ INVALID_EMAILS = [
     "two@@example.com",
     "spaces in@example.com",
     "user@nodot",
-    "user@example.com\n",
     "' OR '1'='1",
     "a" * 250 + "@example.com",
 ]

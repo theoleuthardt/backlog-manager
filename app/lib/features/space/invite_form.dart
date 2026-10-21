@@ -4,14 +4,17 @@ import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/data/space_api.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
+import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/design/widgets/toast.dart';
+import 'package:backlog_manager/domain/sanitize.dart';
 import 'package:backlog_manager/domain/space.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// The username of the partner to invite and the button that sends the
-/// invitation.
+/// invitation. A name outside the format new usernames must have gets a
+/// hint, but can still be sent, since older accounts may have such names.
 class InviteForm extends ConsumerStatefulWidget {
   const InviteForm({super.key});
 
@@ -53,7 +56,9 @@ class _InviteFormState extends ConsumerState<InviteForm> {
   @override
   Widget build(BuildContext context) {
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
-    return Row(
+    final tokens = Theme.of(context).extension<ShelfTokens>()!;
+    final name = inviteName(_controller.text);
+    final row = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         SizedBox(
@@ -80,6 +85,20 @@ class _InviteFormState extends ConsumerState<InviteForm> {
           onPressed: inviteName(_controller.text) == null
               ? null
               : () => unawaited(_send()),
+        ),
+      ],
+    );
+    if (name == null || isValidUsername(name)) return row;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        row,
+        const SizedBox(height: 6),
+        Text(
+          'Usernames are 3-32 letters, digits, _ - or .',
+          key: const Key('space-invite-hint'),
+          style: style.caption.copyWith(color: tokens.muted),
         ),
       ],
     );

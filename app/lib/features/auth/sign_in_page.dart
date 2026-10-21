@@ -10,6 +10,7 @@ import 'package:backlog_manager/design/widgets/banner.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/design/widgets/fields.dart';
 import 'package:backlog_manager/design/widgets/sheet.dart';
+import 'package:backlog_manager/domain/sanitize.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -27,6 +28,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
   final _password = TextEditingController();
   final _code = TextEditingController();
   final _passwordFocus = FocusNode();
+  bool _emailRefused = false;
 
   @override
   void initState() {
@@ -50,8 +52,17 @@ class _SignInPageState extends ConsumerState<SignInPage> {
   bool get _canSignIn =>
       _email.text.trim().isNotEmpty && _password.text.isNotEmpty;
 
+  String? get _emailError =>
+      _emailRefused && !looksLikeEmail(_email.text.trim())
+      ? 'Enter a valid email address'
+      : null;
+
   void _signIn() {
     if (!_canSignIn || ref.read(authControllerProvider).busy) return;
+    if (!looksLikeEmail(_email.text.trim())) {
+      setState(() => _emailRefused = true);
+      return;
+    }
     ref
         .read(authControllerProvider.notifier)
         .login(_email.text.trim(), _password.text);
@@ -129,6 +140,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
     return [
       ShelfField(
         label: 'Email',
+        error: _emailError,
         controller: _email,
         autofocus: true,
         keyboardType: TextInputType.emailAddress,
