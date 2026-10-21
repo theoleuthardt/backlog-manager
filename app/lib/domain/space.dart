@@ -67,10 +67,16 @@ String memberHoursLabel(double? hours) => '${formatHours(hours ?? 0)} h';
 String sharedGamesLabel(int count) =>
     '$count shared ${count == 1 ? 'game' : 'games'}';
 
-/// The username typed into the invitation form, or null when it is blank.
+/// The longest username the server looks up for an invitation, the length
+/// of its username column.
+const maxInviteNameLength = 50;
+
+/// The username typed into the invitation form, or null when it is blank or
+/// longer than [maxInviteNameLength].
 String? inviteName(String input) {
   final trimmed = input.trim();
-  return trimmed.isEmpty ? null : trimmed;
+  if (trimmed.isEmpty || trimmed.length > maxInviteNameLength) return null;
+  return trimmed;
 }
 
 const leaveWarning =

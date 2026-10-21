@@ -4,7 +4,7 @@ from typing import Annotated, Literal
 import msgspec
 
 from backlog_manager_backend.schemas.steam_wishlist_sync import SteamWishlistSyncReport
-from backlog_manager_backend.schemas.types import HexColor
+from backlog_manager_backend.schemas.types import Email, HexColor, Username
 
 SortOption = Literal[
     "status", "category", "genre", "playtime", "platform", "interest", "review_stars"
@@ -173,8 +173,8 @@ class UpdateOwnUserRequest(msgspec.Struct):
     the PasswordHash column unhashed. Deliberately has no `is_admin`
     field - a user can never change their own admin status."""
 
-    username: str | msgspec.UnsetType = msgspec.UNSET
-    email: str | msgspec.UnsetType = msgspec.UNSET
+    username: Username | msgspec.UnsetType = msgspec.UNSET
+    email: Email | msgspec.UnsetType = msgspec.UNSET
     password: str | msgspec.UnsetType = msgspec.UNSET
     steam_id: str | None | msgspec.UnsetType = msgspec.UNSET
     steam_api_key: str | None | msgspec.UnsetType = msgspec.UNSET
@@ -194,8 +194,8 @@ class UpdateUserAdminRequest(msgspec.Struct):
     """Same as UpdateOwnUserRequest, plus is_admin - only admins can
     promote/demote other users, via this request type alone."""
 
-    username: str | msgspec.UnsetType = msgspec.UNSET
-    email: str | msgspec.UnsetType = msgspec.UNSET
+    username: Username | msgspec.UnsetType = msgspec.UNSET
+    email: Email | msgspec.UnsetType = msgspec.UNSET
     password: str | msgspec.UnsetType = msgspec.UNSET
     steam_id: str | None | msgspec.UnsetType = msgspec.UNSET
     steam_api_key: str | None | msgspec.UnsetType = msgspec.UNSET
@@ -216,8 +216,8 @@ class CreateUserRequest(msgspec.Struct):
     """Admin-only user creation - there is no public self-registration
     endpoint. `is_admin` lets an admin create additional admins."""
 
-    username: str
-    email: str
+    username: Username
+    email: Email
     password: str
     steam_id: str | None = None
     is_admin: bool = False

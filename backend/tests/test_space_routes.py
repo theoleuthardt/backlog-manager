@@ -1,3 +1,4 @@
+import pytest
 from litestar.testing import TestClient
 
 
@@ -890,3 +891,18 @@ async def test_deleting_the_last_member_removes_the_space(
         remaining = await session.scalar(select(func.count()).where(Space.id == space_id))
 
     assert remaining == 0
+
+
+@pytest.mark.parametrize("username", ["", "a" * 51])
+async def test_invite_rejects_empty_or_overlong_username(
+    postgres_url: str, create_and_login, username: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "spacelengthcheck@example.com")
+        response = client.post(
+            "/api/space/invitations", headers=headers, json={"username": username}
+        )
+
+    assert response.status_code == 400

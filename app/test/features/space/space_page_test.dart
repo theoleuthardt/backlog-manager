@@ -188,6 +188,30 @@ void main() {
       expect(opened.space.calls.where((c) => c.startsWith('invite')), isEmpty);
     });
 
+    testWidgets('hints at the username format without blocking the invite', (
+      tester,
+    ) async {
+      final opened = await open(tester, noSpace);
+      final field = find.byKey(const Key('space-invite-name'));
+
+      await tester.enterText(field, 'alex');
+      await tester.pump();
+      expect(find.byKey(const Key('space-invite-hint')), findsNothing);
+
+      await tester.enterText(field, 'two words');
+      await tester.pump();
+      expect(find.byKey(const Key('space-invite-hint')), findsOneWidget);
+      expect(
+        find.text('Usernames are 3-32 letters, digits, _ - or .'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const Key('space-invite-send')));
+      await tester.pumpAndSettle();
+      expect(opened.space.calls, contains('invite two words'));
+      await dismissToast(tester);
+    });
+
     testWidgets('sends the invitation and shows the waiting space', (
       tester,
     ) async {

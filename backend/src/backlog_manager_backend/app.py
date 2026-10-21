@@ -30,6 +30,7 @@ from backlog_manager_backend.routes.steam_wishlist_sync import (
     steam_wishlist_sync_router,
 )
 from backlog_manager_backend.routes.user import admin_user_router, user_router
+from backlog_manager_backend.sanitize import SanitizedRequest
 from backlog_manager_backend.services import backup_service
 
 MAX_REQUEST_BODY_BYTES = 10 * 1024 * 1024
@@ -120,6 +121,7 @@ def create_app() -> Litestar:
         dependencies={"db_session": Provide(provide_db_session)},
         on_startup=[bootstrap_initial_admin, start_backup_scheduler],
         on_shutdown=[stop_backup_scheduler, close_db_connection],
+        request_class=SanitizedRequest,
         request_max_body_size=MAX_REQUEST_BODY_BYTES,
         response_headers=_SECURITY_HEADERS,
         cors_config=CORSConfig(

@@ -1,3 +1,4 @@
+import pytest
 from cryptography.fernet import Fernet
 from litestar.testing import TestClient
 
@@ -862,5 +863,152 @@ async def test_update_own_user_rejects_more_than_ten_custom_themes(
     with TestClient(app=create_app()) as client:
         headers = await create_and_login(client, "toomanythemes@example.com")
         response = client.put("/api/user/me", headers=headers, json={"custom_themes": themes})
+
+    assert response.status_code == 400
+
+
+INVALID_USERNAMES = [
+    "",
+    "ab",
+    "a" * 33,
+    "a" * 60,
+    "   ",
+    "two words",
+    "line\nbreak",
+    "tab\there",
+    "admin'--",
+    'x\'; DROP TABLE "Users"; --',
+    "<script>",
+    "{curly}",
+    "semi;colon",
+    "ümlaut",
+]
+
+INVALID_EMAILS = [
+    "",
+    "no-at-sign",
+    "two@@example.com",
+    "spaces in@example.com",
+    "user@nodot",
+    "' OR '1'='1",
+    "a" * 250 + "@example.com",
+]
+
+
+@pytest.mark.parametrize("username", INVALID_USERNAMES)
+async def test_admin_create_user_rejects_invalid_username(
+    postgres_url: str, create_and_login, username: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        admin_headers = await create_and_login(client, "usernamerules@example.com", is_admin=True)
+        response = client.post(
+            "/api/admin/users",
+            headers=admin_headers,
+            json={
+                "username": username,
+                "email": "invalidname@example.com",
+                "password": "hunter2hunter2",
+            },
+        )
+
+    assert response.status_code == 400
+
+
+@pytest.mark.parametrize("email", INVALID_EMAILS)
+async def test_admin_create_user_rejects_invalid_email(
+    postgres_url: str, create_and_login, email: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        admin_headers = await create_and_login(client, "emailrules@example.com", is_admin=True)
+        response = client.post(
+            "/api/admin/users",
+            headers=admin_headers,
+            json={"username": "validname", "email": email, "password": "hunter2hunter2"},
+        )
+
+    assert response.status_code == 400
+
+
+async def test_admin_create_user_accepts_username_with_allowed_characters(
+    postgres_url: str, create_and_login
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        admin_headers = await create_and_login(client, "allowedchars@example.com", is_admin=True)
+        create_response = client.post(
+            "/api/admin/users",
+            headers=admin_headers,
+            json={
+                "username": "Player-1.x_y",
+                "email": "player.one+tag@sub.example.com",
+                "password": "hunter2hunter2",
+            },
+        )
+        client.delete(f"/api/admin/users/{create_response.json()['id']}", headers=admin_headers)
+
+    assert create_response.status_code == 201
+    assert create_response.json()["name"] == "Player-1.x_y"
+
+
+@pytest.mark.parametrize("username", INVALID_USERNAMES)
+async def test_update_own_user_rejects_invalid_username(
+    postgres_url: str, create_and_login, username: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "renameme@example.com")
+        response = client.put("/api/user/me", headers=headers, json={"username": username})
+        profile = client.get("/api/user/me", headers=headers).json()
+
+    assert response.status_code == 400
+    assert profile["name"] == "renameme"
+
+
+@pytest.mark.parametrize("email", INVALID_EMAILS)
+async def test_update_own_user_rejects_invalid_email(
+    postgres_url: str, create_and_login, email: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "keepmyemail@example.com")
+        response = client.put("/api/user/me", headers=headers, json={"email": email})
+        profile = client.get("/api/user/me", headers=headers).json()
+
+    assert response.status_code == 400
+    assert profile["email"] == "keepmyemail@example.com"
+
+
+async def test_update_own_user_accepts_valid_username(postgres_url: str, create_and_login) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        headers = await create_and_login(client, "oldname@example.com")
+        response = client.put("/api/user/me", headers=headers, json={"username": "new_name.2"})
+
+    assert response.status_code == 200
+    assert response.json()["name"] == "new_name.2"
+
+
+@pytest.mark.parametrize("username", ["two words", 'x\'; DROP TABLE "Users"; --'])
+async def test_admin_update_user_rejects_invalid_username(
+    postgres_url: str, create_and_login, username: str
+) -> None:
+    from backlog_manager_backend.app import create_app
+
+    with TestClient(app=create_app()) as client:
+        admin_headers = await create_and_login(client, "adminrename@example.com", is_admin=True)
+        await create_and_login(client, "renamedbyadmin@example.com")
+        users = client.get("/api/admin/users", headers=admin_headers).json()
+        target_id = next(u["id"] for u in users if u["email"] == "renamedbyadmin@example.com")
+        response = client.put(
+            f"/api/admin/users/{target_id}", headers=admin_headers, json={"username": username}
+        )
 
     assert response.status_code == 400

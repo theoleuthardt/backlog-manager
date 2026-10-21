@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:backlog_manager/domain/sanitize.dart';
 import 'package:dio/dio.dart';
 
 /// Builds the [Dio] instance every generated client call goes through.
@@ -10,7 +11,8 @@ import 'package:dio/dio.dart';
 /// to clear the session and the error still reaches the caller. A 401 for a
 /// token that has been replaced in the meantime (a request that was in flight
 /// during a new sign-in) is ignored, so it cannot end the new session. If the token store cannot be read while
-/// handling a 401, the original error still reaches the caller.
+/// handling a 401, the original error still reaches the caller. Every JSON
+/// body is passed through [sanitizeJson] before it is sent.
 Dio createApiDio({
   required String baseUrl,
   required FutureOr<String?> Function() readToken,
@@ -31,6 +33,9 @@ Dio createApiDio({
   dio.interceptors.add(
     InterceptorsWrapper(
       onRequest: (options, handler) async {
+        if (options.data case List<Object?>() || Map<String, Object?>()) {
+          options.data = sanitizeJson(options.data);
+        }
         final token = await readToken();
         if (token != null && token.isNotEmpty) {
           options.headers['Authorization'] = 'Bearer $token';
