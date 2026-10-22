@@ -482,6 +482,12 @@ minute and resends events with `alert = true`, `notified_at IS NULL`, fewer than
 races the listener). After 5 failed attempts it gives up and logs a warning.
 A crash between the commit and the delivery is covered the same way.
 
+Delivery is **at least once**: a crash after Discord accepted a message but
+before `notified_at` was stored sends that alert again, and so would a
+listener that hangs longer than the one-minute delay (the Discord call has a
+timeout of a few seconds, so that only happens in a crash). A duplicate alert
+is accepted on purpose; a lost one is not.
+
 ### `notification_settings`
 
 Exactly one row (`id = 1`, `CHECK (id = 1)`), created by its changeset.
@@ -649,6 +655,6 @@ Image built and published by CI (#497, #498), deployed with podman-compose
 | Uptime Kuma compatible push URLs | The existing host check and backup scripts work unchanged. |
 | Alerts only on status changes, after commit | No flood of messages, no alert for a change that did not happen. |
 | One `ResultRecorder` for checks, pushes and missing pushes | Every outage alerts the same way, whatever its source. |
-| Retry of undelivered alerts from `status_events` | A Discord hiccup or a crash after the commit does not swallow an alert. |
+| Retry of undelivered alerts from `status_events`, at least once | A Discord hiccup or a crash after the commit does not swallow an alert; an occasional duplicate is the price. |
 | Push token in the URL, push endpoint LAN only and never logged | Kuma compatibility for the existing scripts, without leaking tokens through public routes or logs. |
 | **Recommendation:** status page with Thymeleaf (#496) | One deployable, no extra frontend build; a static page with JavaScript is the alternative. |
