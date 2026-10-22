@@ -56,12 +56,13 @@ logic, Spring Data repositories and the entities.
 ├── error/          ErrorType, MonitorError, ApplicationError, ProblemDetails (Either -> ProblemDetail),
 │                   GlobalExceptionHandler (framework exceptions only)
 ├── monitor/        MonitorController, MonitorService, Monitor (entity), MonitorRepository, MonitorMapper
-├── check/          HttpChecker, CheckResult (entity), CheckResultRepository,
+├── check/          HttpChecker, ResultRecorder, CheckResult (entity), CheckResultRepository,
 │                   StatusStateMachine (pure), CheckScheduler, RetentionJob,
 │                   MonitorStatus (entity), MonitorStatusRepository, StatusEvent (entity), StatusEventRepository
 ├── push/           PushController, PushService, PushTokens, HeartbeatWatcher
 ├── notification/   Notifier, DiscordNotifier, NotificationSettings (entity), NotificationSettingsRepository,
-│                   NotificationSettingsService, NotificationController, WebhookCipher, AlertListener
+│                   NotificationSettingsService, NotificationController, WebhookCipher, AlertListener,
+│                   AlertRetryJob
 └── status/         StatusController (public API), StatusPageController, UptimeCalculator (pure)
 ```
 
@@ -155,8 +156,11 @@ tokens and webhook URLs never appear in a response.
 ## 4. Status state machine
 
 The state is runtime data (table `monitor_status`); pausing is configuration
-(`monitors.paused`). A paused monitor is not checked and keeps no deadline;
-resuming sets it back to `PENDING`.
+(`monitors.paused`). A paused monitor is not checked and keeps no deadline
+(`next_check_at` is `NULL`). Resuming sets it back to `PENDING`, resets
+`consecutive_failures` and sets a new `next_check_at` (now for an HTTP
+monitor, now plus interval plus grace for a push monitor), so the scheduler
+or the heartbeat watcher picks it up again.
 
 ```mermaid
 stateDiagram-v2
@@ -188,30 +192,37 @@ sequenceDiagram
     participant DB as Postgres
     participant C as HttpChecker
     participant T as Target
+    participant R as ResultRecorder
     participant M as StatusStateMachine
     participant A as AlertListener
     participant D as DiscordNotifier
 
-    S->>DB: claim due HTTP monitors (next_check_at <= now, not paused), set next_check_at = now + interval
+    S->>DB: claim due HTTP monitors (next_check_at <= now, not paused, not running), set next_check_at = now + interval
     loop each claimed monitor, on a virtual thread
         S->>C: check(monitor)
         C->>T: GET url (timeout)
         T-->>C: response, or timeout or error
         C-->>S: Either<ApplicationError, CheckResult>
-        S->>M: next(current status, result, retries)
-        M-->>S: new status, changed?
-        S->>DB: one transaction: insert check_results, update monitor_status, insert status_events if changed
+        S->>R: record(monitor, result)
+        R->>M: next(current status, result, retries)
+        M-->>R: new status, changed?
+        R->>DB: one transaction: insert check_results, update monitor_status, insert status_events if changed
         opt status changed (after commit)
-            S-)A: MonitorStatusChanged event
+            R-)A: MonitorStatusChanged event
             A->>D: send(message)
             D-->>A: Either<ApplicationError, Delivered>
-            A->>DB: set status_events.notified_at on success
+            A->>DB: Right: set notified_at, Left: notification_attempts + 1
         end
     end
 ```
 
 The HTTP call runs **outside** any transaction: holding a database connection
 while waiting up to the timeout for a remote server would exhaust the pool.
+
+`ResultRecorder` is the one path every result takes, whether it comes from a
+scheduled check, a push or a missing push: state machine, one transaction,
+status event, alert after commit. So a push outage alerts exactly like an
+HTTP outage.
 
 ### Push
 
@@ -222,7 +233,7 @@ sequenceDiagram
     participant P as PushController
     participant PS as PushService
     participant DB as Postgres
-    participant M as StatusStateMachine
+    participant R as ResultRecorder
 
     J->>P: GET /api/push/{token}?status=up&msg=...
     P->>PS: push(token, status, msg)
@@ -232,8 +243,9 @@ sequenceDiagram
         PS-->>P: Left(PUSH_TOKEN_UNKNOWN)
         P-->>J: 404 problem document
     else known
-        PS->>M: next(current status, result)
-        PS->>DB: insert check_results (source PUSH), update monitor_status (next_check_at = now + interval + grace)
+        PS->>R: record(monitor, result with source PUSH)
+        Note over R,DB: same path as a scheduled check: state machine, one transaction, status event, alert after commit
+        R->>DB: also sets next_check_at = now + interval + grace (the next deadline)
         PS-->>P: Right
         P-->>J: 200 {"ok": true}
     end
@@ -243,8 +255,9 @@ sequenceDiagram
 
 `HeartbeatWatcher` runs on the same tick as the scheduler. For every push
 monitor that is not paused and whose `monitor_status.next_check_at` (the
-deadline) has passed, it records a `DOWN` result with source `TIMEOUT` and the
-message "no push since ...", then sets the next deadline one interval later.
+deadline) has passed, it hands a `DOWN` result with source `TIMEOUT` and the
+message "no push since ..." to `ResultRecorder` (so a missing push alerts like
+any other outage), which sets the next deadline one interval later.
 `next_check_at` therefore means "when to check" for HTTP monitors and "push
 expected by" for push monitors, so both use the same index.
 
@@ -336,6 +349,7 @@ erDiagram
         timestamptz changed_at
         varchar message
         timestamptz notified_at
+        int notification_attempts
     }
 
     notification_settings {
@@ -376,6 +390,7 @@ Constraints:
 - `CHECK (type IN ('HTTP', 'PUSH'))`
 - `CHECK (type <> 'HTTP' OR url IS NOT NULL)`, `CHECK (type <> 'PUSH' OR (url IS NULL AND keyword IS NULL AND push_token_hash IS NOT NULL))`
 - `CHECK (NOT is_public OR public_name IS NOT NULL)`
+- `CHECK (type <> 'HTTP' OR timeout_seconds < interval_seconds)`, so a check always ends before the next one is due
 - range checks on `interval_seconds`, `timeout_seconds`, `retries`, `grace_seconds`
 
 ### `monitor_status`
@@ -423,7 +438,9 @@ monitor" and uptime, `(checked_at)` for the retention delete.
 The history of status changes. Few rows, kept forever. It gives the length
 of an outage for the recovery message ("down for 12 min"), lets uptime be
 computed from intervals instead of single results, and `notified_at` shows
-which alerts were delivered.
+which alerts were delivered. Together with `notification_attempts` it is a
+small outbox: an alert that could not be delivered is retried (see
+[Alert delivery](#alert-delivery)).
 
 | Column | Type | Null | Default | Notes |
 |---|---|---|---|---|
@@ -434,8 +451,19 @@ which alerts were delivered.
 | `changed_at` | `timestamptz` | no | | |
 | `message` | `varchar(500)` | yes | | reason of the change |
 | `notified_at` | `timestamptz` | yes | | set once the alert was delivered |
+| `notification_attempts` | `integer` | no | `0` | failed delivery attempts, `CHECK >= 0` |
 
-Index: `(monitor_id, changed_at DESC)`.
+Indexes: `(monitor_id, changed_at DESC)`, and a partial index
+`(changed_at) WHERE notified_at IS NULL` for the retry job.
+
+#### Alert delivery
+
+`AlertListener` sends the alert right after the commit. If Discord fails
+(`Left`), it increments `notification_attempts`. `AlertRetryJob` runs every
+minute and resends events with `notified_at IS NULL`, fewer than 5 attempts,
+`changed_at` within the last 24 hours and older than one minute (so it never
+races the listener). After 5 failed attempts it gives up and logs a warning.
+A crash between the commit and the delivery is covered the same way.
 
 ### `notification_settings`
 
@@ -500,6 +528,19 @@ it is implemented.
 shown once when it is created (like a GitHub token). A lost token is
 replaced through `POST /api/monitors/{id}/push-token`.
 
+**The token in the URL** is a deliberate trade-off for compatibility with
+Uptime Kuma (the existing scripts send `GET /api/push/<token>`). URLs end up
+in logs and histories, so:
+
+- `/api/push/**` is only reachable from the LAN; the public route through
+  Cloudflare exposes only `/status` and `/api/status`.
+- The Monitor never logs the request URI of a push, only the id of the
+  monitor it belongs to; no access log contains the path.
+- Push responses carry `Cache-Control: no-store`.
+- A token can be replaced at any time (`POST /api/monitors/{id}/push-token`).
+- Optional extension in #488: also accept the token in a header
+  (`X-Push-Token`) for new clients.
+
 ## 8. Configuration
 
 All settings live under the prefix `monitor` in a validated
@@ -521,14 +562,18 @@ variables.
 ## 9. Concurrency and transactions
 
 - One scheduler thread runs the tick. It **claims** due monitors by moving
-  their `next_check_at` forward before the checks start, so a slow check is
-  never started twice for the same monitor.
+  their `next_check_at` forward before the checks start, and keeps the ids of
+  running checks in an in-memory set (`ConcurrentHashMap.newKeySet()`); a
+  monitor whose previous check still runs is skipped. An in-memory set is
+  enough because exactly one Monitor instance runs. The constraint
+  `timeout_seconds < interval_seconds` makes a skip the exception.
 - Checks run in parallel on virtual threads (`spring.threads.virtual.enabled=true`).
 - The HTTP call is outside any transaction; storing the result, the new
   status and a status event is one short transaction.
 - Alerts are sent only after that transaction committed
   (`@TransactionalEventListener(phase = AFTER_COMMIT)`), so no alert goes out
-  for a change that was rolled back.
+  for a change that was rolled back. Failed deliveries are retried by
+  `AlertRetryJob` ([Alert delivery](#alert-delivery)).
 - Time always comes from an injected `java.time.Clock`; tests use a fixed or
   manually advanced clock.
 
@@ -585,4 +630,7 @@ Image built and published by CI (#497, #498), deployed with podman-compose
 | AES-256-GCM for the webhook URL (#504) | Whoever has the URL can post into the channel. |
 | Uptime Kuma compatible push URLs | The existing host check and backup scripts work unchanged. |
 | Alerts only on status changes, after commit | No flood of messages, no alert for a change that did not happen. |
+| One `ResultRecorder` for checks, pushes and missing pushes | Every outage alerts the same way, whatever its source. |
+| Retry of undelivered alerts from `status_events` | A Discord hiccup or a crash after the commit does not swallow an alert. |
+| Push token in the URL, push endpoint LAN only and never logged | Kuma compatibility for the existing scripts, without leaking tokens through public routes or logs. |
 | **Recommendation:** status page with Thymeleaf (#496) | One deployable, no extra frontend build; a static page with JavaScript is the alternative. |
