@@ -86,7 +86,11 @@ Dependency rules:
 Expected errors are values, not exceptions: services and components return
 `Either<ApplicationError, T>` (vavr). Exceptions remain only for programming
 errors and for invalid configuration at startup. Code that throws (HTTP
-clients, `javax.crypto`) is wrapped in `Try` and turned into an `Either`.
+clients, `javax.crypto`) is wrapped in `Try` and turned into an `Either`, with
+one important exception: in the `HttpChecker`, a failure of the **target**
+(timeout, refused connection, DNS error, wrong status, missing keyword) is
+turned into `Right(CheckResult)` with status `DOWN`, because that is exactly
+what a check is meant to find out.
 
 - `ErrorType`: enum, the kind of error, decides the HTTP status
 - `MonitorError`: enum, one constant per concrete error, with `errorCode`
@@ -133,7 +137,10 @@ Code ranges: 1xxx monitors, 2xxx checks, 3xxx push, 4xxx notifications,
 
 A `DOWN` result of a check is **not** an `ApplicationError`: then the watched
 service is broken, not the Monitor. `CHECK_NOT_EXECUTABLE` is only for a check
-that cannot run at all.
+that cannot run at all because of the Monitor's side (for example a stored URL
+that cannot be parsed). The scheduler still hands such a `Left` to
+`ResultRecorder` as a `DOWN` result carrying the error message, so a broken
+monitor never goes silent.
 
 ### Error response
 
@@ -178,7 +185,7 @@ stateDiagram-v2
   row that turn a monitor `DOWN`; one success turns it `UP` at once and resets
   the counter (`consecutive_failures`).
 - A status change is reported as an event. Alerts are sent for `UP -> DOWN`,
-  `PENDING -> DOWN` and `DOWN -> UP`; `PENDING -> UP` stays silent, so a
+  `PENDING -> DOWN` and `DOWN -> UP`; `PENDING -> UP` stays silent (stored with `alert = false`), so a
   restart of the Monitor does not flood the channel.
 
 ## 5. Flows
@@ -224,6 +231,13 @@ scheduled check, a push or a missing push: state machine, one transaction,
 status event, alert after commit. So a push outage alerts exactly like an
 HTTP outage.
 
+Pushes, the heartbeat watcher and scheduled checks can reach the recorder
+for the same monitor at the same moment. The recorder therefore reads the
+`monitor_status` row with a row lock inside its transaction
+(`SELECT ... FOR UPDATE`, with JPA `@Lock(LockModeType.PESSIMISTIC_WRITE)` on
+the repository method) before it applies the state machine, so two results
+for one monitor are processed one after the other and no update is lost.
+
 ### Push
 
 ```mermaid
@@ -257,7 +271,8 @@ sequenceDiagram
 monitor that is not paused and whose `monitor_status.next_check_at` (the
 deadline) has passed, it hands a `DOWN` result with source `TIMEOUT` and the
 message "no push since ..." to `ResultRecorder` (so a missing push alerts like
-any other outage), which sets the next deadline one interval later.
+any other outage), which sets the next deadline to now plus interval plus
+grace, the same rule as after a push.
 `next_check_at` therefore means "when to check" for HTTP monitors and "push
 expected by" for push monitors, so both use the same index.
 
@@ -346,6 +361,7 @@ erDiagram
         bigint monitor_id FK
         varchar from_status
         varchar to_status
+        boolean alert
         timestamptz changed_at
         varchar message
         timestamptz notified_at
@@ -446,21 +462,22 @@ small outbox: an alert that could not be delivered is retried (see
 |---|---|---|---|---|
 | `id` | `bigint` identity | no | | primary key |
 | `monitor_id` | `bigint` | no | | FK `monitors(id) ON DELETE CASCADE` |
-| `from_status` | `varchar(10)` | no | | |
-| `to_status` | `varchar(10)` | no | | |
+| `from_status` | `varchar(10)` | no | | `CHECK (from_status IN ('PENDING', 'UP', 'DOWN'))` |
+| `to_status` | `varchar(10)` | no | | `CHECK (to_status IN ('PENDING', 'UP', 'DOWN'))`, `CHECK (from_status <> to_status)` |
+| `alert` | `boolean` | no | | whether this change sends an alert (`false` for `PENDING -> UP`) |
 | `changed_at` | `timestamptz` | no | | |
 | `message` | `varchar(500)` | yes | | reason of the change |
 | `notified_at` | `timestamptz` | yes | | set once the alert was delivered |
 | `notification_attempts` | `integer` | no | `0` | failed delivery attempts, `CHECK >= 0` |
 
 Indexes: `(monitor_id, changed_at DESC)`, and a partial index
-`(changed_at) WHERE notified_at IS NULL` for the retry job.
+`(changed_at) WHERE alert AND notified_at IS NULL` for the retry job.
 
 #### Alert delivery
 
 `AlertListener` sends the alert right after the commit. If Discord fails
 (`Left`), it increments `notification_attempts`. `AlertRetryJob` runs every
-minute and resends events with `notified_at IS NULL`, fewer than 5 attempts,
+minute and resends events with `alert = true`, `notified_at IS NULL`, fewer than 5 attempts,
 `changed_at` within the last 24 hours and older than one minute (so it never
 races the listener). After 5 failed attempts it gives up and logs a warning.
 A crash between the commit and the delivery is covered the same way.
@@ -569,7 +586,8 @@ variables.
   `timeout_seconds < interval_seconds` makes a skip the exception.
 - Checks run in parallel on virtual threads (`spring.threads.virtual.enabled=true`).
 - The HTTP call is outside any transaction; storing the result, the new
-  status and a status event is one short transaction.
+  status and a status event is one short transaction, which locks the
+  `monitor_status` row first (see [Scheduled HTTP check](#scheduled-http-check)).
 - Alerts are sent only after that transaction committed
   (`@TransactionalEventListener(phase = AFTER_COMMIT)`), so no alert goes out
   for a change that was rolled back. Failed deliveries are retried by
