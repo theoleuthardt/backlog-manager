@@ -134,6 +134,31 @@ void main() {
       expect(tile(1), findsOneWidget);
     });
 
+    testWidgets('pulling an empty library down loads the games again', (
+      tester,
+    ) async {
+      final api = FakeBacklogApi(entries: const []);
+      await pumpLibrary(
+        tester,
+        api,
+        overrides: [isDesktopProvider.overrideWithValue(false)],
+      );
+      await resize(tester, phone);
+      final before = api.calls.where((c) => c.startsWith('entries')).length;
+
+      await tester.fling(
+        find.byKey(const Key('library-empty-add')),
+        const Offset(0, 500),
+        1500,
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        api.calls.where((c) => c.startsWith('entries')).length,
+        greaterThan(before),
+      );
+    });
+
     testWidgets('the top bar opens the command palette', (tester) async {
       await openOnPhone(tester);
 

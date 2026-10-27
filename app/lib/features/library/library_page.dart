@@ -85,7 +85,7 @@ class _EmptyLibrary extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
-    return Center(
+    final content = Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -108,6 +108,21 @@ class _EmptyLibrary extends ConsumerWidget {
             onPressed: ref.read(addGameRequestProvider.notifier).request,
           ),
         ],
+      ),
+    );
+    if (!ShelfFormFactor.isTouch(context)) return content;
+    return RefreshIndicator(
+      onRefresh: () => ref
+          .read(entriesProvider(ref.read(backlogScopeProvider)).notifier)
+          .refresh(),
+      child: LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: content,
+          ),
+        ),
       ),
     );
   }
