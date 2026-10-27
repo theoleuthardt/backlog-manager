@@ -38,6 +38,8 @@ android_res=android/app/src/main/res
 for entry in mdpi:48:108 hdpi:72:162 xhdpi:96:216 xxhdpi:144:324 xxxhdpi:192:432; do
   IFS=: read -r density legacy adaptive <<< "$entry"
   rsvg-convert -w "$legacy" -h "$legacy" "$work/full.svg" -o "$android_res/mipmap-$density/ic_launcher.png"
-  rsvg-convert -w "$adaptive" -h "$adaptive" "$work/square.svg" \
-    -o "$android_res/mipmap-$density/ic_launcher_foreground.png"
+  safe=$((adaptive * 3 / 5))
+  rsvg-convert -w "$safe" -h "$safe" "$work/square.svg" -o "$work/foreground.png"
+  convert "$work/foreground.png" -background none -gravity center -extent "${adaptive}x${adaptive}" \
+    "$android_res/mipmap-$density/ic_launcher_foreground.png"
 done

@@ -4,6 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 full_version=$(sed -n 's/^version: *\([^ ]*\).*/\1/p' pubspec.yaml)
 version=${full_version%%+*}
+[ -n "$version" ] || { echo "no version in pubspec.yaml" >&2; exit 1; }
 app=$PWD/build/ios/iphoneos/Runner.app
 dist=$PWD/dist/$full_version
 work=$(mktemp -d)
