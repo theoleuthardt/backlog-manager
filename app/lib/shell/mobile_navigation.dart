@@ -21,8 +21,9 @@ final List<NavigationItem> primaryNavigationItems = [
         .firstWhere((item) => item.id == id),
 ];
 
-/// The top bar of a phone or handheld: back, the page title and the counts
-/// the page reports. It replaces the title bar and the status bar, which have
+/// The top bar of a phone or handheld: back, the page title, the counts the
+/// page reports and the command palette (which has no shortcut without a
+/// keyboard). It replaces the title bar and the status bar, which have
 /// no place on a small screen. A [minimal] bar (sign-in, setup) has the title
 /// only.
 class MobileTopBar extends ConsumerWidget {
@@ -89,7 +90,16 @@ class MobileTopBar extends ConsumerWidget {
                         ),
                       ),
                     ),
-                  const SizedBox(width: 16),
+                  if (!minimal)
+                    IconButton(
+                      key: const Key('mobile-palette'),
+                      icon: const Icon(Icons.search, size: 20),
+                      tooltip: 'Search and commands',
+                      color: tokens.muted,
+                      onPressed: ref.read(paletteOpenProvider.notifier).open,
+                    )
+                  else
+                    const SizedBox(width: 16),
                 ],
               ),
             ),

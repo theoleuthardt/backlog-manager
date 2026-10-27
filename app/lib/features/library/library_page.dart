@@ -11,6 +11,7 @@ import 'package:backlog_manager/data/group_order_store.dart';
 import 'package:backlog_manager/data/selection_providers.dart';
 import 'package:backlog_manager/data/space_backups_api.dart';
 import 'package:backlog_manager/design/color_math.dart';
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
@@ -341,31 +342,50 @@ class _LibraryState extends ConsumerState<_Library> {
             Expanded(
               child: SizedBox.expand(
                 key: _viewportKey,
-                child: CustomScrollView(
-                  controller: _scroll,
-                  slivers: [
-                    if (scrollingHeader)
-                      SliverToBoxAdapter(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            if (!selection.active)
-                              _Toolbar(content: content, space: space),
-                            ...header,
-                          ],
+                child: _refreshable(
+                  CustomScrollView(
+                    controller: _scroll,
+                    physics: ShelfFormFactor.isTouch(context)
+                        ? const AlwaysScrollableScrollPhysics()
+                        : null,
+                    slivers: [
+                      if (scrollingHeader)
+                        SliverToBoxAdapter(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              if (!selection.active)
+                                _Toolbar(content: content, space: space),
+                              ...header,
+                            ],
+                          ),
                         ),
-                      ),
-                    const SliverPadding(padding: EdgeInsets.only(top: 6)),
-                    for (final group in content.groups)
-                      ..._groupSlivers(group, layout, serverUrl),
-                    const SliverPadding(padding: EdgeInsets.only(bottom: 36)),
-                  ],
+                      const SliverPadding(padding: EdgeInsets.only(top: 6)),
+                      for (final group in content.groups)
+                        ..._groupSlivers(group, layout, serverUrl),
+                      const SliverPadding(padding: EdgeInsets.only(bottom: 36)),
+                    ],
+                  ),
                 ),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  /// On a touch screen pulling the list down past its top loads the games
+  /// again; elsewhere [list] stays as it is.
+  Widget _refreshable(Widget list) {
+    if (!ShelfFormFactor.isTouch(context)) return list;
+    return RefreshIndicator(
+      onRefresh: () {
+        final scope = ref.read(backlogScopeProvider);
+        ref.invalidate(entriesProvider(scope));
+        return ref.read(entriesProvider(scope).future);
+      },
+      child: list,
     );
   }
 
@@ -1325,6 +1345,7 @@ class _EntryTargetState extends ConsumerState<_EntryTarget> {
     final canDrag =
         drag != null &&
         !selecting &&
+        !ShelfFormFactor.isTouch(context) &&
         (sortBy == SortOption.status || sortBy == SortOption.category);
     final face = widget.builder(context, selected, selecting, _activate);
 

@@ -1,6 +1,10 @@
+import 'dart:async';
+
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 sealed class ShelfMenuEntry {
   const ShelfMenuEntry();
@@ -184,7 +188,8 @@ class ShelfMenuAnchor extends StatelessWidget {
   }
 }
 
-/// Opens [entries] as a context menu where the user right-clicks [child].
+/// Opens [entries] as a context menu where the user right-clicks [child], or
+/// on a touch screen ([ShelfFormFactor.isTouch]) presses and holds it.
 class ContextMenuRegion extends StatefulWidget {
   const ContextMenuRegion({
     required this.entries,
@@ -214,6 +219,12 @@ class _ContextMenuRegionState extends State<ContextMenuRegion> {
         behavior: HitTestBehavior.translucent,
         onSecondaryTapDown: (details) =>
             _controller.open(position: details.localPosition),
+        onLongPressStart: ShelfFormFactor.isTouch(context)
+            ? (details) {
+                unawaited(HapticFeedback.mediumImpact());
+                _controller.open(position: details.localPosition);
+              }
+            : null,
         child: widget.child,
       ),
     );
