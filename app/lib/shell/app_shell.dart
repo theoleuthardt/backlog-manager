@@ -6,8 +6,10 @@ import 'package:backlog_manager/features/library/wishlist_sync_prompt.dart';
 import 'package:backlog_manager/features/palette/command_palette.dart';
 import 'package:backlog_manager/features/updates/update_notifier.dart';
 import 'package:backlog_manager/routing/routes.dart';
+import 'package:backlog_manager/shell/mobile_navigation.dart';
 import 'package:backlog_manager/shell/pane_widths.dart';
 import 'package:backlog_manager/shell/search_hint.dart';
+import 'package:backlog_manager/shell/shell_layout.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:backlog_manager/shell/sidebar.dart';
 import 'package:backlog_manager/shell/status_bar.dart';
@@ -41,6 +43,8 @@ class AppShell extends ConsumerStatefulWidget {
 
 class _AppShellState extends ConsumerState<AppShell> {
   final _slotKey = GlobalKey();
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _mainKey = GlobalKey();
   bool _showingEntry = false;
 
   @override
@@ -69,6 +73,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.entryId != widget.entryId) _syncInspector();
     if (oldWidget.location != widget.location) {
+      _scaffoldKey.currentState?.closeDrawer();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) ref.read(shellStatusProvider.notifier).clear();
       });
@@ -77,9 +82,12 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   @override
   Widget build(BuildContext context) {
+    final layout = shellLayoutOf(context, ref);
     final inspector = ref.watch(shellInspectorProvider);
     final fullscreen =
-        inspector != null && ref.watch(inspectorFullscreenProvider);
+        inspector != null &&
+        (layout != ShellLayout.expanded ||
+            ref.watch(inspectorFullscreenProvider));
     final location = widget.location;
     final slot = inspector == null
         ? null
@@ -95,6 +103,37 @@ class _AppShellState extends ConsumerState<AppShell> {
         }
       }
     });
+
+    final mainArea = Stack(
+      key: _mainKey,
+      fit: StackFit.expand,
+      children: [
+        Offstage(
+          offstage: fullscreen,
+          child: SizedBox.expand(
+            key: const Key('main-content'),
+            child: UpdateNotifier(
+              child: WishlistSyncPrompt(
+                child: SearchHintPrompt(
+                  location: location,
+                  child: widget.child,
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (slot != null && fullscreen) Positioned.fill(child: slot),
+      ],
+    );
+
+    if (layout != ShellLayout.expanded) {
+      return _MobileShell(
+        scaffoldKey: _scaffoldKey,
+        location: location,
+        layout: layout,
+        child: mainArea,
+      );
+    }
 
     return PaletteHost(
       child: Material(
@@ -112,29 +151,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                         pane: Pane.sidebar,
                         growsToRight: true,
                       ),
-                    Expanded(
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          Offstage(
-                            offstage: fullscreen,
-                            child: SizedBox.expand(
-                              key: const Key('main-content'),
-                              child: UpdateNotifier(
-                                child: WishlistSyncPrompt(
-                                  child: SearchHintPrompt(
-                                    location: location,
-                                    child: widget.child,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          if (slot != null && fullscreen)
-                            Positioned.fill(child: slot),
-                        ],
-                      ),
-                    ),
+                    Expanded(child: mainArea),
                     if (slot != null && !fullscreen) ...[
                       const PaneResizeHandle(
                         pane: Pane.inspector,
@@ -147,6 +164,64 @@ class _AppShellState extends ConsumerState<AppShell> {
               ),
               const StatusBar(),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The main window on a phone or handheld: the [MobileTopBar] over the page,
+/// a [BottomNavBar] below it in [ShellLayout.compact] or a [ShellNavRail]
+/// beside it in [ShellLayout.medium], and the whole sidebar as the drawer
+/// behind More. The safe areas keep it clear of the notch, the Dynamic Island,
+/// the home indicator and rounded corners.
+class _MobileShell extends StatelessWidget {
+  const _MobileShell({
+    required this.scaffoldKey,
+    required this.location,
+    required this.layout,
+    required this.child,
+  });
+
+  final GlobalKey<ScaffoldState> scaffoldKey;
+  final String location;
+  final ShellLayout layout;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final compact = layout == ShellLayout.compact;
+    void openDrawer() => scaffoldKey.currentState?.openDrawer();
+
+    return PaletteHost(
+      child: AtmosphereBackground(
+        child: Scaffold(
+          key: scaffoldKey,
+          backgroundColor: Colors.transparent,
+          drawer: NavigationDrawerPanel(
+            location: location,
+            onItemSelected: () => scaffoldKey.currentState?.closeDrawer(),
+          ),
+          bottomNavigationBar: compact
+              ? BottomNavBar(location: location, onMore: openDrawer)
+              : null,
+          body: SafeArea(
+            bottom: !compact,
+            child: Row(
+              children: [
+                if (!compact)
+                  ShellNavRail(location: location, onMore: openDrawer),
+                Expanded(
+                  child: Column(
+                    children: [
+                      MobileTopBar(location: location),
+                      Expanded(child: child),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -180,8 +255,9 @@ class _InspectorSlot extends ConsumerWidget {
 }
 
 /// A window without a sidebar (sign-in, the setup wizard, settings): the same
-/// title bar and atmosphere around one page.
-class FullWindowFrame extends StatelessWidget {
+/// title bar and atmosphere around one page; on a phone or handheld the
+/// [MobileTopBar] (with back in settings) inside the safe areas.
+class FullWindowFrame extends ConsumerWidget {
   const FullWindowFrame({
     required this.location,
     required this.child,
@@ -192,17 +268,32 @@ class FullWindowFrame extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final minimal = location != AppRoutes.settings;
+    if (shellLayoutOf(context, ref) != ShellLayout.expanded) {
+      return PaletteHost(
+        child: Material(
+          type: MaterialType.transparency,
+          child: AtmosphereBackground(
+            child: SafeArea(
+              child: Column(
+                children: [
+                  MobileTopBar(location: location, minimal: minimal),
+                  Expanded(child: child),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     return PaletteHost(
       child: Material(
         type: MaterialType.transparency,
         child: AtmosphereBackground(
           child: Column(
             children: [
-              TitleBar(
-                location: location,
-                minimal: location != AppRoutes.settings,
-              ),
+              TitleBar(location: location, minimal: minimal),
               Expanded(child: child),
             ],
           ),

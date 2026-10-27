@@ -21,8 +21,8 @@ const _server = 'http://fake.local';
 /// platform's keystore and preferences), so a plugin without an
 /// implementation for that platform fails here. Only the backend is the
 /// in-memory one of the desktop flows. The layout is not checked: RenderFlex
-/// overflows are logged instead of failing until the responsive shell (#521)
-/// and its golden tests at phone and handheld sizes take over; every other
+/// overflows are logged instead of failing until the pages fit a phone (#522)
+/// and their golden tests at phone and handheld sizes take over; every other
 /// error still fails the test.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -37,7 +37,7 @@ void main() {
       final message = details.exceptionAsString();
       if (message.startsWith('A RenderFlex overflowed')) {
         debugPrint(
-          'Layout overflow, left to #521: ${message.split('\n').first}',
+          'Layout overflow, left to #522: ${message.split('\n').first}',
         );
         return;
       }

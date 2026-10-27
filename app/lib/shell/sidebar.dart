@@ -14,9 +14,9 @@ import 'package:backlog_manager/domain/themes.dart';
 import 'package:backlog_manager/features/appearance/appearance_page.dart';
 import 'package:backlog_manager/features/appearance/theme_actions.dart';
 import 'package:backlog_manager/features/common/user_avatar.dart';
-import 'package:backlog_manager/features/shortcuts/shortcuts_sheet.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/routing/session.dart';
+import 'package:backlog_manager/shell/mobile_navigation.dart';
 import 'package:backlog_manager/shell/navigation.dart';
 import 'package:backlog_manager/shell/navigation_counts.dart';
 import 'package:backlog_manager/shell/pane_widths.dart';
@@ -53,7 +53,7 @@ class Sidebar extends ConsumerWidget {
             excluding: collapsed,
             child: ExcludeSemantics(
               excluding: collapsed,
-              child: _SidebarContent(location: location),
+              child: SidebarContent(location: location),
             ),
           ),
         ),
@@ -62,10 +62,18 @@ class Sidebar extends ConsumerWidget {
   }
 }
 
-class _SidebarContent extends ConsumerWidget {
-  const _SidebarContent({required this.location});
+/// The content of the sidebar: brand, the navigation sections with their
+/// counts, the theme strip and the account row. The drawer of a phone or
+/// handheld shows the same; [onItemSelected] lets it close after a choice.
+class SidebarContent extends ConsumerWidget {
+  const SidebarContent({
+    required this.location,
+    this.onItemSelected,
+    super.key,
+  });
 
   final String location;
+  final VoidCallback? onItemSelected;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -104,6 +112,7 @@ class _SidebarContent extends ConsumerWidget {
                               item: item,
                               active: item.isActiveFor(location),
                               count: counts[item.id],
+                              onSelected: onItemSelected,
                             ),
                           if (section.label == 'Personalise')
                             const _ThemeStrip(),
@@ -163,11 +172,17 @@ class _SectionLabel extends StatelessWidget {
 }
 
 class _NavItem extends ConsumerStatefulWidget {
-  const _NavItem({required this.item, required this.active, this.count});
+  const _NavItem({
+    required this.item,
+    required this.active,
+    this.count,
+    this.onSelected,
+  });
 
   final NavigationItem item;
   final bool active;
   final int? count;
+  final VoidCallback? onSelected;
 
   @override
   ConsumerState<_NavItem> createState() => _NavItemState();
@@ -178,14 +193,8 @@ class _NavItemState extends ConsumerState<_NavItem> {
   bool _pressed = false;
 
   void _activate() {
-    final route = widget.item.route;
-    if (route != null) {
-      context.go(route);
-    } else if (widget.item.action == NavigationAction.addGame) {
-      ref.read(addGameRequestProvider.notifier).request();
-    } else if (widget.item.action == NavigationAction.shortcuts) {
-      unawaited(showShortcutsSheet(context));
-    }
+    widget.onSelected?.call();
+    activateNavigationItem(context, ref, widget.item);
   }
 
   @override
