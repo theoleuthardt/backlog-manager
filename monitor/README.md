@@ -12,13 +12,20 @@ handling, decisions) is in
 
 ## Running it
 
-Needs a JDK 25; Maven is downloaded by the wrapper.
+Needs a JDK 25; Maven is downloaded by the wrapper. From the repository root,
+use the tasks (see `Taskfile.yml`):
 
 ```bash
-./mvnw spring-boot:run     # starts on http://localhost:8080
-./mvnw test                # runs the tests
-./mvnw spotless:apply      # formats the code (palantir-java-format)
-./mvnw verify              # tests plus the format check; compiler warnings fail the build
+task monitor:install       # downloads the Maven dependencies and plugins
+task monitor:dev           # starts on http://localhost:8080
+task monitor:test          # runs the tests
+task monitor:lint          # compiles code and tests with -Xlint:all -Werror
+task monitor:format        # formats the code (Spotless, palantir-java-format)
+task monitor:format:check  # checks the format without changing files
+task monitor:build         # builds the executable jar in monitor/target/
 ```
+
+They wrap the Maven wrapper; inside `monitor/`, `./mvnw verify` runs
+everything CI runs (compile, tests, format check).
 
 `GET http://localhost:8080/actuator/health` answers `{"status":"UP"}`.

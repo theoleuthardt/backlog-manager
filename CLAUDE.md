@@ -14,17 +14,18 @@ Users can track games with metadata from HowLongToBeat and IGDB, organize games 
 
 ## Commands
 
-**Always use `task <name>` (see `Taskfile.yml`, requires [go-task](https://taskfile.dev)) when running commands in this repo, instead of calling `npm run ...` / `uv run ...` / `docker compose ...` directly.** It wraps both the frontend (npm) and backend (uv) toolchains plus the local Postgres compose stack under one unified command surface, so any command run from Claude Code should go through it if a matching task exists. `task` (no args) lists everything available; the most common ones:
+**Always use `task <name>` (see `Taskfile.yml`, requires [go-task](https://taskfile.dev)) when running commands in this repo, instead of calling `npm run ...` / `uv run ...` / `./mvnw ...` / `docker compose ...` directly.** It wraps the frontend (npm), backend (uv), app (flutter) and Monitor (Maven wrapper) toolchains plus the local Postgres compose stack under one unified command surface, so any command run from Claude Code should go through it if a matching task exists. `task` (no args) lists everything available; the most common ones:
 
 ```bash
-task install       # npm install (frontend) + uv sync (backend) + flutter pub get (app); needs Node 22.12+ (`nvm use` reads the root .nvmrc)
+task install       # npm install (frontend) + uv sync (backend) + flutter pub get (app) + Maven dependencies (monitor); needs Node 22.12+ (`nvm use` reads the root .nvmrc) and a JDK 25
 task dev           # Vite dev server
 task backend:dev   # Litestar dev server (uvicorn --reload)
 task db:up         # local Postgres + pgAdmin via compose.yml
-task test          # backend (pytest) + frontend (vitest) + app (flutter test) suites
-task lint          # frontend (eslint) + backend (ruff) + app (flutter analyze)
+task test          # backend (pytest) + frontend (vitest) + app (flutter test) + monitor (JUnit) suites
+task lint          # frontend (eslint) + backend (ruff) + app (flutter analyze) + monitor (javac -Xlint:all -Werror)
 task app:dev       # Flutter desktop app (needs Flutter 3.47.6, see docs/FLUTTER.md)
-task format        # prettier (frontend) + ruff format (backend) + dart format (app); task format:check only verifies
+task monitor:dev   # Monitor (Spring Boot) on :8080; also monitor:install, monitor:lint, monitor:test, monitor:build, monitor:format(:check)
+task format        # prettier (frontend) + ruff format (backend) + dart format (app) + Spotless (monitor); task format:check only verifies
 task audit         # known-vulnerability scan of the locked frontend + backend dependencies
 task backend:migration -- "add foo column"   # new Alembic revision
 task backend:migrate                          # alembic upgrade head
