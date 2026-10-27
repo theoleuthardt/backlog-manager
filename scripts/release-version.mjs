@@ -2,13 +2,13 @@
  * Decides the version of the next desktop release.
  *
  * Usage (release pipeline):
- *   node scripts/release-version.mjs <latest tag or ""> <package.json version> <requested version or "">
+ *   node scripts/release-version.mjs <latest tag or ""> <app/pubspec.yaml version> <requested version or "">
  * and prints `version=X.Y.Z` and `tag=vX.Y.Z` for `$GITHUB_OUTPUT`.
  *
  * Without a requested version the patch of the latest `v*.*.*` tag is bumped
- * (or the package.json version is used while no tag exists). A requested
- * version must be plain `X.Y.Z` and greater than the latest tag: the Tauri
- * updater only offers versions newer than the installed one, and a tag that
+ * (or the pubspec.yaml version is used while no tag exists). A requested
+ * version must be plain `X.Y.Z` and greater than the latest tag: the app's
+ * update check only offers versions newer than the installed one, and a tag that
  * already exists cannot be released again. Later automatic bumps continue
  * from whatever was released last.
  */

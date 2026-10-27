@@ -5,34 +5,33 @@ anyone (human or agent) who wasn't there for the decisions. For the literal
 directory layout and command surface, see the root [`CLAUDE.md`](../CLAUDE.md)
 instead — this file is about the shape of the system, not where files live.
 
-> The desktop client is being rebuilt in Flutter (`app/`, epic #247). It is a second client of the same REST API and replaces `frontend/` at the cutover; its structure is described in [`FLUTTER.md`](FLUTTER.md).
+> The client is the Flutter desktop app in `app/` (structure in [`FLUTTER.md`](FLUTTER.md)). The earlier React/Vite + Tauri client was retired with the 0.9.13 release and moved to [`backlog-manager-legacy`](https://github.com/theoleuthardt/backlog-manager-legacy) (#287); sections below that describe it are history.
 
 ## System overview
 
 ```text
-┌─────────────────────┐        REST + JWT Bearer        ┌──────────────────────┐
-│  Vite/React frontend │ ──────────────────────────────► │  Litestar backend    │
-│  (frontend/)         │ ◄────────────────────────────── │  (backend/)          │
-│  - Web build (static)│        openapi-fetch client      │  - Auth (incl. 2FA)  │
-│  - Tauri desktop app │                                   │  - Backlog CRUD      │
-│    (same build)      │                                   │  - CSV import/export │
-└──────────────────────┘                                   │  - IGDB/HLTB/Steam/  │
-                                                             │    SteamGridDB       │
-                                                             └──────────┬───────────┘
-                                                                        │ SQLAlchemy 2.0
-                                                                        │ async + asyncpg
-                                                                        ▼
-                                                              ┌──────────────────┐
-                                                              │   PostgreSQL      │
-                                                              └──────────────────┘
+┌──────────────────────┐        REST + JWT Bearer        ┌──────────────────────┐
+│  Flutter desktop app │ ──────────────────────────────► │  Litestar backend    │
+│  (app/)              │ ◄────────────────────────────── │  (backend/)          │
+│  - macOS, Windows,   │     generated Dart client       │  - Auth (incl. 2FA)  │
+│    Linux             │                                  │  - Backlog CRUD      │
+└──────────────────────┘                                  │  - CSV import/export │
+                                                          │  - IGDB/HLTB/Steam/  │
+                                                          │    SteamGridDB       │
+                                                          └──────────┬───────────┘
+                                                                     │ SQLAlchemy 2.0
+                                                                     │ async + asyncpg
+                                                                     ▼
+                                                           ┌──────────────────┐
+                                                           │   PostgreSQL      │
+                                                           └──────────────────┘
 ```
 
-Only the backend is meant to be hosted as a public, always-on service.
-The frontend is never centrally hosted the same way: the web build is a
-static single-page app served by nginx from a container image that this
-project doesn't run anywhere; in practice the frontend instead ships as
-the [Tauri desktop app](TAURI.md) — the same static build bundled into a
-native WebView for macOS/Windows/Linux.
+Only the backend is meant to be hosted as a public, always-on service. The
+app is installed on each desktop from the GitHub Releases and updates itself
+([`APP_UPDATES.md`](APP_UPDATES.md)). The Monitor (`monitor/`,
+[`MONITOR_ARCHITECTURE.md`](MONITOR_ARCHITECTURE.md)) watches the backend
+from its own host.
 
 ## Why REST + JWT instead of tRPC/NextAuth
 
@@ -44,20 +43,19 @@ run NextAuth middleware.
 
 The backend was rewritten from scratch as a standalone Python/Litestar
 service (issue #103, landed in #104) exposing a plain REST API described by
-an OpenAPI schema. The frontend generates a typed client from that schema
-(`frontend/src/lib/api/schema.d.ts`, via `openapi-fetch`) instead of relying
-on tRPC's compile-time link between frontend and backend. Auth became a JWT
-Bearer token stored in `localStorage` and checked client-side
-(`RequireAuth.tsx`), since there's no server-side session to check in a
-static export. This is also what unlocked the Tauri build: the desktop app
-just talks to the same deployed backend a browser would, with no
-app-specific backend logic embedded in Rust.
+an OpenAPI schema. The web client of that time generated a typed client from
+that schema instead of relying on tRPC's compile-time link between frontend
+and backend, and auth became a JWT Bearer token checked client-side, since
+there's no server-side session to check in a static export. This is what
+unlocked the Tauri build, and later made the Flutter app a drop-in second
+client: it generates its Dart client from the same schema
+(`task app:generate-api`) and talks to the same deployed backend.
 
 The tradeoff is that things Next.js API routes gave for free — colocated
 backend logic, automatic input validation via tRPC's Zod integration — now
 have to be maintained explicitly across two codebases and languages. In
 exchange, the backend can be hosted, scaled, and tested independently of
-whatever the frontend is doing, and isn't tied to Next.js's request/response
+whatever the client is doing, and isn't tied to Next.js's request/response
 lifecycle at all.
 
 ## Backend
@@ -133,31 +131,8 @@ Alembic revision (`task backend:migration -- "..."`).
 The backend has a real pytest suite (`task test` / `uv run pytest`) that
 spins up an actual PostgreSQL instance via testcontainers rather than
 mocking the database — integration-style by default, not unit tests against
-a fake session. The frontend currently has no automated test suite; changes
-there are verified manually (see the root `CLAUDE.md`'s note on testing UI
-changes in a browser before calling them done).
-
-## Frontend
-
-Vite + React with React Router (issue #241 replaced Next.js; the pages are
-lazy-loaded and the vendor code is split into cacheable chunks). One static
-build, two ways to ship it:
-
-- **Web image** — the `dist/` build served by nginx (`frontend/Containerfile`)
-  — though the frontend itself isn't centrally hosted today.
-- **Tauri desktop app** — the same `dist/` loaded into a native WebView,
-  shipped for macOS/Windows/Linux. See [`docs/TAURI.md`](TAURI.md) for the
-  full build/signing/CI story.
-
-Both builds hit the same deployed backend over REST; the only difference is
-how the frontend's own HTML/JS gets to the user's machine. This is why the
-desktop build needed almost no app-specific code — see `TAURI.md`'s "How it
-works" section.
-
-State/data-fetching is React Query hooks (`src/hooks/`) wrapping a typed API
-client (`src/lib/api/`), one module per backend domain, each translating the
-backend's snake_case JSON into the frontend's camelCase shapes at the
-boundary rather than letting snake_case leak into components.
+a fake session. The Flutter app's tests are described in
+[`FLUTTER.md`](FLUTTER.md).
 
 ## Integrations at a glance
 
@@ -183,10 +158,7 @@ Automatic sync (opt-in, `Users.SteamWishlistAutoSync`, only after the first impo
 Config files (compose, workflows, `pyproject.toml`) carry no inline comments;
 the reasoning behind their non-obvious settings lives here.
 
-**Compose.** `compose.yml` overrides two values from `.env`: `NODE_ENV` is
-forced to `production` for the frontend image build (`next build` always needs
-it) and `HOSTNAME` to `0.0.0.0` (the container must bind all interfaces to be
-reachable through the port mapping). `compose/compose.yml` is the local Podman
+**Compose.** `compose/compose.yml` is the local Podman
 file for the PostgreSQL database and pgAdmin only; the postgres image needs the
 individual `POSTGRES_USER`/`POSTGRES_PASSWORD`/`POSTGRES_DB` variables, which
 must match the credentials in the app's `POSTGRES_URL`.
@@ -195,32 +167,13 @@ must match the credentials in the app's `POSTGRES_URL`.
 
 - `tests.yml` runs on every PR: backend lint, format check and pytest, and
   the release script tests.
-- `frontend.yml` runs the frontend audit, lint, typecheck, format check and
-  vitest, only on PRs that change `frontend/` (the old web client is frozen
-  until the cutover, #247).
 - `app.yml` checks the Flutter app on PRs that change `app/`, and
   `monitor.yml` builds and tests the Monitor on PRs that change `monitor/`.
-- `build.yml` test-builds the frontend and backend container images on every
-  PR; it never pushes anything. `build-and-publish.yml` publishes them to
-  ghcr.io, only after a merge to `main`, never for open pull requests.
-- `tauri-build.yml` builds the desktop installers for Windows, macOS and
-  Linux without signing or publishing them (code signing needs certificates it
-  does not have, see issue #14). It runs via `workflow_dispatch` for a manual
-  ad-hoc build of the version already committed in `package.json` /
-  `tauri.conf.json`, or via `workflow_call` from `release-apps.yml` with an
-  explicit `version` stamped into the build. It deliberately has no tag-push
-  trigger: `release-apps.yml` is the only thing that creates release tags and
-  already calls it directly, so a tag trigger would build everything twice.
-  `actions/setup-node` v5 auto-caches from the `packageManager` field on top of
-  the explicit cache config, so the explicit config stays the single source.
-  `NEXT_PUBLIC_API_URL` is baked into the static export at build time, the same
-  variable the container publish workflow uses.
-- `release-apps.yml` is the manual-only prod release stage: it decides the
-  version with `scripts/release-version.mjs` (the optional `version` input
-  when given - plain `X.Y.Z`, greater than the latest tag - otherwise a patch
-  bump on the latest `v*.*.*` tag, or the version in `frontend/package.json`
-  when no tag exists yet), builds the desktop app through `tauri-build.yml` and
-  publishes a GitHub Release with every platform's installer attached.
+- `build.yml` test-builds the backend container image on every PR; it never
+  pushes anything. `build-and-publish.yml` publishes it to ghcr.io, only after
+  a merge to `main`, never for open pull requests.
+- `release-app.yml` builds, packages and publishes the Flutter app; see
+  [`FLUTTER.md`](FLUTTER.md#release-workflow).
 
 **Backend tooling.** pytest-asyncio runs every test and fixture in one
 session-scoped event loop: `db.py`'s engine is a module-level singleton bound
@@ -230,17 +183,13 @@ closed loop. Ruff excludes `alembic/versions`: `alembic revision
 --autogenerate` produces the same boilerplate every time and holding it to the
 hand-written code standard is noise.
 
-**Frontend runtime.** The frontend builds on Node 22 (22.12+), pinned in
-`.nvmrc`, `frontend/Containerfile` and the workflows. Node 20 reached end of
-life in April 2026, and other versions such as 23.x fail with cryptic webpack
-errors, so `engine-strict` makes `npm install` reject them and
-`next.config.js` aborts early with a clear message. Moving to a newer LTS means
-updating those pins together with `SUPPORTED_NODE_MAJORS` and `engines`, and
-checking the build.
+**Node.** Node 22 (`.nvmrc`) only runs the release and deploy scripts and
+their tests (`task release:test`, the "Release Script Tests" job).
 
 ## Related documents
 
-- [`docs/TAURI.md`](TAURI.md) — desktop app build, signing, and CI details.
+- [`docs/FLUTTER.md`](FLUTTER.md) — the desktop app: setup, tests, packaging
+  and releases.
 - Root [`CLAUDE.md`](../CLAUDE.md) — commands, directory layout, coding
   conventions, and the Claude Code / issue workflow used on this repo.
 

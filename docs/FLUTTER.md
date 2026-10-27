@@ -1,6 +1,6 @@
 # Flutter client
 
-The desktop client in `app/` is the Flutter port of `frontend/` (epic #247). It targets macOS, Windows and Linux; mobile is a follow-up. Design and layout come from [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
+The desktop client in `app/` is the Flutter port of the retired web client (epic #247), which now lives in [`backlog-manager-legacy`](https://github.com/theoleuthardt/backlog-manager-legacy). It targets macOS, Windows and Linux; mobile is a follow-up. Design and layout come from [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
 
 ## Setup
 
@@ -41,9 +41,9 @@ The hand-written part is `lib/api/api_client.dart` (`createApiDio`: Bearer token
 
 ## Logic ported from the web client
 
-The framework-free logic of `frontend/src/lib/` lives in `app/lib/domain/` with its tests in `app/test/domain/`; every vitest case that applies has a Dart equivalent. Function names and signatures stay recognisable so both implementations can be compared.
+The framework-free logic of the web client's `src/lib/` ([`backlog-manager-legacy`](https://github.com/theoleuthardt/backlog-manager-legacy)) lives in `app/lib/domain/` with its tests in `app/test/domain/`; every vitest case that applies has a Dart equivalent. Function names and signatures stay recognisable so both implementations can be compared.
 
-| TypeScript (`frontend/src/lib/`) | Dart (`app/lib/domain/`) | Notes |
+| TypeScript (`src/lib/`) | Dart (`app/lib/domain/`) | Notes |
 | --- | --- | --- |
 | `sortEntries.ts` | `sort_entries.dart` | `SortOption` is an enum with `.value` (the stored id); `parseSortOption` replaces `isSortOption` |
 | `filterEntries.ts` | `filter_entries.dart` | ranges are `(min, max)?` records; `emptyFilters` replaces `EMPTY_FILTERS` |
@@ -83,7 +83,7 @@ app/
     platform/   native hooks such as opening a URL
     api/        client generated from backend/openapi.json
     features/   one folder per screen group (auth, setup and the debug gallery)
-    domain/     pure logic and models, ported from frontend/src/lib/
+    domain/     pure logic and models, ported from the web client's src/lib/
     app.dart    root widget (router and providers)
     main.dart
   test/         mirrors lib/; golden tests are added next to the widgets they cover
@@ -103,7 +103,7 @@ A build for another OS cannot be made on this one (Flutter has no cross-compilat
 
 ## Tests
 
-- Pure logic (sorting, filtering, grouping, themes, ...) is ported from `frontend/src/lib/` with the existing test cases, one Dart file per TypeScript file, under `test/` mirroring `lib/`.
+- Pure logic (sorting, filtering, grouping, themes, ...) is ported from the web client's `src/lib/` with the existing test cases, one Dart file per TypeScript file, under `test/` mirroring `lib/`.
 - Widgets get widget tests; reusable components of the UI kit also get golden tests (`matchesGoldenFile`) next to them, for the dark and a light theme.
 - Golden images live in `test/**/goldens/` and are committed. After an intended visual change run `task app:test:update-goldens`, look at the changed images in the diff and commit them with the code. Golden tests carry the tag `golden` (`dart_test.yaml`), so `flutter test --exclude-tags golden` skips them and `flutter test --tags golden` runs only them. Golden images are recorded on Linux (see "Checks on pull requests"); do not commit images recorded on another platform.
 - A test that expresses the desired behaviour is not weakened to make a run green; change the code.
@@ -139,12 +139,11 @@ Verified so far: the three Linux packages are built locally (an AppImage starts 
 
 ## Release workflow
 
-`.github/workflows/release-app.yml` (manual, "Release Flutter App") builds Linux, macOS and Windows on their own runners, packages with `task app:package` and uploads the installers as workflow artifacts. It keeps the version rule of the Tauri pipeline (`scripts/release-version.mjs`, tested by `task release:test`): the optional `version` input, otherwise a patch bump of the latest `v*.*.*` tag, and a requested version must be greater than the latest tag. The default server comes from the repository variable `API_URL`.
+`.github/workflows/release-app.yml` (manual, "Release Flutter App") builds Linux, macOS and Windows on their own runners, packages with `task app:package` and uploads the installers as workflow artifacts. It keeps the version rule of the former Tauri pipeline (`scripts/release-version.mjs`, tested by `task release:test`): the optional `version` input, otherwise a patch bump of the latest `v*.*.*` tag, and a requested version must be greater than the latest tag. The default server comes from the repository variable `API_URL`.
 
 - **Dry run:** with `publish` off (the default) nothing is released; take the installers from the run's artifacts.
 - **Publishing:** `publish` creates the GitHub Release with generated notes and all installers. Since the cutover (#287) a release is a full release by default; `prerelease` marks it as a pre-release, which only the Preview update channel offers (`APP_UPDATES.md`). 0.9.13 was the first full release.
 - The release notes start with the install instructions for unsigned builds (`.github/release-install-notes.md`). The builds are not code signed; that is a decision for later (#280).
-- The Tauri workflows (`release-apps.yml`, `tauri-build.yml`) stay until the cutover.
 
 ## Architecture
 

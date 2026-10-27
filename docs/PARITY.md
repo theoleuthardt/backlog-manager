@@ -1,6 +1,6 @@
 # Parity matrix: web and Tauri client against the Flutter client
 
-Built from `frontend/src/app/`, `frontend/src/hooks/` and `frontend/src/lib/` for issue #286. The old client is removed at the cutover (#287), so every row must be done or dropped on purpose before that. Status: **done** (in `app/`), **new** (only in the Flutter client), **open** (an issue exists), **dropped** (on purpose, with the reason). Where the Flutter code lives is listed in `docs/FLUTTER.md`.
+Built from `frontend/src/app/`, `frontend/src/hooks/` and `frontend/src/lib/` for issue #286. The old client was removed at the cutover (#287) and lives on in [`backlog-manager-legacy`](https://github.com/theoleuthardt/backlog-manager-legacy), where those paths are `src/app/`, `src/hooks/` and `src/lib/`; this matrix is kept as the record of the port. Status: **done** (in `app/`), **new** (only in the Flutter client), **open** (an issue exists), **dropped** (on purpose, with the reason). Where the Flutter code lives is listed in `docs/FLUTTER.md`.
 
 ## Pages
 

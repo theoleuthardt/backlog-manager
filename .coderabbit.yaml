@@ -18,14 +18,6 @@ reviews:
         CLAUDE.md's "Code Comments" section). Flag secrets, API keys, or
         password hashes that could end up logged or included in a response.
         Flag hand-built SQL instead of SQLAlchemy Core/ORM.
-    - path: "frontend/src/**/*.{ts,tsx}"
-      instructions: >
-        Flag `||` where `??` is the correct nullish check, unused
-        variables/exports, and type annotations TypeScript can already
-        infer (this repo's ESLint config enforces all three — see
-        CLAUDE.md's "ESLint Rules"). Flag narrative inline comments under
-        the same rule as the backend. Flag any new API call bypassing the
-        typed client in `src/lib/api/` in favor of a raw `fetch`.
     - path: "bruno/**/*.bru"
       instructions: >
         Check that a new or changed backend route has a matching request

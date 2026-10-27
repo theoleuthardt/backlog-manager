@@ -105,7 +105,7 @@ rating (the stored snapshot has both so that a restore is complete).
 **Export.** `GET /api/space/export` returns the current content of the space as
 a JSON file in the format of a backup download.
 
-Frontend: the "Space backups" button in the toolbar of the space opens a sheet
+App: the "Space backups" button in the toolbar of the space opens a sheet
 with the list, Back up now, Export JSON and the restore request (Approve and
 Decline for the partner's request, Withdraw for one's own); see
 [`FLUTTER.md`](FLUTTER.md).

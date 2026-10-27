@@ -2,8 +2,8 @@
 without needing a running server, a real database, or real secrets (the
 required settings get throwaway placeholder values below) - the
 schema is static, derived purely from the route handlers and their msgspec
-DTOs. The frontend's `openapi-typescript` step reads this file to generate
-a type-safe `openapi-fetch` client (see #104's decision on OpenAPI codegen).
+DTOs. The Flutter app's `task app:generate-api` reads this file to generate
+its typed Dart client (`app/lib/api/generated/`).
 
 Run via `task backend:openapi`.
 """

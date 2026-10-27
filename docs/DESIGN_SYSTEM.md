@@ -2,7 +2,7 @@
 
 "Shelf" is the redesign direction for Backlog Manager: cover-first like a console home screen, built as a clean desktop application rather than a website in a window. Games are the content, the chrome stays quiet, and one accent colour carries focus and progress.
 
-This document is the spec a second client (the planned Flutter client, issue #240) is built from. It does not depend on the web frontend's code. Related files, all in [`design/`](design/):
+This document is the spec the Flutter client (issue #240) is built from. It does not depend on the code of the retired web client. Related files, all in [`design/`](design/):
 
 - [`README.md`](design/README.md): what the design files are and how to update them
 - [`shelf.tokens.json`](design/shelf.tokens.json): every token below in machine-readable form
@@ -26,7 +26,7 @@ This document is the spec a second client (the planned Flutter client, issue #24
 
 ### Six input colours
 
-A theme is six hex colours, unchanged from the current app (`frontend/src/lib/themes.ts`): `background`, `surface`, `foreground`, `accent`, `border`, `glow`.
+A theme is six hex colours, unchanged from the web client (`src/lib/themes.ts` in the legacy repository): `background`, `surface`, `foreground`, `accent`, `border`, `glow`.
 
 | Role | Used for |
 |---|---|
@@ -254,7 +254,7 @@ client-flutter/
 - Images: `cached_network_image`, loading covers through the backend's `GET /api/images/proxy`.
 - Streams (progress events): server-sent events from the sync and import endpoints through a small SSE reader on `dio`.
 - Desktop: `window_manager`, `desktop_drop` if file drop is wanted for CSV import.
-- Logic to port with tests first: `sortEntries`, `filterEntries`, `groupEntries`, `categories`, `themes`, `reviewStars`, `statusStyle`, `entryChanges` (see `frontend/src/lib/`).
+- Logic to port with tests first: `sortEntries`, `filterEntries`, `groupEntries`, `categories`, `themes`, `reviewStars`, `statusStyle`, `entryChanges` (see `src/lib/` in [`backlog-manager-legacy`](https://github.com/theoleuthardt/backlog-manager-legacy)).
 
 ### Packaging and updates
 
@@ -262,7 +262,7 @@ The open questions about installers, signing and the updater are researched in i
 
 ## Keeping this in sync
 
-The web frontend does not use these tokens or this shell yet. If the redesign is applied to the web app first, port `shelf.tokens.json` into `frontend/src/styles/globals.css` as the new `--t-*` mapping and keep this document as the contract. A change to a token or component starts in the design canvas, then `design/canvas/` and `shelf.tokens.json`, then this document, then the clients.
+A change to a token or component starts in the design canvas, then `design/canvas/` and `shelf.tokens.json`, then this document, then the app.
 
 ## Scale-up (#351)
 

@@ -1,7 +1,6 @@
 version: "3"
 
 vars:
-  FRONTEND_DIR: frontend
   BACKEND_DIR: backend
   APP_DIR: app
   MONITOR_DIR: monitor
@@ -15,62 +14,45 @@ tasks:
     silent: true
 
   install:
-    desc: Install frontend, backend, Flutter app and Monitor dependencies
+    desc: Install backend, Flutter app and Monitor dependencies
     cmds:
-      - task: frontend:install
       - task: backend:install
       - task: app:install
       - task: monitor:install
 
-  dev:
-    desc: Run the Vite and backend dev servers
-    deps:
-      - task: frontend:dev
-      - task: backend:dev
-
-  build:
-    desc: Build the frontend for production
-    cmds:
-      - task: frontend:build
-
   lint:
-    desc: Lint frontend, backend, Flutter app and Monitor
+    desc: Lint backend, Flutter app and Monitor
     cmds:
-      - task: frontend:lint
       - task: backend:lint
       - task: app:lint
       - task: monitor:lint
 
   test:
-    desc: Run the backend, frontend, Flutter app and Monitor test suites
+    desc: Run the backend, Flutter app, Monitor and release script test suites
     cmds:
       - task: backend:test
-      - task: frontend:test
       - task: app:test
       - task: monitor:test
       - task: release:test
 
   check:
-    desc: Lint + typecheck + format-check the frontend, lint + format-check the backend, the Flutter app and the Monitor
+    desc: Lint + format-check the backend, the Flutter app and the Monitor
     cmds:
-      - task: frontend:check
       - task: backend:lint
       - task: app:lint
       - task: monitor:lint
       - task: format:check
 
   format:
-    desc: Format the frontend (prettier), backend (ruff format), Flutter app (dart format) and Monitor (Spotless)
+    desc: Format the backend (ruff format), Flutter app (dart format) and Monitor (Spotless)
     cmds:
-      - task: frontend:format
       - task: backend:format
       - task: app:format
       - task: monitor:format
 
   format:check:
-    desc: Check frontend, backend, Flutter app and Monitor formatting without changing files
+    desc: Check backend, Flutter app and Monitor formatting without changing files
     cmds:
-      - task: frontend:format:check
       - task: backend:format:check
       - task: app:format:check
       - task: monitor:format:check
@@ -85,58 +67,10 @@ tasks:
     cmds:
       - podman compose stop db db-monitoring
 
-  frontend:install:
-    desc: Install frontend dependencies
-    dir: "{{.FRONTEND_DIR}}"
-    cmds:
-      - npm install
-
-  frontend:dev:
-    desc: Start the Vite dev server
-    dir: "{{.FRONTEND_DIR}}"
-    cmds:
-      - npm run dev
-
-  frontend:build:
-    desc: Build the Vite app for production
-    dir: "{{.FRONTEND_DIR}}"
-    cmds:
-      - npm run build
-
-  frontend:lint:
-    desc: Lint the frontend (eslint)
-    dir: "{{.FRONTEND_DIR}}"
-    cmds:
-      - npm run lint
-
-  frontend:check:
-    desc: Lint + typecheck the frontend
-    dir: "{{.FRONTEND_DIR}}"
-    cmds:
-      - npm run check
-
-  frontend:format:
-    desc: Format the frontend (prettier)
-    dir: "{{.FRONTEND_DIR}}"
-    cmds:
-      - npm run format:write
-
-  frontend:format:check:
-    desc: Check frontend formatting without changing files
-    dir: "{{.FRONTEND_DIR}}"
-    cmds:
-      - npm run format:check
-
-  frontend:test:
-    desc: Run the frontend unit tests (vitest)
-    dir: "{{.FRONTEND_DIR}}"
-    cmds:
-      - npm test
-
   release:test:
-    desc: Test the release pipeline's scripts (updater manifests, release version)
+    desc: Test the release pipeline's scripts (app update manifest, release version)
     cmds:
-      - node --test scripts/updater-manifest.test.mjs scripts/app-update-manifest.test.mjs scripts/release-version.test.mjs
+      - node --test scripts/app-update-manifest.test.mjs scripts/release-version.test.mjs
 
   backend:install:
     desc: Install backend dependencies (uv sync)
@@ -182,17 +116,10 @@ tasks:
       - uv export --no-dev --no-hashes --no-emit-project --frozen -o .audit-requirements.txt
       - uvx pip-audit --no-deps --disable-pip --ignore-vuln PYSEC-2026-1325 -r .audit-requirements.txt
 
-  frontend:audit:
-    desc: Audit the frontend's production dependencies for known vulnerabilities
-    dir: "{{.FRONTEND_DIR}}"
-    cmds:
-      - npm audit --omit=dev
-
   audit:
-    desc: Audit frontend and backend dependencies for known vulnerabilities
+    desc: Audit the backend dependencies for known vulnerabilities
     cmds:
       - task: backend:audit
-      - task: frontend:audit
 
   backend:migrate:
     desc: Apply pending Alembic migrations
@@ -213,30 +140,6 @@ tasks:
       PYTHONHASHSEED: "0"
     cmds:
       - uv run python scripts/dump_openapi_schema.py
-
-  frontend:generate-api-types:
-    desc: Regenerate the type-safe API client types from backend/openapi.json
-    dir: "{{.FRONTEND_DIR}}"
-    cmds:
-      - npm run generate-api-types
-
-  frontend:tauri:dev:
-    desc: Run the desktop app in dev mode (see docs/TAURI.md)
-    dir: "{{.FRONTEND_DIR}}"
-    cmds:
-      - npm run tauri:dev
-
-  frontend:tauri:build:
-    desc: Build desktop installers for the current platform (see docs/TAURI.md)
-    dir: "{{.FRONTEND_DIR}}"
-    cmds:
-      - npm run tauri:build
-
-  frontend:tauri:build:debug:
-    desc: Build an unoptimized debug desktop build (faster, easier to troubleshoot)
-    dir: "{{.FRONTEND_DIR}}"
-    cmds:
-      - npm run tauri:build:debug
 
   app:install:
     desc: Fetch the Flutter app's dependencies (needs Flutter, see docs/FLUTTER.md)
