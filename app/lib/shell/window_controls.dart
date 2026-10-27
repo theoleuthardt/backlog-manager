@@ -1,3 +1,4 @@
+import 'package:backlog_manager/platform/desktop.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -33,6 +34,24 @@ class PluginWindowControls implements WindowControls {
   Future<void> startDragging() => windowManager.startDragging();
 }
 
+/// A phone or tablet: the system owns the window, so there is nothing to
+/// minimize, maximize, close or drag.
+class NoWindowControls implements WindowControls {
+  @override
+  Future<void> minimize() async {}
+
+  @override
+  Future<void> toggleMaximize() async {}
+
+  @override
+  Future<void> close() async {}
+
+  @override
+  Future<void> startDragging() async {}
+}
+
 final windowControlsProvider = Provider<WindowControls>(
-  (ref) => PluginWindowControls(),
+  (ref) => ref.watch(isDesktopProvider)
+      ? PluginWindowControls()
+      : NoWindowControls(),
 );

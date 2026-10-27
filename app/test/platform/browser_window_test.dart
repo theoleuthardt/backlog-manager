@@ -1,4 +1,5 @@
 import 'package:backlog_manager/platform/browser_window.dart';
+import 'package:backlog_manager/platform/desktop.dart';
 import 'package:backlog_manager/platform/url_opener.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -37,5 +38,23 @@ void main() {
     expect(opened, [
       Uri.parse('https://www.keyforsteam.de/katalog/search-Hades'),
     ]);
+  });
+
+  test('opens the address in the system browser on a phone', () async {
+    final opened = <Uri>[];
+    final container = ProviderContainer(
+      overrides: [
+        urlOpenerProvider.overrideWithValue(opened.add),
+        isDesktopProvider.overrideWithValue(false),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await container.read(browserWindowOpenerProvider)(
+      Uri.parse('https://store.steampowered.com/app/1145360'),
+      stays: (_) => true,
+    );
+
+    expect(opened, [Uri.parse('https://store.steampowered.com/app/1145360')]);
   });
 }

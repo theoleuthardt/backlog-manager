@@ -559,6 +559,9 @@ void main() {
         tester,
         overrides: [
           urlOpenerProvider.overrideWithValue(opened.add),
+          trailerPlayerBuilderProvider.overrideWithValue(
+            (context, embedUrl) => null,
+          ),
           trailerWindowOpenerProvider.overrideWithValue((
             embedUrl,
             watchUrl,

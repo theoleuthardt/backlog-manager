@@ -9,8 +9,10 @@ import 'package:backlog_manager/design/theme_provider.dart';
 import 'package:backlog_manager/domain/csv_import.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/platform/csv_file_picker.dart';
+import 'package:backlog_manager/platform/desktop.dart';
 import 'package:backlog_manager/routing/router.dart';
 import 'package:backlog_manager/routing/routes.dart';
+import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -119,6 +121,7 @@ class Opened {
 Future<Opened> open(
   WidgetTester tester, {
   void Function(FakeCsvImportApi api)? setUp,
+  bool desktop = true,
 }) async {
   final api = FakeCsvImportApi();
   setUp?.call(api);
@@ -133,6 +136,7 @@ Future<Opened> open(
       csvFilePickerProvider.overrideWithValue(picker),
       gamesApiProvider.overrideWithValue(games),
       backlogApiProvider.overrideWithValue(backlog),
+      isDesktopProvider.overrideWithValue(desktop),
     ],
   );
   return Opened(api, picker, games, backlog);
@@ -173,6 +177,23 @@ Future<void> dismissToast(WidgetTester tester) =>
     tester.pump(const Duration(seconds: 6));
 
 void main() {
+  group('dropping a file', () {
+    testWidgets('the desktop takes a file dropped on the page', (tester) async {
+      await open(tester);
+      expect(find.byType(DropTarget), findsOneWidget);
+      expect(find.text('or drop a .csv file on this window'), findsOneWidget);
+    });
+
+    testWidgets('a phone has no drop target, only the file picker', (
+      tester,
+    ) async {
+      await open(tester, desktop: false);
+      expect(find.byType(DropTarget), findsNothing);
+      expect(find.text('or drop a .csv file on this window'), findsNothing);
+      expect(find.byKey(const Key('import-choose')), findsOneWidget);
+    });
+  });
+
   group('choosing a file', () {
     testWidgets('starts with the explanation and the choose button', (
       tester,

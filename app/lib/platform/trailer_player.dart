@@ -14,39 +14,58 @@ typedef TrailerPlayerBuilder = Widget? Function(
   Uri embedUrl,
 );
 
-/// The player of the app: the system web view (WKWebView, WebView2) on macOS
-/// and Windows; the web view plugin has no Linux implementation, Linux plays
-/// the trailer in a window. Navigation
-/// stays on the YouTube hosts, every other address is cancelled.
+/// Whether [platform] plays trailers in the app: the web view plugin runs on
+/// macOS, Windows, iOS and Android, it has no Linux implementation.
+bool hasEmbeddedTrailerPlayer(TargetPlatform platform) =>
+    platform == TargetPlatform.macOS ||
+    platform == TargetPlatform.windows ||
+    platform == TargetPlatform.iOS ||
+    platform == TargetPlatform.android;
+
+/// The player of the app: the system web view (WKWebView, WebView2, Android
+/// WebView) where [hasEmbeddedTrailerPlayer] says so; Linux plays the trailer
+/// in a window. Navigation stays on the YouTube hosts, every other address is
+/// cancelled.
 Widget? systemTrailerPlayer(BuildContext context, Uri embedUrl) {
-  final supported =
-      defaultTargetPlatform == TargetPlatform.macOS ||
-      defaultTargetPlatform == TargetPlatform.windows;
-  if (!supported) return null;
+  if (!hasEmbeddedTrailerPlayer(defaultTargetPlatform)) return null;
   return InAppWebView(
     key: const Key('trailer-webview'),
     initialData: InAppWebViewInitialData(
       data: trailerPage(embedUrl),
       baseUrl: WebUri('$trailerOrigin/'),
     ),
-    shouldOverrideUrlLoading: (controller, action) async {
-      final host = action.request.url?.host ?? '';
-      final embedded =
-          !action.isForMainFrame ||
-          host == Uri.parse(trailerOrigin).host ||
-          host == 'www.youtube-nocookie.com' ||
-          host == 'www.youtube.com';
-      return embedded
-          ? NavigationActionPolicy.ALLOW
-          : NavigationActionPolicy.CANCEL;
-    },
-    initialSettings: InAppWebViewSettings(
-      mediaPlaybackRequiresUserGesture: false,
-      allowsInlineMediaPlayback: true,
-      transparentBackground: true,
-    ),
+    shouldOverrideUrlLoading: (controller, action) async =>
+        trailerNavigationAllowed(
+          action.request.url,
+          mainFrame: action.isForMainFrame,
+        )
+        ? NavigationActionPolicy.ALLOW
+        : NavigationActionPolicy.CANCEL,
+    initialSettings: trailerWebViewSettings(),
   );
 }
+
+/// Whether the trailer web view may load [url]: a frame inside the page
+/// always, the page itself only from the app's own origin or YouTube, or the
+/// blank page (`about:`) a web view reports while it loads a page from a
+/// string.
+bool trailerNavigationAllowed(Uri? url, {required bool mainFrame}) {
+  if (!mainFrame || url?.scheme == 'about') return true;
+  final host = url?.host ?? '';
+  return host == Uri.parse(trailerOrigin).host ||
+      host == 'www.youtube-nocookie.com' ||
+      host == 'www.youtube.com';
+}
+
+/// The settings of the trailer web view. `useShouldOverrideUrlLoading` is
+/// what makes the plugin ask [trailerNavigationAllowed] at all; without it
+/// every navigation goes through.
+InAppWebViewSettings trailerWebViewSettings() => InAppWebViewSettings(
+  useShouldOverrideUrlLoading: true,
+  mediaPlaybackRequiresUserGesture: false,
+  allowsInlineMediaPlayback: true,
+  transparentBackground: true,
+);
 
 /// The origin the app presents to YouTube: its application id as an https
 /// address. YouTube identifies an embedding client by the origin of the page
