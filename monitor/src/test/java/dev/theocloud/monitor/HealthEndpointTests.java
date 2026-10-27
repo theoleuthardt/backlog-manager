@@ -12,16 +12,15 @@ import org.springframework.test.web.servlet.assertj.MockMvcTester;
 @AutoConfigureMockMvc
 class HealthEndpointTests {
 
-	@Autowired
-	private MockMvcTester mvc;
+    @Autowired
+    private MockMvcTester mvc;
 
-	@Test
-	void healthIsUp() {
-		assertThat(mvc.get().uri("/actuator/health"))
-			.hasStatusOk()
-			.bodyJson()
-			.extractingPath("$.status")
-			.isEqualTo("UP");
-	}
-
+    @Test
+    void healthIsUp() {
+        assertThat(mvc.get().uri("/actuator/health"))
+                .hasStatusOk()
+                .bodyJson()
+                .extractingPath("$.status")
+                .isEqualTo("UP");
+    }
 }
