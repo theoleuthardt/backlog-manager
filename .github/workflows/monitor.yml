@@ -1,0 +1,42 @@
+name: Monitor
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "monitor/**"
+      - ".github/workflows/monitor.yml"
+
+concurrency:
+  group: monitor-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Monitor Build, Format and Tests
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    defaults:
+      run:
+        working-directory: monitor
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Setup Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+          cache-dependency-path: monitor/pom.xml
+
+      - name: Build, check formatting and run the tests
+        run: ./mvnw -B verify
