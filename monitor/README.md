@@ -17,6 +17,8 @@ Needs a JDK 25; Maven is downloaded by the wrapper.
 ```bash
 ./mvnw spring-boot:run     # starts on http://localhost:8080
 ./mvnw test                # runs the tests
+./mvnw spotless:apply      # formats the code (palantir-java-format)
+./mvnw verify              # tests plus the format check; compiler warnings fail the build
 ```
 
 `GET http://localhost:8080/actuator/health` answers `{"status":"UP"}`.
