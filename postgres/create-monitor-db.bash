@@ -19,6 +19,12 @@ if [ "$MONITOR_DB_USER" = "$POSTGRES_USER" ]; then
   exit 1
 fi
 
+for attempt in $(seq 1 30); do
+  podman exec "$MONITOR_DB_CONTAINER" pg_isready -q -U "$POSTGRES_USER" && break
+  [ "$attempt" -lt 30 ] || { echo "Postgres in \"$MONITOR_DB_CONTAINER\" is not ready after 30 s (task db:up?)" >&2; exit 1; }
+  sleep 1
+done
+
 podman exec -i "$MONITOR_DB_CONTAINER" psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d postgres \
   -v db="$MONITOR_DB_NAME" -v role="$MONITOR_DB_USER" -v password="$MONITOR_DB_PASSWORD" <<'SQL'
 SELECT format('CREATE ROLE %I LOGIN PASSWORD %L', :'role', :'password')
