@@ -79,7 +79,7 @@ class _ShelfFieldState extends State<ShelfField> {
         ),
         const SizedBox(height: 6),
         SizedBox(
-          height: ShelfHeight.input,
+          height: ShelfFormFactor.heightFor(context, ShelfHeight.input),
           child: TextField(
             controller: widget.controller,
             focusNode: widget.focusNode,

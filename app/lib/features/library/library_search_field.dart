@@ -1,4 +1,5 @@
 import 'package:backlog_manager/data/filter_providers.dart';
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
@@ -53,7 +54,7 @@ class _LibrarySearchFieldState extends ConsumerState<LibrarySearchField> {
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: SizedBox(
-        height: 34,
+        height: ShelfFormFactor.heightFor(context, 34),
         child: TextField(
           key: const Key('search-field'),
           controller: _controller,
