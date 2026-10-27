@@ -12,12 +12,13 @@ import 'package:backlog_manager/features/import_csv/csv_mapping_panel.dart';
 import 'package:backlog_manager/features/import_csv/csv_preview_table.dart';
 import 'package:backlog_manager/features/import_csv/skipped_rows.dart';
 import 'package:backlog_manager/platform/csv_file_picker.dart';
+import 'package:backlog_manager/platform/desktop.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// The CSV import: choose a file (or drop it on the window), map its columns,
-/// preview the matches and import them.
+/// The CSV import: choose a file (or, on the desktop, drop it on the
+/// window), map its columns, preview the matches and import them.
 class ImportCsvPage extends ConsumerStatefulWidget {
   const ImportCsvPage({super.key});
 
@@ -62,6 +63,22 @@ class _ImportCsvPageState extends ConsumerState<ImportCsvPage> {
     final state = ref.watch(csvImportProvider);
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
 
+    final page = DecoratedBox(
+      key: const Key('page-import'),
+      position: DecorationPosition.foreground,
+      decoration: BoxDecoration(
+        border: _dragging ? Border.all(color: tokens.accent, width: 2) : null,
+      ),
+      child: state.hasFile
+          ? _Loaded(
+              state: state,
+              onChoose: _choose,
+              onPreview: _preview,
+              onSubmit: _submit,
+            )
+          : _Empty(state: state, onChoose: _choose),
+    );
+    if (!isDesktopPlatform()) return page;
     return DropTarget(
       onDragEntered: (_) => setState(() => _dragging = true),
       onDragExited: (_) => setState(() => _dragging = false),
@@ -70,21 +87,7 @@ class _ImportCsvPageState extends ConsumerState<ImportCsvPage> {
         if (state.busy || details.files.isEmpty) return;
         unawaited(_load(PickedFile.fromXFile(details.files.first)));
       },
-      child: DecoratedBox(
-        key: const Key('page-import'),
-        position: DecorationPosition.foreground,
-        decoration: BoxDecoration(
-          border: _dragging ? Border.all(color: tokens.accent, width: 2) : null,
-        ),
-        child: state.hasFile
-            ? _Loaded(
-                state: state,
-                onChoose: _choose,
-                onPreview: _preview,
-                onSubmit: _submit,
-              )
-            : _Empty(state: state, onChoose: _choose),
-      ),
+      child: page,
     );
   }
 }

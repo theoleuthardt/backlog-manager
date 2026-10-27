@@ -203,8 +203,26 @@ tasks:
     cmds:
       - flutter build {{.APP_PLATFORM}}{{if .API_URL}} --dart-define=API_URL={{.API_URL}}{{end}}
 
+  app:build:apk:
+    desc: 'Build an Android APK (debug unless BUILD=release); default server: task app:build:apk API_URL=https://api.example.com'
+    dir: "{{.APP_DIR}}"
+    cmds:
+      - flutter build apk --{{.BUILD | default "debug"}}{{if .API_URL}} --dart-define=API_URL={{.API_URL}}{{end}}
+
+  app:build:ios:
+    desc: 'Build the iOS app without code signing (needs macOS and Xcode); default server: task app:build:ios API_URL=https://api.example.com'
+    dir: "{{.APP_DIR}}"
+    cmds:
+      - flutter build ios --release --no-codesign{{if .API_URL}} --dart-define=API_URL={{.API_URL}}{{end}}
+
+  app:dev:mobile:
+    desc: 'Run the app on a connected Android or iOS device or emulator: task app:dev:mobile DEVICE=<id from flutter devices>'
+    dir: "{{.APP_DIR}}"
+    cmds:
+      - flutter run{{if .DEVICE}} -d {{.DEVICE}}{{end}}
+
   app:icons:
-    desc: Regenerate the app icons (macOS, Windows, Linux) from app/tool/icons/icon.svg (needs rsvg-convert and ImageMagick)
+    desc: Regenerate the app icons (macOS, Windows, Linux, iOS, Android) from app/tool/icons/icon.svg (needs rsvg-convert and ImageMagick)
     dir: "{{.APP_DIR}}"
     cmds:
       - bash tool/icons/generate.sh

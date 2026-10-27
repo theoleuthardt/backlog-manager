@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:backlog_manager/domain/safe_url.dart';
+import 'package:backlog_manager/platform/desktop.dart';
 import 'package:backlog_manager/platform/url_opener.dart';
 import 'package:desktop_webview_window/desktop_webview_window.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,15 +28,16 @@ String? windowsWebviewProfileFolder(Map<String, String> environment) {
 /// The browser window of the app: the system web view (WebKitGTK, WebView2,
 /// WKWebView) in a window of its own, one at a time (a second call closes the
 /// first). Where the web view is not available, for example on Windows
-/// without the WebView2 runtime, or when the window cannot be created, the
-/// address opens in the system browser. Tests replace it.
+/// without the WebView2 runtime, on Android and iOS (no windows of its own),
+/// or when the window cannot be created, the address opens in the system
+/// browser. Tests replace it.
 final browserWindowOpenerProvider = Provider<BrowserWindowOpener>((ref) {
   final openExternally = ref.watch(urlOpenerProvider);
   Webview? current;
 
   return (url, {required stays}) async {
     try {
-      if (!await WebviewWindow.isWebviewAvailable()) {
+      if (!isDesktopPlatform() || !await WebviewWindow.isWebviewAvailable()) {
         openExternally(url);
         return;
       }

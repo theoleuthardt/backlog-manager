@@ -1,6 +1,6 @@
 # Flutter client
 
-The desktop client in `app/` is the Flutter port of the retired web client (epic #247), which now lives in [`backlog-manager-legacy`](https://github.com/theoleuthardt/backlog-manager-legacy). It targets macOS, Windows and Linux; mobile is a follow-up. Design and layout come from [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
+The desktop client in `app/` is the Flutter port of the retired web client (epic #247), which now lives in [`backlog-manager-legacy`](https://github.com/theoleuthardt/backlog-manager-legacy). It targets macOS, Windows and Linux, and Android and iOS (#289, see [Mobile](#mobile-android-and-ios)). Design and layout come from [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
 
 ## Setup
 
@@ -9,7 +9,8 @@ The desktop client in `app/` is the Flutter port of the retired web client (epic
    - **macOS:** full Xcode (not only the Command Line Tools) and CocoaPods (`brew install cocoapods`), then `sudo xcodebuild -runFirstLaunch`.
    - **Windows:** Visual Studio with the "Desktop development with C++" workload.
    - **Linux:** `clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev`; the token store (`flutter_secure_storage`) needs a Secret Service such as gnome-keyring at runtime.
-   - The Android and iOS items in `flutter doctor` can stay red, they are not needed yet.
+   - **Android** (only for the mobile build): the Android SDK (Android Studio, or the command-line tools with `platform-tools`, `platforms;android-36` and `build-tools;36.0.0`) and a JDK 17 or 21; accept the licenses with `flutter doctor --android-licenses`.
+   - **iOS** (only for the mobile build, macOS only): the same Xcode and CocoaPods as above.
 3. `task app:install` fetches the packages.
 4. Start a backend (`task db:up`, then `task backend:dev`). A debug build talks to `http://localhost:8000` by default; the sign-in screen can change the server (`lib/api/server_url.dart`).
 5. With FVM, run `fvm use` in `app/` and put `app/.fvm/flutter_sdk/bin` first on your `PATH`: the tasks call `flutter` and `dart` from the `PATH`.
@@ -144,6 +145,17 @@ Verified so far: the three Linux packages are built locally (an AppImage starts 
 - **Dry run:** with `publish` off (the default) nothing is released; take the installers from the run's artifacts.
 - **Publishing:** `publish` creates the GitHub Release with generated notes and all installers. Since the cutover (#287) a release is a full release by default; `prerelease` marks it as a pre-release, which only the Preview update channel offers (`APP_UPDATES.md`). 0.9.13 was the first full release.
 - The release notes start with the install instructions for unsigned builds (`.github/release-install-notes.md`). The builds are not code signed; that is a decision for later (#280).
+
+## Mobile (Android and iOS)
+
+The mobile port is epic #289 (#519-#528). The app id is `dev.theocloud.blm` on every platform; Android needs 8.0 (API 26) or newer, iOS 16 or newer.
+
+- **Run:** `task app:dev:mobile DEVICE=<id>` on a connected device or emulator (`flutter devices` lists them).
+- **Build:** `task app:build:apk` (debug; `BUILD=release` for a release build) and, on macOS, `task app:build:ios` (release, unsigned). The iOS app is shipped as an unsigned IPA that the user signs and installs with a signing tool (KravaSigner); Android ships as a signed APK (#520).
+- **Desktop-only plugins:** `window_manager`, `desktop_webview_window` and `desktop_drop` only run where `isDesktopPlatform()` (`lib/platform/desktop.dart`) is true: the window setup in `main.dart`, the window controls of the title bar (`NoWindowControls` on mobile), the browser window (the system browser on mobile) and the file drop of the CSV import. The check reads the real operating system, not `defaultTargetPlatform`, which widget tests report as Android, so the tests keep the desktop behaviour.
+- **Trailers:** the embedded player (`flutter_inappwebview`) also runs on Android and iOS.
+- **Layout:** still the desktop shell; the responsive layout for a phone in portrait and the Retroid Pocket 6 and AYN Odin 3 in landscape follows in #521 and #522, without changing the desktop.
+- **CI:** `app.yml` builds a debug APK (JDK 17) and an unsigned iOS release build on every app pull request.
 
 ## Architecture
 

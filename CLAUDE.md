@@ -70,9 +70,9 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the reasoning behind thes
 
 ## Flutter client (`app/`)
 
-Dart/Flutter desktop app, ported from the retired web client ([`backlog-manager-legacy`](https://github.com/theoleuthardt/backlog-manager-legacy)). Setup, running, debugging, goldens and packaging: [`docs/FLUTTER.md`](docs/FLUTTER.md).
+Dart/Flutter app (desktop; Android and iOS in progress, epic #289, `isDesktopPlatform()` guards the desktop-only plugins), ported from the retired web client ([`backlog-manager-legacy`](https://github.com/theoleuthardt/backlog-manager-legacy)). Setup, running, debugging, goldens and packaging: [`docs/FLUTTER.md`](docs/FLUTTER.md).
 
-- **Commands:** always `task app:*` (`app:install`, `app:dev`, `app:lint`, `app:test`, `app:test:update-goldens`, `app:format`, `app:format:check`, `app:build`, `app:package`, `app:icons`, `app:generate-api`), never bare `flutter`/`dart`; `task check` and `task lint` include the app.
+- **Commands:** always `task app:*` (`app:install`, `app:dev`, `app:dev:mobile`, `app:lint`, `app:test`, `app:test:update-goldens`, `app:format`, `app:format:check`, `app:build`, `app:build:apk`, `app:build:ios`, `app:package`, `app:icons`, `app:generate-api`), never bare `flutter`/`dart`; `task check` and `task lint` include the app.
 - **Layout:** `lib/api/` (everything that talks to the backend: Dio setup, error mapping, the SSE reader, the server URL setting, the generated client in `generated/`), `lib/domain/` (pure logic and models ported from the web client's `src/lib/`, no Flutter imports), `lib/design/` (`ShelfTokens`, `ShelfTextStyles`, the Material theme builder, the atmosphere, glass and glow widgets, the UI kit in `design/widgets/`), `lib/shell/` (title bar, sidebar, status bar, shortcuts), `lib/routing/` (`go_router`, route guard, session state), `lib/auth/` (token store, auth API, the sign-in state machine) and `lib/features/<screen group>/` (so far the sign-in and setup pages and the debug gallery of the UI kit), `app.dart`; `test/` mirrors `lib/`.
 - **State and routing:** Riverpod and `go_router`. Screens hold UI state only; logic that is not about widgets lives in plain Dart files with unit tests.
 - **Theming:** read colours from the `ShelfTokens` `ThemeExtension` and text from `ShelfTextStyles` (`lib/design/`), never hard-coded `Color`s or font sizes.

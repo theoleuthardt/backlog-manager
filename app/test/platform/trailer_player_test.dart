@@ -1,7 +1,25 @@
 import 'package:backlog_manager/platform/trailer_player.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('hasEmbeddedTrailerPlayer', () {
+    for (final platform in [
+      TargetPlatform.macOS,
+      TargetPlatform.windows,
+      TargetPlatform.iOS,
+      TargetPlatform.android,
+    ]) {
+      test('plays in the app on ${platform.name}', () {
+        expect(hasEmbeddedTrailerPlayer(platform), isTrue);
+      });
+    }
+
+    test('leaves Linux to the trailer window', () {
+      expect(hasEmbeddedTrailerPlayer(TargetPlatform.linux), isFalse);
+    });
+  });
+
   group('trailerPage', () {
     final page = trailerPage(
       Uri.parse('https://www.youtube-nocookie.com/embed/abc123?autoplay=1'),

@@ -14,15 +14,20 @@ typedef TrailerPlayerBuilder = Widget? Function(
   Uri embedUrl,
 );
 
-/// The player of the app: the system web view (WKWebView, WebView2) on macOS
-/// and Windows; the web view plugin has no Linux implementation, Linux plays
-/// the trailer in a window. Navigation
-/// stays on the YouTube hosts, every other address is cancelled.
+/// Whether [platform] plays trailers in the app: the web view plugin runs on
+/// macOS, Windows, iOS and Android, it has no Linux implementation.
+bool hasEmbeddedTrailerPlayer(TargetPlatform platform) =>
+    platform == TargetPlatform.macOS ||
+    platform == TargetPlatform.windows ||
+    platform == TargetPlatform.iOS ||
+    platform == TargetPlatform.android;
+
+/// The player of the app: the system web view (WKWebView, WebView2, Android
+/// WebView) where [hasEmbeddedTrailerPlayer] says so; Linux plays the trailer
+/// in a window. Navigation stays on the YouTube hosts, every other address is
+/// cancelled.
 Widget? systemTrailerPlayer(BuildContext context, Uri embedUrl) {
-  final supported =
-      defaultTargetPlatform == TargetPlatform.macOS ||
-      defaultTargetPlatform == TargetPlatform.windows;
-  if (!supported) return null;
+  if (!hasEmbeddedTrailerPlayer(defaultTargetPlatform)) return null;
   return InAppWebView(
     key: const Key('trailer-webview'),
     initialData: InAppWebViewInitialData(
