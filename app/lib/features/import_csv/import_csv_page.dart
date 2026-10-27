@@ -63,6 +63,7 @@ class _ImportCsvPageState extends ConsumerState<ImportCsvPage> {
     final state = ref.watch(csvImportProvider);
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
 
+    final desktop = ref.watch(isDesktopProvider);
     final page = DecoratedBox(
       key: const Key('page-import'),
       position: DecorationPosition.foreground,
@@ -76,9 +77,9 @@ class _ImportCsvPageState extends ConsumerState<ImportCsvPage> {
               onPreview: _preview,
               onSubmit: _submit,
             )
-          : _Empty(state: state, onChoose: _choose),
+          : _Empty(state: state, onChoose: _choose, canDrop: desktop),
     );
-    if (!ref.watch(isDesktopProvider)) return page;
+    if (!desktop) return page;
     return DropTarget(
       onDragEntered: (_) => setState(() => _dragging = true),
       onDragExited: (_) => setState(() => _dragging = false),
@@ -93,10 +94,15 @@ class _ImportCsvPageState extends ConsumerState<ImportCsvPage> {
 }
 
 class _Empty extends StatelessWidget {
-  const _Empty({required this.state, required this.onChoose});
+  const _Empty({
+    required this.state,
+    required this.onChoose,
+    required this.canDrop,
+  });
 
   final CsvImportState state;
   final VoidCallback onChoose;
+  final bool canDrop;
 
   @override
   Widget build(BuildContext context) {
@@ -136,12 +142,14 @@ class _Empty extends StatelessWidget {
                   onPressed: reading ? null : onChoose,
                 ),
               ),
-              const SizedBox(height: 10),
-              Text(
-                'or drop a .csv file on this window',
-                textAlign: TextAlign.center,
-                style: style.caption.copyWith(color: tokens.faint),
-              ),
+              if (canDrop) ...[
+                const SizedBox(height: 10),
+                Text(
+                  'or drop a .csv file on this window',
+                  textAlign: TextAlign.center,
+                  style: style.caption.copyWith(color: tokens.faint),
+                ),
+              ],
               if (state.skipped.isNotEmpty) ...[
                 const SizedBox(height: 24),
                 SkippedRows(rows: state.skipped),

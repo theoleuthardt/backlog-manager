@@ -204,16 +204,17 @@ tasks:
       - flutter build {{.APP_PLATFORM}}{{if .API_URL}} --dart-define=API_URL={{.API_URL}}{{end}}
 
   app:build:apk:
-    desc: 'Build an Android APK (debug unless BUILD=release); default server: task app:build:apk API_URL=https://api.example.com'
+    desc: 'Build a debug Android APK (release signing comes with #520); default server: task app:build:apk API_URL=https://api.example.com'
     dir: "{{.APP_DIR}}"
     cmds:
-      - flutter build apk --{{.BUILD | default "debug"}}{{if .API_URL}} --dart-define=API_URL={{.API_URL}}{{end}}
+      - flutter build apk --debug{{if .API_URL}} --dart-define=API_URL={{.API_URL}}{{end}}
 
   app:build:ios:
-    desc: 'Build the iOS app without code signing (needs macOS and Xcode); default server: task app:build:ios API_URL=https://api.example.com'
+    desc: 'Build the iOS app without code signing and pack it as an unsigned IPA into app/dist (needs macOS and Xcode); default server: task app:build:ios API_URL=https://api.example.com'
     dir: "{{.APP_DIR}}"
     cmds:
       - flutter build ios --release --no-codesign{{if .API_URL}} --dart-define=API_URL={{.API_URL}}{{end}}
+      - bash tool/package/ipa.sh
 
   app:dev:mobile:
     desc: 'Run the app on a connected Android or iOS device or emulator: task app:dev:mobile DEVICE=<id from flutter devices>'

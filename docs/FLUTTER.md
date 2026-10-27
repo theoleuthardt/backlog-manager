@@ -151,9 +151,10 @@ Verified so far: the three Linux packages are built locally (an AppImage starts 
 The mobile port is epic #289 (#519-#528). The app id is `dev.theocloud.blm` on every platform; Android needs 8.0 (API 26) or newer, iOS 16 or newer.
 
 - **Run:** `task app:dev:mobile DEVICE=<id>` on a connected device or emulator (`flutter devices` lists them).
-- **Build:** `task app:build:apk` (debug; `BUILD=release` for a release build) and, on macOS, `task app:build:ios` (release, unsigned). The iOS app is shipped as an unsigned IPA that the user signs and installs with a signing tool (KravaSigner); Android ships as a signed APK (#520).
+- **Build:** `task app:build:apk` (debug APK in `build/app/outputs/flutter-apk/`; release builds are unsigned until the release signing of #520) and, on macOS, `task app:build:ios` (release build without code signing, packed by `tool/package/ipa.sh` as `dist/<version>/Backlog-Manager_<version>_ios.ipa`). The IPA is unsigned: the user signs and installs it with a signing tool (KravaSigner); Android ships as a signed APK (#520).
 - **Desktop-only plugins:** `window_manager`, `desktop_webview_window` and `desktop_drop` only run where `isDesktopPlatform()` (`lib/platform/desktop.dart`) is true: the window setup in `main.dart`, the window controls of the title bar (`NoWindowControls` on mobile), the browser window (the system browser on mobile) and the file drop of the CSV import. The check reads the real operating system, not `defaultTargetPlatform`, which widget tests report as Android, so the tests keep the desktop behaviour.
 - **Trailers:** the embedded player (`flutter_inappwebview`) also runs on Android and iOS.
+- **Android Gradle Plugin:** pinned to 8.13 (Gradle 8.14.3, needs a JDK 17 or 21) in `android/settings.gradle.kts`, because `flutter_inappwebview_android` 1.1.3 calls `getDefaultProguardFile('proguard-android.txt')`, which AGP 9 rejects. Flutter warns that its AGP 8 support ends soon: move to AGP 9 (the template's 9.1 and Gradle 9.3) once `flutter_inappwebview` 6.2 is stable.
 - **Layout:** still the desktop shell; the responsive layout for a phone in portrait and the Retroid Pocket 6 and AYN Odin 3 in landscape follows in #521 and #522, without changing the desktop.
 - **CI:** `app.yml` builds a debug APK (JDK 17) and an unsigned iOS release build on every app pull request.
 

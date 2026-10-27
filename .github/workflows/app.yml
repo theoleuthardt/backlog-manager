@@ -245,3 +245,6 @@ jobs:
 
       - name: Build
         run: flutter build ios --release --no-codesign
+
+      - name: Pack the unsigned IPA
+        run: bash tool/package/ipa.sh

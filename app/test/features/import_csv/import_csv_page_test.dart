@@ -181,6 +181,7 @@ void main() {
     testWidgets('the desktop takes a file dropped on the page', (tester) async {
       await open(tester);
       expect(find.byType(DropTarget), findsOneWidget);
+      expect(find.text('or drop a .csv file on this window'), findsOneWidget);
     });
 
     testWidgets('a phone has no drop target, only the file picker', (
@@ -188,6 +189,7 @@ void main() {
     ) async {
       await open(tester, desktop: false);
       expect(find.byType(DropTarget), findsNothing);
+      expect(find.text('or drop a .csv file on this window'), findsNothing);
       expect(find.byKey(const Key('import-choose')), findsOneWidget);
     });
   });
