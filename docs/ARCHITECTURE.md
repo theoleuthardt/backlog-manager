@@ -165,11 +165,18 @@ must match the credentials in the app's `POSTGRES_URL`.
 
 **Workflows.**
 
-- `tests.yml` runs on every PR: backend lint, format check and pytest, and
-  the release script tests.
+Every pull request workflow has a path filter, so a PR only runs the checks
+of what it changes (`main` has no required status checks, so a skipped
+workflow never blocks a merge):
+
+- `backend.yml` runs the backend lint, format check and pytest on PRs that
+  change `backend/` or `postgres/`.
+- `tests.yml` runs the release and deploy script tests on PRs that change
+  `scripts/`, `deploy/` or `.nvmrc`.
 - `app.yml` checks the Flutter app on PRs that change `app/`, and
   `monitor.yml` builds and tests the Monitor on PRs that change `monitor/`.
-- `build.yml` test-builds the backend container image on every PR; it never
+- `build.yml` test-builds the backend container image on PRs that change
+  `backend/`; it never
   pushes anything. `build-and-publish.yml` publishes it to ghcr.io, only after
   a merge to `main`, never for open pull requests.
 - `release-app.yml` builds, packages and publishes the Flutter app; see
