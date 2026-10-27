@@ -118,6 +118,22 @@ void main() {
       );
     });
 
+    testWidgets('a failed reload keeps the games on the screen', (
+      tester,
+    ) async {
+      final api = await openOnPhone(tester);
+      api.onEntries = (spaceId) async => throw Exception('offline');
+
+      await tester.fling(
+        find.byKey(const Key('page-library')),
+        const Offset(0, 500),
+        1500,
+      );
+      await tester.pumpAndSettle();
+
+      expect(tile(1), findsOneWidget);
+    });
+
     testWidgets('the top bar opens the command palette', (tester) async {
       await openOnPhone(tester);
 

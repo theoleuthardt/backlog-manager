@@ -376,15 +376,14 @@ class _LibraryState extends ConsumerState<_Library> {
   }
 
   /// On a touch screen pulling the list down past its top loads the games
-  /// again; elsewhere [list] stays as it is.
+  /// again, keeping the loaded ones when that fails; elsewhere [list] stays
+  /// as it is.
   Widget _refreshable(Widget list) {
     if (!ShelfFormFactor.isTouch(context)) return list;
     return RefreshIndicator(
-      onRefresh: () {
-        final scope = ref.read(backlogScopeProvider);
-        ref.invalidate(entriesProvider(scope));
-        return ref.read(entriesProvider(scope).future);
-      },
+      onRefresh: () => ref
+          .read(entriesProvider(ref.read(backlogScopeProvider)).notifier)
+          .refresh(),
       child: list,
     );
   }
