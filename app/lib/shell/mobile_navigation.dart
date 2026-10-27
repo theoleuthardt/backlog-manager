@@ -181,6 +181,7 @@ class ShellNavRail extends ConsumerWidget {
                   children: [
                     for (final item in primaryNavigationItems)
                       SizedBox(
+                        width: double.infinity,
                         height: 60,
                         child: _Destination(
                           key: Key('rail-${item.id}'),
@@ -192,6 +193,7 @@ class ShellNavRail extends ConsumerWidget {
                         ),
                       ),
                     SizedBox(
+                      width: double.infinity,
                       height: 60,
                       child: _Destination(
                         key: const Key('nav-more'),

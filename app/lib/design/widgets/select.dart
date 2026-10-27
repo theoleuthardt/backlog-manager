@@ -1,3 +1,4 @@
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
@@ -89,7 +90,7 @@ class ShelfSelectTrigger extends StatelessWidget {
       semanticLabel: semanticLabel,
       builder: (context, state) => SizedBox(
         key: const Key('select-trigger'),
-        height: ShelfHeight.input,
+        height: ShelfFormFactor.heightFor(context, ShelfHeight.input),
         child: DecoratedBox(
           key: const Key('select-surface'),
           decoration: BoxDecoration(

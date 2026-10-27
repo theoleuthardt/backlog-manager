@@ -129,9 +129,10 @@ class ShelfSheet extends StatelessWidget {
 }
 
 /// The footer of a sheet: Cancel with its Esc hint on the left, the primary
-/// action on the right. On a phone in portrait ([ShelfFormFactor], no Esc
-/// key) or narrower than 400 px the hint is left out and the actions wrap
-/// instead of overflowing.
+/// action on the right; when they do not fit beside each other (a large text
+/// size) the primary action goes below. On a phone in portrait
+/// ([ShelfFormFactor], no Esc key) or narrower than 400 px the hint is left
+/// out and the actions wrap.
 class ShelfSheetFooter extends StatelessWidget {
   const ShelfSheetFooter({
     required this.onCancel,
@@ -164,24 +165,31 @@ class ShelfSheetFooter extends StatelessWidget {
               runSpacing: 8,
               children: [cancel, primary],
             )
-          : Row(
+          : OverflowBar(
+              alignment: MainAxisAlignment.spaceBetween,
+              overflowAlignment: OverflowBarAlignment.end,
+              overflowSpacing: 8,
               children: [
-                cancel,
-                const SizedBox(width: 6),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(5),
-                    border: Border.all(color: tokens.borderSubtle),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 1,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    cancel,
+                    const SizedBox(width: 6),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(5),
+                        border: Border.all(color: tokens.borderSubtle),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 1,
+                        ),
+                        child: Text('Esc', style: text.keyHint),
+                      ),
                     ),
-                    child: Text('Esc', style: text.keyHint),
-                  ),
+                  ],
                 ),
-                const Spacer(),
                 primary,
               ],
             ),

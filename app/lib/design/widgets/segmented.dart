@@ -1,3 +1,4 @@
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
@@ -108,7 +109,9 @@ class _ShelfSegmentedState<T> extends State<ShelfSegmented<T>> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 for (final (index, segment) in widget.segments.indexed)
-                  _buildSegment(_keys[index], tokens, text, segment),
+                  Flexible(
+                    child: _buildSegment(_keys[index], tokens, text, segment),
+                  ),
               ],
             ),
           ),
@@ -133,7 +136,7 @@ class _ShelfSegmentedState<T> extends State<ShelfSegmented<T>> {
         borderRadius: 8,
         builder: (context, state) => SizedBox(
           key: key,
-          height: 32,
+          height: ShelfFormFactor.heightFor(context, 32),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
@@ -147,14 +150,20 @@ class _ShelfSegmentedState<T> extends State<ShelfSegmented<T>> {
                   ),
                   const SizedBox(width: 6),
                 ],
-                AnimatedDefaultTextStyle(
-                  duration: const Duration(milliseconds: 180),
-                  style: text.control.copyWith(
-                    color: selected || state.hovered
-                        ? tokens.foreground
-                        : tokens.muted,
+                Flexible(
+                  child: AnimatedDefaultTextStyle(
+                    duration: const Duration(milliseconds: 180),
+                    style: text.control.copyWith(
+                      color: selected || state.hovered
+                          ? tokens.foreground
+                          : tokens.muted,
+                    ),
+                    child: Text(
+                      segment.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  child: Text(segment.label),
                 ),
               ],
             ),

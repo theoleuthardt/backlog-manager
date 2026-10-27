@@ -34,7 +34,13 @@ class AchievementProgressSection extends ConsumerWidget {
         children: [
           const ShelfSpinner(size: 22),
           const SizedBox(width: 10),
-          Text('Loading achievements...', style: style.caption),
+          Flexible(
+            child: Text(
+              'Loading achievements...',
+              overflow: TextOverflow.ellipsis,
+              style: style.caption,
+            ),
+          ),
         ],
       ),
       error: (_, _) => const SizedBox.shrink(),
@@ -52,8 +58,13 @@ class AchievementProgressSection extends ConsumerWidget {
                   color: tokens.text2,
                 ),
                 const SizedBox(width: 6),
-                Text('Achievements', style: style.control),
-                const Spacer(),
+                Expanded(
+                  child: Text(
+                    'Achievements',
+                    overflow: TextOverflow.ellipsis,
+                    style: style.control,
+                  ),
+                ),
                 Text(
                   '${data.unlocked}/${data.total} (${data.percent}%)',
                   key: const Key('achievements-count'),

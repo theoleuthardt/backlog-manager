@@ -1,4 +1,5 @@
 import 'package:backlog_manager/data/filter_providers.dart';
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
@@ -34,7 +35,7 @@ class FilterBar extends ConsumerWidget {
 
     return SizedBox(
       key: const Key('filter-bar'),
-      height: 44,
+      height: ShelfFormFactor.isTouch(context) ? 56 : 44,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: tokens.foreground.withValues(alpha: 0.03),
@@ -43,66 +44,79 @@ class FilterBar extends ConsumerWidget {
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: gutter),
           child: LayoutBuilder(
-            builder: (context, constraints) => Row(
-              children: [
-                Icon(Icons.filter_alt_outlined, size: 14, color: tokens.muted),
-                if (constraints.maxWidth >= _tightMaxWidth) ...[
-                  const SizedBox(width: 6),
-                  Text(
-                    'Filter',
-                    style: style.label.copyWith(color: tokens.muted),
+            builder: (context, constraints) {
+              final room =
+                  constraints.maxWidth /
+                  MediaQuery.textScalerOf(context).scale(1);
+              final tight = room < _tightMaxWidth;
+              final resetInTokens = tight && ShelfFormFactor.isTouch(context);
+              final reset = ShelfButton(
+                key: const Key('filter-reset'),
+                label: 'Reset',
+                kind: ShelfButtonKind.quiet,
+                onPressed: ref.read(filtersProvider.notifier).reset,
+              );
+              return Row(
+                children: [
+                  Icon(
+                    Icons.filter_alt_outlined,
+                    size: 14,
+                    color: tokens.muted,
                   ),
-                  const SizedBox(width: 12),
-                ] else
-                  const SizedBox(width: 8),
-                Expanded(
-                  child: ScrollConfiguration(
-                    behavior: ScrollConfiguration.of(context)
-                        .copyWith(scrollbars: false),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          for (final token in filterTokens(filters)) ...[
-                            _FilterTokenView(token: token),
-                            const SizedBox(width: 8),
+                  if (room >= _tightMaxWidth) ...[
+                    const SizedBox(width: 6),
+                    Text(
+                      'Filter',
+                      style: style.label.copyWith(color: tokens.muted),
+                    ),
+                    const SizedBox(width: 12),
+                  ] else
+                    const SizedBox(width: 8),
+                  Expanded(
+                    child: ScrollConfiguration(
+                      behavior: ScrollConfiguration.of(context)
+                          .copyWith(scrollbars: false),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            for (final token in filterTokens(filters)) ...[
+                              _FilterTokenView(token: token),
+                              const SizedBox(width: 8),
+                            ],
+                            const _AddFilter(),
+                            if (active > 0 && resetInTokens) ...[
+                              const SizedBox(width: 8),
+                              reset,
+                            ],
                           ],
-                          const _AddFilter(),
-                        ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                if (constraints.maxWidth >= _ownedLabelMinWidth) ...[
-                  Text(
-                    'Owned Only',
-                    style: style.caption.copyWith(color: tokens.muted),
+                  const SizedBox(width: 12),
+                  if (room >= _ownedLabelMinWidth) ...[
+                    Text(
+                      'Owned Only',
+                      style: style.caption.copyWith(color: tokens.muted),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  ShelfSwitch(
+                    key: const Key('owned-only'),
+                    label: 'Owned Only',
+                    value: filters.ownedOnly,
+                    onChanged: ref.read(filtersProvider.notifier).setOwnedOnly,
                   ),
-                  const SizedBox(width: 8),
+                  if (active > 0 && !resetInTokens) ...[
+                    const SizedBox(width: 8),
+                    reset,
+                  ],
+                  const SizedBox(width: 12),
+                  _SortAndView(compact: room < _compactMaxWidth, tight: tight),
                 ],
-                ShelfSwitch(
-                  key: const Key('owned-only'),
-                  label: 'Owned Only',
-                  value: filters.ownedOnly,
-                  onChanged: ref.read(filtersProvider.notifier).setOwnedOnly,
-                ),
-                if (active > 0) ...[
-                  const SizedBox(width: 8),
-                  ShelfButton(
-                    key: const Key('filter-reset'),
-                    label: 'Reset',
-                    kind: ShelfButtonKind.quiet,
-                    onPressed: ref.read(filtersProvider.notifier).reset,
-                  ),
-                ],
-                const SizedBox(width: 12),
-                _SortAndView(
-                  compact: constraints.maxWidth < _compactMaxWidth,
-                  tight: constraints.maxWidth < _tightMaxWidth,
-                ),
-              ],
-            ),
+              );
+            },
           ),
         ),
       ),
@@ -219,7 +233,7 @@ class _FilterTokenView extends ConsumerWidget {
           border: Border.all(color: tokens.borderStrong),
         ),
         child: SizedBox(
-          height: 26,
+          height: ShelfFormFactor.heightFor(context, 26),
           child: Row(
             children: [
               ShelfPressable(

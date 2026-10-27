@@ -4,6 +4,7 @@ import 'package:backlog_manager/design/glass.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
 import 'package:backlog_manager/features/appearance/theme_actions.dart';
 import 'package:backlog_manager/features/startup/startup_splash.dart';
+import 'package:backlog_manager/platform/desktop.dart';
 import 'package:backlog_manager/routing/router.dart';
 import 'package:backlog_manager/shell/shell_layout.dart';
 import 'package:backlog_manager/shell/shell_shortcuts.dart';
@@ -24,15 +25,43 @@ class BacklogManagerApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: ref.watch(shelfThemeProvider),
       routerConfig: ref.watch(routerProvider),
-      builder: (context, child) => ShelfFormFactor(
-        compact: shellLayoutOf(context, ref) == ShellLayout.compact,
-        child: AtmosphereSettings(
+      builder: (context, child) {
+        final touch = !ref.watch(isDesktopProvider);
+        final app = AtmosphereSettings(
           blurEnabled: blurEffects,
           child: StartupSplash(
             child: ShellShortcuts(child: child ?? const SizedBox.shrink()),
           ),
+        );
+        return ShelfFormFactor(
+          compact: shellLayoutOf(context, ref) == ShellLayout.compact,
+          touch: touch,
+          child: touch ? _TouchInputs(child: app) : app,
+        );
+      },
+    );
+  }
+}
+
+/// Text fields at least [ShelfFormFactor.minTapTarget] high on a touch
+/// screen; the theme itself keeps the desktop height.
+class _TouchInputs extends StatelessWidget {
+  const _TouchInputs({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Theme(
+      data: theme.copyWith(
+        inputDecorationTheme: theme.inputDecorationTheme.copyWith(
+          constraints: const BoxConstraints(
+            minHeight: ShelfFormFactor.minTapTarget,
+          ),
         ),
       ),
+      child: child,
     );
   }
 }

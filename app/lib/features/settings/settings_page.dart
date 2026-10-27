@@ -265,10 +265,14 @@ class _TabItem extends StatelessWidget {
                     color: active ? tokens.accent : tokens.muted,
                   ),
                   const SizedBox(width: 10),
-                  Text(
-                    tab.label,
-                    style: style.control.copyWith(
-                      color: active ? tokens.foreground : tokens.muted,
+                  Flexible(
+                    child: Text(
+                      tab.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: style.control.copyWith(
+                        color: active ? tokens.foreground : tokens.muted,
+                      ),
                     ),
                   ),
                 ],

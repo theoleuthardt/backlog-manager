@@ -1,4 +1,5 @@
 import 'package:backlog_manager/design/widgets/buttons.dart';
+import 'package:backlog_manager/design/widgets/chips.dart';
 import 'package:backlog_manager/design/widgets/fields.dart';
 import 'package:backlog_manager/design/widgets/sheet.dart';
 import 'package:flutter/material.dart';
@@ -158,6 +159,26 @@ void main() {
       final sheet = tester.getRect(find.byKey(const Key('sheet-surface')));
       expect(sheet.width, ShelfSheetWidth.wide.value);
       expect(sheet.top, 60);
+    });
+  });
+
+  group('on a touch screen', () {
+    testWidgets('a removable chip has a remove target of 48 dp', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await pumpThemed(
+        tester,
+        ShelfChip(label: 'Roguelike', onRemove: () {}),
+        touch: true,
+      );
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      handle.dispose();
+    });
+
+    testWidgets('the desktop keeps the 24 px chip', (tester) async {
+      await pumpThemed(tester, ShelfChip(label: 'Roguelike', onRemove: () {}));
+      expect(tester.getSize(find.byKey(const Key('chip-surface'))).height, 24);
     });
   });
 }

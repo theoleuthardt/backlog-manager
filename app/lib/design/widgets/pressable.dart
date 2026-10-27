@@ -1,3 +1,4 @@
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -104,38 +105,61 @@ class _ShelfPressableState extends State<ShelfPressable> {
             onTapDown: _enabled ? (_) => _set(pressed: true) : null,
             onTapUp: (_) => _set(pressed: false),
             onTapCancel: () => _set(pressed: false),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                AnimatedScale(
-                  scale: state.pressed ? widget.pressedScale : 1,
-                  duration: const Duration(milliseconds: 90),
-                  curve: Curves.easeOut,
-                  child: widget.builder(context, state),
-                ),
-                if (state.focused)
-                  Positioned(
-                    left: -4,
-                    top: -4,
-                    right: -4,
-                    bottom: -4,
-                    child: IgnorePointer(
-                      child: DecoratedBox(
-                        key: const Key('focus-ring'),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(
-                            widget.borderRadius + 2,
+            child: _TapTarget(
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  AnimatedScale(
+                    scale: state.pressed ? widget.pressedScale : 1,
+                    duration: const Duration(milliseconds: 90),
+                    curve: Curves.easeOut,
+                    child: widget.builder(context, state),
+                  ),
+                  if (state.focused)
+                    Positioned(
+                      left: -4,
+                      top: -4,
+                      right: -4,
+                      bottom: -4,
+                      child: IgnorePointer(
+                        child: DecoratedBox(
+                          key: const Key('focus-ring'),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(
+                              widget.borderRadius + 2,
+                            ),
+                            border: Border.all(color: tokens.accent, width: 2),
                           ),
-                          border: Border.all(color: tokens.accent, width: 2),
                         ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// On a touch screen ([ShelfFormFactor.isTouch]) the tappable area around
+/// [child] is at least [ShelfFormFactor.minTapTarget] square; the look keeps
+/// its size and stays centred. Elsewhere the child is left as it is.
+class _TapTarget extends StatelessWidget {
+  const _TapTarget({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!ShelfFormFactor.isTouch(context)) return child;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        minWidth: ShelfFormFactor.minTapTarget,
+        minHeight: ShelfFormFactor.minTapTarget,
+      ),
+      child: Align(widthFactor: 1, heightFactor: 1, child: child),
     );
   }
 }
