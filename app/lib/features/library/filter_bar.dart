@@ -48,6 +48,14 @@ class FilterBar extends ConsumerWidget {
               final room =
                   constraints.maxWidth /
                   MediaQuery.textScalerOf(context).scale(1);
+              final tight = room < _tightMaxWidth;
+              final resetInTokens = tight && ShelfFormFactor.isTouch(context);
+              final reset = ShelfButton(
+                key: const Key('filter-reset'),
+                label: 'Reset',
+                kind: ShelfButtonKind.quiet,
+                onPressed: ref.read(filtersProvider.notifier).reset,
+              );
               return Row(
                 children: [
                   Icon(
@@ -77,6 +85,10 @@ class FilterBar extends ConsumerWidget {
                               const SizedBox(width: 8),
                             ],
                             const _AddFilter(),
+                            if (active > 0 && resetInTokens) ...[
+                              const SizedBox(width: 8),
+                              reset,
+                            ],
                           ],
                         ),
                       ),
@@ -96,20 +108,12 @@ class FilterBar extends ConsumerWidget {
                     value: filters.ownedOnly,
                     onChanged: ref.read(filtersProvider.notifier).setOwnedOnly,
                   ),
-                  if (active > 0) ...[
+                  if (active > 0 && !resetInTokens) ...[
                     const SizedBox(width: 8),
-                    ShelfButton(
-                      key: const Key('filter-reset'),
-                      label: 'Reset',
-                      kind: ShelfButtonKind.quiet,
-                      onPressed: ref.read(filtersProvider.notifier).reset,
-                    ),
+                    reset,
                   ],
                   const SizedBox(width: 12),
-                  _SortAndView(
-                    compact: room < _compactMaxWidth,
-                    tight: room < _tightMaxWidth,
-                  ),
+                  _SortAndView(compact: room < _compactMaxWidth, tight: tight),
                 ],
               );
             },
@@ -229,7 +233,7 @@ class _FilterTokenView extends ConsumerWidget {
           border: Border.all(color: tokens.borderStrong),
         ),
         child: SizedBox(
-          height: 26,
+          height: ShelfFormFactor.heightFor(context, 26),
           child: Row(
             children: [
               ShelfPressable(

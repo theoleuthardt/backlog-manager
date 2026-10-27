@@ -1,4 +1,5 @@
 import 'package:backlog_manager/design/color_math.dart';
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/pressable.dart';
@@ -7,8 +8,9 @@ import 'package:flutter/material.dart';
 enum ShelfChipKind { neutral, active, accent, info, ok, add }
 
 /// A 24 px pill for tags and filter tokens. [onPressed] makes it clickable,
-/// [onRemove] adds a small x on its right. In a space too narrow for the
-/// label the label is cut with an ellipsis.
+/// [onRemove] adds a small x on its right; on a touch screen a removable chip
+/// is as high as a tap target, so its x can be hit. In a space too narrow for
+/// the label the label is cut with an ellipsis.
 class ShelfChip extends StatelessWidget {
   const ShelfChip({
     required this.label,
@@ -59,6 +61,9 @@ class ShelfChip extends StatelessWidget {
         ),
       );
       final decoration = _decoration(tokens, hovered);
+      final height = onRemove == null
+          ? 24.0
+          : ShelfFormFactor.heightFor(context, 24);
       if (kind == ShelfChipKind.add) {
         return CustomPaint(
           key: const Key('chip-dashed-border'),
@@ -69,7 +74,7 @@ class ShelfChip extends StatelessWidget {
             key: const Key('chip-surface'),
             decoration: decoration,
             child: SizedBox(
-              height: 24,
+              height: height,
               child: Center(widthFactor: 1, child: content),
             ),
           ),
@@ -79,7 +84,7 @@ class ShelfChip extends StatelessWidget {
         key: const Key('chip-surface'),
         decoration: decoration,
         child: SizedBox(
-          height: 24,
+          height: height,
           child: Center(widthFactor: 1, child: content),
         ),
       );

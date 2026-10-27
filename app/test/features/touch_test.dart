@@ -1,4 +1,6 @@
+import 'package:backlog_manager/data/filter_providers.dart';
 import 'package:backlog_manager/data/games_api.dart';
+import 'package:backlog_manager/domain/filter_tokens.dart';
 import 'package:backlog_manager/platform/desktop.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
@@ -68,6 +70,26 @@ void main() {
             FakeBacklogApi(entries: const [hades, celeste]),
             overrides: mobile,
           );
+          await resize(tester, size);
+          expect(tester.takeException(), isNull);
+          await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+          handle.dispose();
+        });
+
+        testWidgets('the library with a filter at text scale $scale', (
+          tester,
+        ) async {
+          final handle = tester.ensureSemantics();
+          tester.platformDispatcher.textScaleFactorTestValue = scale;
+          addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+          final container = await pumpLibrary(
+            tester,
+            FakeBacklogApi(entries: const [hades, celeste]),
+            overrides: mobile,
+          );
+          container.read(filtersProvider.notifier).setList(FilterField.genre, [
+            'Roguelike',
+          ]);
           await resize(tester, size);
           expect(tester.takeException(), isNull);
           await expectLater(tester, meetsGuideline(androidTapTargetGuideline));

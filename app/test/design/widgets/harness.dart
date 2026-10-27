@@ -8,19 +8,24 @@ import 'package:flutter_test/flutter_test.dart';
 ShelfTokens tokensOf(String id) => ShelfTokens.forTheme(resolveTheme(id, []));
 
 /// Wraps [child] in the app theme of [themeId] on the background colour; a
-/// [compact] app is a phone in portrait ([ShelfFormFactor]).
+/// [compact] app is a phone in portrait and a [touch] app runs on a touch
+/// screen ([ShelfFormFactor]).
 Widget themed(
   String themeId,
   Widget child, {
   double? width,
   bool compact = false,
+  bool touch = false,
 }) {
   final tokens = tokensOf(themeId);
   return MaterialApp(
     debugShowCheckedModeBanner: false,
     theme: buildShelfTheme(tokens),
-    builder: (context, app) =>
-        ShelfFormFactor(compact: compact, child: app ?? const SizedBox()),
+    builder: (context, app) => ShelfFormFactor(
+      compact: compact,
+      touch: touch,
+      child: app ?? const SizedBox(),
+    ),
     home: Material(
       color: tokens.background,
       child: Align(
@@ -40,9 +45,10 @@ Future<void> pumpThemed(
   String themeId = 'shelfOled',
   double? width,
   bool compact = false,
+  bool touch = false,
 }) async {
   await tester.pumpWidget(
-    themed(themeId, child, width: width, compact: compact),
+    themed(themeId, child, width: width, compact: compact, touch: touch),
   );
   await tester.pumpAndSettle();
 }
