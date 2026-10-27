@@ -46,9 +46,11 @@ Widget? systemTrailerPlayer(BuildContext context, Uri embedUrl) {
 }
 
 /// Whether the trailer web view may load [url]: a frame inside the page
-/// always, the page itself only from the app's own origin or YouTube.
+/// always, the page itself only from the app's own origin or YouTube, or the
+/// blank page (`about:`) a web view reports while it loads a page from a
+/// string.
 bool trailerNavigationAllowed(Uri? url, {required bool mainFrame}) {
-  if (!mainFrame) return true;
+  if (!mainFrame || url?.scheme == 'about') return true;
   final host = url?.host ?? '';
   return host == Uri.parse(trailerOrigin).host ||
       host == 'www.youtube-nocookie.com' ||

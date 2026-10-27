@@ -31,6 +31,13 @@ void main() {
       expect(trailerNavigationAllowed(null, mainFrame: true), isFalse);
     });
 
+    test('lets the web view open its blank start page', () {
+      expect(
+        trailerNavigationAllowed(Uri.parse('about:blank'), mainFrame: true),
+        isTrue,
+      );
+    });
+
     test('lets the frames inside the page load', () {
       expect(
         trailerNavigationAllowed(
