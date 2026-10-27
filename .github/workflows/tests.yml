@@ -27,7 +27,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: "22"
+          node-version-file: .nvmrc
 
       - name: Run release script tests
         run: node --test scripts/release-version.test.mjs scripts/app-update-manifest.test.mjs deploy/deploy.test.mjs deploy/backup.test.mjs deploy/crons.test.mjs
