@@ -4,6 +4,7 @@ vars:
   FRONTEND_DIR: frontend
   BACKEND_DIR: backend
   APP_DIR: app
+  MONITOR_DIR: monitor
   APP_PLATFORM: '{{if eq OS "darwin"}}macos{{else}}{{OS}}{{end}}'
 
 tasks:
@@ -14,11 +15,12 @@ tasks:
     silent: true
 
   install:
-    desc: Install frontend, backend and Flutter app dependencies
+    desc: Install frontend, backend, Flutter app and Monitor dependencies
     cmds:
       - task: frontend:install
       - task: backend:install
       - task: app:install
+      - task: monitor:install
 
   dev:
     desc: Run the Vite and backend dev servers
@@ -32,41 +34,46 @@ tasks:
       - task: frontend:build
 
   lint:
-    desc: Lint frontend and backend
+    desc: Lint frontend, backend, Flutter app and Monitor
     cmds:
       - task: frontend:lint
       - task: backend:lint
       - task: app:lint
+      - task: monitor:lint
 
   test:
-    desc: Run the backend and frontend test suites
+    desc: Run the backend, frontend, Flutter app and Monitor test suites
     cmds:
       - task: backend:test
       - task: frontend:test
       - task: app:test
+      - task: monitor:test
       - task: release:test
 
   check:
-    desc: Lint + typecheck + format-check the frontend, lint + format-check the backend
+    desc: Lint + typecheck + format-check the frontend, lint + format-check the backend, the Flutter app and the Monitor
     cmds:
       - task: frontend:check
       - task: backend:lint
       - task: app:lint
+      - task: monitor:lint
       - task: format:check
 
   format:
-    desc: Format the frontend (prettier) and backend (ruff format)
+    desc: Format the frontend (prettier), backend (ruff format), Flutter app (dart format) and Monitor (Spotless)
     cmds:
       - task: frontend:format
       - task: backend:format
       - task: app:format
+      - task: monitor:format
 
   format:check:
-    desc: Check frontend and backend formatting without changing files
+    desc: Check frontend, backend, Flutter app and Monitor formatting without changing files
     cmds:
       - task: frontend:format:check
       - task: backend:format:check
       - task: app:format:check
+      - task: monitor:format:check
 
   db:up:
     desc: Start local Postgres + pgAdmin via compose.yml
@@ -314,6 +321,48 @@ tasks:
         platforms: [linux]
       - cmd: bash tool/package/rpm.sh
         platforms: [linux]
+
+  monitor:install:
+    desc: Download the Monitor's Maven dependencies and plugins (needs a JDK 25, see monitor/README.md)
+    dir: "{{.MONITOR_DIR}}"
+    cmds:
+      - ./mvnw -B -q dependency:go-offline
+
+  monitor:dev:
+    desc: Run the Monitor (Spring Boot) on http://localhost:8080
+    dir: "{{.MONITOR_DIR}}"
+    cmds:
+      - ./mvnw spring-boot:run
+
+  monitor:lint:
+    desc: Compile the Monitor and its tests with -Xlint:all -Werror
+    dir: "{{.MONITOR_DIR}}"
+    cmds:
+      - ./mvnw -B -q test-compile
+
+  monitor:test:
+    desc: Run the Monitor's tests
+    dir: "{{.MONITOR_DIR}}"
+    cmds:
+      - ./mvnw -B test
+
+  monitor:build:
+    desc: Build the Monitor's executable jar (monitor/target/), tests included
+    dir: "{{.MONITOR_DIR}}"
+    cmds:
+      - ./mvnw -B package
+
+  monitor:format:
+    desc: Format the Monitor (Spotless with palantir-java-format)
+    dir: "{{.MONITOR_DIR}}"
+    cmds:
+      - ./mvnw -B -q spotless:apply
+
+  monitor:format:check:
+    desc: Check the Monitor's formatting without changing files
+    dir: "{{.MONITOR_DIR}}"
+    cmds:
+      - ./mvnw -B -q spotless:check
 
   vscode:setup-python:
     desc: Point VS Code/VSCodium's Python tooling at backend/.venv (run once per machine/checkout)
