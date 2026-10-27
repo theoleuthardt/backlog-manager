@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# Packs the iOS release build (flutter build ios --release --no-codesign) as an
-# unsigned IPA: Payload/Runner.app in a zip. The user signs and installs it
-# with a signing tool such as KravaSigner; there is no Apple Developer account.
 set -euo pipefail
 
 cd "$(dirname "$0")/../.."
