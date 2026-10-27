@@ -10,9 +10,10 @@ and opens its page.
 
 1. **Feed.** `GithubReleaseSource` (`lib/data/release_source.dart`) lists the
    newest releases and reads the `app-update.json` of the first one that has it.
-   Flutter releases are pre-releases until the cutover, so the list is read and
-   not `releases/latest`; a release without that asset is skipped, and without
-   any manifest the answer is the latest stable release (notify-only).
+   The list is read rather than `releases/latest`, because the Preview channel
+   also takes pre-releases, which `releases/latest` leaves out; a release
+   without that asset is skipped, and without any manifest the answer is the
+   latest stable release (notify-only).
 2. **Payload.** The manifest has one payload per `{os}-{arch}-{format}` key:
    `linux-x64-appimage`, `macos-universal-dmg`, `windows-x64-exe`. An install
    looks up its own key (`UpdateInstaller.payloadKey`), so a DEB or RPM install
@@ -43,7 +44,7 @@ The manifest is read as text and decoded in the app (`GithubReleaseSource._readM
 
 ## Update channel
 
-Settings, Updates (a tab of its own between Backups and About, #430) has an **Update Channel** switch (`Stable` or `Preview`, `data/update_channel.dart`, kept on the device, not in the account). Stable only takes releases that are not marked as a pre-release; Preview takes the newest release with an `app-update.json` whatever its mark, so it also gets the pre-releases. The check uses the channel (`releaseSourceProvider` follows `updateChannelProvider`), and choosing a channel checks again at once. The default is **Preview** while every release of the Flutter client is a pre-release (before the cutover, #287): a Stable default would find nothing to update to. At the cutover the default flips to Stable (`UpdateChannelNotifier.build`).
+Settings, Updates (a tab of its own between Backups and About, #430) has an **Update Channel** switch (`Stable` or `Preview`, `data/update_channel.dart`, kept on the device, not in the account). Stable only takes releases that are not marked as a pre-release; Preview takes the newest release with an `app-update.json` whatever its mark, so it also gets the pre-releases. The check uses the channel (`releaseSourceProvider` follows `updateChannelProvider`), and choosing a channel checks again at once. The default is **Stable** (`UpdateChannelNotifier.build`): since the cutover (#287) the Flutter client has full releases, starting with 0.9.13. Before, while every release was a pre-release, the default was Preview; a channel the user chose is kept, so whoever picked Preview stays on it.
 
 ## Keys
 
@@ -78,4 +79,4 @@ The payloads are signed with an Ed25519 key pair that only the project has.
   the controller (download, refuse, restart, failure keeps the version).
 - What only a real machine shows: the macOS and Windows installers and the
   restart. Test them with a pre-release of a version above the installed one
-  (`release-app.yml` with `publish` and `prerelease` on).
+  (`release-app.yml` with `publish` and `prerelease` on, then the Preview channel in the app).

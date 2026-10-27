@@ -44,18 +44,23 @@ void main() {
   });
 
   group('the update channel setting', () {
-    test('is preview until the user chooses, as long as every Flutter release is a pre-release', () {
-      final container = containerWith(MemoryChannelStore());
+    test(
+      'is stable until the user chooses, now that the app has full releases',
+      () {
+        final container = containerWith(MemoryChannelStore());
 
-      expect(container.read(updateChannelProvider), UpdateChannel.preview);
-    });
+        expect(container.read(updateChannelProvider), UpdateChannel.stable);
+      },
+    );
 
     test('loads the channel kept on the device', () async {
-      final container = containerWith(MemoryChannelStore(UpdateChannel.stable));
+      final container = containerWith(
+        MemoryChannelStore(UpdateChannel.preview),
+      );
       container.read(updateChannelProvider);
       await Future<void>.delayed(Duration.zero);
 
-      expect(container.read(updateChannelProvider), UpdateChannel.stable);
+      expect(container.read(updateChannelProvider), UpdateChannel.preview);
     });
 
     test('choosing a channel applies it at once and keeps it', () async {
@@ -75,15 +80,15 @@ void main() {
       'a choice made before the stored value arrives is not overwritten',
       () async {
         final container = containerWith(
-          MemoryChannelStore(UpdateChannel.preview),
+          MemoryChannelStore(UpdateChannel.stable),
         );
 
         container
             .read(updateChannelProvider.notifier)
-            .select(UpdateChannel.stable);
+            .select(UpdateChannel.preview);
         await Future<void>.delayed(Duration.zero);
 
-        expect(container.read(updateChannelProvider), UpdateChannel.stable);
+        expect(container.read(updateChannelProvider), UpdateChannel.preview);
       },
     );
 
@@ -93,23 +98,23 @@ void main() {
       container.read(updateChannelProvider);
       await Future<void>.delayed(Duration.zero);
 
-      expect(container.read(updateChannelProvider), UpdateChannel.preview);
+      expect(container.read(updateChannelProvider), UpdateChannel.stable);
     });
 
     test('the release source follows the channel', () {
       final container = containerWith(MemoryChannelStore());
       expect(
         (container.read(releaseSourceProvider) as GithubReleaseSource).channel,
-        UpdateChannel.preview,
+        UpdateChannel.stable,
       );
 
       container
           .read(updateChannelProvider.notifier)
-          .select(UpdateChannel.stable);
+          .select(UpdateChannel.preview);
 
       expect(
         (container.read(releaseSourceProvider) as GithubReleaseSource).channel,
-        UpdateChannel.stable,
+        UpdateChannel.preview,
       );
     });
   });

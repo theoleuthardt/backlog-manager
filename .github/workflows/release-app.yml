@@ -14,10 +14,10 @@ on:
         type: boolean
         default: false
       prerelease:
-        description: Mark the release as a pre-release (keeps it out of the Tauri updater feed until the cutover)
+        description: Mark the release as a pre-release (only the Preview update channel offers it)
         required: false
         type: boolean
-        default: true
+        default: false
 
 permissions:
   contents: read
@@ -114,7 +114,7 @@ jobs:
       - name: Build and package
         shell: bash
         env:
-          API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+          API_URL: ${{ vars.API_URL }}
         run: task app:package API_URL="$API_URL"
 
       - name: Upload installers

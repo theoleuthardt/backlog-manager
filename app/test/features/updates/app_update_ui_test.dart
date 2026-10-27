@@ -172,7 +172,7 @@ void main() {
 
         expect(find.text('You are on the latest version.'), findsNothing);
         expect(
-          find.text('You are ahead of the newest Preview release (0.9.2).'),
+          find.text('You are ahead of the newest Stable release (0.9.2).'),
           findsOneWidget,
         );
         expect(find.text('Old notes'), findsNothing);

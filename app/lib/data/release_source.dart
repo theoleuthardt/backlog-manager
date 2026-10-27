@@ -19,15 +19,15 @@ const _repositoryUrl =
 const _manifestAsset = 'app-update.json';
 
 /// Finds the newest release that published an `app-update.json` and reads it,
-/// so the app can update itself in place. The Flutter releases are
-/// pre-releases until the cutover and `releases/latest` does not return those,
-/// so the list is read first; without a manifest anywhere the answer is
+/// so the app can update itself in place. The Preview channel also takes
+/// pre-releases and `releases/latest` does not return those, so the list is
+/// read first; without a manifest anywhere the answer is
 /// `releases/latest`, which GitHub already answers without drafts and
 /// pre-releases, and the app only points at the release page. On the stable
 /// channel the pre-releases of the list are skipped, on the preview channel
 /// they count.
 class GithubReleaseSource implements ReleaseSource {
-  GithubReleaseSource([Dio? dio, this.channel = UpdateChannel.preview])
+  GithubReleaseSource([Dio? dio, this.channel = UpdateChannel.stable])
     : _dio =
           dio ??
           Dio(
