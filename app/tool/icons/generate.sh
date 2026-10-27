@@ -23,6 +23,10 @@ rsvg-convert -w 512 -h 512 "$work/full.svg" -o linux/packaging/icon.png
 
 sed -e 's/viewBox="0 0 1024 1024"/viewBox="100 100 824 824"/' -e 's/ clip-path="url(#tile)"//' \
   "$source_svg" > "$work/square.svg"
+if ! grep -q 'viewBox="100 100 824 824"' "$work/square.svg" || grep -q 'clip-path="url(#tile)"' "$work/square.svg"; then
+  echo "icon.svg changed its viewBox or tile clip path, update the crop in $0" >&2
+  exit 1
+fi
 
 ios_icons=ios/Runner/Assets.xcassets/AppIcon.appiconset
 for entry in 20x20@1x:20 20x20@2x:40 20x20@3x:60 29x29@1x:29 29x29@2x:58 29x29@3x:87 \

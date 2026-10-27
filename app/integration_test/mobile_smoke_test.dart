@@ -16,13 +16,14 @@ import 'fake_backend.dart';
 
 const _server = 'http://fake.local';
 
-/// The smoke test of a mobile build on a device or emulator: the real app
-/// with the real token and theme stores (the platform's keystore and
-/// preferences), so a plugin without an Android or iOS implementation fails
-/// here. Only the backend is the in-memory one of the desktop flows. The
-/// layout is not checked: overflow errors are dropped until the responsive
-/// shell (#521) and its golden tests at phone and handheld sizes take over;
-/// every other error still fails the test.
+/// The smoke test of a mobile build on a device or emulator (CI runs it on an
+/// Android emulator): the real app with the real token and theme stores (the
+/// platform's keystore and preferences), so a plugin without an
+/// implementation for that platform fails here. Only the backend is the
+/// in-memory one of the desktop flows. The layout is not checked: RenderFlex
+/// overflows are logged instead of failing until the responsive shell (#521)
+/// and its golden tests at phone and handheld sizes take over; every other
+/// error still fails the test.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   atmosphereMotion = false;
@@ -33,7 +34,13 @@ void main() {
   ) async {
     final reportError = FlutterError.onError;
     FlutterError.onError = (details) {
-      if (details.exceptionAsString().contains('overflowed')) return;
+      final message = details.exceptionAsString();
+      if (message.startsWith('A RenderFlex overflowed')) {
+        debugPrint(
+          'Layout overflow, left to #521: ${message.split('\n').first}',
+        );
+        return;
+      }
       reportError?.call(details);
     };
     addTearDown(() => FlutterError.onError = reportError);
