@@ -110,7 +110,17 @@ void main() {
         (_) => (status: 201, body: {'requires_2fa': false}),
       );
 
-      expect(apiFor(server).login('a@b.de', 'x'), throwsA(isA<ApiException>()));
+      expect(
+        apiFor(server).login('a@b.de', 'x'),
+        throwsA(
+          isA<ApiException>().having(
+            (e) => e.message,
+            'message',
+            'The server answered the sign-in without a session. '
+                'Check the server address.',
+          ),
+        ),
+      );
     });
 
     test('lets the error of the backend through', () async {

@@ -11,6 +11,7 @@ import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/design/widgets/fields.dart';
 import 'package:backlog_manager/design/widgets/sheet.dart';
 import 'package:backlog_manager/domain/sanitize.dart';
+import 'package:backlog_manager/features/auth/sign_in_failure_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -117,8 +118,12 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                 style: text.body.copyWith(color: tokens.muted),
               ),
               const SizedBox(height: 28),
-              if (flow.error != null) ...[
-                ShelfBanner(message: flow.error!),
+              if (flow.failure case final failure?) ...[
+                ShelfBanner(
+                  message: failure.title,
+                  actionLabel: failure.hasMore ? 'Details' : null,
+                  onAction: () => showSignInFailureSheet(context, failure),
+                ),
                 const SizedBox(height: 18),
               ],
               if (twoFactor)

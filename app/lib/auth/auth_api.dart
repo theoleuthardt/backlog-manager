@@ -53,7 +53,12 @@ class ApiAuthApi implements AuthApi {
       return LoginNeedsTwoFactor(challenge);
     }
     final token = result.accessToken;
-    if (token == null) throw const ApiException('Login failed');
+    if (token == null) {
+      throw const ApiException(
+        'The server answered the sign-in without a session. '
+        'Check the server address.',
+      );
+    }
     return LoginSucceeded(token);
   }
 

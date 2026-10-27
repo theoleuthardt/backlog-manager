@@ -1,6 +1,7 @@
 import 'package:backlog_manager/design/color_math.dart';
 import 'package:backlog_manager/design/widgets/banner.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'harness.dart';
@@ -47,9 +48,71 @@ void main() {
     handle.dispose();
   });
 
+  testWidgets('offers an action next to the message', (tester) async {
+    var opened = 0;
+    await pumpThemed(
+      tester,
+      ShelfBanner(
+        message: 'Server not reachable',
+        actionLabel: 'Details',
+        onAction: () => opened++,
+      ),
+      width: 360,
+    );
+
+    await tester.tap(find.byKey(const Key('error-banner-action')));
+    expect(opened, 1);
+    expect(find.text('Details'), findsOneWidget);
+  });
+
+  testWidgets('the action can be reached and used with the keyboard', (
+    tester,
+  ) async {
+    var opened = 0;
+    await pumpThemed(
+      tester,
+      ShelfBanner(
+        message: 'Server not reachable',
+        actionLabel: 'Details',
+        onAction: () => opened++,
+      ),
+      width: 360,
+    );
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.space);
+    await tester.pump();
+
+    expect(opened, 2);
+  });
+
+  testWidgets('has no action without a label', (tester) async {
+    await pumpThemed(
+      tester,
+      const ShelfBanner(message: 'Invalid email or password'),
+      width: 360,
+    );
+
+    expect(find.byKey(const Key('error-banner-action')), findsNothing);
+  });
+
   goldenInBothThemes(
     'banner',
     () => const ShelfBanner(message: 'Your session has ended. Sign in again.'),
+    size: const Size(420, 100),
+    width: 380,
+  );
+
+  goldenInBothThemes(
+    'banner_with_action',
+    () => ShelfBanner(
+      message: 'Server not reachable',
+      actionLabel: 'Details',
+      onAction: () {},
+    ),
     size: const Size(420, 100),
     width: 380,
   );

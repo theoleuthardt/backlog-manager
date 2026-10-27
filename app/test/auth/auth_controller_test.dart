@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/auth/auth_api.dart';
 import 'package:backlog_manager/auth/auth_controller.dart';
 import 'package:backlog_manager/auth/token_store.dart';
 import 'package:backlog_manager/routing/session.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -21,10 +23,36 @@ ProviderContainer containerWith(FakeAuthApi api, MemoryTokenStore store) {
     overrides: [
       authApiProvider.overrideWithValue(api),
       tokenStoreProvider.overrideWithValue(store),
+      signInClockProvider.overrideWithValue(() => signInTime),
     ],
   );
   addTearDown(container.dispose);
   return container;
+}
+
+final signInTime = DateTime(2026, 10, 27, 8, 10, 23);
+
+DioException refused(String path) => DioException(
+  requestOptions: RequestOptions(
+    baseUrl: 'https://blm.example.dev',
+    path: path,
+  ),
+  error: const SocketException(
+    'Connection refused',
+    osError: OSError('Connection refused', 111),
+  ),
+);
+
+void expectRefused(LoginFlow flow) {
+  expect(flow.error, 'Server not reachable');
+  expect(
+    flow.failure?.explanation,
+    'blm.example.dev refused the connection. The server may be down.',
+  );
+  expect(
+    flow.failure?.details,
+    'connection refused · blm.example.dev · 08:10:23',
+  );
 }
 
 AuthController controllerOf(ProviderContainer container) =>
@@ -100,6 +128,16 @@ void main() {
       expect(store.token, 'jwt');
       expect(flow().error, 'Could not reach the server');
     });
+
+    test('names the cause when the server cannot be reached', () async {
+      store.token = 'jwt';
+      api.onCurrentUser = () async => throw refused('/api/user/me');
+
+      await controllerOf(container).restore();
+
+      expect(store.token, 'jwt');
+      expectRefused(flow());
+    });
   });
 
   group('signing in with a password', () {
@@ -142,6 +180,16 @@ void main() {
       expect(flow().busy, isFalse);
       expect(session(), isA<SessionSignedOut>());
       expect(store.token, isNull);
+    });
+
+    test('names the cause when the server cannot be reached', () async {
+      api.onLogin = (email, password) async => throw refused('/api/auth/login');
+
+      await controllerOf(container).login('a@b.de', 'secret-password');
+
+      expectRefused(flow());
+      expect(flow().busy, isFalse);
+      expect(session(), isA<SessionSignedOut>());
     });
 
     test('clears an old error when the next attempt starts', () async {
@@ -225,6 +273,16 @@ void main() {
       expect(flow().error, 'Invalid verification code');
       expect(flow().step, LoginStep.twoFactor);
       expect(flow().busy, isFalse);
+    });
+
+    test('names the cause when the code cannot be sent', () async {
+      api.onVerify = (challenge, code) async =>
+          throw refused('/api/auth/2fa/login-verify');
+
+      await controllerOf(container).verify('123456');
+
+      expectRefused(flow());
+      expect(flow().step, LoginStep.twoFactor);
     });
 
     test('discards a code answer that arrives after starting over', () async {
