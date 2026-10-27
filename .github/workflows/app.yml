@@ -8,6 +8,12 @@ on:
       - "app/**"
       - "backend/openapi.json"
       - ".github/workflows/app.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "app/**"
+      - ".github/workflows/app.yml"
 
 concurrency:
   group: app-${{ github.ref }}
@@ -16,6 +22,7 @@ concurrency:
 jobs:
   checks:
     name: App Analyze, Format, Client and Tests
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
 
     permissions:
@@ -59,6 +66,7 @@ jobs:
 
   goldens:
     name: App Golden Tests
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
 
     permissions:
@@ -97,6 +105,7 @@ jobs:
 
   linux-build:
     name: App Linux Build
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
 
     permissions:
@@ -141,6 +150,7 @@ jobs:
 
   integration:
     name: App Integration Tests
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
 
     permissions:
@@ -181,9 +191,9 @@ jobs:
           -d linux
 
   android-build:
-    name: App Android Build and Smoke Test
+    name: App Android Build
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
 
     permissions:
       contents: read
@@ -237,6 +247,53 @@ jobs:
           path: app/build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
 
+  android-smoke:
+    name: App Android Smoke Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    permissions:
+      contents: read
+
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+          cache-dependency-path: |
+            app/android/*.gradle*
+            app/android/app/*.gradle*
+            app/android/gradle/wrapper/gradle-wrapper.properties
+
+      - name: Cache the NDK and CMake
+        uses: actions/cache@v4
+        with:
+          path: |
+            /usr/local/lib/android/sdk/ndk/28.2.13676358
+            /usr/local/lib/android/sdk/cmake/3.22.1
+          key: android-ndk-28.2.13676358-cmake-3.22.1
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: app/pubspec.yaml
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
       - name: Enable KVM
         working-directory: .
         run: |
@@ -283,6 +340,7 @@ jobs:
 
   ios-build:
     name: App iOS Build
+    if: github.event_name == 'pull_request'
     runs-on: macos-latest
     timeout-minutes: 30
 
