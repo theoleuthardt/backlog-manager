@@ -4,6 +4,9 @@ on:
   pull_request:
     branches:
       - main
+    paths:
+      - "backend/**"
+      - ".github/workflows/build.yml"
 
 permissions:
   contents: read
