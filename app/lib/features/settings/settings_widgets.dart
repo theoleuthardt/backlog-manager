@@ -9,7 +9,9 @@ import 'package:flutter/material.dart';
 /// text when the field loses the focus or Enter is pressed, for secrets that
 /// are only worth sending once they are complete. Enter followed by a blur
 /// calls it twice with the same text, so a caller must clear or ignore a text
-/// it has already taken.
+/// it has already taken. Where it has less room than [width] and its
+/// trailing room (the stacked rows of a phone) the field takes what is left,
+/// and the trailing room is only kept when there is a [trailing].
 class SettingsTextField extends StatefulWidget {
   const SettingsTextField({
     required this.fieldKey,
@@ -60,11 +62,32 @@ class _SettingsTextFieldState extends State<SettingsTextField> {
   @override
   Widget build(BuildContext context) {
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const trailingRoom = 118.0;
+        final narrow = constraints.maxWidth < widget.width + trailingRoom;
+        final keepTrailing = !narrow || widget.trailing != null;
+        final fieldWidth = narrow
+            ? (constraints.maxWidth - (keepTrailing ? trailingRoom : 0)).clamp(
+                120.0,
+                widget.width,
+              )
+            : widget.width;
+        return _row(style, fieldWidth, keepTrailing: keepTrailing);
+      },
+    );
+  }
+
+  Widget _row(
+    ShelfTextStyles style,
+    double fieldWidth, {
+    required bool keepTrailing,
+  }) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         SizedBox(
-          width: widget.width,
+          width: fieldWidth,
           height: ShelfHeight.input,
           child: TextField(
             key: widget.fieldKey,
@@ -78,12 +101,17 @@ class _SettingsTextFieldState extends State<SettingsTextField> {
             decoration: InputDecoration(hintText: widget.hintText),
           ),
         ),
-        const SizedBox(width: 8),
-        SizedBox(
-          width: 110,
-          height: ShelfHeight.input,
-          child: Align(alignment: Alignment.centerLeft, child: widget.trailing),
-        ),
+        if (keepTrailing) ...[
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 110,
+            height: ShelfHeight.input,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: widget.trailing,
+            ),
+          ),
+        ],
       ],
     );
   }

@@ -9,6 +9,7 @@ import 'package:backlog_manager/data/entry_image.dart';
 import 'package:backlog_manager/data/game_info_providers.dart';
 import 'package:backlog_manager/data/space_api.dart';
 import 'package:backlog_manager/design/color_math.dart';
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
@@ -343,14 +344,16 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
       _CreateState.failed => 'Failed',
       _CreateState.idle => 'Add Game',
     };
+    final gutter = ShelfFormFactor.isCompact(context) ? 16.0 : 28.0;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(28, 22, 28, 12),
+      padding: EdgeInsets.fromLTRB(gutter, 22, gutter, 12),
       child: Row(
         children: [
           Expanded(
             child: Text(
               _prefill.custom ? 'New custom game' : 'New Game',
               style: style.page,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           ShelfButton(

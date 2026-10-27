@@ -1,5 +1,6 @@
 import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/data/game_info_providers.dart';
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
@@ -145,7 +146,9 @@ class _AddGameSheetState extends ConsumerState<AddGameSheet> {
             const SizedBox(width: 8),
             ShelfButton(
               key: const Key('add-continue'),
-              label: 'Continue in Creation Tool',
+              label: ShelfFormFactor.isCompact(context)
+                  ? 'Continue'
+                  : 'Continue in Creation Tool',
               kind: ShelfButtonKind.primary,
               onPressed: _selected == null ? null : _continue,
             ),

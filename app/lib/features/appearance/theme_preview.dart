@@ -89,14 +89,15 @@ class ThemePreview extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 14),
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
                       ShelfButton(
                         label: 'Primary',
                         kind: ShelfButtonKind.primary,
                         onPressed: () {},
                       ),
-                      const SizedBox(width: 8),
                       ShelfButton(label: 'Secondary', onPressed: () {}),
                     ],
                   ),

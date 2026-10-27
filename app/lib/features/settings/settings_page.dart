@@ -26,6 +26,7 @@ import 'package:backlog_manager/platform/url_opener.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/routing/session.dart';
 import 'package:backlog_manager/shell/app_version.dart';
+import 'package:backlog_manager/shell/shell_layout.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -50,7 +51,10 @@ enum SettingsTab {
 const _autosaveDelay = Duration(milliseconds: 800);
 
 /// The settings window: a list of tabs with the account at its foot, and the
-/// settings of the tab in groups of rows. Settings save themselves.
+/// settings of the tab in groups of rows. Settings save themselves. On a phone
+/// in portrait the list of tabs is a screen of its own and each tab opens on
+/// its own screen with a way back to the list; elsewhere the tabs stay beside
+/// the content, in a list that scrolls when the screen is low.
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({this.initialTab, super.key});
 
@@ -65,17 +69,86 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   late SettingsTab _tab =
       SettingsTab.values.where((t) => t.id == widget.initialTab).firstOrNull ??
       SettingsTab.general;
+  late bool _listOpen = widget.initialTab == null;
 
   SessionUser? get _user {
     final session = ref.watch(sessionProvider);
     return session is SessionSignedIn ? session.user : null;
   }
 
+  Widget _content(SessionUser user, {required bool compact}) => Column(
+    key: const Key('settings-tab-content'),
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      if (compact)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: ShelfButton(
+              key: const Key('settings-tabs-back'),
+              label: 'Settings',
+              icon: Icons.arrow_back,
+              kind: ShelfButtonKind.quiet,
+              onPressed: () => setState(() => _listOpen = true),
+            ),
+          ),
+        ),
+      Expanded(
+        child: SingleChildScrollView(
+          padding: compact
+              ? const EdgeInsets.fromLTRB(16, 12, 16, 22)
+              : const EdgeInsets.fromLTRB(26, 22, 26, 22),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 820),
+            child: switch (_tab) {
+              SettingsTab.general => _GeneralTab(user: user),
+              SettingsTab.security => SecurityTab(user: user),
+              SettingsTab.integrations => _IntegrationsTab(user: user),
+              SettingsTab.backups => const BackupsTab(),
+              SettingsTab.updates => const _UpdatesTab(),
+              SettingsTab.about => const _AboutTab(),
+            },
+          ),
+        ),
+      ),
+      const _StatusLine(),
+    ],
+  );
+
   @override
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final user = _user;
     final collapsed = ref.watch(sidebarCollapsedProvider);
+    if (shellLayoutOf(context, ref) == ShellLayout.compact) {
+      if (user != null && !_listOpen) {
+        return KeyedSubtree(
+          key: const Key('page-settings'),
+          child: _content(user, compact: true),
+        );
+      }
+      return ListView(
+        key: const Key('page-settings'),
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        children: [
+          for (final tab in SettingsTab.values)
+            _TabItem(
+              tab: tab,
+              active: false,
+              onPressed: () => setState(() {
+                _tab = tab;
+                _listOpen = false;
+              }),
+            ),
+          if (user != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: _AccountRow(user: user),
+            ),
+        ],
+      );
+    }
     return Row(
       key: const Key('page-settings'),
       children: [
@@ -113,13 +186,19 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           ),
                         ),
                       ),
-                      for (final tab in SettingsTab.values)
-                        _TabItem(
-                          tab: tab,
-                          active: tab == _tab,
-                          onPressed: () => setState(() => _tab = tab),
+                      Expanded(
+                        child: ListView(
+                          padding: EdgeInsets.zero,
+                          children: [
+                            for (final tab in SettingsTab.values)
+                              _TabItem(
+                                tab: tab,
+                                active: tab == _tab,
+                                onPressed: () => setState(() => _tab = tab),
+                              ),
+                          ],
                         ),
-                      const Spacer(),
+                      ),
                       if (user != null) _AccountRow(user: user),
                     ],
                   ),
@@ -131,30 +210,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         Expanded(
           child: user == null
               ? const SizedBox.shrink()
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(26, 22, 26, 22),
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 820),
-                          child: switch (_tab) {
-                            SettingsTab.general => _GeneralTab(user: user),
-                            SettingsTab.security => SecurityTab(user: user),
-                            SettingsTab.integrations => _IntegrationsTab(
-                              user: user,
-                            ),
-                            SettingsTab.backups => const BackupsTab(),
-                            SettingsTab.updates => const _UpdatesTab(),
-                            SettingsTab.about => const _AboutTab(),
-                          },
-                        ),
-                      ),
-                    ),
-                    const _StatusLine(),
-                  ],
-                ),
+              : _content(user, compact: false),
         ),
       ],
     );
@@ -305,11 +361,14 @@ class _StatusLine extends ConsumerWidget {
         child: Row(
           key: const Key('settings-status'),
           children: [
-            Text(
-              'Changes in settings save automatically',
-              style: style.caption.copyWith(color: tokens.faint),
+            Expanded(
+              child: Text(
+                'Changes in settings save automatically',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: style.caption.copyWith(color: tokens.faint),
+              ),
             ),
-            const Spacer(),
             if (dot != null) ...[
               DecoratedBox(
                 decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
