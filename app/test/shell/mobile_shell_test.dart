@@ -177,6 +177,23 @@ void main() {
     });
   });
 
+  testWidgets('turning the device keeps the page and its state', (
+    tester,
+  ) async {
+    await pumpMobile(tester, size: phonePortrait, location: AppRoutes.library);
+    final page = tester.element(find.byKey(const Key('main-content')));
+
+    for (final size in const [phoneLandscape, Size(1180, 820), phonePortrait]) {
+      tester.view.physicalSize = size;
+      await tester.pumpAndSettle();
+      expect(
+        tester.element(find.byKey(const Key('main-content'))),
+        same(page),
+        reason: '$size',
+      );
+    }
+  });
+
   testWidgets('the desktop keeps its window at a small size', (tester) async {
     await pumpApp(tester, size: const Size(800, 600));
 

@@ -31,6 +31,14 @@ void main() {
 
     test('a wide but low screen is medium', () {
       expect(on(1200, 560), ShellLayout.medium);
+      expect(on(1000, 639), ShellLayout.medium);
+    });
+
+    test('the thresholds are exact', () {
+      expect(on(599, 874), ShellLayout.compact);
+      expect(on(600, 874), ShellLayout.medium);
+      expect(on(999, 640), ShellLayout.medium);
+      expect(on(1000, 640), ShellLayout.expanded);
     });
   });
 

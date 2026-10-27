@@ -1,5 +1,11 @@
+import 'dart:async';
+
+import 'package:backlog_manager/features/shortcuts/shortcuts_sheet.dart';
 import 'package:backlog_manager/routing/routes.dart';
+import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 /// What a navigation item does when it is not a page of the router.
 enum NavigationAction { addGame, shortcuts }
@@ -128,4 +134,21 @@ String pageTitle(String location) {
     }
   }
   return _pageTitles[location] ?? 'Backlog Manager';
+}
+
+/// What [item] does when it is chosen, in the sidebar, the bottom bar or the
+/// rail: a page of the router, a new game, or the shortcuts sheet.
+void activateNavigationItem(
+  BuildContext context,
+  WidgetRef ref,
+  NavigationItem item,
+) {
+  final route = item.route;
+  if (route != null) {
+    context.go(route);
+  } else if (item.action == NavigationAction.addGame) {
+    ref.read(addGameRequestProvider.notifier).request();
+  } else if (item.action == NavigationAction.shortcuts) {
+    unawaited(showShortcutsSheet(context));
+  }
 }

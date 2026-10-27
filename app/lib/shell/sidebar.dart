@@ -16,7 +16,6 @@ import 'package:backlog_manager/features/appearance/theme_actions.dart';
 import 'package:backlog_manager/features/common/user_avatar.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/routing/session.dart';
-import 'package:backlog_manager/shell/mobile_navigation.dart';
 import 'package:backlog_manager/shell/navigation.dart';
 import 'package:backlog_manager/shell/navigation_counts.dart';
 import 'package:backlog_manager/shell/pane_widths.dart';
