@@ -217,7 +217,7 @@ tasks:
       - bash tool/package/ipa.sh
 
   app:dev:mobile:
-    desc: 'Run the app on a connected Android or iOS device or emulator: task app:dev:mobile DEVICE=<id from flutter devices>'
+    desc: 'Run the app on a connected Android or iOS device or emulator: task app:dev:mobile DEVICE=<id from flutter devices>; for the local backend on Android run adb reverse tcp:8000 tcp:8000 first'
     dir: "{{.APP_DIR}}"
     cmds:
       - flutter run{{if .DEVICE}} -d {{.DEVICE}}{{end}}
