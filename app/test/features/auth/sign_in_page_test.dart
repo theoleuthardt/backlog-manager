@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
+import 'dart:io';
 
 import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/api/api_providers.dart';
@@ -16,6 +16,7 @@ import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/routing/session.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -147,6 +148,83 @@ void main() {
       await tester.pump();
 
       expect(find.text('Enter a valid email address'), findsNothing);
+    });
+
+    testWidgets('names the cause in one line and the rest in the details', (
+      tester,
+    ) async {
+      String? copied;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copied = (call.arguments as Map)['text'] as String;
+          }
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      final harness = await pumpSignIn(tester);
+      harness.api.onLogin = (email, password) async => throw DioException(
+        requestOptions: RequestOptions(
+          baseUrl: 'https://api.example.com',
+          path: '/api/auth/login',
+        ),
+        error: const SocketException(
+          'Connection refused',
+          osError: OSError('Connection refused', 111),
+        ),
+      );
+
+      await typeCredentials(tester);
+      await tester.tap(find.byKey(const Key('sign-in-submit')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Server not reachable'), findsOneWidget);
+      expect(find.textContaining('refused the connection'), findsNothing);
+      expect(find.text('Login failed'), findsNothing);
+
+      await tester.tap(find.byKey(const Key('error-banner-action')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'api.example.com refused the connection. The server may be down.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('connection refused · api.example.com'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const Key('sign-in-failure-copy')));
+      await tester.pumpAndSettle();
+
+      expect(copied, startsWith('Server not reachable\n'));
+      expect(copied, contains('connection refused · api.example.com'));
+      expect(find.text('Details copied'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('a message of the backend has no details link', (tester) async {
+      final harness = await pumpSignIn(tester);
+      harness.api.onLogin = (email, password) async => throw const ApiException(
+        'Invalid email or password',
+        statusCode: 401,
+      );
+
+      await typeCredentials(tester);
+      await tester.tap(find.byKey(const Key('sign-in-submit')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Invalid email or password'), findsOneWidget);
+      expect(find.byKey(const Key('error-banner-action')), findsNothing);
     });
 
     testWidgets('keeps the button off until both fields are filled', (

@@ -1,5 +1,6 @@
 import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/auth/auth_api.dart';
+import 'package:backlog_manager/auth/sign_in_failure.dart';
 import 'package:backlog_manager/auth/token_store.dart';
 import 'package:backlog_manager/routing/session.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,19 +8,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 enum LoginStep { password, twoFactor }
 
 /// What the sign-in screen shows: the step, the challenge of a two-factor
-/// sign-in, whether a request is running and the error banner.
+/// sign-in, whether a request is running and the failure behind the error
+/// banner, whose title is [error].
 class LoginFlow {
   const LoginFlow({
     this.step = LoginStep.password,
     this.challengeToken,
     this.busy = false,
-    this.error,
+    this.failure,
   });
 
   final LoginStep step;
   final String? challengeToken;
   final bool busy;
-  final String? error;
+  final SignInFailure? failure;
+
+  String? get error => failure?.title;
 }
 
 /// Counts the sessions of the app: it grows on every sign-in and sign-out.
@@ -38,6 +42,11 @@ final sessionGenerationProvider =
     );
 
 const sessionEndedMessage = 'Your session has ended. Sign in again.';
+
+/// The clock for the time in the details line of a failed sign-in.
+final signInClockProvider = Provider<DateTime Function()>(
+  (ref) => DateTime.now,
+);
 
 /// The sign-in state machine: restoring the session at start, signing in with
 /// a password and a two-factor code, signing out and dropping an expired
@@ -76,7 +85,9 @@ class AuthController extends Notifier<LoginFlow> {
         _session.signOut();
       } else {
         _session.signOut();
-        state = LoginFlow(error: failure.message);
+        state = LoginFlow(
+          failure: _describe(error, 'Could not check your session'),
+        );
       }
     }
   }
@@ -146,7 +157,7 @@ class AuthController extends Notifier<LoginFlow> {
   Future<void> sessionExpired() async {
     if (ref.read(sessionProvider) is! SessionSignedIn) return;
     await signOut();
-    state = const LoginFlow(error: sessionEndedMessage);
+    state = const LoginFlow(failure: SignInFailure(sessionEndedMessage));
   }
 
   /// Reads the user again, for example after the account was changed.
@@ -187,9 +198,16 @@ class AuthController extends Notifier<LoginFlow> {
     state = LoginFlow(
       step: keepStep ? state.step : LoginStep.password,
       challengeToken: keepStep ? state.challengeToken : null,
-      error: ApiException.from(error, fallback).message,
+      failure: _describe(error, fallback),
     );
   }
+
+  SignInFailure _describe(Object error, String fallback) =>
+      describeSignInFailure(
+        error,
+        fallback: fallback,
+        now: ref.read(signInClockProvider)(),
+      );
 }
 
 final authControllerProvider = NotifierProvider<AuthController, LoginFlow>(

@@ -5,10 +5,19 @@ import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:flutter/material.dart';
 
 /// An error message above a form, in the danger colour on a tint of it.
+/// With [actionLabel] it ends in a link, for example one that opens the
+/// details of the error.
 class ShelfBanner extends StatelessWidget {
-  const ShelfBanner({required this.message, super.key});
+  const ShelfBanner({
+    required this.message,
+    this.actionLabel,
+    this.onAction,
+    super.key,
+  });
 
   final String message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +27,7 @@ class ShelfBanner extends StatelessWidget {
     return Semantics(
       liveRegion: true,
       label: message,
-      excludeSemantics: true,
+      excludeSemantics: actionLabel == null,
       child: DecoratedBox(
         key: const Key('error-banner'),
         decoration: BoxDecoration(
@@ -34,11 +43,37 @@ class ShelfBanner extends StatelessWidget {
               Icon(Icons.error_outline, size: 16, color: tokens.danger),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  message,
-                  style: text.caption.copyWith(color: tokens.danger),
+                child: ExcludeSemantics(
+                  child: Text(
+                    message,
+                    style: text.caption.copyWith(color: tokens.danger),
+                  ),
                 ),
               ),
+              if (actionLabel case final label?) ...[
+                const SizedBox(width: 12),
+                Semantics(
+                  button: true,
+                  label: label,
+                  excludeSemantics: true,
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: GestureDetector(
+                      key: const Key('error-banner-action'),
+                      onTap: onAction,
+                      child: Text(
+                        label,
+                        style: text.caption.copyWith(
+                          color: tokens.danger,
+                          fontWeight: FontWeight.w600,
+                          decoration: TextDecoration.underline,
+                          decorationColor: tokens.danger,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),

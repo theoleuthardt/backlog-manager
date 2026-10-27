@@ -47,9 +47,47 @@ void main() {
     handle.dispose();
   });
 
+  testWidgets('offers an action next to the message', (tester) async {
+    var opened = 0;
+    await pumpThemed(
+      tester,
+      ShelfBanner(
+        message: 'Server not reachable',
+        actionLabel: 'Details',
+        onAction: () => opened++,
+      ),
+      width: 360,
+    );
+
+    await tester.tap(find.byKey(const Key('error-banner-action')));
+    expect(opened, 1);
+    expect(find.text('Details'), findsOneWidget);
+  });
+
+  testWidgets('has no action without a label', (tester) async {
+    await pumpThemed(
+      tester,
+      const ShelfBanner(message: 'Invalid email or password'),
+      width: 360,
+    );
+
+    expect(find.byKey(const Key('error-banner-action')), findsNothing);
+  });
+
   goldenInBothThemes(
     'banner',
     () => const ShelfBanner(message: 'Your session has ended. Sign in again.'),
+    size: const Size(420, 100),
+    width: 380,
+  );
+
+  goldenInBothThemes(
+    'banner_with_action',
+    () => ShelfBanner(
+      message: 'Server not reachable',
+      actionLabel: 'Details',
+      onAction: () {},
+    ),
     size: const Size(420, 100),
     width: 380,
   );
