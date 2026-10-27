@@ -88,15 +88,14 @@ def create_app() -> Litestar:
     get a fresh app - and, critically, a fresh rate-limit store - per
     test instead of sharing one across the whole test session.
 
-    The frontend calls this API directly, cross-origin, with no Next.js
-    proxy in front. `cors_config` leaves allow_credentials at its False
-    default: auth is a Bearer token in the Authorization header, not a
-    cookie, so the browser never needs to send credentials on a
-    cross-origin request here.
+    `cors_config` only matters for browser clients (the Flutter app sends
+    no Origin) and leaves allow_credentials at its False default: auth is
+    a Bearer token in the Authorization header, not a cookie, so a browser
+    never needs to send credentials on a cross-origin request here.
 
     The OpenAPI schema (and its /schema routes) only exists when
     ENABLE_DOCS is set; scripts/dump_openapi_schema.py sets it itself to
-    generate the frontend client's input."""
+    generate the Flutter client's input."""
     return Litestar(
         route_handlers=[
             health,

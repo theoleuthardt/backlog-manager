@@ -3,7 +3,7 @@
 BEARER_SECURITY_REQUIREMENT is the router-level `security=` value for every
 router gated by get_current_user or require_admin - it references the
 "BearerAuth" scheme defined once in app.py's OpenAPIConfig(components=...),
-so the generated OpenAPI spec (and therefore the frontend's generated
+so the generated OpenAPI spec (and therefore the Flutter app's generated
 client) correctly reflects which operations need an Authorization header."""
 
 from litestar import Request

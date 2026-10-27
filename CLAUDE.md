@@ -4,55 +4,33 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Backlog Manager is a video game backlog manager. The frontend is a React single-page app built with Vite and React Router (originally scaffolded with create-t3-app on Next.js; Next.js, tRPC and NextAuth have since been removed, see issue #241) living in `frontend/`; the backend is a standalone Python/Litestar service living in `backend/` (fully migrated off Next.js/tRPC — see issue #103/#104 for that history). The frontend calls the backend directly over REST with a JWT Bearer token. Only the backend is meant to be hosted as a public, always-on service; the frontend ships as a Tauri desktop app built from the same Vite build (which also produces the web image) rather than being centrally hosted the same way.
+Backlog Manager is a video game backlog manager. The client is a Flutter desktop app in `app/` (macOS, Windows, Linux; epic #247); the backend is a standalone Python/Litestar service living in `backend/` (fully migrated off Next.js/tRPC — see issue #103/#104 for that history). The app calls the backend over REST with a JWT Bearer token. Only the backend is meant to be hosted as a public, always-on service; the app is installed from the GitHub Releases and updates itself.
 
 A separate Spring Boot service in `monitor/` (epic #468; Spring Boot 4.1.2, Java 25, Maven wrapper) is the status and alerting service of the homelab: it watches the backend from its own LXC and does not replace it. Its design: [`docs/MONITOR_ARCHITECTURE.md`](docs/MONITOR_ARCHITECTURE.md).
 
-A Flutter desktop client in `app/` (macOS, Windows, Linux) is being built as the replacement of `frontend/` (epic #247); `frontend/` keeps shipping unchanged until the cutover. Everything about it: [`docs/FLUTTER.md`](docs/FLUTTER.md).
+The earlier React/Vite + Tauri client (`frontend/`) was retired with the 0.9.13 release and moved, with its history, CI and docs, to [`backlog-manager-legacy`](https://github.com/theoleuthardt/backlog-manager-legacy) (archived, #287). Everything about the Flutter app: [`docs/FLUTTER.md`](docs/FLUTTER.md).
 
 Users can track games with metadata from HowLongToBeat and IGDB, organize games into categories via drag & drop, connect Steam accounts for playtime sync, and import/export CSV files.
 
 ## Commands
 
-**Always use `task <name>` (see `Taskfile.yml`, requires [go-task](https://taskfile.dev)) when running commands in this repo, instead of calling `npm run ...` / `uv run ...` / `./mvnw ...` / `docker compose ...` directly.** It wraps the frontend (npm), backend (uv), app (flutter) and Monitor (Maven wrapper) toolchains plus the local Postgres compose stack under one unified command surface, so any command run from Claude Code should go through it if a matching task exists. `task` (no args) lists everything available; the most common ones:
+**Always use `task <name>` (see `Taskfile.yml`, requires [go-task](https://taskfile.dev)) when running commands in this repo, instead of calling `uv run ...` / `flutter ...` / `./mvnw ...` / `docker compose ...` directly.** It wraps the backend (uv), app (flutter) and Monitor (Maven wrapper) toolchains plus the local Postgres compose stack under one unified command surface, so any command run from Claude Code should go through it if a matching task exists. `task` (no args) lists everything available; the most common ones:
 
 ```bash
-task install       # npm install (frontend) + uv sync (backend) + flutter pub get (app) + Maven dependencies (monitor); needs Node 22.12+ (`nvm use` reads the root .nvmrc) and a JDK 25
-task dev           # Vite dev server
+task install       # uv sync (backend) + flutter pub get (app) + Maven dependencies (monitor); needs a JDK 25
 task backend:dev   # Litestar dev server (uvicorn --reload)
 task db:up         # local Postgres + pgAdmin via compose.yml
-task test          # backend (pytest) + frontend (vitest) + app (flutter test) + monitor (JUnit) suites
-task lint          # frontend (eslint) + backend (ruff) + app (flutter analyze) + monitor (javac -Xlint:all -Werror)
+task test          # backend (pytest) + app (flutter test) + monitor (JUnit) + release script (node --test, Node 22 from .nvmrc) suites
+task lint          # backend (ruff) + app (flutter analyze) + monitor (javac -Xlint:all -Werror)
 task app:dev       # Flutter desktop app (needs Flutter 3.47.6, see docs/FLUTTER.md)
 task monitor:dev   # Monitor (Spring Boot) on :8090 against the local Postgres (task monitor:db:create once); also monitor:install, monitor:lint, monitor:test, monitor:build, monitor:format(:check)
-task format        # prettier (frontend) + ruff format (backend) + dart format (app) + Spotless (monitor); task format:check only verifies
-task audit         # known-vulnerability scan of the locked frontend + backend dependencies
+task format        # ruff format (backend) + dart format (app) + Spotless (monitor); task format:check only verifies
+task audit         # known-vulnerability scan of the locked backend dependencies
 task backend:migration -- "add foo column"   # new Alembic revision
 task backend:migrate                          # alembic upgrade head
 ```
 
-The commands below document the underlying toolchain the tasks wrap — they are not an opt-out from the `task` rule. Where no task exists (`preview`, `lint:fix`, `format:check`, `format:write`), running them directly is the allowed exception. `npm run typecheck` is likewise task-less, but it is only a focused re-check while iterating — it never replaces the mandatory `task check` (step 4 below). Root `package.json` only has convenience scripts delegating to `frontend/` (`--prefix frontend`) - run `npm install --prefix frontend` once first, or `cd frontend` and use these directly:
-
-```bash
-# Development
-npm run dev          # Start the Vite dev server (port 3000)
-
-# Build & Production
-npm run build        # Typecheck and build for production (dist/)
-npm run preview      # Build and serve the production build locally
-
-# Code Quality
-npm run check        # Run lint + typecheck
-npm run lint         # ESLint only
-npm run lint:fix     # ESLint with auto-fix
-npm run typecheck    # TypeScript check
-
-# Formatting
-npm run format:check # Check Prettier formatting
-npm run format:write # Apply Prettier formatting
-```
-
-The frontend has a small vitest suite (`task frontend:test`) covering the pure logic in `src/lib/` (sorting, filtering, grouping, categories, themes) - component and page behaviour is verified by running the app. The backend is tested with pytest.
+The release and deploy scripts in `scripts/` and `deploy/` are Node (version in the root `.nvmrc`); `task release:test` runs their tests.
 
 Backend (`backend/`, uv-managed) — every command here has a task equivalent (`task install`, `task backend:dev`, `task test`, `task lint`); listed only as the underlying toolchain:
 ```bash
@@ -63,28 +41,11 @@ uv run pytest        # Run tests (spins up a real Postgres via testcontainers)
 uv run ruff check .  # Lint
 ```
 
-`.env`/`.env.example`/`.env.prod`/`.env.prod.example` stay at the repo root (not inside `frontend/`) since `compose.yml` needs them there for its own variable substitution; `frontend/next.config.js` loads the root `.env` explicitly via `dotenv` for local dev.
+`.env`/`.env.example`/`.env.prod`/`.env.prod.example` stay at the repo root since `compose.yml` and the Taskfile's `monitor:*` tasks read them there.
 
 ## Architecture
 
-**Frontend stack:** Vite + React 19 with React Router (BrowserRouter, lazy routes, guards in `RequireAuth`), calling the backend directly over REST via a typed `openapi-fetch` client generated from the backend's OpenAPI schema, JWT Bearer token in `localStorage` for auth (no NextAuth), Tailwind CSS + shadcn/ui components. Lives entirely in `frontend/`. Distributed as a Tauri desktop app (the static `dist/` build) rather than centrally hosted; the app updates itself via the Tauri updater plugin from GitHub Releases (signing key, `latest.json` and pinned plugin versions: see `docs/TAURI.md`).
-
 **Backend stack:** Python/Litestar, uv-managed, SQLAlchemy 2.0 async + asyncpg, full REST API (backlog CRUD, auth incl. TOTP 2FA, CSV import/export, IGDB/HowLongToBeat integrations). Lives entirely in `backend/`. This is the only piece of the app meant to be hosted as a public, always-on service. See issue #104 for the migration history off Next.js/tRPC.
-
-**Path Aliases** (relative to `frontend/`):
-- `~/` → `./src/*`
-- `components` / `components/*` → `./src/app/_components/*`
-- `shadcn_components/*` → `./src/components/*` (shadcn/ui components)
-
-**Key Directories** (all under `frontend/`):
-- `src/lib/api/` - typed REST client (`client.ts`, generated `schema.d.ts`) + one module per domain (`auth.ts`, `backlog.ts`, `csv.ts`, `games.ts`, `user.ts`, `twoFactor.ts`), each mapping the backend's snake_case responses to the frontend's camelCase shapes
-- `src/hooks/` - React Query hooks wrapping `lib/api/*` calls
-- `src/lib/` - framework-free logic with vitest tests next to it: `sortEntries.ts`, `filterEntries.ts`, `groupEntries.ts`, `categories.ts`, `themes.ts`, `reviewStars.ts`, `statusStyle.ts`
-- `src/app/context/AuthContext.tsx` - auth state (login, 2FA challenge, current user), replaces NextAuth's `SessionProvider`
-- `src/app/context/EntryActionsContext.tsx` - what a dashboard tile can do (open the single entry dialog the dashboard owns, selection, context menu actions); keeps the entry dialog open when an entry moves between groups
-- `src/app/context/ThemeContext.tsx` - active theme + custom themes (backed by the account, cached in `localStorage`); `DashboardContext.tsx` shares the search text between navbar and grid
-- `src/app/_components/` - React components
-- `src/components/ui/` - shadcn/ui primitives
 
 **Key Directories** (all under `backend/src/backlog_manager_backend/`):
 - `routes/` - Litestar HTTP handlers (`auth.py`, `backlog.py`, `backups.py`, `csv.py`, `games.py`, `igdb_sync.py`, `images.py`, `space.py`, `steam.py`, `steam_wishlist_sync.py`, `user.py`, `health.py`)
@@ -97,11 +58,11 @@ uv run ruff check .  # Lint
 
 **Security:** the login rate limit keys on `CF-Connecting-IP` only for peers inside `TRUSTED_PROXY_IPS`; five failed password or 2FA attempts lock an account for 15 minutes; passwords are 12-128 characters; usernames are set as 3-32 characters of `A-Z a-z 0-9 _ - .` and e-mails need one `@` and a dotted domain (`schemas/types.py`), rejected with a 400 rather than stripped; every JSON body is sanitized before validation (`sanitize.py` via the app's `request_class`: NFC, invisible and control characters removed, edges trimmed, `password` values untouched, punctuation never stripped), and the Flutter app's Dio interceptor does the same (`lib/domain/sanitize.dart`); a password change, disabling 2FA or `POST /api/auth/logout-all` bumps `Users.TokenVersion` and thereby invalidates every issued access token; `/schema` only exists with `ENABLE_DOCS=true` (`scripts/dump_openapi_schema.py` sets it itself); startup rejects weak or placeholder secrets. Details and the deployment checklist: [`docs/SECURITY.md`](docs/SECURITY.md).
 
-**Backups:** `UserBackups` holds versioned JSON snapshots of one user's personal entries, categories and custom statuses (`services/backup_service.py`, `repositories/backup_repo.py`, `routes/backups.py`): hourly scheduler tick creating a daily `auto` snapshot, `manual` ones, and safety snapshots before restore, delete-all and CSV import; restore is one transaction. Frontend: `BackupSection` in Account settings. New backlog tables must be added to the snapshot/restore code in `backup_repo.py`. A shared space has backups of its own (`SpaceBackups`, `services/space_backup_service.py`: daily `auto`, `manual` by either member, safety snapshots, JSON export; a restore needs the approval of the other member through `SpaceRestoreRequests`). Details: [`docs/BACKUPS.md`](docs/BACKUPS.md).
+**Backups:** `UserBackups` holds versioned JSON snapshots of one user's personal entries, categories and custom statuses (`services/backup_service.py`, `repositories/backup_repo.py`, `routes/backups.py`): hourly scheduler tick creating a daily `auto` snapshot, `manual` ones, and safety snapshots before restore, delete-all and CSV import; restore is one transaction. New backlog tables must be added to the snapshot/restore code in `backup_repo.py`. A shared space has backups of its own (`SpaceBackups`, `services/space_backup_service.py`: daily `auto`, `manual` by either member, safety snapshots, JSON export; a restore needs the approval of the other member through `SpaceRestoreRequests`). Details: [`docs/BACKUPS.md`](docs/BACKUPS.md).
 
-**Shared space:** two users can share one backlog (a "space", at most two members, invited by username; a user belongs to at most one). Entries, categories and custom statuses carry a nullable `SpaceID` (NULL = personal), and every route in `routes/backlog.py` takes an optional `space_id` query param that switches it to that space - membership is checked first and a non-member gets the same 404 as a missing space. Personal repo queries filter `SpaceID IS NULL`, so shared rows never leak into personal lists, CSV export or Steam sync. Status and categories are shared; playtime, rating, review and ownership (`Owned`, no coupling to the "Not Owned" status in a space) are per member (`SpaceEntryMemberData`, overlaid onto the entry by `space_entry_member_repo.apply_member_data`, which also exposes `partner_playtime`). Any game can live in a space (the web client still only offers Steam games there; the Flutter client every game), and imports (CSV, Steam library/wishlist) never write to one; the Steam playtime sync updates the space playtimes of both active members (the partner's library is read by their Steam ID with the key of the request, a partner without a Steam ID or with a private library is skipped), and the IGDB sync takes `space_id` too. Leaving a space or deleting an account hands the content the leaver created over to the remaining member (`space_repo.remove_member`, also called by `user_repo.delete_user`) and deletes the space once no active member is left; `DELETE /api/backlog/entries` with `space_id` empties the space. Each entry has a list of mods (`BacklogEntryMods`, name and optional http(s) link, `/api/backlog/entries/{id}/mods`), shared by both members in a space and part of the personal backups. Personal entries are flagged `in_shared_space` when the same Steam game (or, without a Steam App ID, a game with the same title) is also in the caller's space. Frontend: `BacklogScopeContext` supplies the space id to the hooks in `hooks/useBacklog.ts` (query keys carry the scope), so `/space` renders the regular `DashboardContent`; the creation tool has an "Add to" dropdown and the entry dialog an "Add to shared space" button.
+**Shared space:** two users can share one backlog (a "space", at most two members, invited by username; a user belongs to at most one). Entries, categories and custom statuses carry a nullable `SpaceID` (NULL = personal), and every route in `routes/backlog.py` takes an optional `space_id` query param that switches it to that space - membership is checked first and a non-member gets the same 404 as a missing space. Personal repo queries filter `SpaceID IS NULL`, so shared rows never leak into personal lists, CSV export or Steam sync. Status and categories are shared; playtime, rating, review and ownership (`Owned`, no coupling to the "Not Owned" status in a space) are per member (`SpaceEntryMemberData`, overlaid onto the entry by `space_entry_member_repo.apply_member_data`, which also exposes `partner_playtime`). Any game can live in a space, and imports (CSV, Steam library/wishlist) never write to one; the Steam playtime sync updates the space playtimes of both active members (the partner's library is read by their Steam ID with the key of the request, a partner without a Steam ID or with a private library is skipped), and the IGDB sync takes `space_id` too. Leaving a space or deleting an account hands the content the leaver created over to the remaining member (`space_repo.remove_member`, also called by `user_repo.delete_user`) and deletes the space once no active member is left; `DELETE /api/backlog/entries` with `space_id` empties the space. Each entry has a list of mods (`BacklogEntryMods`, name and optional http(s) link, `/api/backlog/entries/{id}/mods`), shared by both members in a space and part of the personal backups. Personal entries are flagged `in_shared_space` when the same Steam game (or, without a Steam App ID, a game with the same title) is also in the caller's space.
 
-**Database:** SQLAlchemy 2.0 async models/repositories (`backend/src/backlog_manager_backend/{models,repositories,schemas}/`) against PostgreSQL (`postgres/backlogmanagerdb-init.sql`), Alembic baselined onto the existing schema (`backend/alembic/`, stamped rather than migrated from scratch) and used for all schema changes since. The old frontend-side raw-`pg` access layer (`frontend/src/server/db/`) no longer exists.
+**Database:** SQLAlchemy 2.0 async models/repositories (`backend/src/backlog_manager_backend/{models,repositories,schemas}/`) against PostgreSQL (`postgres/backlogmanagerdb-init.sql`), Alembic baselined onto the existing schema (`backend/alembic/`, stamped rather than migrated from scratch) and used for all schema changes since.
 
 **Production stack:** `compose.prod.yml` (db, backend, hourly Steam wishlist sync cron; pulls the published backend image) with `.env.prod.example` as its settings template. The backend's start command first checks the settings, waits for the database, stamps a database without an Alembic version at the head and runs `alembic upgrade head` before it starts uvicorn, so every start migrates. This is done in the container command on purpose: podman-compose (1.3 and 1.5, measured) ignores `depends_on` conditions such as `service_completed_successfully`, so a separate migration service would not be waited for. Fresh databases are created from `postgres/backlogmanagerdb-init.sql` and then stamped, which means every new migration must also update that SQL file. Deployments are started manually (`Deploy Backend` workflow, owner only, self-hosted runner, `deploy/deploy.sh` on the host): [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
@@ -109,10 +70,10 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the reasoning behind thes
 
 ## Flutter client (`app/`)
 
-Dart/Flutter desktop app, ported from `frontend/`. Setup, running, debugging, goldens and packaging: [`docs/FLUTTER.md`](docs/FLUTTER.md).
+Dart/Flutter desktop app, ported from the retired web client ([`backlog-manager-legacy`](https://github.com/theoleuthardt/backlog-manager-legacy)). Setup, running, debugging, goldens and packaging: [`docs/FLUTTER.md`](docs/FLUTTER.md).
 
 - **Commands:** always `task app:*` (`app:install`, `app:dev`, `app:lint`, `app:test`, `app:test:update-goldens`, `app:format`, `app:format:check`, `app:build`, `app:package`, `app:icons`, `app:generate-api`), never bare `flutter`/`dart`; `task check` and `task lint` include the app.
-- **Layout:** `lib/api/` (everything that talks to the backend: Dio setup, error mapping, the SSE reader, the server URL setting, the generated client in `generated/`), `lib/domain/` (pure logic and models ported from `frontend/src/lib/`, no Flutter imports), `lib/design/` (`ShelfTokens`, `ShelfTextStyles`, the Material theme builder, the atmosphere, glass and glow widgets, the UI kit in `design/widgets/`), `lib/shell/` (title bar, sidebar, status bar, shortcuts), `lib/routing/` (`go_router`, route guard, session state), `lib/auth/` (token store, auth API, the sign-in state machine) and `lib/features/<screen group>/` (so far the sign-in and setup pages and the debug gallery of the UI kit), `app.dart`; `test/` mirrors `lib/`.
+- **Layout:** `lib/api/` (everything that talks to the backend: Dio setup, error mapping, the SSE reader, the server URL setting, the generated client in `generated/`), `lib/domain/` (pure logic and models ported from the web client's `src/lib/`, no Flutter imports), `lib/design/` (`ShelfTokens`, `ShelfTextStyles`, the Material theme builder, the atmosphere, glass and glow widgets, the UI kit in `design/widgets/`), `lib/shell/` (title bar, sidebar, status bar, shortcuts), `lib/routing/` (`go_router`, route guard, session state), `lib/auth/` (token store, auth API, the sign-in state machine) and `lib/features/<screen group>/` (so far the sign-in and setup pages and the debug gallery of the UI kit), `app.dart`; `test/` mirrors `lib/`.
 - **State and routing:** Riverpod and `go_router`. Screens hold UI state only; logic that is not about widgets lives in plain Dart files with unit tests.
 - **Theming:** read colours from the `ShelfTokens` `ThemeExtension` and text from `ShelfTextStyles` (`lib/design/`), never hard-coded `Color`s or font sizes.
 - **Partial updates:** never send a generated request class for a partial `PUT` (it sends every field and a `null` clears the field on the backend); use a map that only has the fields that changed, like `UserUpdate`.
@@ -125,31 +86,9 @@ Dart/Flutter desktop app, ported from `frontend/`. Setup, running, debugging, go
 
 The [`bruno/`](bruno/) collection covers every backend route, organized into one folder per route module (`auth/`, `backlog/`, `csv/`, `games/`, `user/`, `admin/`, `space/`, `steam/`, `images/`, `health/`). Run `auth/Login` first — its `script:post-response` stores the access token in the shared `authToken` environment variable that every other authenticated request uses. When adding a new backend route, add a matching `.bru` request in the same change.
 
-## Theming
-
-Themes are six colours applied as `--t-*` CSS custom properties on `<html>`
-by `ThemeProvider` (built-ins and user-created ones share that path; see
-`src/lib/themes.ts`). `globals.css` maps them onto the shadcn tokens, and
-Tailwind's `black`/`white` colours are aliased to the theme background/text,
-so legacy `bg-black text-white border-white` classes follow the theme. In
-new UI use the semantic tokens (`bg-background`, `bg-surface`,
-`text-foreground`, `bg-primary`) rather than raw colours, and add the
-`themed-icon` class to the white PNG icons from `public/` so they stay
-visible in light themes. `globals.css`'s `surface-glow` (a themed hover/focus
-glow) is declared with Tailwind v4's `@utility` rather than a plain class -
-that's what makes variants like `hover:surface-glow` generate real CSS.
-`docs/DASHBOARD_UX.md` records the dashboard design decisions.
-
-## ESLint Rules
-
-The project enforces strict ESLint rules:
-- Use `??` instead of `||` for nullish values
-- Remove unused variables
-- Don't annotate types that can be inferred
-
 ## Code Comments
 
-**Do not write comments that are not real code documentation.** No narrative comments, no "why I did this" asides, no step-by-step play-by-play scattered through function bodies. This applies in every language (Python, TypeScript/TSX, everywhere) and to every file, new or existing.
+**Do not write comments that are not real code documentation.** No narrative comments, no "why I did this" asides, no step-by-step play-by-play scattered through function bodies. This applies in every language (Python, Dart, Java, everywhere) and to every file, new or existing.
 
 The ONLY comments allowed:
 - A function/class/module docstring (Python `"""..."""` and Dart `///` — including a module docstring at the top of a file, or one attached to a module-level constant that has no enclosing function/class to hold it instead — or the top-of-function/class comment block a file already uses for the same purpose).
@@ -206,12 +145,13 @@ rather than improvising a different one:
    Ask Claude Code to write the failing test first, look at it, *then* ask
    for the implementation. A test is a contract once it's confirmed correct;
    don't let an agent (or yourself) loosen one just to get a run green.
-3. **Use `task`, not raw `npm`/`uv`/`docker` invocations** — see
+3. **Use `task`, not raw `uv`/`flutter`/`./mvnw`/`docker` invocations** — see
    [Commands](#commands). This is what keeps Claude Code's tool calls
-   consistent across the frontend/backend split and the local Postgres
+   consistent across the backend/app/Monitor split and the local Postgres
    stack, and it's what CLAUDE.md tells every agent session to prefer.
-4. **Lint and typecheck before calling anything done**: `task check` (frontend
-   lint + typecheck, backend lint — `task lint` covers lint only). The
+4. **Lint and format-check before calling anything done**: `task check`
+   (backend, app and Monitor lint plus every format check — `task lint`
+   covers lint only). The
    CodeRabbit review will flag what these catch anyway — catching it
    locally first is faster.
 5. **Review every PR locally with the CodeRabbit CLI.** Right after opening
@@ -226,7 +166,7 @@ rather than improvising a different one:
 6. **Every change lands via a PR.** Never close an issue directly — push the
    branch and open a PR that closes the issue (`Closes #<n>`), no matter how
    small the change.
-7. **For UI changes, actually run the app** (`task dev`) and click through
+7. **For UI changes, actually run the app** (`task app:dev`) and click through
    the feature before saying it's done. Passing type checks is not the same
    as a working feature.
 8. **Keep CLAUDE.md itself current.** If you (or an agent) learn something

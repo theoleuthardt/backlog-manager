@@ -26,9 +26,9 @@ class Settings(BaseSettings):
     `initial_admin_password` are set and no users exist yet, the first admin
     is created on startup (bootstrap.py); they are not read again afterwards.
 
-    `cors_allowed_origins` is a comma-separated list of origins the browser
-    may call the API from; the frontend talks to the backend directly,
-    without a Next.js proxy. `trusted_proxy_ips` is a comma-separated list of
+    `cors_allowed_origins` is a comma-separated list of browser origins that
+    may call the API; the Flutter app is not a browser and needs none.
+    `trusted_proxy_ips` is a comma-separated list of
     IPs/CIDRs of trusted reverse proxies (auth/client_ip.py). `enable_docs`
     serves the OpenAPI schema and Swagger UI under /schema.
     `backup_scheduler_enabled` runs the automatic per-user backup scheduler in

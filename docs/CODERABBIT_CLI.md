@@ -79,7 +79,7 @@ Useful scope variants:
 ```bash
 coderabbit review --agent --uncommitted   # staged + unstaged edits to tracked files
 coderabbit review --agent --committed     # committed changes only
-coderabbit review --agent --dir frontend  # limit to one directory
+coderabbit review --agent --dir app  # limit to one directory
 ```
 
 ## Working through findings

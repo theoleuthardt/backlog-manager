@@ -1,18 +1,4 @@
 services:
-  backlog-manager:
-    env_file: .env
-    build:
-      context: ./frontend
-      dockerfile: Containerfile
-      args:
-        NODE_ENV: production
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-    ports:
-      - "${NEXTJS_PORT}:3000"
-    restart: unless-stopped
-    depends_on:
-      - backend
-
   backend:
     env_file: .env
     build:

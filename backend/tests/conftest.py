@@ -14,7 +14,7 @@ SCHEMA_SQL_PATH = Path(__file__).resolve().parents[2] / "postgres" / "backlogman
 @pytest.fixture(scope="session")
 def postgres_url() -> Generator[str, None, None]:
     """Starts a real Postgres container for the test session, seeds the
-    real schema (same file the frontend/CI use), and points the app's
+    real schema (same file CI uses), and points the app's
     settings at it (must run before backlog_manager_backend.db is
     imported anywhere, since the engine is created at import time). The
     database name must match the init SQL's hardcoded

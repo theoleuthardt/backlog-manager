@@ -11,7 +11,7 @@ from backlog_manager_backend.integrations.types import SteamAppDetails
 
 def _parse_sse(body: str) -> list[tuple[str | None, str]]:
     """Splits a raw SSE response body into (event, data) pairs, mirroring
-    how a browser's EventSource (or the frontend's manual fetch-based
+    how a browser's EventSource (or the app's own SSE
     reader, since EventSource can't send an Authorization header) would
     see each message - messages are separated by a blank line, each
     made of `event: ...` / `data: ...` fields."""

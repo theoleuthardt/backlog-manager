@@ -41,13 +41,3 @@ and it would silently change legitimate data (game titles like
   `python-jose`, no fixed release): tokens are signed with HS256, so the ECDSA
   code path is never reached. Revisit if `python-jose` is replaced or the
   signing algorithm changes.
-- Frontend: `task frontend:audit` covers production dependencies only, and CI
-  runs the same `npm audit --omit=dev`, so a new advisory against anything that
-  ships fails the pull request. `npm audit` on the full tree still reports
-  `braces` (GHSA-vfj7-8cjw-p6xm, reached through `eslint-config-next` ->
-  `fast-glob` -> `micromatch`, ESLint tooling that never ships): every released
-  version is affected and no patched release exists, so nothing can be
-  upgraded. Because that finding cannot be acted on, `frontend/.npmrc` sets
-  `audit=false` to keep it from showing up as noise after every
-  `npm install`; run `npm audit` explicitly to see it, and recheck when
-  `braces` publishes a fix.

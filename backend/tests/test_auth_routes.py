@@ -128,7 +128,7 @@ async def test_verify_two_factor_enables_it_and_returns_backup_codes(
 async def test_verify_two_factor_rejects_wrong_code_without_invalidating_the_session(
     postgres_url: str, create_and_login
 ) -> None:
-    """A mistyped code must not silently log the user out: the frontend
+    """A mistyped code must not silently log the user out: the app
     wipes its stored token on any 401, so a wrong-code response here
     has to be a 400, not a 401 (unlike login, which has no session yet
     to lose)."""
