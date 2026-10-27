@@ -66,6 +66,13 @@ void main() {
       expect(find.text('Esc'), findsOneWidget);
     });
 
+    testWidgets('leaves the keyboard hint out on any phone', (tester) async {
+      _onScreen(tester, const Size(440, 900));
+      await pumpThemed(tester, _footer(), width: 400, compact: true);
+
+      expect(find.text('Esc'), findsNothing);
+    });
+
     testWidgets('fits a phone without the keyboard hint', (tester) async {
       _onScreen(tester, _phone);
       await pumpThemed(tester, _footer(), width: 300);

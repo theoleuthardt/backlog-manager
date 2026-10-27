@@ -53,7 +53,8 @@ const _autosaveDelay = Duration(milliseconds: 800);
 /// The settings window: a list of tabs with the account at its foot, and the
 /// settings of the tab in groups of rows. Settings save themselves. On a phone
 /// in portrait the list of tabs is a screen of its own and each tab opens on
-/// its own screen with a way back to the list; elsewhere the tabs stay beside
+/// its own screen with a way back to the list (also the system back);
+/// elsewhere the tabs stay beside
 /// the content, in a list that scrolls when the screen is low.
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({this.initialTab, super.key});
@@ -123,8 +124,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final collapsed = ref.watch(sidebarCollapsedProvider);
     if (shellLayoutOf(context, ref) == ShellLayout.compact) {
       if (user != null && !_listOpen) {
-        return KeyedSubtree(
+        return PopScope(
           key: const Key('page-settings'),
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop) setState(() => _listOpen = true);
+          },
           child: _content(user, compact: true),
         );
       }

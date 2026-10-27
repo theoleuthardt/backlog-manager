@@ -129,8 +129,9 @@ class ShelfSheet extends StatelessWidget {
 }
 
 /// The footer of a sheet: Cancel with its Esc hint on the left, the primary
-/// action on the right. Narrower than 400 px (a phone, which has no Esc key)
-/// the hint is left out and the actions wrap instead of overflowing.
+/// action on the right. On a phone in portrait ([ShelfFormFactor], no Esc
+/// key) or narrower than 400 px the hint is left out and the actions wrap
+/// instead of overflowing.
 class ShelfSheetFooter extends StatelessWidget {
   const ShelfSheetFooter({
     required this.onCancel,
@@ -153,8 +154,9 @@ class ShelfSheetFooter extends StatelessWidget {
       onPressed: onCancel,
     );
 
+    final compact = ShelfFormFactor.isCompact(context);
     return LayoutBuilder(
-      builder: (context, constraints) => constraints.maxWidth < 400
+      builder: (context, constraints) => compact || constraints.maxWidth < 400
           ? Wrap(
               alignment: WrapAlignment.spaceBetween,
               crossAxisAlignment: WrapCrossAlignment.center,

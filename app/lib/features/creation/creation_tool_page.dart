@@ -273,6 +273,7 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
     final canSubmit = !busy && !lookingUp && !waitingForPlaytime;
     final custom = _prefill.custom;
 
+    final gutter = ShelfFormFactor.isCompact(context) ? 16.0 : 28.0;
     return CallbackShortcuts(
       bindings: {
         SingleActivator(
@@ -289,15 +290,15 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
           key: const Key('page-creation'),
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _toolbar(context, canSubmit, isMac),
+            _toolbar(context, canSubmit, isMac, gutter),
             if (!custom && _prefill.hasMissingData)
               Padding(
-                padding: const EdgeInsets.fromLTRB(28, 0, 28, 12),
+                padding: EdgeInsets.fromLTRB(gutter, 0, gutter, 12),
                 child: _WarningBanner(message: _prefill.missingDataMessage),
               ),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(28, 0, 28, 28),
+                padding: EdgeInsets.fromLTRB(gutter, 0, gutter, 28),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final wide = constraints.maxWidth >= 920;
@@ -336,7 +337,12 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
     );
   }
 
-  Widget _toolbar(BuildContext context, bool canSubmit, bool isMac) {
+  Widget _toolbar(
+    BuildContext context,
+    bool canSubmit,
+    bool isMac,
+    double gutter,
+  ) {
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
     final label = switch (_state) {
       _CreateState.creating => 'Creating...',
@@ -344,7 +350,6 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
       _CreateState.failed => 'Failed',
       _CreateState.idle => 'Add Game',
     };
-    final gutter = ShelfFormFactor.isCompact(context) ? 16.0 : 28.0;
     return Padding(
       padding: EdgeInsets.fromLTRB(gutter, 22, gutter, 12),
       child: Row(

@@ -54,6 +54,20 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('the system back of a tab goes back to the list', (
+      tester,
+    ) async {
+      await openOn(tester, phone);
+      await tester.tap(find.byKey(const Key('settings-tab-security')));
+      await tester.pumpAndSettle();
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('settings-tab-general')), findsOneWidget);
+      expect(find.byKey(const Key('settings-tab-content')), findsNothing);
+    });
+
     testWidgets('a tab from the address opens directly', (tester) async {
       await openOn(tester, phone, location: '/settings?tab=about');
 
