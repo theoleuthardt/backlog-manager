@@ -42,16 +42,15 @@ final updateChannelStoreProvider = Provider<UpdateChannelStore>(
   (ref) => const PreferencesUpdateChannelStore(),
 );
 
-/// The channel the app updates from. It is [UpdateChannel.preview] until the
-/// user chooses, because every release of the Flutter client is a pre-release
-/// until the cutover; the default becomes stable then.
+/// The channel the app updates from. It is [UpdateChannel.stable] until the
+/// user chooses; Preview also takes the pre-releases.
 class UpdateChannelNotifier extends Notifier<UpdateChannel> {
   var _chosen = false;
 
   @override
   UpdateChannel build() {
     unawaited(_load(ref.read(updateChannelStoreProvider)));
-    return UpdateChannel.preview;
+    return UpdateChannel.stable;
   }
 
   Future<void> _load(UpdateChannelStore store) async {

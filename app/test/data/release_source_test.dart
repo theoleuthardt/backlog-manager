@@ -50,8 +50,10 @@ class ReleaseAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
-GithubReleaseSource sourceFor(ReleaseAdapter adapter) =>
-    GithubReleaseSource(Dio()..httpClientAdapter = adapter);
+GithubReleaseSource sourceFor(ReleaseAdapter adapter) => GithubReleaseSource(
+  Dio()..httpClientAdapter = adapter,
+  UpdateChannel.preview,
+);
 
 void main() {
   test('asks GitHub for the latest release of the repository', () async {
@@ -301,8 +303,8 @@ void main() {
       expect(found.manifest, isNull);
     });
 
-    test('the default channel is preview, like before there was a choice', () {
-      expect(GithubReleaseSource().channel, UpdateChannel.preview);
+    test('the default channel is stable, like the setting', () {
+      expect(GithubReleaseSource().channel, UpdateChannel.stable);
     });
   });
 }
