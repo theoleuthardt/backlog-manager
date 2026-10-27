@@ -14,6 +14,10 @@ set -euo pipefail
 : "${MONITOR_DB_USER:=monitor}"
 : "${MONITOR_DB_CONTAINER:=postgres-db}"
 [ -n "${MONITOR_DB_PASSWORD:-}" ] || { echo "MONITOR_DB_PASSWORD is not set (see .env.example)" >&2; exit 1; }
+if [ "$MONITOR_DB_USER" = "$POSTGRES_USER" ]; then
+  echo "MONITOR_DB_USER must differ from POSTGRES_USER, the Monitor gets a role of its own" >&2
+  exit 1
+fi
 
 podman exec -i "$MONITOR_DB_CONTAINER" psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d postgres \
   -v db="$MONITOR_DB_NAME" -v role="$MONITOR_DB_USER" -v password="$MONITOR_DB_PASSWORD" <<'SQL'
@@ -23,4 +27,13 @@ SELECT format('ALTER ROLE %I PASSWORD %L', :'role', :'password') \gexec
 SELECT format('CREATE DATABASE %I OWNER %I', :'db', :'role')
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = :'db') \gexec
 SQL
+owner=$(podman exec -i "$MONITOR_DB_CONTAINER" psql -v ON_ERROR_STOP=1 -tA -U "$POSTGRES_USER" -d postgres \
+  -v db="$MONITOR_DB_NAME" <<'SQL'
+SELECT pg_get_userbyid(datdba) FROM pg_database WHERE datname = :'db';
+SQL
+)
+if [ "$owner" != "$MONITOR_DB_USER" ]; then
+  echo "database \"$MONITOR_DB_NAME\" belongs to \"$owner\", not to \"$MONITOR_DB_USER\"; choose another MONITOR_DB_NAME" >&2
+  exit 1
+fi
 echo "monitor database \"$MONITOR_DB_NAME\" with role \"$MONITOR_DB_USER\" is ready"
