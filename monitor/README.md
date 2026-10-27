@@ -42,10 +42,14 @@ an empty volume, so the Monitor does not rely on them).
 
 Profiles:
 
-- **dev** (the default): reads the repository's `.env` (`MONITOR_DB_NAME`,
-  `MONITOR_DB_USER`, `MONITOR_DB_PASSWORD`, `POSTGRES_PORT`, `MONITOR_PORT`,
-  see `.env.example`), listens on 8090 because pgAdmin has 8080, shows the
-  details of `/actuator/health`.
+- **dev** (the default): takes `MONITOR_DB_NAME`, `MONITOR_DB_USER`,
+  `MONITOR_DB_PASSWORD`, `POSTGRES_PORT` and `MONITOR_PORT` from the
+  environment (see `.env.example`). `task monitor:dev` and
+  `task monitor:db:create` load them from the repository's `.env` with the
+  same parser, so the password the role is created with is the one the
+  Monitor connects with; started another way (an IDE), set them yourself.
+  Listens on `127.0.0.1:8090` (pgAdmin has 8080; `MONITOR_ADDRESS=0.0.0.0`
+  opens it to the network) and shows the details of `/actuator/health`.
 - **prod** (`SPRING_PROFILES_ACTIVE=prod`): the datasource comes only from
   `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` and
   `SPRING_DATASOURCE_PASSWORD`, logs are structured (ECS JSON), health shows

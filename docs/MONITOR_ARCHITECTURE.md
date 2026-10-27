@@ -582,7 +582,7 @@ variables.
 | result retention | `MONITOR_RETENTION_DAYS` | `30` |
 | max length of a push message | `MONITOR_PUSH_MESSAGE_MAX_LENGTH` | `200` |
 | local database (profile dev only) | `MONITOR_DB_NAME`, `MONITOR_DB_USER`, `MONITOR_DB_PASSWORD` from the root `.env` | `monitor`, `monitor`, none |
-| local port (profile dev only) | `MONITOR_PORT` | `8090` (pgAdmin has 8080) |
+| local address and port (profile dev only) | `MONITOR_ADDRESS`, `MONITOR_PORT` | `127.0.0.1`, `8090` (pgAdmin has 8080) |
 
 ## 9. Concurrency and transactions
 

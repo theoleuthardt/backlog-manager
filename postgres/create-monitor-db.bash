@@ -1,26 +1,12 @@
 #!/bin/bash
 # Creates the Monitor's own role and database in the local Postgres container
 # (`task db:up` first). Safe to re-run: existing roles and databases are left
-# as they are. The values come from the environment or the root .env
-# (MONITOR_DB_NAME, MONITOR_DB_USER, MONITOR_DB_PASSWORD, POSTGRES_USER), the
-# environment taking precedence; MONITOR_DB_CONTAINER names the container
-# (postgres-db by default).
+# as they are. The values come from the environment (MONITOR_DB_NAME,
+# MONITOR_DB_USER, MONITOR_DB_PASSWORD, POSTGRES_USER); `task monitor:db:create`
+# loads them from the root .env, the same way `task monitor:dev` does, so both
+# read the same values. MONITOR_DB_CONTAINER names the container (postgres-db
+# by default).
 set -euo pipefail
-
-cd "$(dirname "$0")/.."
-names=(POSTGRES_USER MONITOR_DB_NAME MONITOR_DB_USER MONITOR_DB_PASSWORD MONITOR_DB_CONTAINER)
-declare -A given=()
-for name in "${names[@]}"; do
-  if [ -n "${!name+x}" ]; then given[$name]=${!name}; fi
-done
-if [ -f .env ]; then
-  set -a
-  . ./.env
-  set +a
-fi
-for name in "${!given[@]}"; do
-  printf -v "$name" '%s' "${given[$name]}"
-done
 
 : "${POSTGRES_USER:=postgres}"
 : "${MONITOR_DB_NAME:=monitor}"
