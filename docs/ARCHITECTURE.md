@@ -193,9 +193,13 @@ must match the credentials in the app's `POSTGRES_URL`.
 
 **Workflows.**
 
-- `tests.yml` runs on every PR: backend lint, format check and pytest,
-  frontend lint, typecheck, format check and vitest, and the release script
-  tests.
+- `tests.yml` runs on every PR: backend lint, format check and pytest, and
+  the release script tests.
+- `frontend.yml` runs the frontend audit, lint, typecheck, format check and
+  vitest, only on PRs that change `frontend/` (the old web client is frozen
+  until the cutover, #247).
+- `app.yml` checks the Flutter app on PRs that change `app/`, and
+  `monitor.yml` builds and tests the Monitor on PRs that change `monitor/`.
 - `build.yml` test-builds the frontend and backend container images on every
   PR; it never pushes anything. `build-and-publish.yml` publishes them to
   ghcr.io, only after a merge to `main`, never for open pull requests.
