@@ -99,8 +99,9 @@ Future<Settings> openSettings(
   Future<void> Function(UserUpdate update)? onUpdate,
   UserUpdate Function(UserUpdate update)? normalize,
   List<Override> overrides = const [],
+  Size size = const Size(1440, 1100),
 }) async {
-  tester.view.physicalSize = const Size(1440, 1100);
+  tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   var account = user;

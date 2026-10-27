@@ -74,13 +74,18 @@ class MobileTopBar extends ConsumerWidget {
                     ),
                   ),
                   if (counts != null)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 8),
-                      child: Text(
-                        counts,
-                        style: text.label.copyWith(
-                          color: tokens.muted,
-                          fontWeight: FontWeight.w400,
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 180),
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: Text(
+                          counts,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: text.label.copyWith(
+                            color: tokens.muted,
+                            fontWeight: FontWeight.w400,
+                          ),
                         ),
                       ),
                     ),

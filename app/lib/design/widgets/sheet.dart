@@ -1,3 +1,4 @@
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
@@ -16,7 +17,8 @@ enum ShelfSheetWidth {
 }
 
 /// A sheet: a head with the title and a close button, a scrolling body and an
-/// optional [footer] on `surface2`.
+/// optional [footer] on `surface2`. Its bottom stays clear of the system's
+/// bottom inset (the home indicator) when it reaches the bottom of a phone.
 class ShelfSheet extends StatelessWidget {
   const ShelfSheet({
     required this.title,
@@ -41,6 +43,7 @@ class ShelfSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final text = Theme.of(context).extension<ShelfTextStyles>()!;
+    final inset = MediaQuery.paddingOf(context).bottom;
 
     return SizedBox(
       width: width.value,
@@ -99,7 +102,12 @@ class ShelfSheet extends StatelessWidget {
               ),
               Flexible(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+                  padding: EdgeInsets.fromLTRB(
+                    20,
+                    4,
+                    20,
+                    20 + (footer == null ? inset : 0),
+                  ),
                   child: child,
                 ),
               ),
@@ -108,10 +116,7 @@ class ShelfSheet extends StatelessWidget {
                   key: const Key('sheet-footer'),
                   color: tokens.surface2,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
+                    padding: EdgeInsets.fromLTRB(20, 12, 20, 12 + inset),
                     child: footer,
                   ),
                 ),
@@ -124,7 +129,9 @@ class ShelfSheet extends StatelessWidget {
 }
 
 /// The footer of a sheet: Cancel with its Esc hint on the left, the primary
-/// action on the right.
+/// action on the right. On a phone in portrait ([ShelfFormFactor], no Esc
+/// key) or narrower than 400 px the hint is left out and the actions wrap
+/// instead of overflowing.
 class ShelfSheetFooter extends StatelessWidget {
   const ShelfSheetFooter({
     required this.onCancel,
@@ -141,35 +148,52 @@ class ShelfSheetFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final text = Theme.of(context).extension<ShelfTextStyles>()!;
+    final cancel = ShelfButton(
+      label: cancelLabel,
+      kind: ShelfButtonKind.danger,
+      onPressed: onCancel,
+    );
 
-    return Row(
-      children: [
-        ShelfButton(
-          label: cancelLabel,
-          kind: ShelfButtonKind.danger,
-          onPressed: onCancel,
-        ),
-        const SizedBox(width: 6),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(5),
-            border: Border.all(color: tokens.borderSubtle),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-            child: Text('Esc', style: text.keyHint),
-          ),
-        ),
-        const Spacer(),
-        primary,
-      ],
+    final compact = ShelfFormFactor.isCompact(context);
+    return LayoutBuilder(
+      builder: (context, constraints) => compact || constraints.maxWidth < 400
+          ? Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
+              children: [cancel, primary],
+            )
+          : Row(
+              children: [
+                cancel,
+                const SizedBox(width: 6),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(5),
+                    border: Border.all(color: tokens.borderSubtle),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 1,
+                    ),
+                    child: Text('Esc', style: text.keyHint),
+                  ),
+                ),
+                const Spacer(),
+                primary,
+              ],
+            ),
     );
   }
 }
 
 /// Shows the sheet [builder] builds, dropping 8 px from just below the title
 /// bar over a dimmed window. Esc and a click outside close it unless it is not
-/// [dismissible] (a running import, for example).
+/// [dismissible] (a running import, for example). On a phone in portrait
+/// ([ShelfFormFactor]) it rises from the bottom over the full width, at most
+/// 92 % of the screen high and above the on-screen keyboard.
 Future<T?> showShelfSheet<T>(
   BuildContext context, {
   required WidgetBuilder builder,
@@ -181,25 +205,46 @@ Future<T?> showShelfSheet<T>(
     barrierLabel: 'Close',
     barrierColor: Theme.of(context).extension<ShelfTokens>()!.scrim,
     transitionDuration: const Duration(milliseconds: 250),
-    pageBuilder: (context, animation, secondary) => Material(
-      type: MaterialType.transparency,
-      child: Align(
-        alignment: Alignment.topCenter,
-        child: Padding(
-          padding: const EdgeInsets.only(top: 60),
-          child: builder(context),
+    pageBuilder: (context, animation, secondary) {
+      final screen = MediaQuery.sizeOf(context);
+      if (ShelfFormFactor.isCompact(context)) {
+        return Material(
+          type: MaterialType.transparency,
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.viewInsetsOf(context).bottom,
+            ),
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: screen.height * 0.92),
+                child: SizedBox(width: screen.width, child: builder(context)),
+              ),
+            ),
+          ),
+        );
+      }
+      return Material(
+        type: MaterialType.transparency,
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 60),
+            child: builder(context),
+          ),
         ),
-      ),
-    ),
+      );
+    },
     transitionBuilder: (context, animation, secondary, child) {
       final curved = CurvedAnimation(parent: animation, curve: Curves.easeOut);
       final slide = !MediaQuery.of(context).disableAnimations;
+      final distance = ShelfFormFactor.isCompact(context) ? 24.0 : -8.0;
       return FadeTransition(
         opacity: curved,
         child: AnimatedBuilder(
           animation: curved,
           builder: (context, child) => Transform.translate(
-            offset: Offset(0, slide ? -8 * (1 - curved.value) : 0),
+            offset: Offset(0, slide ? distance * (1 - curved.value) : 0),
             child: child,
           ),
           child: child,

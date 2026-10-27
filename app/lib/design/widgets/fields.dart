@@ -1,3 +1,4 @@
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
@@ -126,7 +127,8 @@ class _ShelfFieldState extends State<ShelfField> {
 }
 
 /// One row of a [ShelfFormGroup]: the label on the left (with a small
-/// description below it) and the control on the right.
+/// description below it) and the control on the right; on a phone in
+/// portrait ([ShelfFormFactor]) the control goes below the label.
 class ShelfFormRow extends StatelessWidget {
   const ShelfFormRow({
     required this.label,
@@ -143,34 +145,35 @@ class ShelfFormRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final text = Theme.of(context).extension<ShelfTextStyles>()!;
+    final caption = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: text.control.copyWith(color: tokens.foreground)),
+        if (description != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              description!,
+              style: text.caption.copyWith(color: tokens.faint),
+            ),
+          ),
+      ],
+    );
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
+      child: ShelfFormFactor.isCompact(context)
+          ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              children: [caption, const SizedBox(height: 10), control],
+            )
+          : Row(
               children: [
-                Text(
-                  label,
-                  style: text.control.copyWith(color: tokens.foreground),
-                ),
-                if (description != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: Text(
-                      description!,
-                      style: text.caption.copyWith(color: tokens.faint),
-                    ),
-                  ),
+                Expanded(child: caption),
+                const SizedBox(width: 16),
+                control,
               ],
             ),
-          ),
-          const SizedBox(width: 16),
-          control,
-        ],
-      ),
     );
   }
 }

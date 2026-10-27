@@ -23,6 +23,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 const _gutter = 28.0;
 
+/// Below this width the theme list, the editor and the preview stack instead
+/// of standing side by side (they need 250 + 360 + a preview of about 300).
+const _stackBelow = 960.0;
+
 /// The colours the palette of a colour picker offers: those of the built-in
 /// themes.
 final _palette = {
@@ -191,70 +195,101 @@ class _AppearancePageState extends ConsumerState<AppearancePage> {
     );
     final atLimit = !editing && custom.length >= maxCustomThemes;
 
-    return Column(
-      key: const Key('page-appearance'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(_gutter, 22, _gutter, 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Changes preview live across the whole app.',
-                  style: style.caption.copyWith(color: tokens.muted),
-                ),
-              ),
-              ShelfButton(
-                key: const Key('theme-reset'),
-                label: 'Reset',
-                kind: ShelfButtonKind.quiet,
-                onPressed: _reset,
-              ),
-              const SizedBox(width: 8),
-              if (editing) ...[
-                ShelfButton(
-                  key: const Key('theme-new'),
-                  label: 'New Theme',
-                  icon: Icons.add,
-                  onPressed: () => _startNew(_colors),
-                ),
-                const SizedBox(width: 8),
-              ],
-              ShelfButton(
-                key: const Key('theme-save'),
-                label: editing ? 'Save Changes' : 'Save Theme',
-                kind: ShelfButtonKind.primary,
-                busy: _saving,
-                onPressed: canSave && !_saving
-                    ? () => unawaited(_save())
-                    : null,
-              ),
-            ],
-          ),
+    final buttons = <Widget>[
+      ShelfButton(
+        key: const Key('theme-reset'),
+        label: 'Reset',
+        kind: ShelfButtonKind.quiet,
+        onPressed: _reset,
+      ),
+      if (editing)
+        ShelfButton(
+          key: const Key('theme-new'),
+          label: 'New Theme',
+          icon: Icons.add,
+          onPressed: () => _startNew(_colors),
         ),
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(_gutter, 8, _gutter, 28),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: 250,
-                  child: _themeList(custom, activeId, tokens, style),
-                ),
-                const SizedBox(width: 20),
-                SizedBox(
-                  width: 360,
-                  child: _editor(editing, atLimit, tokens, style),
-                ),
-                const SizedBox(width: 20),
-                const Expanded(child: ThemePreview()),
-              ],
+      ShelfButton(
+        key: const Key('theme-save'),
+        label: editing ? 'Save Changes' : 'Save Theme',
+        kind: ShelfButtonKind.primary,
+        busy: _saving,
+        onPressed: canSave && !_saving ? () => unawaited(_save()) : null,
+      ),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final narrow = constraints.maxWidth < _stackBelow;
+        final gutter = narrow ? 16.0 : _gutter;
+        return Column(
+          key: const Key('page-appearance'),
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(gutter, narrow ? 14 : 22, gutter, 8),
+              child: narrow
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Changes preview live across the whole app.',
+                          style: style.caption.copyWith(color: tokens.muted),
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(spacing: 8, runSpacing: 8, children: buttons),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Changes preview live across the whole app.',
+                            style: style.caption.copyWith(color: tokens.muted),
+                          ),
+                        ),
+                        for (final (index, button) in buttons.indexed) ...[
+                          if (index > 0) const SizedBox(width: 8),
+                          button,
+                        ],
+                      ],
+                    ),
             ),
-          ),
-        ),
-      ],
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(gutter, 8, gutter, 28),
+                child: narrow
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _themeList(custom, activeId, tokens, style),
+                          const SizedBox(height: 20),
+                          _editor(editing, atLimit, tokens, style),
+                          const SizedBox(height: 20),
+                          const ThemePreview(),
+                        ],
+                      )
+                    : Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 250,
+                            child: _themeList(custom, activeId, tokens, style),
+                          ),
+                          const SizedBox(width: 20),
+                          SizedBox(
+                            width: 360,
+                            child: _editor(editing, atLimit, tokens, style),
+                          ),
+                          const SizedBox(width: 20),
+                          const Expanded(child: ThemePreview()),
+                        ],
+                      ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

@@ -1,5 +1,6 @@
 import 'package:backlog_manager/api/api_providers.dart';
 import 'package:backlog_manager/data/entry_image.dart';
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/chips.dart';
@@ -81,7 +82,8 @@ class SheetNote extends StatelessWidget {
   }
 }
 
-/// The "Esc" or "Enter" key hint after a button label.
+/// The "Esc" or "Enter" key hint after a button label, left out on a phone in
+/// portrait ([ShelfFormFactor]), which has no keyboard.
 class KeyHint extends StatelessWidget {
   const KeyHint(this.label, {super.key});
 
@@ -89,6 +91,7 @@ class KeyHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (ShelfFormFactor.isCompact(context)) return const SizedBox.shrink();
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
     return DecoratedBox(

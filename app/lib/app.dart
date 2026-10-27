@@ -1,9 +1,11 @@
 import 'package:backlog_manager/design/background_motion.dart';
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/glass.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
 import 'package:backlog_manager/features/appearance/theme_actions.dart';
 import 'package:backlog_manager/features/startup/startup_splash.dart';
 import 'package:backlog_manager/routing/router.dart';
+import 'package:backlog_manager/shell/shell_layout.dart';
 import 'package:backlog_manager/shell/shell_shortcuts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,10 +24,13 @@ class BacklogManagerApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: ref.watch(shelfThemeProvider),
       routerConfig: ref.watch(routerProvider),
-      builder: (context, child) => AtmosphereSettings(
-        blurEnabled: blurEffects,
-        child: StartupSplash(
-          child: ShellShortcuts(child: child ?? const SizedBox.shrink()),
+      builder: (context, child) => ShelfFormFactor(
+        compact: shellLayoutOf(context, ref) == ShellLayout.compact,
+        child: AtmosphereSettings(
+          blurEnabled: blurEffects,
+          child: StartupSplash(
+            child: ShellShortcuts(child: child ?? const SizedBox.shrink()),
+          ),
         ),
       ),
     );

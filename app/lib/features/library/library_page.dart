@@ -41,6 +41,7 @@ import 'package:backlog_manager/features/space/space_backups_sheet.dart';
 import 'package:backlog_manager/features/space/space_toolbar.dart';
 import 'package:backlog_manager/features/steam/steam_sync_button.dart';
 import 'package:backlog_manager/routing/session.dart';
+import 'package:backlog_manager/shell/shell_layout.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -54,6 +55,8 @@ const _gutter = 28.0;
 ///
 /// With a [space] it is the library of the Shared Space: the header of the
 /// space replaces the title, and covers show the progress of both members.
+/// On a phone or handheld the toolbar and the filter bar scroll away with the
+/// games, so a low screen keeps its height for them; the selection bar stays.
 class LibraryPage extends StatelessWidget {
   const LibraryPage({this.space, super.key});
 
@@ -317,6 +320,12 @@ class _LibraryState extends ConsumerState<_Library> {
       (key, _) => !content.groups.any((group) => group.key == key),
     );
 
+    final scrollingHeader = shellLayoutOf(context, ref) != ShellLayout.expanded;
+    final header = <Widget>[
+      if (space != null) SpaceNotice(space: space),
+      const FilterBar(gutter: _gutter),
+    ];
+
     return LibraryActionsScope(
       actions: LibraryActions(context, ref),
       child: LibraryDragScope(
@@ -326,16 +335,26 @@ class _LibraryState extends ConsumerState<_Library> {
           children: [
             if (selection.active)
               const SelectionBar(gutter: _gutter)
-            else
+            else if (!scrollingHeader)
               _Toolbar(content: content, space: space),
-            if (space != null) SpaceNotice(space: space),
-            const FilterBar(gutter: _gutter),
+            if (!scrollingHeader) ...header,
             Expanded(
               child: SizedBox.expand(
                 key: _viewportKey,
                 child: CustomScrollView(
                   controller: _scroll,
                   slivers: [
+                    if (scrollingHeader)
+                      SliverToBoxAdapter(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (!selection.active)
+                              _Toolbar(content: content, space: space),
+                            ...header,
+                          ],
+                        ),
+                      ),
                     const SliverPadding(padding: EdgeInsets.only(top: 6)),
                     for (final group in content.groups)
                       ..._groupSlivers(group, layout, serverUrl),
