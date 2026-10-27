@@ -26,7 +26,7 @@ games according to categories such as "Games I still want to play", "Games I'm c
 
 ## Installing the desktop app
 
-Download the installer for your system from the [latest release](https://github.com/theoleuthardt/backlog-manager/releases/latest); the app updates itself afterwards ([`docs/APP_UPDATES.md`](docs/APP_UPDATES.md)). The installers are not code signed, so macOS and Windows warn on the first start: on macOS use right click > Open (or System Settings > Privacy & Security > Open Anyway), on Windows "More info" > "Run anyway".
+Download the installer for your system from the [latest release](https://github.com/theoleuthardt/backlog-manager/releases/latest); the DMG, the Windows installer and the AppImage update themselves afterwards, DEB and RPM installs only announce a new release ([`docs/APP_UPDATES.md`](docs/APP_UPDATES.md)). The installers are not code signed, so macOS and Windows warn on the first start: on macOS use right click > Open (or System Settings > Privacy & Security > Open Anyway), on Windows "More info" > "Run anyway".
 
 ## Architecture
 
