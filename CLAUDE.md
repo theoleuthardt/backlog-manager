@@ -24,7 +24,7 @@ task db:up         # local Postgres + pgAdmin via compose.yml
 task test          # backend (pytest) + frontend (vitest) + app (flutter test) + monitor (JUnit) suites
 task lint          # frontend (eslint) + backend (ruff) + app (flutter analyze) + monitor (javac -Xlint:all -Werror)
 task app:dev       # Flutter desktop app (needs Flutter 3.47.6, see docs/FLUTTER.md)
-task monitor:dev   # Monitor (Spring Boot) on :8080; also monitor:install, monitor:lint, monitor:test, monitor:build, monitor:format(:check)
+task monitor:dev   # Monitor (Spring Boot) on :8090 against the local Postgres (task monitor:db:create once); also monitor:install, monitor:lint, monitor:test, monitor:build, monitor:format(:check)
 task format        # prettier (frontend) + ruff format (backend) + dart format (app) + Spotless (monitor); task format:check only verifies
 task audit         # known-vulnerability scan of the locked frontend + backend dependencies
 task backend:migration -- "add foo column"   # new Alembic revision
