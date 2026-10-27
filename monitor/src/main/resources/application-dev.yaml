@@ -1,0 +1,15 @@
+spring:
+  config:
+    import: optional:file:../.env[.properties]
+  datasource:
+    url: jdbc:postgresql://${MONITOR_DB_HOST:localhost}:${POSTGRES_PORT:5432}/${MONITOR_DB_NAME:monitor}
+    username: ${MONITOR_DB_USER:monitor}
+    password: ${MONITOR_DB_PASSWORD:}
+
+server:
+  port: ${MONITOR_PORT:8090}
+
+management:
+  endpoint:
+    health:
+      show-details: always

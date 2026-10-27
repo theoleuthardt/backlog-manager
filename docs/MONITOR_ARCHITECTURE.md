@@ -581,6 +581,8 @@ variables.
 | default HTTP timeout | `MONITOR_HTTP_DEFAULT_TIMEOUT` | `10s` |
 | result retention | `MONITOR_RETENTION_DAYS` | `30` |
 | max length of a push message | `MONITOR_PUSH_MESSAGE_MAX_LENGTH` | `200` |
+| local database (profile dev only) | `MONITOR_DB_NAME`, `MONITOR_DB_USER`, `MONITOR_DB_PASSWORD` from the root `.env` | `monitor`, `monitor`, none |
+| local port (profile dev only) | `MONITOR_PORT` | `8090` (pgAdmin has 8080) |
 
 ## 9. Concurrency and transactions
 

@@ -329,10 +329,15 @@ tasks:
       - ./mvnw -B -q dependency:go-offline
 
   monitor:dev:
-    desc: Run the Monitor (Spring Boot) on http://localhost:8080
+    desc: Run the Monitor (Spring Boot, profile dev) on http://localhost:8090 against the local Postgres
     dir: "{{.MONITOR_DIR}}"
     cmds:
       - ./mvnw spring-boot:run
+
+  monitor:db:create:
+    desc: Create the Monitor's role and database in the local Postgres (task db:up first; safe to re-run)
+    cmds:
+      - bash postgres/create-monitor-db.bash
 
   monitor:lint:
     desc: Compile the Monitor and its tests with -Xlint:all -Werror
