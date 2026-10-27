@@ -51,30 +51,72 @@ class ShelfBanner extends StatelessWidget {
                 ),
               ),
               if (actionLabel case final label?) ...[
-                const SizedBox(width: 12),
-                Semantics(
-                  button: true,
-                  label: label,
-                  excludeSemantics: true,
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: GestureDetector(
-                      key: const Key('error-banner-action'),
-                      onTap: onAction,
-                      child: Text(
-                        label,
-                        style: text.caption.copyWith(
-                          color: tokens.danger,
-                          fontWeight: FontWeight.w600,
-                          decoration: TextDecoration.underline,
-                          decorationColor: tokens.danger,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+                const SizedBox(width: 8),
+                _BannerAction(label: label, onAction: onAction),
               ],
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The link at the end of a [ShelfBanner]: clickable, and reachable with Tab
+/// and usable with Enter or Space, with a ring while it has the focus.
+class _BannerAction extends StatefulWidget {
+  const _BannerAction({required this.label, required this.onAction});
+
+  final String label;
+  final VoidCallback? onAction;
+
+  @override
+  State<_BannerAction> createState() => _BannerActionState();
+}
+
+class _BannerActionState extends State<_BannerAction> {
+  bool _focused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = Theme.of(context).extension<ShelfTokens>()!;
+    final text = Theme.of(context).extension<ShelfTextStyles>()!;
+
+    return Semantics(
+      button: true,
+      label: widget.label,
+      excludeSemantics: true,
+      child: FocusableActionDetector(
+        key: const Key('error-banner-action'),
+        mouseCursor: SystemMouseCursors.click,
+        onShowFocusHighlight: (focused) => setState(() => _focused = focused),
+        actions: {
+          ActivateIntent: CallbackAction<ActivateIntent>(
+            onInvoke: (_) => widget.onAction?.call(),
+          ),
+        },
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.onAction,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(
+                color: atOpacity(tokens.danger, _focused ? 1 : 0),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              child: Text(
+                widget.label,
+                style: text.caption.copyWith(
+                  color: tokens.danger,
+                  fontWeight: FontWeight.w600,
+                  decoration: TextDecoration.underline,
+                  decorationColor: tokens.danger,
+                ),
+              ),
+            ),
           ),
         ),
       ),

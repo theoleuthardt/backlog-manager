@@ -38,6 +38,15 @@ SignInFailure describeSignInFailure(
 }) {
   final time = _clock(now);
   if (error is ApiException) return SignInFailure(error.message);
+  if (error is TypeError || error is FormatException) {
+    return SignInFailure(
+      'Not a Backlog Manager server',
+      explanation:
+          'The server answered, but it is not a Backlog Manager server. '
+          'Check the server address.',
+      details: 'unexpected answer · $time',
+    );
+  }
   if (error is! DioException) {
     return SignInFailure(
       fallback,

@@ -192,6 +192,22 @@ void main() {
       );
     });
 
+    test('JSON of another kind than the backend answers', () async {
+      final error = await signInFailing(
+        (_) => json(200, '{"access_token": 5, "requires_2fa": false}'),
+      );
+      expect(error, isNot(isA<DioException>()));
+      expect(
+        describeSignInFailure(error, fallback: 'Login failed', now: now),
+        isFailure(
+          notBacklogManager,
+          'The server answered, but it is not a Backlog Manager server. '
+              'Check the server address.',
+          'unexpected answer · 08:10:23',
+        ),
+      );
+    });
+
     test('a web page instead of the backend', () async {
       expect(
         await failureFor((_) => html(200)),
