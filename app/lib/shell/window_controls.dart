@@ -51,5 +51,7 @@ class NoWindowControls implements WindowControls {
 }
 
 final windowControlsProvider = Provider<WindowControls>(
-  (ref) => isDesktopPlatform() ? PluginWindowControls() : NoWindowControls(),
+  (ref) => ref.watch(isDesktopProvider)
+      ? PluginWindowControls()
+      : NoWindowControls(),
 );

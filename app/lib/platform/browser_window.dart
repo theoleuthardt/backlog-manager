@@ -33,11 +33,12 @@ String? windowsWebviewProfileFolder(Map<String, String> environment) {
 /// browser. Tests replace it.
 final browserWindowOpenerProvider = Provider<BrowserWindowOpener>((ref) {
   final openExternally = ref.watch(urlOpenerProvider);
+  final desktop = ref.watch(isDesktopProvider);
   Webview? current;
 
   return (url, {required stays}) async {
     try {
-      if (!isDesktopPlatform() || !await WebviewWindow.isWebviewAvailable()) {
+      if (!desktop || !await WebviewWindow.isWebviewAvailable()) {
         openExternally(url);
         return;
       }

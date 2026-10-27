@@ -78,7 +78,7 @@ class _ImportCsvPageState extends ConsumerState<ImportCsvPage> {
             )
           : _Empty(state: state, onChoose: _choose),
     );
-    if (!isDesktopPlatform()) return page;
+    if (!ref.watch(isDesktopProvider)) return page;
     return DropTarget(
       onDragEntered: (_) => setState(() => _dragging = true),
       onDragExited: (_) => setState(() => _dragging = false),
