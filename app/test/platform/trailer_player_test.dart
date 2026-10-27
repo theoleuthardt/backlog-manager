@@ -3,6 +3,49 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('trailer navigation', () {
+    for (final host in [
+      'dev.theocloud.blm',
+      'www.youtube-nocookie.com',
+      'www.youtube.com',
+    ]) {
+      test('stays on $host', () {
+        expect(
+          trailerNavigationAllowed(
+            Uri.parse('https://$host/x'),
+            mainFrame: true,
+          ),
+          isTrue,
+        );
+      });
+    }
+
+    test('cancels a page of another host', () {
+      expect(
+        trailerNavigationAllowed(
+          Uri.parse('https://example.com/'),
+          mainFrame: true,
+        ),
+        isFalse,
+      );
+      expect(trailerNavigationAllowed(null, mainFrame: true), isFalse);
+    });
+
+    test('lets the frames inside the page load', () {
+      expect(
+        trailerNavigationAllowed(
+          Uri.parse('https://example.com/ad'),
+          mainFrame: false,
+        ),
+        isTrue,
+      );
+    });
+
+    test('asks the app before every navigation', () {
+      expect(trailerWebViewSettings().useShouldOverrideUrlLoading, isTrue);
+    });
+  });
+
   group('hasEmbeddedTrailerPlayer', () {
     for (final platform in [
       TargetPlatform.macOS,

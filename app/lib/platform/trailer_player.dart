@@ -34,24 +34,36 @@ Widget? systemTrailerPlayer(BuildContext context, Uri embedUrl) {
       data: trailerPage(embedUrl),
       baseUrl: WebUri('$trailerOrigin/'),
     ),
-    shouldOverrideUrlLoading: (controller, action) async {
-      final host = action.request.url?.host ?? '';
-      final embedded =
-          !action.isForMainFrame ||
-          host == Uri.parse(trailerOrigin).host ||
-          host == 'www.youtube-nocookie.com' ||
-          host == 'www.youtube.com';
-      return embedded
-          ? NavigationActionPolicy.ALLOW
-          : NavigationActionPolicy.CANCEL;
-    },
-    initialSettings: InAppWebViewSettings(
-      mediaPlaybackRequiresUserGesture: false,
-      allowsInlineMediaPlayback: true,
-      transparentBackground: true,
-    ),
+    shouldOverrideUrlLoading: (controller, action) async =>
+        trailerNavigationAllowed(
+          action.request.url,
+          mainFrame: action.isForMainFrame,
+        )
+        ? NavigationActionPolicy.ALLOW
+        : NavigationActionPolicy.CANCEL,
+    initialSettings: trailerWebViewSettings(),
   );
 }
+
+/// Whether the trailer web view may load [url]: a frame inside the page
+/// always, the page itself only from the app's own origin or YouTube.
+bool trailerNavigationAllowed(Uri? url, {required bool mainFrame}) {
+  if (!mainFrame) return true;
+  final host = url?.host ?? '';
+  return host == Uri.parse(trailerOrigin).host ||
+      host == 'www.youtube-nocookie.com' ||
+      host == 'www.youtube.com';
+}
+
+/// The settings of the trailer web view. `useShouldOverrideUrlLoading` is
+/// what makes the plugin ask [trailerNavigationAllowed] at all; without it
+/// every navigation goes through.
+InAppWebViewSettings trailerWebViewSettings() => InAppWebViewSettings(
+  useShouldOverrideUrlLoading: true,
+  mediaPlaybackRequiresUserGesture: false,
+  allowsInlineMediaPlayback: true,
+  transparentBackground: true,
+);
 
 /// The origin the app presents to YouTube: its application id as an https
 /// address. YouTube identifies an embedding client by the origin of the page
