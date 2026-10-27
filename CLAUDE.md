@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Backlog Manager is a video game backlog manager. The frontend is a React single-page app built with Vite and React Router (originally scaffolded with create-t3-app on Next.js; Next.js, tRPC and NextAuth have since been removed, see issue #241) living in `frontend/`; the backend is a standalone Python/Litestar service living in `backend/` (fully migrated off Next.js/tRPC — see issue #103/#104 for that history). The frontend calls the backend directly over REST with a JWT Bearer token. Only the backend is meant to be hosted as a public, always-on service; the frontend ships as a Tauri desktop app built from the same Vite build (which also produces the web image) rather than being centrally hosted the same way.
 
+A separate Spring Boot service in `monitor/` (epic #468; Spring Boot 4.1.2, Java 25, Maven wrapper) is the status and alerting service of the homelab: it watches the backend from its own LXC and does not replace it. Its design: [`docs/MONITOR_ARCHITECTURE.md`](docs/MONITOR_ARCHITECTURE.md).
+
 A Flutter desktop client in `app/` (macOS, Windows, Linux) is being built as the replacement of `frontend/` (epic #247); `frontend/` keeps shipping unchanged until the cutover. Everything about it: [`docs/FLUTTER.md`](docs/FLUTTER.md).
 
 Users can track games with metadata from HowLongToBeat and IGDB, organize games into categories via drag & drop, connect Steam accounts for playtime sync, and import/export CSV files.
