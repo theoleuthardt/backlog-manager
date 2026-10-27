@@ -181,8 +181,9 @@ jobs:
           -d linux
 
   android-build:
-    name: App Android Build
+    name: App Android Build and Smoke Test
     runs-on: ubuntu-latest
+    timeout-minutes: 45
 
     permissions:
       contents: read
@@ -216,6 +217,30 @@ jobs:
       - name: Build
         run: flutter build apk --debug
 
+      - name: Upload the APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: app/build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+
+      - name: Enable KVM
+        working-directory: .
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Smoke test on an emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          working-directory: app
+          script: flutter drive --driver=test_driver/integration_test.dart --target=integration_test/mobile_smoke_test.dart -d emulator-5554
+
   ios-build:
     name: App iOS Build
     runs-on: macos-latest
@@ -248,3 +273,10 @@ jobs:
 
       - name: Pack the unsigned IPA
         run: bash tool/package/ipa.sh
+
+      - name: Upload the IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-ipa
+          path: app/dist/**/*.ipa
+          if-no-files-found: error

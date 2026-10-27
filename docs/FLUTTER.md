@@ -156,7 +156,8 @@ The mobile port is epic #289 (#519-#528). The app id is `dev.theocloud.blm` on e
 - **Trailers:** the embedded player (`flutter_inappwebview`) also runs on Android and iOS.
 - **Android Gradle Plugin:** pinned to 8.13 (Gradle 8.14.3, needs a JDK 17 or 21) in `android/settings.gradle.kts`, because `flutter_inappwebview_android` 1.1.3 calls `getDefaultProguardFile('proguard-android.txt')`, which AGP 9 rejects. Flutter warns that its AGP 8 support ends soon: move to AGP 9 (the template's 9.1 and Gradle 9.3) once `flutter_inappwebview` 6.2 is stable.
 - **Layout:** still the desktop shell; the responsive layout for a phone in portrait and the Retroid Pocket 6 and AYN Odin 3 in landscape follows in #521 and #522, without changing the desktop.
-- **CI:** `app.yml` builds a debug APK (JDK 17) and an unsigned iOS release build on every app pull request.
+- **CI:** on every app pull request `app.yml` builds a debug APK (JDK 17) and runs `integration_test/mobile_smoke_test.dart` on an Android 14 emulator (`reactivecircus/android-emulator-runner`, KVM of the GitHub runner): the real app with the real keystore and preferences against the in-memory backend, so a plugin without an Android implementation fails there. It also builds the unsigned IPA on macOS. The APK and the IPA are attached to the run as artifacts (`android-apk`, `ios-ipa`) for a check on a real device.
+- **Testing the mobile layout:** golden tests at the phone (402x874, portrait) and handheld (Retroid Pocket 6, AYN Odin 3, landscape) sizes next to the unchanged desktop goldens, the integration flows in a window of those sizes, the emulator smoke test, and spot checks on the devices with the CI artifacts. There is no local emulator: the development container has no KVM.
 
 ## Architecture
 
