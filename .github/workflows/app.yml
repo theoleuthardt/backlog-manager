@@ -237,6 +237,8 @@ jobs:
           api-level: 34
           arch: x86_64
           target: google_apis
+          profile: pixel_6
+          ram-size: 4096M
           disable-animations: true
           working-directory: app
           script: flutter drive --driver=test_driver/integration_test.dart --target=integration_test/mobile_smoke_test.dart -d emulator-5554
