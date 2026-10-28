@@ -87,10 +87,12 @@ class _BackupsTabState extends ConsumerState<BackupsTab> {
     setState(() => _downloading = true);
     try {
       final bytes = await ref.read(backupsApiProvider).download(backup.id);
-      final saved = await ref
-          .read(fileSaverProvider)
-          .save(suggestedName: backup.fileName, bytes: bytes);
-      if (saved) _toast('Backup saved');
+      final saver = ref.read(fileSaverProvider);
+      final saved = await saver.save(
+        suggestedName: backup.fileName,
+        bytes: bytes,
+      );
+      if (saved) _toast(saver.shares ? 'Backup shared' : 'Backup saved');
     } on Object catch (error) {
       _toast(_message(error, 'Failed to download backup'));
     } finally {

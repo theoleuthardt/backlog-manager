@@ -1,3 +1,4 @@
+import 'package:backlog_manager/routing/session.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -53,7 +54,9 @@ const _unlockKey = 'blm-biometric-unlock';
 
 /// Keeps on the device whether the app asks for Face ID or a fingerprint.
 abstract interface class BiometricUnlockStore {
-  Future<bool> read();
+  /// The stored choice, false when none is stored, null when the device
+  /// could not be read.
+  Future<bool?> read();
 
   Future<void> write({required bool enabled});
 }
@@ -62,12 +65,12 @@ class PreferencesBiometricUnlockStore implements BiometricUnlockStore {
   const PreferencesBiometricUnlockStore();
 
   @override
-  Future<bool> read() async {
+  Future<bool?> read() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getBool(_unlockKey) ?? false;
     } on Object {
-      return false;
+      return null;
     }
   }
 
@@ -88,7 +91,9 @@ final biometricUnlockStoreProvider = Provider<BiometricUnlockStore>(
 
 /// Whether the lock is on when the app starts; `main` reads it from the
 /// device before the first frame (so nothing of the backlog shows before the
-/// lock), everything else starts with it off.
+/// lock), and a setting the device cannot read counts as on, so a failure
+/// never opens the app (Sign out stays the way out); everything else starts
+/// with it off.
 final biometricUnlockAtStartProvider = Provider<bool>((ref) => false);
 
 /// Whether the app asks for Face ID or a fingerprint when it starts and when
@@ -120,12 +125,21 @@ const relockAfter = Duration(minutes: 5);
 
 /// Whether the lock is closed: at the start, and again after the app was in
 /// the background for [relockAfter]; it only matters while
-/// [biometricUnlockProvider] is on.
+/// [biometricUnlockProvider] is on. Signing out (the way out when the check
+/// fails) opens it, so the next sign-in, which proves the account, is not
+/// locked again; the session that `main` restores at the start stays locked.
 class AppLockedNotifier extends Notifier<bool> {
   DateTime? _hiddenAt;
 
   @override
-  bool build() => true;
+  bool build() {
+    ref.listen(sessionProvider, (previous, next) {
+      if (previous is SessionSignedIn && next is! SessionSignedIn) {
+        state = false;
+      }
+    });
+    return true;
+  }
 
   void unlock() => state = false;
 

@@ -26,15 +26,15 @@ class BiometricGate extends ConsumerStatefulWidget {
 }
 
 class _BiometricGateState extends ConsumerState<BiometricGate> {
-  late final AppLifecycleListener _lifecycle = AppLifecycleListener(
-    onHide: () => ref.read(appLockedProvider.notifier).hidden(DateTime.now()),
-    onShow: () => ref.read(appLockedProvider.notifier).shown(DateTime.now()),
-  );
+  late final AppLifecycleListener _lifecycle;
 
   @override
   void initState() {
     super.initState();
-    _lifecycle;
+    _lifecycle = AppLifecycleListener(
+      onHide: () => ref.read(appLockedProvider.notifier).hidden(DateTime.now()),
+      onShow: () => ref.read(appLockedProvider.notifier).shown(DateTime.now()),
+    );
   }
 
   @override

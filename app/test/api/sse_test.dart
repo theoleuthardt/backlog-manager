@@ -308,6 +308,23 @@ void main() {
       );
     });
 
+    test('an answer of the server keeps its own error after a pause', () async {
+      final gate = Completer<void>();
+      final dio = Dio(BaseOptions(baseUrl: 'http://api.test'))
+        ..httpClientAdapter = StreamAdapter(
+          const Stream.empty(),
+          status: 500,
+          delay: gate.future,
+        );
+
+      final events = openSse(dio, '/stream').toList();
+      await Future<void>.delayed(Duration.zero);
+      backgroundEntries.value++;
+      gate.complete();
+
+      await expectLater(events, throwsA(isA<DioException>()));
+    });
+
     test('a stream cut in the foreground keeps its own error', () async {
       final controller = StreamController<List<int>>();
       final dio = Dio(BaseOptions(baseUrl: 'http://api.test'))

@@ -11,10 +11,17 @@ import 'package:share_plus/share_plus.dart';
 abstract interface class FileSaver {
   /// Asks for a place and writes [bytes] there; false when the user cancelled.
   Future<bool> save({required String suggestedName, required List<int> bytes});
+
+  /// Whether [save] hands the file to the share sheet instead of writing it,
+  /// so a page says "shared" rather than "saved".
+  bool get shares;
 }
 
 class SystemFileSaver implements FileSaver {
   const SystemFileSaver();
+
+  @override
+  bool get shares => false;
 
   @override
   Future<bool> save({
@@ -49,6 +56,9 @@ String mimeTypeFor(String name) {
 /// middle of the screen.
 class ShareFileSaver implements FileSaver {
   const ShareFileSaver();
+
+  @override
+  bool get shares => true;
 
   @override
   Future<bool> save({

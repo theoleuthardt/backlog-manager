@@ -92,16 +92,15 @@ class _SpaceBackupsSheetState extends ConsumerState<SpaceBackupsSheet> {
   Future<void> _save(
     Future<List<int>> Function() read,
     String name,
-    String done,
+    String what,
     String failure,
   ) async {
     setState(() => _saving = true);
     try {
       final bytes = await read();
-      final saved = await ref
-          .read(fileSaverProvider)
-          .save(suggestedName: name, bytes: bytes);
-      if (saved) _toast(done);
+      final saver = ref.read(fileSaverProvider);
+      final saved = await saver.save(suggestedName: name, bytes: bytes);
+      if (saved) _toast('$what ${saver.shares ? 'shared' : 'saved'}');
     } on Object catch (error) {
       _toast(_message(error, failure));
     } finally {
@@ -224,7 +223,7 @@ class _SpaceBackupsSheetState extends ConsumerState<SpaceBackupsSheet> {
                         _save(
                           ref.read(spaceBackupsApiProvider).export,
                           'space-backlog.json',
-                          'Export saved',
+                          'Export',
                           'Failed to export the space',
                         ),
                       ),
@@ -413,7 +412,7 @@ class _SpaceBackupsSheetState extends ConsumerState<SpaceBackupsSheet> {
                                   .read(spaceBackupsApiProvider)
                                   .download(backup.id),
                               backup.fileName,
-                              'Backup saved',
+                              'Backup',
                               'Failed to download backup',
                             ),
                           ),

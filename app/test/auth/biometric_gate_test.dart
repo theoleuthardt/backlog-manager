@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../features/settings/settings_page_test.dart' show openSettings;
 import '../shell/shell_harness.dart';
-import 'biometric_lock_test.dart';
+import 'biometric_fakes.dart';
 
 const phone = Size(402, 874);
 
@@ -52,6 +52,18 @@ void main() {
 
     expect(find.byKey(const Key('biometric-lock')), findsNothing);
     expect(find.byKey(const Key('page-home')), findsOneWidget);
+  });
+
+  testWidgets('signing out from the lock lets the next sign-in in', (
+    tester,
+  ) async {
+    final auth = FakeBiometricAuth()..passes = false;
+    final app = await pumpLocked(tester, auth: auth);
+
+    await tester.tap(find.byKey(const Key('biometric-sign-out')));
+    await tester.pumpAndSettle();
+
+    expect(app.container.read(appLockedProvider), isFalse);
   });
 
   testWidgets('without the lock the app opens directly', (tester) async {

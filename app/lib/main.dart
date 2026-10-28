@@ -29,7 +29,7 @@ Future<void> main() async {
   }
   final unlockAtStart =
       !isDesktopPlatform() &&
-      await const PreferencesBiometricUnlockStore().read();
+      (await const PreferencesBiometricUnlockStore().read() ?? true);
   final container = ProviderContainer(
     retry: (retryCount, error) => null,
     overrides: [

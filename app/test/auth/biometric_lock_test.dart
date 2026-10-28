@@ -2,32 +2,7 @@ import 'package:backlog_manager/auth/biometric_lock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-class FakeBiometricAuth implements BiometricAuth {
-  bool available = true;
-  bool passes = true;
-  int asked = 0;
-
-  @override
-  Future<bool> isAvailable() async => available;
-
-  @override
-  Future<bool> authenticate() async {
-    asked++;
-    return passes;
-  }
-}
-
-class MemoryBiometricUnlockStore implements BiometricUnlockStore {
-  MemoryBiometricUnlockStore([this.enabled = false]);
-
-  bool enabled;
-
-  @override
-  Future<bool> read() async => enabled;
-
-  @override
-  Future<void> write({required bool enabled}) async => this.enabled = enabled;
-}
+import 'biometric_fakes.dart';
 
 ProviderContainer containerWith(
   FakeBiometricAuth auth,
@@ -37,6 +12,7 @@ ProviderContainer containerWith(
     overrides: [
       biometricAuthProvider.overrideWithValue(auth),
       biometricUnlockStoreProvider.overrideWithValue(store),
+      biometricUnlockAtStartProvider.overrideWithValue(store.enabled),
     ],
   );
   addTearDown(container.dispose);
@@ -91,6 +67,7 @@ void main() {
       FakeBiometricAuth(),
       MemoryBiometricUnlockStore(true),
     );
+    expect(container.read(biometricUnlockProvider), isTrue);
     expect(container.read(appLockedProvider), isTrue);
 
     await container.read(appLockedProvider.notifier).tryUnlock();

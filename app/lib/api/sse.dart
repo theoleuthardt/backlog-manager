@@ -183,8 +183,15 @@ Stream<SseEvent> openSse(
   StreamSubscription<SseEvent>? events;
   late final StreamController<SseEvent> controller;
 
+  bool cutConnection(Object error) =>
+      error is SseStreamEndedException ||
+      (error is DioException &&
+          error.response == null &&
+          error.type != DioExceptionType.cancel &&
+          error.type != DioExceptionType.badCertificate);
+
   Object interrupted(Object error) =>
-      backgroundEntries.value > backgroundAtStart
+      backgroundEntries.value > backgroundAtStart && cutConnection(error)
       ? const SseInterruptedException()
       : error;
 

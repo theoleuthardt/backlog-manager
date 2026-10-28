@@ -104,6 +104,9 @@ class FakeFileSaver implements FileSaver {
   bool cancel = false;
 
   @override
+  bool shares = false;
+
+  @override
   Future<bool> save({
     required String suggestedName,
     required List<int> bytes,
@@ -474,6 +477,19 @@ void main() {
       expect(saver.saved.single.$1, 'backlog-backup-3.json');
       expect(utf8.decode(saver.saved.single.$2), '{"entries":[]}');
       expect(find.text('Backup saved'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('says shared when the file went to the share sheet', (
+      tester,
+    ) async {
+      final (_, _, saver, _) = await open(tester);
+      saver.shares = true;
+
+      await tester.tap(find.byKey(const Key('backup-download-3')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Backup shared'), findsOneWidget);
       await tester.pump(const Duration(seconds: 6));
     });
 
