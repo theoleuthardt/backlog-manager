@@ -52,7 +52,9 @@ String mimeTypeFor(String name) {
 }
 
 /// Writes [bytes] as [name] into the share folder of [temp], after emptying
-/// it of the files of the share before.
+/// it of the files of the share before. Only the last part of [name] counts
+/// (a backup's name comes from the server), so no name can write outside the
+/// folder.
 Future<File> stageSharedFile(
   Directory temp,
   String name,
@@ -61,7 +63,9 @@ Future<File> stageSharedFile(
   final folder = Directory('${temp.path}/blm-share');
   if (folder.existsSync()) await folder.delete(recursive: true);
   await folder.create(recursive: true);
-  final file = File('${folder.path}/$name');
+  final last = name.split(RegExp(r'[/\\]')).last;
+  final safe = last.isEmpty || last == '.' || last == '..' ? 'file' : last;
+  final file = File('${folder.path}/$safe');
   await file.writeAsBytes(bytes, flush: true);
   return file;
 }

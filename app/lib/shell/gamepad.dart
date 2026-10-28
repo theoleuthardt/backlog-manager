@@ -1,6 +1,8 @@
+import 'package:backlog_manager/auth/biometric_lock.dart';
 import 'package:backlog_manager/routing/history.dart';
 import 'package:backlog_manager/routing/router.dart';
 import 'package:backlog_manager/routing/routes.dart';
+import 'package:backlog_manager/routing/session.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -56,13 +58,22 @@ String sectionAfter(String location, {required bool forward}) {
   return _sections[(index + step) % _sections.length];
 }
 
-/// Goes back one step, the way B and the system back of Android do: an open
+/// Whether the biometric lock screen covers the app.
+bool behindLock(WidgetRef ref) =>
+    ref.read(sessionProvider) is SessionSignedIn &&
+    ref.read(biometricUnlockProvider) &&
+    ref.read(appLockedProvider);
+
+/// Goes back one step, the way B and the system back of Android do; behind
+/// the biometric lock screen it does nothing (and keeps the system from
+/// leaving the app), so the hidden app below cannot be moved. An open
 /// menu around the focus closes (what Esc does there), the topmost route of
 /// the focused navigator pops (a sheet or a dialog; a `PopScope` such as an
 /// open settings tab answers it too), then the command palette closes, then
 /// the inspector, then the history steps back. False when there is nothing
 /// to go back to, so the system may leave the app.
 Future<bool> navigateBack(WidgetRef ref) async {
+  if (behindLock(ref)) return true;
   final focus = FocusManager.instance.primaryFocus?.context;
   if (focus != null && _dismiss(focus)) return true;
   final navigator = focus == null ? null : Navigator.maybeOf(focus);
