@@ -534,10 +534,12 @@ class _GeneralTab extends ConsumerWidget {
                 label: 'Lighter Effects',
                 description: switch (reason) {
                   LightEffectsReason.powerSave =>
-                    'The animated background, the animated glow and the blur '
+                    'The animated background, the animated glow, the orbs of '
+                        'the Freaky theme and the blur '
                         'are off while the device saves power.',
                   LightEffectsReason.frameStrain =>
-                    'The animated background, the animated glow and the blur '
+                    'The animated background, the animated glow, the orbs of '
+                        'the Freaky theme and the blur '
                         'are off until the app starts again: this device '
                         'dropped frames with them.',
                 },
