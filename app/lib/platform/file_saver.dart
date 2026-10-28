@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -50,10 +51,27 @@ String mimeTypeFor(String name) {
   };
 }
 
+/// Writes [bytes] as [name] into the share folder of [temp], after emptying
+/// it of the files of the share before.
+Future<File> stageSharedFile(
+  Directory temp,
+  String name,
+  List<int> bytes,
+) async {
+  final folder = Directory('${temp.path}/blm-share');
+  if (folder.existsSync()) await folder.delete(recursive: true);
+  await folder.create(recursive: true);
+  final file = File('${folder.path}/$name');
+  await file.writeAsBytes(bytes, flush: true);
+  return file;
+}
+
 /// Android and iOS have no save dialog: the file goes to the share sheet,
 /// from which it can be saved to Files or Drive, mailed or sent; false when
 /// the user dismissed it. On an iPad the sheet needs a place to point at, the
-/// middle of the screen.
+/// middle of the screen. The file is staged in a folder of its own in the
+/// temporary directory, emptied before the next share, so backups and exports
+/// do not pile up there.
 class ShareFileSaver implements FileSaver {
   const ShareFileSaver();
 
@@ -69,16 +87,14 @@ class ShareFileSaver implements FileSaver {
     final size = view == null
         ? Size.zero
         : view.physicalSize / view.devicePixelRatio;
+    final staged = await stageSharedFile(
+      Directory.systemTemp,
+      suggestedName,
+      bytes,
+    );
     final result = await SharePlus.instance.share(
       ShareParams(
-        files: [
-          XFile.fromData(
-            bytes is Uint8List ? bytes : Uint8List.fromList(bytes),
-            name: suggestedName,
-            mimeType: mimeTypeFor(suggestedName),
-          ),
-        ],
-        fileNameOverrides: [suggestedName],
+        files: [XFile(staged.path, mimeType: mimeTypeFor(suggestedName))],
         sharePositionOrigin: Rect.fromCenter(
           center: size.center(Offset.zero),
           width: 1,
