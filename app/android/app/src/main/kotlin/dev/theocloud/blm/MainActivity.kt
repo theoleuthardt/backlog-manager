@@ -22,7 +22,7 @@ import java.io.File
 class MainActivity : FlutterFragmentActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        Thread { File(cacheDir, "updates").deleteRecursively() }.start()
+        File(cacheDir, "updates").deleteRecursively()
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "dev.theocloud.blm/update")
             .setMethodCallHandler { call, result ->
                 val path = call.argument<String>("path")

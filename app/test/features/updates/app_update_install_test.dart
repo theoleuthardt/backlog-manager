@@ -425,6 +425,27 @@ void main() {
     expect(notifier.canInstallInPlace, isFalse);
   });
 
+  test('a new download starts without the old permission notice', () async {
+    final installer = FakeInstaller(
+      dir,
+      restartsApp: false,
+      missingPermission: 1,
+    );
+    final container = await checked(
+      containerFor(downloader: FakeDownloader(_content), installer: installer),
+    );
+    final notifier = container.read(appUpdateProvider.notifier);
+    await notifier.install();
+    await notifier.restart();
+    expect(container.read(appUpdateProvider).needsPermission, isTrue);
+
+    await notifier.install();
+
+    final state = container.read(appUpdateProvider);
+    expect(state.install, UpdateInstall.ready);
+    expect(state.needsPermission, isFalse);
+  });
+
   test('restart does nothing before the update is ready', () async {
     final installer = FakeInstaller(dir);
     final container = await checked(

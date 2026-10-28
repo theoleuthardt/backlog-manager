@@ -186,6 +186,7 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
     state = state.copyWith(
       install: UpdateInstall.downloading,
       progress: 0,
+      needsPermission: false,
       clearInstall: false,
     );
     final file = File(
