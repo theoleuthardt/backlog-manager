@@ -22,10 +22,15 @@ class MemoryBiometricUnlockStore implements BiometricUnlockStore {
   MemoryBiometricUnlockStore([this.enabled = false]);
 
   bool enabled;
+  bool fails = false;
 
   @override
   Future<bool?> read() async => enabled;
 
   @override
-  Future<void> write({required bool enabled}) async => this.enabled = enabled;
+  Future<bool> write({required bool enabled}) async {
+    if (fails) return false;
+    this.enabled = enabled;
+    return true;
+  }
 }

@@ -58,7 +58,8 @@ abstract interface class BiometricUnlockStore {
   /// could not be read.
   Future<bool?> read();
 
-  Future<void> write({required bool enabled});
+  /// Stores [enabled]; false when the device did not take it.
+  Future<bool> write({required bool enabled});
 }
 
 class PreferencesBiometricUnlockStore implements BiometricUnlockStore {
@@ -75,12 +76,12 @@ class PreferencesBiometricUnlockStore implements BiometricUnlockStore {
   }
 
   @override
-  Future<void> write({required bool enabled}) async {
+  Future<bool> write({required bool enabled}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_unlockKey, enabled);
+      return await prefs.setBool(_unlockKey, enabled);
     } on Object {
-      return;
+      return false;
     }
   }
 }
@@ -104,14 +105,18 @@ class BiometricUnlockNotifier extends Notifier<bool> {
 
   /// Turns the lock on once the user passed the check, so a device whose
   /// biometrics do not work cannot lock its owner out; off needs no check.
+  /// The switch only moves once the device stored the choice.
   Future<bool> setEnabled({required bool enabled}) async {
     if (enabled && !await ref.read(biometricAuthProvider).authenticate()) {
       return false;
     }
     if (!ref.mounted) return false;
+    final stored = await ref
+        .read(biometricUnlockStoreProvider)
+        .write(enabled: enabled);
+    if (!stored || !ref.mounted) return false;
     state = enabled;
     ref.read(appLockedProvider.notifier).unlock();
-    await ref.read(biometricUnlockStoreProvider).write(enabled: enabled);
     return true;
   }
 }
@@ -125,9 +130,10 @@ const relockAfter = Duration(minutes: 5);
 
 /// Whether the lock is closed: at the start, and again after the app was in
 /// the background for [relockAfter]; it only matters while
-/// [biometricUnlockProvider] is on. Signing out (the way out when the check
-/// fails) opens it, so the next sign-in, which proves the account, is not
-/// locked again; the session that `main` restores at the start stays locked.
+/// [biometricUnlockProvider] is on. A sign-in with the password (which proves
+/// the account, see `AuthController`) and signing out (the way out when the
+/// check fails) open it; only the session that `main` restores at the start
+/// stays locked.
 class AppLockedNotifier extends Notifier<bool> {
   DateTime? _hiddenAt;
 

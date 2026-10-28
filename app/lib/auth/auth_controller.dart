@@ -1,5 +1,6 @@
 import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/auth/auth_api.dart';
+import 'package:backlog_manager/auth/biometric_lock.dart';
 import 'package:backlog_manager/auth/sign_in_failure.dart';
 import 'package:backlog_manager/auth/token_store.dart';
 import 'package:backlog_manager/routing/session.dart';
@@ -180,6 +181,7 @@ class AuthController extends Notifier<LoginFlow> {
       final user = await ref.read(authApiProvider).currentUser();
       if (_stale(generation)) return;
       _session.signIn(user);
+      ref.read(appLockedProvider.notifier).unlock();
       ref.read(sessionGenerationProvider.notifier).bump();
       state = const LoginFlow();
     } on Object {

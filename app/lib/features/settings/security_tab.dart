@@ -55,7 +55,8 @@ class SecurityTab extends ConsumerWidget {
           ],
         ),
         if (ShelfFormFactor.isTouch(context) &&
-            ref.watch(biometricAvailableProvider).value == true)
+            (ref.watch(biometricAvailableProvider).value == true ||
+                ref.watch(biometricUnlockProvider)))
           ShelfFormGroup(
             title: 'Unlock',
             rows: [

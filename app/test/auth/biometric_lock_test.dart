@@ -1,8 +1,13 @@
+import 'package:backlog_manager/auth/auth_api.dart';
+import 'package:backlog_manager/auth/auth_controller.dart';
 import 'package:backlog_manager/auth/biometric_lock.dart';
+import 'package:backlog_manager/auth/token_store.dart';
+import 'package:backlog_manager/routing/session.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'biometric_fakes.dart';
+import 'fakes.dart';
 
 ProviderContainer containerWith(
   FakeBiometricAuth auth,
@@ -103,5 +108,43 @@ void main() {
       ..hidden(start)
       ..shown(start.add(relockAfter));
     expect(container.read(appLockedProvider), isTrue);
+  });
+
+  test('a setting that cannot be stored is not turned on', () async {
+    final store = MemoryBiometricUnlockStore()..fails = true;
+    final container = containerWith(FakeBiometricAuth(), store);
+
+    final turnedOn = await container
+        .read(biometricUnlockProvider.notifier)
+        .setEnabled(enabled: true);
+
+    expect(turnedOn, isFalse);
+    expect(container.read(biometricUnlockProvider), isFalse);
+  });
+
+  test('a sign-in with the password opens the lock', () async {
+    final container = ProviderContainer(
+      overrides: [
+        biometricUnlockAtStartProvider.overrideWithValue(true),
+        tokenStoreProvider.overrideWithValue(MemoryTokenStore()),
+        authApiProvider.overrideWithValue(
+          FakeAuthApi()
+            ..onLogin = ((email, password) async => const LoginSucceeded('jwt'))
+            ..onCurrentUser = () async => const SessionUser(
+              name: 'Theo',
+              email: 'theo@example.com',
+              setupCompleted: true,
+            ),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    expect(container.read(appLockedProvider), isTrue);
+
+    await container
+        .read(authControllerProvider.notifier)
+        .login('theo@example.com', 'correct-horse');
+
+    expect(container.read(appLockedProvider), isFalse);
   });
 }

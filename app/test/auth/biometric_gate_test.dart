@@ -98,6 +98,28 @@ void main() {
     expect(find.byKey(const Key('biometric-lock')), findsNothing);
   });
 
+  testWidgets('the lock can be turned off where the check went away', (
+    tester,
+  ) async {
+    final auth = FakeBiometricAuth()..available = false;
+    await openSettings(
+      tester,
+      size: const Size(732, 412),
+      location: '/settings?tab=security',
+      overrides: [
+        isDesktopProvider.overrideWithValue(false),
+        biometricAuthProvider.overrideWithValue(auth),
+        biometricUnlockStoreProvider.overrideWithValue(
+          MemoryBiometricUnlockStore(true),
+        ),
+        biometricUnlockAtStartProvider.overrideWithValue(true),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('settings-biometric')), findsOneWidget);
+  });
+
   testWidgets('the desktop has no lock', (tester) async {
     await openSettings(tester, location: '/settings?tab=security');
 
