@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:backlog_manager/design/background_motion.dart';
 import 'package:backlog_manager/design/light_effects.dart';
+import 'package:backlog_manager/design/theme_provider.dart';
 import 'package:backlog_manager/platform/desktop.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,9 +17,10 @@ void main() {
   setUp(() => powerSave = StreamController<bool>.broadcast());
   tearDown(() => powerSave.close());
 
-  ProviderContainer containerFor({required bool desktop}) {
+  ProviderContainer containerFor({required bool desktop, String? theme}) {
     final container = ProviderContainer(
       overrides: [
+        if (theme != null) themeIdProvider.overrideWith(() => _Theme(theme)),
         isDesktopProvider.overrideWithValue(desktop),
         powerSaveEventsProvider.overrideWithValue(powerSave.stream),
       ],
@@ -92,6 +94,24 @@ void main() {
     expect(container.read(lightEffectsProvider), isNull);
   });
 
+  test('the orbs of the Freaky theme count as an effect', () {
+    final container = containerFor(desktop: false, theme: 'freaky');
+    for (final effect in [
+      backgroundMotionProvider,
+      glowMotionProvider,
+      blurEffectsProvider,
+    ]) {
+      container.read(effect.notifier).setEnabled(enabled: false);
+    }
+
+    strain(container);
+
+    expect(
+      container.read(lightEffectsProvider),
+      LightEffectsReason.frameStrain,
+    );
+  });
+
   test('the desktop keeps the full effects', () async {
     final container = containerFor(desktop: true);
 
@@ -140,4 +160,13 @@ void main() {
       expect(container.read(lightEffectsProvider), isNull);
     });
   });
+}
+
+class _Theme extends ThemeIdNotifier {
+  _Theme(this.id);
+
+  final String id;
+
+  @override
+  String build() => id;
 }

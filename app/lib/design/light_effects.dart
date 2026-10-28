@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:backlog_manager/design/background_motion.dart';
 import 'package:backlog_manager/design/frame_strain.dart';
+import 'package:backlog_manager/design/theme_provider.dart';
 import 'package:backlog_manager/platform/desktop.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -97,14 +98,15 @@ class FrameStrainNotifier extends Notifier<bool> {
   }
 
   /// Counts [frame] only while it was drawn with at least one of the effects
-  /// this turns off: not while the device saves power (it also slows down
-  /// then), and not while the user switched all of them off, since those
-  /// frames say nothing about the effects.
+  /// this turns off (the three switches, the orbs of the Freaky theme): not
+  /// while the device saves power (it also slows down then), and not while
+  /// none of them shows, since those frames say nothing about the effects.
   void record(Duration frame) {
     final withEffects =
         ref.read(backgroundMotionProvider) ||
         ref.read(glowMotionProvider) ||
-        ref.read(blurEffectsProvider);
+        ref.read(blurEffectsProvider) ||
+        ref.read(resolvedThemeProvider).id == 'freaky';
     if (state ||
         ref.read(isDesktopProvider) ||
         ref.read(powerSaveProvider) ||
