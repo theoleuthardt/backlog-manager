@@ -80,16 +80,36 @@ class AppUpdateState {
   }
 }
 
+const _staged = '.blm-update-';
+
 /// Whether the app looks for a new release on its own when it starts: in
 /// release builds only, so development and tests make no request.
 final automaticUpdateCheckProvider = Provider<bool>((ref) => kReleaseMode);
 
 /// The state of the update check: a quiet check on start (a failure leaves
 /// the state as it was) and the manual one of the settings (a failure is
-/// reported).
+/// reported). On start it also removes the downloads an earlier run left in
+/// the staging folder: on Android the system installer ends the app, so the
+/// APK it installed is never removed by the run that downloaded it.
 class AppUpdateNotifier extends Notifier<AppUpdateState> {
   @override
-  AppUpdateState build() => const AppUpdateState();
+  AppUpdateState build() {
+    _removeLeftovers();
+    return const AppUpdateState();
+  }
+
+  void _removeLeftovers() {
+    final directory = ref.read(updateInstallerProvider)?.stagingDirectory;
+    try {
+      for (final entry in directory?.listSync() ?? const <FileSystemEntity>[]) {
+        if (entry is File && entry.uri.pathSegments.last.startsWith(_staged)) {
+          entry.deleteSync();
+        }
+      }
+    } on FileSystemException {
+      return;
+    }
+  }
 
   Future<void> check({bool quiet = false}) async {
     if (state.check == UpdateCheck.checking) return;
@@ -169,7 +189,7 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
       clearInstall: false,
     );
     final file = File(
-      '${installer.stagingDirectory.path}/.blm-update-${release.version}',
+      '${installer.stagingDirectory.path}/$_staged${release.version}',
     );
     Future<void> fail(String message) async {
       if (file.existsSync()) file.deleteSync();

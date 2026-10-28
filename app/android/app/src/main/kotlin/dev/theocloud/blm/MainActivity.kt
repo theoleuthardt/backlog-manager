@@ -16,11 +16,13 @@ import java.io.File
  * opening the settings page for it) while the app may not install apps yet,
  * otherwise it copies the APK to the folder [UpdateFileProvider] shares (on a
  * thread of its own, the file is tens of megabytes), opens the installer on it
- * and answers `started`.
+ * and answers `started`. The copy of the last update is removed when the app
+ * starts again.
  */
 class MainActivity : FlutterFragmentActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        Thread { File(cacheDir, "updates").deleteRecursively() }.start()
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "dev.theocloud.blm/update")
             .setMethodCallHandler { call, result ->
                 val path = call.argument<String>("path")

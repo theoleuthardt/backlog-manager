@@ -203,6 +203,18 @@ void main() {
     expect(downloader.urls.single.path, '/o/r/a.AppImage');
   });
 
+  test('downloads left from an earlier run are removed at the start', () {
+    final leftover = File('${dir.path}/.blm-update-0.9.1')
+      ..writeAsStringSync('old apk');
+    final other = File('${dir.path}/notes.txt')..writeAsStringSync('keep');
+    final container = containerFor(downloader: FakeDownloader(_content));
+
+    container.read(appUpdateProvider);
+
+    expect(leftover.existsSync(), isFalse);
+    expect(other.existsSync(), isTrue);
+  });
+
   test('a payload that was changed is refused and removed', () async {
     final tampered = [..._content]..[100] ^= 0xff;
     final container = await checked(
