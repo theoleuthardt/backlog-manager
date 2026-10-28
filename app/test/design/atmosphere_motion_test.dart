@@ -1,5 +1,6 @@
 import 'package:backlog_manager/design/atmosphere.dart';
 import 'package:backlog_manager/design/background_motion.dart';
+import 'package:backlog_manager/design/light_effects.dart';
 import 'package:backlog_manager/design/shelf_theme.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/domain/themes.dart';
@@ -60,6 +61,24 @@ void main() {
       painters(tester).whereType<AtmospherePainter>().single.moving,
       isFalse,
     );
+    expect(tester.hasRunningAnimations, isFalse);
+  });
+
+  testWidgets('the sky stands still while the effects are lightened', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          lightEffectsProvider.overrideWithValue(
+            LightEffectsReason.frameStrain,
+          ),
+        ],
+        child: sky().child,
+      ),
+    );
+
+    expect(painters(tester).whereType<AtmosphereMotionPainter>(), isEmpty);
     expect(tester.hasRunningAnimations, isFalse);
   });
 

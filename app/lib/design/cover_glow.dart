@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:backlog_manager/design/atmosphere.dart';
 import 'package:backlog_manager/design/background_motion.dart';
+import 'package:backlog_manager/design/light_effects.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/throttled_clock.dart';
 import 'package:flutter/material.dart';
@@ -193,7 +194,8 @@ class _CoverGlowBackdropState extends ConsumerState<CoverGlowBackdrop>
     final moving =
         atmosphereMotion &&
         !MediaQuery.of(context).disableAnimations &&
-        ref.watch(glowMotionProvider);
+        ref.watch(glowMotionProvider) &&
+        ref.watch(lightEffectsProvider) == null;
     if (moving && !_drift.isAnimating) {
       unawaited(_drift.repeat());
     } else if (!moving && _drift.isAnimating) {

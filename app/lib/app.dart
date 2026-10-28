@@ -2,6 +2,7 @@ import 'package:backlog_manager/auth/biometric_gate.dart';
 import 'package:backlog_manager/design/background_motion.dart';
 import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/glass.dart';
+import 'package:backlog_manager/design/light_effects.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
 import 'package:backlog_manager/features/appearance/theme_actions.dart';
 import 'package:backlog_manager/features/startup/startup_splash.dart';
@@ -20,7 +21,9 @@ class BacklogManagerApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(themeSyncProvider);
-    final blurEffects = ref.watch(blurEffectsProvider);
+    final blurEffects =
+        ref.watch(blurEffectsProvider) &&
+        ref.watch(lightEffectsProvider) == null;
     return MaterialApp.router(
       title: 'Backlog Manager',
       debugShowCheckedModeBanner: false,

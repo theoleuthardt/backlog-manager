@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:backlog_manager/design/atmosphere.dart';
 import 'package:backlog_manager/design/freaky_orbs.dart';
+import 'package:backlog_manager/design/light_effects.dart';
 import 'package:backlog_manager/design/shelf_theme.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
@@ -20,9 +21,12 @@ Widget host(
   bool? orbs,
   bool freakyActive = false,
   bool reduceMotion = false,
+  bool light = false,
 }) {
   return ProviderScope(
     overrides: [
+      if (light)
+        lightEffectsProvider.overrideWithValue(LightEffectsReason.powerSave),
       themeIdProvider.overrideWith(
         () => _FixedTheme(freakyActive ? 'freaky' : 'shelfOled'),
       ),
@@ -243,6 +247,14 @@ void main() {
           freakyActive: true,
           reduceMotion: true,
         ),
+      );
+
+      expect(find.byKey(const Key('freaky-orbs')), findsNothing);
+    });
+
+    testWidgets('are off while the effects are lightened', (tester) async {
+      await tester.pumpWidget(
+        host('freaky', const Size(400, 300), freakyActive: true, light: true),
       );
 
       expect(find.byKey(const Key('freaky-orbs')), findsNothing);
