@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:backlog_manager/design/atmosphere.dart';
 import 'package:backlog_manager/design/background_motion.dart';
 import 'package:backlog_manager/design/cover_glow.dart';
+import 'package:backlog_manager/design/light_effects.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
@@ -149,6 +150,24 @@ void main() {
         await mount(
           tester,
           overrides: [glowMotionProvider.overrideWith(_Off.new)],
+        );
+        final before = lightCenter(tester, 'cover-glow-light-a');
+
+        await tester.pump(const Duration(seconds: 7));
+
+        expect(lightCenter(tester, 'cover-glow-light-a'), equals(before));
+      });
+
+      testWidgets('they stand still while the effects are lightened', (
+        tester,
+      ) async {
+        await mount(
+          tester,
+          overrides: [
+            lightEffectsProvider.overrideWithValue(
+              LightEffectsReason.powerSave,
+            ),
+          ],
         );
         final before = lightCenter(tester, 'cover-glow-light-a');
 

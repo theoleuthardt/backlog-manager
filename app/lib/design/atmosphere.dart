@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:backlog_manager/design/background_motion.dart';
 import 'package:backlog_manager/design/freaky_orbs.dart';
+import 'package:backlog_manager/design/light_effects.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
 import 'package:backlog_manager/design/throttled_clock.dart';
@@ -566,13 +567,16 @@ class AtmosphereBackground extends ConsumerWidget {
   final Widget child;
 
   /// Whether the drifting orbs of the Freaky theme show; by default they do
-  /// for that theme unless the system asks for less motion.
+  /// for that theme unless the system asks for less motion or the effects
+  /// are lightened (`lightEffectsProvider`), which also stops the sky.
   final bool? orbs;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
-    final reduced = MediaQuery.of(context).disableAnimations;
+    final reduced =
+        MediaQuery.of(context).disableAnimations ||
+        ref.watch(lightEffectsProvider) != null;
     final showOrbs =
         orbs ?? (ref.watch(resolvedThemeProvider).id == 'freaky' && !reduced);
     final moving =

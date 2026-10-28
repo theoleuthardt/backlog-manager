@@ -5,6 +5,7 @@ import 'package:backlog_manager/auth/auth_api.dart';
 import 'package:backlog_manager/auth/token_store.dart';
 import 'package:backlog_manager/auth/user_api.dart';
 import 'package:backlog_manager/design/background_motion.dart';
+import 'package:backlog_manager/design/light_effects.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
 import 'package:backlog_manager/platform/csv_file_picker.dart';
 import 'package:backlog_manager/platform/image_file_picker.dart';
@@ -320,6 +321,51 @@ void main() {
       await tester.tap(toggle);
       await tester.pumpAndSettle();
       expect(container.read(blurEffectsProvider), isTrue);
+    });
+
+    testWidgets('says why the effects are lightened', (tester) async {
+      await openSettings(
+        tester,
+        overrides: [
+          lightEffectsProvider.overrideWithValue(LightEffectsReason.powerSave),
+        ],
+      );
+
+      final note = find.byKey(const Key('settings-light-effects'));
+      await tester.ensureVisible(note);
+      expect(
+        find.descendant(of: note, matching: find.textContaining('saves power')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('says when dropped frames lightened the effects', (
+      tester,
+    ) async {
+      await openSettings(
+        tester,
+        overrides: [
+          lightEffectsProvider.overrideWithValue(
+            LightEffectsReason.frameStrain,
+          ),
+        ],
+      );
+
+      final note = find.byKey(const Key('settings-light-effects'));
+      await tester.ensureVisible(note);
+      expect(
+        find.descendant(
+          of: note,
+          matching: find.textContaining('dropped frames'),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('shows no such note with the full effects', (tester) async {
+      await openSettings(tester);
+
+      expect(find.byKey(const Key('settings-light-effects')), findsNothing);
     });
 
     testWidgets('offers all seven sort options', (tester) async {

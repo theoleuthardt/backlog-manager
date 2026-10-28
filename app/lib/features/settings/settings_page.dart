@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:backlog_manager/auth/user_api.dart';
 import 'package:backlog_manager/design/background_motion.dart';
+import 'package:backlog_manager/design/light_effects.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
@@ -527,6 +528,23 @@ class _GeneralTab extends ConsumerWidget {
                     .setEnabled(enabled: value),
               ),
             ),
+            if (ref.watch(lightEffectsProvider) case final reason?)
+              ShelfFormRow(
+                key: const Key('settings-light-effects'),
+                label: 'Lighter Effects',
+                description: switch (reason) {
+                  LightEffectsReason.powerSave =>
+                    'The animated background, the animated glow, the orbs of '
+                        'the Freaky theme and the blur '
+                        'are off while the device saves power.',
+                  LightEffectsReason.frameStrain =>
+                    'The animated background, the animated glow, the orbs of '
+                        'the Freaky theme and the blur '
+                        'are off until the app starts again: this device '
+                        'dropped frames with them.',
+                },
+                control: const SizedBox.shrink(),
+              ),
             ShelfFormRow(
               label: 'Appearance',
               description: 'Themes and your own colours.',

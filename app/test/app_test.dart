@@ -1,6 +1,7 @@
 import 'package:backlog_manager/app.dart';
 import 'package:backlog_manager/design/background_motion.dart';
 import 'package:backlog_manager/design/glass.dart';
+import 'package:backlog_manager/design/light_effects.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -39,6 +40,23 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [blurEffectsProvider.overrideWith(_NoBlur.new)],
+        child: const BacklogManagerApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final context = tester.element(find.byKey(const Key('page-sign-in')));
+    expect(AtmosphereSettings.blurEnabledOf(context), isFalse);
+  });
+
+  testWidgets('the glass stays flat while the effects are lightened', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          lightEffectsProvider.overrideWithValue(LightEffectsReason.powerSave),
+        ],
         child: const BacklogManagerApp(),
       ),
     );
