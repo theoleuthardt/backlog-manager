@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Starts a program that outlives the app.
@@ -13,7 +14,8 @@ Future<void> _startDetached(String executable, List<String> arguments) async {
 }
 
 /// Puts a downloaded installer in place of the running app and starts the
-/// new version. The caller exits the app after [apply] returned.
+/// new version. The caller exits the app after [apply] returned when
+/// [restartsApp] is true.
 abstract interface class UpdateInstaller {
   /// The key of the payload this install can apply (`{os}-{arch}-{format}`),
   /// or null when it cannot update in place: a DEB or RPM install, an app in
@@ -23,6 +25,14 @@ abstract interface class UpdateInstaller {
   /// A folder on the disk of the app, where a download is kept until it is
   /// applied.
   Directory get stagingDirectory;
+
+  /// Whether the new version starts once the app has ended; false where the
+  /// system installer takes over and ends the app itself (Android).
+  bool get restartsApp;
+
+  /// Whether it can install an older version than the running one; Android
+  /// refuses an APK with a lower version code.
+  bool get allowsDowngrade;
 
   Future<void> apply(File payload);
 }
@@ -68,6 +78,12 @@ class AppImageInstaller implements UpdateInstaller {
 
   @override
   Directory get stagingDirectory => File(appImagePath).parent;
+
+  @override
+  bool get restartsApp => true;
+
+  @override
+  bool get allowsDowngrade => true;
 
   @override
   Future<void> apply(File payload) async {
@@ -131,6 +147,12 @@ class MacDmgInstaller implements UpdateInstaller {
   Directory get stagingDirectory => Directory.systemTemp;
 
   @override
+  bool get restartsApp => true;
+
+  @override
+  bool get allowsDowngrade => true;
+
+  @override
   Future<void> apply(File payload) => _start('/bin/sh', [
     '-c',
     macUpdateScript,
@@ -172,6 +194,12 @@ class WindowsExeInstaller implements UpdateInstaller {
   Directory get stagingDirectory => Directory.systemTemp;
 
   @override
+  bool get restartsApp => true;
+
+  @override
+  bool get allowsDowngrade => true;
+
+  @override
   Future<void> apply(File payload) async {
     final script = File('${payload.path}.cmd')
       ..writeAsStringSync(
@@ -184,13 +212,70 @@ class WindowsExeInstaller implements UpdateInstaller {
   }
 }
 
+/// Hands an APK to the Android package installer: `started` once the
+/// installer opened, `permission` when Android first needs the user to allow
+/// the app to install apps (the settings page for it opened instead).
+typedef ApkHandOver = Future<String?> Function(String path);
+
+const _updateChannel = MethodChannel('dev.theocloud.blm/update');
+
+Future<String?> _handToPackageInstaller(String path) =>
+    _updateChannel.invokeMethod<String>('installApk', {'path': path});
+
+/// Android has not allowed the app to install apps yet; the system opened its
+/// settings for that, and the update stays ready for another try.
+class InstallPermissionNeeded implements Exception {
+  const InstallPermissionNeeded();
+}
+
+/// An Android install hands the APK of the new version to the system
+/// installer, which checks that it is signed with the key of the installed
+/// app, replaces it and ends the running app. Releases ship one APK, for
+/// 64-bit ARM, so other devices are notify-only; [platformVersion] is Dart's
+/// `Platform.version`, which names the architecture.
+class AndroidApkInstaller implements UpdateInstaller {
+  AndroidApkInstaller({
+    required this.platformVersion,
+    this._handOver = _handToPackageInstaller,
+  });
+
+  final String platformVersion;
+  final ApkHandOver _handOver;
+
+  @override
+  String? get payloadKey =>
+      platformVersion.contains('"android_arm64"') ? 'android-arm64-apk' : null;
+
+  @override
+  Directory get stagingDirectory => Directory.systemTemp;
+
+  @override
+  bool get restartsApp => false;
+
+  @override
+  bool get allowsDowngrade => false;
+
+  @override
+  Future<void> apply(File payload) async {
+    switch (await _handOver(payload.path)) {
+      case 'started':
+        return;
+      case 'permission':
+        throw const InstallPermissionNeeded();
+      default:
+        throw const FileSystemException('The installer did not open');
+    }
+  }
+}
+
 /// The installer of the system the app runs on, or null where it cannot
-/// update itself (Linux outside an AppImage).
+/// update itself (Linux outside an AppImage, iOS).
 UpdateInstaller? systemUpdateInstaller({
   String? operatingSystem,
   Map<String, String>? environment,
   String? resolvedExecutable,
   int? processId,
+  String? platformVersion,
 }) {
   final os = operatingSystem ?? Platform.operatingSystem;
   final env = environment ?? Platform.environment;
@@ -210,6 +295,10 @@ UpdateInstaller? systemUpdateInstaller({
       );
     case 'windows':
       return WindowsExeInstaller(executablePath: executable);
+    case 'android':
+      return AndroidApkInstaller(
+        platformVersion: platformVersion ?? Platform.version,
+      );
   }
   return null;
 }
@@ -217,6 +306,10 @@ UpdateInstaller? systemUpdateInstaller({
 final updateInstallerProvider = Provider<UpdateInstaller?>(
   (ref) => systemUpdateInstaller(),
 );
+
+/// Whether the app is a sideloaded iOS install, which cannot update itself:
+/// the update notice explains how to sign and install the new IPA.
+final sideloadedIosProvider = Provider<bool>((ref) => Platform.isIOS);
 
 /// Ends the app after an update was handed over; tests replace it.
 final appExitProvider = Provider<void Function()>(

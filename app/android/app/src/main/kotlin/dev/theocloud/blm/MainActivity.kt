@@ -1,5 +1,59 @@
 package dev.theocloud.blm
 
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
+import androidx.core.content.FileProvider
 import io.flutter.embedding.android.FlutterFragmentActivity
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodChannel
+import java.io.File
 
-class MainActivity : FlutterFragmentActivity()
+/**
+ * The activity of the app. It also answers `installApk` on the
+ * `dev.theocloud.blm/update` channel, which hands a downloaded and verified
+ * APK to the Android package installer: it answers `permission` (after
+ * opening the settings page for it) while the app may not install apps yet,
+ * otherwise it copies the APK to the folder [UpdateFileProvider] shares,
+ * opens the installer on it and answers `started`.
+ */
+class MainActivity : FlutterFragmentActivity() {
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "dev.theocloud.blm/update")
+            .setMethodCallHandler { call, result ->
+                val path = call.argument<String>("path")
+                if (call.method != "installApk" || path == null) {
+                    result.notImplemented()
+                    return@setMethodCallHandler
+                }
+                try {
+                    result.success(installApk(File(path)))
+                } catch (error: Exception) {
+                    result.error("install-failed", error.message, null)
+                }
+            }
+    }
+
+    private fun installApk(source: File): String {
+        if (!packageManager.canRequestPackageInstalls()) {
+            startActivity(
+                Intent(
+                    Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                    Uri.parse("package:$packageName"),
+                ),
+            )
+            return "permission"
+        }
+        val folder = File(cacheDir, "updates").apply { mkdirs() }
+        val apk = File(folder, "update.apk")
+        source.copyTo(apk, overwrite = true)
+        val uri = FileProvider.getUriForFile(this, "$packageName.updates", apk)
+        startActivity(
+            Intent(Intent.ACTION_VIEW)
+                .setDataAndType(uri, "application/vnd.android.package-archive")
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION),
+        )
+        return "started"
+    }
+}

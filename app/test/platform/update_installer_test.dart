@@ -3,6 +3,11 @@ import 'dart:io';
 import 'package:backlog_manager/platform/update_installer.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+const _androidArm64 =
+    '3.13.5 (stable) (Tue Oct 6 00:00:00 2026 +0000) on "android_arm64"';
+const _androidX64 =
+    '3.13.5 (stable) (Tue Oct 6 00:00:00 2026 +0000) on "android_x64"';
+
 void main() {
   late Directory dir;
   final started = <(String, List<String>)>[];
@@ -211,6 +216,90 @@ void main() {
       );
 
       expect(installer, isA<WindowsExeInstaller>());
+    });
+
+    test('Android hands the APK to the system installer', () {
+      final installer = systemUpdateInstaller(
+        operatingSystem: 'android',
+        environment: {},
+        platformVersion: _androidArm64,
+      );
+
+      expect(installer, isA<AndroidApkInstaller>());
+      expect(installer!.payloadKey, 'android-arm64-apk');
+      expect(installer.restartsApp, isFalse);
+      expect(installer.allowsDowngrade, isFalse);
+    });
+
+    test('iOS cannot update itself', () {
+      expect(
+        systemUpdateInstaller(operatingSystem: 'ios', environment: {}),
+        isNull,
+      );
+    });
+
+    test('the desktop installers restart the app', () {
+      final installer = systemUpdateInstaller(
+        operatingSystem: 'windows',
+        environment: {},
+        resolvedExecutable: r'C:\Apps\backlog_manager.exe',
+      );
+
+      expect(installer!.restartsApp, isTrue);
+      expect(installer.allowsDowngrade, isTrue);
+    });
+  });
+
+  group('AndroidApkInstaller', () {
+    final handedOver = <String>[];
+    setUp(handedOver.clear);
+
+    AndroidApkInstaller installerAnswering(
+      String? answer, {
+      String platformVersion = _androidArm64,
+    }) => AndroidApkInstaller(
+      platformVersion: platformVersion,
+      handOver: (path) async {
+        handedOver.add(path);
+        return answer;
+      },
+    );
+
+    test('is only offered on 64-bit ARM, the only APK of a release', () {
+      expect(installerAnswering('started').payloadKey, 'android-arm64-apk');
+      expect(
+        installerAnswering('started', platformVersion: _androidX64).payloadKey,
+        isNull,
+      );
+    });
+
+    test('hands the downloaded APK to the system installer', () async {
+      final payload = File('${dir.path}/.blm-update-1.2.3')
+        ..writeAsStringSync('apk');
+
+      await installerAnswering('started').apply(payload);
+
+      expect(handedOver, [payload.path]);
+    });
+
+    test('says when Android needs the permission to install apps', () async {
+      final payload = File('${dir.path}/.blm-update-1.2.3')
+        ..writeAsStringSync('apk');
+
+      await expectLater(
+        installerAnswering('permission').apply(payload),
+        throwsA(isA<InstallPermissionNeeded>()),
+      );
+    });
+
+    test('fails on any other answer', () async {
+      final payload = File('${dir.path}/.blm-update-1.2.3')
+        ..writeAsStringSync('apk');
+
+      await expectLater(
+        installerAnswering(null).apply(payload),
+        throwsA(isA<FileSystemException>()),
+      );
     });
   });
 

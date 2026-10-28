@@ -28,6 +28,7 @@ class AppUpdateState {
     this.progress,
     this.installError,
     this.staged,
+    this.needsPermission = false,
   });
 
   final UpdateCheck check;
@@ -41,6 +42,10 @@ class AppUpdateState {
 
   /// The verified installer while [install] is [UpdateInstall.ready].
   final File? staged;
+
+  /// Whether the last try to install found that Android does not allow the
+  /// app to install apps yet; the update stays [UpdateInstall.ready].
+  final bool needsPermission;
 
   /// The newer release while [check] is [UpdateCheck.available], the older
   /// newest one while it is [UpdateCheck.older].
@@ -58,6 +63,7 @@ class AppUpdateState {
     double? progress,
     String? installError,
     File? staged,
+    bool? needsPermission,
     bool clearInstall = false,
   }) {
     return AppUpdateState(
@@ -68,6 +74,8 @@ class AppUpdateState {
       progress: clearInstall ? null : progress ?? this.progress,
       installError: clearInstall ? null : installError ?? this.installError,
       staged: clearInstall ? null : staged ?? this.staged,
+      needsPermission:
+          !clearInstall && (needsPermission ?? this.needsPermission),
     );
   }
 }
@@ -125,18 +133,22 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
 
   /// Whether this install can apply the newer release in place: the release
   /// published a payload for it, the app knows the key to verify it with, and
-  /// the install can replace itself.
+  /// the install can replace itself (with an older version only where the
+  /// system allows that).
   bool get canInstallInPlace {
     final release = state.release;
-    final key = ref.read(updateInstallerProvider)?.payloadKey;
+    final installer = ref.read(updateInstallerProvider);
+    final key = installer?.payloadKey;
     return release?.manifest?.payloads[key] != null &&
-        ref.read(updateVerifierProvider) != null;
+        ref.read(updateVerifierProvider) != null &&
+        (state.check != UpdateCheck.older || installer!.allowsDowngrade);
   }
 
   /// Downloads the installer of [AppUpdateState.release], checks its size,
   /// hash and signature and leaves it ready for [restart]. Any failure keeps
   /// the installed version and removes what was downloaded.
   Future<void> install() async {
+    if (!canInstallInPlace) return;
     final release = state.release;
     final installer = ref.read(updateInstallerProvider);
     final verifier = ref.read(updateVerifierProvider);
@@ -215,7 +227,10 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
   }
 
   /// Applies the verified installer and ends the app; the new version starts
-  /// by itself. A failure leaves the installed version running.
+  /// by itself. Where the system installer takes over instead (Android) the
+  /// app keeps running and the update stays ready, so a cancelled install can
+  /// be started again, and so does a missing permission to install apps. A
+  /// failure leaves the installed version running.
   Future<void> restart() async {
     final file = state.staged;
     final installer = ref.read(updateInstallerProvider);
@@ -224,9 +239,19 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
         installer == null) {
       return;
     }
-    state = state.copyWith(install: UpdateInstall.installing);
+    state = state.copyWith(
+      install: UpdateInstall.installing,
+      needsPermission: false,
+    );
     try {
       await installer.apply(file);
+    } on InstallPermissionNeeded {
+      if (!ref.mounted) return;
+      state = state.copyWith(
+        install: UpdateInstall.ready,
+        needsPermission: true,
+      );
+      return;
     } on Object {
       if (file.existsSync()) file.deleteSync();
       if (!ref.mounted) return;
@@ -238,6 +263,10 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
         installError:
             'The update could not be installed. Your version keeps working.',
       );
+      return;
+    }
+    if (!installer.restartsApp) {
+      if (ref.mounted) state = state.copyWith(install: UpdateInstall.ready);
       return;
     }
     ref.read(appExitProvider)();
