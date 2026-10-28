@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:backlog_manager/api/api_client.dart';
 import 'package:backlog_manager/api/api_providers.dart';
 import 'package:backlog_manager/app.dart';
@@ -6,6 +8,7 @@ import 'package:backlog_manager/auth/token_store.dart';
 import 'package:backlog_manager/data/games_api.dart';
 import 'package:backlog_manager/design/atmosphere.dart';
 import 'package:backlog_manager/design/widgets/cover.dart';
+import 'package:backlog_manager/platform/update_installer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -28,6 +31,16 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   atmosphereMotion = false;
   coverImageDelay = Duration.zero;
+
+  test('the app can write to the folder updates are downloaded to', () {
+    final directory =
+        systemUpdateInstaller()?.stagingDirectory ?? Directory.systemTemp;
+    final probe = File('${directory.path}/.blm-smoke-probe')
+      ..writeAsStringSync('apk');
+
+    expect(probe.readAsStringSync(), 'apk');
+    probe.deleteSync();
+  });
 
   testWidgets('starts, signs in and keeps the token in the keystore', (
     tester,
