@@ -67,6 +67,7 @@ Future<bool> navigateBack(WidgetRef ref) async {
   if (focus != null && _dismiss(focus)) return true;
   final navigator = focus == null ? null : Navigator.maybeOf(focus);
   if (navigator != null && await navigator.maybePop()) return true;
+  if (!ref.context.mounted) return true;
   if (ref.read(paletteOpenProvider)) {
     ref.read(paletteOpenProvider.notifier).close();
     return true;

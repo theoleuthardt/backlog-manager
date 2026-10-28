@@ -1,5 +1,6 @@
 import 'package:backlog_manager/platform/desktop.dart';
 import 'package:backlog_manager/routing/routes.dart';
+import 'package:backlog_manager/routing/session.dart';
 import 'package:backlog_manager/shell/gamepad.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:flutter/material.dart';
@@ -187,6 +188,54 @@ void main() {
       await press(tester, LogicalKeyboardKey.gameButtonA);
       expect(find.byKey(const Key('entry-inspector')), findsOneWidget);
     });
+  });
+
+  testWidgets('B closes the drawer before it goes back', (tester) async {
+    final app = await pumpApp(
+      tester,
+      size: const Size(402, 874),
+      desktop: false,
+    );
+    await app.go(AppRoutes.library);
+    await tester.tap(find.byKey(const Key('nav-more')));
+    await tester.pumpAndSettle();
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+
+    await press(tester, LogicalKeyboardKey.gameButtonB);
+
+    expect(find.byKey(const Key('nav-drawer')), findsNothing);
+    expect(app.location, AppRoutes.library);
+  });
+
+  testWidgets('a tablet in the desktop layout also goes back', (tester) async {
+    final app = await pumpApp(
+      tester,
+      size: const Size(1180, 820),
+      desktop: false,
+    );
+    await app.go(AppRoutes.library);
+    await app.go(AppRoutes.steam);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(app.location, AppRoutes.library);
+  });
+
+  testWidgets('signed out only B works', (tester) async {
+    final app = await pumpApp(
+      tester,
+      size: handheld,
+      desktop: false,
+      session: const SessionSignedOut(),
+    );
+    final before = app.location;
+
+    await press(tester, LogicalKeyboardKey.gameButtonRight1);
+    await press(tester, LogicalKeyboardKey.gameButtonStart);
+
+    expect(app.location, before);
   });
 
   testWidgets('the desktop ignores the gamepad buttons', (tester) async {

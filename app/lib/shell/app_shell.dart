@@ -1,4 +1,5 @@
 import 'package:backlog_manager/design/atmosphere.dart';
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/glass.dart';
 import 'package:backlog_manager/design/glow.dart';
 import 'package:backlog_manager/features/inspector/entry_inspector.dart';
@@ -136,7 +137,7 @@ class _AppShellState extends ConsumerState<AppShell> {
       );
     }
 
-    return PaletteHost(
+    final window = PaletteHost(
       child: Material(
         type: MaterialType.transparency,
         child: AtmosphereBackground(
@@ -169,6 +170,9 @@ class _AppShellState extends ConsumerState<AppShell> {
         ),
       ),
     );
+    return ShelfFormFactor.isTouch(context)
+        ? SystemBackHandler(child: window)
+        : window;
   }
 }
 
@@ -292,7 +296,7 @@ class FullWindowFrame extends ConsumerWidget {
         ),
       );
     }
-    return PaletteHost(
+    final window = PaletteHost(
       child: Material(
         type: MaterialType.transparency,
         child: AtmosphereBackground(
@@ -305,5 +309,8 @@ class FullWindowFrame extends ConsumerWidget {
         ),
       ),
     );
+    return ShelfFormFactor.isTouch(context)
+        ? SystemBackHandler(child: window)
+        : window;
   }
 }
