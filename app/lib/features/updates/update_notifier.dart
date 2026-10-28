@@ -1,5 +1,6 @@
 import 'package:backlog_manager/design/widgets/toast.dart';
 import 'package:backlog_manager/features/updates/app_update_state.dart';
+import 'package:backlog_manager/platform/update_installer.dart';
 import 'package:backlog_manager/platform/url_opener.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,7 +9,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// (release builds only) and announces one with a toast that stays until it
 /// is closed or another toast replaces it. The announcement is made once per
 /// session. Where the install can update itself the toast installs the update
-/// and then offers the restart; elsewhere it opens the release page.
+/// and then offers the restart (on Android the system installer); elsewhere
+/// it opens the release page.
 class UpdateNotifier extends ConsumerStatefulWidget {
   const UpdateNotifier({required this.child, super.key});
 
@@ -58,10 +60,13 @@ class _UpdateNotifierState extends ConsumerState<UpdateNotifier> {
     final notifier = ref.read(appUpdateProvider.notifier);
     switch (next.install) {
       case UpdateInstall.ready:
+        final restarts = ref.read(updateInstallerProvider)?.restartsApp ?? true;
         showShelfToast(
           context,
-          'Backlog Manager ${next.release?.version} is ready to install',
-          actionLabel: 'Restart to Update',
+          next.needsPermission
+              ? 'Allow Backlog Manager to install apps, then tap Install Now'
+              : 'Backlog Manager ${next.release?.version} is ready to install',
+          actionLabel: restarts ? 'Restart to Update' : 'Install Now',
           onAction: notifier.restart,
           duration: const Duration(days: 1),
         );
