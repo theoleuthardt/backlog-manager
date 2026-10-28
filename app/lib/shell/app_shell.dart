@@ -1,4 +1,5 @@
 import 'package:backlog_manager/design/atmosphere.dart';
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/glass.dart';
 import 'package:backlog_manager/design/glow.dart';
 import 'package:backlog_manager/features/inspector/entry_inspector.dart';
@@ -6,6 +7,7 @@ import 'package:backlog_manager/features/library/wishlist_sync_prompt.dart';
 import 'package:backlog_manager/features/palette/command_palette.dart';
 import 'package:backlog_manager/features/updates/update_notifier.dart';
 import 'package:backlog_manager/routing/routes.dart';
+import 'package:backlog_manager/shell/gamepad.dart';
 import 'package:backlog_manager/shell/mobile_navigation.dart';
 import 'package:backlog_manager/shell/pane_widths.dart';
 import 'package:backlog_manager/shell/search_hint.dart';
@@ -135,7 +137,7 @@ class _AppShellState extends ConsumerState<AppShell> {
       );
     }
 
-    return PaletteHost(
+    final window = PaletteHost(
       child: Material(
         type: MaterialType.transparency,
         child: AtmosphereBackground(
@@ -168,6 +170,9 @@ class _AppShellState extends ConsumerState<AppShell> {
         ),
       ),
     );
+    return ShelfFormFactor.isTouch(context)
+        ? SystemBackHandler(child: window)
+        : window;
   }
 }
 
@@ -194,33 +199,35 @@ class _MobileShell extends StatelessWidget {
     final compact = layout == ShellLayout.compact;
     void openDrawer() => scaffoldKey.currentState?.openDrawer();
 
-    return PaletteHost(
-      child: AtmosphereBackground(
-        child: Scaffold(
-          key: scaffoldKey,
-          backgroundColor: Colors.transparent,
-          drawer: NavigationDrawerPanel(
-            location: location,
-            onItemSelected: () => scaffoldKey.currentState?.closeDrawer(),
-          ),
-          bottomNavigationBar: compact
-              ? BottomNavBar(location: location, onMore: openDrawer)
-              : null,
-          body: SafeArea(
-            bottom: !compact,
-            child: Row(
-              children: [
-                if (!compact)
-                  ShellNavRail(location: location, onMore: openDrawer),
-                Expanded(
-                  child: Column(
-                    children: [
-                      MobileTopBar(location: location),
-                      Expanded(child: child),
-                    ],
+    return SystemBackHandler(
+      child: PaletteHost(
+        child: AtmosphereBackground(
+          child: Scaffold(
+            key: scaffoldKey,
+            backgroundColor: Colors.transparent,
+            drawer: NavigationDrawerPanel(
+              location: location,
+              onItemSelected: () => scaffoldKey.currentState?.closeDrawer(),
+            ),
+            bottomNavigationBar: compact
+                ? BottomNavBar(location: location, onMore: openDrawer)
+                : null,
+            body: SafeArea(
+              bottom: !compact,
+              child: Row(
+                children: [
+                  if (!compact)
+                    ShellNavRail(location: location, onMore: openDrawer),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        MobileTopBar(location: location),
+                        Expanded(child: child),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -271,23 +278,25 @@ class FullWindowFrame extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final minimal = location != AppRoutes.settings;
     if (shellLayoutOf(context, ref) != ShellLayout.expanded) {
-      return PaletteHost(
-        child: Material(
-          type: MaterialType.transparency,
-          child: AtmosphereBackground(
-            child: SafeArea(
-              child: Column(
-                children: [
-                  MobileTopBar(location: location, minimal: minimal),
-                  Expanded(child: child),
-                ],
+      return SystemBackHandler(
+        child: PaletteHost(
+          child: Material(
+            type: MaterialType.transparency,
+            child: AtmosphereBackground(
+              child: SafeArea(
+                child: Column(
+                  children: [
+                    MobileTopBar(location: location, minimal: minimal),
+                    Expanded(child: child),
+                  ],
+                ),
               ),
             ),
           ),
         ),
       );
     }
-    return PaletteHost(
+    final window = PaletteHost(
       child: Material(
         type: MaterialType.transparency,
         child: AtmosphereBackground(
@@ -300,5 +309,8 @@ class FullWindowFrame extends ConsumerWidget {
         ),
       ),
     );
+    return ShelfFormFactor.isTouch(context)
+        ? SystemBackHandler(child: window)
+        : window;
   }
 }

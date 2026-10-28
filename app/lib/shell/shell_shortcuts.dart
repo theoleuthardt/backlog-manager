@@ -1,4 +1,10 @@
+import 'dart:async';
+
+import 'package:backlog_manager/design/form_factor.dart';
+import 'package:backlog_manager/routing/router.dart';
+import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/routing/session.dart';
+import 'package:backlog_manager/shell/gamepad.dart';
 import 'package:backlog_manager/shell/palette_registry.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +24,13 @@ class RunPaletteActionIntent extends Intent {
 
 class OpenPaletteIntent extends Intent {
   const OpenPaletteIntent();
+}
+
+/// A button of a gamepad, see [gamepadActionFor].
+class GamepadIntent extends Intent {
+  const GamepadIntent(this.action);
+
+  final GamepadAction action;
 }
 
 /// Esc: closes the topmost layer of the window, the palette first and then
@@ -42,7 +55,9 @@ bool _focusInPopupRoute() {
 /// elsewhere focus the search field of the library (on a page without it they
 /// open the command palette; not while typing in a text field and not with a
 /// sheet or popover open), Cmd+K and Ctrl+K open the command palette, Esc closes the palette and then the inspector.
-/// The shortcuts of the palette actions come from the registry.
+/// The shortcuts of the palette actions come from the registry. On a touch
+/// screen the buttons of a gamepad work too ([GamepadAction]), and the D-pad
+/// finds the first control when nothing has the focus yet.
 class ShellShortcuts extends ConsumerWidget {
   const ShellShortcuts({required this.child, super.key});
 
@@ -52,8 +67,13 @@ class ShellShortcuts extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isMac = Theme.of(context).platform == TargetPlatform.macOS;
     final registered = ref.watch(paletteRegistryProvider);
+    final touch = ShelfFormFactor.isTouch(context);
+    final signedIn = ref.watch(sessionProvider) is SessionSignedIn;
     return Shortcuts(
       shortcuts: {
+        if (touch)
+          for (final key in _gamepadKeys)
+            SingleActivator(key): GamepadIntent(gamepadActionFor(key)!),
         for (final action in registered)
           if (action.shortcut != null)
             action.shortcut!.activator(isMac: isMac): RunPaletteActionIntent(
@@ -86,6 +106,10 @@ class ShellShortcuts extends ConsumerWidget {
             enabled: () => ref.read(sessionProvider) is SessionSignedIn,
             run: () => ref.read(paletteOpenProvider.notifier).open(),
           ),
+          if (touch) ...{
+            GamepadIntent: _GamepadAction(ref, signedIn: signedIn),
+            DirectionalFocusIntent: _DpadFocusAction(),
+          },
           CloseTopLayerIntent: _Action<CloseTopLayerIntent>(
             enabled: () =>
                 !_focusInPopupRoute() &&
@@ -134,5 +158,59 @@ class _RunPaletteAction extends Action<RunPaletteActionIntent> {
   Object? invoke(RunPaletteActionIntent intent) {
     intent.action.run();
     return null;
+  }
+}
+
+const _gamepadKeys = [
+  LogicalKeyboardKey.gameButtonB,
+  LogicalKeyboardKey.gameButtonY,
+  LogicalKeyboardKey.gameButtonLeft1,
+  LogicalKeyboardKey.gameButtonRight1,
+  LogicalKeyboardKey.gameButtonStart,
+];
+
+class _GamepadAction extends Action<GamepadIntent> {
+  _GamepadAction(this.ref, {required this.signedIn});
+
+  final WidgetRef ref;
+  final bool signedIn;
+
+  @override
+  bool isEnabled(GamepadIntent intent) =>
+      intent.action == GamepadAction.back || signedIn;
+
+  @override
+  Object? invoke(GamepadIntent intent) {
+    final router = ref.read(routerProvider);
+    final location = router.routerDelegate.currentConfiguration.uri.path;
+    switch (intent.action) {
+      case GamepadAction.back:
+        unawaited(navigateBack(ref));
+      case GamepadAction.search:
+        ref.read(paletteOpenProvider.notifier).open();
+      case GamepadAction.previousSection:
+        router.go(sectionAfter(location, forward: false));
+      case GamepadAction.nextSection:
+        router.go(sectionAfter(location, forward: true));
+      case GamepadAction.settings:
+        router.go(AppRoutes.settings);
+      case GamepadAction.menu:
+        break;
+    }
+    return null;
+  }
+}
+
+/// The D-pad: moves the focus like the arrow keys, and when nothing has the
+/// focus yet it goes to the first control instead of doing nothing.
+class _DpadFocusAction extends DirectionalFocusAction {
+  @override
+  void invoke(DirectionalFocusIntent intent) {
+    final focused = FocusManager.instance.primaryFocus;
+    if (focused == null || focused is FocusScopeNode) {
+      (focused ?? FocusManager.instance.rootScope).nextFocus();
+      return;
+    }
+    super.invoke(intent);
   }
 }

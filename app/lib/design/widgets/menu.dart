@@ -194,18 +194,22 @@ class ContextMenuRegion extends StatefulWidget {
   const ContextMenuRegion({
     required this.entries,
     required this.child,
+    this.controller,
     super.key,
   });
 
   final List<ShelfMenuEntry> entries;
   final Widget child;
 
+  /// Opens the menu from elsewhere, for example from the X of a gamepad.
+  final MenuController? controller;
+
   @override
   State<ContextMenuRegion> createState() => _ContextMenuRegionState();
 }
 
 class _ContextMenuRegionState extends State<ContextMenuRegion> {
-  final MenuController _controller = MenuController();
+  late final MenuController _controller = widget.controller ?? MenuController();
 
   @override
   Widget build(BuildContext context) {
