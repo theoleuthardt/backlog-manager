@@ -36,6 +36,15 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Require the server address
+        env:
+          API_URL: ${{ vars.API_URL }}
+        run: |
+          if [ -z "$API_URL" ]; then
+            echo "The API_URL repository variable is missing: the apps would ship without a server address." >&2
+            exit 1
+          fi
+
       - name: Compute release version
         id: compute
         env:
