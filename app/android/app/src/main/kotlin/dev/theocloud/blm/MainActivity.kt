@@ -18,14 +18,19 @@ import java.io.File
  * otherwise it copies the APK to the folder [UpdateFileProvider] shares (on a
  * thread of its own, the file is tens of megabytes), opens the installer on it
  * and answers `started`. The copy of the last update is removed when the app
- * starts again. `dev.theocloud.blm/power` is [PowerSaveStreamHandler].
+ * starts again. `dev.theocloud.blm/power` is [PowerSaveStreamHandler], whose
+ * receiver goes with the engine.
  */
 class MainActivity : FlutterFragmentActivity() {
+    private var powerSave: PowerSaveStreamHandler? = null
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         File(cacheDir, "updates").deleteRecursively()
-        EventChannel(flutterEngine.dartExecutor.binaryMessenger, "dev.theocloud.blm/power")
-            .setStreamHandler(PowerSaveStreamHandler(applicationContext))
+        powerSave = PowerSaveStreamHandler(applicationContext).also {
+            EventChannel(flutterEngine.dartExecutor.binaryMessenger, "dev.theocloud.blm/power")
+                .setStreamHandler(it)
+        }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "dev.theocloud.blm/update")
             .setMethodCallHandler { call, result ->
                 val path = call.argument<String>("path")
@@ -58,6 +63,12 @@ class MainActivity : FlutterFragmentActivity() {
                     }
                 }.start()
             }
+    }
+
+    override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        powerSave?.onCancel(null)
+        powerSave = null
+        super.cleanUpFlutterEngine(flutterEngine)
     }
 
     private fun openInstallSettings() {
