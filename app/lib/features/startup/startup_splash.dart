@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:backlog_manager/design/atmosphere.dart';
 import 'package:backlog_manager/design/background_motion.dart';
+import 'package:backlog_manager/design/light_effects.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/spinner.dart';
@@ -90,7 +91,8 @@ class _StartupSplashState extends ConsumerState<StartupSplash>
     final moving =
         atmosphereMotion &&
         !MediaQuery.of(context).disableAnimations &&
-        ref.watch(backgroundMotionProvider);
+        ref.watch(backgroundMotionProvider) &&
+        ref.watch(lightEffectsProvider) == null;
     final session = ref.watch(sessionProvider);
     if (!moving || _gone) return widget.child;
 

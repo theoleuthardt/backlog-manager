@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:backlog_manager/design/atmosphere.dart';
 import 'package:backlog_manager/design/background_motion.dart';
+import 'package:backlog_manager/design/light_effects.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -38,7 +39,8 @@ class _BrandMarkState extends ConsumerState<BrandMark>
     final moving =
         atmosphereMotion &&
         !MediaQuery.of(context).disableAnimations &&
-        ref.watch(backgroundMotionProvider);
+        ref.watch(backgroundMotionProvider) &&
+        ref.watch(lightEffectsProvider) == null;
     if (moving && !_controller.isAnimating) {
       unawaited(_controller.repeat());
     } else if (!moving && _controller.isAnimating) {
