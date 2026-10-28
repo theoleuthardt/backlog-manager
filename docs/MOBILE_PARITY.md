@@ -4,7 +4,7 @@ The checklist of the mobile port (epic #289, issue #528): every page and every f
 
 ## How to check
 
-Install the APK and the IPA of a release (for a spot check before a release, the `android-apk` and `ios-ipa` artifacts of a pull request's CI run; the debug APK is signed with another key than the releases, so uninstall it before installing a release APK) and sign in against the real backend with a large backlog (about 2000 entries). Each row is checked on every column:
+Install the APK and the IPA of a release (the IPA is unsigned: sign and install it with KravaSigner, see "Install" in [`FLUTTER.md`](FLUTTER.md)) (for a spot check before a release, the `android-apk` and `ios-ipa` artifacts of a pull request's CI run; the debug APK is signed with another key than the releases, so uninstall it before installing a release APK) and sign in against the real backend with a large backlog (about 2000 entries). Each row is checked on every column:
 
 | Column | Device | Input |
 | --- | --- | --- |
