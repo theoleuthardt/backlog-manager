@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:backlog_manager/design/background_motion.dart';
 import 'package:backlog_manager/design/light_effects.dart';
 import 'package:backlog_manager/platform/desktop.dart';
 import 'package:flutter/services.dart';
@@ -71,6 +72,22 @@ void main() {
     strain(container);
     powerSave.add(false);
     await Future<void>.delayed(Duration.zero);
+
+    expect(container.read(lightEffectsProvider), isNull);
+  });
+
+  test('frames drawn with every effect switched off do not count', () {
+    final container = containerFor(desktop: false);
+    for (final effect in [
+      backgroundMotionProvider,
+      glowMotionProvider,
+      blurEffectsProvider,
+    ]) {
+      container.read(effect.notifier).setEnabled(enabled: false);
+    }
+
+    strain(container);
+    container.read(blurEffectsProvider.notifier).setEnabled(enabled: true);
 
     expect(container.read(lightEffectsProvider), isNull);
   });

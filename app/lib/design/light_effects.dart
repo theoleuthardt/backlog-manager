@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:backlog_manager/design/background_motion.dart';
 import 'package:backlog_manager/design/frame_strain.dart';
 import 'package:backlog_manager/platform/desktop.dart';
 import 'package:flutter/scheduler.dart';
@@ -95,11 +96,19 @@ class FrameStrainNotifier extends Notifier<bool> {
     return false;
   }
 
-  /// Counts [frame] unless the effects are off for saving power already: a
-  /// device that saves power also slows down, and those frames say nothing
-  /// about the full effects.
+  /// Counts [frame] only while it was drawn with at least one of the effects
+  /// this turns off: not while the device saves power (it also slows down
+  /// then), and not while the user switched all of them off, since those
+  /// frames say nothing about the effects.
   void record(Duration frame) {
-    if (state || ref.read(isDesktopProvider) || ref.read(powerSaveProvider)) {
+    final withEffects =
+        ref.read(backgroundMotionProvider) ||
+        ref.read(glowMotionProvider) ||
+        ref.read(blurEffectsProvider);
+    if (state ||
+        ref.read(isDesktopProvider) ||
+        ref.read(powerSaveProvider) ||
+        !withEffects) {
       return;
     }
     if (_strain.add(frame)) state = true;
