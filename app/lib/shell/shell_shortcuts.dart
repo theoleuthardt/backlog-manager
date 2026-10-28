@@ -177,7 +177,7 @@ class _GamepadAction extends Action<GamepadIntent> {
 
   @override
   bool isEnabled(GamepadIntent intent) =>
-      intent.action == GamepadAction.back || signedIn;
+      intent.action == GamepadAction.back || (signedIn && !behindLock(ref));
 
   @override
   Object? invoke(GamepadIntent intent) {

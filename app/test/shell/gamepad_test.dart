@@ -1,3 +1,4 @@
+import 'package:backlog_manager/auth/biometric_lock.dart';
 import 'package:backlog_manager/platform/desktop.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/routing/session.dart';
@@ -7,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../auth/biometric_fakes.dart';
 import '../data/fakes.dart';
 import '../features/inspector/entry_inspector_test.dart' show celeste, hades;
 import '../features/library/library_page_test.dart' show pumpLibrary;
@@ -236,6 +238,30 @@ void main() {
     await press(tester, LogicalKeyboardKey.gameButtonStart);
 
     expect(app.location, before);
+  });
+
+  testWidgets('back does nothing behind the lock screen', (tester) async {
+    final app = await pumpApp(
+      tester,
+      size: handheld,
+      desktop: false,
+      extraOverrides: [
+        biometricUnlockAtStartProvider.overrideWithValue(true),
+        biometricAuthProvider.overrideWithValue(
+          FakeBiometricAuth()..passes = false,
+        ),
+      ],
+    );
+    await app.go(AppRoutes.library);
+    await app.go(AppRoutes.steam);
+    expect(find.byKey(const Key('biometric-lock')), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await press(tester, LogicalKeyboardKey.gameButtonB);
+    await press(tester, LogicalKeyboardKey.gameButtonRight1);
+    await press(tester, LogicalKeyboardKey.gameButtonStart);
+
+    expect(app.location, AppRoutes.steam);
   });
 
   testWidgets('the desktop ignores the gamepad buttons', (tester) async {

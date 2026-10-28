@@ -38,4 +38,16 @@ void main() {
     expect(first.existsSync(), isFalse);
     expect(second.readAsBytesSync(), [2, 3]);
   });
+
+  test('a name with folders cannot leave the share folder', () async {
+    final temp = Directory.systemTemp.createTempSync('blm-test');
+    addTearDown(() => temp.deleteSync(recursive: true));
+
+    final file = await stageSharedFile(temp, '../../evil/backup.json', [1]);
+
+    expect(file.parent.path, '${temp.path}/blm-share');
+    expect(file.path.endsWith('/backup.json'), isTrue);
+    final dotted = await stageSharedFile(temp, '..', [1]);
+    expect(dotted.parent.path, '${temp.path}/blm-share');
+  });
 }
