@@ -11,6 +11,7 @@ import 'package:backlog_manager/shell/app_version.dart';
 import 'package:backlog_manager/shell/window_controls.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 
 import '../auth/fakes.dart';
@@ -73,6 +74,7 @@ Future<Harness> pumpApp(
   Size size = const Size(1440, 900),
   bool settle = true,
   bool desktop = true,
+  List<Override> extraOverrides = const [],
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -93,6 +95,7 @@ Future<Harness> pumpApp(
         tokenStoreProvider.overrideWithValue(tokens),
         appVersionProvider.overrideWith((ref) async => 'v0.9.0'),
         isDesktopProvider.overrideWithValue(desktop),
+        ...extraOverrides,
       ],
       child: const BacklogManagerApp(),
     ),

@@ -1,3 +1,4 @@
+import 'package:backlog_manager/api/sse.dart';
 import 'package:dio/dio.dart';
 
 /// A failed backend call with the message to show the user.
@@ -11,6 +12,9 @@ class ApiException implements Exception {
 
   factory ApiException.from(Object error, String fallback) {
     if (error is ApiException) return error;
+    if (error is SseInterruptedException) {
+      return const ApiException(SseInterruptedException.message);
+    }
     if (error is DioException) {
       final body = error.response?.data;
       final detail = body is Map<String, dynamic> ? body['detail'] : null;

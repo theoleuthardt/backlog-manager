@@ -22,6 +22,8 @@ class ShelfField extends StatefulWidget {
     this.enabled = true,
     this.autofocus = false,
     this.keyboardType,
+    this.autofillHints,
+    this.textInputAction,
     this.labelAction,
     super.key,
   });
@@ -38,6 +40,13 @@ class ShelfField extends StatefulWidget {
   final bool enabled;
   final bool autofocus;
   final TextInputType? keyboardType;
+
+  /// What a password manager or the system may fill in, for example
+  /// [AutofillHints.email].
+  final Iterable<String>? autofillHints;
+
+  /// The action key of the on-screen keyboard, for example next or done.
+  final TextInputAction? textInputAction;
 
   /// A small control at the right end of the label line, for example "Manage".
   final Widget? labelAction;
@@ -89,6 +98,8 @@ class _ShelfFieldState extends State<ShelfField> {
             enabled: widget.enabled,
             autofocus: widget.autofocus,
             keyboardType: widget.keyboardType,
+            autofillHints: widget.autofillHints,
+            textInputAction: widget.textInputAction,
             style: text.fieldText,
             textAlignVertical: TextAlignVertical.center,
             decoration: InputDecoration(
@@ -126,9 +137,14 @@ class _ShelfFieldState extends State<ShelfField> {
   }
 }
 
+/// Below this width a row on a touch screen puts its control below the label.
+const _stackedRowWidth = 480.0;
+
 /// One row of a [ShelfFormGroup]: the label on the left (with a small
 /// description below it) and the control on the right; on a phone in
-/// portrait ([ShelfFormFactor]) the control goes below the label.
+/// portrait ([ShelfFormFactor]), and on any touch screen where the row is
+/// narrower than 480 px (the settings of a handheld), the control goes below
+/// the label. A narrow column on the desktop keeps its rows.
 class ShelfFormRow extends StatelessWidget {
   const ShelfFormRow({
     required this.label,
@@ -162,18 +178,23 @@ class ShelfFormRow extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: ShelfFormFactor.isCompact(context)
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [caption, const SizedBox(height: 10), control],
-            )
-          : Row(
-              children: [
-                Expanded(child: caption),
-                const SizedBox(width: 16),
-                control,
-              ],
-            ),
+      child: LayoutBuilder(
+        builder: (context, constraints) =>
+            ShelfFormFactor.isCompact(context) ||
+                (ShelfFormFactor.isTouch(context) &&
+                    constraints.maxWidth < _stackedRowWidth)
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [caption, const SizedBox(height: 10), control],
+              )
+            : Row(
+                children: [
+                  Expanded(child: caption),
+                  const SizedBox(width: 16),
+                  control,
+                ],
+              ),
+      ),
     );
   }
 }

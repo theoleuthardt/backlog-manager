@@ -1,3 +1,4 @@
+import 'package:backlog_manager/auth/biometric_gate.dart';
 import 'package:backlog_manager/design/background_motion.dart';
 import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/glass.dart';
@@ -36,7 +37,7 @@ class BacklogManagerApp extends ConsumerWidget {
         return ShelfFormFactor(
           compact: shellLayoutOf(context, ref) == ShellLayout.compact,
           touch: touch,
-          child: touch ? _TouchInputs(child: app) : app,
+          child: touch ? _TouchInputs(child: BiometricGate(child: app)) : app,
         );
       },
     );
