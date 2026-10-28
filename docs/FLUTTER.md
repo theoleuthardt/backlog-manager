@@ -142,6 +142,11 @@ Verified so far: the three Linux packages are built locally (an AppImage starts 
 
 `.github/workflows/release-app.yml` (manual, "Release Flutter App") builds Linux, macOS and Windows on their own runners, packages with `task app:package` and uploads the installers as workflow artifacts. It keeps the version rule of the former Tauri pipeline (`scripts/release-version.mjs`, tested by `task release:test`): the optional `version` input, otherwise a patch bump of the latest `v*.*.*` tag, and a requested version must be greater than the latest tag. The default server comes from the repository variable `API_URL`.
 
+- **Android and iOS:** the jobs "Build Android" and "Build iOS" add `Backlog-Manager_<version>_android_arm64.apk` (release, arm64, signed) and `Backlog-Manager_<version>_ios.ipa` (unsigned, for KravaSigner) to the same release as the desktop installers. `app-update.json` gets an `android-arm64-apk` payload; iOS has none, it is notify-only. The APK is signed with the project keystore from four repository secrets:
+  - `ANDROID_KEYSTORE_BASE64`: the keystore file, base64 encoded.
+  - `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`.
+
+  `android/app/build.gradle.kts` uses the keystore when `ANDROID_KEYSTORE_PATH` is set; without it a release build stays unsigned. The workflow fails with a clear message when the keystore secret is missing. Create the keystore once with `keytool -genkeypair -v -keystore blm-release.jks -alias blm -keyalg RSA -keysize 4096 -validity 36500`, store it as `base64 -w0 blm-release.jks` in the secret, and keep the file and its passwords in a safe place. An APK signed with another key cannot update an installed app: losing the keystore means every user reinstalls.
 - **Dry run:** with `publish` off (the default) nothing is released; take the installers from the run's artifacts.
 - **Publishing:** `publish` creates the GitHub Release with generated notes and all installers. Since the cutover (#287) a release is a full release by default; `prerelease` marks it as a pre-release, which only the Preview update channel offers (`APP_UPDATES.md`). 0.9.13 was the first full release.
 - The release notes start with the install instructions for unsigned builds (`.github/release-install-notes.md`). The builds are not code signed; that is a decision for later (#280).

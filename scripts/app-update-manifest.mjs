@@ -9,8 +9,9 @@
  * Every payload carries its SHA-256 and an Ed25519 signature of
  * `blm-update-v1:<version>:<key>:<sha256>`, so a signature is valid for one
  * file of one version for one platform only. The keys are
- * `{os}-{arch}-{format}`: an install that cannot apply a format (DEB, RPM)
- * finds no entry and stays notify-only. Without a private key nothing is
+ * `{os}-{arch}-{format}`: an install that cannot apply a format (DEB, RPM,
+ * and iOS, whose IPA the user signs and installs with a signing tool) finds
+ * no entry and stays notify-only. Without a private key nothing is
  * written and the release ships without in-place updates.
  */
 import { createHash, createPrivateKey, createPublicKey, sign, verify } from "node:crypto";
@@ -22,6 +23,7 @@ const PKCS8_ED25519_PREFIX = Buffer.from("302e020100300506032b657004220420", "he
 const SPKI_ED25519_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
 
 const PAYLOADS = [
+  { key: "android-arm64-apk", pattern: /_android_arm64\.apk$/i },
   { key: "linux-x64-appimage", pattern: /_linux_x64\.AppImage$/i },
   { key: "macos-universal-dmg", pattern: /_macos_universal\.dmg$/i },
   { key: "windows-x64-exe", pattern: /_windows_x64\.exe$/i },

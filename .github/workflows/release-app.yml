@@ -36,6 +36,15 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Require the server address
+        env:
+          API_URL: ${{ vars.API_URL }}
+        run: |
+          if [ -z "$API_URL" ]; then
+            echo "The API_URL repository variable is missing: the apps would ship without a server address." >&2
+            exit 1
+          fi
+
       - name: Compute release version
         id: compute
         env:
@@ -124,9 +133,135 @@ jobs:
           if-no-files-found: error
           path: app/dist/*/Backlog-Manager_*
 
+  android:
+    name: Build Android
+    needs: version
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Setup Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+          cache-dependency-path: |
+            app/android/*.gradle*
+            app/android/app/*.gradle*
+            app/android/gradle/wrapper/gradle-wrapper.properties
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: app/pubspec.yaml
+          channel: stable
+          cache: true
+
+      - name: Stamp app version
+        shell: bash
+        working-directory: app
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+            echo "Version must use MAJOR.MINOR.PATCH format, got: $VERSION" >&2
+            exit 1
+          }
+          sed -i.bak "s/^version: .*/version: ${VERSION}+${BUILD_NUMBER}/" pubspec.yaml
+          rm pubspec.yaml.bak
+          grep '^version:' pubspec.yaml
+
+      - name: Restore the signing key
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "The ANDROID_KEYSTORE_BASE64 secret is missing; see docs/FLUTTER.md (Release workflow)." >&2
+            exit 1
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.jks"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+
+      - name: Build the APK
+        working-directory: app
+        env:
+          API_URL: ${{ vars.API_URL }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          flutter build apk --release --split-per-abi --target-platform android-arm64 --dart-define=API_URL="$API_URL"
+          full_version=$(sed -n 's/^version: *\([^ ]*\).*/\1/p' pubspec.yaml)
+          mkdir -p "dist/$full_version"
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk "dist/$full_version/Backlog-Manager_${VERSION}_android_arm64.apk"
+          apksigner=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n 1)
+          "$apksigner" verify "dist/$full_version/Backlog-Manager_${VERSION}_android_arm64.apk"
+
+      - name: Upload the APK
+        uses: actions/upload-artifact@v6
+        with:
+          name: backlog-manager-app-android
+          if-no-files-found: error
+          path: app/dist/*/Backlog-Manager_*
+
+  ios:
+    name: Build iOS
+    needs: version
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: app/pubspec.yaml
+          channel: stable
+          cache: true
+
+      - name: Stamp app version
+        shell: bash
+        working-directory: app
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+            echo "Version must use MAJOR.MINOR.PATCH format, got: $VERSION" >&2
+            exit 1
+          }
+          sed -i.bak "s/^version: .*/version: ${VERSION}+${BUILD_NUMBER}/" pubspec.yaml
+          rm pubspec.yaml.bak
+          grep '^version:' pubspec.yaml
+
+      - name: Build the unsigned IPA
+        working-directory: app
+        env:
+          API_URL: ${{ vars.API_URL }}
+        run: |
+          flutter build ios --release --no-codesign --dart-define=API_URL="$API_URL"
+          bash tool/package/ipa.sh
+
+      - name: Upload the IPA
+        uses: actions/upload-artifact@v6
+        with:
+          name: backlog-manager-app-ios
+          if-no-files-found: error
+          path: app/dist/*/Backlog-Manager_*
+
   release:
     name: Publish GitHub Release
-    needs: [version, build]
+    needs: [version, build, android, ios]
     if: inputs.publish
     runs-on: ubuntu-latest
     permissions:

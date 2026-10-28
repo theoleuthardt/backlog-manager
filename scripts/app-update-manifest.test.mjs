@@ -37,6 +37,8 @@ const RELEASE_FILES = {
   "linux/Backlog-Manager_1.2.3_linux_x64.rpm": "rpm",
   "macos/Backlog-Manager_1.2.3_macos_universal.dmg": "dmg",
   "windows/Backlog-Manager_1.2.3_windows_x64.exe": "exe",
+  "android/Backlog-Manager_1.2.3_android_arm64.apk": "apk",
+  "ios/Backlog-Manager_1.2.3_ios.ipa": "ipa",
 };
 
 describe("signatures", () => {
@@ -76,10 +78,11 @@ describe("buildAppUpdateManifest", () => {
       pubDate: "2026-10-12T00:00:00.000Z",
     });
 
-  it("lists AppImage, DMG and EXE but not DEB and RPM", () => {
+  it("lists APK, AppImage, DMG and EXE but not DEB, RPM and IPA", () => {
     const manifest = build(seedDir(RELEASE_FILES));
 
     assert.deepEqual(Object.keys(manifest.payloads).sort(), [
+      "android-arm64-apk",
       "linux-x64-appimage",
       "macos-universal-dmg",
       "windows-x64-exe",
@@ -110,6 +113,26 @@ describe("buildAppUpdateManifest", () => {
     const linux = manifest.payloads["linux-x64-appimage"];
     const swapped = updateMessage({ version: "1.2.3", key: "windows-x64-exe", sha256: linux.sha256 });
     assert.equal(verifyMessage(publicKey, swapped, linux.signature), false);
+  });
+
+  it("offers the Android APK, but nothing for iOS, which cannot update itself", () => {
+    const manifest = build(seedDir(RELEASE_FILES));
+
+    assert.equal(
+      manifest.payloads["android-arm64-apk"].url,
+      `https://github.com/${REPO}/releases/download/v1.2.3/Backlog-Manager_1.2.3_android_arm64.apk`,
+    );
+    assert.equal(
+      Object.keys(manifest.payloads).some((key) => key.startsWith("ios")),
+      false,
+    );
+  });
+
+  it("throws when the Android APK is missing", () => {
+    const files = { ...RELEASE_FILES };
+    delete files["android/Backlog-Manager_1.2.3_android_arm64.apk"];
+
+    assert.throws(() => build(seedDir(files)), /android-arm64-apk/);
   });
 
   it("throws when a platform has no installer", () => {
