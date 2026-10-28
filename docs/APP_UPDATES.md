@@ -15,9 +15,11 @@ and opens its page.
    without that asset is skipped, and without any manifest the answer is the
    latest stable release (notify-only).
 2. **Payload.** The manifest has one payload per `{os}-{arch}-{format}` key:
-   `linux-x64-appimage`, `macos-universal-dmg`, `windows-x64-exe`. An install
-   looks up its own key (`UpdateInstaller.payloadKey`), so a DEB or RPM install
-   (no key) is never offered a payload it cannot apply.
+   `linux-x64-appimage`, `macos-universal-dmg`, `windows-x64-exe`,
+   `android-arm64-apk`. An install looks up its own key
+   (`UpdateInstaller.payloadKey`), so a DEB or RPM install (no key) is never
+   offered a payload it cannot apply. Android only has a key on 64-bit ARM
+   (read from `Platform.version`), the only APK of a release; iOS has none.
 3. **Download** into a folder on the disk of the app (`.blm-update-<version>`).
    A failed download removes the part and keeps the installed version.
 4. **Verification** (`UpdateVerifier`): the size and the SHA-256 are the ones of
@@ -33,6 +35,8 @@ and opens its page.
    | Linux AppImage | the new file is made executable and moved next to the running AppImage (`$APPIMAGE`) under a name without a version (`stableAppImageName`: `Backlog-Manager_0.9.9_linux_x64.AppImage` becomes `Backlog-Manager.AppImage`, a name without a version is kept as it is), and started; when the old file had a version in its name, its path becomes a relative link to the new file so desktop entries and shortcuts that point at it keep working (the AppImage runtime resolves `$APPIMAGE`, so the next update finds the real file); the old process keeps its open inode and exits. The release files keep the version in their names (#450) |
    | macOS | a detached shell script waits for the app to exit, mounts the disk image, copies the app over the bundle with `ditto` and opens it; the file is not quarantined because the app downloaded it itself |
    | Windows | a detached `cmd` runs a small batch file next to the download: it waits a moment, runs the Inno Setup installer silently over the install, starts the app and deletes itself |
+   | Android | "Install Now" (`AndroidApkInstaller`) calls `installApk` on the `dev.theocloud.blm/update` channel (`MainActivity.kt`): it copies the APK to `cache/updates/` (emptied when the app starts; `AppUpdateNotifier` likewise removes the `.blm-update-*` downloads an earlier run left in the staging folder) and opens the system installer on it through `UpdateFileProvider`; Android checks that the APK is signed with the key of the installed app, replaces it and ends the app. The app keeps running until then and the update stays ready, so a cancelled install can be started again. Without the "install unknown apps" permission (`REQUEST_INSTALL_PACKAGES` is declared, the user allows it per app) the channel opens that settings page instead, and the app says to allow it and tap Install Now again (`AppUpdateState.needsPermission`). Android refuses an APK with a lower version code (the release builds use the run number of the workflow), so going back to an older release is notify-only there (`UpdateInstaller.allowsDowngrade`) |
+   | iOS | notify-only: the sideloaded IPA cannot replace itself, so the Updates tab links to the release and says to sign and install the new IPA with KravaSigner |
 
    An install in a folder the user cannot write to has no payload key and stays
    notify-only. A failure while applying removes the download and leaves the

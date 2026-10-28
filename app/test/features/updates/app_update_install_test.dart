@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -59,12 +60,31 @@ class FakeDownloader implements UpdateDownloader {
 }
 
 class FakeInstaller implements UpdateInstaller {
-  FakeInstaller(this.stagingDirectory, {this.key = _key, this.fail = false});
+  FakeInstaller(
+    this.stagingDirectory, {
+    this.key = _key,
+    this.fail = false,
+    this.restartsApp = true,
+    this.allowsDowngrade = true,
+    this.missingPermission = 0,
+  });
 
   @override
   final Directory stagingDirectory;
   final String? key;
   final bool fail;
+
+  @override
+  final bool restartsApp;
+
+  @override
+  final bool allowsDowngrade;
+
+  /// How many of the next [apply] calls find the install permission missing.
+  int missingPermission;
+
+  /// Holds [apply] until it completes.
+  Completer<void>? gate;
   final applied = <File>[];
 
   @override
@@ -72,7 +92,12 @@ class FakeInstaller implements UpdateInstaller {
 
   @override
   Future<void> apply(File payload) async {
+    await gate?.future;
     if (fail) throw const FileSystemException('read-only');
+    if (missingPermission > 0) {
+      missingPermission--;
+      throw const InstallPermissionNeeded();
+    }
     applied.add(payload);
   }
 }
@@ -176,6 +201,18 @@ void main() {
     expect(state.staged!.path, staged('0.9.4').path);
     expect(state.staged!.readAsBytesSync(), _content);
     expect(downloader.urls.single.path, '/o/r/a.AppImage');
+  });
+
+  test('downloads left from an earlier run are removed at the start', () {
+    final leftover = File('${dir.path}/.blm-update-0.9.1')
+      ..writeAsStringSync('old apk');
+    final other = File('${dir.path}/notes.txt')..writeAsStringSync('keep');
+    final container = containerFor(downloader: FakeDownloader(_content));
+
+    container.read(appUpdateProvider);
+
+    expect(leftover.existsSync(), isFalse);
+    expect(other.existsSync(), isTrue);
   });
 
   test('a payload that was changed is refused and removed', () async {
@@ -287,6 +324,126 @@ void main() {
 
     expect(installer.applied.single.path, staged('0.9.4').path);
     expect(exited, 1);
+  });
+
+  test(
+    'an installer that hands over to the system keeps the app running',
+    () async {
+      final installer = FakeInstaller(dir, restartsApp: false);
+      final container = await checked(
+        containerFor(
+          downloader: FakeDownloader(_content),
+          installer: installer,
+        ),
+      );
+      final notifier = container.read(appUpdateProvider.notifier);
+      await notifier.install();
+
+      await notifier.restart();
+
+      final state = container.read(appUpdateProvider);
+      expect(installer.applied.single.path, staged('0.9.4').path);
+      expect(exited, 0);
+      expect(state.install, UpdateInstall.ready, reason: 'it can be retried');
+      expect(staged('0.9.4').existsSync(), isTrue);
+    },
+  );
+
+  test('a check that finds another release during the handover drops the '
+      'update', () async {
+    final installer = FakeInstaller(dir, restartsApp: false)
+      ..gate = Completer<void>();
+    final source = MutableSource(release);
+    final container = await checked(
+      containerFor(
+        downloader: FakeDownloader(_content),
+        installer: installer,
+        source: source,
+      ),
+    );
+    final notifier = container.read(appUpdateProvider.notifier);
+    await notifier.install();
+
+    final handover = notifier.restart();
+    source.release = AppRelease(
+      version: '0.9.5',
+      pageUrl: Uri.parse('https://github.com/o/r/releases/tag/v0.9.5'),
+    );
+    await notifier.check();
+    installer.gate!.complete();
+    await handover;
+
+    final state = container.read(appUpdateProvider);
+    expect(state.release!.version, '0.9.5');
+    expect(state.install, UpdateInstall.none);
+    expect(state.staged, isNull);
+    expect(staged('0.9.4').existsSync(), isFalse);
+  });
+
+  test('a missing install permission keeps the update ready', () async {
+    final installer = FakeInstaller(
+      dir,
+      restartsApp: false,
+      missingPermission: 1,
+    );
+    final container = await checked(
+      containerFor(downloader: FakeDownloader(_content), installer: installer),
+    );
+    final notifier = container.read(appUpdateProvider.notifier);
+    await notifier.install();
+
+    await notifier.restart();
+
+    var state = container.read(appUpdateProvider);
+    expect(state.install, UpdateInstall.ready);
+    expect(state.needsPermission, isTrue);
+    expect(staged('0.9.4').existsSync(), isTrue);
+    expect(installer.applied, isEmpty);
+
+    await notifier.restart();
+
+    state = container.read(appUpdateProvider);
+    expect(state.needsPermission, isFalse);
+    expect(installer.applied.single.path, staged('0.9.4').path);
+    expect(exited, 0);
+  });
+
+  test('an install that refuses older versions does not offer the switch '
+      'back', () async {
+    final older = await signedRelease(version: '0.9.2');
+    final container = await checked(
+      containerFor(
+        downloader: FakeDownloader(_content),
+        installer: FakeInstaller(dir, allowsDowngrade: false),
+        verifierOverride: older.verifier,
+        source: FixedSource(older.release),
+      ),
+    );
+    final notifier = container.read(appUpdateProvider.notifier);
+
+    expect(container.read(appUpdateProvider).check, UpdateCheck.older);
+    expect(notifier.canInstallInPlace, isFalse);
+  });
+
+  test('a new download starts without the old permission notice', () async {
+    final installer = FakeInstaller(
+      dir,
+      restartsApp: false,
+      missingPermission: 1,
+    );
+    final container = await checked(
+      containerFor(downloader: FakeDownloader(_content), installer: installer),
+    );
+    final notifier = container.read(appUpdateProvider.notifier);
+    await notifier.install();
+    await notifier.restart();
+    expect(container.read(appUpdateProvider).needsPermission, isTrue);
+
+    await notifier.install();
+
+    final state = container.read(appUpdateProvider);
+    expect(state.install, UpdateInstall.ready);
+    expect(state.needsPermission, isFalse);
   });
 
   test('restart does nothing before the update is ready', () async {

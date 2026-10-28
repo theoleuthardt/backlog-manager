@@ -413,4 +413,98 @@ void main() {
       expect(exited, 1);
     });
   });
+
+  group('on Android', () {
+    testWidgets('hands the update to the system installer and asks for the '
+        'permission first when it is missing', (tester) async {
+      final signed = (await tester.runAsync(signedRelease))!;
+      final content = List<int>.generate(2000, (i) => i % 251);
+      final dir = Directory.systemTemp.createTempSync('blm-ui-android-');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      final installer = FakeInstaller(
+        dir,
+        restartsApp: false,
+        missingPermission: 1,
+      );
+      var exited = 0;
+      await openSettings(
+        tester,
+        location: '/settings?tab=updates',
+        overrides: [
+          ...updateOverrides(FakeSource(release: signed.release)),
+          updateInstallerProvider.overrideWithValue(installer),
+          updateVerifierProvider.overrideWithValue(signed.verifier),
+          updateDownloaderProvider.overrideWithValue(FakeDownloader(content)),
+          appExitProvider.overrideWithValue(() => exited++),
+        ],
+      );
+
+      await tester.tap(find.byKey(const Key('check-for-updates')));
+      await tester.pumpAndSettle();
+      await tester.runAsync(() async {
+        await tester.tap(find.byKey(const Key('install-update')));
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+      });
+      await tester.pumpAndSettle();
+      expect(find.text('Install Now'), findsWidgets);
+      expect(find.text('Restart to Update'), findsNothing);
+
+      await tester.runAsync(() async {
+        await tester.tap(find.byKey(const Key('restart-update')));
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      });
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('update-permission')), findsOneWidget);
+      expect(installer.applied, isEmpty);
+
+      await tester.runAsync(() async {
+        await tester.tap(find.byKey(const Key('restart-update')));
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      });
+      await tester.pumpAndSettle();
+
+      expect(installer.applied, hasLength(1));
+      expect(find.byKey(const Key('update-permission')), findsNothing);
+      expect(exited, 0);
+    });
+  });
+
+  group('on iOS', () {
+    testWidgets('explains how to install the new version', (tester) async {
+      await openSettings(
+        tester,
+        location: '/settings?tab=updates',
+        overrides: [
+          ...updateOverrides(FakeSource(release: releaseOf('0.9.4'))),
+          updateInstallerProvider.overrideWithValue(null),
+          sideloadedIosProvider.overrideWithValue(true),
+        ],
+      );
+
+      await tester.tap(find.byKey(const Key('check-for-updates')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('view-release')), findsOneWidget);
+      expect(
+        find.textContaining('KravaSigner', findRichText: true),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the desktop shows no such hint', (tester) async {
+      await openSettings(
+        tester,
+        location: '/settings?tab=updates',
+        overrides: [
+          ...updateOverrides(FakeSource(release: releaseOf('0.9.4'))),
+          updateInstallerProvider.overrideWithValue(null),
+        ],
+      );
+
+      await tester.tap(find.byKey(const Key('check-for-updates')));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('KravaSigner'), findsNothing);
+    });
+  });
 }

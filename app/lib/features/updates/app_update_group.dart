@@ -9,6 +9,7 @@ import 'package:backlog_manager/design/widgets/progress.dart';
 import 'package:backlog_manager/design/widgets/segmented.dart';
 import 'package:backlog_manager/domain/app_update.dart';
 import 'package:backlog_manager/features/updates/app_update_state.dart';
+import 'package:backlog_manager/platform/update_installer.dart';
 import 'package:backlog_manager/platform/url_opener.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,7 +19,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// a button that downloads and checks it and then restarts into it; elsewhere
 /// a button to its page in the browser. When the newest release of the
 /// channel is older than the installed version (Stable while a pre-release is
-/// installed) the same two buttons offer to go back to it.
+/// installed) the same two buttons offer to go back to it. On Android the
+/// system installer takes over instead of a restart, and on iOS the group
+/// explains how to sign and install the new IPA.
 class AppUpdateGroup extends ConsumerWidget {
   const AppUpdateGroup({super.key});
 
@@ -34,6 +37,7 @@ class AppUpdateGroup extends ConsumerWidget {
     final installing =
         state.install == UpdateInstall.downloading ||
         state.install == UpdateInstall.verifying;
+    final restarts = ref.watch(updateInstallerProvider)?.restartsApp ?? true;
 
     Widget note(String text, {Color? color, Key? key}) => Text(
       text,
@@ -81,10 +85,15 @@ class AppUpdateGroup extends ConsumerWidget {
                     ),
                   ),
                   UpdateInstall.verifying => note('Checking the download...'),
+                  UpdateInstall.ready when state.needsPermission => note(
+                    'Permission needed.',
+                  ),
                   UpdateInstall.ready => note(
                     'Version ${release?.version} is ready to install.',
                   ),
-                  UpdateInstall.installing => note('Restarting...'),
+                  UpdateInstall.installing => note(
+                    restarts ? 'Restarting...' : 'Opening the installer...',
+                  ),
                   UpdateInstall.failed => note(
                     state.installError ?? 'The update failed.',
                     color: tokens.danger,
@@ -113,7 +122,7 @@ class AppUpdateGroup extends ConsumerWidget {
                 if (state.install == UpdateInstall.ready)
                   ShelfButton(
                     key: const Key('restart-update'),
-                    label: 'Restart to Update',
+                    label: restarts ? 'Restart to Update' : 'Install Now',
                     kind: ShelfButtonKind.primary,
                     onPressed: notifier.restart,
                   )
@@ -162,6 +171,28 @@ class AppUpdateGroup extends ConsumerWidget {
               ],
             ),
           ),
+          if (state.install == UpdateInstall.ready && state.needsPermission)
+            Padding(
+              key: const Key('update-permission'),
+              padding: const EdgeInsets.all(14),
+              child: Text(
+                'Allow Backlog Manager to install apps in the settings that '
+                'opened, then come back and tap Install Now again.',
+                style: style.control.copyWith(color: tokens.muted),
+              ),
+            ),
+          if (release != null &&
+              state.check == UpdateCheck.available &&
+              ref.watch(sideloadedIosProvider))
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Text(
+                'To update, download the IPA of the new version from the '
+                'release page, then sign and install it with KravaSigner '
+                'like the first one.',
+                style: style.control.copyWith(color: tokens.muted),
+              ),
+            ),
           if (release != null &&
               state.check == UpdateCheck.available &&
               release.notes.isNotEmpty)
