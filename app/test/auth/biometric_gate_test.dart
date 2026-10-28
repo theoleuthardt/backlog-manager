@@ -66,6 +66,31 @@ void main() {
     expect(app.container.read(appLockedProvider), isFalse);
   });
 
+  testWidgets('the app switcher sees a shield, not the backlog', (
+    tester,
+  ) async {
+    final auth = FakeBiometricAuth();
+    await pumpLocked(tester, auth: auth);
+    expect(find.byKey(const Key('biometric-lock')), findsNothing);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
+    expect(find.byKey(const Key('biometric-shield')), findsOneWidget);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    expect(find.byKey(const Key('biometric-shield')), findsNothing);
+  });
+
+  testWidgets('without the lock there is no shield', (tester) async {
+    await pumpLocked(tester, auth: FakeBiometricAuth(), enabled: false);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
+    expect(find.byKey(const Key('biometric-shield')), findsNothing);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+  });
+
   testWidgets('without the lock the app opens directly', (tester) async {
     final auth = FakeBiometricAuth();
     await pumpLocked(tester, auth: auth, enabled: false);

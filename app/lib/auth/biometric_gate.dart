@@ -15,7 +15,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// mounted below (its
 /// pages keep their state) but takes no input and is hidden from the
 /// screen reader. It also tells the lock when the app goes to the background
-/// and comes back.
+/// and comes back, and while the lock is on it hides the app as soon as the
+/// app is no longer active, so the snapshot of the app switcher shows a plain
+/// background instead of the backlog.
 class BiometricGate extends ConsumerStatefulWidget {
   const BiometricGate({required this.child, super.key});
 
@@ -27,11 +29,14 @@ class BiometricGate extends ConsumerStatefulWidget {
 
 class _BiometricGateState extends ConsumerState<BiometricGate> {
   late final AppLifecycleListener _lifecycle;
+  var _shielded = false;
 
   @override
   void initState() {
     super.initState();
     _lifecycle = AppLifecycleListener(
+      onInactive: () => setState(() => _shielded = true),
+      onResume: () => setState(() => _shielded = false),
       onHide: () => ref.read(appLockedProvider.notifier).hidden(DateTime.now()),
       onShow: () => ref.read(appLockedProvider.notifier).shown(DateTime.now()),
     );
@@ -61,6 +66,11 @@ class _BiometricGateState extends ConsumerState<BiometricGate> {
           ),
         ),
         if (covered) const _LockScreen(),
+        if (signedIn && enabled && !covered && _shielded)
+          ColoredBox(
+            key: const Key('biometric-shield'),
+            color: Theme.of(context).extension<ShelfTokens>()!.background,
+          ),
       ],
     );
   }
