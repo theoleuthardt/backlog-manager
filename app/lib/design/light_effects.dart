@@ -95,8 +95,13 @@ class FrameStrainNotifier extends Notifier<bool> {
     return false;
   }
 
+  /// Counts [frame] unless the effects are off for saving power already: a
+  /// device that saves power also slows down, and those frames say nothing
+  /// about the full effects.
   void record(Duration frame) {
-    if (state || ref.read(isDesktopProvider)) return;
+    if (state || ref.read(isDesktopProvider) || ref.read(powerSaveProvider)) {
+      return;
+    }
     if (_strain.add(frame)) state = true;
   }
 }

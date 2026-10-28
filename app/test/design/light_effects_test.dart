@@ -63,6 +63,18 @@ void main() {
     );
   });
 
+  test('frames drawn while saving power do not count', () async {
+    final container = containerFor(desktop: false);
+    powerSave.add(true);
+    await Future<void>.delayed(Duration.zero);
+
+    strain(container);
+    powerSave.add(false);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(container.read(lightEffectsProvider), isNull);
+  });
+
   test('the desktop keeps the full effects', () async {
     final container = containerFor(desktop: true);
 
