@@ -16,6 +16,7 @@ class PowerSaveStreamHandler(private val context: Context) : EventChannel.Stream
     private var receiver: BroadcastReceiver? = null
 
     override fun onListen(arguments: Any?, events: EventChannel.EventSink) {
+        onCancel(null)
         val power = context.getSystemService(PowerManager::class.java)
         events.success(power.isPowerSaveMode)
         receiver = object : BroadcastReceiver() {

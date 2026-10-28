@@ -28,11 +28,12 @@ class PowerSaveStreamHandler: NSObject, FlutterStreamHandler {
   func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink)
     -> FlutterError?
   {
+    _ = onCancel(withArguments: nil)
     events(ProcessInfo.processInfo.isLowPowerModeEnabled)
     observer = NotificationCenter.default.addObserver(
       forName: .NSProcessInfoPowerStateDidChange, object: nil, queue: .main
     ) { _ in
-      events(ProcessInfo.processInfo.isLowPowerModeEnabled)
+      DispatchQueue.main.async { events(ProcessInfo.processInfo.isLowPowerModeEnabled) }
     }
     return nil
   }

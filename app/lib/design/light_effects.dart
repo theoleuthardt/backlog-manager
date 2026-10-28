@@ -21,7 +21,7 @@ Stream<bool> _powerSaveEvents() {
   const methods = MethodChannel(_powerChannel);
   final messenger = ServicesBinding.instance.defaultBinaryMessenger;
   late final StreamController<bool> controller;
-  controller = StreamController<bool>(
+  controller = StreamController<bool>.broadcast(
     onListen: () async {
       messenger.setMessageHandler(_powerChannel, (data) async {
         if (data == null) {
@@ -100,13 +100,20 @@ class FrameStrainNotifier extends Notifier<bool> {
   /// Counts [frame] only while it was drawn with at least one of the effects
   /// this turns off (the three switches, the orbs of the Freaky theme): not
   /// while the device saves power (it also slows down then), and not while
-  /// none of them shows, since those frames say nothing about the effects.
+  /// none of them shows (under the system setting for less motion only the
+  /// blur does), since those frames say nothing about the effects.
   void record(Duration frame) {
+    final reduced = SchedulerBinding
+        .instance
+        .platformDispatcher
+        .accessibilityFeatures
+        .disableAnimations;
     final withEffects =
-        ref.read(backgroundMotionProvider) ||
-        ref.read(glowMotionProvider) ||
         ref.read(blurEffectsProvider) ||
-        ref.read(resolvedThemeProvider).id == 'freaky';
+        (!reduced &&
+            (ref.read(backgroundMotionProvider) ||
+                ref.read(glowMotionProvider) ||
+                ref.read(resolvedThemeProvider).id == 'freaky'));
     if (state ||
         ref.read(isDesktopProvider) ||
         ref.read(powerSaveProvider) ||

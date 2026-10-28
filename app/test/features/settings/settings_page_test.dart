@@ -339,6 +339,29 @@ void main() {
       );
     });
 
+    testWidgets('says when dropped frames lightened the effects', (
+      tester,
+    ) async {
+      await openSettings(
+        tester,
+        overrides: [
+          lightEffectsProvider.overrideWithValue(
+            LightEffectsReason.frameStrain,
+          ),
+        ],
+      );
+
+      final note = find.byKey(const Key('settings-light-effects'));
+      await tester.ensureVisible(note);
+      expect(
+        find.descendant(
+          of: note,
+          matching: find.textContaining('dropped frames'),
+        ),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('shows no such note with the full effects', (tester) async {
       await openSettings(tester);
 

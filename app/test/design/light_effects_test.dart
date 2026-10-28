@@ -94,6 +94,40 @@ void main() {
     expect(container.read(lightEffectsProvider), isNull);
   });
 
+  test('under reduced motion only the blur counts', () {
+    final container = containerFor(desktop: false, theme: 'freaky');
+    container.read(blurEffectsProvider.notifier).setEnabled(enabled: false);
+    TestWidgetsFlutterBinding
+        .instance
+        .platformDispatcher
+        .accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(
+      disableAnimations: true,
+    );
+    addTearDown(
+      TestWidgetsFlutterBinding
+          .instance
+          .platformDispatcher
+          .clearAccessibilityFeaturesTestValue,
+    );
+
+    strain(container);
+
+    expect(container.read(lightEffectsProvider), isNull);
+  });
+
+  test('the power stream can be listened to again after a rebuild', () {
+    final container = ProviderContainer(
+      overrides: [isDesktopProvider.overrideWithValue(false)],
+    );
+    addTearDown(container.dispose);
+    container.read(powerSaveEventsProvider).listen((_) {}).cancel();
+
+    expect(
+      () => container.read(powerSaveEventsProvider).listen((_) {}),
+      returnsNormally,
+    );
+  });
+
   test('the orbs of the Freaky theme count as an effect', () {
     final container = containerFor(desktop: false, theme: 'freaky');
     for (final effect in [
