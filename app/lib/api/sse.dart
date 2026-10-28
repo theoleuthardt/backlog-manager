@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:backlog_manager/platform/lifecycle.dart';
 import 'package:dio/dio.dart';
 
 /// One decoded message of a backend progress stream.
@@ -36,6 +37,20 @@ class SseStreamEndedException implements Exception {
 
   @override
   String toString() => 'SSE stream ended without a result';
+}
+
+/// The stream broke while the app was in the background on a phone or
+/// tablet, which suspends the app and cuts its connections; the work has to
+/// be started again.
+class SseInterruptedException implements Exception {
+  const SseInterruptedException();
+
+  /// What the pages show for it.
+  static const message =
+      'It stopped while the app was in the background. Start it again.';
+
+  @override
+  String toString() => 'SseInterruptedException: $message';
 }
 
 /// A message of the stream carried a payload that is not what the backend
@@ -164,8 +179,21 @@ Stream<SseEvent> openSse(
   Map<String, Object?>? queryParameters,
 }) {
   final cancelToken = CancelToken();
+  final backgroundAtStart = backgroundEntries.value;
   StreamSubscription<SseEvent>? events;
   late final StreamController<SseEvent> controller;
+
+  bool cutConnection(Object error) =>
+      error is SseStreamEndedException ||
+      (error is DioException &&
+          error.response == null &&
+          error.type != DioExceptionType.cancel &&
+          error.type != DioExceptionType.badCertificate);
+
+  Object interrupted(Object error) =>
+      backgroundEntries.value > backgroundAtStart && cutConnection(error)
+      ? const SseInterruptedException()
+      : error;
 
   Future<void> connect() async {
     try {
@@ -183,14 +211,16 @@ Stream<SseEvent> openSse(
       events = parseSseEvents(response.data!.stream).listen(
         controller.add,
         onError: (Object error, StackTrace stackTrace) {
-          if (!cancelToken.isCancelled) controller.addError(error, stackTrace);
+          if (!cancelToken.isCancelled) {
+            controller.addError(interrupted(error), stackTrace);
+          }
         },
         onDone: controller.close,
       );
       if (controller.isPaused) events!.pause();
     } on Object catch (error, stackTrace) {
       if (cancelToken.isCancelled) return;
-      controller.addError(error, stackTrace);
+      controller.addError(interrupted(error), stackTrace);
       await controller.close();
     }
   }

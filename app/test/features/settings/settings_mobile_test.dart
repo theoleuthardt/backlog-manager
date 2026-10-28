@@ -91,6 +91,20 @@ void main() {
   });
 
   group('settings on a handheld', () {
+    for (final id in [
+      'general',
+      'security',
+      'integrations',
+      'backups',
+      'updates',
+      'about',
+    ]) {
+      testWidgets('the $id tab fits the screen', (tester) async {
+        await openOn(tester, handheld, location: '/settings?tab=$id');
+        expect(tester.takeException(), isNull);
+      });
+    }
+
     testWidgets('keeps the tabs beside the content and fits the height', (
       tester,
     ) async {

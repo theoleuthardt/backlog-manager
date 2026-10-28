@@ -9,19 +9,28 @@ abstract interface class ImageFilePicker {
   Future<PickedFile?> pick();
 }
 
+/// Pictures for the open dialog of every system: the extensions for the
+/// desktop, the MIME types for Android and the type identifier for iOS, which
+/// refuses a group without one.
+const imageTypeGroup = XTypeGroup(
+  label: 'Pictures',
+  extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp'],
+  mimeTypes: [
+    'image/png',
+    'image/jpeg',
+    'image/webp',
+    'image/gif',
+    'image/bmp',
+  ],
+  uniformTypeIdentifiers: ['public.image'],
+);
+
 class SystemImageFilePicker implements ImageFilePicker {
   const SystemImageFilePicker();
 
   @override
   Future<PickedFile?> pick() async {
-    final file = await openFile(
-      acceptedTypeGroups: const [
-        XTypeGroup(
-          label: 'Pictures',
-          extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp'],
-        ),
-      ],
-    );
+    final file = await openFile(acceptedTypeGroups: const [imageTypeGroup]);
     return file == null ? null : PickedFile.fromXFile(file);
   }
 }

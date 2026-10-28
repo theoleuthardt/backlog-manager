@@ -19,16 +19,22 @@ abstract interface class CsvFilePicker {
   Future<PickedFile?> pick();
 }
 
+/// CSV files for the open dialog of every system: the extension for the
+/// desktop, the MIME types for Android and the type identifier for iOS, which
+/// refuses a group without one.
+const csvTypeGroup = XTypeGroup(
+  label: 'CSV',
+  extensions: ['csv'],
+  mimeTypes: ['text/csv', 'text/comma-separated-values', 'application/csv'],
+  uniformTypeIdentifiers: ['public.comma-separated-values-text'],
+);
+
 class SystemCsvFilePicker implements CsvFilePicker {
   const SystemCsvFilePicker();
 
   @override
   Future<PickedFile?> pick() async {
-    final file = await openFile(
-      acceptedTypeGroups: const [
-        XTypeGroup(label: 'CSV', extensions: ['csv']),
-      ],
-    );
+    final file = await openFile(acceptedTypeGroups: const [csvTypeGroup]);
     return file == null ? null : PickedFile.fromXFile(file);
   }
 }

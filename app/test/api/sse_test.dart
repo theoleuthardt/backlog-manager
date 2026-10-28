@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/api/sse.dart';
+import 'package:backlog_manager/platform/lifecycle.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -284,6 +286,55 @@ void main() {
       expect(adapter.request!.path, '/api/user/steam/import-stream');
       expect(adapter.request!.headers['Accept'], 'text/event-stream');
       expect(events.last, isA<SseDone>());
+    });
+
+    test('a stream cut while the app was in the background says so', () async {
+      final controller = StreamController<List<int>>();
+      final dio = Dio(BaseOptions(baseUrl: 'http://api.test'))
+        ..httpClientAdapter = StreamAdapter(controller.stream);
+
+      final events = openSse(dio, '/stream').toList();
+      await Future<void>.delayed(Duration.zero);
+      backgroundEntries.value++;
+      await controller.close();
+
+      await expectLater(events, throwsA(isA<SseInterruptedException>()));
+      expect(
+        ApiException.from(
+          const SseInterruptedException(),
+          'Sync failed',
+        ).message,
+        contains('background'),
+      );
+    });
+
+    test('an answer of the server keeps its own error after a pause', () async {
+      final gate = Completer<void>();
+      final dio = Dio(BaseOptions(baseUrl: 'http://api.test'))
+        ..httpClientAdapter = StreamAdapter(
+          const Stream.empty(),
+          status: 500,
+          delay: gate.future,
+        );
+
+      final events = openSse(dio, '/stream').toList();
+      await Future<void>.delayed(Duration.zero);
+      backgroundEntries.value++;
+      gate.complete();
+
+      await expectLater(events, throwsA(isA<DioException>()));
+    });
+
+    test('a stream cut in the foreground keeps its own error', () async {
+      final controller = StreamController<List<int>>();
+      final dio = Dio(BaseOptions(baseUrl: 'http://api.test'))
+        ..httpClientAdapter = StreamAdapter(controller.stream);
+
+      final events = openSse(dio, '/stream').toList();
+      await Future<void>.delayed(Duration.zero);
+      await controller.close();
+
+      await expectLater(events, throwsA(isA<SseStreamEndedException>()));
     });
 
     test('cancelling the consumer closes the connection', () async {

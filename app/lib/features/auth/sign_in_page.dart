@@ -129,7 +129,12 @@ class _SignInPageState extends ConsumerState<SignInPage> {
               if (twoFactor)
                 ..._twoFactorForm(flow)
               else
-                ..._passwordForm(flow),
+                AutofillGroup(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: _passwordForm(flow),
+                  ),
+                ),
               if (!twoFactor) ...[
                 const SizedBox(height: 28),
                 const _ServerLine(),
@@ -149,6 +154,8 @@ class _SignInPageState extends ConsumerState<SignInPage> {
         controller: _email,
         autofocus: true,
         keyboardType: TextInputType.emailAddress,
+        autofillHints: const [AutofillHints.email, AutofillHints.username],
+        textInputAction: TextInputAction.next,
         onSubmitted: (_) => _passwordFocus.requestFocus(),
       ),
       const SizedBox(height: 18),
@@ -157,6 +164,8 @@ class _SignInPageState extends ConsumerState<SignInPage> {
         controller: _password,
         focusNode: _passwordFocus,
         obscure: true,
+        autofillHints: const [AutofillHints.password],
+        textInputAction: TextInputAction.done,
         onSubmitted: (_) => _signIn(),
       ),
       const SizedBox(height: 26),
@@ -177,6 +186,9 @@ class _SignInPageState extends ConsumerState<SignInPage> {
         label: 'Verification Code',
         controller: _code,
         autofocus: true,
+        keyboardType: TextInputType.number,
+        autofillHints: const [AutofillHints.oneTimeCode],
+        textInputAction: TextInputAction.done,
         onSubmitted: (_) => _verify(),
       ),
       const SizedBox(height: 26),
@@ -339,6 +351,8 @@ class _ServerSheetState extends ConsumerState<_ServerSheet> {
         hintText: 'https://api.example.com',
         controller: _address,
         autofocus: true,
+        keyboardType: TextInputType.url,
+        textInputAction: TextInputAction.done,
         error: _error,
         onChanged: (_) => setState(() {}),
         onSubmitted: (_) => _save(),
