@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:backlog_manager/design/light_effects.dart';
 import 'package:backlog_manager/platform/desktop.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -70,5 +71,44 @@ void main() {
     strain(container);
 
     expect(container.read(lightEffectsProvider), isNull);
+  });
+
+  group('the power channel of the device', () {
+    const channel = EventChannel('dev.theocloud.blm/power');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    tearDown(() => messenger.setMockStreamHandler(channel, null));
+
+    ProviderContainer phone() {
+      final container = ProviderContainer(
+        overrides: [isDesktopProvider.overrideWithValue(false)],
+      );
+      addTearDown(container.dispose);
+      container.listen(lightEffectsProvider, (_, _) {});
+      return container;
+    }
+
+    test('reports battery saver', () async {
+      messenger.setMockStreamHandler(
+        channel,
+        MockStreamHandler.inline(
+          onListen: (arguments, events) => events.success(true),
+        ),
+      );
+      final container = phone();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        container.read(lightEffectsProvider),
+        LightEffectsReason.powerSave,
+      );
+    });
+
+    test('is quiet where the platform has none', () async {
+      final container = phone();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(container.read(lightEffectsProvider), isNull);
+    });
   });
 }

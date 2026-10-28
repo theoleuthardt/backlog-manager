@@ -9,12 +9,48 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// Why the effects of the window are lightened on a phone or handheld.
 enum LightEffectsReason { powerSave, frameStrain }
 
-const _powerChannel = EventChannel('dev.theocloud.blm/power');
+const _powerChannel = 'dev.theocloud.blm/power';
+
+/// The events of the `dev.theocloud.blm/power` event channel, read the way
+/// `EventChannel` reads them but quiet where the platform has no such channel
+/// (tests, a desktop): `EventChannel` reports that as an error of the app.
+Stream<bool> _powerSaveEvents() {
+  const codec = StandardMethodCodec();
+  const methods = MethodChannel(_powerChannel);
+  final messenger = ServicesBinding.instance.defaultBinaryMessenger;
+  late final StreamController<bool> controller;
+  controller = StreamController<bool>(
+    onListen: () async {
+      messenger.setMessageHandler(_powerChannel, (data) async {
+        if (data == null) {
+          await controller.close();
+        } else {
+          controller.add(codec.decodeEnvelope(data) == true);
+        }
+        return null;
+      });
+      try {
+        await methods.invokeMethod<void>('listen');
+      } on Object {
+        messenger.setMessageHandler(_powerChannel, null);
+      }
+    },
+    onCancel: () async {
+      messenger.setMessageHandler(_powerChannel, null);
+      try {
+        await methods.invokeMethod<void>('cancel');
+      } on Object {
+        return;
+      }
+    },
+  );
+  return controller.stream;
+}
 
 /// Whether the system saves power (battery saver on Android, Low Power Mode
 /// on iOS): the current value when listened to, then every change.
 final powerSaveEventsProvider = Provider<Stream<bool>>(
-  (ref) => _powerChannel.receiveBroadcastStream().map((on) => on == true),
+  (ref) => _powerSaveEvents(),
 );
 
 /// Whether a phone or handheld saves power right now; always false on the
