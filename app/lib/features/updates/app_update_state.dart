@@ -229,16 +229,32 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
   /// Applies the verified installer and ends the app; the new version starts
   /// by itself. Where the system installer takes over instead (Android) the
   /// app keeps running and the update stays ready, so a cancelled install can
-  /// be started again, and so does a missing permission to install apps. A
-  /// failure leaves the installed version running.
+  /// be started again, and so does a missing permission to install apps;
+  /// when a check found another release meanwhile, the download is dropped
+  /// instead, as in `_dropStaleInstall`. A failure leaves the installed
+  /// version running.
   Future<void> restart() async {
     final file = state.staged;
     final installer = ref.read(updateInstallerProvider);
+    final version = state.release?.version;
     if (state.install != UpdateInstall.ready ||
         file == null ||
         installer == null) {
       return;
     }
+    void keepReady({required bool needsPermission}) {
+      if (!ref.mounted) return;
+      if (state.release?.version != version) {
+        if (file.existsSync()) file.deleteSync();
+        state = state.copyWith(clearInstall: true);
+        return;
+      }
+      state = state.copyWith(
+        install: UpdateInstall.ready,
+        needsPermission: needsPermission,
+      );
+    }
+
     state = state.copyWith(
       install: UpdateInstall.installing,
       needsPermission: false,
@@ -246,11 +262,7 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
     try {
       await installer.apply(file);
     } on InstallPermissionNeeded {
-      if (!ref.mounted) return;
-      state = state.copyWith(
-        install: UpdateInstall.ready,
-        needsPermission: true,
-      );
+      keepReady(needsPermission: true);
       return;
     } on Object {
       if (file.existsSync()) file.deleteSync();
@@ -266,7 +278,7 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
       return;
     }
     if (!installer.restartsApp) {
-      if (ref.mounted) state = state.copyWith(install: UpdateInstall.ready);
+      keepReady(needsPermission: false);
       return;
     }
     ref.read(appExitProvider)();

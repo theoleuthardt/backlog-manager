@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -81,6 +82,9 @@ class FakeInstaller implements UpdateInstaller {
 
   /// How many of the next [apply] calls find the install permission missing.
   int missingPermission;
+
+  /// Holds [apply] until it completes.
+  Completer<void>? gate;
   final applied = <File>[];
 
   @override
@@ -88,6 +92,7 @@ class FakeInstaller implements UpdateInstaller {
 
   @override
   Future<void> apply(File payload) async {
+    await gate?.future;
     if (fail) throw const FileSystemException('read-only');
     if (missingPermission > 0) {
       missingPermission--;
@@ -331,6 +336,37 @@ void main() {
       expect(staged('0.9.4').existsSync(), isTrue);
     },
   );
+
+  test('a check that finds another release during the handover drops the '
+      'update', () async {
+    final installer = FakeInstaller(dir, restartsApp: false)
+      ..gate = Completer<void>();
+    final source = MutableSource(release);
+    final container = await checked(
+      containerFor(
+        downloader: FakeDownloader(_content),
+        installer: installer,
+        source: source,
+      ),
+    );
+    final notifier = container.read(appUpdateProvider.notifier);
+    await notifier.install();
+
+    final handover = notifier.restart();
+    source.release = AppRelease(
+      version: '0.9.5',
+      pageUrl: Uri.parse('https://github.com/o/r/releases/tag/v0.9.5'),
+    );
+    await notifier.check();
+    installer.gate!.complete();
+    await handover;
+
+    final state = container.read(appUpdateProvider);
+    expect(state.release!.version, '0.9.5');
+    expect(state.install, UpdateInstall.none);
+    expect(state.staged, isNull);
+    expect(staged('0.9.4').existsSync(), isFalse);
+  });
 
   test('a missing install permission keeps the update ready', () async {
     final installer = FakeInstaller(
