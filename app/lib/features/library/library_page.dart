@@ -1206,6 +1206,7 @@ class _EntryTarget extends ConsumerStatefulWidget {
 
 class _EntryTargetState extends ConsumerState<_EntryTarget> {
   bool _focused = false;
+  final _menu = MenuController();
 
   BacklogEntry get _entry => widget.entry;
 
@@ -1235,8 +1236,18 @@ class _EntryTargetState extends ConsumerState<_EntryTarget> {
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
     final key = event.logicalKey;
-    if (key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.space) {
+    if (key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.space ||
+        key == LogicalKeyboardKey.gameButtonA) {
       _activate();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.gameButtonX) {
+      _menu.open();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.gameButtonB && _menu.isOpen) {
+      _menu.close();
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.backspace ||
@@ -1257,7 +1268,7 @@ class _EntryTargetState extends ConsumerState<_EntryTarget> {
     return KeyEventResult.ignored;
   }
 
-  List<ShelfMenuEntry> _menu(
+  List<ShelfMenuEntry> _menuEntries(
     LibraryActions actions,
     List<String> statuses,
     List<Category> categories,
@@ -1368,7 +1379,8 @@ class _EntryTargetState extends ConsumerState<_EntryTarget> {
       onKeyEvent: _onKey,
       child: ContextMenuRegion(
         key: Key('library-tile-${_entry.id}'),
-        entries: _menu(actions, statuses, categories, assigned),
+        controller: _menu,
+        entries: _menuEntries(actions, statuses, categories, assigned),
         child: DecoratedBox(
           position: DecorationPosition.foreground,
           decoration: BoxDecoration(
