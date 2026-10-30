@@ -317,4 +317,46 @@ void main() {
       }
     });
   });
+
+  group('CreationPrefill.fromResult', () {
+    test('is what the creation tool reads from the address of a result', () {
+      const result = GameSearchResult(
+        id: 1,
+        title: 'Hades',
+        imageUrl: 'https://img.example/h.jpg',
+        genres: ['Roguelike'],
+        platforms: ['PC', 'Switch'],
+        mainStory: 22,
+        mainStoryWithExtras: 48,
+        completionist: 95,
+        publisher: 'Supergiant Games',
+      );
+
+      final prefill = CreationPrefill.fromResult(result);
+
+      expect(prefill.custom, isFalse);
+      expect(prefill.title, 'Hades');
+      expect(prefill.platformOptions, ['PC', 'Switch']);
+      expect(prefill.mainStory, 22);
+      expect(prefill.publisher, 'Supergiant Games');
+    });
+
+    test('keeps the whole description, which no address has to carry', () {
+      final long = 'x' * 900;
+      final prefill = CreationPrefill.fromResult(
+        GameSearchResult(
+          id: 1,
+          title: 'Hades',
+          genres: const [],
+          platforms: const [],
+          mainStory: 0,
+          mainStoryWithExtras: 0,
+          completionist: 0,
+          description: long,
+        ),
+      );
+
+      expect(prefill.description, long);
+    });
+  });
 }

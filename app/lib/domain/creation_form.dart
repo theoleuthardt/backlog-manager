@@ -1,3 +1,4 @@
+import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/split_list.dart';
 
 /// What the add-a-game sheet put into the address of the creation tool: a
@@ -35,6 +36,23 @@ class CreationPrefill {
       targetsSpace: query['target'] == 'space',
     );
   }
+
+  /// The prefill of [result] for a game of a batch, like the one the address
+  /// of [creationToolLocation] carries but with the whole description.
+  factory CreationPrefill.fromResult(GameSearchResult result) =>
+      CreationPrefill(
+        custom: false,
+        title: result.title,
+        imageUrl: result.imageUrl ?? '',
+        description: result.description ?? '',
+        publisher: result.publisher ?? '',
+        trailerUrl: result.trailerUrl ?? '',
+        genres: result.genres.join(', '),
+        platforms: result.platforms.join(', '),
+        mainStory: result.mainStory,
+        mainStoryWithExtras: result.mainStoryWithExtras,
+        completionist: result.completionist,
+      );
 
   final bool custom;
   final String title;

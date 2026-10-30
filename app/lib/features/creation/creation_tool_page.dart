@@ -1,44 +1,29 @@
 import 'dart:async';
 
 import 'package:backlog_manager/api/api_error.dart';
-import 'package:backlog_manager/api/api_providers.dart';
-import 'package:backlog_manager/api/generated/export.dart' as wire;
 import 'package:backlog_manager/api/mappers.dart';
 import 'package:backlog_manager/data/backlog_api.dart';
-import 'package:backlog_manager/data/backlog_providers.dart';
-import 'package:backlog_manager/data/entry_image.dart';
-import 'package:backlog_manager/data/entry_mod_providers.dart';
-import 'package:backlog_manager/data/filter_providers.dart';
 import 'package:backlog_manager/data/game_info_providers.dart';
 import 'package:backlog_manager/data/space_api.dart';
-import 'package:backlog_manager/design/color_math.dart';
 import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
-import 'package:backlog_manager/design/widgets/cover.dart';
 import 'package:backlog_manager/design/widgets/fields.dart';
 import 'package:backlog_manager/design/widgets/menu.dart';
+import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/design/widgets/progress.dart';
 import 'package:backlog_manager/design/widgets/select.dart';
-import 'package:backlog_manager/design/widgets/spinner.dart';
 import 'package:backlog_manager/design/widgets/toast.dart';
-import 'package:backlog_manager/design/widgets/toggles.dart';
 import 'package:backlog_manager/domain/creation_form.dart';
-import 'package:backlog_manager/domain/inspector_logic.dart';
-import 'package:backlog_manager/domain/models.dart';
-import 'package:backlog_manager/domain/platform_choices.dart';
-import 'package:backlog_manager/features/achievements/achievement_progress.dart';
-import 'package:backlog_manager/features/add_game/cover_picker_sheet.dart';
+import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/features/add_game/game_result_parts.dart';
-import 'package:backlog_manager/features/common/category_picker.dart';
+import 'package:backlog_manager/features/add_game/wrong_game_sheet.dart';
 import 'package:backlog_manager/features/common/status_select.dart';
+import 'package:backlog_manager/features/creation/creation_draft.dart';
+import 'package:backlog_manager/features/creation/creation_game_form.dart';
 import 'package:backlog_manager/features/creation/duplicate_sheet.dart';
-import 'package:backlog_manager/features/creation/foldable_about.dart';
-import 'package:backlog_manager/features/inspector/inspector_parts.dart';
-import 'package:backlog_manager/features/inspector/manage_platforms_sheet.dart';
-import 'package:backlog_manager/features/inspector/mods_section.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:flutter/material.dart';
@@ -48,13 +33,25 @@ import 'package:go_router/go_router.dart';
 
 enum _CreateState { idle, creating, created, failed }
 
-/// The form for a new game: filled from a search result or empty for a custom
-/// game. Everything the inspector sets on a game can be set here too: several
-/// platforms (also ones of its own), the publisher, categories and mods, and
-/// with an active Shared Space whether the game goes to the personal backlog,
-/// the space or both. It checks for duplicates in each of them before it
-/// creates the entries, then adds the categories and mods to each, and
-/// returns to the library afterwards.
+/// How many searches of a batch run at the same time.
+const _batchSearches = 4;
+
+/// Below this width a game of a batch puts its buttons under its title.
+const _batchActionsBreak = 520.0;
+
+/// The form for new games. With one game ([CreationPrefill.fromQuery]) it is
+/// filled from a search result or empty for a custom game. With `batch` in
+/// the address (one title per line, [batchCreationLocation]) every title is
+/// looked up and takes the best search result (a title the search does not
+/// know becomes a custom game), and the games are listed as folding entries,
+/// each with the same form; "Add to" and the status at the top are the
+/// defaults of all games, which a game can change for itself. Everything the
+/// inspector sets on a game can be set here too: several platforms (also ones
+/// of its own), the publisher, categories and mods, and with an active Shared
+/// Space whether the game goes to the personal backlog, the space or both. It
+/// checks for duplicates in each of them before it creates the entries, then
+/// adds the categories and mods to each, and returns to the library
+/// afterwards.
 class CreationToolPage extends ConsumerStatefulWidget {
   const CreationToolPage({required this.query, super.key});
 
@@ -67,287 +64,319 @@ class CreationToolPage extends ConsumerStatefulWidget {
 
 class _CreationToolPageState extends ConsumerState<CreationToolPage> {
   late final CreationPrefill _prefill;
-  late final TextEditingController _title;
-  late final TextEditingController _genre;
-  late final TextEditingController _publisher;
-  late final TextEditingController _imageUrl;
-  late final TextEditingController _playtime;
-  late final TextEditingController _steamAppId;
-  late final TextEditingController _mainStory;
-  late final TextEditingController _mainStoryWithExtras;
-  late final TextEditingController _completionist;
-  late final TextEditingController _review;
-  late final TextEditingController _note;
-  String _status = '';
-  int _interest = 5;
-  bool _owned = false;
-  int _reviewStars = 0;
-  bool _playtimeTouched = false;
-  String? _steamAppIdTyped;
-  CreationTarget? _targetTyped;
-  late List<String> _platforms;
-  final Map<int?, Set<int>> _categories = {};
-  List<ModInput> _mods = const [];
+  late final List<String>? _batch = widget.query.containsKey('batch')
+      ? batchTitles(widget.query['batch']!)
+      : null;
+  CreationDraft? _single;
+  List<CreationDraft>? _drafts;
+  final _open = <CreationDraft>{};
+  var _searched = 0;
+  String _defaultStatus = '';
+  CreationTarget? _defaultTargetChosen;
   _CreateState _state = _CreateState.idle;
   Timer? _leave;
+
+  bool get _isBatch => _batch != null;
 
   @override
   void initState() {
     super.initState();
     _prefill = CreationPrefill.fromQuery(widget.query);
-    String hours(double value) =>
-        value == value.roundToDouble() ? '${value.toInt()}' : '$value';
-    _title = TextEditingController(text: _prefill.title);
-    _genre = TextEditingController(text: _prefill.genres);
-    _publisher = TextEditingController(text: _prefill.publisher);
-    _platforms = [
-      if (_prefill.defaultPlatform.isNotEmpty) _prefill.defaultPlatform,
-    ];
-    _imageUrl = TextEditingController(text: _prefill.imageUrl);
-    _playtime = TextEditingController(text: '0');
-    _steamAppId = TextEditingController();
-    _mainStory = TextEditingController(text: hours(_prefill.mainStory));
-    _mainStoryWithExtras = TextEditingController(
-      text: hours(_prefill.mainStoryWithExtras),
-    );
-    _completionist = TextEditingController(text: hours(_prefill.completionist));
-    _review = TextEditingController();
-    _note = TextEditingController();
+    final batch = _batch;
+    if (batch == null) {
+      _single = CreationDraft(_prefill)..addListener(_draftChanged);
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_lookUp(batch));
+      });
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         ref
             .read(shellStatusProvider.notifier)
-            .update(counts: 'New entry · not saved yet');
+            .update(
+              counts: _isBatch
+                  ? 'New entries · not saved yet'
+                  : 'New entry · not saved yet',
+            );
       }
     });
   }
 
+  /// Rebuilds the page with the form of one game, so the submit button
+  /// follows the lookups of what was typed.
+  void _draftChanged() => setState(() {});
+
   @override
   void dispose() {
     _leave?.cancel();
-    for (final controller in [
-      _title,
-      _genre,
-      _publisher,
-      _imageUrl,
-      _playtime,
-      _steamAppId,
-      _mainStory,
-      _mainStoryWithExtras,
-      _completionist,
-      _review,
-      _note,
-    ]) {
-      controller.dispose();
+    _single?.dispose();
+    for (final draft in _drafts ?? const <CreationDraft>[]) {
+      draft.dispose();
     }
     super.dispose();
   }
 
+  /// Searches every title of the batch, [_batchSearches] at a time, and makes
+  /// a draft of its best result, or a custom game when the search finds
+  /// nothing or fails (marked, so "Wrong Game?" can search it again). It
+  /// stops searching once the page is gone.
+  Future<void> _lookUp(List<String> titles) async {
+    final container = ProviderScope.containerOf(context, listen: false);
+    final drafts = List<CreationDraft?>.filled(titles.length, null);
+    var next = 0;
+    Future<void> worker() async {
+      while (mounted && next < titles.length) {
+        final index = next++;
+        final title = titles[index];
+        List<GameSearchResult> results;
+        var failed = false;
+        try {
+          results = await container.read(
+            gameSearchProvider((term: title, deep: false)).future,
+          );
+        } on Object {
+          results = const [];
+          failed = true;
+        }
+        if (!mounted) return;
+        final best = results.firstOrNull;
+        drafts[index] = CreationDraft(
+          best == null
+              ? CreationPrefill(custom: true, title: title)
+              : CreationPrefill.fromResult(best),
+          searchFailed: failed,
+        );
+        if (mounted) setState(() => _searched++);
+      }
+    }
+
+    await Future.wait([for (var i = 0; i < _batchSearches; i++) worker()]);
+    if (!mounted) {
+      for (final draft in drafts) {
+        draft?.dispose();
+      }
+      return;
+    }
+    setState(() => _drafts = [for (final draft in drafts) draft!]);
+  }
+
   int? get _activeSpaceId => ref.read(activeSpaceIdProvider);
 
-  CreationTarget get _target {
+  CreationTarget get _defaultTarget {
     if (_activeSpaceId == null) return CreationTarget.personal;
-    return _targetTyped ??
+    return _defaultTargetChosen ??
         (_prefill.targetsSpace
             ? CreationTarget.space
             : CreationTarget.personal);
   }
 
-  List<int?> get _scopes => _target.scopes(_activeSpaceId);
+  CreationTarget _targetOf(CreationDraft draft) => _activeSpaceId == null
+      ? CreationTarget.personal
+      : draft.target(_defaultTarget);
 
-  int? get _targetSpaceId =>
-      _target == CreationTarget.space ? _activeSpaceId : null;
-
-  String get _backTo =>
-      _target == CreationTarget.space ? AppRoutes.space : AppRoutes.library;
-
-  bool get _lookupApplies => !_prefill.custom && _prefill.title.isNotEmpty;
-
-  AsyncValue<int?> get _lookup => _lookupApplies
-      ? ref.watch(steamAppIdProvider(_title.text.trim()))
-      : const AsyncData(null);
-
-  String get _displayedSteamAppId =>
-      _steamAppIdTyped ?? _lookup.value?.toString() ?? '';
-
-  int? get _resolvedAppId => resolvedSteamAppId(_displayedSteamAppId);
-
-  AsyncValue<double?> get _steamHours {
-    final appId = _resolvedAppId;
-    return appId == null
-        ? const AsyncData(null)
-        : ref.watch(steamPlaytimeProvider(appId));
+  String get _backTo {
+    final target = _isBatch ? _defaultTarget : _targetOf(_single!);
+    return target == CreationTarget.space ? AppRoutes.space : AppRoutes.library;
   }
-
-  String get _effectivePlaytime => effectivePlaytime(
-    touched: _playtimeTouched,
-    typed: _playtime.text,
-    fromSteam: _steamHours.value,
-  );
-
-  CreationInput get _input => CreationInput(
-    title: _title.text,
-    genre: _genre.text,
-    platform: _platforms.join(', '),
-    status: _status,
-    owned: _owned,
-    interest: _interest,
-    playtime: _effectivePlaytime,
-    steamAppId: _displayedSteamAppId,
-    imageUrl: _imageUrl.text,
-    publisher: _publisher.text,
-    mainStory: _mainStory.text,
-    mainStoryWithExtras: _mainStoryWithExtras.text,
-    completionist: _completionist.text,
-    reviewStars: _reviewStars,
-    review: _review.text,
-    note: _note.text,
-  );
 
   void _toast(String message) {
     if (mounted) showShelfToast(context, message);
+  }
+
+  void _finished(String message) {
+    setState(() => _state = _CreateState.created);
+    _toast(message);
+    final backTo = _backTo;
+    _leave?.cancel();
+    _leave = Timer(const Duration(milliseconds: 800), () {
+      if (mounted) context.go(backTo);
+    });
+  }
+
+  void _failed(String message) {
+    setState(() => _state = _CreateState.failed);
+    _toast(message);
+    _leave?.cancel();
+    _leave = Timer(const Duration(seconds: 3), () {
+      if (mounted) setState(() => _state = _CreateState.idle);
+    });
+  }
+
+  /// Checks the duplicates of [draft] in each of its backlogs, asks when
+  /// there are some, and creates it: true with what could not be saved after
+  /// the entry existed, false when the user did not want it or the page is
+  /// gone. A failure is thrown. One game frees the page while it asks, so a
+  /// declined duplicate leaves the form to change; a batch stays busy until
+  /// every game had its turn.
+  Future<(bool, List<String>)> _create(
+    CreationDraft draft,
+    CreationInput input,
+    CreationTarget target,
+  ) async {
+    final container = ProviderScope.containerOf(context, listen: false);
+    final entry = buildNewEntry(input, draft.prefill);
+    final scopes = target.scopes(_activeSpaceId);
+    final existing = [
+      for (final scope in scopes)
+        ...await container
+            .read(backlogApiProvider)
+            .duplicates(entry.title, entry.steamAppId, scope),
+    ];
+    if (existing.isNotEmpty) {
+      if (!mounted) return (false, const <String>[]);
+      if (!_isBatch) setState(() => _state = _CreateState.idle);
+      final proceed = await confirmDuplicate(
+        context,
+        existing: existing,
+        proposed: entry,
+      );
+      if (!proceed || !mounted) return (false, const <String>[]);
+      if (!_isBatch) setState(() => _state = _CreateState.creating);
+    }
+    if (!mounted) return (false, const <String>[]);
+    final unsaved = await createEntryIn(
+      container,
+      scopes: scopes,
+      request: createRequestFrom(entry),
+      categories: {
+        for (final scope in scopes) scope: {...?draft.categories[scope]},
+      },
+      mods: [...draft.mods],
+    );
+    return (true, unsaved);
   }
 
   Future<void> _submit() async {
     if (_state == _CreateState.creating || _state == _CreateState.created) {
       return;
     }
-    final input = _input;
+    if (_isBatch) return _submitBatch();
+    final draft = _single!;
+    _leave?.cancel();
+    setState(() => _state = _CreateState.creating);
+    final input = await draft.resolve(
+      ProviderScope.containerOf(context, listen: false),
+      fallbackStatus: '',
+    );
+    if (!mounted) return;
     final problem = validateCreation(input);
     if (problem != null) {
+      setState(() => _state = _CreateState.idle);
       _toast(problem);
       return;
     }
-    final entry = buildNewEntry(input, _prefill);
-    final scopes = _scopes;
-    final backTo = _backTo;
-    setState(() => _state = _CreateState.creating);
     try {
-      final existing = [
-        for (final scope in scopes)
-          ...await ref
-              .read(backlogApiProvider)
-              .duplicates(entry.title, entry.steamAppId, scope),
-      ];
-      if (existing.isNotEmpty) {
-        if (!mounted) return;
-        setState(() => _state = _CreateState.idle);
-        final proceed = await confirmDuplicate(
-          context,
-          existing: existing,
-          proposed: entry,
-        );
-        if (!proceed || !mounted) return;
-        setState(() => _state = _CreateState.creating);
-      }
-      if (!mounted) return;
-      final unsaved = await _createIn(scopes, createRequestFrom(entry));
-      if (!mounted) return;
-      setState(() => _state = _CreateState.created);
-      _toast(
+      final (created, unsaved) = await _create(draft, input, _targetOf(draft));
+      if (!created || !mounted) return;
+      _finished(
         unsaved.isEmpty
             ? 'Entry created successfully!'
             : 'Entry created, but ${unsaved.join(', ')} could not be saved',
       );
-      _leave?.cancel();
-      _leave = Timer(const Duration(milliseconds: 800), () {
-        if (mounted) context.go(backTo);
-      });
     } on Object catch (error) {
       if (!mounted) return;
-      setState(() => _state = _CreateState.failed);
-      _toast(
+      _failed(
         'Failed to create: '
         '${ApiException.from(error, 'Please try again.').message}',
       );
-      _leave?.cancel();
-      _leave = Timer(const Duration(seconds: 3), () {
-        if (mounted) setState(() => _state = _CreateState.idle);
-      });
     }
   }
 
-  /// Creates the entry in each of [scopes] and adds the chosen categories of
-  /// that backlog and the mods to it. A failure of the first entry is thrown;
-  /// what fails after an entry exists is returned by name, so the user learns
-  /// what to add by hand. It works on the provider container of the app and a
-  /// copy of the choices, so leaving the page while it runs does not stop it
-  /// halfway.
-  Future<List<String>> _createIn(
-    List<int?> scopes,
-    wire.CreateBacklogEntryRequest request,
-  ) async {
+  /// Checks every game of the batch first (the first one that is not
+  /// complete is opened and named, before any Steam lookup runs), then
+  /// creates them one after the other
+  /// with the defaults as they were when it started; the list is locked
+  /// meanwhile.
+  /// The games that were created leave the list; the others stay, with what
+  /// went wrong in the toast.
+  Future<void> _submitBatch() async {
+    final drafts = _drafts;
+    if (drafts == null || drafts.isEmpty) return;
     final container = ProviderScope.containerOf(context, listen: false);
-    final categories = {
-      for (final scope in scopes) scope: {...?_categories[scope]},
-    };
-    final mods = [..._mods];
-    final unsaved = <String>{};
-    var createdAny = false;
-    for (final scope in scopes) {
-      final BacklogEntry created;
-      try {
-        created = await container
-            .read(entriesProvider(scope).notifier)
-            .createEntry(request);
-      } on Object {
-        if (!createdAny) rethrow;
-        unsaved.add(
-          scope == null
-              ? 'the entry in My Backlog'
-              : 'the entry in the Shared Space',
-        );
-        continue;
-      }
-      createdAny = true;
-      for (final categoryId in categories[scope] ?? const <int>{}) {
-        try {
-          await container
-              .read(categoryActionsProvider(scope))
-              .setAssigned(created.id, categoryId, assigned: true);
-        } on Object {
-          unsaved.add('some categories');
-        }
-      }
-      for (final mod in mods) {
-        try {
-          await container
-              .read(
-                entryModActionsProvider((entryId: created.id, spaceId: scope)),
-              )
-              .add(mod.name, mod.url);
-        } on Object {
-          unsaved.add('some mods');
-        }
+    final defaultStatus = _defaultStatus;
+    final targets = {for (final draft in drafts) draft: _targetOf(draft)};
+    _leave?.cancel();
+    setState(() => _state = _CreateState.creating);
+    for (final draft in drafts) {
+      final problem = validateCreation(
+        draft.inputWith(
+          fallbackStatus: defaultStatus,
+          steamAppIdText: '',
+          playtimeText: '0',
+        ),
+      );
+      if (problem != null) {
+        setState(() {
+          _state = _CreateState.idle;
+          _open.add(draft);
+        });
+        final title = draft.title.text.trim();
+        _toast(title.isEmpty ? problem : '$title: $problem');
+        return;
       }
     }
-    return unsaved.toList();
-  }
+    final inputs = <CreationDraft, CreationInput>{};
+    var next = 0;
+    Future<void> worker() async {
+      while (mounted && next < drafts.length) {
+        final draft = drafts[next++];
+        inputs[draft] = await draft.resolve(
+          container,
+          fallbackStatus: defaultStatus,
+        );
+      }
+    }
 
-  Future<void> _otherPlatform() async {
-    final chosen = await showManagePlatformsSheet(
-      context,
-      initial: _platforms,
-      inBacklog: [
-        ..._prefill.platformOptions,
-        ...ref.read(filterOptionsProvider).platforms,
-      ],
+    await Future.wait([for (var i = 0; i < _batchSearches; i++) worker()]);
+    if (!mounted) return;
+    final done = <CreationDraft>[];
+    final failures = <String>[];
+    final unsaved = <String>{};
+    for (final draft in drafts) {
+      try {
+        final (created, missing) = await _create(
+          draft,
+          inputs[draft]!,
+          targets[draft]!,
+        );
+        if (!mounted) return;
+        if (created) {
+          done.add(draft);
+          unsaved.addAll(missing);
+        }
+      } on Object catch (error) {
+        if (!mounted) return;
+        failures.add(
+          '${draft.title.text.trim()} '
+          '(${ApiException.from(error, 'failed').message})',
+        );
+      }
+    }
+    setState(() {
+      for (final draft in done) {
+        drafts.remove(draft);
+        _open.remove(draft);
+      }
+    });
+    done.forEach(_disposeLater);
+    final count = done.length == 1 ? '1 game' : '${done.length} games';
+    final created = unsaved.isEmpty
+        ? '$count created'
+        : '$count created, but ${unsaved.join(', ')} could not be saved';
+    if (drafts.isEmpty) {
+      _finished(created);
+      return;
+    }
+    if (failures.isEmpty) {
+      setState(() => _state = _CreateState.idle);
+      if (done.isNotEmpty) _toast(created);
+      return;
+    }
+    _failed(
+      '${done.isEmpty ? '' : '$created. '}'
+      'Not created: ${failures.join(', ')}',
     );
-    if (chosen != null && mounted) setState(() => _platforms = chosen);
-  }
-
-  Future<void> _addMod() async {
-    final mod = await showModSheet(context);
-    if (mod != null && mounted) setState(() => _mods = [..._mods, mod]);
-  }
-
-  Future<void> _changeCover() async {
-    final url = await showCoverPicker(
-      context,
-      initialQuery: _title.text.trim(),
-      steamAppId: _resolvedAppId,
-    );
-    if (url != null && mounted) setState(() => _imageUrl.text = url);
   }
 
   void _searchAgain() {
@@ -355,31 +384,54 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
     ref.read(addGameRequestProvider.notifier).request();
   }
 
-  void _syncText(TextEditingController controller, String value) {
-    if (controller.text == value) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && controller.text != value) controller.text = value;
+  Future<void> _wrongGame(CreationDraft draft) async {
+    final result = await showWrongGameSheet(
+      context,
+      initialQuery: draft.title.text.trim(),
+    );
+    final drafts = _drafts;
+    if (result == null || !mounted || drafts == null) return;
+    final index = drafts.indexOf(draft);
+    if (index == -1) return;
+    final replacement = CreationDraft(CreationPrefill.fromResult(result));
+    setState(() {
+      drafts[index] = replacement;
+      if (_open.remove(draft)) _open.add(replacement);
     });
+    _disposeLater(draft);
+  }
+
+  void _remove(CreationDraft draft) {
+    setState(() {
+      _drafts?.remove(draft);
+      _open.remove(draft);
+    });
+    _disposeLater(draft);
+  }
+
+  /// Disposes a draft that left the list once the frame that removes its
+  /// form is drawn, so the form never sees its controllers go away.
+  void _disposeLater(CreationDraft draft) {
+    WidgetsBinding.instance.addPostFrameCallback((_) => draft.dispose());
   }
 
   @override
   Widget build(BuildContext context) {
-    final tokens = Theme.of(context).extension<ShelfTokens>()!;
-    final style = Theme.of(context).extension<ShelfTextStyles>()!;
     final isMac = Theme.of(context).platform == TargetPlatform.macOS;
     ref.watch(activeSpaceIdProvider);
-    final lookup = _lookup;
-    final lookingUp = _lookupApplies && lookup.isLoading;
-    final steamHours = _steamHours;
-    final waitingForPlaytime = steamHours.isLoading && !_playtimeTouched;
-    if (_steamAppIdTyped == null) {
-      _syncText(_steamAppId, _displayedSteamAppId);
-    }
-    if (!_playtimeTouched) _syncText(_playtime, _effectivePlaytime);
+    final single = _single;
     final busy =
         _state == _CreateState.creating || _state == _CreateState.created;
-    final canSubmit = !busy && !lookingUp && !waitingForPlaytime;
-    final custom = _prefill.custom;
+    final bool canSubmit;
+    if (single != null) {
+      final lookups = draftLookups(ref, single);
+      final lookingUp = single.lookupApplies && lookups.lookup.isLoading;
+      final waitingForPlaytime =
+          lookups.steamHours.isLoading && !single.playtimeTouched;
+      canSubmit = !busy && !lookingUp && !waitingForPlaytime;
+    } else {
+      canSubmit = !busy && (_drafts?.isNotEmpty ?? false);
+    }
 
     final gutter = ShelfFormFactor.isCompact(context) ? 16.0 : 28.0;
     return CallbackShortcuts(
@@ -399,46 +451,143 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _toolbar(context, canSubmit, isMac, gutter),
-            if (!custom && _prefill.hasMissingData)
-              Padding(
-                padding: EdgeInsets.fromLTRB(gutter, 0, gutter, 12),
-                child: _WarningBanner(message: _prefill.missingDataMessage),
-              ),
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.fromLTRB(gutter, 0, gutter, 28),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final wide = constraints.maxWidth >= 920;
-                    final left = _leftColumn(tokens, style);
-                    final middle = _middleColumn(lookingUp);
-                    final right = _rightColumn(custom);
-                    if (!wide) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          left,
-                          const SizedBox(height: 16),
-                          middle,
-                          const SizedBox(height: 16),
-                          right,
-                        ],
-                      );
-                    }
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(width: 190, child: left),
-                        const SizedBox(width: 24),
-                        Expanded(child: middle),
-                        const SizedBox(width: 24),
-                        Expanded(child: right),
-                      ],
-                    );
-                  },
-                ),
+                child: single != null
+                    ? CreationGameForm(
+                        draft: single,
+                        fallbackStatus: '',
+                        fallbackTarget: _defaultTarget,
+                        busy: _state == _CreateState.creating,
+                        onSearchAgain: _searchAgain,
+                      )
+                    : _batchList(context),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _batchList(BuildContext context) {
+    final tokens = Theme.of(context).extension<ShelfTokens>()!;
+    final style = Theme.of(context).extension<ShelfTextStyles>()!;
+    final drafts = _drafts;
+    final total = _batch!.length;
+    if (drafts == null) {
+      return Column(
+        key: const Key('batch-searching'),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Looking up $_searched of $total games...',
+            style: style.control.copyWith(color: tokens.muted),
+          ),
+          const SizedBox(height: 10),
+          ShelfProgressBar(value: total == 0 ? 0 : _searched / total),
+        ],
+      );
+    }
+    final spaceId = _defaultTarget == CreationTarget.space
+        ? _activeSpaceId
+        : null;
+    final busy =
+        _state == _CreateState.creating || _state == _CreateState.created;
+    return IgnorePointer(
+      ignoring: busy,
+      child: ExcludeFocus(
+        excluding: busy,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ShelfFormGroup(
+              title: 'For all games',
+              description:
+                  'Each game can change these for itself in its own form.',
+              rows: [
+                if (_activeSpaceId != null)
+                  ShelfFormRow(
+                    label: 'Add to',
+                    control: SizedBox(
+                      width: 220,
+                      child: ShelfMenuAnchor(
+                        entries: [
+                          for (final (target, label) in [
+                            (CreationTarget.personal, 'My Backlog'),
+                            (CreationTarget.space, 'Shared Space'),
+                            (CreationTarget.both, 'Both'),
+                          ])
+                            ShelfMenuItem(
+                              label: label,
+                              checked: _defaultTarget == target,
+                              onSelected: () =>
+                                  setState(() => _defaultTargetChosen = target),
+                            ),
+                        ],
+                        builder: (context, controller) => ShelfSelectTrigger(
+                          key: const Key('batch-target'),
+                          text: switch (_defaultTarget) {
+                            CreationTarget.personal => 'My Backlog',
+                            CreationTarget.space => 'Shared Space',
+                            CreationTarget.both => 'Both',
+                          },
+                          semanticLabel: 'Add to',
+                          onPressed: () => controller.isOpen
+                              ? controller.close()
+                              : controller.open(),
+                        ),
+                      ),
+                    ),
+                  ),
+                ShelfFormRow(
+                  label: 'Status',
+                  control: SizedBox(
+                    width: 220,
+                    child: KeyedSubtree(
+                      key: const Key('batch-status'),
+                      child: StatusSelect(
+                        spaceId: spaceId,
+                        value: _defaultStatus,
+                        onChanged: (status) =>
+                            setState(() => _defaultStatus = status),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (drafts.isEmpty)
+              Text(
+                'No games left in this list.',
+                key: const Key('batch-empty'),
+                style: style.control.copyWith(color: tokens.muted),
+              ),
+            for (final (index, draft) in drafts.indexed) ...[
+              _BatchItem(
+                key: ValueKey(draft),
+                index: index,
+                draft: draft,
+                open: _open.contains(draft),
+                busy: _state == _CreateState.creating,
+                onToggle: () => setState(
+                  () => _open.contains(draft)
+                      ? _open.remove(draft)
+                      : _open.add(draft),
+                ),
+                onWrongGame: () => unawaited(_wrongGame(draft)),
+                onRemove: () => _remove(draft),
+                form: CreationGameForm(
+                  draft: draft,
+                  fallbackStatus: _defaultStatus,
+                  fallbackTarget: _defaultTarget,
+                  busy: _state == _CreateState.creating,
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
           ],
         ),
       ),
@@ -452,19 +601,27 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
     double gutter,
   ) {
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
+    final count = _drafts?.length ?? _batch?.length ?? 1;
     final label = switch (_state) {
       _CreateState.creating => 'Creating...',
       _CreateState.created => 'Created!',
       _CreateState.failed => 'Failed',
+      _CreateState.idle when _isBatch =>
+        count == 1 ? 'Add 1 Game' : 'Add $count Games',
       _CreateState.idle => 'Add Game',
     };
+    final title = _isBatch
+        ? 'New Games'
+        : _prefill.custom
+        ? 'New custom game'
+        : 'New Game';
     return Padding(
       padding: EdgeInsets.fromLTRB(gutter, 22, gutter, 12),
       child: Row(
         children: [
           Expanded(
             child: Text(
-              _prefill.custom ? 'New custom game' : 'New Game',
+              title,
               style: style.page,
               overflow: TextOverflow.ellipsis,
             ),
@@ -493,513 +650,154 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
       ),
     );
   }
-
-  Widget _leftColumn(ShelfTokens tokens, ShelfTextStyles style) {
-    final serverUrl = ref.watch(serverUrlProvider).value;
-    return ValueListenableBuilder<TextEditingValue>(
-      valueListenable: _imageUrl,
-      builder: (context, value, _) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          ShelfCover(
-            title: _title.text.trim().isEmpty ? 'New Game' : _title.text.trim(),
-            image: entryImage(serverUrl, value.text.trim()),
-          ),
-          const SizedBox(height: 10),
-          ShelfButton(
-            key: const Key('creation-search-again'),
-            label: 'Search Again',
-            onPressed: _state == _CreateState.creating ? null : _searchAgain,
-          ),
-          const SizedBox(height: 10),
-          ShelfButton(
-            key: const Key('creation-change-cover'),
-            label: 'Change Cover',
-            onPressed: _changeCover,
-          ),
-          if (_prefill.description.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Text('About', style: style.label),
-            const SizedBox(height: 4),
-            FoldableAbout(text: _prefill.description),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _field(
-    Key key,
-    TextEditingController controller, {
-    String? hint,
-    bool number = false,
-    bool enabled = true,
-    ValueChanged<String>? onChanged,
-    double width = 220,
-  }) {
-    final style = Theme.of(context).extension<ShelfTextStyles>()!;
-    return SizedBox(
-      width: width,
-      height: ShelfHeight.input,
-      child: TextField(
-        key: key,
-        controller: controller,
-        enabled: enabled,
-        onChanged: (value) {
-          setState(() {});
-          onChanged?.call(value);
-        },
-        keyboardType: number
-            ? const TextInputType.numberWithOptions(decimal: true)
-            : null,
-        inputFormatters: number
-            ? [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))]
-            : null,
-        style: style.fieldText,
-        textAlignVertical: TextAlignVertical.center,
-        decoration: InputDecoration(hintText: hint),
-      ),
-    );
-  }
-
-  Widget _row(String label, Widget control, {String? description}) {
-    return ShelfFormRow(
-      label: label,
-      description: description,
-      control: control,
-    );
-  }
-
-  Widget _platformControl() {
-    final choices = platformChoices(
-      selected: [..._prefill.platformOptions, ..._platforms],
-      inBacklog: ref.watch(filterOptionsProvider).platforms,
-    );
-    bool chosen(String name) =>
-        _platforms.any((known) => known.toLowerCase() == name.toLowerCase());
-    return SizedBox(
-      width: 220,
-      child: ShelfMenuAnchor(
-        entries: [
-          for (final option in choices)
-            ShelfMenuItem(
-              itemKey: Key('creation-platform-$option'),
-              label: option,
-              checked: chosen(option),
-              keepOpen: true,
-              onSelected: () => setState(
-                () => _platforms = togglePlatform(_platforms, option),
-              ),
-            ),
-          const ShelfMenuDivider(),
-          ShelfMenuItem(
-            itemKey: const Key('creation-platform-other'),
-            label: 'Other platform...',
-            icon: Icons.add,
-            onSelected: () => unawaited(_otherPlatform()),
-          ),
-        ],
-        builder: (context, controller) => ShelfSelectTrigger(
-          key: const Key('creation-platform'),
-          text: _platforms.isEmpty ? 'Select platforms' : _platforms.join(', '),
-          placeholder: _platforms.isEmpty,
-          semanticLabel: 'Platform',
-          onPressed: () =>
-              controller.isOpen ? controller.close() : controller.open(),
-        ),
-      ),
-    );
-  }
-
-  Widget _categoryRow(int? scope, {required String label, required Key key}) {
-    return _row(
-      label,
-      SizedBox(
-        width: 300,
-        child: CategoryPicker.pending(
-          key: key,
-          spaceId: scope,
-          selected: _categories[scope] ?? const {},
-          onSelectedChanged: (ids) => setState(() => _categories[scope] = ids),
-        ),
-      ),
-    );
-  }
-
-  String get _targetLabel => switch (_target) {
-    CreationTarget.personal => 'My Backlog',
-    CreationTarget.space => 'Shared Space',
-    CreationTarget.both => 'Both',
-  };
-
-  Widget _middleColumn(bool lookingUp) {
-    final steamHours = _steamHours;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ShelfFormGroup(
-          title: 'Game Info',
-          rows: [
-            if (_activeSpaceId != null)
-              _row(
-                'Add to',
-                SizedBox(
-                  width: 220,
-                  child: ShelfMenuAnchor(
-                    entries: [
-                      for (final (target, label) in [
-                        (CreationTarget.personal, 'My Backlog'),
-                        (CreationTarget.space, 'Shared Space'),
-                        (CreationTarget.both, 'Both'),
-                      ])
-                        ShelfMenuItem(
-                          label: label,
-                          checked: _target == target,
-                          onSelected: () =>
-                              setState(() => _targetTyped = target),
-                        ),
-                    ],
-                    builder: (context, controller) => ShelfSelectTrigger(
-                      key: const Key('creation-target'),
-                      text: _targetLabel,
-                      semanticLabel: 'Add to',
-                      onPressed: () => controller.isOpen
-                          ? controller.close()
-                          : controller.open(),
-                    ),
-                  ),
-                ),
-              ),
-            _row(
-              'Title',
-              _field(
-                const Key('creation-title'),
-                _title,
-                enabled: _prefill.custom,
-              ),
-            ),
-            _row('Platform', _platformControl()),
-            _row(
-              'Genre',
-              _field(
-                const Key('creation-genre'),
-                _genre,
-                hint: 'Action, RPG, Adventure',
-              ),
-            ),
-            _row(
-              'Publisher',
-              _field(
-                const Key('creation-publisher'),
-                _publisher,
-                hint: 'The company that published the game',
-              ),
-            ),
-            if (_prefill.custom)
-              _row(
-                'Image URL',
-                _field(
-                  const Key('creation-image-url'),
-                  _imageUrl,
-                  hint: 'https://example.com/cover.jpg',
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        ShelfFormGroup(
-          title: 'Your Take',
-          rows: [
-            _row(
-              'Status',
-              SizedBox(
-                width: 220,
-                child: StatusSelect(
-                  spaceId: _targetSpaceId,
-                  value: _status,
-                  onChanged: (status) => setState(() => _status = status),
-                ),
-              ),
-            ),
-            for (final scope in _scopes)
-              _categoryRow(
-                scope,
-                label: _scopes.length > 1
-                    ? scope == null
-                          ? 'Categories (My Backlog)'
-                          : 'Categories (Shared Space)'
-                    : 'Categories',
-                key: Key(
-                  scope == null
-                      ? 'creation-categories'
-                      : _scopes.length > 1
-                      ? 'creation-categories-space'
-                      : 'creation-categories',
-                ),
-              ),
-            _row(
-              'Interest',
-              SizedBox(
-                width: 300,
-                child: InterestPicker(
-                  value: _interest,
-                  onChanged: (value) => setState(() => _interest = value),
-                ),
-              ),
-            ),
-            _row(
-              'Playtime (h)',
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (steamHours.isLoading && !_playtimeTouched)
-                    const Padding(
-                      padding: EdgeInsets.only(right: 8),
-                      child: SizedBox(
-                        key: Key('creation-playtime-loading'),
-                        width: 20,
-                        height: 20,
-                        child: ShelfSpinner(size: 20),
-                      ),
-                    ),
-                  _field(
-                    const Key('creation-playtime'),
-                    _playtime,
-                    number: true,
-                    width: 120,
-                    onChanged: (_) => _playtimeTouched = true,
-                  ),
-                ],
-              ),
-            ),
-            _row(
-              'I own this game',
-              ShelfSwitch(
-                key: const Key('creation-owned'),
-                value: _owned,
-                label: 'I own this game',
-                onChanged: (value) => setState(() => _owned = value),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _rightColumn(bool custom) {
-    final lookingUp = _lookupApplies && _lookup.isLoading;
-    final reviewable = canReview(_status);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ShelfFormGroup(
-          title: 'HowLongToBeat Times',
-          description: custom
-              ? null
-              : _prefill.hasHltbData
-              ? 'Times from HowLongToBeat - editable for custom games only.'
-              : 'Editable because no match was found.',
-          rows: [
-            _row(
-              'Main',
-              _field(
-                const Key('creation-main'),
-                _mainStory,
-                number: true,
-                enabled: custom || !_prefill.hasHltbData,
-                width: 120,
-              ),
-            ),
-            _row(
-              'Main + Extra',
-              _field(
-                const Key('creation-extra'),
-                _mainStoryWithExtras,
-                number: true,
-                enabled: custom || !_prefill.hasHltbData,
-                width: 120,
-              ),
-            ),
-            _row(
-              'Completionist',
-              _field(
-                const Key('creation-completionist'),
-                _completionist,
-                number: true,
-                enabled: custom || !_prefill.hasHltbData,
-                width: 120,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        ShelfFormGroup(
-          title: 'Steam',
-          rows: [
-            _row(
-              'App ID',
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (lookingUp)
-                    const Padding(
-                      padding: EdgeInsets.only(right: 8),
-                      child: SizedBox(
-                        key: Key('creation-lookup-loading'),
-                        width: 20,
-                        height: 20,
-                        child: ShelfSpinner(size: 20),
-                      ),
-                    ),
-                  _field(
-                    const Key('creation-steam-app-id'),
-                    _steamAppId,
-                    number: true,
-                    width: 160,
-                    hint: custom
-                        ? 'e.g. 504230'
-                        : lookingUp
-                        ? 'Looking up on Steam...'
-                        : 'No Steam App ID found',
-                    onChanged: (value) => _steamAppIdTyped = value,
-                  ),
-                ],
-              ),
-            ),
-            if (_resolvedAppId != null)
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: AchievementProgressSection(steamAppId: _resolvedAppId),
-              ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        ShelfFormGroup(
-          title: 'Review & notes',
-          rows: [
-            _row(
-              'Review Stars',
-              Tooltip(
-                message: reviewable ? '' : _needsCompleted,
-                child: Opacity(
-                  opacity: reviewable ? 1 : 0.5,
-                  child: StarRating(
-                    value: _reviewStars,
-                    onChanged: reviewable
-                        ? (value) => setState(() => _reviewStars = value)
-                        : null,
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Tooltip(
-                message: reviewable ? '' : _needsCompleted,
-                child: ShelfTextArea(
-                  label: 'Review',
-                  fieldKey: const Key('creation-review'),
-                  controller: _review,
-                  enabled: reviewable,
-                  minLines: 3,
-                  hintText: reviewable
-                      ? 'Write your review here...'
-                      : 'Set the status to Completed to write a review',
-                  onChanged: (_) {},
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: ShelfTextArea(
-                label: 'Notes',
-                fieldKey: const Key('creation-note'),
-                controller: _note,
-                minLines: 3,
-                hintText: 'Add any notes about this game...',
-                onChanged: (_) {},
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        ShelfFormGroup(
-          title: 'Mods',
-          description: 'Added to the game once it is created.',
-          rows: [
-            for (final (index, mod) in _mods.indexed)
-              _row(
-                mod.name,
-                ShelfButton(
-                  key: Key('creation-mod-remove-$index'),
-                  label: 'Remove',
-                  kind: ShelfButtonKind.quiet,
-                  onPressed: () =>
-                      setState(() => _mods = [..._mods]..removeAt(index)),
-                ),
-                description: mod.url,
-              ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: ShelfButton(
-                  key: const Key('mod-add'),
-                  label: 'Add mod',
-                  icon: Icons.add,
-                  onPressed: () => unawaited(_addMod()),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
 }
 
-const _needsCompleted = 'Stars and review need the status Completed';
+/// One game of a batch: a header with its title and what the search found,
+/// which folds [form] in and out, "Wrong Game?" and a button that takes it
+/// off the list.
+class _BatchItem extends StatelessWidget {
+  const _BatchItem({
+    required this.index,
+    required this.draft,
+    required this.open,
+    required this.busy,
+    required this.onToggle,
+    required this.onWrongGame,
+    required this.onRemove,
+    required this.form,
+    super.key,
+  });
 
-class _WarningBanner extends StatelessWidget {
-  const _WarningBanner({required this.message});
-
-  final String message;
+  final int index;
+  final CreationDraft draft;
+  final bool open;
+  final bool busy;
+  final VoidCallback onToggle;
+  final VoidCallback onWrongGame;
+  final VoidCallback onRemove;
+  final Widget form;
 
   @override
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
+    final prefill = draft.prefill;
+    final summary = draft.searchFailed
+        ? 'The search failed - a custom game for now'
+        : prefill.custom
+        ? 'No match found - a custom game'
+        : [
+            if (prefill.platformOptions.isNotEmpty)
+              prefill.platformOptions.join(', '),
+            if (prefill.genres.isNotEmpty) prefill.genres,
+          ].join(' · ');
     return DecoratedBox(
-      key: const Key('creation-warning'),
+      key: Key('batch-item-$index'),
       decoration: BoxDecoration(
-        color: atOpacity(tokens.accent, 0.12),
-        borderRadius: BorderRadius.circular(ShelfRadius.control),
-        border: Border.all(color: atOpacity(tokens.accent, 0.4)),
+        color: tokens.surface,
+        borderRadius: BorderRadius.circular(ShelfRadius.panel),
+        border: Border.all(color: tokens.borderSubtle),
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: [
-            Icon(Icons.warning_amber_rounded, size: 18, color: tokens.accent),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final header = ShelfPressable(
+                key: Key('batch-toggle-$index'),
+                semanticLabel: open ? 'Fold in' : 'Fold out',
+                onPressed: onToggle,
+                builder: (context, state) => Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Row(
+                    children: [
+                      Icon(
+                        open ? Icons.expand_less : Icons.expand_more,
+                        size: 20,
+                        color: tokens.muted,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ListenableBuilder(
+                          listenable: draft.title,
+                          builder: (context, _) => Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                draft.title.text.trim().isEmpty
+                                    ? 'Untitled game'
+                                    : draft.title.text.trim(),
+                                style: style.control.copyWith(
+                                  color: tokens.foreground,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (summary.isNotEmpty)
+                                Text(
+                                  summary,
+                                  style: style.caption.copyWith(
+                                    color: prefill.custom
+                                        ? tokens.accent
+                                        : tokens.muted,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+              final actions = Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    'Warning: Missing game data',
-                    style: style.control.copyWith(color: tokens.accent),
+                  ShelfButton(
+                    key: Key('batch-wrong-$index'),
+                    label: 'Wrong Game?',
+                    kind: ShelfButtonKind.quiet,
+                    onPressed: busy ? null : onWrongGame,
                   ),
-                  Text(
-                    message,
-                    style: style.caption.copyWith(color: tokens.text2),
+                  const SizedBox(width: 4),
+                  ShelfButton(
+                    key: Key('batch-remove-$index'),
+                    label: 'Remove',
+                    kind: ShelfButtonKind.quiet,
+                    onPressed: busy ? null : onRemove,
                   ),
+                  const SizedBox(width: 10),
                 ],
-              ),
+              );
+              if (constraints.maxWidth < _batchActionsBreak) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    header,
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4, bottom: 8),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: actions,
+                      ),
+                    ),
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(child: header),
+                  actions,
+                ],
+              );
+            },
+          ),
+          if (open)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+              child: form,
             ),
-          ],
-        ),
+        ],
       ),
     );
   }

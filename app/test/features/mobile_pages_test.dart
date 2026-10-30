@@ -83,6 +83,52 @@ void main() {
         expect(tester.takeException(), isNull);
       });
 
+      testWidgets('the batch of the creation tool fits the screen', (
+        tester,
+      ) async {
+        await openTool(
+          tester,
+          overrides: mobile,
+          location: batchCreationLocation([
+            'Hades',
+            'A game whose title is long enough to need the whole row',
+          ]),
+          setUp: (api, games) =>
+              games.onSearch = (term, deep) async =>
+                  term == 'Hades' ? [found(1, 'Hades')] : const [],
+        );
+        await resize(tester, size);
+        await tester.tap(find.byKey(const Key('batch-toggle-0')));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('batch-item-1')), findsOneWidget);
+        expect(find.byKey(const Key('creation-title')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('the batch mode of the add game sheet fits the screen', (
+        tester,
+      ) async {
+        await pumpLibrary(
+          tester,
+          FakeBacklogApi(entries: const [hades]),
+          overrides: mobile,
+        );
+        await resize(tester, size);
+        await tester.tap(find.text('Add Game').first);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Batch'));
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const Key('add-batch-titles')),
+          'Hades\nCeleste',
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('2 games'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+
       for (final tab in ['Details', 'Notes', 'Progress', 'Review', 'Trailer']) {
         testWidgets('the $tab tab of the inspector fits the screen', (
           tester,

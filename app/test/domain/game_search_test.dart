@@ -173,4 +173,52 @@ void main() {
       expect(wrongGameChanges(result(genres: const [])).genre, isNull);
     });
   });
+
+  group('batchTitles', () {
+    test('takes one title per line, trimmed, without empty lines', () {
+      expect(batchTitles(' Hades \n\n  Celeste\r\nOuter Wilds  \n'), [
+        'Hades',
+        'Celeste',
+        'Outer Wilds',
+      ]);
+    });
+
+    test('keeps a title once whatever its case', () {
+      expect(batchTitles('Hades\nhades\nHADES\nCeleste'), ['Hades', 'Celeste']);
+    });
+
+    test('takes another limit when asked', () {
+      expect(batchTitles('a\nb\nc', limit: 2), ['a', 'b']);
+    });
+
+    test('takes at most $maxBatchTitles titles', () {
+      final text = [for (var i = 0; i < maxBatchTitles + 5; i++) 'Game $i']
+          .join('\n');
+
+      expect(batchTitles(text), hasLength(maxBatchTitles));
+    });
+  });
+
+  group('batchCreationLocation', () {
+    test('carries the titles to the creation tool', () {
+      final uri = Uri.parse(batchCreationLocation(['Hades', 'Celeste']));
+
+      expect(uri.path, '/creation-tool');
+      expect(batchTitles(uri.queryParameters['batch']!), ['Hades', 'Celeste']);
+      expect(uri.queryParameters.containsKey('target'), isFalse);
+    });
+
+    test('keeps titles with characters of an address', () {
+      const titles = ['D&D Dark Alliance', '100% Orange Juice', 'C++ #1 = ?'];
+      final uri = Uri.parse(batchCreationLocation(titles));
+
+      expect(batchTitles(uri.queryParameters['batch']!), titles);
+    });
+
+    test('names the Shared Space as the target inside a space', () {
+      final uri = Uri.parse(batchCreationLocation(['Hades'], inSpace: true));
+
+      expect(uri.queryParameters['target'], 'space');
+    });
+  });
 }

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:backlog_manager/data/games_api.dart';
 import 'package:backlog_manager/data/space_api.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
+import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/routing/router.dart';
@@ -544,6 +545,38 @@ void main() {
       expect(find.byKey(const Key('creation-lookup-loading')), findsNothing);
     });
 
+    testWidgets('the submit button waits for the playtime of a typed App ID', (
+      tester,
+    ) async {
+      final playtime = Completer<double?>();
+      await openTool(
+        tester,
+        setUp: (api, games) =>
+            api.onSteamPlaytime = (steamAppId) => playtime.future,
+      );
+
+      await tester.enterText(
+        find.byKey(const Key('creation-steam-app-id')),
+        '620',
+      );
+      await tester.pump();
+
+      expect(
+        tester
+            .widget<ShelfButton>(find.byKey(const Key('creation-submit')))
+            .onPressed,
+        isNull,
+      );
+      playtime.complete(12);
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<ShelfButton>(find.byKey(const Key('creation-submit')))
+            .onPressed,
+        isNotNull,
+      );
+    });
+
     testWidgets('can be typed in when none was found', (tester) async {
       final tool = await openTool(tester);
       await chooseStatus(tester, 'Not Started');
@@ -828,6 +861,376 @@ void main() {
         tool.api.calls,
         contains('add-mod $id Hell Mode+ https://mods.example/hell'),
       );
+      await tester.pump(const Duration(seconds: 6));
+    });
+  });
+
+  group('the batch mode (#548)', () {
+    GameSearchResult result(int id, String title) => GameSearchResult(
+      id: id,
+      title: title,
+      imageUrl: 'https://img.example/$id.jpg',
+      genres: const ['Action'],
+      platforms: const ['PC'],
+      mainStory: 10,
+      mainStoryWithExtras: 20,
+      completionist: 30,
+    );
+
+    Future<Tool> openBatch(
+      WidgetTester tester, {
+      List<String> titles = const ['Hades', 'Celeste', 'Mystery Game'],
+      List<Override> overrides = const [],
+      void Function(FakeBacklogApi api, FakeGamesApi games)? setUp,
+    }) => openTool(
+      tester,
+      location: batchCreationLocation(titles),
+      overrides: overrides,
+      setUp: (api, games) {
+        games.onSearch = (term, deep) async => switch (term) {
+          'Hades' => [result(1, 'Hades'), result(9, 'Hades II')],
+          'Celeste' => [result(2, 'Celeste')],
+          _ => const [],
+        };
+        setUp?.call(api, games);
+      },
+    );
+
+    Future<void> chooseDefaultStatus(WidgetTester tester, String status) async {
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(const Key('batch-status')),
+          matching: find.byKey(const Key('status-select')),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(Key('status-option-$status')).last);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('lists every title with its best search result', (
+      tester,
+    ) async {
+      await openBatch(tester);
+
+      expect(find.text('New Games'), findsOneWidget);
+      expect(find.text('Add 3 Games'), findsOneWidget);
+      for (final index in [0, 1, 2]) {
+        expect(find.byKey(Key('batch-item-$index')), findsOneWidget);
+      }
+      expect(find.text('Hades'), findsOneWidget);
+      expect(find.text('Hades II'), findsNothing);
+      expect(find.text('No match found - a custom game'), findsOneWidget);
+      expect(
+        find.byKey(const Key('creation-title')),
+        findsNothing,
+        reason: 'the games are folded in',
+      );
+    });
+
+    testWidgets('says when the search of a title failed', (tester) async {
+      await openBatch(
+        tester,
+        titles: ['Hades', 'Offline Game'],
+        setUp: (api, games) => games.onSearch = (term, deep) async =>
+            term == 'Hades' ? [result(1, 'Hades')] : throw Exception('offline'),
+      );
+
+      expect(
+        find.text('The search failed - a custom game for now'),
+        findsOneWidget,
+      );
+      expect(find.text('No match found - a custom game'), findsNothing);
+    });
+
+    testWidgets('cannot be submitted while the titles are looked up', (
+      tester,
+    ) async {
+      final search = Completer<List<GameSearchResult>>();
+      await openTool(
+        tester,
+        location: batchCreationLocation(['Hades']),
+        settle: false,
+        setUp: (api, games) => games.onSearch = (term, deep) => search.future,
+      );
+      await tester.pump();
+
+      expect(find.byKey(const Key('batch-searching')), findsOneWidget);
+      expect(
+        tester
+            .widget<ShelfButton>(find.byKey(const Key('creation-submit')))
+            .onPressed,
+        isNull,
+      );
+      search.complete([result(1, 'Hades')]);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('batch-item-0')), findsOneWidget);
+    });
+
+    testWidgets('a Steam lookup that fails does not stop the game', (
+      tester,
+    ) async {
+      final tool = await openBatch(
+        tester,
+        titles: ['Hades'],
+        setUp: (api, games) =>
+            games.onSteamAppId = (title) async => throw Exception('steam'),
+      );
+
+      await chooseDefaultStatus(tester, 'Not Started');
+      await submit(tester);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+
+      final request = tool.api.created.single;
+      expect(request.steamAppId, isNull);
+      expect(request.playtime, '0.0');
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('folds out the normal form of a game', (tester) async {
+      await openBatch(tester);
+
+      await tester.tap(find.byKey(const Key('batch-toggle-1')));
+      await tester.pumpAndSettle();
+
+      expect(textOf(tester, const Key('creation-title')), 'Celeste');
+      expect(textOf(tester, const Key('creation-main')), '10');
+    });
+
+    testWidgets('creates every game with the status for all', (tester) async {
+      final tool = await openBatch(tester);
+
+      await chooseDefaultStatus(tester, 'Not Started');
+      await tester.tap(find.byKey(const Key('batch-toggle-2')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('creation-genre')), 'Indie');
+      await choosePlatforms(tester, ['PC']);
+      await submit(tester);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+
+      expect(
+        [for (final r in tool.api.created) r.title],
+        ['Hades', 'Celeste', 'Mystery Game'],
+      );
+      expect([
+        for (final r in tool.api.created) r.status,
+      ], everyElement('Not Started'));
+      expect(tool.location, AppRoutes.library);
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('a game can change the status for itself', (tester) async {
+      final tool = await openBatch(tester, titles: ['Hades', 'Celeste']);
+
+      await chooseDefaultStatus(tester, 'Not Started');
+      await tester.tap(find.byKey(const Key('batch-toggle-0')));
+      await tester.pumpAndSettle();
+      final ownStatus = find.descendant(
+        of: find.byKey(const Key('batch-item-0')),
+        matching: find.byKey(const Key('status-select')),
+      );
+      await tester.ensureVisible(ownStatus);
+      await tester.tap(ownStatus);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('status-option-Completed')).last);
+      await tester.pumpAndSettle();
+      await submit(tester);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+
+      expect(
+        {for (final r in tool.api.created) r.title: r.status},
+        {'Hades': 'Completed', 'Celeste': 'Not Started'},
+      );
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('opens and names a game that is not complete', (tester) async {
+      final tool = await openBatch(tester);
+
+      await chooseDefaultStatus(tester, 'Not Started');
+      await submit(tester);
+
+      expect(tool.api.created, isEmpty);
+      expect(find.textContaining('Mystery Game:'), findsOneWidget);
+      expect(find.byKey(const Key('creation-genre')), findsOneWidget);
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('Remove takes a game off the list', (tester) async {
+      final tool = await openBatch(tester, titles: ['Hades', 'Celeste']);
+
+      await tester.tap(find.byKey(const Key('batch-remove-0')));
+      await tester.pumpAndSettle();
+      expect(find.text('Add 1 Game'), findsOneWidget);
+      await chooseDefaultStatus(tester, 'Not Started');
+      await submit(tester);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+
+      expect([for (final r in tool.api.created) r.title], ['Celeste']);
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('Wrong Game? replaces the match of a game', (tester) async {
+      await openBatch(tester, titles: ['Hades']);
+
+      await tester.tap(find.byKey(const Key('batch-wrong-0')));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Hades II').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Use this game'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Hades II'), findsOneWidget);
+    });
+
+    testWidgets('a declined duplicate keeps the page busy until the rest is '
+        'created', (tester) async {
+      final tool = await openBatch(
+        tester,
+        titles: ['Hades', 'Celeste'],
+        setUp: (api, games) =>
+            api.onDuplicates = (title, steamAppId, spaceId) =>
+                title == 'Hades' ? [backlog.first] : const [],
+      );
+
+      await chooseDefaultStatus(tester, 'Not Started');
+      await tester.tap(find.byKey(const Key('creation-submit')));
+      await tester.pumpAndSettle();
+      expect(find.text('Do not Add'), findsOneWidget);
+      expect(
+        tester
+            .widget<ShelfButton>(find.byKey(const Key('creation-submit')))
+            .onPressed,
+        isNull,
+      );
+
+      await tester.tap(find.text('Do not Add'));
+      await tester.pumpAndSettle();
+
+      expect([for (final r in tool.api.created) r.title], ['Celeste']);
+      expect(find.byKey(const Key('batch-item-0')), findsOneWidget);
+      expect(find.byKey(const Key('batch-item-1')), findsNothing);
+      expect(find.text('Add 1 Game'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('names what was not saved while games stay in the list', (
+      tester,
+    ) async {
+      await openBatch(
+        tester,
+        titles: ['Hades', 'Celeste'],
+        setUp: (api, games) {
+          api
+            ..categoryList = const [
+              Category(id: 7, name: 'Cozy', color: '#22c55e'),
+            ]
+            ..onSetEntryCategory = (entryId, categoryId, assigned) async {
+              throw Exception('offline');
+            }
+            ..onDuplicates = (title, steamAppId, spaceId) =>
+                title == 'Celeste' ? [backlog.first] : const [];
+        },
+      );
+
+      await chooseDefaultStatus(tester, 'Not Started');
+      await tester.tap(find.byKey(const Key('batch-toggle-0')));
+      await tester.pumpAndSettle();
+      final picker = find.descendant(
+        of: find.byKey(const Key('creation-categories')),
+        matching: find.byKey(const Key('category-add')),
+      );
+      await tester.ensureVisible(picker);
+      await tester.tap(picker);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('category-option-Cozy')));
+      await tester.pumpAndSettle();
+      await tester.tapAt(Offset.zero);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('creation-submit')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Do not Add'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('could not be saved'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('Add Anyway creates a duplicate and goes on', (tester) async {
+      final tool = await openBatch(
+        tester,
+        titles: ['Hades', 'Celeste'],
+        setUp: (api, games) =>
+            api.onDuplicates = (title, steamAppId, spaceId) =>
+                title == 'Hades' ? [backlog.first] : const [],
+      );
+
+      await chooseDefaultStatus(tester, 'Not Started');
+      await tester.tap(find.byKey(const Key('creation-submit')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add Anyway'));
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+
+      expect([for (final r in tool.api.created) r.title], ['Hades', 'Celeste']);
+      expect(tool.location, AppRoutes.library);
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('a game that fails stays in the list', (tester) async {
+      final tool = await openBatch(
+        tester,
+        titles: ['Hades', 'Celeste'],
+        setUp: (api, games) => api.onCreate = (request, spaceId) async {
+          if (request.title == 'Celeste') throw Exception('offline');
+        },
+      );
+
+      await chooseDefaultStatus(tester, 'Not Started');
+      await submit(tester);
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pumpAndSettle();
+
+      expect(Uri.parse(tool.location).path, AppRoutes.creationTool);
+      expect(find.byKey(const Key('batch-item-0')), findsOneWidget);
+      expect(find.byKey(const Key('batch-item-1')), findsNothing);
+      expect(find.text('Celeste'), findsOneWidget);
+      expect(find.text('Add 1 Game'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('adds every game to both backlogs', (tester) async {
+      final createdIn = <(String, int?)>[];
+      await openBatch(
+        tester,
+        titles: ['Hades', 'Celeste'],
+        overrides: [spaceApiProvider.overrideWithValue(FakeSpaceApi(together))],
+        setUp: (api, games) =>
+            api.onCreate = (request, spaceId) async =>
+                createdIn.add((request.title, spaceId)),
+      );
+
+      await tester.tap(find.byKey(const Key('batch-target')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Both').last);
+      await tester.pumpAndSettle();
+      await chooseDefaultStatus(tester, 'Not Started');
+      await submit(tester);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+
+      expect(createdIn, [
+        ('Hades', null),
+        ('Hades', 4),
+        ('Celeste', null),
+        ('Celeste', 4),
+      ]);
       await tester.pump(const Duration(seconds: 6));
     });
   });
