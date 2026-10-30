@@ -507,6 +507,10 @@ void main() {
   group('on a phone with the on-screen keyboard (#550)', () {
     const phone = Size(402, 874);
     const keyboard = 336.0;
+    const phones = TargetPlatformVariant({
+      TargetPlatform.android,
+      TargetPlatform.iOS,
+    });
 
     Future<Harness> twoFactorOnPhone(WidgetTester tester) async {
       final app = await pumpSignIn(tester, size: phone, desktop: false);
@@ -534,7 +538,7 @@ void main() {
         lessThanOrEqualTo(phone.height - keyboard),
       );
       expect(tester.takeException(), isNull);
-    });
+    }, variant: phones);
 
     testWidgets('the code field takes backup codes and can be sent', (
       tester,
@@ -550,7 +554,7 @@ void main() {
       expect(field.autocorrect, isFalse);
       expect(field.enableSuggestions, isFalse);
       expect(field.textInputAction, TextInputAction.go);
-    });
+    }, variant: phones);
 
     testWidgets('a tap next to the field closes the keyboard', (tester) async {
       await twoFactorOnPhone(tester);
@@ -561,6 +565,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.widget<EditableText>(field).focusNode.hasFocus, isFalse);
-    });
+    }, variant: phones);
   });
 }
