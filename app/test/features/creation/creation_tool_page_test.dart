@@ -1162,6 +1162,27 @@ void main() {
       await tester.pump(const Duration(seconds: 6));
     });
 
+    testWidgets('Add Anyway creates a duplicate and goes on', (tester) async {
+      final tool = await openBatch(
+        tester,
+        titles: ['Hades', 'Celeste'],
+        setUp: (api, games) =>
+            api.onDuplicates = (title, steamAppId, spaceId) =>
+                title == 'Hades' ? [backlog.first] : const [],
+      );
+
+      await chooseDefaultStatus(tester, 'Not Started');
+      await tester.tap(find.byKey(const Key('creation-submit')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add Anyway'));
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+
+      expect([for (final r in tool.api.created) r.title], ['Hades', 'Celeste']);
+      expect(tool.location, AppRoutes.library);
+      await tester.pump(const Duration(seconds: 6));
+    });
+
     testWidgets('a game that fails stays in the list', (tester) async {
       final tool = await openBatch(
         tester,

@@ -253,6 +253,8 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
     }
     if (_isBatch) return _submitBatch();
     final draft = _single!;
+    _leave?.cancel();
+    setState(() => _state = _CreateState.creating);
     final input = await draft.resolve(
       ProviderScope.containerOf(context, listen: false),
       fallbackStatus: '',
@@ -260,11 +262,10 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
     if (!mounted) return;
     final problem = validateCreation(input);
     if (problem != null) {
+      setState(() => _state = _CreateState.idle);
       _toast(problem);
       return;
     }
-    _leave?.cancel();
-    setState(() => _state = _CreateState.creating);
     try {
       final (created, unsaved) = await _create(draft, input, _targetOf(draft));
       if (!created || !mounted) return;
