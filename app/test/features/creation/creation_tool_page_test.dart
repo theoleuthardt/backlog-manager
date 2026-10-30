@@ -1120,6 +1120,48 @@ void main() {
       await tester.pump(const Duration(seconds: 6));
     });
 
+    testWidgets('names what was not saved while games stay in the list', (
+      tester,
+    ) async {
+      await openBatch(
+        tester,
+        titles: ['Hades', 'Celeste'],
+        setUp: (api, games) {
+          api
+            ..categoryList = const [
+              Category(id: 7, name: 'Cozy', color: '#22c55e'),
+            ]
+            ..onSetEntryCategory = (entryId, categoryId, assigned) async {
+              throw Exception('offline');
+            }
+            ..onDuplicates = (title, steamAppId, spaceId) =>
+                title == 'Celeste' ? [backlog.first] : const [];
+        },
+      );
+
+      await chooseDefaultStatus(tester, 'Not Started');
+      await tester.tap(find.byKey(const Key('batch-toggle-0')));
+      await tester.pumpAndSettle();
+      final picker = find.descendant(
+        of: find.byKey(const Key('creation-categories')),
+        matching: find.byKey(const Key('category-add')),
+      );
+      await tester.ensureVisible(picker);
+      await tester.tap(picker);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('category-option-Cozy')));
+      await tester.pumpAndSettle();
+      await tester.tapAt(Offset.zero);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('creation-submit')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Do not Add'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('could not be saved'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 6));
+    });
+
     testWidgets('a game that fails stays in the list', (tester) async {
       final tool = await openBatch(
         tester,

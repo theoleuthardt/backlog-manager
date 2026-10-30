@@ -350,25 +350,24 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
       for (final draft in done) {
         drafts.remove(draft);
         _open.remove(draft);
-        draft.dispose();
       }
     });
+    done.forEach(_disposeLater);
     final count = done.length == 1 ? '1 game' : '${done.length} games';
+    final created = unsaved.isEmpty
+        ? '$count created'
+        : '$count created, but ${unsaved.join(', ')} could not be saved';
     if (drafts.isEmpty) {
-      _finished(
-        unsaved.isEmpty
-            ? '$count created'
-            : '$count created, but ${unsaved.join(', ')} could not be saved',
-      );
+      _finished(created);
       return;
     }
     if (failures.isEmpty) {
       setState(() => _state = _CreateState.idle);
-      if (done.isNotEmpty) _toast('$count created');
+      if (done.isNotEmpty) _toast(created);
       return;
     }
     _failed(
-      '${done.isEmpty ? '' : '$count created. '}'
+      '${done.isEmpty ? '' : '$created. '}'
       'Not created: ${failures.join(', ')}',
     );
   }
@@ -392,7 +391,7 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
       drafts[index] = replacement;
       if (_open.remove(draft)) _open.add(replacement);
     });
-    draft.dispose();
+    _disposeLater(draft);
   }
 
   void _remove(CreationDraft draft) {
@@ -400,7 +399,13 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
       _drafts?.remove(draft);
       _open.remove(draft);
     });
-    draft.dispose();
+    _disposeLater(draft);
+  }
+
+  /// Disposes a draft that left the list once the frame that removes its
+  /// form is drawn, so the form never sees its controllers go away.
+  void _disposeLater(CreationDraft draft) {
+    WidgetsBinding.instance.addPostFrameCallback((_) => draft.dispose());
   }
 
   @override
