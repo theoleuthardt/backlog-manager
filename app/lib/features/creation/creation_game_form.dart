@@ -147,7 +147,7 @@ class _CreationGameFormState extends ConsumerState<CreationGameForm> {
             LayoutBuilder(
               builder: (context, constraints) {
                 final wide = constraints.maxWidth >= 920;
-                final left = _leftColumn(tokens, style);
+                final left = _leftColumn(tokens, style, wide: wide);
                 final middle = _middleColumn(lookingUp);
                 final right = _rightColumn(custom);
                 if (!wide) {
@@ -213,41 +213,74 @@ class _CreationGameFormState extends ConsumerState<CreationGameForm> {
     });
   }
 
-  Widget _leftColumn(ShelfTokens tokens, ShelfTextStyles style) {
+  /// The cover with "Search Again", "Change Cover" and the About text: a
+  /// column of its own next to the form when it is [wide], else a small
+  /// cover with the buttons beside it above the form, so the cover never
+  /// takes the whole width of a phone or a handheld.
+  Widget _leftColumn(
+    ShelfTokens tokens,
+    ShelfTextStyles style, {
+    required bool wide,
+  }) {
     final serverUrl = ref.watch(serverUrlProvider).value;
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: _d.imageUrl,
-      builder: (context, value, _) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          ShelfCover(
-            title: _d.title.text.trim().isEmpty
-                ? 'New Game'
-                : _d.title.text.trim(),
-            image: entryImage(serverUrl, value.text.trim()),
-          ),
+      builder: (context, value, _) {
+        final cover = ShelfCover(
+          title: _d.title.text.trim().isEmpty
+              ? 'New Game'
+              : _d.title.text.trim(),
+          image: entryImage(serverUrl, value.text.trim()),
+        );
+        final buttons = <Widget>[
           if (widget.onSearchAgain != null) ...[
-            const SizedBox(height: 10),
             ShelfButton(
               key: const Key('creation-search-again'),
               label: 'Search Again',
               onPressed: widget.busy ? null : widget.onSearchAgain,
             ),
+            const SizedBox(height: 10),
           ],
-          const SizedBox(height: 10),
           ShelfButton(
             key: const Key('creation-change-cover'),
             label: 'Change Cover',
             onPressed: _changeCover,
           ),
+        ];
+        final about = [
           if (_d.prefill.description.isNotEmpty) ...[
             const SizedBox(height: 12),
             Text('About', style: style.label),
             const SizedBox(height: 4),
             FoldableAbout(text: _d.prefill.description),
           ],
-        ],
-      ),
+        ];
+        if (wide) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [cover, const SizedBox(height: 10), ...buttons, ...about],
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(width: _compactCoverWidth, child: cover),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: buttons,
+                  ),
+                ),
+              ],
+            ),
+            ...about,
+          ],
+        );
+      },
     );
   }
 
@@ -686,6 +719,9 @@ class _CreationGameFormState extends ConsumerState<CreationGameForm> {
 }
 
 const _needsCompleted = 'Stars and review need the status Completed';
+
+/// The width of the cover above the form on a phone or a handheld.
+const _compactCoverWidth = 128.0;
 
 class _WarningBanner extends StatelessWidget {
   const _WarningBanner({required this.message});

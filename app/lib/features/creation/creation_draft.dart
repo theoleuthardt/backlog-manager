@@ -162,7 +162,9 @@ class CreationDraft extends ChangeNotifier {
 /// that backlog and the [mods] to it. A failure of the first entry is thrown;
 /// what fails after an entry exists is returned by name, so the user learns
 /// what to add by hand. It works on the provider container of the app, so
-/// leaving the page while it runs does not stop it halfway.
+/// leaving the page while it runs does not stop it halfway. With the personal
+/// backlog and the space it loads the personal one again at the end, so its
+/// entry knows that the space has the game too (`in_shared_space`).
 Future<List<String>> createEntryIn(
   ProviderContainer container, {
   required List<int?> scopes,
@@ -207,6 +209,13 @@ Future<List<String>> createEntryIn(
       } on Object {
         unsaved.add('some mods');
       }
+    }
+  }
+  if (scopes.length > 1 && scopes.contains(null)) {
+    try {
+      await container.read(entriesProvider(null).notifier).refresh();
+    } on Object {
+      return unsaved.toList();
     }
   }
   return unsaved.toList();

@@ -215,7 +215,7 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
     CreationTarget target,
   ) async {
     final container = ProviderScope.containerOf(context, listen: false);
-    final entry = buildNewEntry(input, draft.prefill);
+    var entry = buildNewEntry(input, draft.prefill);
     final scopes = target.scopes(_activeSpaceId);
     final existing = [
       for (final scope in scopes)
@@ -226,12 +226,17 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
     if (existing.isNotEmpty) {
       if (!mounted) return (false, const <String>[]);
       if (!_isBatch) setState(() => _state = _CreateState.idle);
-      final proceed = await confirmDuplicate(
+      final choice = await confirmDuplicate(
         context,
         existing: existing,
         proposed: entry,
       );
-      if (!proceed || !mounted) return (false, const <String>[]);
+      if (choice == DuplicateChoice.skip || !mounted) {
+        return (false, const <String>[]);
+      }
+      if (choice == DuplicateChoice.addWithoutSteamAppId) {
+        entry = entry.withoutSteamAppId();
+      }
       if (!_isBatch) setState(() => _state = _CreateState.creating);
     }
     if (!mounted) return (false, const <String>[]);

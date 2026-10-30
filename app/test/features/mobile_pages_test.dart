@@ -1,4 +1,5 @@
 import 'package:backlog_manager/data/games_api.dart';
+import 'package:backlog_manager/design/widgets/cover.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/features/add_game/add_game_sheet.dart';
@@ -81,6 +82,17 @@ void main() {
 
         expect(find.byKey(const Key('creation-submit')), findsOneWidget);
         expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('the cover of the creation tool stays small', (tester) async {
+        await openTool(tester, overrides: mobile);
+        await resize(tester, size);
+
+        final cover = find.descendant(
+          of: find.byKey(const Key('page-creation')),
+          matching: find.byType(ShelfCover),
+        );
+        expect(tester.getSize(cover.first).width, lessThanOrEqualTo(180));
       });
 
       testWidgets('the batch of the creation tool fits the screen', (

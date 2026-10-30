@@ -467,6 +467,43 @@ void main() {
     });
   });
 
+  group('a duplicate with the same Steam App ID (#554)', () {
+    Future<Tool> openWithSameAppId(WidgetTester tester) async {
+      final tool = await openTool(
+        tester,
+        setUp: (api, games) {
+          games.onSteamAppId = (title) async => 1145360;
+          api.onDuplicates = (title, steamAppId, spaceId) => const [
+            BacklogEntry(id: 9, title: 'Hades', steamAppId: 1145360),
+          ];
+        },
+      );
+      await chooseStatus(tester, 'Not Started');
+      await submit(tester);
+      return tool;
+    }
+
+    testWidgets('says the backlog holds the App ID once', (tester) async {
+      await openWithSameAppId(tester);
+
+      expect(find.textContaining('same Steam App ID'), findsOneWidget);
+      expect(find.text('Add without Steam App ID'), findsOneWidget);
+      expect(find.text('Add Anyway'), findsNothing);
+    });
+
+    testWidgets('adds the game without the Steam App ID', (tester) async {
+      final tool = await openWithSameAppId(tester);
+
+      await tester.tap(find.text('Add without Steam App ID'));
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+
+      expect(tool.api.created.single.title, 'Hades');
+      expect(tool.api.created.single.steamAppId, isNull);
+      await tester.pump(const Duration(seconds: 6));
+    });
+  });
+
   group('the Steam App ID', () {
     testWidgets('is looked up by the title and put into the field', (
       tester,
@@ -1359,6 +1396,31 @@ void main() {
       expect(createdIn, [null, 4]);
       expect(tool.api.created, hasLength(2));
       expect(tool.location, AppRoutes.library);
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('loads my backlog again once the space has the game', (
+      tester,
+    ) async {
+      final tool = await openTool(tester, overrides: withSpace());
+
+      await tester.tap(find.byKey(const Key('creation-target')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Both').last);
+      await tester.pumpAndSettle();
+      await chooseStatus(tester, 'In Progress');
+      tool.api.calls.clear();
+      await submit(tester);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+
+      final calls = tool.api.calls;
+      final lastCreate = calls.lastIndexWhere((c) => c.startsWith('create'));
+      expect(
+        calls.skip(lastCreate).where((c) => c == 'entries personal'),
+        isNotEmpty,
+        reason: 'the personal entry learns that the space has it',
+      );
       await tester.pump(const Duration(seconds: 6));
     });
 
