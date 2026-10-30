@@ -16,9 +16,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 const _listWidth = 260.0;
 
 /// The drop-down every place that picks a status uses: the default statuses,
-/// the value of the entry when it is none of the known ones (a CSV import, for
-/// example), then the custom statuses of the backlog each with a delete button,
-/// and "Add Status" at the end.
+/// the statuses games of the backlog have that are none of the known ones (a
+/// CSV import or the old web client, for example; the library shows a group
+/// for each) and the value of the entry when it is such a status, then the
+/// custom statuses of the backlog each with a delete button, and "Add Status"
+/// at the end.
 class StatusSelect extends ConsumerWidget {
   const StatusSelect({
     required this.value,
@@ -74,9 +76,16 @@ class _StatusList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final custom = ref.watch(customStatusesProvider(spaceId)).value ?? const [];
-    final known =
-        defaultStatuses.contains(value) ||
-        custom.any((status) => status.name == value);
+    final entries = ref.watch(entriesProvider(spaceId)).value ?? const [];
+    final listed = {
+      ...defaultStatuses,
+      for (final status in custom) status.name,
+    };
+    final used =
+        {if (value.isNotEmpty) value, for (final entry in entries) entry.status}
+            .where((status) => status.isNotEmpty && !listed.contains(status))
+            .toList()
+          ..sort();
     final menu = MenuController.maybeOf(context);
 
     void choose(String status) {
@@ -107,8 +116,8 @@ class _StatusList extends ConsumerWidget {
         children: [
           for (final status in defaultStatuses)
             _option(status, selected: status == value, onPressed: choose),
-          if (value.isNotEmpty && !known)
-            _option(value, selected: true, onPressed: choose),
+          for (final status in used)
+            _option(status, selected: status == value, onPressed: choose),
           for (final status in custom)
             _option(
               status.name,

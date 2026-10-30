@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../data/fakes.dart';
 import '../../design/widgets/harness.dart';
+import '../library/library_page_test.dart' show game;
 
 class Host extends StatefulWidget {
   const Host({required this.initial, this.spaceId, super.key});
@@ -39,8 +40,9 @@ Future<FakeBacklogApi> pumpSelect(
     CustomStatus(id: 2, name: 'Wishlist'),
   ],
   int? spaceId,
+  List<BacklogEntry> entries = const [],
 }) async {
-  final api = FakeBacklogApi()..statusList = custom;
+  final api = FakeBacklogApi(entries: entries)..statusList = custom;
   await tester.pumpWidget(
     ProviderScope(
       retry: (retryCount, error) => null,
@@ -129,6 +131,29 @@ void main() {
 
       expect(find.byKey(const Key('status-option-Imported')), findsOneWidget);
       expect(find.byKey(const Key('status-delete-Imported')), findsNothing);
+    });
+
+    testWidgets('offer the statuses other games of the backlog have', (
+      tester,
+    ) async {
+      await pumpSelect(
+        tester,
+        value: 'On Hold',
+        entries: [
+          game(1, 'Gothic II', status: 'Paused'),
+          game(2, 'Isaac', status: 'Paused'),
+          game(3, 'Hades', status: 'Completed'),
+        ],
+      );
+      await open(tester);
+
+      expect(find.byKey(const Key('status-option-Paused')), findsOneWidget);
+      expect(find.byKey(const Key('status-delete-Paused')), findsNothing);
+      expect(find.byKey(const Key('status-option-Completed')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('status-option-Paused')));
+      await tester.pumpAndSettle();
+      expect(current(tester), 'Paused');
     });
 
     testWidgets('choosing one selects it and closes the list', (tester) async {
