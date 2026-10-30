@@ -23,6 +23,7 @@ class ShelfMenuItem extends ShelfMenuEntry {
     this.checked,
     this.keepOpen = false,
     this.submenu,
+    this.itemKey,
   });
 
   final String label;
@@ -33,6 +34,9 @@ class ShelfMenuItem extends ShelfMenuEntry {
   final bool? checked;
   final bool keepOpen;
   final List<ShelfMenuEntry>? submenu;
+
+  /// The key of the menu row, for finding it in tests.
+  final Key? itemKey;
 }
 
 /// A small muted heading inside a menu, for example the title of the game a
@@ -131,6 +135,7 @@ List<Widget> _children(BuildContext context, List<ShelfMenuEntry> entries) {
           child: Text(entry.label),
         ),
         ShelfMenuItem() => MenuItemButton(
+          key: entry.itemKey,
           style: _itemStyle(tokens, text, danger: entry.danger),
           closeOnActivate: !entry.keepOpen,
           onPressed: entry.onSelected,

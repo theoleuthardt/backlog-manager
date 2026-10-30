@@ -12,6 +12,7 @@ CreationInput input({
   String playtime = '0',
   String steamAppId = '',
   String imageUrl = 'https://img.example/h.jpg',
+  String publisher = 'Supergiant Games',
   String mainStory = '22',
   String mainStoryWithExtras = '48',
   String completionist = '95',
@@ -28,6 +29,7 @@ CreationInput input({
   playtime: playtime,
   steamAppId: steamAppId,
   imageUrl: imageUrl,
+  publisher: publisher,
   mainStory: mainStory,
   mainStoryWithExtras: mainStoryWithExtras,
   completionist: completionist,
@@ -255,6 +257,14 @@ void main() {
       expect(entry.trailerLink, 'https://www.youtube.com/watch?v=abcdefghijk');
     });
 
+    test('sends the publisher of the form, none when it is empty', () {
+      expect(
+        buildNewEntry(input(publisher: ' Supergiant '), prefill).publisher,
+        'Supergiant',
+      );
+      expect(buildNewEntry(input(publisher: '  '), prefill).publisher, isNull);
+    });
+
     test('sends only the beat times above zero', () {
       final entry = buildNewEntry(
         input(mainStory: '22', mainStoryWithExtras: '0', completionist: ''),
@@ -291,6 +301,20 @@ void main() {
 
     test('treats an unreadable playtime as zero', () {
       expect(buildNewEntry(input(playtime: 'abc'), prefill).playtime, 0);
+    });
+  });
+
+  group('CreationTarget.scopes', () {
+    test('names the backlogs to create the entry in', () {
+      expect(CreationTarget.personal.scopes(4), [null]);
+      expect(CreationTarget.space.scopes(4), [4]);
+      expect(CreationTarget.both.scopes(4), [null, 4]);
+    });
+
+    test('is always the personal backlog without an active space', () {
+      for (final target in CreationTarget.values) {
+        expect(target.scopes(null), [null]);
+      }
     });
   });
 }

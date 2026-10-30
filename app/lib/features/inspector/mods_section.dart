@@ -80,10 +80,7 @@ class ModsSection extends ConsumerWidget {
   }
 
   Future<void> _add(BuildContext context, WidgetRef ref) async {
-    final input = await showShelfSheet<ModInput>(
-      context,
-      builder: (_) => const _ModSheet(),
-    );
+    final input = await showModSheet(context);
     if (input == null || !context.mounted) return;
     await _run(
       context,
@@ -130,6 +127,10 @@ class ModsSection extends ConsumerWidget {
     }
   }
 }
+
+/// Asks for a new mod; null when the sheet was cancelled.
+Future<ModInput?> showModSheet(BuildContext context) =>
+    showShelfSheet<ModInput>(context, builder: (_) => const _ModSheet());
 
 /// What the mod sheet returns: the trimmed name and the link or null.
 class ModInput {

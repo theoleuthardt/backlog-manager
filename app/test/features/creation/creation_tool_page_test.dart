@@ -83,6 +83,20 @@ Future<void> chooseStatus(WidgetTester tester, String status) async {
   await tester.pumpAndSettle();
 }
 
+Future<void> choosePlatforms(WidgetTester tester, List<String> names) async {
+  await tester.ensureVisible(find.byKey(const Key('creation-platform')));
+  await tester.tap(find.byKey(const Key('creation-platform')));
+  await tester.pumpAndSettle();
+  for (final name in names) {
+    final item = find.byKey(Key('creation-platform-$name'));
+    await tester.ensureVisible(item);
+    await tester.tap(item);
+    await tester.pumpAndSettle();
+  }
+  await tester.tapAt(Offset.zero);
+  await tester.pumpAndSettle();
+}
+
 Future<void> submit(WidgetTester tester) async {
   await tester.tap(find.byKey(const Key('creation-submit')));
   await tester.pumpAndSettle();
@@ -99,9 +113,8 @@ void main() {
       expect(textOf(tester, const Key('creation-main')), '22');
       expect(textOf(tester, const Key('creation-extra')), '48');
       expect(textOf(tester, const Key('creation-completionist')), '95');
-      expect(find.text('Publisher'), findsOneWidget);
       expect(
-        tester.widget<Text>(find.byKey(const Key('creation-publisher'))).data,
+        textOf(tester, const Key('creation-publisher')),
         'Supergiant Games',
       );
       expect(find.text('Defy the god of the dead.'), findsOneWidget);
@@ -130,7 +143,11 @@ void main() {
 
       await tester.tap(find.byKey(const Key('creation-platform')));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Switch').last);
+      await tester.tap(find.byKey(const Key('creation-platform-PC')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('creation-platform-Switch')));
+      await tester.pumpAndSettle();
+      await tester.tapAt(Offset.zero);
       await tester.pumpAndSettle();
       await chooseStatus(tester, 'Not Started');
       await submit(tester);
@@ -202,7 +219,7 @@ void main() {
 
       await tester.enterText(find.byKey(const Key('creation-title')), 'Mine!');
       await tester.enterText(find.byKey(const Key('creation-genre')), 'Indie');
-      await tester.enterText(find.byKey(const Key('creation-platform')), 'PC');
+      await choosePlatforms(tester, ['PC']);
       await tester.enterText(
         find.byKey(const Key('creation-image-url')),
         'https://img.example/mine.jpg',
@@ -703,6 +720,118 @@ void main() {
     });
   });
 
+  group('everything the inspector can set (#544)', () {
+    testWidgets('takes several platforms from the drop-down', (tester) async {
+      final tool = await openTool(tester);
+
+      await choosePlatforms(tester, ['Switch', 'PS5']);
+      await chooseStatus(tester, 'Not Started');
+      await submit(tester);
+
+      expect(tool.api.created.single.platform, ['PC', 'Switch', 'PS5']);
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('takes a platform of its own', (tester) async {
+      final tool = await openTool(tester);
+
+      await tester.ensureVisible(find.byKey(const Key('creation-platform')));
+      await tester.tap(find.byKey(const Key('creation-platform')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('creation-platform-other')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('platform-new')),
+        'Retroid Pocket 6',
+      );
+      await tester.tap(find.byKey(const Key('platform-add')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('platforms-done')));
+      await tester.pumpAndSettle();
+      await chooseStatus(tester, 'Not Started');
+      await submit(tester);
+
+      expect(tool.api.created.single.platform, ['PC', 'Retroid Pocket 6']);
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('sends the publisher as edited', (tester) async {
+      final tool = await openTool(tester);
+
+      expect(
+        textOf(tester, const Key('creation-publisher')),
+        'Supergiant Games',
+      );
+      await tester.enterText(
+        find.byKey(const Key('creation-publisher')),
+        'Supergiant',
+      );
+      await chooseStatus(tester, 'Not Started');
+      await submit(tester);
+
+      expect(tool.api.created.single.publisher, 'Supergiant');
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('adds the chosen categories to the new game', (tester) async {
+      final tool = await openTool(
+        tester,
+        setUp: (api, games) => api.categoryList = const [
+          Category(id: 7, name: 'Cozy', color: '#22c55e'),
+          Category(id: 8, name: 'Co-op', color: '#3b82f6'),
+        ],
+      );
+
+      await tester.ensureVisible(find.byKey(const Key('creation-categories')));
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(const Key('creation-categories')),
+          matching: find.byKey(const Key('category-add')),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('category-option-Cozy')));
+      await tester.pumpAndSettle();
+      await tester.tapAt(Offset.zero);
+      await tester.pumpAndSettle();
+      await chooseStatus(tester, 'Not Started');
+      await submit(tester);
+
+      final id = tool.api.stored.values.last.id;
+      expect(tool.api.calls, contains('add-category $id 7 personal'));
+      expect(
+        tool.api.calls.where((call) => call.startsWith('add-category')),
+        hasLength(1),
+      );
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('adds the mods to the new game', (tester) async {
+      final tool = await openTool(tester);
+
+      await tester.ensureVisible(find.byKey(const Key('mod-add')));
+      await tester.tap(find.byKey(const Key('mod-add')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('mod-name')), 'Hell Mode+');
+      await tester.enterText(
+        find.byKey(const Key('mod-url')),
+        'https://mods.example/hell',
+      );
+      await tester.tap(find.byKey(const Key('mod-save')));
+      await tester.pumpAndSettle();
+      expect(find.text('Hell Mode+'), findsOneWidget);
+      await chooseStatus(tester, 'Not Started');
+      await submit(tester);
+
+      final id = tool.api.stored.values.last.id;
+      expect(
+        tool.api.calls,
+        contains('add-mod $id Hell Mode+ https://mods.example/hell'),
+      );
+      await tester.pump(const Duration(seconds: 6));
+    });
+  });
+
   group('adding to the Shared Space', () {
     List<Override> withSpace() => [
       spaceApiProvider.overrideWithValue(FakeSpaceApi(together)),
@@ -796,6 +925,53 @@ void main() {
       expect(createdIn, [4]);
       expect(tool.location, AppRoutes.space);
       await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('adds to both, my backlog and the space', (tester) async {
+      final duplicateScopes = <int?>[];
+      final createdIn = <int?>[];
+      final tool = await openTool(
+        tester,
+        overrides: withSpace(),
+        setUp: (api, games) {
+          api
+            ..onDuplicates = (title, steamAppId, spaceId) {
+              duplicateScopes.add(spaceId);
+              return const [];
+            }
+            ..onCreate = (request, spaceId) async => createdIn.add(spaceId);
+        },
+      );
+
+      await tester.tap(find.byKey(const Key('creation-target')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Both').last);
+      await tester.pumpAndSettle();
+      await chooseStatus(tester, 'In Progress');
+      await submit(tester);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+
+      expect(duplicateScopes, unorderedEquals([null, 4]));
+      expect(createdIn, [null, 4]);
+      expect(tool.api.created, hasLength(2));
+      expect(tool.location, AppRoutes.library);
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('picks categories for each target of both', (tester) async {
+      await openTool(tester, overrides: withSpace());
+
+      await tester.tap(find.byKey(const Key('creation-target')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Both').last);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('creation-categories')), findsOneWidget);
+      expect(
+        find.byKey(const Key('creation-categories-space')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('switching the target back creates in my backlog', (

@@ -75,6 +75,23 @@ class CreationPrefill {
   }
 }
 
+/// Where the creation tool adds the game: the personal backlog, the Shared
+/// Space, or both (two entries, one in each).
+enum CreationTarget {
+  personal,
+  space,
+  both;
+
+  /// The backlogs to create the entry in (null is the personal one); always
+  /// the personal one without an active space ([spaceId] null).
+  List<int?> scopes(int? spaceId) => switch (this) {
+    _ when spaceId == null => const [null],
+    CreationTarget.personal => const [null],
+    CreationTarget.space => [spaceId],
+    CreationTarget.both => [null, spaceId],
+  };
+}
+
 /// The values of the creation form as the user typed them.
 class CreationInput {
   const CreationInput({
@@ -87,6 +104,7 @@ class CreationInput {
     required this.playtime,
     required this.steamAppId,
     required this.imageUrl,
+    this.publisher = '',
     required this.mainStory,
     required this.mainStoryWithExtras,
     required this.completionist,
@@ -104,6 +122,7 @@ class CreationInput {
   final String playtime;
   final String steamAppId;
   final String imageUrl;
+  final String publisher;
   final String mainStory;
   final String mainStoryWithExtras;
   final String completionist;
@@ -194,8 +213,8 @@ double? _hoursAboveZero(String text) {
   return value != null && value > 0 ? value : null;
 }
 
-/// The entry the form describes; description, publisher and trailer come from
-/// the search. Beat times of zero, an empty cover and an empty review are left
+/// The entry the form describes; description and trailer come from the
+/// search. Beat times of zero, an empty cover and an empty review are left
 /// out.
 NewEntry buildNewEntry(CreationInput input, CreationPrefill prefill) {
   return NewEntry(
@@ -209,7 +228,7 @@ NewEntry buildNewEntry(CreationInput input, CreationPrefill prefill) {
     steamAppId: resolvedSteamAppId(input.steamAppId),
     imageLink: _blankToNull(input.imageUrl),
     description: _blankToNull(prefill.description),
-    publisher: _blankToNull(prefill.publisher),
+    publisher: _blankToNull(input.publisher),
     trailerLink: _blankToNull(prefill.trailerUrl),
     mainTime: _hoursAboveZero(input.mainStory),
     mainPlusExtraTime: _hoursAboveZero(input.mainStoryWithExtras),

@@ -42,9 +42,12 @@ class EntriesNotifier extends AsyncNotifier<List<BacklogEntry>> {
     }
   }
 
-  Future<void> createEntry(wire.CreateBacklogEntryRequest request) async {
-    await _api.createEntry(request, spaceId);
+  Future<BacklogEntry> createEntry(
+    wire.CreateBacklogEntryRequest request,
+  ) async {
+    final created = await _api.createEntry(request, spaceId);
     await refresh();
+    return created;
   }
 
   Future<void> updateEntry(int entryId, EntryUpdate update) async {
