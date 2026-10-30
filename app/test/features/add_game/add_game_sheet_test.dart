@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/data/games_api.dart';
+import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/features/add_game/add_game_sheet.dart';
 import 'package:backlog_manager/routing/router.dart';
@@ -266,5 +267,49 @@ void main() {
       find.byType(MaterialApp),
       matchesGoldenFile('goldens/add_game_sheet.png'),
     );
+  });
+
+  group('the batch mode', () {
+    testWidgets('carries the list of titles to the creation tool', (
+      tester,
+    ) async {
+      final (container, _) = await openSheet(tester);
+
+      await tester.tap(find.text('Batch'));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<ShelfButton>(find.byKey(const Key('add-continue')))
+            .onPressed,
+        isNull,
+        reason: 'nothing to continue with yet',
+      );
+      await tester.enterText(
+        find.byKey(const Key('add-batch-titles')),
+        'Hades\n\nCeleste\n',
+      );
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('add-continue')));
+      await tester.pumpAndSettle();
+
+      final uri = location(container);
+      expect(uri.path, AppRoutes.creationTool);
+      expect(batchTitles(uri.queryParameters['batch']!), ['Hades', 'Celeste']);
+      expect(find.byType(AddGameSheet), findsNothing);
+    });
+
+    testWidgets('says how many games the list holds', (tester) async {
+      await openSheet(tester);
+
+      await tester.tap(find.text('Batch'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('add-batch-titles')),
+        'Hades\nCeleste\nhades',
+      );
+      await tester.pump();
+
+      expect(find.text('2 games'), findsOneWidget);
+    });
   });
 }

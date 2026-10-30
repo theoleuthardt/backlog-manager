@@ -7,6 +7,7 @@ import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/design/widgets/note.dart';
 import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/design/widgets/search_input.dart';
+import 'package:backlog_manager/design/widgets/segmented.dart';
 import 'package:backlog_manager/design/widgets/sheet.dart';
 import 'package:backlog_manager/design/widgets/table.dart';
 import 'package:backlog_manager/domain/game_search.dart';
@@ -28,7 +29,9 @@ Future<void> showAddGameSheet(BuildContext context, {bool inSpace = false}) {
 }
 
 /// Searches games and carries the chosen one on to the creation tool; a game
-/// the search does not know can be created as a custom game.
+/// the search does not know can be created as a custom game. In the batch
+/// mode it takes a list of titles, one per line, which the creation tool
+/// looks up and lists ([batchCreationLocation]).
 class AddGameSheet extends ConsumerStatefulWidget {
   const AddGameSheet({this.inSpace = false, super.key});
 
@@ -40,6 +43,8 @@ class AddGameSheet extends ConsumerStatefulWidget {
 
 class _AddGameSheetState extends ConsumerState<AddGameSheet> {
   final _controller = TextEditingController();
+  final _batchText = TextEditingController();
+  var _batchMode = false;
   final _debouncer = Debouncer(_searchDelay);
   String _term = '';
   int? _selectedId;
@@ -48,6 +53,7 @@ class _AddGameSheetState extends ConsumerState<AddGameSheet> {
   void dispose() {
     _debouncer.cancel();
     _controller.dispose();
+    _batchText.dispose();
     super.dispose();
   }
 
@@ -80,6 +86,14 @@ class _AddGameSheetState extends ConsumerState<AddGameSheet> {
     final chosen = _selected ?? _results.firstOrNull;
     if (chosen == null) return;
     _go(creationToolLocation(chosen, inSpace: widget.inSpace));
+  }
+
+  List<String> get _titles => batchTitles(_batchText.text);
+
+  void _continueBatch() {
+    final titles = _titles;
+    if (titles.isEmpty) return;
+    _go(batchCreationLocation(titles, inSpace: widget.inSpace));
   }
 
   void _custom() {
@@ -142,15 +156,21 @@ class _AddGameSheetState extends ConsumerState<AddGameSheet> {
         primary: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const KeyHint('Enter'),
-            const SizedBox(width: 8),
+            if (!_batchMode) ...[
+              const KeyHint('Enter'),
+              const SizedBox(width: 8),
+            ],
             ShelfButton(
               key: const Key('add-continue'),
               label: ShelfFormFactor.isCompact(context)
                   ? 'Continue'
                   : 'Continue in Creation Tool',
               kind: ShelfButtonKind.primary,
-              onPressed: _selected == null ? null : _continue,
+              onPressed: _batchMode
+                  ? (_titles.isEmpty ? null : _continueBatch)
+                  : _selected == null
+                  ? null
+                  : _continue,
             ),
           ],
         ),
@@ -158,42 +178,101 @@ class _AddGameSheetState extends ConsumerState<AddGameSheet> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ShelfSearchInput(
-            controller: _controller,
-            hintText: 'Type in a game name...',
-            autofocus: true,
-            onChanged: _typed,
-            onSubmitted: (_) => _continue(),
-          ),
-          const SizedBox(height: 10),
-          content,
-          const SizedBox(height: 10),
-          ShelfNote(
-            icon: Icons.help_outline,
-            child: Wrap(
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Text(
-                  'Not the game you meant? ',
-                  style: style.caption.copyWith(color: tokens.muted),
-                ),
-                ShelfPressable(
-                  key: const Key('add-custom'),
-                  semanticLabel: 'Create it as a custom game',
-                  onPressed: _custom,
-                  builder: (context, state) => Text(
-                    'Create it as a custom game',
-                    style: style.caption.copyWith(
-                      color: tokens.accent,
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
-                ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: ShelfSegmented<bool>(
+              segments: const [
+                ShelfSegment(value: false, label: 'Single'),
+                ShelfSegment(value: true, label: 'Batch'),
               ],
+              value: _batchMode,
+              onChanged: (batch) => setState(() => _batchMode = batch),
             ),
           ),
+          const SizedBox(height: 12),
+          if (_batchMode)
+            _batch(style, tokens)
+          else
+            ..._single(content, style, tokens),
         ],
       ),
     );
+  }
+
+  Widget _batch(ShelfTextStyles style, ShelfTokens tokens) {
+    final count = _titles.length;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          key: const Key('add-batch-titles'),
+          controller: _batchText,
+          autofocus: true,
+          minLines: 6,
+          maxLines: 12,
+          keyboardType: TextInputType.multiline,
+          style: style.fieldText,
+          decoration: const InputDecoration(
+            hintText: 'One game per line, for example\nHades\nCeleste',
+          ),
+          onChanged: (_) => setState(() {}),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          count == 1 ? '1 game' : '$count games',
+          style: style.caption.copyWith(color: tokens.muted),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Each title takes the best match of the search; a title it does '
+          'not know becomes a custom game. You can check and change every '
+          'game before it is created. At most $maxBatchTitles at once.',
+          style: style.caption.copyWith(color: tokens.muted),
+        ),
+      ],
+    );
+  }
+
+  List<Widget> _single(
+    Widget content,
+    ShelfTextStyles style,
+    ShelfTokens tokens,
+  ) {
+    return [
+      ShelfSearchInput(
+        controller: _controller,
+        hintText: 'Type in a game name...',
+        autofocus: true,
+        onChanged: _typed,
+        onSubmitted: (_) => _continue(),
+      ),
+      const SizedBox(height: 10),
+      content,
+      const SizedBox(height: 10),
+      ShelfNote(
+        icon: Icons.help_outline,
+        child: Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text(
+              'Not the game you meant? ',
+              style: style.caption.copyWith(color: tokens.muted),
+            ),
+            ShelfPressable(
+              key: const Key('add-custom'),
+              semanticLabel: 'Create it as a custom game',
+              onPressed: _custom,
+              builder: (context, state) => Text(
+                'Create it as a custom game',
+                style: style.caption.copyWith(
+                  color: tokens.accent,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ];
   }
 }

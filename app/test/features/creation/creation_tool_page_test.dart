@@ -832,6 +832,222 @@ void main() {
     });
   });
 
+  group('the batch mode (#548)', () {
+    GameSearchResult result(int id, String title) => GameSearchResult(
+      id: id,
+      title: title,
+      imageUrl: 'https://img.example/$id.jpg',
+      genres: const ['Action'],
+      platforms: const ['PC'],
+      mainStory: 10,
+      mainStoryWithExtras: 20,
+      completionist: 30,
+    );
+
+    Future<Tool> openBatch(
+      WidgetTester tester, {
+      List<String> titles = const ['Hades', 'Celeste', 'Mystery Game'],
+      List<Override> overrides = const [],
+      void Function(FakeBacklogApi api, FakeGamesApi games)? setUp,
+    }) => openTool(
+      tester,
+      location: batchCreationLocation(titles),
+      overrides: overrides,
+      setUp: (api, games) {
+        games.onSearch = (term, deep) async => switch (term) {
+          'Hades' => [result(1, 'Hades'), result(9, 'Hades II')],
+          'Celeste' => [result(2, 'Celeste')],
+          _ => const [],
+        };
+        setUp?.call(api, games);
+      },
+    );
+
+    Future<void> chooseDefaultStatus(WidgetTester tester, String status) async {
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(const Key('batch-status')),
+          matching: find.byKey(const Key('status-select')),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(Key('status-option-$status')).last);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('lists every title with its best search result', (
+      tester,
+    ) async {
+      await openBatch(tester);
+
+      expect(find.text('New Games'), findsOneWidget);
+      expect(find.text('Add 3 Games'), findsOneWidget);
+      for (final index in [0, 1, 2]) {
+        expect(find.byKey(Key('batch-item-$index')), findsOneWidget);
+      }
+      expect(find.text('Hades'), findsOneWidget);
+      expect(find.text('Hades II'), findsNothing);
+      expect(find.text('No match found - a custom game'), findsOneWidget);
+      expect(
+        find.byKey(const Key('creation-title')),
+        findsNothing,
+        reason: 'the games are folded in',
+      );
+    });
+
+    testWidgets('folds out the normal form of a game', (tester) async {
+      await openBatch(tester);
+
+      await tester.tap(find.byKey(const Key('batch-toggle-1')));
+      await tester.pumpAndSettle();
+
+      expect(textOf(tester, const Key('creation-title')), 'Celeste');
+      expect(textOf(tester, const Key('creation-main')), '10');
+    });
+
+    testWidgets('creates every game with the status for all', (tester) async {
+      final tool = await openBatch(tester);
+
+      await chooseDefaultStatus(tester, 'Not Started');
+      await tester.tap(find.byKey(const Key('batch-toggle-2')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('creation-genre')), 'Indie');
+      await choosePlatforms(tester, ['PC']);
+      await submit(tester);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+
+      expect(
+        [for (final r in tool.api.created) r.title],
+        ['Hades', 'Celeste', 'Mystery Game'],
+      );
+      expect([
+        for (final r in tool.api.created) r.status,
+      ], everyElement('Not Started'));
+      expect(tool.location, AppRoutes.library);
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('a game can change the status for itself', (tester) async {
+      final tool = await openBatch(tester, titles: ['Hades', 'Celeste']);
+
+      await chooseDefaultStatus(tester, 'Not Started');
+      await tester.tap(find.byKey(const Key('batch-toggle-0')));
+      await tester.pumpAndSettle();
+      final ownStatus = find.descendant(
+        of: find.byKey(const Key('batch-item-0')),
+        matching: find.byKey(const Key('status-select')),
+      );
+      await tester.ensureVisible(ownStatus);
+      await tester.tap(ownStatus);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('status-option-Completed')).last);
+      await tester.pumpAndSettle();
+      await submit(tester);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+
+      expect(
+        {for (final r in tool.api.created) r.title: r.status},
+        {'Hades': 'Completed', 'Celeste': 'Not Started'},
+      );
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('opens and names a game that is not complete', (tester) async {
+      final tool = await openBatch(tester);
+
+      await chooseDefaultStatus(tester, 'Not Started');
+      await submit(tester);
+
+      expect(tool.api.created, isEmpty);
+      expect(find.textContaining('Mystery Game:'), findsOneWidget);
+      expect(find.byKey(const Key('creation-genre')), findsOneWidget);
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('Remove takes a game off the list', (tester) async {
+      final tool = await openBatch(tester, titles: ['Hades', 'Celeste']);
+
+      await tester.tap(find.byKey(const Key('batch-remove-0')));
+      await tester.pumpAndSettle();
+      expect(find.text('Add 1 Game'), findsOneWidget);
+      await chooseDefaultStatus(tester, 'Not Started');
+      await submit(tester);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+
+      expect([for (final r in tool.api.created) r.title], ['Celeste']);
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('Wrong Game? replaces the match of a game', (tester) async {
+      await openBatch(tester, titles: ['Hades']);
+
+      await tester.tap(find.byKey(const Key('batch-wrong-0')));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Hades II').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Use this game'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Hades II'), findsOneWidget);
+    });
+
+    testWidgets('a game that fails stays in the list', (tester) async {
+      final tool = await openBatch(
+        tester,
+        titles: ['Hades', 'Celeste'],
+        setUp: (api, games) => api.onCreate = (request, spaceId) async {
+          if (request.title == 'Celeste') throw Exception('offline');
+        },
+      );
+
+      await chooseDefaultStatus(tester, 'Not Started');
+      await submit(tester);
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pumpAndSettle();
+
+      expect(Uri.parse(tool.location).path, AppRoutes.creationTool);
+      expect(find.byKey(const Key('batch-item-0')), findsOneWidget);
+      expect(find.byKey(const Key('batch-item-1')), findsNothing);
+      expect(find.text('Celeste'), findsOneWidget);
+      expect(find.text('Add 1 Game'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('adds every game to both backlogs', (tester) async {
+      final createdIn = <(String, int?)>[];
+      await openBatch(
+        tester,
+        titles: ['Hades', 'Celeste'],
+        overrides: [spaceApiProvider.overrideWithValue(FakeSpaceApi(together))],
+        setUp: (api, games) =>
+            api.onCreate = (request, spaceId) async =>
+                createdIn.add((request.title, spaceId)),
+      );
+
+      await tester.tap(find.byKey(const Key('batch-target')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Both').last);
+      await tester.pumpAndSettle();
+      await chooseDefaultStatus(tester, 'Not Started');
+      await submit(tester);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+
+      expect(createdIn, [
+        ('Hades', null),
+        ('Hades', 4),
+        ('Celeste', null),
+        ('Celeste', 4),
+      ]);
+      await tester.pump(const Duration(seconds: 6));
+    });
+  });
+
   group('adding to the Shared Space', () {
     List<Override> withSpace() => [
       spaceApiProvider.overrideWithValue(FakeSpaceApi(together)),

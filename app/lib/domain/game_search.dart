@@ -92,6 +92,36 @@ String customGameLocation(String title, {bool inSpace = false}) {
   });
 }
 
+/// How many games the batch mode of the creation tool takes at once; each
+/// title is one search.
+const maxBatchTitles = 50;
+
+/// The titles of a batch, one per line: trimmed, empty lines left out, each
+/// title once whatever its case, at most [maxBatchTitles].
+List<String> batchTitles(String text) {
+  final titles = <String>[];
+  for (final line in text.split(RegExp(r'\r?\n'))) {
+    final title = line.trim();
+    if (title.isEmpty) continue;
+    if (titles.any((known) => known.toLowerCase() == title.toLowerCase())) {
+      continue;
+    }
+    titles.add(title);
+    if (titles.length == maxBatchTitles) break;
+  }
+  return titles;
+}
+
+/// Where the batch mode of "Search for a game" goes: the creation tool with
+/// the [titles], one per line. Inside a Shared Space [inSpace] names it as
+/// the target of all of them.
+String batchCreationLocation(List<String> titles, {bool inSpace = false}) {
+  return _location({
+    if (inSpace) 'target': 'space',
+    'batch': titles.join('\n'),
+  });
+}
+
 /// The ids of the results that only the deeper search found, to mark them.
 Set<int> deeperIds({
   required List<GameSearchResult> normal,
