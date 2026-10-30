@@ -263,7 +263,10 @@ class _InspectorSlot extends ConsumerWidget {
 
 /// A window without a sidebar (sign-in, the setup wizard, settings): the same
 /// title bar and atmosphere around one page; on a phone or handheld the
-/// [MobileTopBar] (with back in settings) inside the safe areas.
+/// [MobileTopBar] (with back in settings) inside the safe areas. On a touch
+/// screen the page stays above the on-screen keyboard, which this frame,
+/// unlike the `Scaffold` of the main shell, would otherwise leave on top of
+/// it.
 class FullWindowFrame extends ConsumerWidget {
   const FullWindowFrame({
     required this.location,
@@ -287,7 +290,7 @@ class FullWindowFrame extends ConsumerWidget {
                 child: Column(
                   children: [
                     MobileTopBar(location: location, minimal: minimal),
-                    Expanded(child: child),
+                    Expanded(child: _AboveKeyboard(child: child)),
                   ],
                 ),
               ),
@@ -303,7 +306,11 @@ class FullWindowFrame extends ConsumerWidget {
           child: Column(
             children: [
               TitleBar(location: location, minimal: minimal),
-              Expanded(child: child),
+              Expanded(
+                child: ShelfFormFactor.isTouch(context)
+                    ? _AboveKeyboard(child: child)
+                    : child,
+              ),
             ],
           ),
         ),
@@ -312,5 +319,27 @@ class FullWindowFrame extends ConsumerWidget {
     return ShelfFormFactor.isTouch(context)
         ? SystemBackHandler(child: window)
         : window;
+  }
+}
+
+/// Keeps [child] above the on-screen keyboard and closes the keyboard on a
+/// tap next to a field: the number pad of iOS has no key that closes it.
+class _AboveKeyboard extends StatelessWidget {
+  const _AboveKeyboard({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: child,
+      ),
+    );
   }
 }

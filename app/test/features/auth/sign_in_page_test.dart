@@ -11,6 +11,7 @@ import 'package:backlog_manager/auth/token_store.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
 import 'package:backlog_manager/design/widgets/spinner.dart';
+import 'package:backlog_manager/platform/desktop.dart';
 import 'package:backlog_manager/routing/router.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/routing/session.dart';
@@ -59,9 +60,13 @@ class Harness {
       .path;
 }
 
-Future<Harness> pumpSignIn(WidgetTester tester) async {
+Future<Harness> pumpSignIn(
+  WidgetTester tester, {
+  Size size = const Size(1440, 900),
+  bool desktop = true,
+}) async {
   SharedPreferences.setMockInitialValues({});
-  tester.view.physicalSize = const Size(1440, 900);
+  tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   final api = FakeAuthApi();
@@ -70,6 +75,7 @@ Future<Harness> pumpSignIn(WidgetTester tester) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        if (!desktop) isDesktopProvider.overrideWithValue(false),
         authApiProvider.overrideWithValue(api),
         tokenStoreProvider.overrideWithValue(store),
         serverUrlStoreProvider.overrideWithValue(
@@ -497,4 +503,64 @@ void main() {
       });
     }
   }
+
+  group('on a phone with the on-screen keyboard (#550)', () {
+    const phone = Size(402, 874);
+    const keyboard = 336.0;
+
+    Future<Harness> twoFactorOnPhone(WidgetTester tester) async {
+      final app = await pumpSignIn(tester, size: phone, desktop: false);
+      app.api.onLogin = (email, password) async =>
+          const LoginNeedsTwoFactor('challenge-1');
+      await typeCredentials(tester);
+      await tester.tap(find.byKey(const Key('sign-in-submit')));
+      await tester.pumpAndSettle();
+      return app;
+    }
+
+    testWidgets('Verify can be reached above the keyboard', (tester) async {
+      await twoFactorOnPhone(tester);
+      tester.view.viewInsets = const FakeViewPadding(bottom: keyboard);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '123456');
+      await tester.pump();
+
+      final verify = find.byKey(const Key('verify-submit'));
+      await tester.ensureVisible(verify);
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.getRect(verify).bottom,
+        lessThanOrEqualTo(phone.height - keyboard),
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('the code field takes backup codes and can be sent', (
+      tester,
+    ) async {
+      await twoFactorOnPhone(tester);
+
+      final field = tester.widget<TextField>(find.byType(TextField));
+      expect(
+        field.keyboardType,
+        isNot(TextInputType.number),
+        reason: 'backup codes hold letters and a dash',
+      );
+      expect(field.autocorrect, isFalse);
+      expect(field.enableSuggestions, isFalse);
+      expect(field.textInputAction, TextInputAction.go);
+    });
+
+    testWidgets('a tap next to the field closes the keyboard', (tester) async {
+      await twoFactorOnPhone(tester);
+      final field = find.byType(EditableText);
+      expect(tester.widget<EditableText>(field).focusNode.hasFocus, isTrue);
+
+      await tester.tap(find.text('Verify it is you'));
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<EditableText>(field).focusNode.hasFocus, isFalse);
+    });
+  });
 }
