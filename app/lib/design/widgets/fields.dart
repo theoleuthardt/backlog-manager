@@ -22,6 +22,7 @@ class ShelfField extends StatefulWidget {
     this.enabled = true,
     this.autofocus = false,
     this.keyboardType,
+    this.autocorrect = true,
     this.autofillHints,
     this.textInputAction,
     this.labelAction,
@@ -40,6 +41,10 @@ class ShelfField extends StatefulWidget {
   final bool enabled;
   final bool autofocus;
   final TextInputType? keyboardType;
+
+  /// Whether the on-screen keyboard corrects and suggests words; off for
+  /// codes.
+  final bool autocorrect;
 
   /// What a password manager or the system may fill in, for example
   /// [AutofillHints.email].
@@ -98,6 +103,8 @@ class _ShelfFieldState extends State<ShelfField> {
             enabled: widget.enabled,
             autofocus: widget.autofocus,
             keyboardType: widget.keyboardType,
+            autocorrect: widget.autocorrect,
+            enableSuggestions: widget.autocorrect,
             autofillHints: widget.autofillHints,
             textInputAction: widget.textInputAction,
             style: text.fieldText,
