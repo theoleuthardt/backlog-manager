@@ -240,6 +240,7 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
         if (!proceed || !mounted) return;
         setState(() => _state = _CreateState.creating);
       }
+      if (!mounted) return;
       final unsaved = await _createIn(scopes, createRequestFrom(entry));
       if (!mounted) return;
       setState(() => _state = _CreateState.created);
@@ -269,17 +270,24 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
   /// Creates the entry in each of [scopes] and adds the chosen categories of
   /// that backlog and the mods to it. A failure of the first entry is thrown;
   /// what fails after an entry exists is returned by name, so the user learns
-  /// what to add by hand.
+  /// what to add by hand. It works on the provider container of the app and a
+  /// copy of the choices, so leaving the page while it runs does not stop it
+  /// halfway.
   Future<List<String>> _createIn(
     List<int?> scopes,
     wire.CreateBacklogEntryRequest request,
   ) async {
+    final container = ProviderScope.containerOf(context, listen: false);
+    final categories = {
+      for (final scope in scopes) scope: {...?_categories[scope]},
+    };
+    final mods = [..._mods];
     final unsaved = <String>{};
     var createdAny = false;
     for (final scope in scopes) {
       final BacklogEntry created;
       try {
-        created = await ref
+        created = await container
             .read(entriesProvider(scope).notifier)
             .createEntry(request);
       } on Object {
@@ -292,18 +300,18 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
         continue;
       }
       createdAny = true;
-      for (final categoryId in _categories[scope] ?? const <int>{}) {
+      for (final categoryId in categories[scope] ?? const <int>{}) {
         try {
-          await ref
+          await container
               .read(categoryActionsProvider(scope))
               .setAssigned(created.id, categoryId, assigned: true);
         } on Object {
           unsaved.add('some categories');
         }
       }
-      for (final mod in _mods) {
+      for (final mod in mods) {
         try {
-          await ref
+          await container
               .read(
                 entryModActionsProvider((entryId: created.id, spaceId: scope)),
               )
