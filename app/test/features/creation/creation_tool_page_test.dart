@@ -545,6 +545,38 @@ void main() {
       expect(find.byKey(const Key('creation-lookup-loading')), findsNothing);
     });
 
+    testWidgets('the submit button waits for the playtime of a typed App ID', (
+      tester,
+    ) async {
+      final playtime = Completer<double?>();
+      await openTool(
+        tester,
+        setUp: (api, games) =>
+            api.onSteamPlaytime = (steamAppId) => playtime.future,
+      );
+
+      await tester.enterText(
+        find.byKey(const Key('creation-steam-app-id')),
+        '620',
+      );
+      await tester.pump();
+
+      expect(
+        tester
+            .widget<ShelfButton>(find.byKey(const Key('creation-submit')))
+            .onPressed,
+        isNull,
+      );
+      playtime.complete(12);
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<ShelfButton>(find.byKey(const Key('creation-submit')))
+            .onPressed,
+        isNotNull,
+      );
+    });
+
     testWidgets('can be typed in when none was found', (tester) async {
       final tool = await openTool(tester);
       await chooseStatus(tester, 'Not Started');

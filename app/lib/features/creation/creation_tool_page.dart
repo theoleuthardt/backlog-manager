@@ -84,7 +84,7 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
     _prefill = CreationPrefill.fromQuery(widget.query);
     final batch = _batch;
     if (batch == null) {
-      _single = CreationDraft(_prefill);
+      _single = CreationDraft(_prefill)..addListener(_draftChanged);
     } else {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) unawaited(_lookUp(batch));
@@ -102,6 +102,10 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
       }
     });
   }
+
+  /// Rebuilds the page with the form of one game, so the submit button
+  /// follows the lookups of what was typed.
+  void _draftChanged() => setState(() {});
 
   @override
   void dispose() {
@@ -254,6 +258,7 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
       _toast(problem);
       return;
     }
+    _leave?.cancel();
     setState(() => _state = _CreateState.creating);
     try {
       final (created, unsaved) = await _create(draft, input);
@@ -280,6 +285,7 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
     final drafts = _drafts;
     if (drafts == null || drafts.isEmpty) return;
     final container = ProviderScope.containerOf(context, listen: false);
+    _leave?.cancel();
     setState(() => _state = _CreateState.creating);
     final inputs = <CreationDraft, CreationInput>{};
     for (final draft in drafts) {
@@ -416,15 +422,12 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
               child: SingleChildScrollView(
                 padding: EdgeInsets.fromLTRB(gutter, 0, gutter, 28),
                 child: single != null
-                    ? ListenableBuilder(
-                        listenable: single,
-                        builder: (context, _) => CreationGameForm(
-                          draft: single,
-                          fallbackStatus: '',
-                          fallbackTarget: _defaultTarget,
-                          busy: _state == _CreateState.creating,
-                          onSearchAgain: _searchAgain,
-                        ),
+                    ? CreationGameForm(
+                        draft: single,
+                        fallbackStatus: '',
+                        fallbackTarget: _defaultTarget,
+                        busy: _state == _CreateState.creating,
+                        onSearchAgain: _searchAgain,
                       )
                     : _batchList(context),
               ),
