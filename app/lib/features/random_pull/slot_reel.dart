@@ -19,7 +19,9 @@ const _rowHeight = 64.0;
 /// at first and slower and slower, and stops with its [ReelStrip.stopIndex]
 /// game on the highlighted middle row, with more games below it. [onDone] is
 /// called once it has stopped, at once when the system asks for less motion.
-/// A new spin needs a new key: the state starts the animation once.
+/// A new spin needs a new key: the state starts the animation once. The reel
+/// takes no padding from the safe area (a list would by default), which
+/// would shift the rows against the highlighted one.
 class SlotReel extends ConsumerStatefulWidget {
   const SlotReel({required this.strip, required this.onDone, super.key});
 
@@ -105,6 +107,7 @@ class _SlotReelState extends ConsumerState<SlotReel>
                 children: [
                   ListView.builder(
                     controller: _scroll,
+                    padding: EdgeInsets.zero,
                     physics: const NeverScrollableScrollPhysics(),
                     itemExtent: _rowHeight,
                     itemCount: widget.strip.games.length,

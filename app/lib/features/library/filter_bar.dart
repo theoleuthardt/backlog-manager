@@ -1,3 +1,4 @@
+import 'package:backlog_manager/data/cover_size.dart';
 import 'package:backlog_manager/data/filter_providers.dart';
 import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
@@ -20,7 +21,9 @@ const _pickerWidth = 260.0;
 
 /// The 44 px strip under the library toolbar: one token per active filter,
 /// the dashed "+ Add filter" token, and on the right the owned-only switch,
-/// reset, sorting and the grid or list toggle.
+/// reset, sorting and the grid or list toggle. On a phone in portrait the
+/// filters get a row of their own and the switch and the sorting the row
+/// below, since one row leaves the filters no room.
 class FilterBar extends ConsumerWidget {
   const FilterBar({required this.gutter, super.key});
 
@@ -33,14 +36,93 @@ class FilterBar extends ConsumerWidget {
     final filters = ref.watch(effectiveFiltersProvider);
     final active = ref.watch(activeFilterCountProvider);
 
+    final reset = ShelfButton(
+      key: const Key('filter-reset'),
+      label: 'Reset',
+      kind: ShelfButtonKind.quiet,
+      onPressed: ref.read(filtersProvider.notifier).reset,
+    );
+    Widget tokensRow({required bool withReset}) => Expanded(
+      child: ScrollConfiguration(
+        behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (final token in filterTokens(filters)) ...[
+                _FilterTokenView(token: token),
+                const SizedBox(width: 8),
+              ],
+              const _AddFilter(),
+              if (active > 0 && withReset) ...[const SizedBox(width: 8), reset],
+            ],
+          ),
+        ),
+      ),
+    );
+    final ownedSwitch = ShelfSwitch(
+      key: const Key('owned-only'),
+      label: 'Owned Only',
+      value: filters.ownedOnly,
+      onChanged: ref.read(filtersProvider.notifier).setOwnedOnly,
+    );
+    final decoration = BoxDecoration(
+      color: tokens.foreground.withValues(alpha: 0.03),
+      border: Border(bottom: BorderSide(color: tokens.borderSubtle)),
+    );
+
+    if (ShelfFormFactor.isCompact(context)) {
+      return DecoratedBox(
+        key: const Key('filter-bar'),
+        decoration: decoration,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: gutter),
+          child: Column(
+            children: [
+              SizedBox(
+                height: 52,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.filter_alt_outlined,
+                      size: 14,
+                      color: tokens.muted,
+                    ),
+                    const SizedBox(width: 8),
+                    tokensRow(withReset: true),
+                  ],
+                ),
+              ),
+              SizedBox(
+                height: 52,
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        'Owned Only',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: style.caption.copyWith(color: tokens.muted),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ownedSwitch,
+                    const Spacer(),
+                    const _SortAndView(compact: true, tight: true, phone: true),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return SizedBox(
       key: const Key('filter-bar'),
       height: ShelfFormFactor.isTouch(context) ? 56 : 44,
       child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: tokens.foreground.withValues(alpha: 0.03),
-          border: Border(bottom: BorderSide(color: tokens.borderSubtle)),
-        ),
+        decoration: decoration,
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: gutter),
           child: LayoutBuilder(
@@ -50,12 +132,6 @@ class FilterBar extends ConsumerWidget {
                   MediaQuery.textScalerOf(context).scale(1);
               final tight = room < _tightMaxWidth;
               final resetInTokens = tight && ShelfFormFactor.isTouch(context);
-              final reset = ShelfButton(
-                key: const Key('filter-reset'),
-                label: 'Reset',
-                kind: ShelfButtonKind.quiet,
-                onPressed: ref.read(filtersProvider.notifier).reset,
-              );
               return Row(
                 children: [
                   Icon(
@@ -72,28 +148,7 @@ class FilterBar extends ConsumerWidget {
                     const SizedBox(width: 12),
                   ] else
                     const SizedBox(width: 8),
-                  Expanded(
-                    child: ScrollConfiguration(
-                      behavior: ScrollConfiguration.of(context)
-                          .copyWith(scrollbars: false),
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            for (final token in filterTokens(filters)) ...[
-                              _FilterTokenView(token: token),
-                              const SizedBox(width: 8),
-                            ],
-                            const _AddFilter(),
-                            if (active > 0 && resetInTokens) ...[
-                              const SizedBox(width: 8),
-                              reset,
-                            ],
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
+                  tokensRow(withReset: resetInTokens),
                   const SizedBox(width: 12),
                   if (room >= _ownedLabelMinWidth) ...[
                     Text(
@@ -102,12 +157,7 @@ class FilterBar extends ConsumerWidget {
                     ),
                     const SizedBox(width: 8),
                   ],
-                  ShelfSwitch(
-                    key: const Key('owned-only'),
-                    label: 'Owned Only',
-                    value: filters.ownedOnly,
-                    onChanged: ref.read(filtersProvider.notifier).setOwnedOnly,
-                  ),
+                  ownedSwitch,
                   if (active > 0 && !resetInTokens) ...[
                     const SizedBox(width: 8),
                     reset,
@@ -136,19 +186,52 @@ const _compactMaxWidth = 700.0;
 /// one icon button, so the tokens keep room for the add button.
 const _tightMaxWidth = 520.0;
 
+/// Sorting, its direction and how the games are shown. On a touch screen
+/// it also offers the cover size ([coverSizeProvider]); on a phone in
+/// portrait ([phone]) and in a [compact] bar on a touch screen grid, list
+/// and the cover sizes share one menu, since the row has no room for both.
 class _SortAndView extends ConsumerWidget {
-  const _SortAndView({required this.compact, required this.tight});
+  const _SortAndView({
+    required this.compact,
+    required this.tight,
+    this.phone = false,
+  });
 
   final bool compact;
   final bool tight;
+  final bool phone;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final view = ref.watch(libraryViewProvider);
     final notifier = ref.read(libraryViewProvider.notifier);
+    final coverSize = ref.watch(coverSizeProvider);
 
+    final touch = ShelfFormFactor.isTouch(context);
+    final combined = phone || (touch && compact);
     return Row(
       children: [
+        if (touch && !combined && view.layout == LibraryLayout.grid) ...[
+          ShelfMenuAnchor(
+            entries: [
+              for (final size in CoverSize.values)
+                ShelfMenuItem(
+                  label: size.label,
+                  checked: size == coverSize,
+                  onSelected: () =>
+                      ref.read(coverSizeProvider.notifier).select(size),
+                ),
+            ],
+            builder: (context, controller) => ShelfIconButton(
+              key: const Key('cover-size'),
+              icon: Icons.photo_size_select_large,
+              tooltip: 'Cover Size: ${coverSize.label}',
+              onPressed: () =>
+                  controller.isOpen ? controller.close() : controller.open(),
+            ),
+          ),
+          const SizedBox(width: 4),
+        ],
         ShelfMenuAnchor(
           entries: [
             for (final option in SortOption.values)
@@ -182,7 +265,40 @@ class _SortAndView extends ConsumerWidget {
           onPressed: notifier.toggleDirection,
         ),
         SizedBox(width: tight ? 4 : 12),
-        if (tight)
+        if (combined)
+          ShelfMenuAnchor(
+            entries: [
+              ShelfMenuItem(
+                label: 'Grid',
+                checked: view.layout == LibraryLayout.grid,
+                onSelected: () => notifier.setLayout(LibraryLayout.grid),
+              ),
+              ShelfMenuItem(
+                label: 'List',
+                checked: view.layout == LibraryLayout.list,
+                onSelected: () => notifier.setLayout(LibraryLayout.list),
+              ),
+              const ShelfMenuDivider(),
+              const ShelfMenuLabel('Cover Size'),
+              for (final size in CoverSize.values)
+                ShelfMenuItem(
+                  label: size.label,
+                  checked: size == coverSize,
+                  onSelected: () =>
+                      ref.read(coverSizeProvider.notifier).select(size),
+                ),
+            ],
+            builder: (context, controller) => ShelfIconButton(
+              key: const Key('library-view-menu'),
+              icon: view.layout == LibraryLayout.grid
+                  ? Icons.grid_view_outlined
+                  : Icons.view_list_outlined,
+              tooltip: 'View',
+              onPressed: () =>
+                  controller.isOpen ? controller.close() : controller.open(),
+            ),
+          )
+        else if (tight)
           ShelfIconButton(
             key: const Key('layout-toggle'),
             icon: view.layout == LibraryLayout.grid

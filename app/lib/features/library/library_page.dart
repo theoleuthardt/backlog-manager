@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:backlog_manager/api/api_providers.dart';
 import 'package:backlog_manager/data/backlog_providers.dart';
 import 'package:backlog_manager/data/backlog_scope.dart';
+import 'package:backlog_manager/data/cover_size.dart';
 import 'package:backlog_manager/data/drag_providers.dart';
 import 'package:backlog_manager/data/entry_image.dart';
 import 'package:backlog_manager/data/filter_providers.dart';
@@ -20,6 +21,7 @@ import 'package:backlog_manager/design/widgets/chips.dart';
 import 'package:backlog_manager/design/widgets/cover.dart';
 import 'package:backlog_manager/design/widgets/menu.dart';
 import 'package:backlog_manager/design/widgets/pressable.dart';
+import 'package:backlog_manager/domain/entry_order.dart';
 import 'package:backlog_manager/domain/format.dart';
 import 'package:backlog_manager/domain/group_order.dart';
 import 'package:backlog_manager/domain/library_groups.dart';
@@ -239,6 +241,7 @@ class _LibraryState extends ConsumerState<_Library> {
           final metrics = coverGridMetrics(
             width,
             extraHeight: ref.read(backlogScopeProvider) == null ? 44 : 92,
+            minCoverWidth: ref.read(coverSizeProvider).minWidth,
           );
           final rows = index ~/ metrics.columns;
           position.jumpTo(
@@ -465,6 +468,71 @@ class _SpaceBackupsButton extends ConsumerWidget {
   }
 }
 
+/// The actions of the library toolbar on a phone in portrait, where a row of
+/// unlabelled icons has no room: one "More" button that opens them as a menu
+/// with their names. The dot of a restore that waits for the member shows on
+/// the button too.
+class _LibraryActions extends ConsumerWidget {
+  const _LibraryActions({required this.space});
+
+  final Space? space;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = Theme.of(context).extension<ShelfTokens>()!;
+    final waiting = space != null && ref.watch(restoreWaitsForMeProvider);
+    return ShelfMenuAnchor(
+      entries: [
+        ShelfMenuItem(
+          label: 'Sync IGDB data',
+          icon: Icons.storage_outlined,
+          onSelected: ref.read(igdbSyncRequestProvider.notifier).request,
+        ),
+        ShelfMenuItem(
+          label: 'Pull a random game',
+          icon: Icons.casino_outlined,
+          onSelected: ref.read(randomPullRequestProvider.notifier).request,
+        ),
+        if (space != null)
+          ShelfMenuItem(
+            label: waiting ? 'Space backups (restore waits)' : 'Space backups',
+            icon: Icons.history,
+            onSelected: () => unawaited(showSpaceBackupsSheet(context)),
+          ),
+        ShelfMenuItem(
+          label: 'Find duplicate games',
+          icon: Icons.difference_outlined,
+          onSelected: () => unawaited(showDuplicatesSheet(context)),
+        ),
+      ],
+      builder: (context, controller) => Stack(
+        clipBehavior: Clip.none,
+        children: [
+          ShelfButton(
+            key: const Key('library-actions'),
+            label: 'More',
+            icon: Icons.more_horiz,
+            onPressed: () =>
+                controller.isOpen ? controller.close() : controller.open(),
+          ),
+          if (waiting)
+            Positioned(
+              top: 4,
+              right: 4,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: tokens.accent,
+                  shape: BoxShape.circle,
+                ),
+                child: const SizedBox(width: 9, height: 9),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 /// How much wider the heading of the Shared Space is than "Library": the
 /// avatars, the title and the space controls, so the search needs that much
 /// more room before it sits beside the heading.
@@ -497,44 +565,64 @@ class _Toolbar extends ConsumerWidget {
       onPressed: ref.read(addGameRequestProvider.notifier).request,
     );
 
-    final controls = Wrap(
-      spacing: 12,
-      runSpacing: 10,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
-        selectButton,
-        if (ref.watch(sessionUserProvider)?.hasSteamId ?? false)
-          const SteamSyncButton(),
-        ShelfIconButton(
-          key: const Key('igdb-sync-button'),
-          icon: Icons.storage_outlined,
-          badge: Icons.bolt,
-          tooltip: 'Sync IGDB',
-          onPressed: ref.read(igdbSyncRequestProvider.notifier).request,
-        ),
-        ShelfIconButton(
-          key: const Key('random-pull-button'),
-          icon: Icons.casino_outlined,
-          tooltip: 'Pull a random game',
-          onPressed: ref.read(randomPullRequestProvider.notifier).request,
-        ),
-        if (space != null) const _SpaceBackupsButton(),
-        ShelfIconButton(
-          key: const Key('duplicates-button'),
-          icon: Icons.difference_outlined,
-          tooltip: 'Find duplicate games',
-          onPressed: () => unawaited(showDuplicatesSheet(context)),
-        ),
-        if (space == null) ...[
-          const SizedBox(width: 6),
-          Text('${content.shown} of ${content.total} games', style: muted),
-          Text(
-            '${formatCount(content.hoursToBeat.round())} h to beat',
-            style: muted,
-          ),
-        ],
-      ],
-    );
+    final counts = [
+      Text('${content.shown} of ${content.total} games', style: muted),
+      Text(
+        '${formatCount(content.hoursToBeat.round())} h to beat',
+        style: muted,
+      ),
+    ];
+    final controls = ShelfFormFactor.isCompact(context)
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  selectButton,
+                  const SizedBox(width: 12),
+                  if (ref.watch(sessionUserProvider)?.hasSteamId ?? false)
+                    const SteamSyncButton(),
+                  const Spacer(),
+                  _LibraryActions(space: space),
+                ],
+              ),
+              if (space == null) ...[
+                const SizedBox(height: 8),
+                Wrap(spacing: 12, children: counts),
+              ],
+            ],
+          )
+        : Wrap(
+            spacing: 12,
+            runSpacing: 10,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              selectButton,
+              if (ref.watch(sessionUserProvider)?.hasSteamId ?? false)
+                const SteamSyncButton(),
+              ShelfIconButton(
+                key: const Key('igdb-sync-button'),
+                icon: Icons.storage_outlined,
+                badge: Icons.bolt,
+                tooltip: 'Sync IGDB',
+                onPressed: ref.read(igdbSyncRequestProvider.notifier).request,
+              ),
+              ShelfIconButton(
+                key: const Key('random-pull-button'),
+                icon: Icons.casino_outlined,
+                tooltip: 'Pull a random game',
+                onPressed: ref.read(randomPullRequestProvider.notifier).request,
+              ),
+              if (space != null) const _SpaceBackupsButton(),
+              ShelfIconButton(
+                key: const Key('duplicates-button'),
+                icon: Icons.difference_outlined,
+                tooltip: 'Find duplicate games',
+                onPressed: () => unawaited(showDuplicatesSheet(context)),
+              ),
+              if (space == null) ...[const SizedBox(width: 6), ...counts],
+            ],
+          );
     final heading = space == null
         ? SizedBox(
             key: const Key('library-heading'),
@@ -709,48 +797,104 @@ class _GroupHeader extends ConsumerWidget {
                         onPressed: () => ref
                             .read(libraryViewProvider.notifier)
                             .toggleCollapsed(group.key),
-                        builder: (context, state) => Row(
-                          children: [
-                            Text(group.label, style: style.groupTitle),
-                            const SizedBox(width: 8),
-                            Text(
-                              '${group.entries.length}',
-                              style: style.caption.copyWith(
+                        builder: (context, state) => LayoutBuilder(
+                          builder: (context, constraints) => Row(
+                            children: [
+                              ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth: constraints.maxWidth * 0.6,
+                                ),
+                                child: Text(
+                                  group.label,
+                                  style: style.groupTitle,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${group.entries.length}',
+                                style: style.caption.copyWith(
+                                  color: tokens.muted,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        tokens.borderStrong,
+                                        tokens.borderStrong.withAlpha(0),
+                                      ],
+                                    ),
+                                  ),
+                                  child: const SizedBox(height: 1),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Icon(
+                                collapsed
+                                    ? Icons.chevron_right
+                                    : Icons.expand_more,
+                                size: 18,
                                 color: tokens.muted,
                               ),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      tokens.borderStrong,
-                                      tokens.borderStrong.withAlpha(0),
-                                    ],
-                                  ),
-                                ),
-                                child: const SizedBox(height: 1),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Icon(
-                              collapsed
-                                  ? Icons.chevron_right
-                                  : Icons.expand_more,
-                              size: 18,
-                              color: tokens.muted,
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
+                    const SizedBox(width: 4),
+                    _EntryOrderMenu(group: group),
                   ],
                 ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The order of the games of one group, at the end of its header: "As
+/// sorted" keeps the order of the sort, the others order only this group
+/// ([EntryOrder]).
+class _EntryOrderMenu extends ConsumerWidget {
+  const _EntryOrderMenu({required this.group});
+
+  final LibraryGroup group;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final current = ref.watch(
+      libraryViewProvider.select((view) => view.entryOrders[group.key]),
+    );
+    final notifier = ref.read(libraryViewProvider.notifier);
+    return ShelfMenuAnchor(
+      entries: [
+        ShelfMenuItem(
+          label: 'As sorted',
+          checked: current == null,
+          onSelected: () => notifier.setEntryOrder(group.key, null),
+        ),
+        const ShelfMenuDivider(),
+        for (final order in EntryOrder.values)
+          ShelfMenuItem(
+            label: order.label,
+            checked: current == order,
+            onSelected: () => notifier.setEntryOrder(group.key, order),
+          ),
+      ],
+      builder: (context, controller) => ShelfIconButton(
+        key: Key('group-entry-order-${group.key}'),
+        icon: Icons.sort,
+        tooltip: current == null
+            ? 'Order of ${group.label}'
+            : 'Order of ${group.label}: ${current.label}',
+        onPressed: () =>
+            controller.isOpen ? controller.close() : controller.open(),
       ),
     );
   }
@@ -862,6 +1006,7 @@ class _GroupBody extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: _gutter),
             sliver: ShelfCoverSliverGrid(
               extraHeight: ref.watch(backlogScopeProvider) == null ? 44 : 92,
+              minCoverWidth: ref.watch(coverSizeProvider).minWidth,
               itemCount: shownCount,
               itemBuilder: (context, index) => _revealable(
                 revealed,
