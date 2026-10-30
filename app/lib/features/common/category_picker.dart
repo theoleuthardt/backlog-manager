@@ -21,18 +21,34 @@ const _panelWidth = 288.0;
 /// category it has, a popover that toggles the existing categories or creates
 /// a new one and adds it at once, and the manage sheet. Changes are saved at
 /// once and independent of the entry form.
+///
+/// [CategoryPicker.pending] does the same for a game that does not exist yet
+/// (the creation tool): the chosen categories are only held in [selected]
+/// and reported through [onSelectedChanged]; a new category is still created
+/// at once, since it belongs to the backlog.
 class CategoryPicker extends ConsumerWidget {
-  const CategoryPicker({required this.entryId, this.spaceId, super.key});
+  const CategoryPicker({required int this.entryId, this.spaceId, super.key})
+    : selected = null,
+      onSelectedChanged = null;
 
-  final int entryId;
+  const CategoryPicker.pending({
+    required Set<int> this.selected,
+    required ValueChanged<Set<int>> this.onSelectedChanged,
+    this.spaceId,
+    super.key,
+  }) : entryId = null;
+
+  final int? entryId;
 
   /// The Shared Space the game lives in; null for the personal backlog.
   final int? spaceId;
 
+  final Set<int>? selected;
+  final ValueChanged<Set<int>>? onSelectedChanged;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final byEntry = ref.watch(entryCategoriesProvider(spaceId)).value;
-    final assigned = byEntry?[entryId] ?? const <Category>[];
+    final assigned = _assigned(ref, entryId, spaceId, selected);
 
     return Wrap(
       spacing: 8,
@@ -46,7 +62,12 @@ class CategoryPicker extends ConsumerWidget {
                 _setAssigned(context, ref, category.id, assigned: false),
           ),
         ShelfPopover(
-          content: _CategoryPanel(entryId: entryId, spaceId: spaceId),
+          content: _CategoryPanel(
+            entryId: entryId,
+            spaceId: spaceId,
+            selected: selected,
+            onSelectedChanged: onSelectedChanged,
+          ),
           builder: (context, controller) => ShelfButton(
             key: const Key('category-add'),
             label: 'Category',
@@ -71,10 +92,19 @@ class CategoryPicker extends ConsumerWidget {
     int categoryId, {
     required bool assigned,
   }) async {
+    final selected = this.selected;
+    if (selected != null) {
+      onSelectedChanged?.call(
+        assigned
+            ? {...selected, categoryId}
+            : ({...selected}..remove(categoryId)),
+      );
+      return;
+    }
     try {
       await ref
           .read(categoryActionsProvider(spaceId))
-          .setAssigned(entryId, categoryId, assigned: assigned);
+          .setAssigned(entryId!, categoryId, assigned: assigned);
     } on Object catch (error) {
       if (context.mounted) {
         showShelfToast(
@@ -150,11 +180,37 @@ class _CategoryChip extends StatelessWidget {
   }
 }
 
-class _CategoryPanel extends ConsumerStatefulWidget {
-  const _CategoryPanel({required this.entryId, required this.spaceId});
+/// The categories the game has: those of [entryId] in the backlog, or the
+/// chosen ones of a game that does not exist yet ([selected]).
+List<Category> _assigned(
+  WidgetRef ref,
+  int? entryId,
+  int? spaceId,
+  Set<int>? selected,
+) {
+  if (selected != null) {
+    final categories = ref.watch(categoriesProvider(spaceId)).value ?? const [];
+    return [
+      for (final category in categories)
+        if (selected.contains(category.id)) category,
+    ];
+  }
+  final byEntry = ref.watch(entryCategoriesProvider(spaceId)).value;
+  return byEntry?[entryId] ?? const <Category>[];
+}
 
-  final int entryId;
+class _CategoryPanel extends ConsumerStatefulWidget {
+  const _CategoryPanel({
+    required this.entryId,
+    required this.spaceId,
+    required this.selected,
+    required this.onSelectedChanged,
+  });
+
+  final int? entryId;
   final int? spaceId;
+  final Set<int>? selected;
+  final ValueChanged<Set<int>>? onSelectedChanged;
 
   @override
   ConsumerState<_CategoryPanel> createState() => _CategoryPanelState();
@@ -185,10 +241,19 @@ class _CategoryPanelState extends ConsumerState<_CategoryPanel> {
       !_creating && _name.text.trim().isNotEmpty && _error.isEmpty;
 
   Future<void> _toggle(int categoryId, {required bool assigned}) async {
+    final selected = widget.selected;
+    if (selected != null) {
+      widget.onSelectedChanged?.call(
+        assigned
+            ? {...selected, categoryId}
+            : ({...selected}..remove(categoryId)),
+      );
+      return;
+    }
     try {
       await ref
           .read(categoryActionsProvider(widget.spaceId))
-          .setAssigned(widget.entryId, categoryId, assigned: assigned);
+          .setAssigned(widget.entryId!, categoryId, assigned: assigned);
     } on Object catch (error) {
       if (mounted) {
         showShelfToast(
@@ -225,8 +290,13 @@ class _CategoryPanelState extends ConsumerState<_CategoryPanel> {
       _name.clear();
     });
     _nameFocus.requestFocus();
+    final selected = widget.selected;
+    if (selected != null) {
+      widget.onSelectedChanged?.call({...selected, created.id});
+      return;
+    }
     try {
-      await actions.setAssigned(widget.entryId, created.id, assigned: true);
+      await actions.setAssigned(widget.entryId!, created.id, assigned: true);
     } on Object catch (error) {
       if (!mounted) return;
       final reason = ApiException.from(error, 'an error occurred').message;
@@ -244,9 +314,13 @@ class _CategoryPanelState extends ConsumerState<_CategoryPanel> {
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
     final categories =
         ref.watch(categoriesProvider(widget.spaceId)).value ?? const [];
-    final byEntry = ref.watch(entryCategoriesProvider(widget.spaceId)).value;
     final assignedIds = {
-      for (final category in byEntry?[widget.entryId] ?? const <Category>[])
+      for (final category in _assigned(
+        ref,
+        widget.entryId,
+        widget.spaceId,
+        widget.selected,
+      ))
         category.id,
     };
     final color = _color ?? nextCategoryColor(categories.length);
