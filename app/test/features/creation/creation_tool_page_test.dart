@@ -928,6 +928,21 @@ void main() {
       );
     });
 
+    testWidgets('says when the search of a title failed', (tester) async {
+      await openBatch(
+        tester,
+        titles: ['Hades', 'Offline Game'],
+        setUp: (api, games) => games.onSearch = (term, deep) async =>
+            term == 'Hades' ? [result(1, 'Hades')] : throw Exception('offline'),
+      );
+
+      expect(
+        find.text('The search failed - a custom game for now'),
+        findsOneWidget,
+      );
+      expect(find.text('No match found - a custom game'), findsNothing);
+    });
+
     testWidgets('folds out the normal form of a game', (tester) async {
       await openBatch(tester);
 

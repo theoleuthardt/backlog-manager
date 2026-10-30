@@ -119,7 +119,7 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
 
   /// Searches every title of the batch, [_batchSearches] at a time, and makes
   /// a draft of its best result, or a custom game when the search finds
-  /// nothing or fails.
+  /// nothing or fails (marked, so "Wrong Game?" can search it again).
   Future<void> _lookUp(List<String> titles) async {
     final container = ProviderScope.containerOf(context, listen: false);
     final drafts = List<CreationDraft?>.filled(titles.length, null);
@@ -129,18 +129,21 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
         final index = next++;
         final title = titles[index];
         List<GameSearchResult> results;
+        var failed = false;
         try {
           results = await container.read(
             gameSearchProvider((term: title, deep: false)).future,
           );
         } on Object {
           results = const [];
+          failed = true;
         }
         final best = results.firstOrNull;
         drafts[index] = CreationDraft(
           best == null
               ? CreationPrefill(custom: true, title: title)
               : CreationPrefill.fromResult(best),
+          searchFailed: failed,
         );
         if (mounted) setState(() => _searched++);
       }
@@ -207,10 +210,11 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
   Future<(bool, List<String>)> _create(
     CreationDraft draft,
     CreationInput input,
+    CreationTarget target,
   ) async {
     final container = ProviderScope.containerOf(context, listen: false);
     final entry = buildNewEntry(input, draft.prefill);
-    final scopes = _targetOf(draft).scopes(_activeSpaceId);
+    final scopes = target.scopes(_activeSpaceId);
     final existing = [
       for (final scope in scopes)
         ...await container
@@ -261,7 +265,7 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
     _leave?.cancel();
     setState(() => _state = _CreateState.creating);
     try {
-      final (created, unsaved) = await _create(draft, input);
+      final (created, unsaved) = await _create(draft, input, _targetOf(draft));
       if (!created || !mounted) return;
       _finished(
         unsaved.isEmpty
@@ -278,22 +282,35 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
   }
 
   /// Checks every game of the batch first (the first one that is not
-  /// complete is opened and named), then creates them one after the other.
+  /// complete is opened and named), then creates them one after the other
+  /// with the defaults as they were when it started; the list is locked
+  /// meanwhile.
   /// The games that were created leave the list; the others stay, with what
   /// went wrong in the toast.
   Future<void> _submitBatch() async {
     final drafts = _drafts;
     if (drafts == null || drafts.isEmpty) return;
     final container = ProviderScope.containerOf(context, listen: false);
+    final defaultStatus = _defaultStatus;
+    final targets = {for (final draft in drafts) draft: _targetOf(draft)};
     _leave?.cancel();
     setState(() => _state = _CreateState.creating);
     final inputs = <CreationDraft, CreationInput>{};
+    var next = 0;
+    Future<void> worker() async {
+      while (next < drafts.length) {
+        final draft = drafts[next++];
+        inputs[draft] = await draft.resolve(
+          container,
+          fallbackStatus: defaultStatus,
+        );
+      }
+    }
+
+    await Future.wait([for (var i = 0; i < _batchSearches; i++) worker()]);
+    if (!mounted) return;
     for (final draft in drafts) {
-      final input = await draft.resolve(
-        container,
-        fallbackStatus: _defaultStatus,
-      );
-      if (!mounted) return;
+      final input = inputs[draft]!;
       final problem = validateCreation(input);
       if (problem != null) {
         setState(() {
@@ -304,14 +321,17 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
         _toast(title.isEmpty ? problem : '$title: $problem');
         return;
       }
-      inputs[draft] = input;
     }
     final done = <CreationDraft>[];
     final failures = <String>[];
     final unsaved = <String>{};
     for (final draft in drafts) {
       try {
-        final (created, missing) = await _create(draft, inputs[draft]!);
+        final (created, missing) = await _create(
+          draft,
+          inputs[draft]!,
+          targets[draft]!,
+        );
         if (!mounted) return;
         if (created) {
           done.add(draft);
@@ -460,95 +480,101 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
     final spaceId = _defaultTarget == CreationTarget.space
         ? _activeSpaceId
         : null;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ShelfFormGroup(
-          title: 'For all games',
-          description: 'Each game can change these for itself in its own form.',
-          rows: [
-            if (_activeSpaceId != null)
+    final busy =
+        _state == _CreateState.creating || _state == _CreateState.created;
+    return IgnorePointer(
+      ignoring: busy,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ShelfFormGroup(
+            title: 'For all games',
+            description:
+                'Each game can change these for itself in its own form.',
+            rows: [
+              if (_activeSpaceId != null)
+                ShelfFormRow(
+                  label: 'Add to',
+                  control: SizedBox(
+                    width: 220,
+                    child: ShelfMenuAnchor(
+                      entries: [
+                        for (final (target, label) in [
+                          (CreationTarget.personal, 'My Backlog'),
+                          (CreationTarget.space, 'Shared Space'),
+                          (CreationTarget.both, 'Both'),
+                        ])
+                          ShelfMenuItem(
+                            label: label,
+                            checked: _defaultTarget == target,
+                            onSelected: () =>
+                                setState(() => _defaultTargetChosen = target),
+                          ),
+                      ],
+                      builder: (context, controller) => ShelfSelectTrigger(
+                        key: const Key('batch-target'),
+                        text: switch (_defaultTarget) {
+                          CreationTarget.personal => 'My Backlog',
+                          CreationTarget.space => 'Shared Space',
+                          CreationTarget.both => 'Both',
+                        },
+                        semanticLabel: 'Add to',
+                        onPressed: () => controller.isOpen
+                            ? controller.close()
+                            : controller.open(),
+                      ),
+                    ),
+                  ),
+                ),
               ShelfFormRow(
-                label: 'Add to',
+                label: 'Status',
                 control: SizedBox(
                   width: 220,
-                  child: ShelfMenuAnchor(
-                    entries: [
-                      for (final (target, label) in [
-                        (CreationTarget.personal, 'My Backlog'),
-                        (CreationTarget.space, 'Shared Space'),
-                        (CreationTarget.both, 'Both'),
-                      ])
-                        ShelfMenuItem(
-                          label: label,
-                          checked: _defaultTarget == target,
-                          onSelected: () =>
-                              setState(() => _defaultTargetChosen = target),
-                        ),
-                    ],
-                    builder: (context, controller) => ShelfSelectTrigger(
-                      key: const Key('batch-target'),
-                      text: switch (_defaultTarget) {
-                        CreationTarget.personal => 'My Backlog',
-                        CreationTarget.space => 'Shared Space',
-                        CreationTarget.both => 'Both',
-                      },
-                      semanticLabel: 'Add to',
-                      onPressed: () => controller.isOpen
-                          ? controller.close()
-                          : controller.open(),
+                  child: KeyedSubtree(
+                    key: const Key('batch-status'),
+                    child: StatusSelect(
+                      spaceId: spaceId,
+                      value: _defaultStatus,
+                      onChanged: (status) =>
+                          setState(() => _defaultStatus = status),
                     ),
                   ),
                 ),
               ),
-            ShelfFormRow(
-              label: 'Status',
-              control: SizedBox(
-                width: 220,
-                child: KeyedSubtree(
-                  key: const Key('batch-status'),
-                  child: StatusSelect(
-                    spaceId: spaceId,
-                    value: _defaultStatus,
-                    onChanged: (status) =>
-                        setState(() => _defaultStatus = status),
-                  ),
-                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (drafts.isEmpty)
+            Text(
+              'No games left in this list.',
+              key: const Key('batch-empty'),
+              style: style.control.copyWith(color: tokens.muted),
+            ),
+          for (final (index, draft) in drafts.indexed) ...[
+            _BatchItem(
+              key: ValueKey(draft),
+              index: index,
+              draft: draft,
+              open: _open.contains(draft),
+              busy: _state == _CreateState.creating,
+              onToggle: () => setState(
+                () => _open.contains(draft)
+                    ? _open.remove(draft)
+                    : _open.add(draft),
+              ),
+              onWrongGame: () => unawaited(_wrongGame(draft)),
+              onRemove: () => _remove(draft),
+              form: CreationGameForm(
+                draft: draft,
+                fallbackStatus: _defaultStatus,
+                fallbackTarget: _defaultTarget,
+                busy: _state == _CreateState.creating,
               ),
             ),
+            const SizedBox(height: 10),
           ],
-        ),
-        const SizedBox(height: 16),
-        if (drafts.isEmpty)
-          Text(
-            'No games left in this list.',
-            key: const Key('batch-empty'),
-            style: style.control.copyWith(color: tokens.muted),
-          ),
-        for (final (index, draft) in drafts.indexed) ...[
-          _BatchItem(
-            key: ValueKey(draft),
-            index: index,
-            draft: draft,
-            open: _open.contains(draft),
-            busy: _state == _CreateState.creating,
-            onToggle: () => setState(
-              () => _open.contains(draft)
-                  ? _open.remove(draft)
-                  : _open.add(draft),
-            ),
-            onWrongGame: () => unawaited(_wrongGame(draft)),
-            onRemove: () => _remove(draft),
-            form: CreationGameForm(
-              draft: draft,
-              fallbackStatus: _defaultStatus,
-              fallbackTarget: _defaultTarget,
-              busy: _state == _CreateState.creating,
-            ),
-          ),
-          const SizedBox(height: 10),
         ],
-      ],
+      ),
     );
   }
 
@@ -640,7 +666,9 @@ class _BatchItem extends StatelessWidget {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
     final prefill = draft.prefill;
-    final summary = prefill.custom
+    final summary = draft.searchFailed
+        ? 'The search failed - a custom game for now'
+        : prefill.custom
         ? 'No match found - a custom game'
         : [
             if (prefill.platformOptions.isNotEmpty)

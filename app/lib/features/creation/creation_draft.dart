@@ -17,7 +17,7 @@ String _hours(double value) =>
 /// status and the target are null until the user chose them for this game;
 /// until then the defaults of the page apply.
 class CreationDraft extends ChangeNotifier {
-  CreationDraft(this.prefill)
+  CreationDraft(this.prefill, {this.searchFailed = false})
     : title = TextEditingController(text: prefill.title),
       genre = TextEditingController(text: prefill.genres),
       publisher = TextEditingController(text: prefill.publisher),
@@ -38,6 +38,10 @@ class CreationDraft extends ChangeNotifier {
       ];
 
   final CreationPrefill prefill;
+
+  /// Whether the search of a game of a batch failed, so [prefill] is a custom
+  /// game only for now.
+  final bool searchFailed;
   final TextEditingController title;
   final TextEditingController genre;
   final TextEditingController publisher;

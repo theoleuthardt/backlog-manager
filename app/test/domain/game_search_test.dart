@@ -204,6 +204,13 @@ void main() {
       expect(uri.queryParameters.containsKey('target'), isFalse);
     });
 
+    test('keeps titles with characters of an address', () {
+      const titles = ['D&D Dark Alliance', '100% Orange Juice', 'C++ #1 = ?'];
+      final uri = Uri.parse(batchCreationLocation(titles));
+
+      expect(batchTitles(uri.queryParameters['batch']!), titles);
+    });
+
     test('names the Shared Space as the target inside a space', () {
       final uri = Uri.parse(batchCreationLocation(['Hades'], inSpace: true));
 
