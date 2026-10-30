@@ -197,7 +197,9 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
   /// Checks the duplicates of [draft] in each of its backlogs, asks when
   /// there are some, and creates it: true with what could not be saved after
   /// the entry existed, false when the user did not want it or the page is
-  /// gone. A failure is thrown.
+  /// gone. A failure is thrown. One game frees the page while it asks, so a
+  /// declined duplicate leaves the form to change; a batch stays busy until
+  /// every game had its turn.
   Future<(bool, List<String>)> _create(
     CreationDraft draft,
     CreationInput input,
@@ -213,15 +215,14 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
     ];
     if (existing.isNotEmpty) {
       if (!mounted) return (false, const <String>[]);
-      final state = _state;
-      setState(() => _state = _CreateState.idle);
+      if (!_isBatch) setState(() => _state = _CreateState.idle);
       final proceed = await confirmDuplicate(
         context,
         existing: existing,
         proposed: entry,
       );
       if (!proceed || !mounted) return (false, const <String>[]);
-      setState(() => _state = state);
+      if (!_isBatch) setState(() => _state = _CreateState.creating);
     }
     if (!mounted) return (false, const <String>[]);
     final unsaved = await createEntryIn(

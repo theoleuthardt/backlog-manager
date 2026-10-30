@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:backlog_manager/data/games_api.dart';
 import 'package:backlog_manager/data/space_api.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
+import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/routing/router.dart';
@@ -994,6 +995,37 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Hades II'), findsOneWidget);
+    });
+
+    testWidgets('a declined duplicate keeps the page busy until the rest is '
+        'created', (tester) async {
+      final tool = await openBatch(
+        tester,
+        titles: ['Hades', 'Celeste'],
+        setUp: (api, games) =>
+            api.onDuplicates = (title, steamAppId, spaceId) =>
+                title == 'Hades' ? [backlog.first] : const [],
+      );
+
+      await chooseDefaultStatus(tester, 'Not Started');
+      await tester.tap(find.byKey(const Key('creation-submit')));
+      await tester.pumpAndSettle();
+      expect(find.text('Do not Add'), findsOneWidget);
+      expect(
+        tester
+            .widget<ShelfButton>(find.byKey(const Key('creation-submit')))
+            .onPressed,
+        isNull,
+      );
+
+      await tester.tap(find.text('Do not Add'));
+      await tester.pumpAndSettle();
+
+      expect([for (final r in tool.api.created) r.title], ['Celeste']);
+      expect(find.byKey(const Key('batch-item-0')), findsOneWidget);
+      expect(find.byKey(const Key('batch-item-1')), findsNothing);
+      expect(find.text('Add 1 Game'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 6));
     });
 
     testWidgets('a game that fails stays in the list', (tester) async {
