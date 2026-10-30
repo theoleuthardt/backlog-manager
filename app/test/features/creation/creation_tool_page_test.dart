@@ -943,6 +943,51 @@ void main() {
       expect(find.text('No match found - a custom game'), findsNothing);
     });
 
+    testWidgets('cannot be submitted while the titles are looked up', (
+      tester,
+    ) async {
+      final search = Completer<List<GameSearchResult>>();
+      await openTool(
+        tester,
+        location: batchCreationLocation(['Hades']),
+        settle: false,
+        setUp: (api, games) => games.onSearch = (term, deep) => search.future,
+      );
+      await tester.pump();
+
+      expect(find.byKey(const Key('batch-searching')), findsOneWidget);
+      expect(
+        tester
+            .widget<ShelfButton>(find.byKey(const Key('creation-submit')))
+            .onPressed,
+        isNull,
+      );
+      search.complete([result(1, 'Hades')]);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('batch-item-0')), findsOneWidget);
+    });
+
+    testWidgets('a Steam lookup that fails does not stop the game', (
+      tester,
+    ) async {
+      final tool = await openBatch(
+        tester,
+        titles: ['Hades'],
+        setUp: (api, games) =>
+            games.onSteamAppId = (title) async => throw Exception('steam'),
+      );
+
+      await chooseDefaultStatus(tester, 'Not Started');
+      await submit(tester);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+
+      final request = tool.api.created.single;
+      expect(request.steamAppId, isNull);
+      expect(request.playtime, '0.0');
+      await tester.pump(const Duration(seconds: 6));
+    });
+
     testWidgets('folds out the normal form of a game', (tester) async {
       await openBatch(tester);
 

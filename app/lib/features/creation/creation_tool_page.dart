@@ -485,96 +485,99 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
         _state == _CreateState.creating || _state == _CreateState.created;
     return IgnorePointer(
       ignoring: busy,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          ShelfFormGroup(
-            title: 'For all games',
-            description:
-                'Each game can change these for itself in its own form.',
-            rows: [
-              if (_activeSpaceId != null)
+      child: ExcludeFocus(
+        excluding: busy,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ShelfFormGroup(
+              title: 'For all games',
+              description:
+                  'Each game can change these for itself in its own form.',
+              rows: [
+                if (_activeSpaceId != null)
+                  ShelfFormRow(
+                    label: 'Add to',
+                    control: SizedBox(
+                      width: 220,
+                      child: ShelfMenuAnchor(
+                        entries: [
+                          for (final (target, label) in [
+                            (CreationTarget.personal, 'My Backlog'),
+                            (CreationTarget.space, 'Shared Space'),
+                            (CreationTarget.both, 'Both'),
+                          ])
+                            ShelfMenuItem(
+                              label: label,
+                              checked: _defaultTarget == target,
+                              onSelected: () =>
+                                  setState(() => _defaultTargetChosen = target),
+                            ),
+                        ],
+                        builder: (context, controller) => ShelfSelectTrigger(
+                          key: const Key('batch-target'),
+                          text: switch (_defaultTarget) {
+                            CreationTarget.personal => 'My Backlog',
+                            CreationTarget.space => 'Shared Space',
+                            CreationTarget.both => 'Both',
+                          },
+                          semanticLabel: 'Add to',
+                          onPressed: () => controller.isOpen
+                              ? controller.close()
+                              : controller.open(),
+                        ),
+                      ),
+                    ),
+                  ),
                 ShelfFormRow(
-                  label: 'Add to',
+                  label: 'Status',
                   control: SizedBox(
                     width: 220,
-                    child: ShelfMenuAnchor(
-                      entries: [
-                        for (final (target, label) in [
-                          (CreationTarget.personal, 'My Backlog'),
-                          (CreationTarget.space, 'Shared Space'),
-                          (CreationTarget.both, 'Both'),
-                        ])
-                          ShelfMenuItem(
-                            label: label,
-                            checked: _defaultTarget == target,
-                            onSelected: () =>
-                                setState(() => _defaultTargetChosen = target),
-                          ),
-                      ],
-                      builder: (context, controller) => ShelfSelectTrigger(
-                        key: const Key('batch-target'),
-                        text: switch (_defaultTarget) {
-                          CreationTarget.personal => 'My Backlog',
-                          CreationTarget.space => 'Shared Space',
-                          CreationTarget.both => 'Both',
-                        },
-                        semanticLabel: 'Add to',
-                        onPressed: () => controller.isOpen
-                            ? controller.close()
-                            : controller.open(),
+                    child: KeyedSubtree(
+                      key: const Key('batch-status'),
+                      child: StatusSelect(
+                        spaceId: spaceId,
+                        value: _defaultStatus,
+                        onChanged: (status) =>
+                            setState(() => _defaultStatus = status),
                       ),
                     ),
                   ),
                 ),
-              ShelfFormRow(
-                label: 'Status',
-                control: SizedBox(
-                  width: 220,
-                  child: KeyedSubtree(
-                    key: const Key('batch-status'),
-                    child: StatusSelect(
-                      spaceId: spaceId,
-                      value: _defaultStatus,
-                      onChanged: (status) =>
-                          setState(() => _defaultStatus = status),
-                    ),
-                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (drafts.isEmpty)
+              Text(
+                'No games left in this list.',
+                key: const Key('batch-empty'),
+                style: style.control.copyWith(color: tokens.muted),
+              ),
+            for (final (index, draft) in drafts.indexed) ...[
+              _BatchItem(
+                key: ValueKey(draft),
+                index: index,
+                draft: draft,
+                open: _open.contains(draft),
+                busy: _state == _CreateState.creating,
+                onToggle: () => setState(
+                  () => _open.contains(draft)
+                      ? _open.remove(draft)
+                      : _open.add(draft),
+                ),
+                onWrongGame: () => unawaited(_wrongGame(draft)),
+                onRemove: () => _remove(draft),
+                form: CreationGameForm(
+                  draft: draft,
+                  fallbackStatus: _defaultStatus,
+                  fallbackTarget: _defaultTarget,
+                  busy: _state == _CreateState.creating,
                 ),
               ),
+              const SizedBox(height: 10),
             ],
-          ),
-          const SizedBox(height: 16),
-          if (drafts.isEmpty)
-            Text(
-              'No games left in this list.',
-              key: const Key('batch-empty'),
-              style: style.control.copyWith(color: tokens.muted),
-            ),
-          for (final (index, draft) in drafts.indexed) ...[
-            _BatchItem(
-              key: ValueKey(draft),
-              index: index,
-              draft: draft,
-              open: _open.contains(draft),
-              busy: _state == _CreateState.creating,
-              onToggle: () => setState(
-                () => _open.contains(draft)
-                    ? _open.remove(draft)
-                    : _open.add(draft),
-              ),
-              onWrongGame: () => unawaited(_wrongGame(draft)),
-              onRemove: () => _remove(draft),
-              form: CreationGameForm(
-                draft: draft,
-                fallbackStatus: _defaultStatus,
-                fallbackTarget: _defaultTarget,
-                busy: _state == _CreateState.creating,
-              ),
-            ),
-            const SizedBox(height: 10),
           ],
-        ],
+        ),
       ),
     );
   }
