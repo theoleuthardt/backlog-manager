@@ -37,11 +37,21 @@ class CreationPrefill {
     );
   }
 
-  /// What the creation tool reads from the address of [result]
-  /// ([creationToolLocation]), for a game of a batch.
+  /// The prefill of [result] for a game of a batch, like the one the address
+  /// of [creationToolLocation] carries but with the whole description.
   factory CreationPrefill.fromResult(GameSearchResult result) =>
-      CreationPrefill.fromQuery(
-        Uri.parse(creationToolLocation(result)).queryParameters,
+      CreationPrefill(
+        custom: false,
+        title: result.title,
+        imageUrl: result.imageUrl ?? '',
+        description: result.description ?? '',
+        publisher: result.publisher ?? '',
+        trailerUrl: result.trailerUrl ?? '',
+        genres: result.genres.join(', '),
+        platforms: result.platforms.join(', '),
+        mainStory: result.mainStory,
+        mainStoryWithExtras: result.mainStoryWithExtras,
+        completionist: result.completionist,
       );
 
   final bool custom;

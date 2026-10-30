@@ -340,5 +340,23 @@ void main() {
       expect(prefill.mainStory, 22);
       expect(prefill.publisher, 'Supergiant Games');
     });
+
+    test('keeps the whole description, which no address has to carry', () {
+      final long = 'x' * 900;
+      final prefill = CreationPrefill.fromResult(
+        GameSearchResult(
+          id: 1,
+          title: 'Hades',
+          genres: const [],
+          platforms: const [],
+          mainStory: 0,
+          mainStoryWithExtras: 0,
+          completionist: 0,
+          description: long,
+        ),
+      );
+
+      expect(prefill.description, long);
+    });
   });
 }
