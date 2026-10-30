@@ -8,18 +8,30 @@ import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/features/creation/field_diff_list.dart';
 import 'package:flutter/material.dart';
 
+/// What the user chose for a game that looks like one of the backlog.
+enum DuplicateChoice { skip, add, addWithoutSteamAppId }
+
+/// Whether one of [existing] has the Steam App ID of [proposed]: a backlog
+/// holds each Steam App ID once (the Steam playtime sync relies on it), so
+/// such a game can only be added without it.
+bool sharesSteamAppId(List<BacklogEntry> existing, NewEntry proposed) {
+  final appId = proposed.steamAppId;
+  return appId != null && existing.any((entry) => entry.steamAppId == appId);
+}
+
 /// Asks whether to create [proposed] although [existing] looks like the same
-/// game; the future is true for "Add Anyway".
-Future<bool> confirmDuplicate(
+/// game: "Add Anyway", or "Add without Steam App ID" when one of them has the
+/// same Steam App ID ([sharesSteamAppId]).
+Future<DuplicateChoice> confirmDuplicate(
   BuildContext context, {
   required List<BacklogEntry> existing,
   required NewEntry proposed,
 }) async {
-  final result = await showShelfSheet<bool>(
+  final result = await showShelfSheet<DuplicateChoice>(
     context,
     builder: (_) => DuplicateSheet(existing: existing, proposed: proposed),
   );
-  return result ?? false;
+  return result ?? DuplicateChoice.skip;
 }
 
 /// "Duplicate found": the entries that look the same, each with what differs
@@ -57,20 +69,29 @@ class DuplicateSheet extends StatelessWidget {
       reviewStars: proposed.reviewStars,
       note: proposed.note,
     );
+    final sameAppId = sharesSteamAppId(existing, proposed);
+    final already = existing.length == 1
+        ? 'This game is already in your backlog.'
+        : 'These games are already in your backlog.';
     return ShelfSheet(
       title: 'Duplicate found',
-      description: existing.length == 1
-          ? 'This game is already in your backlog.'
-          : 'These games are already in your backlog.',
+      description: sameAppId
+          ? '$already It has the same Steam App ID, which a backlog holds '
+                'once, so the new entry can only be added without it.'
+          : already,
       width: ShelfSheetWidth.standard,
       footer: ShelfSheetFooter(
         cancelLabel: 'Do not Add',
-        onCancel: () => Navigator.of(context).pop(false),
+        onCancel: () => Navigator.of(context).pop(DuplicateChoice.skip),
         primary: ShelfButton(
           key: const Key('duplicate-add-anyway'),
-          label: 'Add Anyway',
+          label: sameAppId ? 'Add without Steam App ID' : 'Add Anyway',
           kind: ShelfButtonKind.primary,
-          onPressed: () => Navigator.of(context).pop(true),
+          onPressed: () => Navigator.of(context).pop(
+            sameAppId
+                ? DuplicateChoice.addWithoutSteamAppId
+                : DuplicateChoice.add,
+          ),
         ),
       ),
       child: Column(

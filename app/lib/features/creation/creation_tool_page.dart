@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:backlog_manager/api/api_error.dart';
-import 'package:backlog_manager/api/mappers.dart';
 import 'package:backlog_manager/data/backlog_api.dart';
 import 'package:backlog_manager/data/game_info_providers.dart';
 import 'package:backlog_manager/data/space_api.dart';
@@ -18,6 +17,7 @@ import 'package:backlog_manager/design/widgets/select.dart';
 import 'package:backlog_manager/design/widgets/toast.dart';
 import 'package:backlog_manager/domain/creation_form.dart';
 import 'package:backlog_manager/domain/game_search.dart';
+import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/features/add_game/game_result_parts.dart';
 import 'package:backlog_manager/features/add_game/wrong_game_sheet.dart';
 import 'package:backlog_manager/features/common/status_select.dart';
@@ -217,28 +217,39 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
     final container = ProviderScope.containerOf(context, listen: false);
     final entry = buildNewEntry(input, draft.prefill);
     final scopes = target.scopes(_activeSpaceId);
-    final existing = [
+    final existingIn = <int?, List<BacklogEntry>>{
       for (final scope in scopes)
-        ...await container
+        scope: await container
             .read(backlogApiProvider)
             .duplicates(entry.title, entry.steamAppId, scope),
-    ];
+    };
+    final existing = [for (final found in existingIn.values) ...found];
+    var withoutSteamAppIdIn = const <int?>{};
     if (existing.isNotEmpty) {
       if (!mounted) return (false, const <String>[]);
       if (!_isBatch) setState(() => _state = _CreateState.idle);
-      final proceed = await confirmDuplicate(
+      final choice = await confirmDuplicate(
         context,
         existing: existing,
         proposed: entry,
       );
-      if (!proceed || !mounted) return (false, const <String>[]);
+      if (choice == DuplicateChoice.skip || !mounted) {
+        return (false, const <String>[]);
+      }
+      if (choice == DuplicateChoice.addWithoutSteamAppId) {
+        withoutSteamAppIdIn = {
+          for (final MapEntry(key: scope, value: found) in existingIn.entries)
+            if (sharesSteamAppId(found, entry)) scope,
+        };
+      }
       if (!_isBatch) setState(() => _state = _CreateState.creating);
     }
     if (!mounted) return (false, const <String>[]);
     final unsaved = await createEntryIn(
       container,
       scopes: scopes,
-      request: createRequestFrom(entry),
+      entry: entry,
+      withoutSteamAppIdIn: withoutSteamAppIdIn,
       categories: {
         for (final scope in scopes) scope: {...?draft.categories[scope]},
       },

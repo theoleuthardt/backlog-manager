@@ -219,6 +219,28 @@ class NewEntry {
   final int? reviewStars;
   final String? review;
   final String? note;
+
+  /// This entry without its Steam App ID, for a backlog that already holds
+  /// that App ID.
+  NewEntry withoutSteamAppId() => NewEntry(
+    title: title,
+    genre: genre,
+    platform: platform,
+    status: status,
+    owned: owned,
+    interest: interest,
+    playtime: playtime,
+    imageLink: imageLink,
+    description: description,
+    publisher: publisher,
+    trailerLink: trailerLink,
+    mainTime: mainTime,
+    mainPlusExtraTime: mainPlusExtraTime,
+    completionTime: completionTime,
+    reviewStars: reviewStars,
+    review: review,
+    note: note,
+  );
 }
 
 String? _blankToNull(String text) {

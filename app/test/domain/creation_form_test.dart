@@ -265,6 +265,18 @@ void main() {
       expect(buildNewEntry(input(publisher: '  '), prefill).publisher, isNull);
     });
 
+    test('withoutSteamAppId drops only the Steam App ID', () {
+      final entry = buildNewEntry(input(steamAppId: '1145360'), prefill);
+
+      final stripped = entry.withoutSteamAppId();
+
+      expect(stripped.steamAppId, isNull);
+      expect(stripped.title, entry.title);
+      expect(stripped.platform, entry.platform);
+      expect(stripped.publisher, entry.publisher);
+      expect(stripped.mainTime, entry.mainTime);
+    });
+
     test('sends only the beat times above zero', () {
       final entry = buildNewEntry(
         input(mainStory: '22', mainStoryWithExtras: '0', completionist: ''),
