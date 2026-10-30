@@ -284,7 +284,8 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
   }
 
   /// Checks every game of the batch first (the first one that is not
-  /// complete is opened and named), then creates them one after the other
+  /// complete is opened and named, before any Steam lookup runs), then
+  /// creates them one after the other
   /// with the defaults as they were when it started; the list is locked
   /// meanwhile.
   /// The games that were created leave the list; the others stay, with what
@@ -297,23 +298,14 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
     final targets = {for (final draft in drafts) draft: _targetOf(draft)};
     _leave?.cancel();
     setState(() => _state = _CreateState.creating);
-    final inputs = <CreationDraft, CreationInput>{};
-    var next = 0;
-    Future<void> worker() async {
-      while (next < drafts.length) {
-        final draft = drafts[next++];
-        inputs[draft] = await draft.resolve(
-          container,
-          fallbackStatus: defaultStatus,
-        );
-      }
-    }
-
-    await Future.wait([for (var i = 0; i < _batchSearches; i++) worker()]);
-    if (!mounted) return;
     for (final draft in drafts) {
-      final input = inputs[draft]!;
-      final problem = validateCreation(input);
+      final problem = validateCreation(
+        draft.inputWith(
+          fallbackStatus: defaultStatus,
+          steamAppIdText: '',
+          playtimeText: '0',
+        ),
+      );
       if (problem != null) {
         setState(() {
           _state = _CreateState.idle;
@@ -324,6 +316,20 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
         return;
       }
     }
+    final inputs = <CreationDraft, CreationInput>{};
+    var next = 0;
+    Future<void> worker() async {
+      while (mounted && next < drafts.length) {
+        final draft = drafts[next++];
+        inputs[draft] = await draft.resolve(
+          container,
+          fallbackStatus: defaultStatus,
+        );
+      }
+    }
+
+    await Future.wait([for (var i = 0; i < _batchSearches; i++) worker()]);
+    if (!mounted) return;
     final done = <CreationDraft>[];
     final failures = <String>[];
     final unsaved = <String>{};
