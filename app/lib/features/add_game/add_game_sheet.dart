@@ -222,12 +222,8 @@ class _AddGameSheetState extends ConsumerState<AddGameSheet> {
           count == 1 ? '1 game' : '$count games',
           style: style.caption.copyWith(color: tokens.muted),
         ),
-        if (count == maxBatchTitles &&
-            _batchText.text
-                    .split('\n')
-                    .where((line) => line.trim().isNotEmpty)
-                    .length >
-                maxBatchTitles)
+        if (batchTitles(_batchText.text, limit: maxBatchTitles + 1).length >
+            maxBatchTitles)
           Text(
             'Only the first $maxBatchTitles titles are taken.',
             style: style.caption.copyWith(color: tokens.accent),

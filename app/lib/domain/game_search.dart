@@ -97,8 +97,8 @@ String customGameLocation(String title, {bool inSpace = false}) {
 const maxBatchTitles = 50;
 
 /// The titles of a batch, one per line: trimmed, empty lines left out, each
-/// title once whatever its case, at most [maxBatchTitles].
-List<String> batchTitles(String text) {
+/// title once whatever its case, at most [limit].
+List<String> batchTitles(String text, {int limit = maxBatchTitles}) {
   final titles = <String>[];
   for (final line in text.split(RegExp(r'\r?\n'))) {
     final title = line.trim();
@@ -107,7 +107,7 @@ List<String> batchTitles(String text) {
       continue;
     }
     titles.add(title);
-    if (titles.length == maxBatchTitles) break;
+    if (titles.length == limit) break;
   }
   return titles;
 }

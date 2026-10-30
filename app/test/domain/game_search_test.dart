@@ -187,6 +187,10 @@ void main() {
       expect(batchTitles('Hades\nhades\nHADES\nCeleste'), ['Hades', 'Celeste']);
     });
 
+    test('takes another limit when asked', () {
+      expect(batchTitles('a\nb\nc', limit: 2), ['a', 'b']);
+    });
+
     test('takes at most $maxBatchTitles titles', () {
       final text = [for (var i = 0; i < maxBatchTitles + 5; i++) 'Game $i']
           .join('\n');

@@ -316,6 +316,26 @@ void main() {
       );
     });
 
+    testWidgets('does not count a repeated title as one too many', (
+      tester,
+    ) async {
+      await openSheet(tester);
+
+      await tester.tap(find.text('Batch'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('add-batch-titles')),
+        [
+          for (var i = 0; i < maxBatchTitles; i++) 'Game $i',
+          'game 0',
+        ].join('\n'),
+      );
+      await tester.pump();
+
+      expect(find.text('$maxBatchTitles games'), findsOneWidget);
+      expect(find.textContaining('Only the first'), findsNothing);
+    });
+
     testWidgets('says how many games the list holds', (tester) async {
       await openSheet(tester);
 
