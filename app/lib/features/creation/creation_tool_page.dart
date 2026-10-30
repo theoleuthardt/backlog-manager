@@ -251,12 +251,11 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
     }
     if (_isBatch) return _submitBatch();
     final draft = _single!;
-    final lookups = draftLookups(ref, draft);
-    final input = draft.inputWith(
+    final input = await draft.resolve(
+      ProviderScope.containerOf(context, listen: false),
       fallbackStatus: '',
-      steamAppIdText: lookups.steamAppId,
-      playtimeText: lookups.playtime,
     );
+    if (!mounted) return;
     final problem = validateCreation(input);
     if (problem != null) {
       _toast(problem);

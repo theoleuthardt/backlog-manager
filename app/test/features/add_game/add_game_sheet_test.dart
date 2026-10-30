@@ -298,6 +298,24 @@ void main() {
       expect(find.byType(AddGameSheet), findsNothing);
     });
 
+    testWidgets('says when the list is longer than it takes', (tester) async {
+      await openSheet(tester);
+
+      await tester.tap(find.text('Batch'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('add-batch-titles')),
+        [for (var i = 0; i < maxBatchTitles + 3; i++) 'Game $i'].join('\n'),
+      );
+      await tester.pump();
+
+      expect(find.text('$maxBatchTitles games'), findsOneWidget);
+      expect(
+        find.text('Only the first $maxBatchTitles titles are taken.'),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('says how many games the list holds', (tester) async {
       await openSheet(tester);
 
