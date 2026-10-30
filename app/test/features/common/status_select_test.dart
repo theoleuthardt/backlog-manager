@@ -156,6 +156,36 @@ void main() {
       expect(current(tester), 'Paused');
     });
 
+    testWidgets('scroll on a short screen so every option stays reachable', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(732, 412);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await pumpSelect(
+        tester,
+        entries: [
+          for (var i = 0; i < 30; i++)
+            game(i + 1, 'Game $i', status: 'Imported $i'),
+        ],
+      );
+      await open(tester);
+
+      final add = find.byKey(const Key('status-add'));
+      await tester.scrollUntilVisible(
+        add,
+        100,
+        scrollable: find
+            .ancestor(of: add, matching: find.byType(Scrollable))
+            .first,
+      );
+      await tester.tap(add);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Add Status'), findsWidgets);
+    });
+
     testWidgets('choosing one selects it and closes the list', (tester) async {
       await pumpSelect(tester);
       await open(tester);
