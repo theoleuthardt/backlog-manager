@@ -119,13 +119,14 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
 
   /// Searches every title of the batch, [_batchSearches] at a time, and makes
   /// a draft of its best result, or a custom game when the search finds
-  /// nothing or fails (marked, so "Wrong Game?" can search it again).
+  /// nothing or fails (marked, so "Wrong Game?" can search it again). It
+  /// stops searching once the page is gone.
   Future<void> _lookUp(List<String> titles) async {
     final container = ProviderScope.containerOf(context, listen: false);
     final drafts = List<CreationDraft?>.filled(titles.length, null);
     var next = 0;
     Future<void> worker() async {
-      while (next < titles.length) {
+      while (mounted && next < titles.length) {
         final index = next++;
         final title = titles[index];
         List<GameSearchResult> results;
@@ -138,6 +139,7 @@ class _CreationToolPageState extends ConsumerState<CreationToolPage> {
           results = const [];
           failed = true;
         }
+        if (!mounted) return;
         final best = results.firstOrNull;
         drafts[index] = CreationDraft(
           best == null
