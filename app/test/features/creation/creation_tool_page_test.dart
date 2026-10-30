@@ -1399,6 +1399,37 @@ void main() {
       await tester.pump(const Duration(seconds: 6));
     });
 
+    testWidgets('drops the Steam App ID only where it is already', (
+      tester,
+    ) async {
+      final createdIn = <(int?, int?)>[];
+      await openTool(
+        tester,
+        overrides: withSpace(),
+        setUp: (api, games) {
+          games.onSteamAppId = (title) async => 1145360;
+          api.onDuplicates = (title, steamAppId, spaceId) => spaceId == null
+              ? const [BacklogEntry(id: 9, title: 'Hades', steamAppId: 1145360)]
+              : const <BacklogEntry>[];
+          api.onCreate = (request, spaceId) async =>
+              createdIn.add((spaceId, request.steamAppId));
+        },
+      );
+
+      await tester.tap(find.byKey(const Key('creation-target')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Both').last);
+      await tester.pumpAndSettle();
+      await chooseStatus(tester, 'In Progress');
+      await submit(tester);
+      await tester.tap(find.text('Add without Steam App ID'));
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+
+      expect(createdIn, [(null, null), (4, 1145360)]);
+      await tester.pump(const Duration(seconds: 6));
+    });
+
     testWidgets('loads my backlog again once the space has the game', (
       tester,
     ) async {

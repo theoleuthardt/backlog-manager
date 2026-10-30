@@ -1,4 +1,4 @@
-import 'package:backlog_manager/api/generated/export.dart' as wire;
+import 'package:backlog_manager/api/mappers.dart';
 import 'package:backlog_manager/data/backlog_providers.dart';
 import 'package:backlog_manager/data/entry_mod_providers.dart';
 import 'package:backlog_manager/data/game_info_providers.dart';
@@ -158,7 +158,9 @@ class CreationDraft extends ChangeNotifier {
   }
 }
 
-/// Creates [request] in each of [scopes] and adds the chosen [categories] of
+/// Creates [entry] in each of [scopes] (without its Steam App ID in those of
+/// [withoutSteamAppIdIn], which hold that App ID already) and adds the
+/// chosen [categories] of
 /// that backlog and the [mods] to it. A failure of the first entry is thrown;
 /// what fails after an entry exists is returned by name, so the user learns
 /// what to add by hand. It works on the provider container of the app, so
@@ -168,7 +170,8 @@ class CreationDraft extends ChangeNotifier {
 Future<List<String>> createEntryIn(
   ProviderContainer container, {
   required List<int?> scopes,
-  required wire.CreateBacklogEntryRequest request,
+  required NewEntry entry,
+  Set<int?> withoutSteamAppIdIn = const {},
   required Map<int?, Set<int>> categories,
   required List<ModInput> mods,
 }) async {
@@ -179,7 +182,13 @@ Future<List<String>> createEntryIn(
     try {
       created = await container
           .read(entriesProvider(scope).notifier)
-          .createEntry(request);
+          .createEntry(
+            createRequestFrom(
+              withoutSteamAppIdIn.contains(scope)
+                  ? entry.withoutSteamAppId()
+                  : entry,
+            ),
+          );
     } on Object {
       if (!createdAny) rethrow;
       unsaved.add(

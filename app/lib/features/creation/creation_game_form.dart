@@ -6,6 +6,7 @@ import 'package:backlog_manager/data/filter_providers.dart';
 import 'package:backlog_manager/data/game_info_providers.dart';
 import 'package:backlog_manager/data/space_api.dart';
 import 'package:backlog_manager/design/color_math.dart';
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
@@ -296,7 +297,7 @@ class _CreationGameFormState extends ConsumerState<CreationGameForm> {
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
     return SizedBox(
       width: width,
-      height: ShelfHeight.input,
+      height: ShelfFormFactor.heightFor(context, ShelfHeight.input),
       child: TextField(
         key: key,
         controller: controller,
