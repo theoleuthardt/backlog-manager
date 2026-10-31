@@ -308,6 +308,35 @@ void main() {
       expect(find.byKey(const Key('nav-drawer')), findsNothing);
     });
 
+    testWidgets('the rail is slim, with icons and names as tooltips', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      final app = await pumpMobile(tester, size: handheldDense);
+      await app.go(AppRoutes.library);
+      await tester.pumpAndSettle();
+
+      final rail = find.byKey(const Key('nav-rail'));
+      expect(tester.getSize(rail).width, lessThanOrEqualTo(64));
+      expect(
+        find.descendant(of: rail, matching: find.text('Library')),
+        findsNothing,
+      );
+      expect(
+        find.descendant(of: rail, matching: find.byTooltip('Library')),
+        findsOneWidget,
+      );
+      expect(
+        tester.getSemantics(find.byKey(const Key('rail-library'))),
+        isSemantics(label: 'Library', isSelected: true, isButton: true),
+      );
+      expect(
+        tester.getSemantics(find.byKey(const Key('rail-home'))),
+        isSemantics(label: 'Home', isSelected: false, isButton: true),
+      );
+      handle.dispose();
+    });
+
     testWidgets('the rail is as high as the screen', (tester) async {
       tester.view.padding = const FakeViewPadding(top: 24, bottom: 24);
       addTearDown(tester.view.resetPadding);

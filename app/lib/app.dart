@@ -1,5 +1,6 @@
 import 'package:backlog_manager/auth/biometric_gate.dart';
 import 'package:backlog_manager/design/background_motion.dart';
+import 'package:backlog_manager/design/focus_glide.dart';
 import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/glass.dart';
 import 'package:backlog_manager/design/light_effects.dart';
@@ -16,7 +17,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Root widget of the desktop client: the router, the theme, the keyboard
 /// shortcuts of the window, the start animation, the switch for the blur and
-/// the limit of the system text size ([maxTextScale]).
+/// the limit of the system text size ([maxTextScale]); on a touch screen also
+/// the swipe back of iOS and the gliding focus ring ([FocusGlideHost]).
 class BacklogManagerApp extends ConsumerWidget {
   const BacklogManagerApp({super.key});
 
@@ -38,7 +40,11 @@ class BacklogManagerApp extends ConsumerWidget {
           child: StartupSplash(
             child: ShellShortcuts(
               child: touch
-                  ? EdgeSwipeBack(child: child ?? const SizedBox.shrink())
+                  ? EdgeSwipeBack(
+                      child: FocusGlideHost(
+                        child: child ?? const SizedBox.shrink(),
+                      ),
+                    )
                   : child ?? const SizedBox.shrink(),
             ),
           ),

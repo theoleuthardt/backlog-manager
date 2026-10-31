@@ -2,6 +2,7 @@ import 'package:backlog_manager/design/glass.dart';
 import 'package:backlog_manager/design/glow.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
+import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/routing/history.dart';
 import 'package:backlog_manager/shell/navigation.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
@@ -167,7 +168,9 @@ class BottomNavBar extends ConsumerWidget {
 
 /// The rail of a phone in landscape, the handhelds and a tablet in portrait:
 /// the [primaryNavigationItems] and More, on the left edge where the height
-/// is short. Its glass runs the full height of the screen; the items keep
+/// is short. Slim like the sidebar of DroidDeck: icons only, the current
+/// section on a rounded filled square, the names as tooltips and for screen
+/// readers. Its glass runs the full height of the screen; the items keep
 /// inside the safe area.
 class ShellNavRail extends ConsumerWidget {
   const ShellNavRail({required this.location, required this.onMore, super.key});
@@ -179,7 +182,7 @@ class ShellNavRail extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return SizedBox(
       key: const Key('nav-rail'),
-      width: 76,
+      width: 64,
       child: GlassSurface(
         opacity: 0.52,
         blur: 10,
@@ -189,32 +192,24 @@ class ShellNavRail extends ConsumerWidget {
               child: SafeArea(
                 right: false,
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Column(
                     children: [
                       for (final item in primaryNavigationItems)
-                        SizedBox(
-                          width: double.infinity,
-                          height: 60,
-                          child: _Destination(
-                            key: Key('rail-${item.id}'),
-                            icon: item.icon,
-                            label: _shortLabel(item),
-                            active: item.isActiveFor(location),
-                            onTap: () =>
-                                activateNavigationItem(context, ref, item),
-                          ),
+                        _RailItem(
+                          key: Key('rail-${item.id}'),
+                          icon: item.icon,
+                          label: _shortLabel(item),
+                          active: item.isActiveFor(location),
+                          onTap: () =>
+                              activateNavigationItem(context, ref, item),
                         ),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 60,
-                        child: _Destination(
-                          key: const Key('nav-more'),
-                          icon: Icons.menu,
-                          label: 'More',
-                          active: false,
-                          onTap: onMore,
-                        ),
+                      _RailItem(
+                        key: const Key('nav-more'),
+                        icon: Icons.menu,
+                        label: 'More',
+                        active: false,
+                        onTap: onMore,
                       ),
                     ],
                   ),
@@ -228,6 +223,66 @@ class ShellNavRail extends ConsumerWidget {
     );
   }
 }
+
+/// One item of the [ShellNavRail]: the icon on a 48 px square that is filled
+/// for the current section and lit while the pointer or the finger is on it.
+class _RailItem extends StatelessWidget {
+  const _RailItem({
+    required this.icon,
+    required this.label,
+    required this.active,
+    required this.onTap,
+    super.key,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = Theme.of(context).extension<ShelfTokens>()!;
+
+    return Semantics(
+      container: true,
+      selected: active,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Tooltip(
+          message: label,
+          excludeFromSemantics: true,
+          child: ShelfPressable(
+            semanticLabel: label,
+            onPressed: onTap,
+            borderRadius: _railRadius,
+            builder: (context, state) => AnimatedContainer(
+              duration: const Duration(milliseconds: 160),
+              curve: Curves.easeOut,
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: active
+                    ? tokens.accentSoft
+                    : state.hovered || state.pressed
+                    ? tokens.glowSoft
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(_railRadius),
+              ),
+              child: Icon(
+                icon,
+                size: 24,
+                color: active ? tokens.accent : tokens.muted,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+const _railRadius = 14.0;
 
 String _shortLabel(NavigationItem item) => switch (item.id) {
   'space' => 'Space',
