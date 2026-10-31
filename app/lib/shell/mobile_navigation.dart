@@ -302,7 +302,7 @@ Future<void> showMoreSheet(BuildContext context, {required String location}) {
     builder: (sheetContext) => DraggableScrollableSheet(
       expand: false,
       initialChildSize: 0.7,
-      minChildSize: 0.3,
+      minChildSize: 0.5,
       snap: true,
       builder: (context, scrollController) => ClipRRect(
         key: const Key('nav-drawer'),

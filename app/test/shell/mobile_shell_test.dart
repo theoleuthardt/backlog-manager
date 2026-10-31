@@ -258,6 +258,22 @@ void main() {
       expect(find.byType(DraggableScrollableSheet), findsOneWidget);
     });
 
+    testWidgets('More can be dragged down on a handheld without overflow', (
+      tester,
+    ) async {
+      await pumpMobile(tester, size: handheldDense);
+      await tester.tap(find.byKey(const Key('nav-more')));
+      await tester.pumpAndSettle();
+
+      await tester.drag(
+        find.byKey(const Key('nav-drawer')),
+        const Offset(0, 120),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('the theme creator in More closes the sheet', (tester) async {
       final app = await pumpMobile(tester, size: phonePortrait);
       await tester.tap(find.byKey(const Key('nav-more')));
