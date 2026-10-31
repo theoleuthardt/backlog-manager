@@ -84,9 +84,9 @@ class LibraryActions {
     );
   }
 
-  /// Moves one game to a category: the category is added and the game's first
-  /// one is removed. Dropping a game on the category it is already in does
-  /// nothing.
+  /// Moves one game to a category: the category is added and the one it was
+  /// dragged [from] is removed (its first one when that is not known), the
+  /// others stay. Dropping a game on the category it came from does nothing.
   Future<void> moveToCategory(
     BacklogEntry entry,
     Category target, {
