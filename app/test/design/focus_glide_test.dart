@@ -267,6 +267,37 @@ void main() {
     expect(host(tester).ringCorner, closeTo(20, 0.5));
   });
 
+  testWidgets('also goes to a control without a ring of its own', (
+    tester,
+  ) async {
+    await pumpGlide(
+      tester,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          button('first'),
+          const SizedBox(height: 20),
+          Switch(key: const Key('switch'), value: true, onChanged: (_) {}),
+        ],
+      ),
+    );
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pumpAndSettle();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pumpAndSettle();
+
+    final ring = host(tester).ringRect;
+    expect(ring, isNotNull);
+    expect(
+      ring!.center,
+      offsetMoreOrLessEquals(
+        tester.getRect(find.byKey(const Key('switch'))).center,
+        epsilon: 1,
+      ),
+    );
+  });
+
   testWidgets('without a host every control draws its own ring', (
     tester,
   ) async {

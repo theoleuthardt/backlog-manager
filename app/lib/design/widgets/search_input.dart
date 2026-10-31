@@ -1,9 +1,11 @@
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
+import 'package:backlog_manager/design/widgets/type_gate.dart';
 import 'package:flutter/material.dart';
 
-/// A 36 px search field on `surface2` with the magnifier in front.
+/// A 36 px search field on `surface2` with the magnifier in front; a gamepad
+/// types in it only after A ([TypeGate]).
 class ShelfSearchInput extends StatelessWidget {
   const ShelfSearchInput({
     required this.controller,
@@ -26,20 +28,23 @@ class ShelfSearchInput extends StatelessWidget {
     final text = Theme.of(context).extension<ShelfTextStyles>()!;
     return SizedBox(
       height: ShelfHeight.input + 2,
-      child: TextField(
-        controller: controller,
-        autofocus: autofocus,
-        onChanged: onChanged,
-        onSubmitted: onSubmitted,
-        textAlignVertical: TextAlignVertical.center,
-        style: text.fieldText.copyWith(fontSize: 14),
-        decoration: InputDecoration(
-          hintText: hintText,
-          prefixIcon: Padding(
-            padding: const EdgeInsets.only(left: 6),
-            child: Icon(Icons.search, size: 18, color: tokens.faint),
+      child: TypeGate(
+        builder: (context, focusNode) => TextField(
+          controller: controller,
+          focusNode: focusNode,
+          autofocus: autofocus,
+          onChanged: onChanged,
+          onSubmitted: onSubmitted,
+          textAlignVertical: TextAlignVertical.center,
+          style: text.fieldText.copyWith(fontSize: 14),
+          decoration: InputDecoration(
+            hintText: hintText,
+            prefixIcon: Padding(
+              padding: const EdgeInsets.only(left: 6),
+              child: Icon(Icons.search, size: 18, color: tokens.faint),
+            ),
+            prefixIconConstraints: const BoxConstraints(minWidth: 46),
           ),
-          prefixIconConstraints: const BoxConstraints(minWidth: 46),
         ),
       ),
     );
