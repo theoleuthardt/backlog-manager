@@ -1,8 +1,11 @@
+import 'package:backlog_manager/api/sse.dart';
 import 'package:backlog_manager/data/games_api.dart';
 import 'package:backlog_manager/design/widgets/cover.dart';
+import 'package:backlog_manager/design/widgets/sheet.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/features/add_game/add_game_sheet.dart';
+import 'package:backlog_manager/features/import_csv/csv_preview_table.dart';
 import 'package:backlog_manager/platform/desktop.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
@@ -12,9 +15,11 @@ import 'package:flutter_test/flutter_test.dart';
 import '../data/fakes.dart';
 import '../shell/shell_harness.dart';
 import 'creation/creation_tool_page_test.dart' show openTool;
+import 'import_csv/import_csv_page_test.dart' as csv;
 import 'inspector/entry_inspector_test.dart'
     show celeste, hades, openInspector, openTab;
 import 'library/library_page_test.dart' show pumpLibrary;
+import 'space/space_page_test.dart' as space;
 
 const sizes = {
   'a phone in portrait': Size(402, 874),
@@ -73,6 +78,69 @@ void main() {
         await resize(tester, size);
 
         expect(find.byKey(const Key('page-library')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('the invite form of the space fits the screen', (
+        tester,
+      ) async {
+        await space.open(tester, space.noSpace, overrides: mobile);
+        await resize(tester, size);
+
+        expect(find.byKey(const Key('space-invite-send')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('a row of the CSV preview keeps room for the title', (
+        tester,
+      ) async {
+        final opened = await csv.open(tester, desktop: false);
+        await resize(tester, size);
+        await csv.chooseFile(tester);
+        await tester.ensureVisible(find.byKey(const Key('import-preview')));
+        await csv.startPreview(tester, opened);
+        opened.api.previewStream.add(
+          SseDone([
+            csv.previewJson(0, 'Hades', owned: true),
+            csv.previewJson(1, 'Celeste', matched: false),
+          ]),
+        );
+        await tester.pumpAndSettle();
+
+        final title = tester.getSize(find.byKey(const Key('import-edit-0')));
+        final row = tester.getSize(find.byType(CsvRowTile).first);
+        expect(title.width, greaterThan(row.width / 2));
+        expect(find.byKey(const Key('import-chip-0')), findsOneWidget);
+        expect(find.byKey(const Key('import-action-0')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('the column mapping of the CSV import stays reachable', (
+        tester,
+      ) async {
+        final opened = await csv.open(tester, desktop: false);
+        await resize(tester, size);
+        await csv.chooseFile(tester);
+        await tester.ensureVisible(find.byKey(const Key('import-preview')));
+        await csv.startPreview(tester, opened);
+        opened.api.previewStream.add(
+          SseDone([csv.previewJson(0, 'Hades', owned: true)]),
+        );
+        await tester.pumpAndSettle();
+
+        final mapping = find.byKey(const Key('import-mapping'));
+        if (mapping.evaluate().isNotEmpty) {
+          await tester.tap(mapping);
+          await tester.pumpAndSettle();
+        }
+        final preview = find.byKey(const Key('import-preview'));
+        await tester.ensureVisible(preview);
+        await tester.pumpAndSettle();
+        await tester.tap(preview);
+        await tester.pumpAndSettle();
+
+        expect(opened.api.previews, hasLength(2));
+        expect(find.byType(ShelfSheet), findsNothing);
         expect(tester.takeException(), isNull);
       });
 

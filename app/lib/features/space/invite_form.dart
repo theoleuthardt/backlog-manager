@@ -61,18 +61,20 @@ class _InviteFormState extends ConsumerState<InviteForm> {
     final row = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(
-          width: 240,
-          height: ShelfHeight.input,
-          child: TextField(
-            key: const Key('space-invite-name'),
-            controller: _controller,
-            style: style.fieldText,
-            textAlignVertical: TextAlignVertical.center,
-            onChanged: (_) => setState(() {}),
-            onSubmitted: (_) => unawaited(_send()),
-            decoration: const InputDecoration(
-              hintText: 'Username of your co-op partner',
+        Flexible(
+          child: SizedBox(
+            width: 240,
+            height: ShelfHeight.input,
+            child: TextField(
+              key: const Key('space-invite-name'),
+              controller: _controller,
+              style: style.fieldText,
+              textAlignVertical: TextAlignVertical.center,
+              onChanged: (_) => setState(() {}),
+              onSubmitted: (_) => unawaited(_send()),
+              decoration: const InputDecoration(
+                hintText: 'Username of your co-op partner',
+              ),
             ),
           ),
         ),

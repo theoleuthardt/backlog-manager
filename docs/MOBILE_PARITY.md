@@ -64,7 +64,7 @@ What the automated tests already cover (so a failure there is a regression, not 
 | Function | iP | iL | RP | RG | OP | OG | D | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Navigation: bottom bar (portrait), rail (landscape), More drawer, desktop sidebar | | | | | | | | |
-| Back: system back gesture, B button, top bar back; never behind the lock | | | | | | | | |
+| Back: system back gesture (iOS: swipe from the left edge), B button, top bar back; never behind the lock | | | | | | | | |
 | Turning the device keeps the page and its state | | | | | | | | |
 | Safe areas: notch, Dynamic Island, home indicator, rounded corners | | | | | | | | |
 | On-screen keyboard: fields stay visible, matching keyboard types | | | | | | | | |

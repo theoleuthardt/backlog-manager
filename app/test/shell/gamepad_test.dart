@@ -249,6 +249,88 @@ void main() {
     expect(app.location, AppRoutes.library);
   });
 
+  group('the swipe from the left edge', () {
+    const phone = Size(402, 874);
+
+    Future<Harness> twoPages(WidgetTester tester) async {
+      final app = await pumpApp(tester, size: phone, desktop: false);
+      await app.go(AppRoutes.library);
+      await app.go(AppRoutes.steam);
+      return app;
+    }
+
+    testWidgets(
+      'goes back on iOS',
+      variant: TargetPlatformVariant.only(TargetPlatform.iOS),
+      (tester) async {
+        final app = await twoPages(tester);
+
+        await tester.dragFrom(const Offset(4, 500), const Offset(160, 0));
+        await tester.pumpAndSettle();
+
+        expect(app.location, AppRoutes.library);
+      },
+    );
+
+    testWidgets(
+      'closes a sheet on iOS before it goes back',
+      variant: TargetPlatformVariant.only(TargetPlatform.iOS),
+      (tester) async {
+        final app = await twoPages(tester);
+        app.container.read(addGameRequestProvider.notifier).request();
+        await tester.pumpAndSettle();
+        expect(find.text('Search for a game'), findsOneWidget);
+
+        await tester.dragFrom(const Offset(4, 500), const Offset(160, 0));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Search for a game'), findsNothing);
+        expect(app.location, AppRoutes.steam);
+      },
+    );
+
+    testWidgets(
+      'a short fling from the edge goes back too',
+      variant: TargetPlatformVariant.only(TargetPlatform.iOS),
+      (tester) async {
+        final app = await twoPages(tester);
+
+        await tester.flingFrom(const Offset(4, 500), const Offset(60, 0), 800);
+        await tester.pumpAndSettle();
+
+        expect(app.location, AppRoutes.library);
+      },
+    );
+
+    testWidgets(
+      'needs to start at the edge and to go far enough',
+      variant: TargetPlatformVariant.only(TargetPlatform.iOS),
+      (tester) async {
+        final app = await twoPages(tester);
+
+        await tester.dragFrom(const Offset(120, 500), const Offset(160, 0));
+        await tester.pumpAndSettle();
+        await tester.dragFrom(const Offset(4, 500), const Offset(20, 0));
+        await tester.pumpAndSettle();
+
+        expect(app.location, AppRoutes.steam);
+      },
+    );
+
+    testWidgets(
+      'is left to the system on Android',
+      variant: TargetPlatformVariant.only(TargetPlatform.android),
+      (tester) async {
+        final app = await twoPages(tester);
+
+        await tester.dragFrom(const Offset(4, 500), const Offset(160, 0));
+        await tester.pumpAndSettle();
+
+        expect(app.location, AppRoutes.steam);
+      },
+    );
+  });
+
   testWidgets('signed out only B works', (tester) async {
     final app = await pumpApp(
       tester,
