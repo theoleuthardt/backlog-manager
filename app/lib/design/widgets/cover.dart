@@ -352,9 +352,14 @@ class _CheckCircle extends StatelessWidget {
   }
 }
 
-/// How many covers of at least 150 px fit into a row of [width].
-int coverGridColumns(double width, {double gap = _coverGapColumn}) {
-  return math.max(1, ((width + gap) / (_minCoverWidth + gap)).floor());
+/// How many covers of at least [minCoverWidth] (150 px unless the user chose
+/// another cover size) fit into a row of [width].
+int coverGridColumns(
+  double width, {
+  double gap = _coverGapColumn,
+  double minCoverWidth = _minCoverWidth,
+}) {
+  return math.max(1, ((width + gap) / (minCoverWidth + gap)).floor());
 }
 
 /// The width of one cover when [columns] of them fill a row of [width].
@@ -372,8 +377,9 @@ double coverWidthFor(
 ({int columns, double rowStride}) coverGridMetrics(
   double width, {
   required double extraHeight,
+  double minCoverWidth = _minCoverWidth,
 }) {
-  final columns = coverGridColumns(width);
+  final columns = coverGridColumns(width, minCoverWidth: minCoverWidth);
   final cover = coverWidthFor(width, columns: columns);
   return (
     columns: columns,
@@ -382,14 +388,15 @@ double coverWidthFor(
 }
 
 class _CoverGridDelegate extends SliverGridDelegate {
-  const _CoverGridDelegate(this.extraHeight);
+  const _CoverGridDelegate(this.extraHeight, this.minCoverWidth);
 
   final double extraHeight;
+  final double minCoverWidth;
 
   @override
   SliverGridLayout getLayout(SliverConstraints constraints) {
     final width = constraints.crossAxisExtent;
-    final columns = coverGridColumns(width);
+    final columns = coverGridColumns(width, minCoverWidth: minCoverWidth);
     final cover = coverWidthFor(width, columns: columns);
     final extent = cover * 1.5 + extraHeight;
     return SliverGridRegularTileLayout(
@@ -404,7 +411,8 @@ class _CoverGridDelegate extends SliverGridDelegate {
 
   @override
   bool shouldRelayout(_CoverGridDelegate oldDelegate) {
-    return oldDelegate.extraHeight != extraHeight;
+    return oldDelegate.extraHeight != extraHeight ||
+        oldDelegate.minCoverWidth != minCoverWidth;
   }
 }
 
@@ -432,7 +440,7 @@ class ShelfCoverGrid extends StatelessWidget {
     return GridView.builder(
       controller: controller,
       padding: padding,
-      gridDelegate: _CoverGridDelegate(extraHeight),
+      gridDelegate: _CoverGridDelegate(extraHeight, _minCoverWidth),
       itemCount: itemCount,
       itemBuilder: itemBuilder,
     );
@@ -446,6 +454,7 @@ class ShelfCoverSliverGrid extends StatelessWidget {
     required this.itemCount,
     required this.itemBuilder,
     this.extraHeight = 0,
+    this.minCoverWidth = _minCoverWidth,
     super.key,
   });
 
@@ -453,10 +462,13 @@ class ShelfCoverSliverGrid extends StatelessWidget {
   final NullableIndexedWidgetBuilder itemBuilder;
   final double extraHeight;
 
+  /// The narrowest a cover may get before a row holds one less.
+  final double minCoverWidth;
+
   @override
   Widget build(BuildContext context) {
     return SliverGrid(
-      gridDelegate: _CoverGridDelegate(extraHeight),
+      gridDelegate: _CoverGridDelegate(extraHeight, minCoverWidth),
       delegate: SliverChildBuilderDelegate(
         (context, index) => _FadeUp(child: itemBuilder(context, index)),
         childCount: itemCount,

@@ -27,6 +27,7 @@ class BacklogEntry {
     this.inSharedSpace = false,
     this.steamAppId,
     this.completedAt,
+    this.createdAt,
   });
 
   final int id;
@@ -65,6 +66,9 @@ class BacklogEntry {
   final int? steamAppId;
   final DateTime? completedAt;
 
+  /// When the game was added to the backlog.
+  final DateTime? createdAt;
+
   /// This entry in another status; moving to or out of "Not Owned" changes
   /// the owned flag with it, as the server does, unless [ownershipFollows] is
   /// off (in a shared space ownership is the member's own).
@@ -99,6 +103,7 @@ class BacklogEntry {
       inSharedSpace: inSharedSpace,
       steamAppId: steamAppId,
       completedAt: completedAt,
+      createdAt: createdAt,
     );
   }
 }

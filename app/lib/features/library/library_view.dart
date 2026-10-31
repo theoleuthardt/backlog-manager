@@ -1,4 +1,5 @@
 import 'package:backlog_manager/auth/auth_controller.dart';
+import 'package:backlog_manager/domain/entry_order.dart';
 import 'package:backlog_manager/domain/sort_entries.dart';
 import 'package:backlog_manager/routing/session.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,7 +10,8 @@ enum LibraryLayout { grid, list }
 const groupPageSize = 60;
 
 /// How the library looks right now: the sort, the layout, which groups are
-/// folded away and how many covers each group has revealed. Collapsed groups
+/// folded away, how many covers each group has revealed and how the games of
+/// a group are ordered when its header says so. Collapsed groups and orders
 /// are keyed by sort option and group, so each sort keeps its own.
 class LibraryViewState {
   const LibraryViewState({
@@ -18,6 +20,7 @@ class LibraryViewState {
     this.layout = LibraryLayout.grid,
     this.collapsed = const {},
     this.extraPages = const {},
+    this.entryOrders = const {},
     this.reorderingGroups = false,
   });
 
@@ -26,6 +29,10 @@ class LibraryViewState {
   final LibraryLayout layout;
   final Set<String> collapsed;
   final Map<String, int> extraPages;
+
+  /// The order of the games of a group, by group key; a group without one
+  /// keeps the order of the sort.
+  final Map<String, EntryOrder> entryOrders;
 
   /// Whether a group header is being dragged to another place: every group
   /// folds away meanwhile, so all headers are in view as drop targets.
@@ -42,6 +49,7 @@ class LibraryViewState {
     LibraryLayout? layout,
     Set<String>? collapsed,
     Map<String, int>? extraPages,
+    Map<String, EntryOrder>? entryOrders,
     bool? reorderingGroups,
   }) {
     return LibraryViewState(
@@ -50,6 +58,7 @@ class LibraryViewState {
       layout: layout ?? this.layout,
       collapsed: collapsed ?? this.collapsed,
       extraPages: extraPages ?? this.extraPages,
+      entryOrders: entryOrders ?? this.entryOrders,
       reorderingGroups: reorderingGroups ?? this.reorderingGroups,
     );
   }
@@ -98,6 +107,18 @@ class LibraryViewNotifier extends Notifier<LibraryViewState> {
   void setReorderingGroups({required bool active}) {
     if (state.reorderingGroups == active) return;
     state = state.copyWith(reorderingGroups: active);
+  }
+
+  /// Orders the games of the group [groupKey] by [order], or as the sort
+  /// does again for null.
+  void setEntryOrder(String groupKey, EntryOrder? order) {
+    final next = {...state.entryOrders};
+    if (order == null) {
+      next.remove(groupKey);
+    } else {
+      next[groupKey] = order;
+    }
+    state = state.copyWith(entryOrders: next);
   }
 
   void showMore(String groupKey) {
