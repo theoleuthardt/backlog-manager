@@ -39,9 +39,14 @@ List<String> releaseChanges(String notes) {
 }
 
 /// Whether the changes of the [installed] version are still to be shown: only
-/// after an update from the [lastSeen] version, never on a first install
-/// (nothing seen yet), again for the same version or after a downgrade.
+/// after an update from the [lastSeen] version, not again for the same
+/// version or after a downgrade. Nothing was seen yet on a first install,
+/// which shows nothing, and on an install from before this feature, which
+/// was [inUseBefore] (signed in from its stored session) and shows the
+/// changes of the version it was updated to.
 bool shouldShowWhatsNew({
   required String installed,
   required String? lastSeen,
-}) => lastSeen != null && isNewerVersion(installed, than: lastSeen);
+  bool inUseBefore = false,
+}) =>
+    lastSeen == null ? inUseBefore : isNewerVersion(installed, than: lastSeen);

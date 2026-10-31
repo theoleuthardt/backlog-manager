@@ -1,3 +1,4 @@
+import 'package:backlog_manager/auth/auth_controller.dart';
 import 'package:backlog_manager/data/release_source.dart';
 import 'package:backlog_manager/domain/app_update.dart';
 import 'package:backlog_manager/domain/whats_new.dart';
@@ -101,8 +102,8 @@ class WhatsNew {
 
 /// What is new in the installed version, or null when there is nothing to
 /// show: on a first install (which only remembers the version), when the
-/// version was shown already, and for a release without changes in its
-/// notes. A release that cannot be fetched shows nothing this time and is
+/// version was shown already or is older than the one shown (a newer one is
+/// kept), and for a release without changes in its notes. A release that cannot be fetched shows nothing this time and is
 /// asked for again at the next start.
 class WhatsNewNotifier extends AsyncNotifier<WhatsNew?> {
   @override
@@ -110,8 +111,12 @@ class WhatsNewNotifier extends AsyncNotifier<WhatsNew?> {
     final installed = await ref.watch(installedVersionProvider.future);
     final store = ref.read(whatsNewStoreProvider);
     final lastSeen = await store.read();
-    if (!shouldShowWhatsNew(installed: installed, lastSeen: lastSeen)) {
-      if (lastSeen != installed) await store.write(installed);
+    if (!shouldShowWhatsNew(
+      installed: installed,
+      lastSeen: lastSeen,
+      inUseBefore: ref.read(sessionRestoredProvider),
+    )) {
+      if (lastSeen == null) await store.write(installed);
       return null;
     }
     final AppRelease? release;

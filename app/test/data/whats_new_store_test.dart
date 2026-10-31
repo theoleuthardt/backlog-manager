@@ -1,3 +1,4 @@
+import 'package:backlog_manager/auth/auth_controller.dart';
 import 'package:backlog_manager/data/release_source.dart';
 import 'package:backlog_manager/data/whats_new.dart';
 import 'package:backlog_manager/domain/app_update.dart';
@@ -45,9 +46,13 @@ ProviderContainer containerFor({
   required String installed,
   required MemoryWhatsNewStore store,
   required FakeNotesSource source,
+  bool restored = false,
 }) {
   final container = ProviderContainer(
     overrides: [
+      sessionRestoredProvider.overrideWith(
+        () => SessionRestoredNotifier(restored),
+      ),
       installedVersionProvider.overrideWith((ref) async => installed),
       whatsNewStoreProvider.overrideWithValue(store),
       releaseNotesSourceProvider.overrideWithValue(source),
@@ -89,6 +94,35 @@ void main() {
 
       expect(await container.read(whatsNewProvider.future), isNull);
       expect(store.version, '0.9.18');
+      expect(source.asked, isEmpty);
+    });
+
+    test('an update to the first version with it shows its changes', () async {
+      final store = MemoryWhatsNewStore();
+      final container = containerFor(
+        installed: '0.9.18',
+        store: store,
+        source: FakeNotesSource(),
+        restored: true,
+      );
+
+      expect(
+        (await container.read(whatsNewProvider.future))?.version,
+        '0.9.18',
+      );
+    });
+
+    test('a downgrade keeps the newer version that was shown', () async {
+      final store = MemoryWhatsNewStore('1.2.0');
+      final source = FakeNotesSource();
+      final container = containerFor(
+        installed: '1.1.0',
+        store: store,
+        source: source,
+      );
+
+      expect(await container.read(whatsNewProvider.future), isNull);
+      expect(store.version, '1.2.0');
       expect(source.asked, isEmpty);
     });
 

@@ -72,6 +72,17 @@ void main() {
       expect(shouldShowWhatsNew(installed: '0.9.18', lastSeen: null), isFalse);
     });
 
+    test('for an install from before this feature that was in use', () {
+      expect(
+        shouldShowWhatsNew(
+          installed: '0.9.18',
+          lastSeen: null,
+          inUseBefore: true,
+        ),
+        isTrue,
+      );
+    });
+
     test('not again for the same version, nor after a downgrade', () {
       expect(
         shouldShowWhatsNew(installed: '0.9.18', lastSeen: '0.9.18'),

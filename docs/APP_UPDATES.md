@@ -52,7 +52,7 @@ Settings, Updates (a tab of its own between Backups and About, #430) has an **Up
 
 ## What is new
 
-The first time the home page opens after an update, the app shows once what changed in the installed version (`WhatsNewPrompt` in `lib/features/updates/whats_new_sheet.dart`, #577). The changes are the bullets of the "What's Changed" section of the GitHub release of that version (pre-releases included), without the conventional-commit type, the author and the link (`releaseChanges` in `lib/domain/whats_new.dart`). The last version shown is kept on the device; a first install only stores its version and shows nothing, a release without changes counts as shown, and a release GitHub does not answer for is asked for again at the next start.
+The first time the home page opens after an update, the app shows once what changed in the installed version (`WhatsNewPrompt` in `lib/features/updates/whats_new_sheet.dart`, #577). The changes are the bullets of the "What's Changed" section of the GitHub release of that version (pre-releases included), without the conventional-commit type, the author and the link (`releaseChanges` in `lib/domain/whats_new.dart`). The last version shown is kept on the device and only replaced by a newer one (a downgrade keeps it). A first install only stores its version and shows nothing; an install from before this feature, whose session came from its stored token at start (`sessionRestoredProvider`), shows the changes of the version it was updated to. A release without changes counts as shown, and a release GitHub does not answer for is asked for again at the next start.
 
 ## Keys
 

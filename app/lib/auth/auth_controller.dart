@@ -49,6 +49,23 @@ final signInClockProvider = Provider<DateTime Function()>(
   (ref) => DateTime.now,
 );
 
+/// Whether the session of this start came from the stored token, so the app
+/// was in use on this device before (what is new after an update uses it).
+class SessionRestoredNotifier extends Notifier<bool> {
+  SessionRestoredNotifier([this._initial = false]);
+
+  final bool _initial;
+
+  @override
+  bool build() => _initial;
+
+  void restored() => state = true;
+}
+
+final sessionRestoredProvider = NotifierProvider<SessionRestoredNotifier, bool>(
+  SessionRestoredNotifier.new,
+);
+
 /// The sign-in state machine: restoring the session at start, signing in with
 /// a password and a two-factor code, signing out and dropping an expired
 /// session. Every request remembers the session generation it started in, so
@@ -78,6 +95,7 @@ class AuthController extends Notifier<LoginFlow> {
       if (_stale(generation)) return;
       _session.signIn(user);
       ref.read(sessionGenerationProvider.notifier).bump();
+      ref.read(sessionRestoredProvider.notifier).restored();
     } on Object catch (error) {
       if (_stale(generation)) return;
       final failure = ApiException.from(error, 'Could not check your session');
