@@ -1,5 +1,6 @@
 import 'package:backlog_manager/auth/biometric_lock.dart';
 import 'package:backlog_manager/data/selection_providers.dart';
+import 'package:backlog_manager/design/focus_glide.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/platform/desktop.dart';
 import 'package:backlog_manager/routing/router.dart';
@@ -512,6 +513,47 @@ void main() {
         expect(app.location, AppRoutes.steam);
       },
     );
+  });
+
+  testWidgets('a touch screen has one gliding focus ring, the desktop not', (
+    tester,
+  ) async {
+    await pumpHandheld(tester);
+    expect(find.byType(FocusGlideHost), findsOneWidget);
+
+    await pumpApp(tester, size: const Size(1440, 900), desktop: true);
+    expect(find.byType(FocusGlideHost), findsNothing);
+  });
+
+  testWidgets('the D-pad moves the gliding ring over the library', (
+    tester,
+  ) async {
+    await pumpLibrary(
+      tester,
+      FakeBacklogApi(entries: const [hades, celeste]),
+      overrides: [isDesktopProvider.overrideWithValue(false)],
+    );
+    await resize(tester, handheld);
+    final tile = find.byKey(Key('library-tile-${hades.id}'));
+    await tester.scrollUntilVisible(
+      tile,
+      100,
+      scrollable: find
+          .descendant(
+            of: find.byKey(const Key('page-library')),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    Focus.of(tester.element(tile)).requestFocus();
+    await press(tester, LogicalKeyboardKey.arrowRight);
+
+    final ring = tester
+        .state<FocusGlideHostState>(find.byType(FocusGlideHost))
+        .ringRect;
+    expect(ring, isNotNull);
+    final focused = FocusManager.instance.primaryFocus!.rect;
+    expect(ring!.overlaps(focused), isTrue);
   });
 
   testWidgets('signed out only B works', (tester) async {

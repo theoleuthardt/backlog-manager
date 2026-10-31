@@ -143,13 +143,14 @@ class _GamepadDetector extends ConsumerStatefulWidget {
   ConsumerState<_GamepadDetector> createState() => _GamepadDetectorState();
 }
 
-const _dpadKeys = [
+const _arrowKeys = [
   LogicalKeyboardKey.arrowUp,
   LogicalKeyboardKey.arrowDown,
   LogicalKeyboardKey.arrowLeft,
   LogicalKeyboardKey.arrowRight,
-  LogicalKeyboardKey.gameButtonA,
 ];
+
+const _dpadKeys = [..._arrowKeys, LogicalKeyboardKey.gameButtonA];
 
 class _GamepadDetectorState extends ConsumerState<_GamepadDetector> {
   bool _onKey(KeyEvent event) {
@@ -158,8 +159,29 @@ class _GamepadDetectorState extends ConsumerState<_GamepadDetector> {
         (_dpadKeys.contains(key) || gamepadActionFor(key) != null) &&
         !ref.read(gamepadInUseProvider)) {
       ref.read(gamepadInUseProvider.notifier).set(inUse: true);
+      if (_arrowKeys.contains(key)) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _revealFocus());
+      }
     }
     return false;
+  }
+
+  /// The button hints take room at the bottom of the page when they show, so
+  /// after a move of the D-pad the focused control is scrolled back into
+  /// sight; not after a button, whose menu a scroll would close again.
+  void _revealFocus() {
+    final focused = FocusManager.instance.primaryFocus?.context;
+    if (focused == null || !focused.mounted) return;
+    unawaited(
+      Scrollable.ensureVisible(
+        focused,
+        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+        duration: MediaQuery.of(context).disableAnimations
+            ? Duration.zero
+            : _focusScrollDuration,
+        curve: Curves.easeOutCubic,
+      ),
+    );
   }
 
   @override

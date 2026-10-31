@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:backlog_manager/design/focus_glide.dart';
 import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:flutter/material.dart';
@@ -142,7 +143,9 @@ class _ShelfPressableState extends State<ShelfPressable> {
 /// slightly larger size when [visible] turns on, so the focus glides from one
 /// control to the next on a gamepad or keyboard, and fades out when it turns
 /// off. Nothing is drawn once it is gone, and it does not move under the
-/// system setting for less motion.
+/// system setting for less motion. Below a [FocusGlideHost] (a phone or
+/// handheld) it draws nothing itself and hands its place to the one ring of
+/// the host, which glides there.
 class ShelfFocusRing extends StatefulWidget {
   const ShelfFocusRing({
     required this.visible,
@@ -173,12 +176,38 @@ class _ShelfFocusRingState extends State<ShelfFocusRing>
     curve: Curves.easeOutCubic,
   );
   late final _scale = Tween<double>(begin: 1.08, end: 1).animate(_curve);
+  late final _source = GlideSource(
+    context: context,
+    radius: widget.borderRadius,
+    color: widget.color,
+  );
+  FocusGlideHostState? _glide;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final glide = FocusGlideHost.maybeOf(context);
+    if (glide == _glide) return;
+    _glide?.release(_source);
+    _glide = glide;
+    if (widget.visible) glide?.claim(_source);
+  }
 
   @override
   void didUpdateWidget(ShelfFocusRing oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _source
+      ..radius = widget.borderRadius
+      ..color = widget.color;
     if (oldWidget.visible == widget.visible) return;
-    if (MediaQuery.of(context).disableAnimations) {
+    final glide = _glide;
+    if (glide != null) {
+      if (widget.visible) {
+        glide.claim(_source);
+      } else {
+        glide.release(_source);
+      }
+    } else if (MediaQuery.of(context).disableAnimations) {
       _controller.value = widget.visible ? 1 : 0;
     } else if (widget.visible) {
       unawaited(_controller.forward());
@@ -189,6 +218,7 @@ class _ShelfFocusRingState extends State<ShelfFocusRing>
 
   @override
   void dispose() {
+    _glide?.release(_source);
     _curve.dispose();
     _controller.dispose();
     super.dispose();
@@ -196,6 +226,7 @@ class _ShelfFocusRingState extends State<ShelfFocusRing>
 
   @override
   Widget build(BuildContext context) {
+    if (_glide != null) return const SizedBox.expand();
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) =>
