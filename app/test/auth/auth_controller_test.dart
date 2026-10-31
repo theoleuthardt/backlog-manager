@@ -78,6 +78,7 @@ void main() {
 
       expect(session(), isA<SessionSignedOut>());
       expect(api.calls, isEmpty);
+      expect(container.read(sessionRestoredProvider), isFalse);
     });
 
     test('shows the checking state while the token is validated', () async {
@@ -104,6 +105,7 @@ void main() {
 
       expect((session() as SessionSignedIn).user.name, 'Theo');
       expect(store.token, 'jwt');
+      expect(container.read(sessionRestoredProvider), isTrue);
     });
 
     test('drops a revoked token and returns to sign-in', () async {

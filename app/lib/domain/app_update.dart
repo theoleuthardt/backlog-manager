@@ -61,10 +61,15 @@ bool isNewerVersion(String candidate, {required String than}) {
 }
 
 /// The release described by one GitHub release JSON object, or null for a
-/// draft, a pre-release, a tag that is not a plain version and a page that is
-/// not on github.com (the link is opened in the browser).
-AppRelease? appReleaseFromJson(Map<String, dynamic> json) {
-  if (json['draft'] == true || json['prerelease'] == true) return null;
+/// draft, a pre-release (unless [allowPrerelease]), a tag that is not a plain
+/// version and a page that is not on github.com (the link is opened in the
+/// browser).
+AppRelease? appReleaseFromJson(
+  Map<String, dynamic> json, {
+  bool allowPrerelease = false,
+}) {
+  if (json['draft'] == true) return null;
+  if (json['prerelease'] == true && !allowPrerelease) return null;
   final tag = json['tag_name'];
   final page = json['html_url'];
   if (tag is! String || page is! String) return null;
