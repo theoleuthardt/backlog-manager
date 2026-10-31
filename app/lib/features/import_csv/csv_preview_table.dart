@@ -64,6 +64,10 @@ class CsvPreviewTable extends ConsumerWidget {
   }
 }
 
+/// The width of a row below which the chip and the action move to a second
+/// line under the title.
+const _twoLineWidth = 640.0;
+
 /// One row of the preview: cover, title and meta line, the chip with the
 /// result and the button that fixes it. Only this row rebuilds when it changes.
 class CsvRowTile extends ConsumerStatefulWidget {
@@ -112,6 +116,74 @@ class _CsvRowTileState extends ConsumerState<CsvRowTile> {
         : entryImage(serverUrl, row.imageLink!);
     final info = _info(row);
 
+    final cover = ShelfPressable(
+      key: Key('import-cover-${row.rowIndex}'),
+      semanticLabel: 'Choose cover for ${row.title}',
+      onPressed: () => unawaited(_action(row, RowAction.cover)),
+      builder: (context, state) => ClipRRect(
+        borderRadius: BorderRadius.circular(4),
+        child: SizedBox(
+          width: 34,
+          height: 46,
+          child: image == null
+              ? ColoredBox(color: tokens.surface3)
+              : Image(image: image, fit: BoxFit.cover),
+        ),
+      ),
+    );
+    final title = Expanded(
+      child: ShelfPressable(
+        key: Key('import-edit-${row.rowIndex}'),
+        semanticLabel: 'Edit ${row.title}',
+        onPressed: () =>
+            unawaited(showCsvRowSheet(context, rowIndex: row.rowIndex)),
+        builder: (context, state) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              row.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: style.label.copyWith(fontWeight: FontWeight.w700),
+            ),
+            Text(
+              rowMeta(row),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: style.caption.copyWith(color: tokens.faint),
+            ),
+          ],
+        ),
+      ),
+    );
+    final chip = verdict.chip == null
+        ? null
+        : FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: ShelfChip(
+              key: Key('import-chip-${row.rowIndex}'),
+              label: verdict.chip!,
+              kind: switch (verdict.chip) {
+                'Owned' => ShelfChipKind.ok,
+                'Check Match' => ShelfChipKind.accent,
+                _ => ShelfChipKind.neutral,
+              },
+            ),
+          );
+    final action = ShelfButton(
+      key: Key('import-action-${row.rowIndex}'),
+      label: verdict.action.label,
+      onPressed: () => unawaited(_action(row, verdict.action)),
+    );
+    final remove = ShelfIconButton(
+      key: Key('import-remove-${row.rowIndex}'),
+      icon: Icons.delete_outline,
+      tooltip: 'Remove ${row.title} from the import',
+      onPressed: () =>
+          ref.read(csvImportProvider.notifier).removeRow(row.rowIndex),
+    );
+
     return DecoratedBox(
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: tokens.borderSubtle)),
@@ -121,85 +193,46 @@ class _CsvRowTileState extends ConsumerState<CsvRowTile> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                ShelfPressable(
-                  key: Key('import-cover-${row.rowIndex}'),
-                  semanticLabel: 'Choose cover for ${row.title}',
-                  onPressed: () => unawaited(_action(row, RowAction.cover)),
-                  builder: (context, state) => ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: SizedBox(
-                      width: 34,
-                      height: 46,
-                      child: image == null
-                          ? ColoredBox(color: tokens.surface3)
-                          : Image(image: image, fit: BoxFit.cover),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ShelfPressable(
-                    key: Key('import-edit-${row.rowIndex}'),
-                    semanticLabel: 'Edit ${row.title}',
-                    onPressed: () => unawaited(
-                      showCsvRowSheet(context, rowIndex: row.rowIndex),
-                    ),
-                    builder: (context, state) => Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          row.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: style.label.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth < _twoLineWidth) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          cover,
+                          const SizedBox(width: 12),
+                          title,
+                          const SizedBox(width: 4),
+                          remove,
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 46, top: 6),
+                        child: Row(
+                          children: [
+                            if (chip != null) Flexible(child: chip),
+                            const Spacer(),
+                            action,
+                          ],
                         ),
-                        Text(
-                          rowMeta(row),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: style.caption.copyWith(color: tokens.faint),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 130,
-                  child: verdict.chip == null
-                      ? null
-                      : FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
-                          child: ShelfChip(
-                            key: Key('import-chip-${row.rowIndex}'),
-                            label: verdict.chip!,
-                            kind: switch (verdict.chip) {
-                              'Owned' => ShelfChipKind.ok,
-                              'Check Match' => ShelfChipKind.accent,
-                              _ => ShelfChipKind.neutral,
-                            },
-                          ),
-                        ),
-                ),
-                ShelfButton(
-                  key: Key('import-action-${row.rowIndex}'),
-                  label: verdict.action.label,
-                  onPressed: () => unawaited(_action(row, verdict.action)),
-                ),
-                const SizedBox(width: 4),
-                ShelfIconButton(
-                  key: Key('import-remove-${row.rowIndex}'),
-                  icon: Icons.delete_outline,
-                  tooltip: 'Remove ${row.title} from the import',
-                  onPressed: () => ref
-                      .read(csvImportProvider.notifier)
-                      .removeRow(row.rowIndex),
-                ),
-              ],
+                      ),
+                    ],
+                  );
+                }
+                return Row(
+                  children: [
+                    cover,
+                    const SizedBox(width: 12),
+                    title,
+                    SizedBox(width: 130, child: chip),
+                    action,
+                    const SizedBox(width: 4),
+                    remove,
+                  ],
+                );
+              },
             ),
             if (info.isNotEmpty)
               Padding(

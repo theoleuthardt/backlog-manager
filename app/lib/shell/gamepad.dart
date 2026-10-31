@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:backlog_manager/auth/biometric_lock.dart';
 import 'package:backlog_manager/routing/history.dart';
 import 'package:backlog_manager/routing/router.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/routing/session.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -122,6 +125,61 @@ class SystemBackHandler extends ConsumerWidget {
     onBackButtonPressed: () => navigateBack(ref),
     child: child,
   );
+}
+
+/// The swipe from the left edge of iOS, which has no system back: a drag
+/// that starts within [_edgeWidth] of the left edge and goes at least
+/// [_swipeDistance] to the right (or is flung there) runs [navigateBack]. It
+/// sits above the navigator of the app, so it closes a sheet as well. Android
+/// keeps its own back gesture ([SystemBackHandler]).
+class EdgeSwipeBack extends ConsumerStatefulWidget {
+  const EdgeSwipeBack({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  ConsumerState<EdgeSwipeBack> createState() => _EdgeSwipeBackState();
+}
+
+const _edgeWidth = 20.0;
+const _swipeDistance = 80.0;
+const _flingVelocity = 500.0;
+
+class _EdgeSwipeBackState extends ConsumerState<EdgeSwipeBack> {
+  double _distance = 0;
+
+  void _end(DragEndDetails details) {
+    if (_distance >= _swipeDistance ||
+        details.primaryVelocity != null &&
+            details.primaryVelocity! >= _flingVelocity) {
+      unawaited(navigateBack(ref));
+    }
+    _distance = 0;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (defaultTargetPlatform != TargetPlatform.iOS) return widget.child;
+    return Stack(
+      children: [
+        widget.child,
+        Positioned(
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: _edgeWidth,
+          child: GestureDetector(
+            key: const Key('edge-swipe-back'),
+            behavior: HitTestBehavior.translucent,
+            onHorizontalDragStart: (_) => _distance = 0,
+            onHorizontalDragUpdate: (details) =>
+                _distance += details.primaryDelta ?? 0,
+            onHorizontalDragEnd: _end,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 /// Closes what a [DismissIntent] closes around [focus] (an open menu), and

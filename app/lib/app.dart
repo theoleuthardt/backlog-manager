@@ -8,6 +8,7 @@ import 'package:backlog_manager/features/appearance/theme_actions.dart';
 import 'package:backlog_manager/features/startup/startup_splash.dart';
 import 'package:backlog_manager/platform/desktop.dart';
 import 'package:backlog_manager/routing/router.dart';
+import 'package:backlog_manager/shell/gamepad.dart';
 import 'package:backlog_manager/shell/shell_layout.dart';
 import 'package:backlog_manager/shell/shell_shortcuts.dart';
 import 'package:flutter/material.dart';
@@ -35,7 +36,11 @@ class BacklogManagerApp extends ConsumerWidget {
         final app = AtmosphereSettings(
           blurEnabled: blurEffects,
           child: StartupSplash(
-            child: ShellShortcuts(child: child ?? const SizedBox.shrink()),
+            child: ShellShortcuts(
+              child: touch
+                  ? EdgeSwipeBack(child: child ?? const SizedBox.shrink())
+                  : child ?? const SizedBox.shrink(),
+            ),
           ),
         );
         return MediaQuery.withClampedTextScaling(

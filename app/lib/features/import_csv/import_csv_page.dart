@@ -5,6 +5,7 @@ import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/design/widgets/chips.dart';
 import 'package:backlog_manager/design/widgets/progress.dart';
+import 'package:backlog_manager/design/widgets/sheet.dart';
 import 'package:backlog_manager/design/widgets/toast.dart';
 import 'package:backlog_manager/domain/csv_import.dart';
 import 'package:backlog_manager/features/import_csv/csv_import_controller.dart';
@@ -162,6 +163,14 @@ class _Empty extends StatelessWidget {
   }
 }
 
+/// The width below which the column mapping and the preview no longer sit
+/// side by side: the mapping comes first, and once there is a preview it moves
+/// into a sheet behind the "Column Mapping" button.
+const _sideBySideWidth = 700.0;
+
+const _previewHint =
+    'Nothing is written until you import. Preview the matches first.';
+
 class _Loaded extends ConsumerWidget {
   const _Loaded({
     required this.state,
@@ -186,87 +195,152 @@ class _Loaded extends ConsumerWidget {
         state.phase == CsvImportPhase.submitting;
     final submitting = state.phase == CsvImportPhase.submitting;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(28, 18, 28, 8),
-          child: Wrap(
-            spacing: 12,
-            runSpacing: 10,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              ShelfChip(
-                key: const Key('import-file'),
-                label: state.fileName ?? '',
-                kind: ShelfChipKind.accent,
-              ),
-              ShelfButton(
-                key: const Key('import-choose-other'),
-                label: 'Choose another file',
-                onPressed: state.busy ? null : onChoose,
-              ),
-              if (state.hasPreview)
-                Text(
-                  rowsSummary(rows),
-                  key: const Key('import-summary'),
-                  style: style.caption.copyWith(color: tokens.muted),
-                ),
-              if (running && state.total != null)
-                SizedBox(
-                  width: 160,
-                  child: ShelfProgressBar(
-                    value: (state.processed ?? 0) / state.total!,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final stacked = constraints.maxWidth - 56 < _sideBySideWidth;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(28, 18, 28, 8),
+              child: Wrap(
+                spacing: 12,
+                runSpacing: 10,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  ShelfChip(
+                    key: const Key('import-file'),
+                    label: state.fileName ?? '',
+                    kind: ShelfChipKind.accent,
                   ),
-                ),
-              ShelfButton(
-                key: const Key('import-cancel'),
-                label: 'Cancel',
-                onPressed: running ? controller.cancel : controller.reset,
-              ),
-              if (state.hasPreview)
-                ShelfButton(
-                  key: const Key('import-submit'),
-                  label: submitting
-                      ? submitLabel(state.processed, state.total)
-                      : importLabel(rows.length),
-                  kind: ShelfButtonKind.primary,
-                  busy: submitting,
-                  onPressed: state.busy || rows.isEmpty ? null : onSubmit,
-                ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(28, 8, 28, 20),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: 360,
-                  child: SingleChildScrollView(
-                    child: CsvMappingPanel(state: state, onPreview: onPreview),
+                  ShelfButton(
+                    key: const Key('import-choose-other'),
+                    label: 'Choose another file',
+                    onPressed: state.busy ? null : onChoose,
                   ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: state.hasPreview
-                      ? const CsvPreviewTable()
-                      : Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: Text(
-                            'Nothing is written until you import. Preview the '
-                            'matches first.',
-                            style: style.body.copyWith(color: tokens.muted),
-                          ),
+                  if (state.hasPreview)
+                    Text(
+                      rowsSummary(rows),
+                      key: const Key('import-summary'),
+                      style: style.caption.copyWith(color: tokens.muted),
+                    ),
+                  if (running && state.total != null)
+                    SizedBox(
+                      width: 160,
+                      child: ShelfProgressBar(
+                        value: (state.processed ?? 0) / state.total!,
+                      ),
+                    ),
+                  if (stacked && state.hasPreview)
+                    ShelfButton(
+                      key: const Key('import-mapping'),
+                      label: 'Column Mapping',
+                      onPressed: () => unawaited(
+                        showShelfSheet<void>(
+                          context,
+                          builder: (_) => _MappingSheet(onPreview: onPreview),
                         ),
-                ),
-              ],
+                      ),
+                    ),
+                  ShelfButton(
+                    key: const Key('import-cancel'),
+                    label: 'Cancel',
+                    onPressed: running ? controller.cancel : controller.reset,
+                  ),
+                  if (state.hasPreview)
+                    ShelfButton(
+                      key: const Key('import-submit'),
+                      label: submitting
+                          ? submitLabel(state.processed, state.total)
+                          : importLabel(rows.length),
+                      kind: ShelfButtonKind.primary,
+                      busy: submitting,
+                      onPressed: state.busy || rows.isEmpty ? null : onSubmit,
+                    ),
+                ],
+              ),
             ),
-          ),
-        ),
-      ],
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(28, 8, 28, 20),
+                child: stacked
+                    ? state.hasPreview
+                          ? const CsvPreviewTable()
+                          : SingleChildScrollView(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  CsvMappingPanel(
+                                    state: state,
+                                    onPreview: onPreview,
+                                  ),
+                                  const SizedBox(height: 14),
+                                  Text(
+                                    _previewHint,
+                                    style: style.body.copyWith(
+                                      color: tokens.muted,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                    : Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 360,
+                            child: SingleChildScrollView(
+                              child: CsvMappingPanel(
+                                state: state,
+                                onPreview: onPreview,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 20),
+                          Expanded(
+                            child: state.hasPreview
+                                ? const CsvPreviewTable()
+                                : Padding(
+                                    padding: const EdgeInsets.only(top: 6),
+                                    child: Text(
+                                      _previewHint,
+                                      style: style.body.copyWith(
+                                        color: tokens.muted,
+                                      ),
+                                    ),
+                                  ),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// The column mapping in a sheet, for screens where the preview takes the
+/// whole width; previewing again closes the sheet.
+class _MappingSheet extends ConsumerWidget {
+  const _MappingSheet({required this.onPreview});
+
+  final VoidCallback onPreview;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ShelfSheet(
+      title: 'Column Mapping',
+      width: ShelfSheetWidth.compact,
+      onClose: () => Navigator.of(context).pop(),
+      child: CsvMappingPanel(
+        state: ref.watch(csvImportProvider),
+        onPreview: () {
+          Navigator.of(context).pop();
+          onPreview();
+        },
+      ),
     );
   }
 }
