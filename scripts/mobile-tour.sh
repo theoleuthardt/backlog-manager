@@ -7,7 +7,8 @@
 # the Gradle and Kotlin daemons no longer share the memory of the runner with
 # the emulator) and then checks with native screenshots that a D-pad press
 # leaves the look of the app as it is. The logcat of the run and, when the
-# drive fails, the free memory and the OOM lines of the kernel go to the
+# drive fails, the free memory, the end of the kernel log and the emulator
+# process go to the
 # report folder.
 set -euo pipefail
 
@@ -44,7 +45,8 @@ kill "$logcat" 2> /dev/null || true
 if [ -f "$out/drive-failed.txt" ]; then
   {
     free -m
-    sudo dmesg | grep -iE 'out of memory|killed process|oom' || echo "no OOM lines in dmesg"
+    sudo dmesg | tail -60
+    pgrep -a -f qemu-system || echo "no emulator process"
   } > "$out/memory.txt" 2>&1 || true
 fi
 
