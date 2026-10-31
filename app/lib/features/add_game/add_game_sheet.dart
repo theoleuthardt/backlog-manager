@@ -207,7 +207,7 @@ class _AddGameSheetState extends ConsumerState<AddGameSheet> {
         TextField(
           key: const Key('add-batch-titles'),
           controller: _batchText,
-          autofocus: true,
+          autofocus: ShelfFormFactor.autofocus(context),
           minLines: 6,
           maxLines: 12,
           keyboardType: TextInputType.multiline,
@@ -248,7 +248,7 @@ class _AddGameSheetState extends ConsumerState<AddGameSheet> {
       ShelfSearchInput(
         controller: _controller,
         hintText: 'Type in a game name...',
-        autofocus: true,
+        autofocus: ShelfFormFactor.autofocus(context),
         onChanged: _typed,
         onSubmitted: (_) => _continue(),
       ),

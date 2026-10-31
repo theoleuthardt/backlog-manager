@@ -64,9 +64,22 @@ void main() {
       }
     });
 
-    test('the shoulder buttons step through the main sections', () {
+    test('the shoulder buttons step through the main sections and Add', () {
       expect(sectionAfter(AppRoutes.home, forward: true), AppRoutes.library);
-      expect(sectionAfter(AppRoutes.library, forward: true), AppRoutes.space);
+      expect(
+        sectionAfter(AppRoutes.library, forward: true),
+        addGameSection,
+        reason: 'Add of the bottom bar, the search for a new game',
+      );
+      expect(
+        sectionAfter(AppRoutes.library, forward: true, adding: true),
+        AppRoutes.space,
+      );
+      expect(
+        sectionAfter(AppRoutes.library, forward: false, adding: true),
+        AppRoutes.library,
+      );
+      expect(sectionAfter(AppRoutes.space, forward: false), addGameSection);
       expect(sectionAfter(AppRoutes.space, forward: true), AppRoutes.home);
       expect(sectionAfter(AppRoutes.home, forward: false), AppRoutes.space);
       expect(sectionAfter(AppRoutes.steam, forward: true), AppRoutes.home);
@@ -74,6 +87,19 @@ void main() {
   });
 
   group('on a handheld', () {
+    testWidgets('R1 opens the search for a new game after the library', (
+      tester,
+    ) async {
+      final app = await pumpHandheld(tester, location: AppRoutes.library);
+
+      await press(tester, LogicalKeyboardKey.gameButtonRight1);
+      expect(find.text('Search for a game'), findsOneWidget);
+
+      await press(tester, LogicalKeyboardKey.gameButtonRight1);
+      expect(find.text('Search for a game'), findsNothing);
+      expect(app.location, AppRoutes.space);
+    });
+
     testWidgets('R1 and L1 change the section', (tester) async {
       final app = await pumpHandheld(tester);
 
@@ -192,7 +218,7 @@ void main() {
     });
   });
 
-  testWidgets('B closes the drawer before it goes back', (tester) async {
+  testWidgets('B closes the More sheet before it goes back', (tester) async {
     final app = await pumpApp(
       tester,
       size: const Size(402, 874),
@@ -201,8 +227,6 @@ void main() {
     await app.go(AppRoutes.library);
     await tester.tap(find.byKey(const Key('nav-more')));
     await tester.pumpAndSettle();
-    FocusManager.instance.primaryFocus?.unfocus();
-    await tester.pump();
 
     await press(tester, LogicalKeyboardKey.gameButtonB);
 

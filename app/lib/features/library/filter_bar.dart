@@ -475,7 +475,7 @@ class _AddFilterContentState extends ConsumerState<_AddFilterContent> {
                 Expanded(
                   child: TextField(
                     key: const Key('add-filter-search'),
-                    autofocus: true,
+                    autofocus: ShelfFormFactor.autofocus(context),
                     style: style.fieldText,
                     decoration: InputDecoration(
                       hintText: 'Filter by...',

@@ -13,7 +13,7 @@ import 'package:go_router/go_router.dart';
 const _primaryIds = ['home', 'library', 'add-game', 'space'];
 
 /// The items of the bottom bar and the rail; every other item is behind
-/// "More", in the [NavigationDrawerPanel].
+/// "More", in the sheet of [showMoreSheet].
 final List<NavigationItem> primaryNavigationItems = [
   for (final id in _primaryIds)
     navigationSections
@@ -167,7 +167,8 @@ class BottomNavBar extends ConsumerWidget {
 
 /// The rail of a phone in landscape, the handhelds and a tablet in portrait:
 /// the [primaryNavigationItems] and More, on the left edge where the height
-/// is short.
+/// is short. Its glass runs the full height of the screen; the items keep
+/// inside the safe area.
 class ShellNavRail extends ConsumerWidget {
   const ShellNavRail({required this.location, required this.onMore, super.key});
 
@@ -185,35 +186,38 @@ class ShellNavRail extends ConsumerWidget {
         child: Row(
           children: [
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Column(
-                  children: [
-                    for (final item in primaryNavigationItems)
+              child: SafeArea(
+                right: false,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Column(
+                    children: [
+                      for (final item in primaryNavigationItems)
+                        SizedBox(
+                          width: double.infinity,
+                          height: 60,
+                          child: _Destination(
+                            key: Key('rail-${item.id}'),
+                            icon: item.icon,
+                            label: _shortLabel(item),
+                            active: item.isActiveFor(location),
+                            onTap: () =>
+                                activateNavigationItem(context, ref, item),
+                          ),
+                        ),
                       SizedBox(
                         width: double.infinity,
                         height: 60,
                         child: _Destination(
-                          key: Key('rail-${item.id}'),
-                          icon: item.icon,
-                          label: _shortLabel(item),
-                          active: item.isActiveFor(location),
-                          onTap: () =>
-                              activateNavigationItem(context, ref, item),
+                          key: const Key('nav-more'),
+                          icon: Icons.menu,
+                          label: 'More',
+                          active: false,
+                          onTap: onMore,
                         ),
                       ),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 60,
-                      child: _Destination(
-                        key: const Key('nav-more'),
-                        icon: Icons.menu,
-                        label: 'More',
-                        active: false,
-                        onTap: onMore,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -283,33 +287,51 @@ class _Destination extends StatelessWidget {
   }
 }
 
-/// The whole sidebar (every item, the themes and the account) as the drawer
-/// behind More; choosing an item closes it.
-class NavigationDrawerPanel extends StatelessWidget {
-  const NavigationDrawerPanel({
-    required this.location,
-    required this.onItemSelected,
-    super.key,
-  });
-
-  final String location;
-  final VoidCallback onItemSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = Theme.of(context).extension<ShelfTokens>()!;
-    return Drawer(
-      key: const Key('nav-drawer'),
-      width: 300,
-      backgroundColor: tokens.background,
-      shape: const RoundedRectangleBorder(),
-      child: SafeArea(
-        right: false,
-        child: SidebarContent(
-          location: location,
-          onItemSelected: onItemSelected,
+/// Opens the whole sidebar (every item, the themes and the account) as a
+/// bottom sheet that can be dragged up and down and away; choosing an item
+/// closes it. B and the system back close it like every other sheet.
+Future<void> showMoreSheet(BuildContext context, {required String location}) {
+  final tokens = Theme.of(context).extension<ShelfTokens>()!;
+  return showModalBottomSheet<void>(
+    context: context,
+    useRootNavigator: true,
+    isScrollControlled: true,
+    useSafeArea: true,
+    backgroundColor: Colors.transparent,
+    barrierColor: tokens.scrim,
+    builder: (sheetContext) => DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.7,
+      minChildSize: 0.3,
+      snap: true,
+      builder: (context, scrollController) => ClipRRect(
+        key: const Key('nav-drawer'),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+        child: ColoredBox(
+          color: tokens.background,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 8, bottom: 4),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: tokens.borderStrong,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  child: const SizedBox(width: 40, height: 5),
+                ),
+              ),
+              Expanded(
+                child: SidebarContent(
+                  location: location,
+                  scrollController: scrollController,
+                  onItemSelected: () => Navigator.of(sheetContext).pop(),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }

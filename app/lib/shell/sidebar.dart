@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:backlog_manager/auth/auth_controller.dart';
 import 'package:backlog_manager/data/space_api.dart';
 import 'package:backlog_manager/design/brand_mark.dart';
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/glass.dart';
 import 'package:backlog_manager/design/glow.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
@@ -62,17 +63,21 @@ class Sidebar extends ConsumerWidget {
 }
 
 /// The content of the sidebar: brand, the navigation sections with their
-/// counts, the theme strip and the account row. The drawer of a phone or
-/// handheld shows the same; [onItemSelected] lets it close after a choice.
+/// counts, the theme strip and the account row. The More sheet of a phone or
+/// handheld shows the same (without "Shortcuts", which needs a keyboard);
+/// [onItemSelected] lets it close after a choice, [scrollController] lets it
+/// be dragged.
 class SidebarContent extends ConsumerWidget {
   const SidebarContent({
     required this.location,
     this.onItemSelected,
+    this.scrollController,
     super.key,
   });
 
   final String location;
   final VoidCallback? onItemSelected;
+  final ScrollController? scrollController;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -102,17 +107,20 @@ class SidebarContent extends ConsumerWidget {
                   const _Brand(),
                   Expanded(
                     child: ListView(
+                      controller: scrollController,
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                       children: [
                         for (final section in navigationSections) ...[
                           _SectionLabel(section.label),
                           for (final item in section.items)
-                            _NavItem(
-                              item: item,
-                              active: item.isActiveFor(location),
-                              count: counts[item.id],
-                              onSelected: onItemSelected,
-                            ),
+                            if (item.id != 'shortcuts' ||
+                                !ShelfFormFactor.isTouch(context))
+                              _NavItem(
+                                item: item,
+                                active: item.isActiveFor(location),
+                                count: counts[item.id],
+                                onSelected: onItemSelected,
+                              ),
                           if (section.label == 'Personalise')
                             const _ThemeStrip(),
                         ],

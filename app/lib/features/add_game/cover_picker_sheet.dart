@@ -204,7 +204,8 @@ class _CoverPickerSheetState extends ConsumerState<CoverPickerSheet> {
           ShelfSearchInput(
             controller: _controller,
             hintText: 'Search a different title on SteamGridDB...',
-            autofocus: widget.steamAppId == null,
+            autofocus:
+                widget.steamAppId == null && ShelfFormFactor.autofocus(context),
             onChanged: _typed,
           ),
           const SizedBox(height: 12),

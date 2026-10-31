@@ -2,6 +2,7 @@ import 'package:backlog_manager/api/api_providers.dart';
 import 'package:backlog_manager/data/backlog_providers.dart';
 import 'package:backlog_manager/data/backlog_scope.dart';
 import 'package:backlog_manager/data/entry_image.dart';
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
@@ -68,10 +69,14 @@ class _PaletteHostState extends ConsumerState<PaletteHost> {
     ref.listen(addGameRequestProvider, (_, _) {
       if (_addOpen) return;
       _addOpen = true;
+      ref.read(addGameOpenProvider.notifier).set(open: true);
       showAddGameSheet(
         context,
         inSpace: ref.read(backlogScopeProvider) != null,
-      ).whenComplete(() => _addOpen = false);
+      ).whenComplete(() {
+        _addOpen = false;
+        if (mounted) ref.read(addGameOpenProvider.notifier).set(open: false);
+      });
     });
     ref.listen(igdbSyncRequestProvider, (_, _) {
       if (_syncOpen) return;
@@ -233,7 +238,7 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
                           child: TextField(
                             key: const Key('palette-input'),
                             controller: _controller,
-                            autofocus: true,
+                            autofocus: ShelfFormFactor.autofocus(context),
                             onChanged: (_) => setState(() => _highlight = 0),
                             textAlignVertical: TextAlignVertical.center,
                             style: style.fieldText.copyWith(fontSize: 17),
@@ -485,7 +490,8 @@ class _ActionRow extends StatelessWidget {
         key: Key('palette-action-${action.id}'),
         children: [
           Expanded(child: Text(action.label, style: style.control)),
-          if (shortcut != null) _Kbd(shortcut.display(isMac: isMac)),
+          if (shortcut != null && !ShelfFormFactor.isTouch(context))
+            _Kbd(shortcut.display(isMac: isMac)),
         ],
       ),
     );

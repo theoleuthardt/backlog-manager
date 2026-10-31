@@ -80,6 +80,19 @@ final addGameRequestProvider = NotifierProvider<AddGameRequestNotifier, int>(
   AddGameRequestNotifier.new,
 );
 
+/// Whether the "Search for a game" sheet is open, so the shoulder buttons of
+/// a gamepad know that they stand on "Add".
+class AddGameOpenNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void set({required bool open}) => state = open;
+}
+
+final addGameOpenProvider = NotifierProvider<AddGameOpenNotifier, bool>(
+  AddGameOpenNotifier.new,
+);
+
 /// Counts requests to open the IGDB sync sheet (toolbar button, palette).
 class IgdbSyncRequestNotifier extends Notifier<int> {
   @override

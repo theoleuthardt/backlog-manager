@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:backlog_manager/design/atmosphere.dart';
 import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/glass.dart';
@@ -197,7 +199,7 @@ class _MobileShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final compact = layout == ShellLayout.compact;
-    void openDrawer() => scaffoldKey.currentState?.openDrawer();
+    void openMore() => unawaited(showMoreSheet(context, location: location));
 
     return SystemBackHandler(
       child: PaletteHost(
@@ -205,20 +207,18 @@ class _MobileShell extends StatelessWidget {
           child: Scaffold(
             key: scaffoldKey,
             backgroundColor: Colors.transparent,
-            drawer: NavigationDrawerPanel(
-              location: location,
-              onItemSelected: () => scaffoldKey.currentState?.closeDrawer(),
-            ),
             bottomNavigationBar: compact
-                ? BottomNavBar(location: location, onMore: openDrawer)
+                ? BottomNavBar(location: location, onMore: openMore)
                 : null,
-            body: SafeArea(
-              bottom: !compact,
-              child: Row(
-                children: [
-                  if (!compact)
-                    ShellNavRail(location: location, onMore: openDrawer),
-                  Expanded(
+            body: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (!compact)
+                  ShellNavRail(location: location, onMore: openMore),
+                Expanded(
+                  child: SafeArea(
+                    left: compact,
+                    bottom: !compact,
                     child: Column(
                       children: [
                         MobileTopBar(location: location),
@@ -226,8 +226,8 @@ class _MobileShell extends StatelessWidget {
                       ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

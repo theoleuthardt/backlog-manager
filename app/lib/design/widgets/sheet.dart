@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
@@ -201,7 +203,8 @@ class ShelfSheetFooter extends StatelessWidget {
 /// bar over a dimmed window. Esc and a click outside close it unless it is not
 /// [dismissible] (a running import, for example). On a phone in portrait
 /// ([ShelfFormFactor]) it rises from the bottom over the full width, at most
-/// 92 % of the screen high and above the on-screen keyboard.
+/// 92 % of the screen high, above the on-screen keyboard and below the status
+/// bar.
 Future<T?> showShelfSheet<T>(
   BuildContext context, {
   required WidgetBuilder builder,
@@ -216,16 +219,21 @@ Future<T?> showShelfSheet<T>(
     pageBuilder: (context, animation, secondary) {
       final screen = MediaQuery.sizeOf(context);
       if (ShelfFormFactor.isCompact(context)) {
+        final keyboard = MediaQuery.viewInsetsOf(context).bottom;
+        final statusBar = MediaQuery.paddingOf(context).top;
         return Material(
           type: MaterialType.transparency,
           child: Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.viewInsetsOf(context).bottom,
-            ),
+            padding: EdgeInsets.only(bottom: keyboard),
             child: Align(
               alignment: Alignment.bottomCenter,
               child: ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: screen.height * 0.92),
+                constraints: BoxConstraints(
+                  maxHeight: math.min(
+                    screen.height * 0.92,
+                    screen.height - keyboard - statusBar - 8,
+                  ),
+                ),
                 child: SizedBox(width: screen.width, child: builder(context)),
               ),
             ),
