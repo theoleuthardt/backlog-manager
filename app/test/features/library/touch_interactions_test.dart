@@ -86,17 +86,45 @@ void main() {
       await tester.pump(const Duration(seconds: 6));
     });
 
-    testWidgets('holding and moving a game does not drag it', (tester) async {
-      await openOnPhone(tester);
+    testWidgets('holding and moving a game drags it to another group', (
+      tester,
+    ) async {
+      final api = await openOnPhone(tester);
+      final target = find.byKey(const Key('group-status:Completed'));
+      await tester.ensureVisible(tile(1));
+      await tester.pumpAndSettle();
 
       final gesture = await tester.startGesture(tester.getCenter(tile(1)));
       await tester.pump(const Duration(milliseconds: 300));
-      await gesture.moveBy(const Offset(0, 120));
+      await gesture.moveBy(const Offset(0, 20));
       await tester.pump();
-
-      expect(find.byKey(const Key('drag-preview')), findsNothing);
+      expect(find.byKey(const Key('drag-preview')), findsOneWidget);
+      await gesture.moveTo(tester.getCenter(target));
+      await tester.pump();
       await gesture.up();
       await tester.pumpAndSettle();
+
+      expect(api.calls, contains('update 1 {status: Completed}'));
+      await tester.pump(const Duration(seconds: 6));
+    });
+
+    testWidgets('a quick swipe over a game still scrolls', (tester) async {
+      await openOnPhone(tester);
+      final scrollable = tester.state<ScrollableState>(
+        find
+            .descendant(
+              of: find.byKey(const Key('page-library')),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      final before = scrollable.position.pixels;
+
+      await tester.drag(tile(1), const Offset(0, -200));
+      await tester.pumpAndSettle();
+
+      expect(scrollable.position.pixels, greaterThan(before));
+      expect(find.byKey(const Key('drag-preview')), findsNothing);
     });
 
     testWidgets('pulling the library down loads the games again', (

@@ -31,7 +31,8 @@ class LibraryContent {
 /// The library sections for the personal backlog, or null while the entries
 /// are not loaded. The statuses are the built-in ones, the custom ones and any
 /// status only entries carry, in that order; the filters of the filter bar
-/// and the search text narrow the entries. Only the sort option, its
+/// and the search text narrow the entries; sorted by category, a game is in
+/// every category it has. Only the sort option, its
 /// direction and the orders of the groups ([LibraryViewState.entryOrders])
 /// are watched from the view, so folding a group away or paging does not sort
 /// the entries again.
@@ -98,6 +99,12 @@ final libraryContentProvider = Provider<LibraryContent?>((ref) {
       statusFilter: filters.statuses.toSet(),
       categoryNames: categoryNames,
       categoryColors: categoryColors,
+      entryCategories: sortBy == SortOption.category
+          ? {
+              for (final item in categoriesByEntry.entries)
+                item.key: [for (final category in item.value) category.name],
+            }
+          : const {},
     ),
     groupOrder,
   );

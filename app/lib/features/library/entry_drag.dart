@@ -118,27 +118,58 @@ class _EntryDraggable extends Draggable<int> {
   }
 }
 
-/// Makes [child], the tile or row of [entry], draggable onto the groups of
-/// the library. The drag itself is run by the [LibraryDrag] of the page.
-class EntryDragSource extends StatelessWidget {
+/// Makes [child], the tile or row of [entry] in [group], draggable onto the
+/// groups of the library. The drag itself is run by the [LibraryDrag] of the
+/// page. On a touch screen the drag starts after a hold; a hold that ends
+/// without moving is the long press of the game and runs [onHold] (its menu).
+class EntryDragSource extends StatefulWidget {
   const EntryDragSource({
     required this.entry,
+    required this.group,
     required this.drag,
     required this.child,
+    this.onHold,
     super.key,
   });
 
   final BacklogEntry entry;
+  final LibraryGroup group;
   final LibraryDrag drag;
   final Widget child;
+  final VoidCallback? onHold;
+
+  @override
+  State<EntryDragSource> createState() => _EntryDragSourceState();
+}
+
+class _EntryDragSourceState extends State<EntryDragSource> {
+  Offset? _start;
+  var _moved = false;
+
+  void _update(DragUpdateDetails details) {
+    final start = _start ??= details.globalPosition;
+    if ((details.globalPosition - start).distance > _dragDistance) {
+      _moved = true;
+    }
+    widget.drag.update(details.globalPosition);
+  }
+
+  void _end() {
+    final held = !_moved;
+    _start = null;
+    _moved = false;
+    unawaited(widget.drag.end(widget.entry, from: widget.group));
+    if (held) widget.onHold?.call();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final child = widget.child;
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
         return _EntryDraggable(
-          data: entry.id,
+          data: widget.entry.id,
           dragAnchorStrategy: (draggable, context, position) =>
               Offset(width / 2, 24),
           feedback: IgnorePointer(
@@ -155,9 +186,9 @@ class EntryDragSource extends StatelessWidget {
             ),
           ),
           childWhenDragging: Opacity(opacity: 0.3, child: child),
-          onDragStarted: () => drag.start(entry.id),
-          onDragUpdate: (details) => drag.update(details.globalPosition),
-          onDragEnd: (_) => drag.end(entry),
+          onDragStarted: () => widget.drag.start(widget.entry.id),
+          onDragUpdate: _update,
+          onDragEnd: (_) => _end(),
           child: child,
         );
       },
@@ -259,7 +290,8 @@ class LibraryDrag {
     return group != null && group.droppable ? group : null;
   }
 
-  Future<void> end(BacklogEntry entry) async {
+  /// Ends the drag of [entry] out of the group it was dragged [from].
+  Future<void> end(BacklogEntry entry, {LibraryGroup? from}) async {
     _timer?.cancel();
     _timer = null;
     final key = ref.read(dragProvider).overGroupKey;
@@ -280,7 +312,14 @@ class LibraryDrag {
     final target = categories
         .where((category) => category.name == group.label)
         .firstOrNull;
-    if (target != null) await actions.moveToCategory(entry, target);
+    final source = from == null
+        ? null
+        : categories
+              .where((category) => category.name == from.label)
+              .firstOrNull;
+    if (target != null) {
+      await actions.moveToCategory(entry, target, from: source);
+    }
   }
 
   void dispose() {

@@ -27,13 +27,15 @@ class CategoryMove {
 }
 
 /// The change for dropping a game with the [assigned] categories on [target]:
-/// the target is added unless the game has it, and the first category goes.
-/// Null when the target already is the first category.
+/// the target is added unless the game has it, and the category it was
+/// dragged [from] goes (the first one when that is not known); the other
+/// categories stay. Null when the target is that category.
 CategoryMove? categoryMove({
   required List<Category> assigned,
   required Category target,
+  Category? from,
 }) {
-  final source = assigned.firstOrNull;
+  final source = from ?? assigned.firstOrNull;
   if (source?.id == target.id) return null;
   return CategoryMove(
     add: assigned.any((category) => category.id == target.id) ? null : target,

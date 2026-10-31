@@ -162,6 +162,42 @@ void main() {
       await tester.pump(const Duration(seconds: 6));
     });
 
+    testWidgets(
+      'a game with two categories is in both and leaves the one it is '
+      'dragged out of',
+      (tester) async {
+        final api = FakeBacklogApi(entries: backlog)
+          ..categoryList = [rpg, indie, cozy]
+          ..entriesByCategory = {
+            1: [backlog[0]],
+            2: [backlog[0]],
+          };
+        await pumpLibrary(tester, api, defaultSort: 'category');
+
+        final inIndie = find.byKey(const ValueKey('tile-1')).first;
+        expect(find.byKey(const ValueKey('tile-1')), findsNWidgets(2));
+        expect(tester.takeException(), isNull);
+
+        final gesture = await tester.startGesture(
+          tester.getCenter(inIndie),
+          kind: PointerDeviceKind.mouse,
+        );
+        await gesture.moveBy(const Offset(0, 24));
+        await tester.pump();
+        await gesture.moveTo(
+          tester.getCenter(find.byKey(const Key('group-category:Cozy'))),
+        );
+        await tester.pump();
+        await gesture.up();
+        await tester.pumpAndSettle();
+
+        expect(api.calls, contains('add-category 1 3 personal'));
+        expect(api.calls, contains('remove-category 1 2 personal'));
+        expect(api.calls, isNot(contains('remove-category 1 1 personal')));
+        await tester.pump(const Duration(seconds: 6));
+      },
+    );
+
     testWidgets('drops on an empty category', (tester) async {
       final api = categorized();
       await pumpLibrary(tester, api, defaultSort: 'category');

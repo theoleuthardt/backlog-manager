@@ -50,6 +50,23 @@ void main() {
       expect(move.remove, rpg);
     });
 
+    test('takes the game out of the category it was dragged from', () {
+      final move = categoryMove(
+        assigned: [rpg, indie],
+        target: co,
+        from: indie,
+      )!;
+      expect(move.add, co);
+      expect(move.remove, indie);
+    });
+
+    test('does nothing when dropped on the category it came from', () {
+      expect(
+        categoryMove(assigned: [rpg, indie], target: indie, from: indie),
+        isNull,
+      );
+    });
+
     test('leaves the other categories alone', () {
       final move = categoryMove(assigned: [rpg, indie], target: co)!;
       expect(move.add, co);

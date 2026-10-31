@@ -163,6 +163,41 @@ void main() {
       },
     );
 
+    test('shows a game in every category it has', () {
+      final groups = buildLibraryGroups(
+        entries: [game(1, 'Alpha'), game(2, 'Beta'), game(3, 'Gamma')],
+        config: config(SortOption.category, categories: {1: 'RPG', 2: 'Co-op'}),
+        entryCategories: {
+          1: ['RPG', 'Co-op'],
+          2: ['Co-op'],
+        },
+        categoryNames: ['RPG', 'Co-op'],
+      );
+
+      expect(labels(groups), ['Co-op', 'RPG', 'Uncategorized']);
+      expect(titles(groups[0]), ['Alpha', 'Beta']);
+      expect(titles(groups[1]), ['Alpha']);
+      expect(titles(groups[2]), ['Gamma']);
+      expect(groups[0].droppable, isTrue);
+      expect(groups[2].droppable, isFalse);
+    });
+
+    test('turns the order of the categories with the direction', () {
+      final groups = buildLibraryGroups(
+        entries: [game(1, 'Alpha'), game(2, 'Beta')],
+        config: config(
+          SortOption.category,
+          direction: SortDirection.desc,
+          categories: {1: 'Co-op'},
+        ),
+        entryCategories: {
+          1: ['Co-op', 'RPG'],
+        },
+      );
+
+      expect(labels(groups), ['RPG', 'Co-op', 'Uncategorized']);
+    });
+
     test('gives a category group the colour of its category', () {
       final groups = buildLibraryGroups(
         entries: [game(1, 'A'), game(2, 'B')],
