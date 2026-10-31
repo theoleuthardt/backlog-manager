@@ -237,6 +237,36 @@ void main() {
     },
   );
 
+  testWidgets('takes a new colour and corner of its control at once', (
+    tester,
+  ) async {
+    final style = ValueNotifier<(Color, double)>((const Color(0xFFFF9800), 8));
+    addTearDown(style.dispose);
+    await pumpGlide(
+      tester,
+      child: SizedBox(
+        width: 120,
+        height: 50,
+        child: ValueListenableBuilder(
+          valueListenable: style,
+          builder: (context, value, _) => ShelfFocusRing(
+            visible: true,
+            color: value.$1,
+            borderRadius: value.$2,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(host(tester).ringColor, const Color(0xFFFF9800));
+
+    style.value = (const Color(0xFF009688), 20);
+    await tester.pumpAndSettle();
+
+    expect(host(tester).ringColor, const Color(0xFF009688));
+    expect(host(tester).ringCorner, closeTo(20, 0.5));
+  });
+
   testWidgets('without a host every control draws its own ring', (
     tester,
   ) async {

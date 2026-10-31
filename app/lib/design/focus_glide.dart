@@ -83,12 +83,33 @@ class FocusGlideHostState extends State<FocusGlideHost>
   @visibleForTesting
   Rect? get ringRect => _motion.visible ? _motion.rect : null;
 
+  /// The colour and the corner radius the ring is drawn with now.
+  @visibleForTesting
+  Color get ringColor => _color;
+
+  @visibleForTesting
+  double get ringCorner => _motion.corner;
+
   /// [source] shows the focus now; the ring goes there.
   void claim(GlideSource source) {
     _hot
       ..remove(source)
       ..add(source);
     _scheduleRetarget();
+  }
+
+  /// The colour or the corner of [source] changed while it shows the focus.
+  void restyle(GlideSource source) {
+    if (source != _shown) return;
+    if (_reducedMotion) {
+      _setColor(source.color, at: true);
+      _apply();
+      _frames.value++;
+      return;
+    }
+    _setColor(source.color, at: false);
+    _motion.setRadius(source.radius);
+    _run();
   }
 
   /// [source] no longer shows the focus.
@@ -244,7 +265,7 @@ class FocusGlideHostState extends State<FocusGlideHost>
   bool _onScroll(ScrollNotification notification) {
     if (_target == null) return false;
     if (_reducedMotion) {
-      _apply();
+      _scheduleRetarget();
     } else {
       _run();
     }

@@ -171,7 +171,7 @@ class _GamepadDetectorState extends ConsumerState<_GamepadDetector> {
   /// sight; not after a button, whose menu a scroll would close again.
   void _revealFocus() {
     final focused = FocusManager.instance.primaryFocus?.context;
-    if (focused == null || !focused.mounted) return;
+    if (!mounted || focused == null || !focused.mounted) return;
     unawaited(
       Scrollable.ensureVisible(
         focused,

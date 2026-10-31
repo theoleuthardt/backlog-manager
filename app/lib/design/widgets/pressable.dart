@@ -199,7 +199,14 @@ class _ShelfFocusRingState extends State<ShelfFocusRing>
     _source
       ..radius = widget.borderRadius
       ..color = widget.color;
-    if (oldWidget.visible == widget.visible) return;
+    if (oldWidget.visible == widget.visible) {
+      if (widget.visible &&
+          (oldWidget.color != widget.color ||
+              oldWidget.borderRadius != widget.borderRadius)) {
+        _glide?.restyle(_source);
+      }
+      return;
+    }
     final glide = _glide;
     if (glide != null) {
       if (widget.visible) {

@@ -178,6 +178,15 @@ class GlideMotion {
     }
   }
 
+  /// The control under the ring took another corner [radius].
+  void setRadius(double radius) {
+    if (_phase == _Phase.springs) {
+      _cornerTarget = radius;
+    } else {
+      _destinationRadius = radius;
+    }
+  }
+
   /// The focus left: the ring fades out after a moment.
   void hide() {
     if (_opacityTarget == 0) return;
