@@ -1,4 +1,6 @@
 import 'package:backlog_manager/design/focus_glide_motion.dart';
+import 'package:backlog_manager/design/shelf_metrics.dart';
+import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
@@ -28,7 +30,9 @@ class _GlideScope extends InheritedWidget {
 /// One focus ring for everything below it, the focus selector of a phone or
 /// handheld after DroidDeck: instead of a ring per control it glides from the
 /// control that had the focus to the next one ([GlideMotion]), follows it
-/// while the page scrolls, and fades out when the focus leaves. It sits above
+/// while the page scrolls, and fades out when the focus leaves. A control
+/// without a ring of its own (a Material button, a switch) gets it too, round
+/// its box. It sits above
 /// the navigator, so sheets and dialogs share it, and draws over them without
 /// taking a touch. The desktop has no host and keeps a ring per control.
 class FocusGlideHost extends StatefulWidget {
@@ -65,6 +69,7 @@ class FocusGlideHostState extends State<FocusGlideHost>
   late final Ticker _ticker;
 
   GlideSource? _target;
+  GlideSource? _fallback;
   GlideSource? _shown;
   Rect? _seen;
   Duration _last = Duration.zero;
@@ -131,7 +136,7 @@ class FocusGlideHostState extends State<FocusGlideHost>
   bool get _reducedMotion => MediaQuery.of(context).disableAnimations;
 
   void _retarget() {
-    _target = _hot.isEmpty ? null : _hot.last;
+    _target = _hot.isEmpty ? _focusedControl() : _hot.last;
     if (_target == null) {
       _shown = null;
       if (_reducedMotion) {
@@ -276,10 +281,41 @@ class FocusGlideHostState extends State<FocusGlideHost>
   void initState() {
     super.initState();
     _ticker = createTicker(_tick);
+    FocusManager.instance
+      ..addListener(_scheduleRetarget)
+      ..addHighlightModeListener(_onHighlightMode);
+  }
+
+  void _onHighlightMode(FocusHighlightMode mode) => _scheduleRetarget();
+
+  /// The focused control when none of the claimed rings shows it (a Material
+  /// button, a switch, a menu): its box with the corner of a control, while
+  /// the keyboard or a gamepad moves the focus.
+  GlideSource? _focusedControl() {
+    final node = FocusManager.instance.primaryFocus;
+    final focused = node?.context;
+    if (node == null ||
+        focused == null ||
+        node is FocusScopeNode ||
+        FocusManager.instance.highlightMode != FocusHighlightMode.traditional ||
+        focused.findAncestorStateOfType<FocusGlideHostState>() != this) {
+      return null;
+    }
+    final tokens = Theme.of(context).extension<ShelfTokens>();
+    final cached = _fallback;
+    if (cached != null && cached.context == focused) return cached;
+    return _fallback = GlideSource(
+      context: focused,
+      radius: ShelfRadius.control,
+      color: tokens?.accent ?? Theme.of(context).colorScheme.primary,
+    );
   }
 
   @override
   void dispose() {
+    FocusManager.instance
+      ..removeListener(_scheduleRetarget)
+      ..removeHighlightModeListener(_onHighlightMode);
     _ticker.dispose();
     _frames.dispose();
     super.dispose();

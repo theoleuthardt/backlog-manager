@@ -363,6 +363,32 @@ void main() {
       expect(app.container.read(selectionProvider).ids, {hades.id});
     });
 
+    testWidgets('the D-pad reaches the library search without the keyboard', (
+      tester,
+    ) async {
+      await pumpLibrary(
+        tester,
+        FakeBacklogApi(entries: const [hades, celeste]),
+        overrides: [isDesktopProvider.overrideWithValue(false)],
+      );
+      await resize(tester, handheld);
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pump();
+
+      for (final key in [
+        LogicalKeyboardKey.arrowDown,
+        LogicalKeyboardKey.arrowDown,
+        LogicalKeyboardKey.arrowUp,
+      ]) {
+        await press(tester, key);
+        expect(tester.testTextInput.isVisible, isFalse);
+      }
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'TypeGate');
+
+      await press(tester, LogicalKeyboardKey.gameButtonA);
+      expect(tester.testTextInput.isVisible, isTrue);
+    });
+
     testWidgets('X opens the menu of the focused game, A opens the game', (
       tester,
     ) async {
