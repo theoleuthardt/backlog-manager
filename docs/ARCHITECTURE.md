@@ -5,17 +5,18 @@ anyone (human or agent) who wasn't there for the decisions. For the literal
 directory layout and command surface, see the root [`CLAUDE.md`](../CLAUDE.md)
 instead — this file is about the shape of the system, not where files live.
 
-> The client is the Flutter desktop app in `app/` (structure in [`FLUTTER.md`](FLUTTER.md)). The earlier React/Vite + Tauri client was retired with the 0.9.13 release and moved to [`backlog-manager-legacy`](https://github.com/theoleuthardt/backlog-manager-legacy) (#287); sections below that describe it are history.
+> The client is the Flutter app in `app/` (desktop, Android and iOS) (structure in [`FLUTTER.md`](FLUTTER.md)). The earlier React/Vite + Tauri client was retired with the 0.9.13 release and moved to [`backlog-manager-legacy`](https://github.com/theoleuthardt/backlog-manager-legacy) (#287); sections below that describe it are history.
 
 ## System overview
 
 ```text
 ┌──────────────────────┐        REST + JWT Bearer        ┌──────────────────────┐
-│  Flutter desktop app │ ──────────────────────────────► │  Litestar backend    │
+│  Flutter app         │ ──────────────────────────────► │  Litestar backend    │
 │  (app/)              │ ◄────────────────────────────── │  (backend/)          │
 │  - macOS, Windows,   │     generated Dart client       │  - Auth (incl. 2FA)  │
 │    Linux             │                                  │  - Backlog CRUD      │
-└──────────────────────┘                                  │  - CSV import/export │
+│  - Android, iOS      │                                  │  - CSV import/export │
+└──────────────────────┘                                  │  - Space, backups    │
                                                           │  - IGDB/HLTB/Steam/  │
                                                           │    SteamGridDB       │
                                                           └──────────┬───────────┘
@@ -28,7 +29,8 @@ instead — this file is about the shape of the system, not where files live.
 ```
 
 Only the backend is meant to be hosted as a public, always-on service. The
-app is installed on each desktop from the GitHub Releases and updates itself
+app is installed on each device from the GitHub Releases and updates itself (the
+IPA for iOS only announces new versions)
 ([`APP_UPDATES.md`](APP_UPDATES.md)). The Monitor (`monitor/`,
 [`MONITOR_ARCHITECTURE.md`](MONITOR_ARCHITECTURE.md)) watches the backend
 from its own host.
@@ -181,6 +183,11 @@ workflow never blocks a merge):
   a merge to `main`, never for open pull requests.
 - `release-app.yml` builds, packages and publishes the Flutter app; see
   [`FLUTTER.md`](FLUTTER.md#release-workflow).
+- `app-mobile-tour.yml` (started by hand) runs the mobile tour on Android
+  emulators against a real backend in the job; see
+  [`FLUTTER.md`](FLUTTER.md#mobile-android-and-ios).
+- `deploy-backend.yml` (started by hand, owner only) deploys the backend on
+  the self-hosted runner; see [`DEPLOYMENT.md`](DEPLOYMENT.md).
 
 **Backend tooling.** pytest-asyncio runs every test and fixture in one
 session-scoped event loop: `db.py`'s engine is a module-level singleton bound
@@ -195,7 +202,7 @@ their tests (`task release:test`, the "Release Script Tests" job).
 
 ## Related documents
 
-- [`docs/FLUTTER.md`](FLUTTER.md) — the desktop app: setup, tests, packaging
+- [`docs/FLUTTER.md`](FLUTTER.md) — the app: setup, tests, packaging
   and releases.
 - Root [`CLAUDE.md`](../CLAUDE.md) — commands, directory layout, coding
   conventions, and the Claude Code / issue workflow used on this repo.

@@ -18,7 +18,7 @@ Install the APK and the IPA of a release (the IPA is unsigned: sign and install 
 
 Mark a cell `ok`, `n/a` (with the reason in the notes), or the number of the issue that tracks the gap. A row is done when no cell is empty and no issue in it is open.
 
-What the automated tests already cover (so a failure there is a regression, not a gap): every page without overflow at 402x874, 874x402, 732x412 and 960x540 and goldens of the main pages at those sizes (`test/features/mobile_pages_test.dart`, `test/shell/mobile_shell_test.dart`), 48 dp tap targets (`test/features/touch_test.dart`), the gamepad mapping (`test/shell/gamepad_test.dart`), the long-press menus (`test/features/library/touch_interactions_test.dart`), the biometric lock (`test/auth/`), the update paths (`test/features/updates/`, `test/platform/update_installer_test.dart`), the lighter effects (`test/design/light_effects_test.dart`) and the emulator smoke test (`integration_test/mobile_smoke_test.dart`, Android 14).
+What the automated tests already cover (so a failure there is a regression, not a gap): every page without overflow at 402x874, 874x402, 732x412 and 960x540 and goldens of the main pages at those sizes (`test/features/mobile_pages_test.dart`, `test/shell/mobile_shell_test.dart`), 48 dp tap targets (`test/features/touch_test.dart`), the gamepad mapping (`test/shell/gamepad_test.dart`), the long-press menus and the touch drag (`test/features/library/touch_interactions_test.dart`), the biometric lock (`test/auth/`), the update paths (`test/features/updates/`, `test/platform/update_installer_test.dart`), the lighter effects (`test/design/light_effects_test.dart`) and the emulator smoke test (`integration_test/mobile_smoke_test.dart`, Android 14). The "App Mobile Tour" workflow (`integration_test/mobile_tour_test.dart`) walks every page and feature on a phone and a handheld emulator against the real backend, the handheld with gamepad buttons only; its screenshots and `summary.md` are a first pass over the columns RP and RG before the devices.
 
 ## Pages
 
@@ -30,7 +30,7 @@ What the automated tests already cover (so a failure there is a regression, not 
 | Library: groups, covers and rows, collapsing groups | | | | | | | | |
 | Library: search, filters, sort, group by | | | | | | | | |
 | Library: selection, bulk status, bulk delete, bulk categories | | | | | | | | |
-| Library: long press / context menu, move to status, categories (drag and drop on the desktop) | | | | | | | | |
+| Library: long press / context menu, move to status, categories, drag and drop (on touch: hold, then move) | | | | | | | | |
 | Inspector: every tab, autosave, status, categories, rating, review, playtime, mods, platforms | | | | | | | | |
 | Inspector: trailer, Keyforsteam prices, update image, wrong game | | | | | | | | |
 | Add game sheet: search, deep search, cover picker, duplicate check | | | | | | | | |

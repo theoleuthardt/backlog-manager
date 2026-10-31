@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Backlog Manager is a video game backlog manager. The client is a Flutter desktop app in `app/` (macOS, Windows, Linux; epic #247); the backend is a standalone Python/Litestar service living in `backend/` (fully migrated off Next.js/tRPC — see issue #103/#104 for that history). The app calls the backend over REST with a JWT Bearer token. Only the backend is meant to be hosted as a public, always-on service; the app is installed from the GitHub Releases and updates itself.
+Backlog Manager is a video game backlog manager. The client is a Flutter app in `app/` for the desktop (macOS, Windows, Linux; epic #247) and mobile (Android and iOS; epic #289); the backend is a standalone Python/Litestar service living in `backend/` (fully migrated off Next.js/tRPC — see issue #103/#104 for that history). The app calls the backend over REST with a JWT Bearer token. Only the backend is meant to be hosted as a public, always-on service; the app is installed from the GitHub Releases and updates itself.
 
 A separate Spring Boot service in `monitor/` (epic #468; Spring Boot 4.1.2, Java 25, Maven wrapper) is the status and alerting service of the homelab: it watches the backend from its own LXC and does not replace it. Its design: [`docs/MONITOR_ARCHITECTURE.md`](docs/MONITOR_ARCHITECTURE.md).
 
@@ -22,7 +22,7 @@ task backend:dev   # Litestar dev server (uvicorn --reload)
 task db:up         # local Postgres + pgAdmin via compose.yml
 task test          # backend (pytest) + app (flutter test) + monitor (JUnit) + release script (node --test, Node 22 from .nvmrc) suites
 task lint          # backend (ruff) + app (flutter analyze) + monitor (javac -Xlint:all -Werror)
-task app:dev       # Flutter desktop app (needs Flutter 3.47.6, see docs/FLUTTER.md)
+task app:dev       # Flutter app on this platform (needs Flutter 3.47.6, see docs/FLUTTER.md)
 task monitor:dev   # Monitor (Spring Boot) on :8090 against the local Postgres (task monitor:db:create once); also monitor:install, monitor:lint, monitor:test, monitor:build, monitor:format(:check)
 task format        # ruff format (backend) + dart format (app) + Spotless (monitor); task format:check only verifies
 task audit         # known-vulnerability scan of the locked backend dependencies
@@ -70,10 +70,10 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the reasoning behind thes
 
 ## Flutter client (`app/`)
 
-Dart/Flutter app (desktop; Android and iOS in progress, epic #289, `isDesktopPlatform()` guards the desktop-only plugins), ported from the retired web client ([`backlog-manager-legacy`](https://github.com/theoleuthardt/backlog-manager-legacy)). Setup, running, debugging, goldens and packaging: [`docs/FLUTTER.md`](docs/FLUTTER.md).
+Dart/Flutter app (desktop, and Android and iOS since epic #289: phones in portrait, handhelds such as the Retroid Pocket 6 in landscape with a gamepad; `isDesktopPlatform()` guards the desktop-only plugins, `ShelfFormFactor` tells the UI kit about touch and compact layouts), ported from the retired web client ([`backlog-manager-legacy`](https://github.com/theoleuthardt/backlog-manager-legacy)). Setup, running, debugging, goldens and packaging: [`docs/FLUTTER.md`](docs/FLUTTER.md).
 
 - **Commands:** always `task app:*` (`app:install`, `app:dev`, `app:dev:mobile`, `app:lint`, `app:test`, `app:test:update-goldens`, `app:format`, `app:format:check`, `app:build`, `app:build:apk`, `app:build:ios`, `app:package`, `app:icons`, `app:generate-api`), never bare `flutter`/`dart`; `task check` and `task lint` include the app.
-- **Layout:** `lib/api/` (everything that talks to the backend: Dio setup, error mapping, the SSE reader, the server URL setting, the generated client in `generated/`), `lib/domain/` (pure logic and models ported from the web client's `src/lib/`, no Flutter imports), `lib/design/` (`ShelfTokens`, `ShelfTextStyles`, the Material theme builder, the atmosphere, glass and glow widgets, the UI kit in `design/widgets/`), `lib/shell/` (title bar, sidebar, status bar, shortcuts), `lib/routing/` (`go_router`, route guard, session state), `lib/auth/` (token store, auth API, the sign-in state machine) and `lib/features/<screen group>/` (so far the sign-in and setup pages and the debug gallery of the UI kit), `app.dart`; `test/` mirrors `lib/`.
+- **Layout:** `lib/api/` (everything that talks to the backend: Dio setup, error mapping, the SSE reader, the server URL setting, the generated client in `generated/`), `lib/domain/` (pure logic and models ported from the web client's `src/lib/`, no Flutter imports), `lib/design/` (`ShelfTokens`, `ShelfTextStyles`, the Material theme builder, the atmosphere, glass and glow widgets, the UI kit in `design/widgets/`), `lib/data/` (the Riverpod providers of the backend data per scope, personal or space, the API wrappers around the generated client, device-local stores, the release source, update download and verification), `lib/platform/` (native hooks: URLs, browser and trailer windows, file pickers and savers, the update installer, the app lifecycle), `lib/shell/` (title bar, sidebar, status bar, shortcuts, the mobile bars and rail, the gamepad mapping), `lib/routing/` (`go_router`, route guard, session state), `lib/auth/` (token store, auth API, the sign-in state machine) and `lib/features/<screen group>/` (one folder per page or tool: library, inspector, settings, space, steam, updates, ...), `app.dart`; `test/` mirrors `lib/`.
 - **State and routing:** Riverpod and `go_router`. Screens hold UI state only; logic that is not about widgets lives in plain Dart files with unit tests.
 - **Theming:** read colours from the `ShelfTokens` `ThemeExtension` and text from `ShelfTextStyles` (`lib/design/`), never hard-coded `Color`s or font sizes.
 - **Partial updates:** never send a generated request class for a partial `PUT` (it sends every field and a `null` clears the field on the backend); use a map that only has the fields that changed, like `UserUpdate`.

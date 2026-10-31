@@ -1,6 +1,6 @@
 # Flutter client
 
-The desktop client in `app/` is the Flutter port of the retired web client (epic #247), which now lives in [`backlog-manager-legacy`](https://github.com/theoleuthardt/backlog-manager-legacy). It targets macOS, Windows and Linux, and Android and iOS (#289, see [Mobile](#mobile-android-and-ios)). Design and layout come from [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
+The client in `app/` is the Flutter port of the retired web client (epic #247), which now lives in [`backlog-manager-legacy`](https://github.com/theoleuthardt/backlog-manager-legacy). It targets macOS, Windows and Linux, and Android and iOS (#289, see [Mobile](#mobile-android-and-ios)). Design and layout come from [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
 
 ## Setup
 
@@ -20,11 +20,17 @@ The desktop client in `app/` is the Flutter port of the retired web client (epic
 | Task | What it does |
 | --- | --- |
 | `task app:dev` | run the app on the host platform |
+| `task app:dev:mobile DEVICE=<id>` | run the app on a connected Android or iOS device or emulator (see [Mobile](#mobile-android-and-ios)) |
 | `task app:lint` | `flutter analyze` (`flutter_lints` plus the stricter rules in `app/analysis_options.yaml`) |
 | `task app:test` | `tool/test/run.sh`: unit, widget and golden tests, one run with a worker per core (`task app:test -- test/features/inspector` runs one path) |
 | `task app:test:update-goldens` | the same with `--update-goldens`, re-records the golden images |
 | `task app:format` / `task app:format:check` | `dart format` / check only |
+| `task app:test:integration` | the integration flows in a window (see [Integration tests](#integration-tests)) |
 | `task app:build` | release build for the host platform |
+| `task app:build:apk` / `task app:build:ios` | debug APK / unsigned IPA (macOS only) |
+| `task app:package` | installers for the host OS (see [Building and packaging locally](#building-and-packaging-locally)) |
+| `task app:icons` | renders the app icons from `tool/icons/icon.svg` |
+| `task app:generate-api` | regenerates `lib/api/generated/` from `backend/openapi.json` |
 
 `task lint`, `task test`, `task check`, `task format` and `task install` include the app.
 
@@ -78,12 +84,13 @@ Deliberate difference from the TypeScript code: `toNumber` returns null for an e
 app/
   lib/
     design/     tokens, theme, atmosphere and the shared widgets
-    shell/      window shell: title bar, sidebar, status bar, shortcuts
+    shell/      window shell: title bar, sidebar, status bar, shortcuts, mobile bars and rail, gamepad
     routing/    router, route table, session guard, navigation history
-    auth/       token store, auth API, sign-in state machine
-    platform/   native hooks such as opening a URL
-    api/        client generated from backend/openapi.json
-    features/   one folder per screen group (auth, setup and the debug gallery)
+    auth/       token store, auth API, sign-in state machine, biometric lock
+    platform/   native hooks: URLs, browser and trailer windows, files, update installer, lifecycle
+    api/        Dio setup, errors, SSE, server URL, client generated from backend/openapi.json
+    data/       providers of the backend data, API wrappers, device-local stores, updates
+    features/   one folder per page or tool (library, inspector, settings, space, updates, ...)
     domain/     pure logic and models, ported from the web client's src/lib/
     app.dart    root widget (router and providers)
     main.dart
@@ -100,7 +107,7 @@ app/
 
 `task app:dev` runs `flutter run` for the host platform (macOS, Windows or Linux) with hot reload: press `r` in the terminal to reload, `R` to restart, `q` to quit. The terminal prints the URL of the Dart DevTools (widget inspector, profiler, logs). VS Code and the JetBrains IDEs with the Flutter plugin start the same app from their run button and attach the debugger; open `app/` as the project folder.
 
-A build for another OS cannot be made on this one (Flutter has no cross-compilation for desktop), so Windows and Linux will be checked by the CI runners of those systems (#282).
+A build for another OS cannot be made on this one (Flutter has no cross-compilation for desktop): pull requests build Linux, Android and iOS in CI ("Checks on pull requests"), and the release workflow builds every platform on a runner of its own.
 
 ## Tests
 
@@ -136,7 +143,7 @@ Decisions (#277):
 
 **The AppImage is assembled by `tool/package/appimage.sh` (#438), not by Fastforge:** Fastforge puts every library `ldd` finds into it, and since the WebKit plugin that was the whole WebKitGTK tree of the Ubuntu build machine (76 MB instead of 19 MB), which does not run on a Fedora based system (v0.9.6 on Bazzite: `libjpeg.so.8` missing, Fedora has `.so.62`; `AppRun` also put the bundled libraries first with `LD_LIBRARY_PATH`). The script copies only the Flutter release bundle (about 11 MB) into an AppDir with a plain `AppRun` and runs `appimagetool`; WebKitGTK 4.1 and libsoup 3 are a requirement of the system like for the deb and rpm. `tool/package/check_appimage.sh` fails when the AppImage holds anything but the bundle and the files of the AppImage itself (it runs in `task app:package` and in the Linux build job of CI).
 
-Verified so far: the three Linux packages are built locally (an AppImage starts under Xvfb); the macOS and Windows packages only run in the release workflow's dry run.
+Locally only the packages of the host OS can be built; every release builds all of them in the release workflow.
 
 ## Release workflow
 
@@ -149,14 +156,14 @@ Verified so far: the three Linux packages are built locally (an AppImage starts 
   `android/app/build.gradle.kts` uses the keystore when `ANDROID_KEYSTORE_PATH` is set; without it a release build stays unsigned. The workflow fails with a clear message when the keystore secret is missing. Create the keystore once with `keytool -genkeypair -v -keystore blm-release.jks -alias blm -keyalg RSA -keysize 4096 -validity 36500`, store it as `base64 -w0 blm-release.jks` in the secret, and keep the file and its passwords in a safe place. An APK signed with another key cannot update an installed app: losing the keystore means every user reinstalls.
 - **Dry run:** with `publish` off (the default) nothing is released; take the installers from the run's artifacts.
 - **Publishing:** `publish` creates the GitHub Release with generated notes and all installers. Since the cutover (#287) a release is a full release by default; `prerelease` marks it as a pre-release, which only the Preview update channel offers (`APP_UPDATES.md`). 0.9.13 was the first full release.
-- The release notes start with the install instructions for unsigned builds (`.github/release-install-notes.md`). The builds are not code signed; that is a decision for later (#280).
+- The release notes start with the install instructions for unsigned builds (`.github/release-install-notes.md`). The desktop builds are not code signed; code signing is postponed (#280).
 
 ## Mobile (Android and iOS)
 
 The mobile port is epic #289 (#519-#528). The app id is `dev.theocloud.blm` on every platform; Android needs 8.0 (API 26) or newer, iOS 16 or newer.
 
 - **Run:** `task app:dev:mobile DEVICE=<id>` on a connected device or emulator (`flutter devices` lists them). Against the local backend (`task backend:dev`, the debug default `http://localhost:8000`) run `adb reverse tcp:8000 tcp:8000` first: `localhost` on an Android emulator or a USB device is the device itself, and the reverse forwards it to the backend on the computer. The iOS simulator shares the network of the Mac and needs nothing. A physical iPhone (and an Android device without the USB reverse) cannot reach a local backend: `localhost` is the phone itself, and plain `http` to the computer's LAN address is refused like on the desktop, so point it at an `https` backend (the deployed one or an `https` tunnel to the local one). Plain `http` stays limited to loopback hosts, as on the desktop: `res/xml/network_security_config.xml` allows cleartext only for `localhost`, `127.0.0.1` and `::1`, and iOS allows local networking (`NSAllowsLocalNetworking`).
-- **Build:** `task app:build:apk` (debug APK in `build/app/outputs/flutter-apk/`; release builds are unsigned until the release signing of #520) and, on macOS, `task app:build:ios` (release build without code signing, packed by `tool/package/ipa.sh` as `dist/<version>/Backlog-Manager_<version>_ios.ipa`). The IPA is unsigned: the user signs and installs it with a signing tool (KravaSigner); Android ships as a signed APK (#520).
+- **Build:** `task app:build:apk` (debug APK in `build/app/outputs/flutter-apk/`; a local release build stays unsigned unless `ANDROID_KEYSTORE_PATH` is set, see [Release workflow](#release-workflow)) and, on macOS, `task app:build:ios` (release build without code signing, packed by `tool/package/ipa.sh` as `dist/<version>/Backlog-Manager_<version>_ios.ipa`). The IPA is unsigned: the user signs and installs it with a signing tool (KravaSigner); Android ships as a signed APK (#520).
 - **Desktop-only plugins:** `window_manager`, `desktop_webview_window` and `desktop_drop` only run where `isDesktopPlatform()` (`lib/platform/desktop.dart`) is true: the window setup in `main.dart`, the window controls of the title bar (`NoWindowControls` on mobile), the browser window (the system browser on mobile) and the file drop of the CSV import. The check reads the real operating system, not `defaultTargetPlatform`, which widget tests report as Android, so the tests keep the desktop behaviour.
 - **Trailers:** the embedded player (`flutter_inappwebview`) also runs on Android and iOS.
 - **Android Gradle Plugin:** pinned to 8.13 (Gradle 8.14.3, needs a JDK 17 or 21) in `android/settings.gradle.kts`, because `flutter_inappwebview_android` 1.1.3 calls `getDefaultProguardFile('proguard-android.txt')`, which AGP 9 rejects. Flutter warns that its AGP 8 support ends soon: move to AGP 9 (the template's 9.1 and Gradle 9.3) once `flutter_inappwebview` 6.2 is stable.
@@ -187,7 +194,7 @@ The mobile port is epic #289 (#519-#528). The app id is `dev.theocloud.blm` on e
 - **CI:** on every app pull request `app.yml` builds a debug APK (JDK 17, job "App Android Build") and, in parallel, runs `integration_test/mobile_smoke_test.dart` on an Android 14 emulator (job "App Android Smoke Test") (`reactivecircus/android-emulator-runner`, KVM of the GitHub runner): the real app with the real keystore and preferences against the in-memory backend, so a plugin without an Android implementation fails there. It also builds the unsigned IPA on macOS. The APK and the IPA are attached to the run as artifacts (`android-apk`, `ios-ipa`) for a check on a real device. Both Android jobs cache Gradle, the NDK, CMake and the emulator snapshot; GitHub shares a cache made on a pull request only with that pull request, so the two Android jobs also run on every push to `main` that changes the app, and every new pull request starts from those warm caches (the other app jobs run on pull requests only).
 - **Install:** every app release carries `Backlog-Manager_<version>_android_arm64.apk` (signed; open it on the device and allow the browser or file manager to install unknown apps; later versions install from Settings > Updates, `APP_UPDATES.md`) and `Backlog-Manager_<version>_ios.ipa` (unsigned; sign and install it with KravaSigner, again for each new version, which the app announces). For spot checks before a release, the CI run of a pull request uploads a debug APK (`android-apk`) and an unsigned IPA (`ios-ipa`).
 - **Device checklist:** [`MOBILE_PARITY.md`](MOBILE_PARITY.md) lists every page and function per device (iPhone portrait and landscape, Retroid Pocket 6 and AYN Odin 3 with touch and with the gamepad, the desktop); a gap found there becomes an issue of #289.
-- **Testing the mobile layout:** golden tests at the phone (402x874, portrait) and handheld (Retroid Pocket 6, AYN Odin 3, landscape) sizes next to the unchanged desktop goldens, the integration flows in a window of those sizes, the emulator smoke test, and spot checks on the devices with the CI artifacts. There is no local emulator: the development container has no KVM.
+- **Testing the mobile layout:** golden tests at the phone (402x874, portrait) and handheld (Retroid Pocket 6, AYN Odin 3, landscape) sizes next to the unchanged desktop goldens, the integration flows in a window of those sizes, the emulator smoke test, the mobile tour below, and spot checks on the devices with the CI artifacts. There is no local emulator: the development container has no KVM.
 - **Mobile tour (#576):** the workflow "App Mobile Tour" (`.github/workflows/app-mobile-tour.yml`, started by hand, phone and/or handheld) runs `integration_test/mobile_tour_test.dart` on Android emulators against the real backend: Postgres and the Litestar backend run in the job, `backend/scripts/seed_mobile_tour.py` fills them through the API (two users, a backlog with Steam covers in every status, categories, mods, a shared space, backups) and `adb reverse` lets the emulator reach it. `scripts/mobile-tour.sh` shapes the emulator (the phone in portrait at 411x891 logical pixels; the handheld in landscape at the 853x480 logical pixels of the Retroid Pocket 6; both at a lower pixel density, which the software GPU of the emulator keeps up with), drives the tour and then takes native screenshots before and after a D-pad press (the grey focus veil of Android, #570). The tour walks every page, sheet and menu, uses the features (editing a game, mods, categories, filters, sorting, bulk actions, a custom game, CSV import and export with built-in files, themes, the profile picture, two-factor set-up, backups, the space, the palette) and on the handheld drives everything with gamepad buttons, checking after each D-pad move that the gliding focus ring sits on the focused control. It never fails on what it finds: errors of the app, failed steps and notes on the focus go to `tour/<device>/report.json` and `summary.md` (also the job summary), the screenshots to the `mobile-tour-<device>` artifact. Locally it runs as a Linux build that tells the app it is a touch screen of the device size: start the backend on a seeded database and run `flutter drive --driver=test_driver/tour_driver.dart --target=integration_test/mobile_tour_test.dart -d linux --dart-define=TOUR_LOCAL=true --dart-define=TOUR_DEVICE=phone --dart-define=TOUR_PASSWORD=<INITIAL_ADMIN_PASSWORD>` (under Xvfb, like the integration flows).
 
 ## Architecture
@@ -229,7 +236,7 @@ features/*  ──►  providers (Riverpod)  ──►  lib/api (Dio + generated
 - **Back and forward** (`routing/history.dart`) keep their own history of visited pages, because `go_router` cannot walk one.
 - **Shortcuts** (`shell/shell_shortcuts.dart`): Cmd+S (macOS) or Ctrl+S focuses the search field of the library header, or opens the command palette on a page without it, Cmd+K (macOS) or Ctrl+K opens the command palette (`paletteOpenProvider`, see below), the shortcuts of the registered palette actions work from anywhere, and Esc closes the palette and then the inspector. Esc uses its own intent because the framework's `DismissIntent` is answered by other widgets first.
 - **Screens fill the shell** through providers: `shellStatusProvider` (counts and sync state in the status bar), `shellInspectorProvider` (the inspector slot), `navigationCountsProvider` (numbers next to sidebar items) and `addGameRequestProvider` ("Add game" in the sidebar).
-- The account row's menu switches the theme (`themeIdProvider`, not stored yet, that is the appearance issue) and logs out.
+- The account row's menu switches the theme (`themeIdProvider`, saved with the account by `ThemeActions`) and logs out.
 
 ## UI kit
 
@@ -514,7 +521,7 @@ Settings > General > Account > "Profile Picture" (`features/settings/profile_pic
 
 ### Update notification
 
-`features/updates/` tells the user about a newer release and, where the install can replace itself, installs it in place (download, signature check, restart, on Android the system installer instead of the restart; iOS stays notify-only; the mechanism, the payload keys and the key handling are in [`APP_UPDATES.md`](APP_UPDATES.md)). `domain/app_update.dart` holds the pure part (`parseVersion`, `isNewerVersion` compare plain `X.Y.Z` numerically, `appReleaseFromJson` drops drafts, pre-releases, tags that are not a plain version and pages outside github.com); `data/release_source.dart` reads the newest release of the channel that has an `app-update.json`, else `releases/latest` of the repository (GitHub already leaves out drafts and pre-releases; 404 means no release), and the installed version from `package_info_plus`. The channel (`UpdateChannel`: Stable skips pre-releases, Preview takes them; a switch in the App Updates group, details in [`APP_UPDATES.md`](APP_UPDATES.md)) decides which releases of that list count.
+`features/updates/` tells the user about a newer release and, where the install can replace itself, installs it in place (download, signature check, restart, on Android the system installer instead of the restart; iOS stays notify-only; the mechanism, the payload keys and the key handling are in [`APP_UPDATES.md`](APP_UPDATES.md)). `domain/app_update.dart` holds the pure part (`parseVersion`, `isNewerVersion` compare plain `X.Y.Z` numerically, `appReleaseFromJson` drops drafts, tags that are not a plain version and pages outside github.com, and pre-releases unless `allowPrerelease`); `data/release_source.dart` reads the newest release of the channel that has an `app-update.json`, else `releases/latest` of the repository (GitHub already leaves out drafts and pre-releases; 404 means no release), and the installed version from `package_info_plus`. The channel (`UpdateChannel`: Stable skips pre-releases, Preview takes them; a switch in the App Updates group, details in [`APP_UPDATES.md`](APP_UPDATES.md)) decides which releases of that list count.
 
 - **On start:** `UpdateNotifier` (in `AppShell`) checks quietly in release builds only (`automaticUpdateCheckProvider`, so development and tests make no request); offline and rate-limit failures change nothing. A newer release shows the toast "Backlog Manager <version> is available" with "View release" once per session; the toast stays for a day unless another toast replaces it.
 - **Settings > Updates (#430, a tab of its own between Backups and About):** "Check for updates" ("Checking..."), then "You are on the latest version.", "Version <x> is available." with the release notes and "View release", or "The update check failed. Try again later." The manual check reports failures.
