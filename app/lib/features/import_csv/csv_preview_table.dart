@@ -212,8 +212,7 @@ class _CsvRowTileState extends ConsumerState<CsvRowTile> {
                         padding: const EdgeInsets.only(left: 46, top: 6),
                         child: Row(
                           children: [
-                            if (chip != null) Flexible(child: chip),
-                            const Spacer(),
+                            Expanded(child: chip ?? const SizedBox.shrink()),
                             action,
                           ],
                         ),
