@@ -17,6 +17,7 @@ import 'package:backlog_manager/design/widgets/toast.dart';
 import 'package:backlog_manager/design/widgets/toggles.dart';
 import 'package:backlog_manager/domain/sort_entries.dart';
 import 'package:backlog_manager/features/common/debouncer.dart';
+import 'package:backlog_manager/features/common/user_avatar.dart';
 import 'package:backlog_manager/features/settings/backups_tab.dart';
 import 'package:backlog_manager/features/settings/profile_picture_row.dart';
 import 'package:backlog_manager/features/settings/security_tab.dart';
@@ -307,18 +308,23 @@ class _AccountRow extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         child: Row(
           children: [
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: tokens.accentSoft,
-                shape: BoxShape.circle,
-              ),
-              child: SizedBox(
-                width: 32,
-                height: 32,
-                child: Center(
-                  child: Text(
-                    initials.toUpperCase(),
-                    style: style.label.copyWith(color: tokens.accent),
+            UserAvatar(
+              userId: user.id,
+              version: user.avatarUpdatedAt,
+              size: 32,
+              fallback: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: tokens.accentSoft,
+                  shape: BoxShape.circle,
+                ),
+                child: SizedBox(
+                  width: 32,
+                  height: 32,
+                  child: Center(
+                    child: Text(
+                      initials.toUpperCase(),
+                      style: style.label.copyWith(color: tokens.accent),
+                    ),
                   ),
                 ),
               ),
