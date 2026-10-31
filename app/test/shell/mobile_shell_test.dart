@@ -258,6 +258,21 @@ void main() {
       expect(find.byType(DraggableScrollableSheet), findsOneWidget);
     });
 
+    testWidgets('the theme creator in More closes the sheet', (tester) async {
+      final app = await pumpMobile(tester, size: phonePortrait);
+      await tester.tap(find.byKey(const Key('nav-more')));
+      await tester.pumpAndSettle();
+
+      final creator = find.byKey(const Key('sidebar-theme-creator'));
+      await tester.ensureVisible(creator);
+      await tester.pumpAndSettle();
+      await tester.tap(creator);
+      await tester.pumpAndSettle();
+
+      expect(app.location, AppRoutes.appearance);
+      expect(find.byKey(const Key('nav-drawer')), findsNothing);
+    });
+
     testWidgets('the rail is as high as the screen', (tester) async {
       tester.view.padding = const FakeViewPadding(top: 24, bottom: 24);
       addTearDown(tester.view.resetPadding);

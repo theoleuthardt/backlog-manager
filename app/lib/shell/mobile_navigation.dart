@@ -322,10 +322,13 @@ Future<void> showMoreSheet(BuildContext context, {required String location}) {
                 ),
               ),
               Expanded(
-                child: SidebarContent(
-                  location: location,
-                  scrollController: scrollController,
-                  onItemSelected: () => Navigator.of(sheetContext).pop(),
+                child: SafeArea(
+                  top: false,
+                  child: SidebarContent(
+                    location: location,
+                    scrollController: scrollController,
+                    onItemSelected: () => Navigator.of(sheetContext).pop(),
+                  ),
                 ),
               ),
             ],

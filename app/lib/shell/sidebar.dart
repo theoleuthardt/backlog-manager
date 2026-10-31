@@ -122,12 +122,12 @@ class SidebarContent extends ConsumerWidget {
                                 onSelected: onItemSelected,
                               ),
                           if (section.label == 'Personalise')
-                            const _ThemeStrip(),
+                            _ThemeStrip(onLeave: onItemSelected),
                         ],
                       ],
                     ),
                   ),
-                  const _AccountRow(),
+                  _AccountRow(onLeave: onItemSelected),
                 ],
               ),
             ),
@@ -364,7 +364,11 @@ class _NavItemState extends ConsumerState<_NavItem> {
 /// The themes as small swatches under "Personalise": a click applies one, the
 /// plus opens the theme creator.
 class _ThemeStrip extends ConsumerWidget {
-  const _ThemeStrip();
+  const _ThemeStrip({this.onLeave});
+
+  /// Called before the strip opens another page (the theme creator), so the
+  /// More sheet closes.
+  final VoidCallback? onLeave;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -420,7 +424,10 @@ class _ThemeStrip extends ConsumerWidget {
               label: 'Create a theme',
               child: InkWell(
                 borderRadius: BorderRadius.circular(8),
-                onTap: () => context.go(AppRoutes.appearance),
+                onTap: () {
+                  onLeave?.call();
+                  context.go(AppRoutes.appearance);
+                },
                 child: Padding(
                   padding: const EdgeInsets.all(3),
                   child: SizedBox(
@@ -444,7 +451,10 @@ Future<void> _setTheme(BuildContext context, WidgetRef ref, String id) async {
 }
 
 class _AccountRow extends ConsumerWidget {
-  const _AccountRow();
+  const _AccountRow({this.onLeave});
+
+  /// Called before the row opens the settings, so the More sheet closes.
+  final VoidCallback? onLeave;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -463,6 +473,7 @@ class _AccountRow extends ConsumerWidget {
         if (value == 'logout') {
           unawaited(ref.read(authControllerProvider.notifier).signOut());
         } else if (value == 'settings') {
+          onLeave?.call();
           context.go(AppRoutes.settings);
         }
       },

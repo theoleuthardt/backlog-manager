@@ -230,7 +230,7 @@ Future<T?> showShelfSheet<T>(
               child: ConstrainedBox(
                 constraints: BoxConstraints(
                   maxHeight: math.max(
-                    _leastSheetHeight,
+                    0,
                     math.min(
                       screen.height * 0.92,
                       screen.height - keyboard - statusBar - 8,
@@ -272,7 +272,3 @@ Future<T?> showShelfSheet<T>(
     },
   );
 }
-
-/// The least height of a sheet on a phone, for a keyboard that leaves even
-/// less.
-const _leastSheetHeight = 160.0;
