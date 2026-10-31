@@ -1047,6 +1047,7 @@ class _GroupBody extends ConsumerWidget {
                 _EntryTarget(
                   key: ValueKey('tile-${group.entries[index].id}'),
                   entry: group.entries[index],
+                  group: group,
                   builder: (context, selected, selecting, onTap) => _Tile(
                     entry: group.entries[index],
                     serverUrl: serverUrl,
@@ -1071,6 +1072,7 @@ class _GroupBody extends ConsumerWidget {
                 _EntryTarget(
                   key: ValueKey('row-${group.entries[index].id}'),
                   entry: group.entries[index],
+                  group: group,
                   builder: (context, selected, selecting, onTap) => _Row(
                     entry: group.entries[index],
                     selected:
@@ -1364,11 +1366,19 @@ class _Row extends StatelessWidget {
 /// What every game of the library can do: a click opens it, or toggles it
 /// while selecting; a right click opens the context menu; Enter or Space
 /// activates it, Backspace or Delete asks to delete it and the arrow keys move
-/// the focus to the neighbouring game.
+/// the focus to the neighbouring game. [group] is the group it is shown in: a
+/// game with several categories is in several groups of the category sort,
+/// and a drag takes it out of this one.
 class _EntryTarget extends ConsumerStatefulWidget {
-  const _EntryTarget({required this.entry, required this.builder, super.key});
+  const _EntryTarget({
+    required this.entry,
+    required this.group,
+    required this.builder,
+    super.key,
+  });
 
   final BacklogEntry entry;
+  final LibraryGroup group;
   final Widget Function(
     BuildContext context,
     bool selected,
@@ -1556,7 +1566,6 @@ class _EntryTargetState extends ConsumerState<_EntryTarget> {
     final canDrag =
         drag != null &&
         !selecting &&
-        !ShelfFormFactor.isTouch(context) &&
         (sortBy == SortOption.status || sortBy == SortOption.category);
     final face = widget.builder(context, selected, selecting, _activate);
 
@@ -1570,7 +1579,13 @@ class _EntryTargetState extends ConsumerState<_EntryTarget> {
         child: Stack(
           children: [
             if (canDrag)
-              EntryDragSource(entry: _entry, drag: drag, child: face)
+              EntryDragSource(
+                entry: _entry,
+                group: widget.group,
+                drag: drag,
+                onHold: ShelfFormFactor.isTouch(context) ? _menu.open : null,
+                child: face,
+              )
             else
               face,
             Positioned.fill(

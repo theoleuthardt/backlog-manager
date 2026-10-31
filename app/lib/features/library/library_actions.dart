@@ -87,13 +87,17 @@ class LibraryActions {
   /// Moves one game to a category: the category is added and the game's first
   /// one is removed. Dropping a game on the category it is already in does
   /// nothing.
-  Future<void> moveToCategory(BacklogEntry entry, Category target) async {
+  Future<void> moveToCategory(
+    BacklogEntry entry,
+    Category target, {
+    Category? from,
+  }) async {
     final assigned =
         _ref
             .read(entryCategoriesProvider(_ref.read(backlogScopeProvider)))
             .value?[entry.id] ??
         const <Category>[];
-    final move = categoryMove(assigned: assigned, target: target);
+    final move = categoryMove(assigned: assigned, target: target, from: from);
     if (move == null) return;
     final actions = _ref.read(
       categoryActionsProvider(_ref.read(backlogScopeProvider)),

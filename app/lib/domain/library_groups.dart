@@ -45,6 +45,7 @@ List<LibraryGroup> buildLibraryGroups({
   Set<String>? statusFilter,
   List<String> categoryNames = const [],
   Map<String, String> categoryColors = const {},
+  Map<int, List<String>> entryCategories = const {},
 }) {
   final sorted = sortEntries(entries, config);
   final sortBy = config.sortBy;
@@ -69,12 +70,11 @@ List<LibraryGroup> buildLibraryGroups({
     ];
   }
 
+  final grouped = sortBy == SortOption.category && entryCategories.isNotEmpty
+      ? _byEveryCategory(entries, entryCategories, config.direction)
+      : groupSortedEntries(sorted, sortBy, config.categoryByEntryId);
   final groups = [
-    for (final group in groupSortedEntries(
-      sorted,
-      sortBy,
-      config.categoryByEntryId,
-    ))
+    for (final group in grouped)
       LibraryGroup(
         key: '${sortBy.value}:${group.label}',
         label: group.label,
@@ -100,6 +100,36 @@ List<LibraryGroup> buildLibraryGroups({
         entries: const [],
         color: categoryColors[name],
         droppable: true,
+      ),
+  ];
+}
+
+/// The groups of the category sort with every game in each of its
+/// [categories] (by entry id), the categories by name in [direction] and the
+/// games without one last; the games of a group by title.
+List<LabelGroup> _byEveryCategory(
+  List<BacklogEntry> entries,
+  Map<int, List<String>> categories,
+  SortDirection direction,
+) {
+  final byName = <String, List<BacklogEntry>>{};
+  final without = <BacklogEntry>[];
+  for (final entry in entries) {
+    final names = categories[entry.id] ?? const <String>[];
+    if (names.isEmpty) without.add(entry);
+    for (final name in names.toSet()) {
+      (byName[name] ??= []).add(entry);
+    }
+  }
+  int byTitle(BacklogEntry a, BacklogEntry b) => compareText(a.title, b.title);
+  final names = byName.keys.toList()..sort(compareText);
+  return [
+    for (final name in direction == SortDirection.asc ? names : names.reversed)
+      LabelGroup(label: name, entries: stableSorted(byName[name]!, byTitle)),
+    if (without.isNotEmpty)
+      LabelGroup(
+        label: uncategorizedLabel,
+        entries: stableSorted(without, byTitle),
       ),
   ];
 }
