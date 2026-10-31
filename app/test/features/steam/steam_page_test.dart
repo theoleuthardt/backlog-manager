@@ -696,6 +696,26 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('the filter keeps its focus when the keyboard opens', (
+      tester,
+    ) async {
+      await openWishlist(tester, const Size(402, 874));
+      final filter = find.descendant(
+        of: find.byKey(const Key('page-steam')),
+        matching: find.byType(EditableText),
+      );
+      await tester.tap(filter);
+      await tester.enterText(filter, 'Ready');
+      await tester.pump();
+
+      tester.view.viewInsets = const FakeViewPadding(bottom: 336);
+      await tester.pumpAndSettle();
+
+      final field = tester.widget<EditableText>(filter);
+      expect(field.focusNode.hasFocus, isTrue);
+      expect(field.controller.text, 'Ready');
+    });
+
     testWidgets('the list keeps several rows in landscape', (tester) async {
       await openWishlist(tester, const Size(732, 412));
 

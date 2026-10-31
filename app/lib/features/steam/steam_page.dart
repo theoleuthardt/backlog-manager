@@ -35,6 +35,12 @@ class SteamPage extends ConsumerStatefulWidget {
 }
 
 class _SteamPageState extends ConsumerState<SteamPage> {
+  /// Keep the heading and the list (with the filter field) when the page
+  /// switches between its tall and its short layout, as it does when the
+  /// on-screen keyboard opens, so the field keeps its focus and its text.
+  final _headerKey = GlobalKey();
+  final _listKey = GlobalKey();
+
   final _filter = TextEditingController();
 
   @override
@@ -222,13 +228,21 @@ class _SteamPageState extends ConsumerState<SteamPage> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        final header = KeyedSubtree(
+          key: _headerKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: top,
+          ),
+        );
+        final list = KeyedSubtree(key: _listKey, child: body);
         if (constraints.maxHeight >= _shortPage) {
           return Column(
             key: const Key('page-steam'),
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              ...top,
-              Expanded(child: body),
+              header,
+              Expanded(child: list),
               ?footer,
             ],
           );
@@ -242,10 +256,10 @@ class _SteamPageState extends ConsumerState<SteamPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    ...top,
+                    header,
                     SizedBox(
                       height: math.max(_shortPageList, constraints.maxHeight),
-                      child: body,
+                      child: list,
                     ),
                   ],
                 ),
@@ -672,9 +686,10 @@ const _steamRowColumns = 420.0;
 /// rows of their own.
 const _steamHeaderInOneRow = 600.0;
 
-/// Below this height (a handheld in landscape) the whole page scrolls and the
-/// preview list is as high as the page, instead of the list getting what the
-/// heading leaves, which is about one row.
+/// Below this height (a handheld in landscape, or a phone with the on-screen
+/// keyboard open) the whole page scrolls and the preview list is as high as
+/// the page, instead of the list getting what the heading leaves, which is
+/// about one row.
 const _shortPage = 560.0;
 
 /// The least height of the preview list on a short page.
