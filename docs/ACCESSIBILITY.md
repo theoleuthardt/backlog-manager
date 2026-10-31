@@ -26,6 +26,6 @@ These need the real screen readers and cannot run in CI. Run them on a beta buil
 
 ## Known gaps
 
-- Covers and rows of the library announce their title and hours but the context menu is only reachable with the mouse; the same actions are reachable from the selection bar and the inspector with the keyboard.
+- Covers and rows of the library announce their title and hours but the context menu needs the mouse, a long press or the X button of a gamepad, there is no keyboard key for it; the same actions are reachable from the selection bar and the inspector with the keyboard.
 - The drag and drop between groups has no keyboard path; the status select of the inspector and "Move to" in the selection bar do the same.
 - Custom themes can have colours with too little contrast; the theme creator does not warn about it.
