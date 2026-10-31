@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:flutter/material.dart';
@@ -115,25 +117,99 @@ class _ShelfPressableState extends State<ShelfPressable> {
                     curve: Curves.easeOut,
                     child: widget.builder(context, state),
                   ),
-                  if (state.focused)
-                    Positioned(
-                      left: -4,
-                      top: -4,
-                      right: -4,
-                      bottom: -4,
-                      child: IgnorePointer(
-                        child: DecoratedBox(
-                          key: const Key('focus-ring'),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(
-                              widget.borderRadius + 2,
-                            ),
-                            border: Border.all(color: tokens.accent, width: 2),
-                          ),
-                        ),
-                      ),
+                  Positioned(
+                    left: -4,
+                    top: -4,
+                    right: -4,
+                    bottom: -4,
+                    child: ShelfFocusRing(
+                      visible: state.focused,
+                      borderRadius: widget.borderRadius + 2,
+                      color: tokens.accent,
                     ),
+                  ),
                 ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A 2 px focus ring that fills its parent: it fades in and settles from a
+/// slightly larger size when [visible] turns on, so the focus glides from one
+/// control to the next on a gamepad or keyboard, and fades out when it turns
+/// off. Nothing is drawn once it is gone, and it does not move under the
+/// system setting for less motion.
+class ShelfFocusRing extends StatefulWidget {
+  const ShelfFocusRing({
+    required this.visible,
+    required this.borderRadius,
+    required this.color,
+    super.key,
+  });
+
+  final bool visible;
+  final double borderRadius;
+  final Color color;
+
+  @override
+  State<ShelfFocusRing> createState() => _ShelfFocusRingState();
+}
+
+const _ringFade = Duration(milliseconds: 160);
+
+class _ShelfFocusRingState extends State<ShelfFocusRing>
+    with SingleTickerProviderStateMixin {
+  late final _controller = AnimationController(
+    vsync: this,
+    duration: _ringFade,
+    value: widget.visible ? 1 : 0,
+  );
+  late final _curve = CurvedAnimation(
+    parent: _controller,
+    curve: Curves.easeOutCubic,
+  );
+  late final _scale = Tween<double>(begin: 1.08, end: 1).animate(_curve);
+
+  @override
+  void didUpdateWidget(ShelfFocusRing oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.visible == widget.visible) return;
+    if (MediaQuery.of(context).disableAnimations) {
+      _controller.value = widget.visible ? 1 : 0;
+    } else if (widget.visible) {
+      unawaited(_controller.forward());
+    } else {
+      unawaited(_controller.reverse());
+    }
+  }
+
+  @override
+  void dispose() {
+    _curve.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) =>
+          _controller.isDismissed ? const SizedBox.shrink() : child!,
+      child: IgnorePointer(
+        child: FadeTransition(
+          opacity: _curve,
+          child: ScaleTransition(
+            scale: _scale,
+            child: DecoratedBox(
+              key: const Key('focus-ring'),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(widget.borderRadius),
+                border: Border.all(color: widget.color, width: 2),
               ),
             ),
           ),

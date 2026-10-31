@@ -124,11 +124,137 @@ class ShellShortcuts extends ConsumerWidget {
             },
           ),
         },
-        child: child,
+        child: touch
+            ? _GamepadDetector(child: _FocusFallback(child: child))
+            : child,
       ),
     );
   }
 }
+
+/// Notes in [gamepadInUseProvider] whether the gamepad is in use: a button of
+/// it or the D-pad turns it on, a touch of the screen off.
+class _GamepadDetector extends ConsumerStatefulWidget {
+  const _GamepadDetector({required this.child});
+
+  final Widget child;
+
+  @override
+  ConsumerState<_GamepadDetector> createState() => _GamepadDetectorState();
+}
+
+const _dpadKeys = [
+  LogicalKeyboardKey.arrowUp,
+  LogicalKeyboardKey.arrowDown,
+  LogicalKeyboardKey.arrowLeft,
+  LogicalKeyboardKey.arrowRight,
+  LogicalKeyboardKey.gameButtonA,
+];
+
+class _GamepadDetectorState extends ConsumerState<_GamepadDetector> {
+  bool _onKey(KeyEvent event) {
+    final key = event.logicalKey;
+    if (event is KeyDownEvent &&
+        (_dpadKeys.contains(key) || gamepadActionFor(key) != null) &&
+        !ref.read(gamepadInUseProvider)) {
+      ref.read(gamepadInUseProvider.notifier).set(inUse: true);
+    }
+    return false;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    HardwareKeyboard.instance.addHandler(_onKey);
+  }
+
+  @override
+  void dispose() {
+    HardwareKeyboard.instance.removeHandler(_onKey);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Listener(
+    behavior: HitTestBehavior.translucent,
+    onPointerDown: (_) {
+      if (ref.read(gamepadInUseProvider)) {
+        ref.read(gamepadInUseProvider.notifier).set(inUse: false);
+      }
+    },
+    child: widget.child,
+  );
+}
+
+/// Holds the focus inside the shortcuts on a touch screen: when the focus
+/// falls above them (a focused control closed, a sheet went away), the key
+/// events of a gamepad would no longer reach [ShellShortcuts], so the focus
+/// goes back to the last focused control below, or to this scope. The page
+/// scrolls to a control the D-pad focuses instead of jumping there.
+class _FocusFallback extends StatefulWidget {
+  const _FocusFallback({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_FocusFallback> createState() => _FocusFallbackState();
+}
+
+class _FocusFallbackState extends State<_FocusFallback> {
+  final _scope = FocusScopeNode(debugLabel: 'ShellShortcuts');
+  bool _scheduled = false;
+
+  bool get _fellAway {
+    final primary = FocusManager.instance.primaryFocus;
+    return primary == null || _scope.ancestors.contains(primary);
+  }
+
+  void _check() {
+    if (_scheduled || !_fellAway) return;
+    _scheduled = true;
+    scheduleMicrotask(() {
+      _scheduled = false;
+      if (mounted && _fellAway) _scope.requestFocus();
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    FocusManager.instance.addListener(_check);
+  }
+
+  @override
+  void dispose() {
+    FocusManager.instance.removeListener(_check);
+    _scope.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scroll = MediaQuery.of(context).disableAnimations
+        ? Duration.zero
+        : _focusScrollDuration;
+    return FocusTraversalGroup(
+      policy: ReadingOrderTraversalPolicy(
+        requestFocusCallback:
+            (node, {alignment, alignmentPolicy, curve, duration}) =>
+                FocusTraversalPolicy.defaultTraversalRequestFocusCallback(
+                  node,
+                  alignment: alignment,
+                  alignmentPolicy: alignmentPolicy,
+                  curve: Curves.easeOutCubic,
+                  duration: scroll,
+                ),
+      ),
+      child: FocusScope(node: _scope, child: widget.child),
+    );
+  }
+}
+
+/// How long the page scrolls to a control the D-pad moved the focus to.
+const _focusScrollDuration = Duration(milliseconds: 220);
 
 class _Action<T extends Intent> extends Action<T> {
   _Action({required this.enabled, required this.run});
@@ -204,7 +330,7 @@ class _GamepadAction extends Action<GamepadIntent> {
         goToSection(sectionAfter(location, forward: true, adding: adding));
       case GamepadAction.settings:
         router.go(AppRoutes.settings);
-      case GamepadAction.menu:
+      case GamepadAction.menu || GamepadAction.select:
         break;
     }
     return null;

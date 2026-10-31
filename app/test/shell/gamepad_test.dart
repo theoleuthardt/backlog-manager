@@ -1,5 +1,8 @@
 import 'package:backlog_manager/auth/biometric_lock.dart';
+import 'package:backlog_manager/data/selection_providers.dart';
+import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/platform/desktop.dart';
+import 'package:backlog_manager/routing/router.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/routing/session.dart';
 import 'package:backlog_manager/shell/gamepad.dart';
@@ -52,6 +55,10 @@ void main() {
         gamepadActionFor(LogicalKeyboardKey.gameButtonStart),
         GamepadAction.settings,
       );
+      expect(
+        gamepadActionFor(LogicalKeyboardKey.gameButtonSelect),
+        GamepadAction.select,
+      );
     });
 
     test('leave A and the D-pad to the framework', () {
@@ -86,6 +93,56 @@ void main() {
     });
   });
 
+  group('the button hints', () {
+    test('name what the buttons do', () {
+      final hints = {
+        for (final hint in gamepadHints(selecting: false))
+          hint.button: hint.action,
+      };
+      expect(hints, {
+        'A': 'Choose',
+        'B': 'Back',
+        'X': 'Menu',
+        'Y': 'Search',
+        'Select': 'Mark',
+        'L1 R1': 'Section',
+        'Start': 'Settings',
+      });
+    });
+
+    test('B ends a selection', () {
+      final hints = {
+        for (final hint in gamepadHints(selecting: true))
+          hint.button: hint.action,
+      };
+      expect(hints['B'], 'End selection');
+      expect(hints['Select'], 'Mark');
+    });
+
+    testWidgets('show while the gamepad is used and hide on a touch', (
+      tester,
+    ) async {
+      await pumpHandheld(tester, location: AppRoutes.library);
+      expect(find.byKey(const Key('gamepad-hints')), findsNothing);
+
+      await press(tester, LogicalKeyboardKey.arrowDown);
+      expect(find.byKey(const Key('gamepad-hints')), findsOneWidget);
+      expect(find.text('Section'), findsOneWidget);
+
+      await tester.tapAt(const Offset(400, 200));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('gamepad-hints')), findsNothing);
+    });
+
+    testWidgets('fit a phone', (tester) async {
+      await pumpApp(tester, size: const Size(402, 874), desktop: false);
+      await press(tester, LogicalKeyboardKey.gameButtonA);
+
+      expect(find.byKey(const Key('gamepad-hints')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   group('on a handheld', () {
     testWidgets('R1 opens the search for a new game after the library', (
       tester,
@@ -98,6 +155,27 @@ void main() {
       await press(tester, LogicalKeyboardKey.gameButtonRight1);
       expect(find.text('Search for a game'), findsNothing);
       expect(app.location, AppRoutes.space);
+    });
+
+    testWidgets('the buttons keep working when the focus falls away', (
+      tester,
+    ) async {
+      final app = await pumpHandheld(tester, location: AppRoutes.library);
+      await tester.tap(find.byKey(const Key('nav-more')));
+      await tester.pumpAndSettle();
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pump();
+
+      await press(tester, LogicalKeyboardKey.gameButtonB);
+      expect(find.byKey(const Key('nav-drawer')), findsNothing);
+
+      for (var i = 0; i < 3; i++) {
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pump();
+      }
+      await press(tester, LogicalKeyboardKey.gameButtonRight1);
+      expect(find.text('Search for a game'), findsOneWidget);
+      expect(app.location, AppRoutes.library);
     });
 
     testWidgets('R1 and L1 change the section', (tester) async {
@@ -177,6 +255,111 @@ void main() {
       final focused = FocusManager.instance.primaryFocus;
       expect(focused, isNotNull);
       expect(focused, isNot(isA<FocusScopeNode>()));
+    });
+
+    testWidgets('the D-pad scrolls to the focused game smoothly', (
+      tester,
+    ) async {
+      await pumpLibrary(
+        tester,
+        FakeBacklogApi(
+          entries: [
+            for (var i = 1; i <= 40; i++)
+              BacklogEntry(id: i, title: 'Game $i', status: 'Backlog'),
+          ],
+        ),
+        overrides: [isDesktopProvider.overrideWithValue(false)],
+      );
+      await resize(tester, handheld);
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('library-tile-1')),
+        100,
+        scrollable: find
+            .descendant(
+              of: find.byKey(const Key('page-library')),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      Focus.of(tester.element(find.byKey(const Key('library-tile-1'))))
+          .requestFocus();
+      await tester.pumpAndSettle();
+      double offset() =>
+          Scrollable.of(FocusManager.instance.primaryFocus!.context!)
+              .position
+              .pixels;
+
+      final start = offset();
+      for (var i = 0; i < 30; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 30));
+        final during = offset();
+        await tester.pumpAndSettle();
+        if (offset() != start) {
+          expect(during, isNot(offset()), reason: 'scrolled at once');
+          return;
+        }
+      }
+      fail('the D-pad never scrolled');
+    });
+
+    testWidgets('Select marks games and B ends the selection', (tester) async {
+      final container = await pumpLibrary(
+        tester,
+        FakeBacklogApi(entries: const [hades, celeste]),
+        overrides: [isDesktopProvider.overrideWithValue(false)],
+      );
+      await resize(tester, handheld);
+      Future<void> selectTile(int id) async {
+        final tile = find.byKey(Key('library-tile-$id'));
+        await tester.scrollUntilVisible(
+          tile,
+          100,
+          scrollable: find
+              .descendant(
+                of: find.byKey(const Key('page-library')),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
+        Focus.of(tester.element(tile)).requestFocus();
+        await tester.pumpAndSettle();
+        await press(tester, LogicalKeyboardKey.gameButtonSelect);
+      }
+
+      await selectTile(hades.id);
+      expect(container.read(selectionProvider).active, isTrue);
+      expect(container.read(selectionProvider).ids, {hades.id});
+      await selectTile(celeste.id);
+      expect(container.read(selectionProvider).ids, {hades.id, celeste.id});
+      await selectTile(celeste.id);
+      expect(container.read(selectionProvider).ids, {hades.id});
+
+      await press(tester, LogicalKeyboardKey.gameButtonB);
+      expect(container.read(selectionProvider).active, isFalse);
+      expect(
+        container
+            .read(routerProvider)
+            .routerDelegate
+            .currentConfiguration
+            .uri
+            .path,
+        AppRoutes.library,
+      );
+    });
+
+    testWidgets('B outside the library goes back and keeps the selection', (
+      tester,
+    ) async {
+      final app = await pumpHandheld(tester, location: AppRoutes.library);
+      app.container.read(selectionProvider.notifier).start(hades.id);
+      await app.go(AppRoutes.steam);
+
+      await press(tester, LogicalKeyboardKey.gameButtonB);
+
+      expect(app.location, AppRoutes.library);
+      expect(app.container.read(selectionProvider).ids, {hades.id});
     });
 
     testWidgets('X opens the menu of the focused game, A opens the game', (
