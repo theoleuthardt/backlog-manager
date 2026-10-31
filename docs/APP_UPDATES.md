@@ -50,6 +50,10 @@ The manifest is read as text and decoded in the app (`GithubReleaseSource._readM
 
 Settings, Updates (a tab of its own between Backups and About, #430) has an **Update Channel** switch (`Stable` or `Preview`, `data/update_channel.dart`, kept on the device, not in the account). Stable only takes releases that are not marked as a pre-release; Preview takes the newest release with an `app-update.json` whatever its mark, so it also gets the pre-releases. The check uses the channel (`releaseSourceProvider` follows `updateChannelProvider`), and choosing a channel checks again at once. The default is **Stable** (`UpdateChannelNotifier.build`): since the cutover (#287) the Flutter client has full releases, starting with 0.9.13. Before, while every release was a pre-release, the default was Preview; a channel the user chose is kept, so whoever picked Preview stays on it.
 
+## What is new
+
+The first time the home page opens after an update, the app shows once what changed in the installed version (`WhatsNewPrompt` in `lib/features/updates/whats_new_sheet.dart`, #577). The changes are the bullets of the "What's Changed" section of the GitHub release of that version (pre-releases included), without the conventional-commit type, the author and the link (`releaseChanges` in `lib/domain/whats_new.dart`). The last version shown is kept on the device; a first install only stores its version and shows nothing, a release without changes counts as shown, and a release GitHub does not answer for is asked for again at the next start.
+
 ## Keys
 
 The payloads are signed with an Ed25519 key pair that only the project has.

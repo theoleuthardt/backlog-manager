@@ -62,6 +62,20 @@ void main() {
       expect(appReleaseFromJson(release(prerelease: true)), isNull);
     });
 
+    test('takes a pre-release when asked to, never a draft', () {
+      expect(
+        appReleaseFromJson(
+          release(prerelease: true),
+          allowPrerelease: true,
+        )?.version,
+        '0.9.4',
+      );
+      expect(
+        appReleaseFromJson(release(draft: true), allowPrerelease: true),
+        isNull,
+      );
+    });
+
     test('ignores a tag that is not a plain version', () {
       expect(appReleaseFromJson(release(tag: 'nightly')), isNull);
     });

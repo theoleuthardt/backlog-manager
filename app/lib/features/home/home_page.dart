@@ -16,6 +16,7 @@ import 'package:backlog_manager/domain/format.dart';
 import 'package:backlog_manager/domain/home_logic.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/features/common/entries_gate.dart';
+import 'package:backlog_manager/features/updates/whats_new_sheet.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:flutter/material.dart';
@@ -82,9 +83,11 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     return KeyedSubtree(
       key: const Key('page-home'),
-      child: EntriesGate(
-        builder: (context, list) =>
-            list.isEmpty ? const _EmptyBacklog() : _Content(entries: list),
+      child: WhatsNewPrompt(
+        child: EntriesGate(
+          builder: (context, list) =>
+              list.isEmpty ? const _EmptyBacklog() : _Content(entries: list),
+        ),
       ),
     );
   }

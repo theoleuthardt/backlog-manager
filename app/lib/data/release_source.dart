@@ -14,7 +14,8 @@ abstract interface class ReleaseSource {
   Future<AppRelease?> latest();
 }
 
-const _repositoryUrl =
+/// The releases of the app in the GitHub API.
+const releasesApiUrl =
     'https://api.github.com/repos/theoleuthardt/backlog-manager/releases';
 const _manifestAsset = 'app-update.json';
 
@@ -47,7 +48,7 @@ class GithubReleaseSource implements ReleaseSource {
     if (withManifest != null) return withManifest;
     try {
       final response = await _dio.get<Map<String, dynamic>>(
-        '$_repositoryUrl/latest',
+        '$releasesApiUrl/latest',
       );
       final data = response.data;
       return data == null ? null : appReleaseFromJson(data);
@@ -60,7 +61,7 @@ class GithubReleaseSource implements ReleaseSource {
   Future<AppRelease?> _newestWithManifest() async {
     try {
       final response = await _dio.get<List<dynamic>>(
-        _repositoryUrl,
+        releasesApiUrl,
         queryParameters: {'per_page': 20},
       );
       for (final item in response.data ?? const <dynamic>[]) {
