@@ -64,9 +64,12 @@ jobs:
         run: |
           fernet=$(uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())")
           password=$(openssl rand -hex 16)
+          secret=$(openssl rand -base64 32)
           echo "::add-mask::$password"
+          echo "::add-mask::$secret"
+          echo "::add-mask::$fernet"
           {
-            echo "AUTH_SECRET=$(openssl rand -base64 32)"
+            echo "AUTH_SECRET=$secret"
             echo "TOTP_ENCRYPTION_KEY=$fernet"
             echo "STEAM_API_KEY_ENCRYPTION_KEY=$fernet"
             echo "INITIAL_ADMIN_PASSWORD=$password"
@@ -146,7 +149,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-34-x86_64-google_apis-pixel_6-4096-guest
+          key: avd-34-x86_64-default-pixel_6-4096-guest
 
       - name: Create the emulator snapshot
         if: steps.avd-cache.outputs.cache-hit != 'true'
@@ -154,7 +157,7 @@ jobs:
         with:
           api-level: 34
           arch: x86_64
-          target: google_apis
+          target: default
           profile: pixel_6
           ram-size: 4096M
           force-avd-creation: false
@@ -169,7 +172,7 @@ jobs:
         with:
           api-level: 34
           arch: x86_64
-          target: google_apis
+          target: default
           profile: pixel_6
           ram-size: 4096M
           force-avd-creation: false

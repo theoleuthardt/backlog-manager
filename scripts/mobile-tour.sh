@@ -8,8 +8,7 @@
 # the emulator) and then checks with native screenshots that a D-pad press
 # leaves the look of the app as it is. The logcat of the run and, when the
 # drive fails, the free memory, the end of the kernel log and the emulator
-# process go to the
-# report folder.
+# process go to the report folder.
 set -euo pipefail
 
 device="${TOUR_DEVICE:?phone or handheld}"
