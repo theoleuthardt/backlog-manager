@@ -180,5 +180,6 @@ jobs:
           path: |
             app/tour/${{ matrix.device }}
             ${{ runner.temp }}/backend.log
+            /tmp/android-runner
           retention-days: 7
           if-no-files-found: warn
