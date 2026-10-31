@@ -86,6 +86,7 @@ String trailerPage(Uri embedUrl, {String origin = trailerOrigin}) {
   );
   final src = const HtmlEscape(HtmlEscapeMode.attribute).convert('$withOrigin');
   return '<!doctype html><html><head><meta charset="utf-8">'
+      '<meta name="viewport" content="width=device-width, initial-scale=1">'
       '<meta name="referrer" content="strict-origin">'
       '<style>html,body{margin:0;height:100%;background:#000}'
       'iframe{border:0;width:100%;height:100%}</style></head><body>'

@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/pressable.dart';
@@ -12,7 +13,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Plays the trailer of a game in a sheet over the window, in the largest
-/// 16:9 area that fits. Where the platform has no embedded player (Linux) the
+/// 16:9 area that fits (on a touch screen the whole width of a phone, most
+/// of the height in landscape). Where the platform has no embedded player (Linux) the
 /// trailer plays in a window of its own. [link] must be a canonical YouTube watch
 /// address (`youtubeEmbedUrl`); anything else is ignored.
 Future<void> showTrailer(
@@ -56,8 +58,13 @@ class TrailerSheet extends ConsumerWidget {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
     final screen = MediaQuery.of(context).size;
-    final fits = math.min(screen.width - 80, (screen.height - 230) * 16 / 9);
-    final width = fits.clamp(360.0, 1080.0);
+    final double width;
+    if (ShelfFormFactor.isTouch(context)) {
+      width = math.min(screen.width - 32, (screen.height - 120) * 16 / 9);
+    } else {
+      final fits = math.min(screen.width - 80, (screen.height - 230) * 16 / 9);
+      width = fits.clamp(360.0, 1080.0);
+    }
 
     return SizedBox(
       width: width,
@@ -76,7 +83,8 @@ class TrailerSheet extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 14),
-            Row(
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Text(
                   'Video not playing? ',
