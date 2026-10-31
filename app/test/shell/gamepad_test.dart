@@ -290,6 +290,19 @@ void main() {
     );
 
     testWidgets(
+      'a short fling from the edge goes back too',
+      variant: TargetPlatformVariant.only(TargetPlatform.iOS),
+      (tester) async {
+        final app = await twoPages(tester);
+
+        await tester.flingFrom(const Offset(4, 500), const Offset(60, 0), 800);
+        await tester.pumpAndSettle();
+
+        expect(app.location, AppRoutes.library);
+      },
+    );
+
+    testWidgets(
       'needs to start at the edge and to go far enough',
       variant: TargetPlatformVariant.only(TargetPlatform.iOS),
       (tester) async {
