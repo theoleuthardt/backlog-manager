@@ -122,6 +122,17 @@ jobs:
         working-directory: app
         run: flutter pub get
 
+      - name: Build the tour app
+        working-directory: app
+        run: |
+          flutter build apk --debug \
+            --target=integration_test/mobile_tour_test.dart \
+            --dart-define=TOUR_DEVICE=${{ matrix.device }} \
+            --dart-define=TOUR_PASSWORD="$INITIAL_ADMIN_PASSWORD"
+          (cd android && ./gradlew --stop)
+          pkill -f KotlinCompileDaemon || true
+          free -m
+
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
