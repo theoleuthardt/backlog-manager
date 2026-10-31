@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:backlog_manager/api/api_providers.dart';
 import 'package:backlog_manager/data/entry_image.dart';
@@ -34,6 +35,12 @@ class SteamPage extends ConsumerStatefulWidget {
 }
 
 class _SteamPageState extends ConsumerState<SteamPage> {
+  /// Keep the heading and the list (with the filter field) when the page
+  /// switches between its tall and its short layout, as it does when the
+  /// on-screen keyboard opens, so the field keeps its focus and its text.
+  final _headerKey = GlobalKey();
+  final _listKey = GlobalKey();
+
   final _filter = TextEditingController();
 
   @override
@@ -94,140 +101,174 @@ class _SteamPageState extends ConsumerState<SteamPage> {
       (_, _) => _reportStatus(),
     );
 
-    return Column(
-      key: const Key('page-steam'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(_gutter, 22, _gutter, 8),
-          child: Wrap(
-            spacing: 12,
-            runSpacing: 10,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              if (!wishlistImported)
-                ShelfSegmented<SteamSource>(
-                  segments: const [
-                    ShelfSegment(value: SteamSource.library, label: 'Library'),
-                    ShelfSegment(
-                      value: SteamSource.wishlist,
-                      label: 'Wishlist',
-                    ),
-                  ],
-                  value: source,
-                  onChanged: controller.setSource,
-                )
-              else
-                Text('Steam Library', style: style.page),
-              ShelfButton(
-                key: const Key('steam-load'),
-                label: previewing
-                    ? 'Loading...'
-                    : rows == null
-                    ? 'Load Preview'
-                    : 'Reload Preview',
-                kind: ShelfButtonKind.primary,
-                busy: previewing,
-                onPressed: !linked || state.busy
-                    ? null
-                    : () => unawaited(_load()),
-              ),
-              if (previewing && source == SteamSource.library)
-                SizedBox(
-                  width: 180,
-                  child: ShelfProgressBar(
-                    value: state.total == null || state.total == 0
-                        ? 0
-                        : (state.processed ?? 0) / state.total!,
-                  ),
+    final top = <Widget>[
+      Padding(
+        padding: const EdgeInsets.fromLTRB(_gutter, 22, _gutter, 8),
+        child: Wrap(
+          spacing: 12,
+          runSpacing: 10,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            if (!wishlistImported)
+              ShelfSegmented<SteamSource>(
+                segments: const [
+                  ShelfSegment(value: SteamSource.library, label: 'Library'),
+                  ShelfSegment(value: SteamSource.wishlist, label: 'Wishlist'),
+                ],
+                value: source,
+                onChanged: controller.setSource,
+              )
+            else
+              Text('Steam Library', style: style.page),
+            ShelfButton(
+              key: const Key('steam-load'),
+              label: previewing
+                  ? 'Loading...'
+                  : rows == null
+                  ? 'Load Preview'
+                  : 'Reload Preview',
+              kind: ShelfButtonKind.primary,
+              busy: previewing,
+              onPressed: !linked || state.busy
+                  ? null
+                  : () => unawaited(_load()),
+            ),
+            if (previewing && source == SteamSource.library)
+              SizedBox(
+                width: 180,
+                child: ShelfProgressBar(
+                  value: state.total == null || state.total == 0
+                      ? 0
+                      : (state.processed ?? 0) / state.total!,
                 ),
-              if (previewing && source == SteamSource.library)
-                Text(
-                  checkedLine(state.processed, state.total),
-                  key: const Key('steam-checked'),
+              ),
+            if (previewing && source == SteamSource.library)
+              Text(
+                checkedLine(state.processed, state.total),
+                key: const Key('steam-checked'),
+                style: style.caption.copyWith(color: tokens.muted),
+              ),
+            if (previewing && source == SteamSource.library)
+              ShelfButton(
+                key: const Key('steam-cancel'),
+                label: 'Cancel',
+                kind: ShelfButtonKind.quiet,
+                onPressed: controller.cancel,
+              ),
+          ],
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(_gutter, 4, _gutter, 8),
+        child: const ShelfNote(
+          text: 'Nothing is written until you press Import.',
+        ),
+      ),
+      if (!linked)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(_gutter, 0, _gutter, 8),
+          child: Row(
+            children: [
+              Flexible(
+                child: Text(
+                  'Link your Steam account in the settings to load your '
+                  'games.',
+                  key: const Key('steam-not-linked'),
                   style: style.caption.copyWith(color: tokens.muted),
                 ),
-              if (previewing && source == SteamSource.library)
-                ShelfButton(
-                  key: const Key('steam-cancel'),
-                  label: 'Cancel',
-                  kind: ShelfButtonKind.quiet,
-                  onPressed: controller.cancel,
-                ),
+              ),
+              const SizedBox(width: 10),
+              ShelfButton(
+                key: const Key('steam-open-settings'),
+                label: 'Open Settings',
+                onPressed: () =>
+                    context.go('${AppRoutes.settings}?tab=integrations'),
+              ),
             ],
           ),
         ),
+      if (importedOn != null)
         Padding(
-          padding: const EdgeInsets.fromLTRB(_gutter, 4, _gutter, 8),
-          child: const ShelfNote(
-            text: 'Nothing is written until you press Import.',
-          ),
-        ),
-        if (!linked)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(_gutter, 0, _gutter, 8),
-            child: Row(
-              children: [
-                Flexible(
-                  child: Text(
-                    'Link your Steam account in the settings to load your '
-                    'games.',
-                    key: const Key('steam-not-linked'),
-                    style: style.caption.copyWith(color: tokens.muted),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                ShelfButton(
-                  key: const Key('steam-open-settings'),
-                  label: 'Open Settings',
-                  onPressed: () =>
-                      context.go('${AppRoutes.settings}?tab=integrations'),
-                ),
-              ],
+          padding: const EdgeInsets.fromLTRB(_gutter, 0, _gutter, 8),
+          child: ShelfNote(
+            child: Text(
+              'Your Steam wishlist was imported on $importedOn. The '
+              'wishlist import is for the first time only; the games it '
+              'created are marked as wishlist imports in your backlog. '
+              'Automatic wishlist sync is '
+              '${user?.steamWishlistAutoSync ?? false ? 'on' : 'off'}.',
+              key: const Key('steam-wishlist-imported'),
+              style: style.caption.copyWith(color: tokens.muted),
             ),
           ),
-        if (importedOn != null)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(_gutter, 0, _gutter, 8),
-            child: ShelfNote(
-              child: Text(
-                'Your Steam wishlist was imported on $importedOn. The '
-                'wishlist import is for the first time only; the games it '
-                'created are marked as wishlist imports in your backlog. '
-                'Automatic wishlist sync is '
-                '${user?.steamWishlistAutoSync ?? false ? 'on' : 'off'}.',
-                key: const Key('steam-wishlist-imported'),
-                style: style.caption.copyWith(color: tokens.muted),
+        ),
+    ];
+    final body = AnimatedSwitcher(
+      duration: const Duration(milliseconds: 280),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeIn,
+      transitionBuilder: (child, animation) {
+        final toWishlist = source == SteamSource.wishlist;
+        return FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween(
+              begin: Offset(toWishlist ? 0.04 : -0.04, 0),
+              end: Offset.zero,
+            ).animate(animation),
+            child: child,
+          ),
+        );
+      },
+      child: KeyedSubtree(key: ValueKey(source), child: _body(state, source)),
+    );
+    final footer = rows != null && rows.isNotEmpty
+        ? _Footer(state: state, onImport: () => unawaited(_import()))
+        : null;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final header = KeyedSubtree(
+          key: _headerKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: top,
+          ),
+        );
+        final list = KeyedSubtree(key: _listKey, child: body);
+        if (constraints.maxHeight >= _shortPage) {
+          return Column(
+            key: const Key('page-steam'),
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              header,
+              Expanded(child: list),
+              ?footer,
+            ],
+          );
+        }
+        return Column(
+          key: const Key('page-steam'),
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    header,
+                    SizedBox(
+                      height: math.max(_shortPageList, constraints.maxHeight),
+                      child: list,
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        Expanded(
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 280),
-            switchInCurve: Curves.easeOutCubic,
-            switchOutCurve: Curves.easeIn,
-            transitionBuilder: (child, animation) {
-              final toWishlist = source == SteamSource.wishlist;
-              return FadeTransition(
-                opacity: animation,
-                child: SlideTransition(
-                  position: Tween(
-                    begin: Offset(toWishlist ? 0.04 : -0.04, 0),
-                    end: Offset.zero,
-                  ).animate(animation),
-                  child: child,
-                ),
-              );
-            },
-            child: KeyedSubtree(
-              key: ValueKey(source),
-              child: _body(state, source),
-            ),
-          ),
-        ),
-        if (rows != null && rows.isNotEmpty)
-          _Footer(state: state, onImport: () => unawaited(_import())),
-      ],
+            ?footer,
+          ],
+        );
+      },
     );
   }
 
@@ -274,47 +315,54 @@ class _SteamPageState extends ConsumerState<SteamPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: Text(
-                        previewHeading(source, rows.length),
-                        key: const Key('steam-heading'),
-                        style: style.section,
-                      ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final heading = Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: Text(
+                      previewHeading(source, rows.length),
+                      key: const Key('steam-heading'),
+                      style: style.section,
                     ),
-                    ShelfButton(
-                      key: const Key('steam-select-none'),
-                      label: 'Select None',
-                      kind: ShelfButtonKind.quiet,
-                      onPressed: state.busy ? null : controller.selectNone,
-                    ),
-                    ShelfButton(
-                      key: const Key('steam-select-all'),
-                      label: 'Select All',
-                      kind: ShelfButtonKind.quiet,
-                      onPressed: state.busy ? null : controller.selectAll,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              SizedBox(
-                width: 240,
-                child: ShelfSearchInput(
-                  controller: _filter,
-                  hintText: 'Filter List',
-                  onChanged: controller.setQuery,
-                ),
-              ),
-            ],
+                  ),
+                  ShelfButton(
+                    key: const Key('steam-select-none'),
+                    label: 'Select None',
+                    kind: ShelfButtonKind.quiet,
+                    onPressed: state.busy ? null : controller.selectNone,
+                  ),
+                  ShelfButton(
+                    key: const Key('steam-select-all'),
+                    label: 'Select All',
+                    kind: ShelfButtonKind.quiet,
+                    onPressed: state.busy ? null : controller.selectAll,
+                  ),
+                ],
+              );
+              final search = ShelfSearchInput(
+                controller: _filter,
+                hintText: 'Filter List',
+                onChanged: controller.setQuery,
+              );
+              if (constraints.maxWidth < _steamHeaderInOneRow) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [heading, const SizedBox(height: 8), search],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(child: heading),
+                  const SizedBox(width: 12),
+                  SizedBox(width: 240, child: search),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 10),
           Expanded(
@@ -403,26 +451,50 @@ class _SteamRowTile extends ConsumerWidget {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  row.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: style.label.copyWith(fontWeight: FontWeight.w700),
-                ),
-              ),
-              SizedBox(
-                width: 110,
-                child: Text(
-                  '${row.steamAppId}',
-                  style: style.caption.copyWith(color: tokens.faint),
-                ),
-              ),
-              SizedBox(
-                width: 100,
-                child: Text(
-                  steamHoursLabel(row.playtime),
-                  textAlign: TextAlign.right,
-                  style: style.caption.copyWith(color: tokens.muted),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final title = Text(
+                      row.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: style.label.copyWith(fontWeight: FontWeight.w700),
+                    );
+                    if (constraints.maxWidth < _steamRowColumns) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          title,
+                          Text(
+                            '${row.steamAppId} · '
+                            '${steamHoursLabel(row.playtime)}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: style.caption.copyWith(color: tokens.muted),
+                          ),
+                        ],
+                      );
+                    }
+                    return Row(
+                      children: [
+                        Expanded(child: title),
+                        SizedBox(
+                          width: 110,
+                          child: Text(
+                            '${row.steamAppId}',
+                            style: style.caption.copyWith(color: tokens.faint),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 100,
+                          child: Text(
+                            steamHoursLabel(row.playtime),
+                            textAlign: TextAlign.right,
+                            style: style.caption.copyWith(color: tokens.muted),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ],
@@ -459,34 +531,48 @@ class _Footer extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: _gutter, vertical: 12),
         child: Row(
           children: [
-            Text(
-              selectedLabel(selected, rows.length),
-              key: const Key('steam-selected'),
-              style: style.body.copyWith(color: tokens.muted),
+            Expanded(
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      selectedLabel(selected, rows.length),
+                      key: const Key('steam-selected'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: style.body.copyWith(color: tokens.muted),
+                    ),
+                  ),
+                  if (importing && total != null) ...[
+                    const SizedBox(width: 16),
+                    Flexible(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 180),
+                        child: ShelfProgressBar(
+                          value: total == 0
+                              ? 0
+                              : (state.processed ?? 0) / total,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${state.processed ?? 0}/$total',
+                      key: const Key('steam-import-progress'),
+                      style: style.caption.copyWith(color: tokens.muted),
+                    ),
+                    const SizedBox(width: 8),
+                    ShelfButton(
+                      key: const Key('steam-import-cancel'),
+                      label: 'Cancel',
+                      kind: ShelfButtonKind.quiet,
+                      onPressed: ref.read(steamProvider.notifier).cancel,
+                    ),
+                  ],
+                ],
+              ),
             ),
-            if (importing && total != null) ...[
-              const SizedBox(width: 16),
-              SizedBox(
-                width: 180,
-                child: ShelfProgressBar(
-                  value: total == 0 ? 0 : (state.processed ?? 0) / total,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '${state.processed ?? 0}/$total',
-                key: const Key('steam-import-progress'),
-                style: style.caption.copyWith(color: tokens.muted),
-              ),
-              const SizedBox(width: 8),
-              ShelfButton(
-                key: const Key('steam-import-cancel'),
-                label: 'Cancel',
-                kind: ShelfButtonKind.quiet,
-                onPressed: ref.read(steamProvider.notifier).cancel,
-              ),
-            ],
-            const Spacer(),
+            const SizedBox(width: 12),
             ShelfButton(
               key: const Key('steam-import'),
               label: importing ? 'Importing...' : steamImportLabel(selected),
@@ -591,3 +677,20 @@ class _LoadingPanelState extends State<_LoadingPanel>
     );
   }
 }
+
+/// Below this width a row of the preview puts the App ID and the playtime
+/// under the title instead of in columns of their own.
+const _steamRowColumns = 420.0;
+
+/// Below this width the heading of the preview and its filter field stand on
+/// rows of their own.
+const _steamHeaderInOneRow = 600.0;
+
+/// Below this height (a handheld in landscape, or a phone with the on-screen
+/// keyboard open) the whole page scrolls and the preview list is as high as
+/// the page, instead of the list getting what the heading leaves, which is
+/// about one row.
+const _shortPage = 560.0;
+
+/// The least height of the preview list on a short page.
+const _shortPageList = 300.0;

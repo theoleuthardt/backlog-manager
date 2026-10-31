@@ -65,6 +65,28 @@ void main() {
     final context = tester.element(find.byKey(const Key('page-sign-in')));
     expect(AtmosphereSettings.blurEnabledOf(context), isFalse);
   });
+
+  testWidgets('large system text sizes stay within what the layouts hold', (
+    tester,
+  ) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 2.0;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await tester.pumpWidget(const ProviderScope(child: BacklogManagerApp()));
+    await tester.pumpAndSettle();
+
+    final context = tester.element(find.byKey(const Key('page-sign-in')));
+    expect(MediaQuery.textScalerOf(context).scale(10), closeTo(13, 0.01));
+  });
+
+  testWidgets('a slightly larger text size is kept as it is', (tester) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 1.15;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await tester.pumpWidget(const ProviderScope(child: BacklogManagerApp()));
+    await tester.pumpAndSettle();
+
+    final context = tester.element(find.byKey(const Key('page-sign-in')));
+    expect(MediaQuery.textScalerOf(context).scale(10), closeTo(11.5, 0.01));
+  });
 }
 
 class _NoBlur extends BackgroundMotionNotifier {
