@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # Runs the mobile tour (#576) on the running Android emulator from app/:
-# shapes the emulator like the device of TOUR_DEVICE, lets it reach the
-# backend on localhost:8000, drives the tour and then checks with native
-# screenshots that a D-pad press leaves the look of the app as it is.
+# shapes the emulator like the device of TOUR_DEVICE (the logical size of the
+# device at a lower pixel density, which the software GPU of the emulator
+# keeps up with), lets it reach the backend on localhost:8000, drives the tour
+# and then checks with native screenshots that a D-pad press leaves the look
+# of the app as it is.
 set -euo pipefail
 
 device="${TOUR_DEVICE:?phone or handheld}"
@@ -12,10 +14,12 @@ mkdir -p "$out"
 adb reverse tcp:8000 tcp:8000
 adb shell settings put system accelerometer_rotation 0
 if [ "$device" = handheld ]; then
-  adb shell wm size 1080x1920
-  adb shell wm density 360
+  adb shell wm size 720x1280
+  adb shell wm density 240
   adb shell settings put system user_rotation 1
 else
+  adb shell wm size 720x1560
+  adb shell wm density 280
   adb shell settings put system user_rotation 0
 fi
 sleep 3
