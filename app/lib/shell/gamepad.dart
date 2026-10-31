@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:backlog_manager/auth/biometric_lock.dart';
 import 'package:backlog_manager/data/selection_providers.dart';
+import 'package:backlog_manager/routing/current_path.dart';
 import 'package:backlog_manager/routing/history.dart';
 import 'package:backlog_manager/routing/router.dart';
 import 'package:backlog_manager/routing/routes.dart';
@@ -111,9 +112,9 @@ bool behindLock(WidgetRef ref) =>
 /// the focused navigator pops (a sheet or a dialog; a `PopScope` such as an
 /// open settings tab answers it too), then the topmost route of the app's
 /// own navigator (a sheet while the focus is elsewhere), then the command
-/// palette closes, then the inspector, then the selection of games ends,
-/// then the history steps back. False when there is nothing to go back to, so
-/// the system may leave the app.
+/// palette closes, then the inspector, then the selection of games ends (on
+/// a page that shows it), then the history steps back. False when there is
+/// nothing to go back to, so the system may leave the app.
 Future<bool> navigateBack(WidgetRef ref) async {
   if (behindLock(ref)) return true;
   final focus = FocusManager.instance.primaryFocus?.context;
@@ -137,7 +138,8 @@ Future<bool> navigateBack(WidgetRef ref) async {
     ref.read(shellInspectorProvider.notifier).hide();
     return true;
   }
-  if (ref.read(selectionProvider).active) {
+  if (ref.read(selectionProvider).active &&
+      showsLibrary(ref.read(currentPathProvider))) {
     ref.read(selectionProvider.notifier).end();
     return true;
   }
@@ -146,6 +148,11 @@ Future<bool> navigateBack(WidgetRef ref) async {
   ref.read(routerProvider).go(target);
   return true;
 }
+
+/// Whether the page at [path] shows a library, where the selection of games
+/// is seen: the personal one or the one of the space.
+bool showsLibrary(String path) =>
+    path == AppRoutes.library || path == AppRoutes.space;
 
 /// Answers the system back of Android with [navigateBack] instead of leaving
 /// the app at once; it sits below the router, around a page of the app.

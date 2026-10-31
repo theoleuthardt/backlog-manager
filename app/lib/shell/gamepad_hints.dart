@@ -1,6 +1,7 @@
 import 'package:backlog_manager/data/selection_providers.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
+import 'package:backlog_manager/routing/current_path.dart';
 import 'package:backlog_manager/shell/gamepad.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:flutter/material.dart';
@@ -17,7 +18,9 @@ class GamepadHints extends ConsumerWidget {
     if (!ref.watch(gamepadInUseProvider)) return const SizedBox.shrink();
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final style = Theme.of(context).extension<ShelfTextStyles>()!;
-    final selecting = ref.watch(selectionProvider.select((s) => s.active));
+    final selecting =
+        ref.watch(selectionProvider.select((s) => s.active)) &&
+        showsLibrary(ref.watch(currentPathProvider));
 
     return DecoratedBox(
       key: const Key('gamepad-hints'),

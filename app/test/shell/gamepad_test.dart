@@ -349,6 +349,19 @@ void main() {
       );
     });
 
+    testWidgets('B outside the library goes back and keeps the selection', (
+      tester,
+    ) async {
+      final app = await pumpHandheld(tester, location: AppRoutes.library);
+      app.container.read(selectionProvider.notifier).start(hades.id);
+      await app.go(AppRoutes.steam);
+
+      await press(tester, LogicalKeyboardKey.gameButtonB);
+
+      expect(app.location, AppRoutes.library);
+      expect(app.container.read(selectionProvider).ids, {hades.id});
+    });
+
     testWidgets('X opens the menu of the focused game, A opens the game', (
       tester,
     ) async {
