@@ -3,6 +3,7 @@ import 'package:backlog_manager/api/server_url.dart';
 import 'package:backlog_manager/auth/auth_controller.dart';
 import 'package:backlog_manager/design/brand_mark.dart';
 import 'package:backlog_manager/design/color_math.dart';
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
@@ -152,7 +153,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
         label: 'Email',
         error: _emailError,
         controller: _email,
-        autofocus: true,
+        autofocus: ShelfFormFactor.autofocus(context),
         keyboardType: TextInputType.emailAddress,
         autofillHints: const [AutofillHints.email, AutofillHints.username],
         textInputAction: TextInputAction.next,
@@ -185,7 +186,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
       ShelfField(
         label: 'Verification Code',
         controller: _code,
-        autofocus: true,
+        autofocus: ShelfFormFactor.autofocus(context),
         keyboardType: TextInputType.visiblePassword,
         autocorrect: false,
         autofillHints: const [AutofillHints.oneTimeCode],
@@ -351,7 +352,7 @@ class _ServerSheetState extends ConsumerState<_ServerSheet> {
         label: 'Server Address',
         hintText: 'https://api.example.com',
         controller: _address,
-        autofocus: true,
+        autofocus: ShelfFormFactor.autofocus(context),
         keyboardType: TextInputType.url,
         textInputAction: TextInputAction.done,
         error: _error,

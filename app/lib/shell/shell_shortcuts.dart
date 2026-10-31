@@ -183,15 +183,25 @@ class _GamepadAction extends Action<GamepadIntent> {
   Object? invoke(GamepadIntent intent) {
     final router = ref.read(routerProvider);
     final location = router.routerDelegate.currentConfiguration.uri.path;
+    final adding = ref.read(addGameOpenProvider);
+    void goToSection(String section) {
+      if (section == addGameSection) {
+        ref.read(addGameRequestProvider.notifier).request();
+        return;
+      }
+      if (adding) router.routerDelegate.navigatorKey.currentState?.pop();
+      router.go(section);
+    }
+
     switch (intent.action) {
       case GamepadAction.back:
         unawaited(navigateBack(ref));
       case GamepadAction.search:
         ref.read(paletteOpenProvider.notifier).open();
       case GamepadAction.previousSection:
-        router.go(sectionAfter(location, forward: false));
+        goToSection(sectionAfter(location, forward: false, adding: adding));
       case GamepadAction.nextSection:
-        router.go(sectionAfter(location, forward: true));
+        goToSection(sectionAfter(location, forward: true, adding: adding));
       case GamepadAction.settings:
         router.go(AppRoutes.settings);
       case GamepadAction.menu:

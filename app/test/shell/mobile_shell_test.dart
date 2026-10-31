@@ -70,7 +70,6 @@ void main() {
         'Export CSV',
         'Appearance',
         'Settings',
-        'Shortcuts',
       ]) {
         expect(
           find.descendant(
@@ -83,6 +82,11 @@ void main() {
       }
       expect(find.byKey(const Key('account-row')), findsOneWidget);
       expect(find.byKey(const Key('sidebar-themes')), findsOneWidget);
+      expect(
+        find.text('Shortcuts'),
+        findsNothing,
+        reason: 'keyboard shortcuts are of no use without a keyboard',
+      );
 
       await tester.tap(find.byKey(const Key('nav-steam')));
       await tester.pumpAndSettle();
@@ -238,6 +242,79 @@ void main() {
         find.byType(MaterialApp),
         matchesGoldenFile('goldens/mobile_window_drawer.png'),
       );
+    });
+  });
+
+  group('navigation (#558)', () {
+    testWidgets('More is a bottom sheet that can be dragged', (tester) async {
+      await pumpMobile(tester, size: phonePortrait);
+
+      await tester.tap(find.byKey(const Key('nav-more')));
+      await tester.pumpAndSettle();
+
+      final sheet = tester.getRect(find.byKey(const Key('nav-drawer')));
+      expect(sheet.bottom, closeTo(phonePortrait.height, 1));
+      expect(sheet.width, closeTo(phonePortrait.width, 1));
+      expect(find.byType(DraggableScrollableSheet), findsOneWidget);
+    });
+
+    testWidgets('More can be dragged down on a handheld without overflow', (
+      tester,
+    ) async {
+      await pumpMobile(tester, size: handheldDense);
+      await tester.tap(find.byKey(const Key('nav-more')));
+      await tester.pumpAndSettle();
+
+      await tester.drag(
+        find.byKey(const Key('nav-drawer')),
+        const Offset(0, 120),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('the theme creator in More closes the sheet', (tester) async {
+      final app = await pumpMobile(tester, size: phonePortrait);
+      await tester.tap(find.byKey(const Key('nav-more')));
+      await tester.pumpAndSettle();
+
+      final creator = find.byKey(const Key('sidebar-theme-creator'));
+      await tester.ensureVisible(creator);
+      await tester.pumpAndSettle();
+      await tester.tap(creator);
+      await tester.pumpAndSettle();
+
+      expect(app.location, AppRoutes.appearance);
+      expect(find.byKey(const Key('nav-drawer')), findsNothing);
+    });
+
+    testWidgets('the rail is as high as the screen', (tester) async {
+      tester.view.padding = const FakeViewPadding(top: 24, bottom: 24);
+      addTearDown(tester.view.resetPadding);
+      await pumpMobile(tester, size: handheldDense);
+
+      final rail = tester.getRect(find.byKey(const Key('nav-rail')));
+      expect(rail.top, 0);
+      expect(rail.bottom, handheldDense.height);
+    });
+
+    testWidgets('the command palette starts below the status bar', (
+      tester,
+    ) async {
+      tester.view.padding = const FakeViewPadding(top: 59);
+      addTearDown(tester.view.resetPadding);
+      await pumpMobile(tester, size: phonePortrait);
+
+      await tester.tap(find.byKey(const Key('mobile-palette')));
+      await tester.pumpAndSettle();
+      tester.view.viewInsets = const FakeViewPadding(bottom: 336);
+      addTearDown(tester.view.resetViewInsets);
+      await tester.pumpAndSettle();
+
+      final field = tester.getRect(find.byKey(const Key('palette-input')));
+      expect(field.top, greaterThanOrEqualTo(59));
+      expect(find.text('Ctrl+N'), findsNothing);
     });
   });
 }

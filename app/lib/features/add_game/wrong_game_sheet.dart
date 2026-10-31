@@ -1,5 +1,6 @@
 import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/data/game_info_providers.dart';
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
@@ -129,7 +130,7 @@ class _WrongGameSheetState extends ConsumerState<WrongGameSheet> {
           ShelfSearchInput(
             controller: _controller,
             hintText: 'Search game...',
-            autofocus: true,
+            autofocus: ShelfFormFactor.autofocus(context),
             onChanged: _typed,
           ),
           const SizedBox(height: 10),

@@ -43,16 +43,33 @@ GamepadAction? gamepadActionFor(LogicalKeyboardKey key) => switch (key) {
   _ => null,
 };
 
-const _sections = [AppRoutes.home, AppRoutes.library, AppRoutes.space];
+/// The stop of the shoulder buttons that is "Add" of the bottom bar: the
+/// search for a new game, which opens over the page instead of being one.
+const addGameSection = 'add-game';
+
+const _sections = [
+  AppRoutes.home,
+  AppRoutes.library,
+  addGameSection,
+  AppRoutes.space,
+];
 
 /// The main section after (or with [forward] false, before) [location], in
-/// the order of the bottom bar; from any other page R1 and L1 start at Home.
-String sectionAfter(String location, {required bool forward}) {
-  final index = _sections.indexWhere(
-    (route) => route == AppRoutes.home
-        ? location == route
-        : location == route || location.startsWith('$route/'),
-  );
+/// the order of the bottom bar (Home, Library, Add, Space); [adding] says
+/// that the search for a new game is open, which stands for Add. From any
+/// other page R1 and L1 start at Home.
+String sectionAfter(
+  String location, {
+  required bool forward,
+  bool adding = false,
+}) {
+  final index = adding
+      ? _sections.indexOf(addGameSection)
+      : _sections.indexWhere(
+          (route) => route == AppRoutes.home
+              ? location == route
+              : location == route || location.startsWith('$route/'),
+        );
   if (index == -1) return AppRoutes.home;
   final step = forward ? 1 : -1;
   return _sections[(index + step) % _sections.length];

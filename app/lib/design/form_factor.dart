@@ -32,6 +32,13 @@ class ShelfFormFactor extends InheritedWidget {
 
   /// [height] on the desktop; on a touch screen at least [minTapTarget], for
   /// the fixed heights of controls and of the rows that hold them.
+  /// Whether a field that a sheet or page opens with takes the focus at
+  /// once: not on a touch screen lower than 600 px (a handheld or a phone in
+  /// landscape), where the on-screen keyboard would cover all of it before
+  /// the user even sees what opened.
+  static bool autofocus(BuildContext context) =>
+      !isTouch(context) || MediaQuery.sizeOf(context).height >= 600;
+
   static double heightFor(BuildContext context, double height) =>
       isTouch(context) && height < minTapTarget ? minTapTarget : height;
 

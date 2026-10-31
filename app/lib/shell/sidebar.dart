@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:backlog_manager/auth/auth_controller.dart';
 import 'package:backlog_manager/data/space_api.dart';
 import 'package:backlog_manager/design/brand_mark.dart';
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/glass.dart';
 import 'package:backlog_manager/design/glow.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
@@ -62,17 +63,21 @@ class Sidebar extends ConsumerWidget {
 }
 
 /// The content of the sidebar: brand, the navigation sections with their
-/// counts, the theme strip and the account row. The drawer of a phone or
-/// handheld shows the same; [onItemSelected] lets it close after a choice.
+/// counts, the theme strip and the account row. The More sheet of a phone or
+/// handheld shows the same (without "Shortcuts", which needs a keyboard);
+/// [onItemSelected] lets it close after a choice, [scrollController] lets it
+/// be dragged.
 class SidebarContent extends ConsumerWidget {
   const SidebarContent({
     required this.location,
     this.onItemSelected,
+    this.scrollController,
     super.key,
   });
 
   final String location;
   final VoidCallback? onItemSelected;
+  final ScrollController? scrollController;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -102,24 +107,27 @@ class SidebarContent extends ConsumerWidget {
                   const _Brand(),
                   Expanded(
                     child: ListView(
+                      controller: scrollController,
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                       children: [
                         for (final section in navigationSections) ...[
                           _SectionLabel(section.label),
                           for (final item in section.items)
-                            _NavItem(
-                              item: item,
-                              active: item.isActiveFor(location),
-                              count: counts[item.id],
-                              onSelected: onItemSelected,
-                            ),
+                            if (item.id != 'shortcuts' ||
+                                !ShelfFormFactor.isTouch(context))
+                              _NavItem(
+                                item: item,
+                                active: item.isActiveFor(location),
+                                count: counts[item.id],
+                                onSelected: onItemSelected,
+                              ),
                           if (section.label == 'Personalise')
-                            const _ThemeStrip(),
+                            _ThemeStrip(onLeave: onItemSelected),
                         ],
                       ],
                     ),
                   ),
-                  const _AccountRow(),
+                  _AccountRow(onLeave: onItemSelected),
                 ],
               ),
             ),
@@ -356,7 +364,11 @@ class _NavItemState extends ConsumerState<_NavItem> {
 /// The themes as small swatches under "Personalise": a click applies one, the
 /// plus opens the theme creator.
 class _ThemeStrip extends ConsumerWidget {
-  const _ThemeStrip();
+  const _ThemeStrip({this.onLeave});
+
+  /// Called before the strip opens another page (the theme creator), so the
+  /// More sheet closes.
+  final VoidCallback? onLeave;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -412,7 +424,10 @@ class _ThemeStrip extends ConsumerWidget {
               label: 'Create a theme',
               child: InkWell(
                 borderRadius: BorderRadius.circular(8),
-                onTap: () => context.go(AppRoutes.appearance),
+                onTap: () {
+                  onLeave?.call();
+                  context.go(AppRoutes.appearance);
+                },
                 child: Padding(
                   padding: const EdgeInsets.all(3),
                   child: SizedBox(
@@ -436,7 +451,10 @@ Future<void> _setTheme(BuildContext context, WidgetRef ref, String id) async {
 }
 
 class _AccountRow extends ConsumerWidget {
-  const _AccountRow();
+  const _AccountRow({this.onLeave});
+
+  /// Called before the row opens the settings, so the More sheet closes.
+  final VoidCallback? onLeave;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -455,6 +473,7 @@ class _AccountRow extends ConsumerWidget {
         if (value == 'logout') {
           unawaited(ref.read(authControllerProvider.notifier).signOut());
         } else if (value == 'settings') {
+          onLeave?.call();
           context.go(AppRoutes.settings);
         }
       },

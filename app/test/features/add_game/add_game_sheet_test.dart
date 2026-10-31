@@ -391,4 +391,32 @@ void main() {
     expect(height, lessThan(130));
     expect(tester.takeException(), isNull);
   });
+
+  for (final (name, size, focused) in [
+    ('a phone in portrait', const Size(402, 874), true),
+    ('a handheld in landscape', const Size(732, 412), false),
+  ]) {
+    testWidgets('the search takes the focus at once on $name: $focused', (
+      tester,
+    ) async {
+      await pumpLibrary(
+        tester,
+        FakeBacklogApi(entries: backlog),
+        height: 900,
+        overrides: [isDesktopProvider.overrideWithValue(false)],
+      );
+      tester.view.physicalSize = size;
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('add-game-button')));
+      await tester.pumpAndSettle();
+
+      final field = tester.widget<EditableText>(
+        find.descendant(
+          of: find.byType(AddGameSheet),
+          matching: find.byType(EditableText),
+        ),
+      );
+      expect(field.focusNode.hasFocus, focused);
+    });
+  }
 }
