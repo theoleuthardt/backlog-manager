@@ -123,6 +123,7 @@ void main() {
 
     Future<void> run(String name, Future<void> Function() body) async {
       step = name;
+      debugPrint('tour step: $name');
       try {
         await body();
       } on Object catch (error, stack) {

@@ -173,7 +173,7 @@ jobs:
           profile: pixel_6
           ram-size: 4096M
           force-avd-creation: false
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -show-kernel
           disable-animations: false
           working-directory: app
           script: ../scripts/mobile-tour.sh
