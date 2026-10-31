@@ -73,8 +73,10 @@ class AppUpdateGroup extends ConsumerWidget {
           ),
           ShelfFormRow(
             label: 'Updates',
-            control: Row(
-              mainAxisSize: MainAxisSize.min,
+            control: Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 switch (state.install) {
                   UpdateInstall.downloading => SizedBox(
@@ -118,7 +120,6 @@ class AppUpdateGroup extends ConsumerWidget {
                     _ => const SizedBox.shrink(),
                   },
                 },
-                const SizedBox(width: 12),
                 if (state.install == UpdateInstall.ready)
                   ShelfButton(
                     key: const Key('restart-update'),

@@ -14,7 +14,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Root widget of the desktop client: the router, the theme, the keyboard
-/// shortcuts of the window, the start animation and the switch for the blur.
+/// shortcuts of the window, the start animation, the switch for the blur and
+/// the limit of the system text size ([maxTextScale]).
 class BacklogManagerApp extends ConsumerWidget {
   const BacklogManagerApp({super.key});
 
@@ -37,15 +38,23 @@ class BacklogManagerApp extends ConsumerWidget {
             child: ShellShortcuts(child: child ?? const SizedBox.shrink()),
           ),
         );
-        return ShelfFormFactor(
-          compact: shellLayoutOf(context, ref) == ShellLayout.compact,
-          touch: touch,
-          child: touch ? _TouchInputs(child: BiometricGate(child: app)) : app,
+        return MediaQuery.withClampedTextScaling(
+          maxScaleFactor: maxTextScale,
+          child: ShelfFormFactor(
+            compact: shellLayoutOf(context, ref) == ShellLayout.compact,
+            touch: touch,
+            child: touch ? _TouchInputs(child: BiometricGate(child: app)) : app,
+          ),
         );
       },
     );
   }
 }
+
+/// The largest text scale of the system (iOS Dynamic Type, the font size of
+/// Android) the app follows: the touch tests check every page up to it, and
+/// beyond it the layouts of a phone break.
+const maxTextScale = 1.3;
 
 /// Text fields at least [ShelfFormFactor.minTapTarget] high on a touch
 /// screen; the theme itself keeps the desktop height.

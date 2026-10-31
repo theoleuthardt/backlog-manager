@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/data/games_api.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
+import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/features/add_game/add_game_sheet.dart';
+import 'package:backlog_manager/platform/desktop.dart';
 import 'package:backlog_manager/routing/router.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
@@ -349,5 +351,44 @@ void main() {
 
       expect(find.text('2 games'), findsOneWidget);
     });
+  });
+
+  testWidgets('a result stays compact on a phone (#556)', (tester) async {
+    final games = FakeGamesApi()
+      ..onSearch = (term, deep) async => [
+        found(
+          1,
+          'LEGO Batman: Legacy of the Dark Knight - Deluxe Edition',
+          genres: const ['Puzzle', 'Adventure'],
+          platforms: const [
+            'Xbox Series X|S',
+            'Nintendo Switch 2',
+            'PC (Microsoft Windows)',
+            'PlayStation 5',
+          ],
+        ),
+      ];
+    await pumpLibrary(
+      tester,
+      FakeBacklogApi(entries: backlog),
+      height: 900,
+      overrides: [
+        gamesApiProvider.overrideWithValue(games),
+        isDesktopProvider.overrideWithValue(false),
+      ],
+    );
+    tester.view.physicalSize = const Size(402, 874);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('add-game-button')));
+    await tester.pumpAndSettle();
+    await typeSearch(tester, 'LEGO Batman');
+    await settleSearch(tester);
+
+    final title = find.textContaining('LEGO Batman: Legacy');
+    expect(title, findsOneWidget);
+    final row = find.ancestor(of: title, matching: find.byType(ShelfPressable));
+    final height = tester.getSize(row.first).height;
+    expect(height, lessThan(130));
+    expect(tester.takeException(), isNull);
   });
 }

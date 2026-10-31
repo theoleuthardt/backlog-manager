@@ -144,8 +144,10 @@ class _ShelfFieldState extends State<ShelfField> {
   }
 }
 
-/// Below this width a row on a touch screen puts its control below the label.
-const _stackedRowWidth = 480.0;
+/// Below this width a row on a touch screen puts its control below the label:
+/// a field next to the label leaves its description a narrow column of many
+/// lines on a handheld in landscape.
+const _stackedRowWidth = 720.0;
 
 /// One row of a [ShelfFormGroup]: the label on the left (with a small
 /// description below it) and the control on the right; on a phone in

@@ -233,43 +233,56 @@ class _StatTiles extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _StatTile(
-            label: 'In Backlog',
-            value: formatCount(stats.inBacklog),
-            unit: 'games',
-          ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: _StatTile(
-            label: 'Time to beat',
-            value: formatCount(stats.timeToBeat.round()),
-            unit: 'h',
-          ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: _StatTile(
-            label: 'Playing Now',
-            value: formatCount(stats.playingNow),
-            unit: 'games',
-          ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: _StatTile(
-            label: 'Completed this year',
-            value: formatCount(stats.completedThisYear),
-            unit: 'games',
-          ),
-        ),
-      ],
+    final tiles = [
+      _StatTile(
+        label: 'In Backlog',
+        value: formatCount(stats.inBacklog),
+        unit: 'games',
+      ),
+      _StatTile(
+        label: 'Time to beat',
+        value: formatCount(stats.timeToBeat.round()),
+        unit: 'h',
+      ),
+      _StatTile(
+        label: 'Playing Now',
+        value: formatCount(stats.playingNow),
+        unit: 'games',
+      ),
+      _StatTile(
+        label: 'Completed this year',
+        value: formatCount(stats.completedThisYear),
+        unit: 'games',
+      ),
+    ];
+    Widget row(List<Widget> items) => IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final (index, tile) in items.indexed) ...[
+            if (index > 0) const SizedBox(width: 14),
+            Expanded(child: tile),
+          ],
+        ],
+      ),
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= _statTilesInOneRow) return row(tiles);
+        return Column(
+          children: [
+            row(tiles.sublist(0, 2)),
+            const SizedBox(height: 14),
+            row(tiles.sublist(2)),
+          ],
+        );
+      },
     );
   }
 }
+
+/// Below this width the four stat tiles stand in two rows of two.
+const _statTilesInOneRow = 560.0;
 
 class _StatTile extends StatelessWidget {
   const _StatTile({
@@ -299,14 +312,21 @@ class _StatTile extends StatelessWidget {
           children: [
             Text(label, style: style.label.copyWith(color: tokens.muted)),
             const SizedBox(height: 8),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text(value, style: style.page),
-                const SizedBox(width: 6),
-                Text(unit, style: style.caption.copyWith(color: tokens.muted)),
-              ],
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(value, style: style.page),
+                  const SizedBox(width: 6),
+                  Text(
+                    unit,
+                    style: style.caption.copyWith(color: tokens.muted),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -369,69 +389,77 @@ class _HeroState extends ConsumerState<_Hero> {
         child: Stack(
           children: [
             Positioned.fill(child: CustomPaint(painter: _OrbitPainter(tokens))),
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: 120,
-                    child: ShelfCover(
-                      title: entry.title,
-                      image: entryImage(widget.serverUrl, entry.imageLink),
-                    ),
-                  ),
-                  const SizedBox(width: 24),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'CONTINUE PLAYING',
-                          style: style.eyebrow.copyWith(color: tokens.accent),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final narrow = constraints.maxWidth < _heroNarrow;
+                return Padding(
+                  padding: EdgeInsets.all(narrow ? 18 : 24),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: narrow ? 88 : 120,
+                        child: ShelfCover(
+                          title: entry.title,
+                          image: entryImage(widget.serverUrl, entry.imageLink),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          entry.title,
-                          style: style.hero,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          parts.join(' · '),
-                          style: style.body.copyWith(color: tokens.text2),
-                        ),
-                        if (toBeat != null && toBeat > 0) ...[
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            width: 360,
-                            child: ShelfProgressBar(value: played / toBeat),
-                          ),
-                        ],
-                        const SizedBox(height: 20),
-                        Row(
+                      ),
+                      SizedBox(width: narrow ? 16 : 24),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            ShelfButton(
-                              label: 'Open Details',
-                              kind: ShelfButtonKind.primary,
-                              onPressed: () => context.go(
-                                _library({'entry': '${entry.id}'}),
+                            Text(
+                              'CONTINUE PLAYING',
+                              style: style.eyebrow.copyWith(
+                                color: tokens.accent,
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            ShelfButton(
-                              label: 'Mark as completed',
-                              busy: _busy,
-                              onPressed: _complete,
+                            const SizedBox(height: 8),
+                            Text(
+                              entry.title,
+                              style: narrow ? style.section : style.hero,
+                              maxLines: narrow ? 3 : 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              parts.join(' · '),
+                              style: style.body.copyWith(color: tokens.text2),
+                            ),
+                            if (toBeat != null && toBeat > 0) ...[
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                width: narrow ? double.infinity : 360,
+                                child: ShelfProgressBar(value: played / toBeat),
+                              ),
+                            ],
+                            const SizedBox(height: 20),
+                            Wrap(
+                              spacing: 10,
+                              runSpacing: 8,
+                              children: [
+                                ShelfButton(
+                                  label: 'Open Details',
+                                  kind: ShelfButtonKind.primary,
+                                  onPressed: () => context.go(
+                                    _library({'entry': '${entry.id}'}),
+                                  ),
+                                ),
+                                ShelfButton(
+                                  label: 'Mark as completed',
+                                  busy: _busy,
+                                  onPressed: _complete,
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             ),
           ],
         ),
@@ -439,6 +467,9 @@ class _HeroState extends ConsumerState<_Hero> {
     );
   }
 }
+
+/// Below this width the hero card has a smaller cover and title.
+const _heroNarrow = 520.0;
 
 /// Two orbit rings and two small planets at the right edge of the hero card.
 class _OrbitPainter extends CustomPainter {
@@ -501,18 +532,22 @@ class _Shelf extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
             children: [
-              Text(title, style: style.section),
-              if (subtitle != null) ...[
-                const SizedBox(width: 10),
-                Text(
-                  subtitle!,
-                  style: style.caption.copyWith(color: tokens.muted),
+              Expanded(
+                child: Wrap(
+                  spacing: 10,
+                  runSpacing: 2,
+                  crossAxisAlignment: WrapCrossAlignment.end,
+                  children: [
+                    Text(title, style: style.section),
+                    if (subtitle != null)
+                      Text(
+                        subtitle!,
+                        style: style.caption.copyWith(color: tokens.muted),
+                      ),
+                  ],
                 ),
-              ],
-              const Spacer(),
+              ),
               ShelfButton(
                 key: Key('see-all-$shelfKey'),
                 label: 'See All',
