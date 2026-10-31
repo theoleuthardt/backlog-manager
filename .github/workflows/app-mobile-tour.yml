@@ -1,0 +1,184 @@
+name: App Mobile Tour
+
+on:
+  workflow_dispatch:
+    inputs:
+      devices:
+        description: Devices to run on (phone, handheld or both)
+        required: false
+        type: choice
+        default: both
+        options:
+          - both
+          - phone
+          - handheld
+
+permissions:
+  contents: read
+
+jobs:
+  tour:
+    name: Mobile Tour (${{ matrix.device }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    strategy:
+      fail-fast: false
+      matrix:
+        device: ${{ fromJSON(inputs.devices == 'both' && '["phone","handheld"]' || format('["{0}"]', inputs.devices)) }}
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: tour
+          POSTGRES_DB: backlog-manager-db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      POSTGRES_URL: postgresql+asyncpg://postgres:tour@localhost:5432/backlog-manager-db
+      INITIAL_ADMIN_EMAIL: theo@example.com
+      BACKUP_SCHEDULER_ENABLED: "false"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: uv sync
+
+      - name: Generate the secrets of this run
+        working-directory: backend
+        run: |
+          fernet=$(uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())")
+          password=$(openssl rand -hex 16)
+          echo "::add-mask::$password"
+          {
+            echo "AUTH_SECRET=$(openssl rand -base64 32)"
+            echo "TOTP_ENCRYPTION_KEY=$fernet"
+            echo "STEAM_API_KEY_ENCRYPTION_KEY=$fernet"
+            echo "INITIAL_ADMIN_PASSWORD=$password"
+          } >> "$GITHUB_ENV"
+
+      - name: Create the database
+        working-directory: backend
+        env:
+          PGPASSWORD: tour
+        run: |
+          psql -q -h localhost -U postgres -d backlog-manager-db -f ../postgres/backlogmanagerdb-init.sql
+          uv run alembic stamp head
+
+      - name: Start and seed the backend
+        working-directory: backend
+        run: |
+          setsid nohup uv run uvicorn backlog_manager_backend.app:app --port 8000 > "$RUNNER_TEMP/backend.log" 2>&1 &
+          ready=0
+          for _ in $(seq 1 60); do
+            if curl -sf http://localhost:8000/health > /dev/null; then ready=1; break; fi
+            sleep 2
+          done
+          if [ "$ready" != 1 ]; then cat "$RUNNER_TEMP/backend.log"; exit 1; fi
+          uv run python scripts/seed_mobile_tour.py
+
+      - name: Setup Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+          cache-dependency-path: |
+            app/android/*.gradle*
+            app/android/app/*.gradle*
+            app/android/gradle/wrapper/gradle-wrapper.properties
+
+      - name: Cache the NDK and CMake
+        uses: actions/cache@v4
+        with:
+          path: |
+            /usr/local/lib/android/sdk/ndk/28.2.13676358
+            /usr/local/lib/android/sdk/cmake/3.22.1
+          key: android-ndk-28.2.13676358-cmake-3.22.1
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: app/pubspec.yaml
+          channel: stable
+          cache: true
+
+      - name: Install app dependencies
+        working-directory: app
+        run: flutter pub get
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Cache the emulator snapshot
+        id: avd-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-34-x86_64-google_apis-pixel_6-4096
+
+      - name: Create the emulator snapshot
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          ram-size: 4096M
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Created the emulator snapshot."
+
+      - name: Run the tour on the emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          TOUR_DEVICE: ${{ matrix.device }}
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          ram-size: 4096M
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          working-directory: app
+          script: ../scripts/mobile-tour.sh
+
+      - name: Write the summary
+        if: always()
+        working-directory: app
+        run: cat "tour/${{ matrix.device }}/summary.md" >> "$GITHUB_STEP_SUMMARY" || echo "No summary, see the log of the tour." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the screenshots and the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-tour-${{ matrix.device }}
+          path: |
+            app/tour/${{ matrix.device }}
+            ${{ runner.temp }}/backend.log
+          retention-days: 7
+          if-no-files-found: warn
