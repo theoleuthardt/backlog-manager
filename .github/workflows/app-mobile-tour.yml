@@ -146,7 +146,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-34-x86_64-google_apis-pixel_6-4096
+          key: avd-34-x86_64-google_apis-pixel_6-4096-guest
 
       - name: Create the emulator snapshot
         if: steps.avd-cache.outputs.cache-hit != 'true'
@@ -158,7 +158,7 @@ jobs:
           profile: pixel_6
           ram-size: 4096M
           force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          emulator-options: -no-window -gpu guest -noaudio -no-boot-anim -camera-back none
           disable-animations: false
           script: echo "Created the emulator snapshot."
 
@@ -173,7 +173,7 @@ jobs:
           profile: pixel_6
           ram-size: 4096M
           force-avd-creation: false
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -show-kernel
+          emulator-options: -no-snapshot-save -no-window -gpu guest -noaudio -no-boot-anim -camera-back none -show-kernel
           disable-animations: false
           working-directory: app
           script: ../scripts/mobile-tour.sh
