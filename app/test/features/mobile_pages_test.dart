@@ -1,6 +1,7 @@
 import 'package:backlog_manager/api/sse.dart';
 import 'package:backlog_manager/data/games_api.dart';
 import 'package:backlog_manager/design/widgets/cover.dart';
+import 'package:backlog_manager/design/widgets/sheet.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/features/add_game/add_game_sheet.dart';
@@ -136,9 +137,10 @@ void main() {
         await tester.ensureVisible(preview);
         await tester.pumpAndSettle();
         await tester.tap(preview);
-        await tester.pump();
+        await tester.pumpAndSettle();
 
         expect(opened.api.previews, hasLength(2));
+        expect(find.byType(ShelfSheet), findsNothing);
         expect(tester.takeException(), isNull);
       });
 
