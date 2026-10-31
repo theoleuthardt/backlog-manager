@@ -3,6 +3,7 @@ import 'package:backlog_manager/design/widgets/chips.dart';
 import 'package:backlog_manager/design/widgets/segmented.dart';
 import 'package:backlog_manager/design/widgets/tabs.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'harness.dart';
@@ -266,7 +267,7 @@ void main() {
       await pumpThemed(
         tester,
         SizedBox(
-          width: 400,
+          width: 700,
           child: ShelfTabs(
             labels: const [
               'Overview',
@@ -287,10 +288,45 @@ void main() {
           tester.getSize(find.byKey(Key('tab-$i'))).width,
       ];
       expect(
-        widths.every((w) => (w - 80).abs() < 0.5),
+        widths.every((w) => (w - 140).abs() < 0.5),
         isTrue,
         reason: '$widths',
       );
+    });
+
+    testWidgets('scroll sideways instead of cutting labels that do not fit', (
+      tester,
+    ) async {
+      await pumpThemed(
+        tester,
+        SizedBox(
+          width: 400,
+          child: ShelfTabs(
+            labels: const [
+              'Overview',
+              'Progress',
+              'Notes',
+              'Review',
+              'Trailer',
+            ],
+            index: 0,
+            expand: true,
+            onChanged: (_) {},
+          ),
+        ),
+        touch: true,
+      );
+
+      expect(find.byType(SingleChildScrollView), findsOneWidget);
+      for (final label in ['Overview', 'Progress', 'Trailer']) {
+        expect(
+          tester
+              .renderObject<RenderParagraph>(find.text(label))
+              .didExceedMaxLines,
+          isFalse,
+          reason: label,
+        );
+      }
     });
 
     testWidgets('reports the tapped tab', (tester) async {

@@ -1,4 +1,5 @@
 import 'package:backlog_manager/design/background_motion.dart';
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_theme.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/domain/themes.dart';
@@ -25,6 +26,7 @@ Future<void> pumpHint(
   required MemoryStore store,
   String location = AppRoutes.library,
   TargetPlatform platform = TargetPlatform.windows,
+  bool touch = false,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -33,6 +35,8 @@ Future<void> pumpHint(
         theme: buildShelfTheme(
           ShelfTokens.forTheme(resolveTheme('shelfOled', [])),
         ).copyWith(platform: platform),
+        builder: (context, child) =>
+            ShelfFormFactor(compact: false, touch: touch, child: child!),
         home: SearchHintPrompt(
           location: location,
           child: const Scaffold(body: SizedBox.expand()),
@@ -70,6 +74,14 @@ void main() {
     expect(find.textContaining('⌘K'), findsOneWidget);
     expect(find.textContaining('⌘S'), findsOneWidget);
     await tester.pump(const Duration(seconds: 30));
+  });
+
+  testWidgets('a touch screen without those keys gets no hint', (tester) async {
+    final store = MemoryStore();
+    await pumpHint(tester, store: store, touch: true);
+
+    expect(find.textContaining('Ctrl+K'), findsNothing);
+    expect(store.seen, isNull);
   });
 
   testWidgets('does not show it again once it was seen', (tester) async {

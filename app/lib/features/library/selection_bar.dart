@@ -6,6 +6,7 @@ import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/design/widgets/menu.dart';
+import 'package:backlog_manager/domain/categories.dart';
 import 'package:backlog_manager/domain/library_groups.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/features/library/library_actions.dart';
@@ -107,7 +108,7 @@ class SelectionBar extends ConsumerWidget {
               ),
               ShelfMenuAnchor(
                 entries: [
-                  for (final category in categories)
+                  for (final category in sortCategoriesByName(categories))
                     ShelfMenuItem(
                       label: category.name,
                       checked: everySelectedHas(category),

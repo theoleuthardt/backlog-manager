@@ -383,6 +383,27 @@ void main() {
       expect(find.text('Backspace'), findsOneWidget);
     });
 
+    testWidgets('lists the categories in alphabetical order', (tester) async {
+      final api = backlog()
+        ..categoryList = const [
+          Category(id: 1, name: 'story', color: '#38bdf8'),
+          Category(id: 2, name: 'Backlog heroes', color: '#22c55e'),
+          Category(id: 3, name: 'Co-op', color: '#f59e0b'),
+        ];
+      await pumpLibrary(tester, api);
+
+      await rightClick(tester, 'Portal 2');
+      await tester.tap(find.widgetWithText(SubmenuButton, 'Categories'));
+      await tester.pumpAndSettle();
+
+      final tops = [
+        for (final name in ['Backlog heroes', 'Co-op', 'story'])
+          tester.getTopLeft(find.text(name).last).dy,
+      ];
+      expect(tops[0], lessThan(tops[1]));
+      expect(tops[1], lessThan(tops[2]));
+    });
+
     testWidgets('open details opens the game', (tester) async {
       final container = await pumpLibrary(tester, backlog());
 

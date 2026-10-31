@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:backlog_manager/data/games_api.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/features/add_game/wrong_game_sheet.dart';
+import 'package:backlog_manager/platform/desktop.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -29,6 +30,7 @@ Future<(FakeGamesApi, Opened)> openWrongGame(
   WidgetTester tester, {
   String query = 'Overcooked',
   void Function(FakeGamesApi games)? setUp,
+  bool desktop = true,
 }) async {
   final games = FakeGamesApi();
   setUp?.call(games);
@@ -37,7 +39,10 @@ Future<(FakeGamesApi, Opened)> openWrongGame(
     tester,
     FakeBacklogApi(entries: backlog),
     height: 900,
-    overrides: [gamesApiProvider.overrideWithValue(games)],
+    overrides: [
+      gamesApiProvider.overrideWithValue(games),
+      if (!desktop) isDesktopProvider.overrideWithValue(false),
+    ],
   );
   final context = tester.element(find.byKey(const Key('main-content')));
   unawaited(
@@ -55,6 +60,26 @@ Finder inSheet(Finder matching) =>
     find.descendant(of: find.byType(WrongGameSheet), matching: matching);
 
 void main() {
+  testWidgets('a phone puts the deeper search below its explanation', (
+    tester,
+  ) async {
+    await openWrongGame(
+      tester,
+      desktop: false,
+      setUp: (g) => g.onSearch = (t, d) async => [found(1, 'Overcooked!')],
+    );
+    tester.view.physicalSize = const Size(402, 874);
+    await tester.pumpAndSettle();
+
+    final text = tester.getRect(
+      find.text('Searching deeper also tries other spellings and bundles.'),
+    );
+    final button = tester.getRect(find.byKey(const Key('wrong-search-more')));
+    expect(button.top, greaterThanOrEqualTo(text.bottom));
+    expect(text.width, greaterThan(200));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('searches for the title of the entry at once', (tester) async {
     final (games, _) = await openWrongGame(
       tester,

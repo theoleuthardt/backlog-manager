@@ -22,6 +22,7 @@ import 'package:backlog_manager/design/widgets/cover.dart';
 import 'package:backlog_manager/design/widgets/menu.dart';
 import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/design/widgets/toast.dart';
+import 'package:backlog_manager/domain/categories.dart';
 import 'package:backlog_manager/domain/entry_order.dart';
 import 'package:backlog_manager/domain/format.dart';
 import 'package:backlog_manager/domain/group_order.dart';
@@ -1501,7 +1502,7 @@ class _EntryTargetState extends ConsumerState<_EntryTarget> {
           label: 'Categories',
           icon: Icons.sell_outlined,
           submenu: [
-            for (final category in categories)
+            for (final category in sortCategoriesByName(categories))
               ShelfMenuItem(
                 label: category.name,
                 checked: assigned.contains(category.id),
@@ -1576,7 +1577,7 @@ class _EntryTargetState extends ConsumerState<_EntryTarget> {
               child: ShelfFocusRing(
                 visible: _focused,
                 borderRadius: ShelfRadius.card,
-                color: tokens.glow,
+                color: tokens.accent,
               ),
             ),
           ],

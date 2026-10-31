@@ -7,11 +7,15 @@ import 'package:backlog_manager/api/generated/export.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+/// Answers every request with [_respond] and keeps the requests and, in
+/// `sent`, the bytes each one sent over the wire.
 class FakeServer implements HttpClientAdapter {
   FakeServer(this._respond);
 
   final ({int status, Object? body}) Function(RequestOptions) _respond;
   final requests = <RequestOptions>[];
+
+  final sent = <List<int>>[];
 
   @override
   Future<ResponseBody> fetch(
@@ -20,6 +24,10 @@ class FakeServer implements HttpClientAdapter {
     Future<void>? cancelFuture,
   ) async {
     requests.add(options);
+    sent.add([
+      if (requestStream != null)
+        for (final chunk in await requestStream.toList()) ...chunk,
+    ]);
     final response = _respond(options);
     return ResponseBody.fromString(
       jsonEncode(response.body),
@@ -87,6 +95,19 @@ void main() {
         });
       },
     );
+
+    test('sends raw bytes as they are, not as a sanitized list', () async {
+      final server = FakeServer((_) => (status: 204, body: null));
+      final png = Uint8List.fromList([0x89, 0x50, 0x4E, 0x47, 13, 10, 26, 10]);
+
+      await buildDio(server).put<void>(
+        '/api/user/avatar',
+        data: png,
+        options: Options(contentType: 'image/png'),
+      );
+
+      expect(server.sent.single, png);
+    });
 
     test('sends the stored token as a Bearer header', () async {
       final server = FakeServer((_) => (status: 200, body: <Object?>[]));

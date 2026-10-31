@@ -1,3 +1,4 @@
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/pressable.dart';
@@ -5,7 +6,9 @@ import 'package:flutter/material.dart';
 
 /// Text tabs; the active one is underlined with 2 px in the accent colour.
 /// With [expand] the tabs share the width they are given equally, with the
-/// labels centred, instead of sitting at their own width on the left.
+/// labels centred, instead of sitting at their own width on the left; on a
+/// touch screen where the labels do not fit that way (a phone), the tabs keep
+/// their own width and scroll sideways, so no label is cut.
 class ShelfTabs extends StatelessWidget {
   const ShelfTabs({
     required this.labels,
@@ -20,12 +23,38 @@ class ShelfTabs extends StatelessWidget {
   final ValueChanged<int> onChanged;
   final bool expand;
 
-  Widget _slot(Widget tab) => expand ? Expanded(child: tab) : tab;
-
-  Widget _fit(Widget column) => expand ? column : IntrinsicWidth(child: column);
-
   @override
   Widget build(BuildContext context) {
+    if (!expand) return _tabs(context, share: false);
+    if (!ShelfFormFactor.isTouch(context)) return _tabs(context, share: true);
+    final text = Theme.of(context).extension<ShelfTextStyles>()!;
+    final scaler = MediaQuery.textScalerOf(context);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        var widest = 0.0;
+        for (final label in labels) {
+          final painter = TextPainter(
+            text: TextSpan(text: label, style: text.control),
+            textDirection: TextDirection.ltr,
+            textScaler: scaler,
+          )..layout();
+          if (painter.width > widest) widest = painter.width;
+          painter.dispose();
+        }
+        if (widest + _inset <= constraints.maxWidth / labels.length) {
+          return _tabs(context, share: true);
+        }
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: _tabs(context, share: false),
+        );
+      },
+    );
+  }
+
+  Widget _tabs(BuildContext context, {required bool share}) {
+    Widget slot(Widget tab) => share ? Expanded(child: tab) : tab;
+    Widget fit(Widget column) => share ? column : IntrinsicWidth(child: column);
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final text = Theme.of(context).extension<ShelfTextStyles>()!;
 
@@ -34,10 +63,10 @@ class ShelfTabs extends StatelessWidget {
         border: Border(bottom: BorderSide(color: tokens.borderSubtle)),
       ),
       child: Row(
-        mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
+        mainAxisSize: share ? MainAxisSize.max : MainAxisSize.min,
         children: [
           for (var i = 0; i < labels.length; i++)
-            _slot(
+            slot(
               Semantics(
                 key: Key('tab-$i'),
                 selected: i == index,
@@ -46,8 +75,8 @@ class ShelfTabs extends StatelessWidget {
                   semanticLabel: labels[i],
                   borderRadius: 4,
                   builder: (context, state) => Padding(
-                    padding: EdgeInsets.only(right: expand ? 0 : 20),
-                    child: _fit(
+                    padding: EdgeInsets.only(right: share ? 0 : _gap),
+                    child: fit(
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         mainAxisSize: MainAxisSize.min,
@@ -100,3 +129,9 @@ class ShelfTabs extends StatelessWidget {
     );
   }
 }
+
+/// The space after a tab that sits at its own width.
+const _gap = 20.0;
+
+/// The room a shared tab keeps around its label.
+const _inset = 8.0;

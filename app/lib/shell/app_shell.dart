@@ -115,13 +115,16 @@ class _AppShellState extends ConsumerState<AppShell> {
       children: [
         Offstage(
           offstage: fullscreen,
-          child: SizedBox.expand(
-            key: const Key('main-content'),
-            child: UpdateNotifier(
-              child: WishlistSyncPrompt(
-                child: SearchHintPrompt(
-                  location: location,
-                  child: widget.child,
+          child: ExcludeFocus(
+            excluding: fullscreen,
+            child: SizedBox.expand(
+              key: const Key('main-content'),
+              child: UpdateNotifier(
+                child: WishlistSyncPrompt(
+                  child: SearchHintPrompt(
+                    location: location,
+                    child: widget.child,
+                  ),
                 ),
               ),
             ),
@@ -291,7 +294,11 @@ class FullWindowFrame extends ConsumerWidget {
               child: SafeArea(
                 child: Column(
                   children: [
-                    MobileTopBar(location: location, minimal: minimal),
+                    MobileTopBar(
+                      location: location,
+                      minimal: minimal,
+                      counts: false,
+                    ),
                     Expanded(child: _AboveKeyboard(child: child)),
                   ],
                 ),

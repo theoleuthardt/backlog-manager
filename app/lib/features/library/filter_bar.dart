@@ -99,17 +99,24 @@ class FilterBar extends ConsumerWidget {
                 height: 52,
                 child: Row(
                   children: [
-                    Flexible(
-                      child: Text(
-                        'Owned Only',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: style.caption.copyWith(color: tokens.muted),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              'Owned Only',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: style.caption.copyWith(
+                                color: tokens.muted,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ownedSwitch,
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    ownedSwitch,
-                    const Spacer(),
                     const _SortAndView(compact: true, tight: true, phone: true),
                   ],
                 ),

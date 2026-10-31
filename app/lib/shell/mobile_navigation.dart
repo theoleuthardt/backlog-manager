@@ -26,19 +26,27 @@ final List<NavigationItem> primaryNavigationItems = [
 /// page reports and the command palette (which has no shortcut without a
 /// keyboard). It replaces the title bar and the status bar, which have
 /// no place on a small screen. A [minimal] bar (sign-in, setup) has the title
-/// only.
+/// only; without [counts] (the full-window pages such as the settings, which
+/// report none) the counts of the page before stay hidden.
 class MobileTopBar extends ConsumerWidget {
-  const MobileTopBar({required this.location, this.minimal = false, super.key});
+  const MobileTopBar({
+    required this.location,
+    this.minimal = false,
+    this.counts = true,
+    super.key,
+  });
 
   final String location;
   final bool minimal;
+
+  final bool counts;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final text = Theme.of(context).extension<ShelfTextStyles>()!;
     final history = ref.watch(navigationHistoryProvider);
-    final counts = ref.watch(shellStatusProvider).counts;
+    final counts = this.counts ? ref.watch(shellStatusProvider).counts : null;
 
     return SizedBox(
       key: const Key('mobile-top-bar'),

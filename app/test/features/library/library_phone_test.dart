@@ -1,7 +1,7 @@
 import 'package:backlog_manager/design/widgets/cover.dart';
 import 'package:backlog_manager/platform/desktop.dart';
 import 'package:backlog_manager/routing/session.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../data/fakes.dart';
@@ -71,6 +71,18 @@ void main() {
     final owned = tester.getRect(find.byKey(const Key('owned-only')));
     expect(owned.top, greaterThanOrEqualTo(add.bottom));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a phone shows Owned Only in full', (tester) async {
+    await openOnPhone(tester);
+
+    final label = tester.renderObject<RenderParagraph>(
+      find.descendant(
+        of: find.byKey(const Key('filter-bar')),
+        matching: find.text('Owned Only'),
+      ),
+    );
+    expect(label.didExceedMaxLines, isFalse);
   });
 
   testWidgets('the covers can be made smaller and bigger', (tester) async {
