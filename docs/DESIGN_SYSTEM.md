@@ -258,7 +258,7 @@ client-flutter/
 
 ### Packaging and updates
 
-Researched in issue #240 (comment "Research: packaging, signing and updater for a Flutter desktop client"); what was built is in [`FLUTTER.md`](FLUTTER.md#building-and-packaging-locally) (installers, release workflow) and [`APP_UPDATES.md`](APP_UPDATES.md) (in-place updates on the desktop and Android).
+Researched in issue #240 (comment "Research: packaging, signing and updater for a Flutter desktop client"); what was built is in [`FLUTTER.md`](FLUTTER.md#building-and-packaging-locally) (installers, release workflow) and [`APP_UPDATES.md`](APP_UPDATES.md) (in-place updates on macOS, Windows, the Linux AppImage and Android; DEB, RPM and iOS are notify-only).
 
 ## Keeping this in sync
 

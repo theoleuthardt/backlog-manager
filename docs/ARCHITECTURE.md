@@ -29,8 +29,8 @@ instead — this file is about the shape of the system, not where files live.
 ```
 
 Only the backend is meant to be hosted as a public, always-on service. The
-app is installed on each device from the GitHub Releases and updates itself (the
-IPA for iOS only announces new versions)
+app is installed on each device from the GitHub Releases and updates itself in place (DEB, RPM
+and the iOS IPA only announce new versions)
 ([`APP_UPDATES.md`](APP_UPDATES.md)). The Monitor (`monitor/`,
 [`MONITOR_ARCHITECTURE.md`](MONITOR_ARCHITECTURE.md)) watches the backend
 from its own host.

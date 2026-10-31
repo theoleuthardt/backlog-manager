@@ -71,7 +71,7 @@ Built from `frontend/src/app/`, `frontend/src/hooks/` and `frontend/src/lib/` fo
 | Case | Flutter | Status |
 | --- | --- | --- |
 | Empty backlog | "Your backlog is empty" with an add button; the shared space has its own empty text | done |
-| 2000 entries | lazy slivers in the library; not measured | #283 was closed without a measurement |
+| 2000 entries | lazy slivers in the library; not measured | open: #283 was closed without a measurement |
 | Expired token | a 401 ends the session with "Your session has ended. Sign in again." | done |
 | Backend offline | "Try again" on the library and the space, error toasts and write-only fields elsewhere; a failed refresh of the space keeps the screen | done |
 | Large CSV | files up to 10 MB, a thousand rows stay fast, preview and import can be cancelled | done |

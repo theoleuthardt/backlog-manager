@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Backlog Manager is a video game backlog manager. The client is a Flutter app in `app/` for the desktop (macOS, Windows, Linux; epic #247) and mobile (Android and iOS; epic #289); the backend is a standalone Python/Litestar service living in `backend/` (fully migrated off Next.js/tRPC — see issue #103/#104 for that history). The app calls the backend over REST with a JWT Bearer token. Only the backend is meant to be hosted as a public, always-on service; the app is installed from the GitHub Releases and updates itself.
+Backlog Manager is a video game backlog manager. The client is a Flutter app in `app/` for the desktop (macOS, Windows, Linux; epic #247) and mobile (Android and iOS; epic #289); the backend is a standalone Python/Litestar service living in `backend/` (fully migrated off Next.js/tRPC — see issue #103/#104 for that history). The app calls the backend over REST with a JWT Bearer token. Only the backend is meant to be hosted as a public, always-on service; the app is installed from the GitHub Releases and updates itself in place on macOS, Windows, the Linux AppImage and Android (DEB, RPM and the iOS IPA only announce a new release, `docs/APP_UPDATES.md`).
 
 A separate Spring Boot service in `monitor/` (epic #468; Spring Boot 4.1.2, Java 25, Maven wrapper) is the status and alerting service of the homelab: it watches the backend from its own LXC and does not replace it. Its design: [`docs/MONITOR_ARCHITECTURE.md`](docs/MONITOR_ARCHITECTURE.md).
 

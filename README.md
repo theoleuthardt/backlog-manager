@@ -26,7 +26,7 @@ on the desktop and by holding and moving a game on a touch screen.
 - Themes: built-in ones and your own, made in the theme editor
 - Command palette, random pull, duplicate finder, achievements, trailers and price lookup
 - Gamepad control on handhelds such as the Retroid Pocket 6 and the AYN Odin 3, with a gliding focus selector
-- The app updates itself and shows what is new after an update
+- The app updates itself (macOS, Windows, the Linux AppImage, Android; the other installs announce new releases) and shows what is new after an update
 
 ## Installing the app
 
