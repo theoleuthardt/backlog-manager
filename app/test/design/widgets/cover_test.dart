@@ -323,6 +323,16 @@ void main() {
       expect(coverGridColumns(100), 1);
     });
 
+    test('takes a smaller or bigger cover width when asked', () {
+      expect(coverGridColumns(370, minCoverWidth: 100), 3);
+      expect(coverGridColumns(370), 2);
+      expect(coverGridColumns(370, minCoverWidth: 200), 1);
+      expect(
+        coverGridMetrics(346, extraHeight: 0, minCoverWidth: 100).columns,
+        3,
+      );
+    });
+
     test('stretches the covers to fill the row', () {
       expect(coverWidthFor(800, columns: 4), (800 - 3 * 16) / 4);
     });

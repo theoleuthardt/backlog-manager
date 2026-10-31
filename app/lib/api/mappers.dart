@@ -39,6 +39,7 @@ BacklogEntry entryFromResponse(BacklogEntryResponse entry) {
     inSharedSpace: entry.inSharedSpace,
     steamAppId: entry.steamAppId,
     completedAt: entry.completedAt,
+    createdAt: entry.createdAt,
   );
 }
 
