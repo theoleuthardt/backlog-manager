@@ -10,6 +10,7 @@ import 'package:backlog_manager/data/filter_providers.dart';
 import 'package:backlog_manager/data/space_api.dart';
 import 'package:backlog_manager/design/color_math.dart';
 import 'package:backlog_manager/design/cover_glow.dart';
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
@@ -47,6 +48,7 @@ import 'package:backlog_manager/features/inspector/trailer_sheet.dart';
 import 'package:backlog_manager/features/library/library_actions.dart';
 import 'package:backlog_manager/features/space/share_to_space_button.dart';
 import 'package:backlog_manager/platform/browser_window.dart';
+import 'package:backlog_manager/platform/desktop.dart';
 import 'package:backlog_manager/routing/current_path.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:flutter/material.dart';
@@ -157,18 +159,19 @@ class _InspectorFrame extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 6),
-                ShelfIconButton(
-                  key: const Key('inspector-fullscreen'),
-                  icon: fullscreen
-                      ? Icons.close_fullscreen
-                      : Icons.open_in_full,
-                  tooltip: fullscreen
-                      ? 'Back to the sidebar view'
-                      : 'Show the details in full screen',
-                  onPressed: ref
-                      .read(inspectorFullscreenProvider.notifier)
-                      .toggle,
-                ),
+                if (ref.watch(isDesktopProvider))
+                  ShelfIconButton(
+                    key: const Key('inspector-fullscreen'),
+                    icon: fullscreen
+                        ? Icons.close_fullscreen
+                        : Icons.open_in_full,
+                    tooltip: fullscreen
+                        ? 'Back to the sidebar view'
+                        : 'Show the details in full screen',
+                    onPressed: ref
+                        .read(inspectorFullscreenProvider.notifier)
+                        .toggle,
+                  ),
                 ShelfIconButton(
                   key: const Key('inspector-close'),
                   icon: Icons.close,
@@ -204,23 +207,38 @@ class _InspectorLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!fullscreen) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [...left, const SizedBox(height: 18), ...right],
-      );
-    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final beside =
+            fullscreen ||
+            (ShelfFormFactor.isTouch(context) &&
+                constraints.maxWidth >= _besideOnTouch);
+        if (!beside) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [...left, const SizedBox(height: 18), ...right],
+          );
+        }
+        return _columns(
+          leftWidth: fullscreen ? 460 : constraints.maxWidth * 0.46,
+          gap: fullscreen ? 32 : 20,
+        );
+      },
+    );
+  }
+
+  Widget _columns({required double leftWidth, required double gap}) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: 460,
+          width: leftWidth,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: left,
           ),
         ),
-        const SizedBox(width: 32),
+        SizedBox(width: gap),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -231,6 +249,41 @@ class _InspectorLayout extends StatelessWidget {
     );
   }
 }
+
+/// The title, genres and platforms beside the cover: as high as the cover and
+/// cut off below it on the desktop, where the chips stay on their lines; on a
+/// touch screen it grows instead, since a chip there is taller (its tap area)
+/// and a cut off platform cannot be reached.
+class _FactsBox extends StatelessWidget {
+  const _FactsBox({required this.height, required this.child});
+
+  final double height;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (ShelfFormFactor.isTouch(context)) {
+      return ConstrainedBox(
+        constraints: BoxConstraints(minHeight: height),
+        child: child,
+      );
+    }
+    return SizedBox(
+      height: height,
+      child: ClipRect(
+        child: SingleChildScrollView(
+          physics: const NeverScrollableScrollPhysics(),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+/// From this width a touch screen (a handheld or a phone in landscape) shows
+/// the cover and the facts beside the tabs, as the full screen view of the
+/// desktop does, since one long column leaves little of a low screen.
+const _besideOnTouch = 600.0;
 
 class _InspectorForm extends ConsumerStatefulWidget {
   const _InspectorForm({required this.initial, super.key});
@@ -537,40 +590,31 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
                             ),
                             const SizedBox(width: 14),
                             Expanded(
-                              child: SizedBox(
+                              child: _FactsBox(
                                 height: coverWidth * 1.5,
-                                child: ClipRect(
-                                  child: SingleChildScrollView(
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        _titleHeading(entry, tokens, style),
-                                        if (genres.isNotEmpty) ...[
-                                          const SizedBox(height: 12),
-                                          FactChips(
-                                            key: const Key('inspector-genres'),
-                                            label: 'Genre',
-                                            values: genres,
-                                            maxLines: fullscreen ? null : 2,
-                                          ),
-                                        ],
-                                        if (platforms.isNotEmpty) ...[
-                                          const SizedBox(height: 10),
-                                          FactChips(
-                                            key: const Key(
-                                              'inspector-platforms',
-                                            ),
-                                            label: 'Platform',
-                                            values: platforms,
-                                            maxLines: fullscreen ? null : 1,
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                  ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _titleHeading(entry, tokens, style),
+                                    if (genres.isNotEmpty) ...[
+                                      const SizedBox(height: 12),
+                                      FactChips(
+                                        key: const Key('inspector-genres'),
+                                        label: 'Genre',
+                                        values: genres,
+                                        maxLines: fullscreen ? null : 2,
+                                      ),
+                                    ],
+                                    if (platforms.isNotEmpty) ...[
+                                      const SizedBox(height: 10),
+                                      FactChips(
+                                        key: const Key('inspector-platforms'),
+                                        label: 'Platform',
+                                        values: platforms,
+                                        maxLines: fullscreen ? null : 1,
+                                      ),
+                                    ],
+                                  ],
                                 ),
                               ),
                             ),

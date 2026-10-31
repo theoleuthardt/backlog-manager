@@ -1,3 +1,6 @@
+import 'dart:math' as math;
+
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
@@ -297,6 +300,7 @@ class FactChips extends StatelessWidget {
     Widget chips(List<String> shown, {Widget? more}) => Wrap(
       spacing: _gap,
       runSpacing: _gap,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         for (final value in shown) ShelfChip(label: value),
         ?more,
@@ -322,7 +326,12 @@ class FactChips extends StatelessWidget {
             if (fitting == values.length) return chips(values);
 
             var hidden = values.length - fitting;
-            final more = chipWidth('+$hidden') + 4;
+            final more = math.max(
+              chipWidth('+$hidden') + 4,
+              ShelfFormFactor.isTouch(context)
+                  ? ShelfFormFactor.minTapTarget
+                  : 0,
+            );
             fitting = _fit(widths, available, lines, reserve: more + _gap);
             hidden = values.length - fitting;
             return chips(

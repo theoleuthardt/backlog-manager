@@ -115,4 +115,11 @@ void main() {
       expect(hostile, isNot(contains('"onload="x')));
     });
   });
+
+  test('the page renders at the width of the device', () {
+    final page = trailerPage(Uri.parse('https://www.youtube.com/embed/abc'));
+
+    expect(page, contains('name="viewport"'));
+    expect(page, contains('width=device-width'));
+  });
 }
