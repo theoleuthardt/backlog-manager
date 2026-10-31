@@ -49,3 +49,6 @@ app.*.map.json
 
 # Test bundles written by tool/test/bundles.dart for a run
 /test/bundles/
+
+# Screenshots and report of the mobile tour (integration_test/mobile_tour_test.dart)
+/tour/
