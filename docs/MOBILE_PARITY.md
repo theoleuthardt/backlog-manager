@@ -68,7 +68,7 @@ What the automated tests already cover (so a failure there is a regression, not 
 | Turning the device keeps the page and its state | | | | | | | | |
 | Safe areas: notch, Dynamic Island, home indicator, rounded corners | | | | | | | | |
 | On-screen keyboard: fields stay visible, matching keyboard types | | | | | | | | |
-| Gamepad: focus visible everywhere, D-pad reaches every control, A activates, shoulders switch groups | | | | | | | | |
+| Gamepad: focus visible everywhere and glides, D-pad reaches every control, A activates, Select marks games, shoulders switch groups, button hints show, buttons keep working after a sheet closes | | | | | | | | |
 | Biometric lock: at start, after five minutes in the background, app switcher shows no backlog | | | | | | | | |
 | Share sheet and file pickers (CSV, pictures) | | | | | | | | |
 | Long-running streams (Steam, IGDB, CSV) after a trip to the background | | | | | | | | |
