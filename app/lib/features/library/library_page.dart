@@ -21,6 +21,7 @@ import 'package:backlog_manager/design/widgets/chips.dart';
 import 'package:backlog_manager/design/widgets/cover.dart';
 import 'package:backlog_manager/design/widgets/menu.dart';
 import 'package:backlog_manager/design/widgets/pressable.dart';
+import 'package:backlog_manager/design/widgets/toast.dart';
 import 'package:backlog_manager/domain/entry_order.dart';
 import 'package:backlog_manager/domain/format.dart';
 import 'package:backlog_manager/domain/group_order.dart';
@@ -29,6 +30,7 @@ import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/domain/sort_entries.dart';
 import 'package:backlog_manager/domain/space.dart';
 import 'package:backlog_manager/domain/status_style.dart';
+import 'package:backlog_manager/domain/steam_sync.dart';
 import 'package:backlog_manager/features/common/entries_gate.dart';
 import 'package:backlog_manager/features/duplicates/duplicates_sheet.dart';
 import 'package:backlog_manager/features/library/entry_drag.dart';
@@ -42,6 +44,7 @@ import 'package:backlog_manager/features/library/selection_bar.dart';
 import 'package:backlog_manager/features/space/member_progress.dart';
 import 'package:backlog_manager/features/space/space_backups_sheet.dart';
 import 'package:backlog_manager/features/space/space_toolbar.dart';
+import 'package:backlog_manager/features/steam/steam_controller.dart';
 import 'package:backlog_manager/features/steam/steam_sync_button.dart';
 import 'package:backlog_manager/routing/session.dart';
 import 'package:backlog_manager/shell/shell_layout.dart';
@@ -468,9 +471,10 @@ class _SpaceBackupsButton extends ConsumerWidget {
   }
 }
 
-/// The actions of the library toolbar on a phone in portrait, where a row of
-/// unlabelled icons has no room: one "More" button that opens them as a menu
-/// with their names. The dot of a restore that waits for the member shows on
+/// The actions of the library toolbar on a touch screen (a phone, a
+/// handheld), where a row of unlabelled icons has no room or no names: one
+/// "More" button that opens them as a menu with their names, the Steam
+/// playtime sync with its progress included. The dot of a restore that waits for the member shows on
 /// the button too.
 class _LibraryActions extends ConsumerWidget {
   const _LibraryActions({required this.space});
@@ -481,8 +485,27 @@ class _LibraryActions extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final waiting = space != null && ref.watch(restoreWaitsForMeProvider);
+    final steam = ref.watch(sessionUserProvider)?.hasSteamId ?? false;
+    final sync = ref.watch(playtimeSyncProvider);
     return ShelfMenuAnchor(
       entries: [
+        if (steam)
+          ShelfMenuItem(
+            label: sync.running
+                ? playtimeSyncTooltip(sync.processed, sync.total, running: true)
+                : 'Sync Steam playtime',
+            icon: Icons.sync,
+            onSelected: sync.running
+                ? null
+                : () async {
+                    final message = await ref
+                        .read(playtimeSyncProvider.notifier)
+                        .run();
+                    if (message != null && context.mounted) {
+                      showShelfToast(context, message);
+                    }
+                  },
+          ),
         ShelfMenuItem(
           label: 'Sync IGDB data',
           icon: Icons.storage_outlined,
@@ -579,9 +602,6 @@ class _Toolbar extends ConsumerWidget {
               Row(
                 children: [
                   selectButton,
-                  const SizedBox(width: 12),
-                  if (ref.watch(sessionUserProvider)?.hasSteamId ?? false)
-                    const SteamSyncButton(),
                   const Spacer(),
                   _LibraryActions(space: space),
                 ],
@@ -590,6 +610,17 @@ class _Toolbar extends ConsumerWidget {
                 const SizedBox(height: 8),
                 Wrap(spacing: 12, children: counts),
               ],
+            ],
+          )
+        : ShelfFormFactor.isTouch(context)
+        ? Wrap(
+            spacing: 12,
+            runSpacing: 10,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              selectButton,
+              _LibraryActions(space: space),
+              if (space == null) ...[const SizedBox(width: 6), ...counts],
             ],
           )
         : Wrap(

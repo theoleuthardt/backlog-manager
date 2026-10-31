@@ -23,7 +23,9 @@ const _pickerWidth = 260.0;
 /// the dashed "+ Add filter" token, and on the right the owned-only switch,
 /// reset, sorting and the grid or list toggle. On a phone in portrait the
 /// filters get a row of their own and the switch and the sorting the row
-/// below, since one row leaves the filters no room.
+/// below, since one row leaves the filters no room; on the other touch
+/// screens (a handheld) sorting and the view shrink to their menus, so the
+/// filters keep most of the row, and the switch keeps its name.
 class FilterBar extends ConsumerWidget {
   const FilterBar({required this.gutter, super.key});
 
@@ -131,7 +133,8 @@ class FilterBar extends ConsumerWidget {
                   constraints.maxWidth /
                   MediaQuery.textScalerOf(context).scale(1);
               final tight = room < _tightMaxWidth;
-              final resetInTokens = tight && ShelfFormFactor.isTouch(context);
+              final touch = ShelfFormFactor.isTouch(context);
+              final resetInTokens = tight && touch;
               return Row(
                 children: [
                   Icon(
@@ -139,7 +142,7 @@ class FilterBar extends ConsumerWidget {
                     size: 14,
                     color: tokens.muted,
                   ),
-                  if (room >= _tightMaxWidth) ...[
+                  if (!touch && room >= _tightMaxWidth) ...[
                     const SizedBox(width: 6),
                     Text(
                       'Filter',
@@ -150,7 +153,7 @@ class FilterBar extends ConsumerWidget {
                     const SizedBox(width: 8),
                   tokensRow(withReset: resetInTokens),
                   const SizedBox(width: 12),
-                  if (room >= _ownedLabelMinWidth) ...[
+                  if (touch || room >= _ownedLabelMinWidth) ...[
                     Text(
                       'Owned Only',
                       style: style.caption.copyWith(color: tokens.muted),
@@ -163,7 +166,10 @@ class FilterBar extends ConsumerWidget {
                     reset,
                   ],
                   const SizedBox(width: 12),
-                  _SortAndView(compact: room < _compactMaxWidth, tight: tight),
+                  _SortAndView(
+                    compact: touch || room < _compactMaxWidth,
+                    tight: tight,
+                  ),
                 ],
               );
             },
