@@ -62,7 +62,7 @@ class FocusGlideHostState extends State<FocusGlideHost>
   final _motion = GlideMotion();
   final _hot = <GlideSource>[];
   final _frames = ValueNotifier<int>(0);
-  late final Ticker _ticker = createTicker(_tick);
+  late final Ticker _ticker;
 
   GlideSource? _target;
   GlideSource? _shown;
@@ -249,6 +249,12 @@ class FocusGlideHostState extends State<FocusGlideHost>
       _run();
     }
     return false;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = createTicker(_tick);
   }
 
   @override
