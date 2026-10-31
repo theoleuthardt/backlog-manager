@@ -11,6 +11,7 @@ import 'package:backlog_manager/data/selection_providers.dart';
 import 'package:backlog_manager/data/whats_new.dart';
 import 'package:backlog_manager/design/atmosphere.dart';
 import 'package:backlog_manager/design/focus_glide.dart';
+import 'package:backlog_manager/design/light_effects.dart';
 import 'package:backlog_manager/design/widgets/fields.dart';
 import 'package:backlog_manager/platform/csv_file_picker.dart';
 import 'package:backlog_manager/platform/desktop.dart';
@@ -51,7 +52,10 @@ const _local = bool.fromEnvironment('TOUR_LOCAL');
 /// does not fail on what it finds: every error of the app (layout overflows
 /// included) is recorded with its step, and a step that throws is recorded
 /// and skipped, so one run shows everything. The screenshots and the report
-/// go to the driver (`test_driver/tour_driver.dart`) as report data.
+/// go to the driver (`test_driver/tour_driver.dart`) as report data. On the
+/// emulator the app runs with the lighter effects (no sky, glow, orbs or
+/// blur), because its software GPU took seconds per frame with them until
+/// the emulator hung and died (#588).
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   atmosphereMotion = false;
@@ -87,6 +91,8 @@ void main() {
         fileSaverProvider.overrideWithValue(const _TourFileSaver()),
         installedVersionProvider.overrideWith((ref) async => '0.9.17'),
         whatsNewStoreProvider.overrideWithValue(_TourWhatsNewStore()),
+        if (!_local)
+          lightEffectsProvider.overrideWithValue(LightEffectsReason.powerSave),
         if (_local) ...[
           isDesktopProvider.overrideWithValue(false),
           tokenStoreProvider.overrideWithValue(MemoryTokenStore()),
@@ -152,6 +158,13 @@ void main() {
       }
       await tester.ensureVisible(finder.first);
       await settle(3);
+      if (finder.evaluate().isEmpty) {
+        steps.add({
+          'step': step,
+          'missing': '${finder.describeMatch(Plurality.zero)} after scrolling',
+        });
+        return;
+      }
       await tester.tap(finder.first, warnIfMissed: false);
       await settle(4);
     }
