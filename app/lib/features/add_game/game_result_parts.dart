@@ -111,12 +111,67 @@ class KeyHint extends StatelessWidget {
 /// a game and the sheet that replaces the game of an entry: the cover with the
 /// title and the platforms, the genres, and the times to beat. Long texts wrap.
 /// A result whose id is in [deeper] carries a "Found by deeper search" chip.
+/// On a phone in portrait it is one column with a small cover, the title in
+/// two lines at most and the platforms and "genres · times" in one line each,
+/// so a game with a long title and many platforms keeps a short row.
 List<ShelfColumn<GameSearchResult>> gameResultColumns(
   BuildContext context, {
   Set<int> deeper = const {},
 }) {
   final tokens = Theme.of(context).extension<ShelfTokens>()!;
   final style = Theme.of(context).extension<ShelfTextStyles>()!;
+  if (ShelfFormFactor.isCompact(context)) {
+    return [
+      ShelfColumn(
+        header: 'Game',
+        flex: 1,
+        cell: (context, result) => Row(
+          children: [
+            ResultThumb(imageUrl: result.imageUrl, width: 40, height: 60),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    result.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: style.control.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  if (result.platforms.isNotEmpty)
+                    Text(
+                      result.platforms.join(', '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: style.caption.copyWith(color: tokens.faint),
+                    ),
+                  Text(
+                    [
+                      if (result.genres.isNotEmpty) result.genres.join(', '),
+                      result.timesLabel,
+                    ].join(' · '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: style.caption.copyWith(color: tokens.muted),
+                  ),
+                  if (deeper.contains(result.id))
+                    const Padding(
+                      padding: EdgeInsets.only(top: 6),
+                      child: ShelfChip(
+                        key: Key('deeper-marker'),
+                        label: 'Found by deeper search',
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ];
+  }
   return [
     ShelfColumn(
       header: 'Game',

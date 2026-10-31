@@ -1,7 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/api/api_providers.dart';
 import 'package:backlog_manager/data/entry_image.dart';
 import 'package:backlog_manager/data/game_info_providers.dart';
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/pressable.dart';
@@ -162,17 +165,33 @@ class _CoverPickerSheetState extends ConsumerState<CoverPickerSheet> {
         noteKey: Key('cover-empty'),
       );
     } else {
-      body = Wrap(
-        key: const Key('cover-grid'),
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          for (final url in covers.requireValue)
-            _CoverOption(
-              url: url,
-              onPressed: () => Navigator.of(context).pop(url),
-            ),
-        ],
+      body = LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = ShelfFormFactor.isCompact(context);
+          final columns = compact
+              ? math.max(
+                  1,
+                  ((constraints.maxWidth + _gap) / (_compactTile + _gap))
+                      .floor(),
+                )
+              : null;
+          final width = columns == null
+              ? _tileWidth
+              : (constraints.maxWidth - (columns - 1) * _gap) / columns;
+          return Wrap(
+            key: const Key('cover-grid'),
+            spacing: _gap,
+            runSpacing: _gap,
+            children: [
+              for (final url in covers.requireValue)
+                _CoverOption(
+                  url: url,
+                  width: width,
+                  onPressed: () => Navigator.of(context).pop(url),
+                ),
+            ],
+          );
+        },
       );
     }
 
@@ -197,9 +216,14 @@ class _CoverPickerSheetState extends ConsumerState<CoverPickerSheet> {
 }
 
 class _CoverOption extends ConsumerWidget {
-  const _CoverOption({required this.url, required this.onPressed});
+  const _CoverOption({
+    required this.url,
+    required this.width,
+    required this.onPressed,
+  });
 
   final String url;
+  final double width;
   final VoidCallback onPressed;
 
   @override
@@ -220,8 +244,8 @@ class _CoverOption extends ConsumerWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(5),
           child: SizedBox(
-            width: 130,
-            height: 195,
+            width: width,
+            height: width * 1.5,
             child: image == null
                 ? ColoredBox(color: tokens.surface3)
                 : Image(
@@ -236,3 +260,9 @@ class _CoverOption extends ConsumerWidget {
     );
   }
 }
+
+/// The width of a cover option; on a phone in portrait the options fill the
+/// row instead, each at least [_compactTile] wide.
+const _tileWidth = 130.0;
+const _compactTile = 100.0;
+const _gap = 8.0;

@@ -7,10 +7,12 @@ import 'package:backlog_manager/data/steam_api.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
 import 'package:backlog_manager/design/widgets/buttons.dart';
 import 'package:backlog_manager/domain/steam_sync.dart';
+import 'package:backlog_manager/platform/desktop.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/routing/session.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../data/fakes.dart';
@@ -78,15 +80,19 @@ Future<Opened> open(
   String location = AppRoutes.steam,
   FakeSteamApi? api,
   FakeBacklogApi? backlog,
+  Size size = const Size(1440, 1100),
+  List<Override> overrides = const [],
 }) async {
   final steam = api ?? FakeSteamApi();
   final settings = await openSettings(
     tester,
     user: user,
     location: location,
+    size: size,
     overrides: [
       steamApiProvider.overrideWithValue(steam),
       backlogApiProvider.overrideWithValue(backlog ?? FakeBacklogApi()),
+      ...overrides,
     ],
   );
   return Opened(steam, settings);
@@ -658,4 +664,64 @@ void main() {
       );
     });
   }
+
+  group('on phones and handhelds (#556)', () {
+    final mobile = [isDesktopProvider.overrideWithValue(false)];
+    final rows = [
+      for (var i = 0; i < 12; i++)
+        SteamRow(steamAppId: 2638890 + i, title: 'Ready or Not $i'),
+    ];
+
+    Future<void> openWishlist(WidgetTester tester, Size size) async {
+      final api = FakeSteamApi()..wishlist = rows;
+      await open(tester, api: api, size: size, overrides: mobile);
+      await tester.tap(find.text('Wishlist'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('steam-load')));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('a row shows its title on a phone', (tester) async {
+      await openWishlist(tester, const Size(402, 874));
+
+      final title = find.text('Ready or Not 0');
+      expect(title, findsOneWidget);
+      expect(tester.getSize(title).width, greaterThan(100));
+      final heading = tester.getSize(find.byKey(const Key('steam-heading')));
+      expect(
+        heading.height,
+        lessThan(80),
+        reason: 'the heading is not squeezed',
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('the filter keeps its focus when the keyboard opens', (
+      tester,
+    ) async {
+      await openWishlist(tester, const Size(402, 874));
+      final filter = find.descendant(
+        of: find.byKey(const Key('page-steam')),
+        matching: find.byType(EditableText),
+      );
+      await tester.tap(filter);
+      await tester.enterText(filter, 'Ready');
+      await tester.pump();
+
+      tester.view.viewInsets = const FakeViewPadding(bottom: 336);
+      await tester.pumpAndSettle();
+
+      final field = tester.widget<EditableText>(filter);
+      expect(field.focusNode.hasFocus, isTrue);
+      expect(field.controller.text, 'Ready');
+    });
+
+    testWidgets('the list keeps several rows in landscape', (tester) async {
+      await openWishlist(tester, const Size(732, 412));
+
+      final list = tester.getSize(find.byKey(const Key('steam-rows')));
+      expect(list.height, greaterThan(150), reason: 'three rows or more');
+      expect(tester.takeException(), isNull);
+    });
+  });
 }

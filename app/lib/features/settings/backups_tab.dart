@@ -198,40 +198,37 @@ class _BackupsTabState extends ConsumerState<BackupsTab> {
         ),
         child: Padding(
           padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              Expanded(
-                child: renaming
-                    ? _renameField(backup, style)
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text.rich(
-                            TextSpan(
-                              text: backup.title,
-                              style: style.control,
-                              children: [
-                                TextSpan(
-                                  text:
-                                      '  ${backupDateLabel(backup.createdAt)}',
-                                  style: style.caption.copyWith(
-                                    color: tokens.muted,
-                                  ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final info = renaming
+                  ? _renameField(backup, style)
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text.rich(
+                          TextSpan(
+                            text: backup.title,
+                            style: style.control,
+                            children: [
+                              TextSpan(
+                                text: '  ${backupDateLabel(backup.createdAt)}',
+                                style: style.caption.copyWith(
+                                  color: tokens.muted,
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            backup.detail,
-                            style: style.caption.copyWith(color: tokens.muted),
-                          ),
-                        ],
-                      ),
-              ),
-              const SizedBox(width: 12),
-              Wrap(
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          backup.detail,
+                          style: style.caption.copyWith(color: tokens.muted),
+                        ),
+                      ],
+                    );
+              final buttons = Wrap(
                 spacing: 8,
+                runSpacing: 8,
                 children: [
                   ShelfButton(
                     key: Key('backup-restore-${backup.id}'),
@@ -256,8 +253,21 @@ class _BackupsTabState extends ConsumerState<BackupsTab> {
                     onPressed: () => unawaited(_confirmDelete(backup)),
                   ),
                 ],
-              ),
-            ],
+              );
+              if (constraints.maxWidth < _backupRowStacked) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [info, const SizedBox(height: 10), buttons],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(child: info),
+                  const SizedBox(width: 12),
+                  buttons,
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -466,3 +476,7 @@ class _DeleteSheetState extends ConsumerState<_DeleteSheet> {
     );
   }
 }
+
+/// Below this width a backup puts its buttons below its name, which a row of
+/// four buttons would leave no room.
+const _backupRowStacked = 600.0;

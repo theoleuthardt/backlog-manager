@@ -6,11 +6,13 @@ import 'package:backlog_manager/auth/auth_controller.dart';
 import 'package:backlog_manager/data/backlog_api.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
 import 'package:backlog_manager/domain/models.dart';
+import 'package:backlog_manager/platform/desktop.dart';
 import 'package:backlog_manager/routing/router.dart';
 import 'package:backlog_manager/routing/session.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../data/fakes.dart';
@@ -78,6 +80,7 @@ Future<ProviderContainer> pumpHome(
   WidgetTester tester,
   FakeBacklogApi api, {
   bool settle = true,
+  List<Override> overrides = const [],
 }) async {
   tester.view.physicalSize = const Size(1440, 900);
   tester.view.devicePixelRatio = 1;
@@ -88,6 +91,7 @@ Future<ProviderContainer> pumpHome(
       overrides: [
         sessionProvider.overrideWith(SignedIn.new),
         backlogApiProvider.overrideWithValue(api),
+        ...overrides,
       ],
       child: const BacklogManagerApp(),
     ),
@@ -367,4 +371,52 @@ void main() {
       );
     });
   }
+
+  group('on a phone (#556)', () {
+    Future<void> openOnPhone(WidgetTester tester) async {
+      await pumpHome(
+        tester,
+        FakeBacklogApi(
+          entries: [
+            ...backlog.where((entry) => entry.status != 'In Progress'),
+            game(
+              9,
+              "Mighty Morphin Power Rangers: Rita's Rewind",
+              status: 'In Progress',
+              mainTime: 85,
+              playtime: 116.7,
+            ),
+          ],
+        ),
+        overrides: [isDesktopProvider.overrideWithValue(false)],
+      );
+      tester.view.physicalSize = const Size(402, 874);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('the stat tiles keep their labels on one or two lines', (
+      tester,
+    ) async {
+      await openOnPhone(tester);
+
+      final lineHeight = tester.getSize(inHome(find.text('In Backlog'))).height;
+      for (final label in ['Time to beat', 'Playing Now']) {
+        final size = tester.getSize(inHome(find.text(label)));
+        expect(size.height, lessThanOrEqualTo(lineHeight * 2.2), reason: label);
+      }
+      expect(
+        tester.getSize(inHome(find.text('Completed this year'))).height,
+        lessThanOrEqualTo(lineHeight * 2.2),
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('the continue card fits the phone', (tester) async {
+      await openOnPhone(tester);
+
+      final mark = tester.getRect(inHome(find.text('Mark as completed')));
+      expect(mark.right, lessThanOrEqualTo(402));
+      expect(tester.takeException(), isNull);
+    });
+  });
 }

@@ -4,6 +4,7 @@ import 'package:backlog_manager/api/api_error.dart';
 import 'package:backlog_manager/data/games_api.dart';
 import 'package:backlog_manager/domain/game_search.dart';
 import 'package:backlog_manager/features/add_game/cover_picker_sheet.dart';
+import 'package:backlog_manager/platform/desktop.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -21,6 +22,7 @@ Future<(FakeGamesApi, Picked)> openPicker(
   String query = 'Portal 2',
   bool settle = true,
   void Function(FakeGamesApi games)? setUp,
+  bool phone = false,
 }) async {
   final games = FakeGamesApi();
   setUp?.call(games);
@@ -29,8 +31,15 @@ Future<(FakeGamesApi, Picked)> openPicker(
     tester,
     FakeBacklogApi(entries: backlog),
     height: 900,
-    overrides: [gamesApiProvider.overrideWithValue(games)],
+    overrides: [
+      gamesApiProvider.overrideWithValue(games),
+      if (phone) isDesktopProvider.overrideWithValue(false),
+    ],
   );
+  if (phone) {
+    tester.view.physicalSize = const Size(402, 874);
+    await tester.pumpAndSettle();
+  }
   final context = tester.element(find.byKey(const Key('main-content')));
   unawaited(
     showCoverPicker(context, initialQuery: query, steamAppId: steamAppId).then((
@@ -212,5 +221,29 @@ void main() {
       find.byType(MaterialApp),
       matchesGoldenFile('goldens/cover_picker_sheet.png'),
     );
+  });
+
+  testWidgets('three covers fill a row on a phone (#556)', (tester) async {
+    await openPicker(
+      tester,
+      phone: true,
+      setUp: (g) => g.onCovers = (id) async => [
+        for (var i = 0; i < 6; i++) 'https://cdn2.steamgriddb.com/grid/$i.png',
+      ],
+    );
+
+    final options = find.bySemanticsLabel('Cover Option');
+    final tops = {
+      for (final element in options.evaluate())
+        tester.getTopLeft(find.byWidget(element.widget)).dy,
+    };
+    final grid = tester.getRect(find.byKey(const Key('cover-grid')));
+    final firstRow = [
+      for (final element in options.evaluate())
+        if (tester.getTopLeft(find.byWidget(element.widget)).dy == tops.first)
+          tester.getRect(find.byWidget(element.widget)),
+    ];
+    expect(firstRow, hasLength(3));
+    expect(grid.right - firstRow.last.right, lessThan(4));
   });
 }
