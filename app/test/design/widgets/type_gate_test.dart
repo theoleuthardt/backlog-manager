@@ -63,6 +63,23 @@ void main() {
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'TypeGate');
   });
 
+  testWidgets('the field keeps the size it is given', (tester) async {
+    await pumpThemed(
+      tester,
+      SizedBox(
+        width: 200,
+        height: 60,
+        child: TypeGate(
+          builder: (context, focusNode) =>
+              TextField(key: const Key('sized'), focusNode: focusNode),
+        ),
+      ),
+      touch: true,
+    );
+
+    expect(tester.getSize(find.byKey(const Key('sized'))), const Size(200, 60));
+  });
+
   testWidgets('a tap types at once', (tester) async {
     await pumpThemed(tester, fields(), touch: true);
 

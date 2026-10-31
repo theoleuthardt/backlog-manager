@@ -12,7 +12,8 @@ import 'package:dio/dio.dart';
 /// token that has been replaced in the meantime (a request that was in flight
 /// during a new sign-in) is ignored, so it cannot end the new session. If the token store cannot be read while
 /// handling a 401, the original error still reaches the caller. Every JSON
-/// body is passed through [sanitizeJson] before it is sent.
+/// body is passed through [sanitizeJson] before it is sent; raw bytes (a
+/// profile picture) go as they are.
 Dio createApiDio({
   required String baseUrl,
   required FutureOr<String?> Function() readToken,
@@ -33,8 +34,10 @@ Dio createApiDio({
   dio.interceptors.add(
     InterceptorsWrapper(
       onRequest: (options, handler) async {
-        if (options.data case List<Object?>() || Map<String, Object?>()) {
-          options.data = sanitizeJson(options.data);
+        final data = options.data;
+        if (data is! List<int> &&
+            (data is List<Object?> || data is Map<String, Object?>)) {
+          options.data = sanitizeJson(data);
         }
         final token = await readToken();
         if (token != null && token.isNotEmpty) {

@@ -99,6 +99,7 @@ class _TypeGateState extends State<TypeGate> {
       onKeyEvent: _onKey,
       child: Stack(
         clipBehavior: Clip.none,
+        fit: StackFit.passthrough,
         children: [
           field,
           Positioned(

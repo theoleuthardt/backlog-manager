@@ -28,17 +28,26 @@ final List<NavigationItem> primaryNavigationItems = [
 /// no place on a small screen. A [minimal] bar (sign-in, setup) has the title
 /// only.
 class MobileTopBar extends ConsumerWidget {
-  const MobileTopBar({required this.location, this.minimal = false, super.key});
+  const MobileTopBar({
+    required this.location,
+    this.minimal = false,
+    this.counts = true,
+    super.key,
+  });
 
   final String location;
   final bool minimal;
+
+  /// Whether the counts of the page show; the full-window pages (settings)
+  /// report none and would show those of the page before.
+  final bool counts;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final text = Theme.of(context).extension<ShelfTextStyles>()!;
     final history = ref.watch(navigationHistoryProvider);
-    final counts = ref.watch(shellStatusProvider).counts;
+    final counts = this.counts ? ref.watch(shellStatusProvider).counts : null;
 
     return SizedBox(
       key: const Key('mobile-top-bar'),

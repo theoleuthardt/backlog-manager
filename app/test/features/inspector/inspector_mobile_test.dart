@@ -1,7 +1,9 @@
+import 'package:backlog_manager/design/widgets/tabs.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/features/inspector/trailer_sheet.dart';
 import 'package:backlog_manager/platform/desktop.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../design/widgets/harness.dart';
@@ -86,6 +88,31 @@ void main() {
     final close = tester.getRect(find.byKey(const Key('inspector-close')));
     final delete = tester.getRect(find.byKey(const Key('inspector-delete')));
     expect(delete.top, greaterThan(close.bottom + 100));
+  });
+
+  testWidgets('a phone shows the names of all tabs in full', (tester) async {
+    await openOn(tester, const Size(402, 874));
+
+    for (final label in [
+      'Overview',
+      'Progress',
+      'Notes',
+      'Review',
+      'Mods',
+      'Trailer',
+    ]) {
+      final text = find.descendant(
+        of: find.byType(ShelfTabs),
+        matching: find.text(label),
+      );
+      await tester.ensureVisible(text);
+      expect(
+        tester.renderObject<RenderParagraph>(text).didExceedMaxLines,
+        isFalse,
+        reason: label,
+      );
+    }
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('the handheld shows the details beside the tabs', (tester) async {

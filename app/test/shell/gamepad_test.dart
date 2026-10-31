@@ -1,6 +1,8 @@
 import 'package:backlog_manager/auth/biometric_lock.dart';
 import 'package:backlog_manager/data/selection_providers.dart';
 import 'package:backlog_manager/design/focus_glide.dart';
+import 'package:backlog_manager/design/shelf_tokens.dart';
+import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/platform/desktop.dart';
 import 'package:backlog_manager/routing/router.dart';
@@ -387,6 +389,70 @@ void main() {
 
       await press(tester, LogicalKeyboardKey.gameButtonA);
       expect(tester.testTextInput.isVisible, isTrue);
+    });
+
+    testWidgets('the focus ring of a game has the colour of every ring', (
+      tester,
+    ) async {
+      await pumpLibrary(
+        tester,
+        FakeBacklogApi(entries: const [hades, celeste]),
+        overrides: [isDesktopProvider.overrideWithValue(false)],
+      );
+      final ring = tester.widget<ShelfFocusRing>(
+        find
+            .descendant(
+              of: find.byKey(Key('library-tile-${hades.id}')),
+              matching: find.byType(ShelfFocusRing),
+            )
+            .first,
+      );
+      final tokens = Theme.of(
+        tester.element(find.byKey(const Key('page-library'))),
+      ).extension<ShelfTokens>()!;
+
+      expect(ring.color, tokens.accent);
+    });
+
+    testWidgets('the page under a full-screen inspector takes no focus', (
+      tester,
+    ) async {
+      final container = await pumpLibrary(
+        tester,
+        FakeBacklogApi(entries: const [hades, celeste]),
+        overrides: [isDesktopProvider.overrideWithValue(false)],
+      );
+      await resize(tester, handheld);
+      container
+          .read(routerProvider)
+          .go('${AppRoutes.library}?entry=${hades.id}');
+      await tester.pumpAndSettle();
+
+      final page = tester.element(
+        find.byKey(const Key('main-content'), skipOffstage: false),
+      );
+      bool isUnderPage(FocusNode node) {
+        var found = false;
+        node.context?.visitAncestorElements((ancestor) {
+          found = ancestor == page;
+          return !found;
+        });
+        return found;
+      }
+
+      final under = FocusManager.instance.rootScope.descendants
+          .where((node) => !node.skipTraversal && isUnderPage(node))
+          .toList();
+      expect(under, isNotEmpty);
+      for (final node in under) {
+        node.requestFocus();
+        await tester.pump();
+        expect(
+          FocusManager.instance.primaryFocus,
+          isNot(node),
+          reason: '$node under the inspector took the focus',
+        );
+      }
     });
 
     testWidgets('X opens the menu of the focused game, A opens the game', (

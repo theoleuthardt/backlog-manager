@@ -337,6 +337,28 @@ void main() {
       handle.dispose();
     });
 
+    testWidgets('the settings show no counts of the page before', (
+      tester,
+    ) async {
+      final app = await pumpMobile(tester, size: handheldDense);
+      await app.go(AppRoutes.space);
+      app.container
+          .read(shellStatusProvider.notifier)
+          .update(counts: '28 shared games');
+      await tester.pumpAndSettle();
+
+      await app.go(AppRoutes.settings);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('mobile-top-bar')),
+          matching: find.text('28 shared games'),
+        ),
+        findsNothing,
+      );
+    });
+
     testWidgets('the rail is as high as the screen', (tester) async {
       tester.view.padding = const FakeViewPadding(top: 24, bottom: 24);
       addTearDown(tester.view.resetPadding);

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:backlog_manager/design/background_motion.dart';
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/widgets/toast.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:flutter/material.dart';
@@ -37,7 +38,8 @@ final searchHintSeenProvider =
 /// Shows [child] and, the first time the library is open on this device, a
 /// toast that tells how to search: the shortcut of the command palette, which
 /// finds games and runs commands, and Cmd/Ctrl+S for the field in the header
-/// of the library, which filters it.
+/// of the library, which filters it. A touch screen, which has no such keys,
+/// gets no hint.
 class SearchHintPrompt extends ConsumerStatefulWidget {
   const SearchHintPrompt({
     required this.location,
@@ -58,6 +60,7 @@ class _SearchHintPromptState extends ConsumerState<SearchHintPrompt> {
   void _maybeShow() {
     if (_shown ||
         !searchHintEnabled ||
+        ShelfFormFactor.isTouch(context) ||
         widget.location != AppRoutes.library ||
         ref.read(searchHintSeenProvider).value != false) {
       return;

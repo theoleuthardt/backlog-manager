@@ -13,6 +13,9 @@ class FakeServer implements HttpClientAdapter {
   final ({int status, Object? body}) Function(RequestOptions) _respond;
   final requests = <RequestOptions>[];
 
+  /// The bytes each request sent, as they went over the wire.
+  final sent = <List<int>>[];
+
   @override
   Future<ResponseBody> fetch(
     RequestOptions options,
@@ -20,6 +23,10 @@ class FakeServer implements HttpClientAdapter {
     Future<void>? cancelFuture,
   ) async {
     requests.add(options);
+    sent.add([
+      if (requestStream != null)
+        for (final chunk in await requestStream.toList()) ...chunk,
+    ]);
     final response = _respond(options);
     return ResponseBody.fromString(
       jsonEncode(response.body),
@@ -87,6 +94,19 @@ void main() {
         });
       },
     );
+
+    test('sends raw bytes as they are, not as a sanitized list', () async {
+      final server = FakeServer((_) => (status: 204, body: null));
+      final png = Uint8List.fromList([0x89, 0x50, 0x4E, 0x47, 13, 10, 26, 10]);
+
+      await buildDio(server).put<void>(
+        '/api/user/avatar',
+        data: png,
+        options: Options(contentType: 'image/png'),
+      );
+
+      expect(server.sent.single, png);
+    });
 
     test('sends the stored token as a Bearer header', () async {
       final server = FakeServer((_) => (status: 200, body: <Object?>[]));

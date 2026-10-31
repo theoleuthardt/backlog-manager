@@ -137,24 +137,34 @@ class _WrongGameSheetState extends ConsumerState<WrongGameSheet> {
           list,
           if (_term.isNotEmpty && !_deep && !loading) ...[
             const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Searching deeper also tries other spellings and bundles.',
-                    style: style.caption.copyWith(color: tokens.muted),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                ShelfButton(
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final explanation = Text(
+                  'Searching deeper also tries other spellings and bundles.',
+                  style: style.caption.copyWith(color: tokens.muted),
+                );
+                final more = ShelfButton(
                   key: const Key('wrong-search-more'),
                   label: "Can't find your game? Search more",
                   onPressed: () => setState(() {
                     _deep = true;
                     _selectedId = null;
                   }),
-                ),
-              ],
+                );
+                if (constraints.maxWidth < _stackedBelow) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [explanation, const SizedBox(height: 8), more],
+                  );
+                }
+                return Row(
+                  children: [
+                    Expanded(child: explanation),
+                    const SizedBox(width: 10),
+                    more,
+                  ],
+                );
+              },
             ),
           ],
         ],
@@ -162,3 +172,7 @@ class _WrongGameSheetState extends ConsumerState<WrongGameSheet> {
     );
   }
 }
+
+/// Below this width the deeper search goes under its explanation, which the
+/// button would otherwise squeeze to a few words a line.
+const _stackedBelow = 520.0;
