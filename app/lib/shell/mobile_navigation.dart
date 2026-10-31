@@ -26,7 +26,8 @@ final List<NavigationItem> primaryNavigationItems = [
 /// page reports and the command palette (which has no shortcut without a
 /// keyboard). It replaces the title bar and the status bar, which have
 /// no place on a small screen. A [minimal] bar (sign-in, setup) has the title
-/// only.
+/// only; without [counts] (the full-window pages such as the settings, which
+/// report none) the counts of the page before stay hidden.
 class MobileTopBar extends ConsumerWidget {
   const MobileTopBar({
     required this.location,
@@ -38,8 +39,6 @@ class MobileTopBar extends ConsumerWidget {
   final String location;
   final bool minimal;
 
-  /// Whether the counts of the page show; the full-window pages (settings)
-  /// report none and would show those of the page before.
   final bool counts;
 
   @override

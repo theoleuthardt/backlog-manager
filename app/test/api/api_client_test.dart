@@ -7,13 +7,14 @@ import 'package:backlog_manager/api/generated/export.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+/// Answers every request with [_respond] and keeps the requests and, in
+/// `sent`, the bytes each one sent over the wire.
 class FakeServer implements HttpClientAdapter {
   FakeServer(this._respond);
 
   final ({int status, Object? body}) Function(RequestOptions) _respond;
   final requests = <RequestOptions>[];
 
-  /// The bytes each request sent, as they went over the wire.
   final sent = <List<int>>[];
 
   @override
