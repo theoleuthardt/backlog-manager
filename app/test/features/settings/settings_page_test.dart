@@ -7,6 +7,7 @@ import 'package:backlog_manager/auth/user_api.dart';
 import 'package:backlog_manager/design/background_motion.dart';
 import 'package:backlog_manager/design/light_effects.dart';
 import 'package:backlog_manager/design/theme_provider.dart';
+import 'package:backlog_manager/features/common/user_avatar.dart';
 import 'package:backlog_manager/platform/csv_file_picker.dart';
 import 'package:backlog_manager/platform/image_file_picker.dart';
 import 'package:backlog_manager/platform/url_opener.dart';
@@ -167,6 +168,39 @@ Future<void> afterAutosave(WidgetTester tester) async {
 const integrations = '/settings?tab=integrations';
 
 void main() {
+  testWidgets('the account row of the sidebar shows the profile picture', (
+    tester,
+  ) async {
+    final picture = DateTime.utc(2026, 10, 30);
+    await openSettings(
+      tester,
+      user: SessionUser(
+        id: 7,
+        name: 'Theo',
+        email: 'theo@example.com',
+        setupCompleted: true,
+        avatarUpdatedAt: picture,
+      ),
+    );
+
+    final avatar = tester.widget<UserAvatar>(
+      find.descendant(
+        of: find.byKey(const Key('settings-account')),
+        matching: find.byType(UserAvatar),
+      ),
+    );
+    expect(avatar.userId, 7);
+    expect(avatar.version, picture);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('settings-account')),
+        matching: find.text('TH'),
+      ),
+      findsOneWidget,
+      reason: 'the initials until the picture has loaded',
+    );
+  });
+
   group('the window', () {
     testWidgets('has the tabs and the account at the foot of the list', (
       tester,

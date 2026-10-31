@@ -107,11 +107,20 @@ class EntryInspector extends ConsumerWidget {
   }
 }
 
+/// Below this height of the window a touch screen (a handheld in landscape)
+/// moves Delete from the footer into the header, so the form keeps the
+/// height of the footer.
+const _shortHeight = 520.0;
+
 class _InspectorFrame extends ConsumerWidget {
-  const _InspectorFrame({required this.child, this.status});
+  const _InspectorFrame({required this.child, this.status, this.action});
 
   final Widget child;
   final Widget? status;
+
+  /// A button in the header before the close button: Delete on a short
+  /// touch screen, which has no room for the footer.
+  final Widget? action;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -159,6 +168,10 @@ class _InspectorFrame extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 6),
+                if (action case final action?) ...[
+                  action,
+                  const SizedBox(width: 6),
+                ],
                 if (ref.watch(isDesktopProvider))
                   ShelfIconButton(
                     key: const Key('inspector-fullscreen'),
@@ -549,8 +562,18 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
     final reviewable = canReview(_form.status);
     final fullscreen = ref.watch(inspectorFullscreenProvider);
     final coverWidth = fullscreen ? 160.0 : 132.0;
+    final short =
+        ShelfFormFactor.isTouch(context) &&
+        MediaQuery.sizeOf(context).height < _shortHeight;
+    final delete = ShelfButton(
+      key: const Key('inspector-delete'),
+      label: 'Delete',
+      kind: ShelfButtonKind.danger,
+      onPressed: () => LibraryActions(context, ref).deleteEntries([entry]),
+    );
 
     return _InspectorFrame(
+      action: short ? delete : null,
       status: ValueListenableBuilder<SaveState>(
         valueListenable: _autosave.state,
         builder: (context, state, _) => SaveStatus(state: state, dirty: dirty),
@@ -729,28 +752,19 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
                 ),
               ),
             ),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border(top: BorderSide(color: tokens.borderSubtle)),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
+            if (!short)
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border(top: BorderSide(color: tokens.borderSubtle)),
                 ),
-                child: Row(
-                  children: [
-                    ShelfButton(
-                      key: const Key('inspector-delete'),
-                      label: 'Delete',
-                      kind: ShelfButtonKind.danger,
-                      onPressed: () =>
-                          LibraryActions(context, ref).deleteEntries([entry]),
-                    ),
-                  ],
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                  child: Row(children: [delete]),
                 ),
               ),
-            ),
           ],
         ),
       ),

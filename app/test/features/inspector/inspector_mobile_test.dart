@@ -59,6 +59,35 @@ void main() {
     expect(tester.getCenter(more).dy, closeTo(shooter.dy, 2));
   });
 
+  testWidgets('a short handheld has Delete in the header, no footer', (
+    tester,
+  ) async {
+    await openOn(tester, const Size(732, 412));
+
+    final header = tester.getRect(find.byKey(const Key('inspector-close')));
+    final delete = tester.getRect(find.byKey(const Key('inspector-delete')));
+    expect(delete.center.dy, closeTo(header.center.dy, 1));
+    final inspector = tester.getRect(find.byKey(const Key('entry-inspector')));
+    final body = tester.getRect(
+      find
+          .descendant(
+            of: find.byKey(const Key('entry-inspector')),
+            matching: find.byType(SingleChildScrollView),
+          )
+          .first,
+    );
+    expect(inspector.bottom - body.bottom, lessThan(1));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a phone keeps Delete in the footer', (tester) async {
+    await openOn(tester, const Size(402, 874));
+
+    final close = tester.getRect(find.byKey(const Key('inspector-close')));
+    final delete = tester.getRect(find.byKey(const Key('inspector-delete')));
+    expect(delete.top, greaterThan(close.bottom + 100));
+  });
+
   testWidgets('the handheld shows the details beside the tabs', (tester) async {
     await openOn(tester, const Size(732, 412));
 
