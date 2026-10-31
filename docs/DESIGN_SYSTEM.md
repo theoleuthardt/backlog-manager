@@ -241,7 +241,7 @@ class ShelfTokens extends ThemeExtension<ShelfTokens> {
 client-flutter/
   lib/
     design/        tokens, ShelfTheme, shell widgets (title bar, sidebar, status bar), shared widgets (cover, chip, table, sheet, menu)
-    api/           client generated from backend/openapi.json (openapi-generator, dart-dio)
+    api/           client generated from backend/openapi.json (swagger_parser, retrofit, dio)
     features/      one folder per screen group (library, entry, steam, csv, settings, themes, space)
     app.dart       router (go_router) and providers
   test/            pure logic ported with its tests: sorting, filtering, grouping, categories, themes

@@ -61,9 +61,9 @@ Steam, SteamGridDB) falls back when unconfigured.
   PostgreSQL via testcontainers rather than mocking the database.
 - **App:** `task app:test` (unit, widget and golden tests), plus
   `task app:test:integration` for the main flows. On pull requests CI also
-  runs a smoke test on an Android emulator, and the "App Mobile Tour"
-  workflow walks through the whole app on a phone and a handheld emulator
-  against the real backend; see [`docs/FLUTTER.md`](docs/FLUTTER.md).
+  runs a smoke test on an Android emulator; the "App Mobile Tour" workflow,
+  started by hand, walks through the whole app on a phone and a handheld
+  emulator against the real backend; see [`docs/FLUTTER.md`](docs/FLUTTER.md).
 - **Monitor:** `task monitor:test` (JUnit, Testcontainers).
 - **Release and deploy scripts:** `task release:test` (`node --test`).
 
