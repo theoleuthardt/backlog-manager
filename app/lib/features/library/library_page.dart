@@ -1391,6 +1391,15 @@ class _EntryTargetState extends ConsumerState<_EntryTarget> {
       _menu.open();
       return KeyEventResult.handled;
     }
+    if (key == LogicalKeyboardKey.gameButtonSelect) {
+      final selection = ref.read(selectionProvider.notifier);
+      if (ref.read(selectionProvider).active) {
+        selection.toggle(_entry.id);
+      } else {
+        selection.start(_entry.id);
+      }
+      return KeyEventResult.handled;
+    }
     if (key == LogicalKeyboardKey.gameButtonB && _menu.isOpen) {
       _menu.close();
       return KeyEventResult.handled;
@@ -1526,15 +1535,20 @@ class _EntryTargetState extends ConsumerState<_EntryTarget> {
         key: Key('library-tile-${_entry.id}'),
         controller: _menu,
         entries: _menuEntries(actions, statuses, categories, assigned),
-        child: DecoratedBox(
-          position: DecorationPosition.foreground,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(ShelfRadius.card),
-            border: _focused ? Border.all(color: tokens.glow, width: 2) : null,
-          ),
-          child: canDrag
-              ? EntryDragSource(entry: _entry, drag: drag, child: face)
-              : face,
+        child: Stack(
+          children: [
+            if (canDrag)
+              EntryDragSource(entry: _entry, drag: drag, child: face)
+            else
+              face,
+            Positioned.fill(
+              child: ShelfFocusRing(
+                visible: _focused,
+                borderRadius: ShelfRadius.card,
+                color: tokens.glow,
+              ),
+            ),
+          ],
         ),
       ),
     );

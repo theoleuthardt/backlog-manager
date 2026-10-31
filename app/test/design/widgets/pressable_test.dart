@@ -88,6 +88,36 @@ void main() {
     },
   );
 
+  testWidgets('the focus ring fades in and out', (tester) async {
+    await pumpThemed(tester, probe(onPressed: () {}));
+    double ringOpacity() => tester
+        .widget<FadeTransition>(
+          find.descendant(
+            of: find.byType(ShelfFocusRing),
+            matching: find.byType(FadeTransition),
+          ),
+        )
+        .opacity
+        .value;
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 40));
+    expect(ringOpacity(), inExclusiveRange(0, 1));
+
+    await tester.pumpAndSettle();
+    expect(ringOpacity(), 1);
+
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 40));
+    expect(ringOpacity(), inExclusiveRange(0, 1));
+
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('focus-ring')), findsNothing);
+  });
+
   testWidgets('is a labelled button for assistive technology', (tester) async {
     final handle = tester.ensureSemantics();
     await pumpThemed(tester, probe(onPressed: () {}));

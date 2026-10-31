@@ -10,6 +10,7 @@ import 'package:backlog_manager/features/palette/command_palette.dart';
 import 'package:backlog_manager/features/updates/update_notifier.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/shell/gamepad.dart';
+import 'package:backlog_manager/shell/gamepad_hints.dart';
 import 'package:backlog_manager/shell/mobile_navigation.dart';
 import 'package:backlog_manager/shell/pane_widths.dart';
 import 'package:backlog_manager/shell/search_hint.dart';
@@ -223,6 +224,7 @@ class _MobileShell extends StatelessWidget {
                       children: [
                         MobileTopBar(location: location),
                         Expanded(child: child),
+                        const GamepadHints(),
                       ],
                     ),
                   ),

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:backlog_manager/auth/biometric_lock.dart';
+import 'package:backlog_manager/data/selection_providers.dart';
 import 'package:backlog_manager/routing/history.dart';
 import 'package:backlog_manager/routing/router.dart';
 import 'package:backlog_manager/routing/routes.dart';
@@ -32,6 +33,10 @@ enum GamepadAction {
 
   /// Start: the settings.
   settings,
+
+  /// Select: marks the focused game for a batch action, or unmarks it (the
+  /// library tile handles it); B ends the selection.
+  select,
 }
 
 /// The [GamepadAction] of [key], or null for a key the app leaves to the
@@ -43,8 +48,23 @@ GamepadAction? gamepadActionFor(LogicalKeyboardKey key) => switch (key) {
   LogicalKeyboardKey.gameButtonLeft1 => GamepadAction.previousSection,
   LogicalKeyboardKey.gameButtonRight1 => GamepadAction.nextSection,
   LogicalKeyboardKey.gameButtonStart => GamepadAction.settings,
+  LogicalKeyboardKey.gameButtonSelect => GamepadAction.select,
   _ => null,
 };
+
+/// One hint of the button bar ([GamepadHints]): a button and what it does.
+typedef GamepadHint = ({String button, String action});
+
+/// The hints of the button bar; while games are marked, B ends the selection.
+List<GamepadHint> gamepadHints({required bool selecting}) => [
+  (button: 'A', action: 'Choose'),
+  (button: 'B', action: selecting ? 'End selection' : 'Back'),
+  (button: 'X', action: 'Menu'),
+  (button: 'Y', action: 'Search'),
+  (button: 'Select', action: 'Mark'),
+  (button: 'L1 R1', action: 'Section'),
+  (button: 'Start', action: 'Settings'),
+];
 
 /// The stop of the shoulder buttons that is "Add" of the bottom bar: the
 /// search for a new game, which opens over the page instead of being one.
@@ -89,9 +109,11 @@ bool behindLock(WidgetRef ref) =>
 /// leaving the app), so the hidden app below cannot be moved. An open
 /// menu around the focus closes (what Esc does there), the topmost route of
 /// the focused navigator pops (a sheet or a dialog; a `PopScope` such as an
-/// open settings tab answers it too), then the command palette closes, then
-/// the inspector, then the history steps back. False when there is nothing
-/// to go back to, so the system may leave the app.
+/// open settings tab answers it too), then the topmost route of the app's
+/// own navigator (a sheet while the focus is elsewhere), then the command
+/// palette closes, then the inspector, then the selection of games ends,
+/// then the history steps back. False when there is nothing to go back to, so
+/// the system may leave the app.
 Future<bool> navigateBack(WidgetRef ref) async {
   if (behindLock(ref)) return true;
   final focus = FocusManager.instance.primaryFocus?.context;
@@ -99,12 +121,24 @@ Future<bool> navigateBack(WidgetRef ref) async {
   final navigator = focus == null ? null : Navigator.maybeOf(focus);
   if (navigator != null && await navigator.maybePop()) return true;
   if (!ref.context.mounted) return true;
+  final root = ref.read(routerProvider).routerDelegate.navigatorKey;
+  final rootNavigator = root.currentState;
+  if (rootNavigator != null &&
+      rootNavigator != navigator &&
+      await rootNavigator.maybePop()) {
+    return true;
+  }
+  if (!ref.context.mounted) return true;
   if (ref.read(paletteOpenProvider)) {
     ref.read(paletteOpenProvider.notifier).close();
     return true;
   }
   if (ref.read(shellInspectorProvider) != null) {
     ref.read(shellInspectorProvider.notifier).hide();
+    return true;
+  }
+  if (ref.read(selectionProvider).active) {
+    ref.read(selectionProvider.notifier).end();
     return true;
   }
   final target = ref.read(navigationHistoryProvider.notifier).back();

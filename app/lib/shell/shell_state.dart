@@ -58,6 +58,17 @@ final paletteOpenProvider = NotifierProvider<PaletteOpenNotifier, bool>(
   PaletteOpenNotifier.new,
 );
 
+/// Whether the app is used with a gamepad right now: its buttons or the
+/// D-pad were pressed since the screen was last touched. The button hints
+/// show while it is.
+class GamepadInUseNotifier extends _FlagNotifier {
+  void set({required bool inUse}) => state = inUse;
+}
+
+final gamepadInUseProvider = NotifierProvider<GamepadInUseNotifier, bool>(
+  GamepadInUseNotifier.new,
+);
+
 /// Whether the sidebar is collapsed from the title bar.
 class SidebarCollapsedNotifier extends _FlagNotifier {
   void toggle() => state = !state;

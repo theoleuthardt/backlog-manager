@@ -243,6 +243,25 @@ void main() {
         matchesGoldenFile('goldens/mobile_window_drawer.png'),
       );
     });
+
+    for (final (name, size) in [
+      ('phone_portrait', phonePortrait),
+      ('handheld_large', handheldLarge),
+    ]) {
+      testWidgets('matches the button hints on $name', tags: 'golden', (
+        tester,
+      ) async {
+        final app = await pumpMobile(tester, size: size);
+        await app.go(AppRoutes.home);
+        app.container.read(gamepadInUseProvider.notifier).set(inUse: true);
+        await tester.pumpAndSettle();
+
+        await expectLater(
+          find.byType(MaterialApp),
+          matchesGoldenFile('goldens/mobile_window_hints_$name.png'),
+        );
+      });
+    }
   });
 
   group('navigation (#558)', () {
