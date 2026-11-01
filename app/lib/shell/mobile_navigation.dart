@@ -2,6 +2,7 @@ import 'package:backlog_manager/design/glass.dart';
 import 'package:backlog_manager/design/glow.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
+import 'package:backlog_manager/design/theme_provider.dart';
 import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/routing/history.dart';
 import 'package:backlog_manager/shell/navigation.dart';
@@ -188,6 +189,10 @@ class ShellNavRail extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final focusNode = ref.watch(railFocusProvider);
+    final current = primaryNavigationItems
+        .where((item) => item.isActiveFor(location))
+        .firstOrNull;
     return SizedBox(
       key: const Key('nav-rail'),
       width: 64,
@@ -209,6 +214,7 @@ class ShellNavRail extends ConsumerWidget {
                           icon: item.icon,
                           label: _shortLabel(item),
                           active: item.isActiveFor(location),
+                          focusNode: item == current ? focusNode : null,
                           onTap: () =>
                               activateNavigationItem(context, ref, item),
                         ),
@@ -217,6 +223,7 @@ class ShellNavRail extends ConsumerWidget {
                         icon: Icons.menu,
                         label: 'More',
                         active: false,
+                        focusNode: current == null ? focusNode : null,
                         onTap: onMore,
                       ),
                     ],
@@ -240,6 +247,7 @@ class _RailItem extends StatelessWidget {
     required this.label,
     required this.active,
     required this.onTap,
+    this.focusNode,
     super.key,
   });
 
@@ -247,6 +255,7 @@ class _RailItem extends StatelessWidget {
   final String label;
   final bool active;
   final VoidCallback onTap;
+  final FocusNode? focusNode;
 
   @override
   Widget build(BuildContext context) {
@@ -263,6 +272,7 @@ class _RailItem extends StatelessWidget {
           child: ShelfPressable(
             semanticLabel: label,
             onPressed: onTap,
+            focusNode: focusNode,
             borderRadius: _railRadius,
             builder: (context, state) => AnimatedContainer(
               duration: const Duration(milliseconds: 160),
@@ -352,52 +362,66 @@ class _Destination extends StatelessWidget {
 
 /// Opens the whole sidebar (every item, the themes and the account) as a
 /// bottom sheet that can be dragged up and down and away; choosing an item
-/// closes it. B and the system back close it like every other sheet.
+/// closes it. B and the system back close it like every other sheet. A route
+/// keeps the theme it was opened with, so the sheet takes the active theme
+/// itself and a theme chosen in it shows at once.
 Future<void> showMoreSheet(BuildContext context, {required String location}) {
-  final tokens = Theme.of(context).extension<ShelfTokens>()!;
+  final scrim = Theme.of(context).extension<ShelfTokens>()!.scrim;
   return showModalBottomSheet<void>(
     context: context,
     useRootNavigator: true,
     isScrollControlled: true,
     useSafeArea: true,
     backgroundColor: Colors.transparent,
-    barrierColor: tokens.scrim,
-    builder: (sheetContext) => DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.7,
-      minChildSize: 0.5,
-      snap: true,
-      builder: (context, scrollController) => ClipRRect(
-        key: const Key('nav-drawer'),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
-        child: ColoredBox(
-          color: tokens.background,
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 8, bottom: 4),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: tokens.borderStrong,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                  child: const SizedBox(width: 40, height: 5),
+    barrierColor: scrim,
+    builder: (sheetContext) => Consumer(
+      builder: (context, ref, _) {
+        final theme = ref.watch(shelfThemeProvider);
+        final tokens = theme.extension<ShelfTokens>()!;
+        return Theme(
+          data: theme,
+          child: DraggableScrollableSheet(
+            expand: false,
+            initialChildSize: 0.7,
+            minChildSize: 0.5,
+            snap: true,
+            builder: (context, scrollController) => ClipRRect(
+              key: const Key('nav-drawer'),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(18),
+              ),
+              child: ColoredBox(
+                color: tokens.background,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8, bottom: 4),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: tokens.borderStrong,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: const SizedBox(width: 40, height: 5),
+                      ),
+                    ),
+                    Expanded(
+                      child: SafeArea(
+                        top: false,
+                        child: SidebarContent(
+                          location: location,
+                          scrollController: scrollController,
+                          onItemSelected: () =>
+                              Navigator.of(sheetContext).pop(),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              Expanded(
-                child: SafeArea(
-                  top: false,
-                  child: SidebarContent(
-                    location: location,
-                    scrollController: scrollController,
-                    onItemSelected: () => Navigator.of(sheetContext).pop(),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     ),
   );
 }

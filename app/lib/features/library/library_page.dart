@@ -993,8 +993,16 @@ Widget _revealable(
   int id,
   Widget child,
 ) {
-  if (revealed == null || revealed.id != id) return child;
-  return KeyedSubtree(key: key, child: child);
+  return Stack(
+    fit: StackFit.passthrough,
+    children: [
+      child,
+      if (revealed?.id == id)
+        Positioned.fill(
+          child: IgnorePointer(child: SizedBox(key: key)),
+        ),
+    ],
+  );
 }
 
 class _GroupBody extends ConsumerWidget {

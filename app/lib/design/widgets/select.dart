@@ -72,11 +72,13 @@ class ShelfSelectTrigger extends StatelessWidget {
     required this.onPressed,
     this.placeholder = false,
     this.semanticLabel,
+    this.autofocus = false,
     super.key,
   });
 
   final String text;
   final bool placeholder;
+  final bool autofocus;
   final String? semanticLabel;
   final VoidCallback onPressed;
 
@@ -88,6 +90,7 @@ class ShelfSelectTrigger extends StatelessWidget {
     return ShelfPressable(
       onPressed: onPressed,
       semanticLabel: semanticLabel,
+      autofocus: autofocus,
       builder: (context, state) => SizedBox(
         key: const Key('select-trigger'),
         height: ShelfFormFactor.heightFor(context, ShelfHeight.input),

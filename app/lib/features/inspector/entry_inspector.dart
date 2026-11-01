@@ -659,6 +659,7 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: StatusSelect(
+                            autofocus: ref.read(gamepadInUseProvider),
                             spaceId: ref.watch(backlogScopeProvider),
                             value: _form.status,
                             onChanged: (status) =>

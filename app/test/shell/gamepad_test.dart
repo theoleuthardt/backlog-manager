@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:backlog_manager/auth/biometric_lock.dart';
 import 'package:backlog_manager/data/selection_providers.dart';
 import 'package:backlog_manager/design/focus_glide.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/pressable.dart';
+import 'package:backlog_manager/design/widgets/sheet.dart';
 import 'package:backlog_manager/domain/models.dart';
+import 'package:backlog_manager/features/common/status_select.dart';
 import 'package:backlog_manager/platform/desktop.dart';
 import 'package:backlog_manager/routing/router.dart';
 import 'package:backlog_manager/routing/routes.dart';
@@ -12,6 +16,7 @@ import 'package:backlog_manager/shell/gamepad.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../auth/biometric_fakes.dart';
@@ -453,6 +458,98 @@ void main() {
           reason: '$node under the inspector took the focus',
         );
       }
+    });
+
+    Future<void> focusFirstGame(WidgetTester tester) async {
+      await pumpLibrary(
+        tester,
+        FakeBacklogApi(entries: const [hades, celeste]),
+        overrides: [isDesktopProvider.overrideWithValue(false)],
+      );
+      await resize(tester, handheld);
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('library-tile-1')),
+        100,
+        scrollable: find
+            .descendant(
+              of: find.byKey(const Key('page-library')),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      Focus.of(tester.element(find.byKey(const Key('library-tile-1'))))
+          .requestFocus();
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('A moves the focus into the inspector, B brings it back', (
+      tester,
+    ) async {
+      await focusFirstGame(tester);
+      final game = FocusManager.instance.primaryFocus;
+
+      await press(tester, LogicalKeyboardKey.gameButtonA);
+      final focused = FocusManager.instance.primaryFocus?.context;
+      expect(focused?.findAncestorWidgetOfExactType<StatusSelect>(), isNotNull);
+
+      await press(tester, LogicalKeyboardKey.gameButtonB);
+      expect(FocusManager.instance.primaryFocus, game);
+    });
+
+    testWidgets('left reaches the rail from a game low on the page', (
+      tester,
+    ) async {
+      await focusFirstGame(tester);
+
+      for (var i = 0; i < 3; i++) {
+        await press(tester, LogicalKeyboardKey.arrowLeft);
+      }
+
+      final rail = find.byKey(const Key('nav-rail'));
+      final focused = FocusManager.instance.primaryFocus!.context!;
+      expect(
+        find.descendant(of: rail, matching: find.byWidget(focused.widget)),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('left stays calm on a page without a rail', (tester) async {
+      await focusFirstGame(tester);
+      ProviderScope.containerOf(tester.element(find.byType(MaterialApp)))
+          .read(routerProvider)
+          .go(AppRoutes.settings);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('nav-rail')), findsNothing);
+
+      await press(tester, LogicalKeyboardKey.arrowDown);
+      for (var i = 0; i < 3; i++) {
+        await press(tester, LogicalKeyboardKey.arrowLeft);
+      }
+
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('left does not leave an open sheet for the rail', (
+      tester,
+    ) async {
+      await focusFirstGame(tester);
+      unawaited(
+        showShelfSheet<void>(
+          tester.element(find.byKey(const Key('page-library'))),
+          builder: (context) => ElevatedButton(
+            key: const Key('in-sheet'),
+            autofocus: true,
+            onPressed: () {},
+            child: const Text('In the sheet'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final inSheet = FocusManager.instance.primaryFocus;
+
+      await press(tester, LogicalKeyboardKey.arrowLeft);
+
+      expect(FocusManager.instance.primaryFocus, inSheet);
     });
 
     testWidgets('X opens the menu of the focused game, A opens the game', (
