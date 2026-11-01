@@ -30,6 +30,7 @@ class PublicUser {
     this.steamWishlistImportedAt,
     this.steamFamilyIds,
     this.customThemes,
+    this.groupOrder,
     this.avatarUpdatedAt,
   });
 
@@ -70,6 +71,8 @@ class PublicUser {
   final String theme;
   @JsonKey(name: 'custom_themes')
   final List<CustomTheme>? customThemes;
+  @JsonKey(name: 'group_order')
+  final List<String>? groupOrder;
   @JsonKey(name: 'avatar_updated_at')
   final DateTime? avatarUpdatedAt;
 

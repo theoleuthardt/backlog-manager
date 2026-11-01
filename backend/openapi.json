@@ -12819,6 +12819,12 @@
             },
             "type": "array"
           },
+          "group_order": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "avatar_updated_at": {
             "oneOf": [
               {
@@ -13926,6 +13932,17 @@
               }
             ],
             "maxItems": 10
+          },
+          "group_order": {
+            "oneOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "maxItems": 500
           }
         },
         "type": "object",
@@ -14074,6 +14091,17 @@
               }
             ],
             "maxItems": 10
+          },
+          "group_order": {
+            "oneOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "maxItems": 500
           },
           "is_admin": {
             "oneOf": [

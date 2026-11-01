@@ -30,6 +30,8 @@ class CustomTheme(msgspec.Struct):
 
 CustomThemes = Annotated[list[CustomTheme], msgspec.Meta(max_length=MAX_CUSTOM_THEMES)]
 ThemeName = Annotated[str, msgspec.Meta(min_length=1, max_length=50)]
+GroupOrderKey = Annotated[str, msgspec.Meta(max_length=300)]
+GroupOrder = Annotated[list[GroupOrderKey], msgspec.Meta(max_length=500)]
 
 
 class User(msgspec.Struct):
@@ -58,6 +60,7 @@ class User(msgspec.Struct):
     default_sort: str = "status"
     theme: str = "shelfOled"
     custom_themes: list[CustomTheme] = msgspec.field(default_factory=list)
+    group_order: list[str] = msgspec.field(default_factory=list)
     avatar_updated_at: datetime | None = None
 
 
@@ -99,6 +102,7 @@ class UpdateUserParams(msgspec.Struct):
     default_sort: SortOption | msgspec.UnsetType = msgspec.UNSET
     theme: ThemeName | msgspec.UnsetType = msgspec.UNSET
     custom_themes: CustomThemes | msgspec.UnsetType = msgspec.UNSET
+    group_order: GroupOrder | msgspec.UnsetType = msgspec.UNSET
 
 
 class PublicUser(msgspec.Struct):
@@ -123,6 +127,7 @@ class PublicUser(msgspec.Struct):
     default_sort: str = "status"
     theme: str = "shelfOled"
     custom_themes: list[CustomTheme] = msgspec.field(default_factory=list)
+    group_order: list[str] = msgspec.field(default_factory=list)
     avatar_updated_at: datetime | None = None
 
     @classmethod
@@ -147,6 +152,7 @@ class PublicUser(msgspec.Struct):
             default_sort=user.default_sort,
             theme=user.theme,
             custom_themes=user.custom_themes,
+            group_order=user.group_order,
             avatar_updated_at=user.avatar_updated_at,
         )
 
@@ -188,6 +194,7 @@ class UpdateOwnUserRequest(msgspec.Struct):
     default_sort: SortOption | msgspec.UnsetType = msgspec.UNSET
     theme: ThemeName | msgspec.UnsetType = msgspec.UNSET
     custom_themes: CustomThemes | msgspec.UnsetType = msgspec.UNSET
+    group_order: GroupOrder | msgspec.UnsetType = msgspec.UNSET
 
 
 class UpdateUserAdminRequest(msgspec.Struct):
@@ -209,6 +216,7 @@ class UpdateUserAdminRequest(msgspec.Struct):
     default_sort: SortOption | msgspec.UnsetType = msgspec.UNSET
     theme: ThemeName | msgspec.UnsetType = msgspec.UNSET
     custom_themes: CustomThemes | msgspec.UnsetType = msgspec.UNSET
+    group_order: GroupOrder | msgspec.UnsetType = msgspec.UNSET
     is_admin: bool | msgspec.UnsetType = msgspec.UNSET
 
 

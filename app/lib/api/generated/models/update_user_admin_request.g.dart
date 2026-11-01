@@ -30,6 +30,9 @@ UpdateUserAdminRequest _$UpdateUserAdminRequestFromJson(
   customThemes: (json['custom_themes'] as List<dynamic>?)
       ?.map((e) => CustomTheme.fromJson(e as Map<String, dynamic>))
       .toList(),
+  groupOrder: (json['group_order'] as List<dynamic>?)
+      ?.map((e) => e as String)
+      .toList(),
   isAdmin: json['is_admin'] as bool?,
 );
 
@@ -52,6 +55,7 @@ Map<String, dynamic> _$UpdateUserAdminRequestToJson(
       _$UpdateUserAdminRequestDefaultSortEnumMap[instance.defaultSort],
   'theme': instance.theme,
   'custom_themes': instance.customThemes,
+  'group_order': instance.groupOrder,
   'is_admin': instance.isAdmin,
 };
 

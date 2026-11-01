@@ -17,6 +17,7 @@ class UserUpdate {
   const UserUpdate({
     this.theme,
     this.customThemes,
+    this.groupOrder,
     this.defaultSort,
     this.steamId,
     this.steamApiKey,
@@ -30,6 +31,7 @@ class UserUpdate {
 
   final String? theme;
   final List<CustomTheme>? customThemes;
+  final List<String>? groupOrder;
   final String? defaultSort;
   final String? steamId;
   final String? steamApiKey;
@@ -42,6 +44,7 @@ class UserUpdate {
 
   Map<String, Object?> toJson() => {
     'theme': ?theme,
+    'group_order': ?groupOrder,
     'custom_themes': ?customThemes?.map((theme) => theme.toJson()).toList(),
     'default_sort': ?defaultSort,
     'steam_id': ?steamId,

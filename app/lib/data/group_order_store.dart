@@ -1,6 +1,9 @@
 import 'dart:async';
 
+import 'package:backlog_manager/auth/user_api.dart';
 import 'package:backlog_manager/domain/group_order.dart';
+import 'package:backlog_manager/routing/session.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -48,11 +51,29 @@ final groupOrderStoreProvider = Provider<GroupOrderStore>(
 
 /// The keys of the groups in the order the user arranged them; empty while
 /// the groups keep their default order. Group keys carry their sort option, so
-/// one list serves every sort.
+/// one list serves every sort. The order follows the account: the one stored
+/// there replaces the one of the device, and an account without one takes it
+/// over from the device, which keeps the order of an earlier version. The
+/// device keeps a copy for the start; a save that failed stays pending and
+/// goes out with the next read of the account, and signing out clears the
+/// order, so the next account does not take it over.
 class GroupOrderNotifier extends Notifier<List<String>> {
+  late final Future<void> _loaded;
+  bool _pending = false;
+  int _saves = 0;
+
   @override
   List<String> build() {
-    unawaited(_load(ref.read(groupOrderStoreProvider)));
+    _loaded = _load(ref.read(groupOrderStoreProvider));
+    ref.listen(sessionUserProvider, (previous, user) {
+      if (user != null) {
+        unawaited(_fromAccount(user.groupOrder));
+      } else if (previous != null) {
+        _signedOut();
+      }
+    });
+    final user = ref.read(sessionUserProvider);
+    if (user != null) unawaited(_fromAccount(user.groupOrder));
     return const [];
   }
 
@@ -71,6 +92,36 @@ class GroupOrderNotifier extends Notifier<List<String>> {
     unawaited(store.write(state));
   }
 
+  Future<void> _fromAccount(List<String> order) async {
+    await _loaded;
+    if (!ref.mounted) return;
+    if (_pending || (order.isEmpty && state.isNotEmpty)) {
+      await _save();
+      return;
+    }
+    if (order.isEmpty || listEquals(order, state)) return;
+    state = order;
+    unawaited(ref.read(groupOrderStoreProvider).write(order));
+  }
+
+  void _signedOut() {
+    _pending = false;
+    state = const [];
+    unawaited(ref.read(groupOrderStoreProvider).write(const []));
+  }
+
+  Future<void> _save() async {
+    if (ref.read(sessionUserProvider) == null) return;
+    _pending = true;
+    final save = ++_saves;
+    try {
+      await ref.read(userApiProvider).update(UserUpdate(groupOrder: state));
+      if (save == _saves) _pending = false;
+    } on Object {
+      return;
+    }
+  }
+
   /// Saves [arranged], the order of the groups on screen, in front of the
   /// saved keys of groups that are not on screen now.
   void arrange(List<String> arranged) {
@@ -80,6 +131,7 @@ class GroupOrderNotifier extends Notifier<List<String>> {
         if (!arranged.contains(key)) key,
     ];
     unawaited(ref.read(groupOrderStoreProvider).write(state));
+    unawaited(_save());
   }
 }
 
