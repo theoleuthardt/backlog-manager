@@ -824,9 +824,7 @@ async def test_update_own_user_round_trips_custom_themes(
     assert me_response.json()["custom_themes"] == themes
 
 
-async def test_update_own_user_round_trips_group_order(
-    postgres_url: str, create_and_login
-) -> None:
+async def test_update_own_user_round_trips_group_order(postgres_url: str, create_and_login) -> None:
     from backlog_manager_backend.app import create_app
 
     order = ["status:Completed", "category:3"]
@@ -834,9 +832,7 @@ async def test_update_own_user_round_trips_group_order(
     with TestClient(app=create_app()) as client:
         headers = await create_and_login(client, "grouporder@example.com")
 
-        update_response = client.put(
-            "/api/user/me", headers=headers, json={"group_order": order}
-        )
+        update_response = client.put("/api/user/me", headers=headers, json={"group_order": order})
         me_response = client.get("/api/user/me", headers=headers)
 
     assert update_response.status_code == 200
