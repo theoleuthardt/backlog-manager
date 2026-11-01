@@ -9,7 +9,7 @@ Built from `frontend/src/app/`, `frontend/src/hooks/` and `frontend/src/lib/` fo
 | `login` | `features/auth/sign_in_page.dart`: password, two-factor code or backup code, server address | done |
 | `setup` | `features/setup/`: the wizard (profile, Steam, API keys, theme) | done |
 | `dashboard` | `features/library/`: groups, covers and rows, filters, sort, drag and drop, selection, context menu | done |
-| (none) | `features/home/`: the home screen with Up next, short games first, recently completed and the stats of the backlog | new |
+| (none) | `features/home/`: the home screen with Up Next by interest, the stats of the backlog and its charts | new |
 | `account` | `features/settings/`: general, integrations, security (two-factor), backups, about | done |
 | `creation-tool` | `features/creation/` and `features/add_game/`: search, wrong game, cover, duplicate check, creation tool | done |
 | `import-csv` | `features/import_csv/` | done |

@@ -28,7 +28,7 @@ The mobile tour (`scripts/mobile-tour.sh`, `integration_test/mobile_tour_test.da
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Sign-in: password, two-factor code, backup code, server address, autofill | | | | | | | | |
 | Setup wizard: profile, Steam, API keys, theme | | | | | | | | |
-| Home: Up next, short games first, recently completed, stats | | | | | | | | |
+| Home: Up Next by interest, stats, charts by status, genre and month | | | | | | | | |
 | Library: groups, covers and rows, collapsing groups | | | | | | | | |
 | Library: search, filters, sort, group by | | | | | | | | |
 | Library: selection, bulk status, bulk delete, bulk categories | | | | | | | | |

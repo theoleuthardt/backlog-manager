@@ -299,6 +299,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.byKey(const Key('home-chart-months')), findsOneWidget);
+      expect(find.byKey(const Key('home-chart-genres')), findsNothing);
     });
 
     testWidgets('shows the number of games in the status bar', (tester) async {
