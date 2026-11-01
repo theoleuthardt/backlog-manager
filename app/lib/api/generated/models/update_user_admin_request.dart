@@ -27,6 +27,7 @@ class UpdateUserAdminRequest {
     this.defaultSort,
     this.theme,
     this.customThemes,
+    this.groupOrder,
     this.isAdmin,
   });
 
@@ -59,6 +60,8 @@ class UpdateUserAdminRequest {
   final String? theme;
   @JsonKey(name: 'custom_themes')
   final List<CustomTheme>? customThemes;
+  @JsonKey(name: 'group_order')
+  final List<String>? groupOrder;
   @JsonKey(name: 'is_admin')
   final bool? isAdmin;
 

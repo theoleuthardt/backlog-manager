@@ -26,5 +26,6 @@ SessionUser sessionUserFrom(wire.PublicUser user) {
       for (final theme in user.customThemes ?? const <wire.CustomTheme>[])
         CustomTheme.fromJson(theme.toJson()),
     ],
+    groupOrder: user.groupOrder ?? const [],
   );
 }

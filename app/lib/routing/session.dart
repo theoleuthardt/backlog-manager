@@ -20,6 +20,7 @@ class SessionUser {
     this.isTwoFactorEnabled = false,
     this.theme,
     this.customThemes = const [],
+    this.groupOrder = const [],
   });
 
   final String name;
@@ -52,6 +53,9 @@ class SessionUser {
   /// known.
   final String? theme;
   final List<CustomTheme> customThemes;
+
+  /// The order of the library's groups, kept with the account.
+  final List<String> groupOrder;
 
   bool get hasSteamId => steamId.isNotEmpty;
 }

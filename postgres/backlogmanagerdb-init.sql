@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS "blm-system"."Users"(
     "DefaultSort" VARCHAR(20) NOT NULL DEFAULT 'status',
     "Theme" VARCHAR(50) NOT NULL DEFAULT 'shelfOled',
     "CustomThemes" JSONB NOT NULL DEFAULT '[]'::jsonb,
+    "GroupOrder" JSONB NOT NULL DEFAULT '[]'::jsonb,
     "AvatarUpdatedAt" TIMESTAMP,
     "CreatedAt" TIMESTAMP NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP),
     "UpdatedAt" TIMESTAMP NOT NULL DEFAULT DATE_TRUNC('minute', CURRENT_TIMESTAMP)
