@@ -25,11 +25,11 @@ Built from `frontend/src/app/`, `frontend/src/hooks/` and `frontend/src/lib/` fo
 | --- | --- | --- |
 | `AccountContent` | `features/settings/*_tab.dart` | done |
 | `AchievementProgress` | `features/achievements/` | done |
-| `AppUpdateSection`, `AppUpdater`, `lib/appUpdate` | none yet | open: #278, #279 |
+| `AppUpdateSection`, `AppUpdater`, `lib/appUpdate` | `features/updates/`, `data/release_source.dart`, `platform/update_installer.dart` | done (#278, #279; Android #526) |
 | `AuthCard`, `RequireAuth` | `features/auth/`, `routing/guard.dart` | done |
 | `BacklogEntry`, `EntryTile`, `EntryDetail` | library tiles and `features/inspector/` (autosave, tabs, trailer, stats) | done |
 | `BackupSection` | `features/settings/backups_tab.dart` | done |
-| `BottomSheet`, `useMediaQuery` (phone layouts) | none | dropped for the desktop client: phones are #289 |
+| `BottomSheet`, `useMediaQuery` (phone layouts) | the mobile shell and `ShelfFormFactor` (`docs/FLUTTER.md`, "Mobile") | done in the mobile port (#289) |
 | `BulkActionBar` | `features/library/selection_bar.dart` | done |
 | `CategoryGroupSection`, `GroupSection`, `StatusGroupSection` | `LibraryGroup` sections of `library_page.dart` | done |
 | `CategoryManager`, `CategoryPicker` | `features/common/category_*.dart` | done |
@@ -71,7 +71,7 @@ Built from `frontend/src/app/`, `frontend/src/hooks/` and `frontend/src/lib/` fo
 | Case | Flutter | Status |
 | --- | --- | --- |
 | Empty backlog | "Your backlog is empty" with an add button; the shared space has its own empty text | done |
-| 2000 entries | lazy slivers in the library; not measured | open: #283 compares it with the Tauri baseline |
+| 2000 entries | lazy slivers in the library; not measured | open: #283 was closed without a measurement |
 | Expired token | a 401 ends the session with "Your session has ended. Sign in again." | done |
 | Backend offline | "Try again" on the library and the space, error toasts and write-only fields elsewhere; a failed refresh of the space keeps the screen | done |
 | Large CSV | files up to 10 MB, a thousand rows stay fast, preview and import can be cancelled | done |
@@ -79,7 +79,8 @@ Built from `frontend/src/app/`, `frontend/src/hooks/` and `frontend/src/lib/` fo
 | Two-factor sign-in, enrolment and disabling | `auth/`, `features/settings/security_tab.dart` | done |
 | Wishlist import for the first time only, skipped games, automatic sync report | `features/steam/`, `wishlist_sync_prompt.dart` | done |
 | Theme from the web client shows up in the app and the other way round | the same `custom_themes` shape and cache key | done (check in the beta) |
-| Window chrome, update from GitHub Releases, signing | title bar done; update notification done (#278); in-place updates #279; code signing postponed (#280) | open |
+| Window chrome and update from GitHub Releases | title bar, update notification (#278) and in-place updates (#279) | done |
+| Code signing | postponed (#280) | open |
 
 ## Sign-off
 
