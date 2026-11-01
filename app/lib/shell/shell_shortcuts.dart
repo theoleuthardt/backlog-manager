@@ -261,21 +261,43 @@ class _FocusFallbackState extends State<_FocusFallback> {
     return FocusTraversalGroup(
       policy: ReadingOrderTraversalPolicy(
         requestFocusCallback:
-            (node, {alignment, alignmentPolicy, curve, duration}) =>
-                FocusTraversalPolicy.defaultTraversalRequestFocusCallback(
-                  node,
-                  alignment: alignment,
-                  alignmentPolicy: alignmentPolicy,
+            (node, {alignment, alignmentPolicy, curve, duration}) {
+              FocusTraversalPolicy.defaultTraversalRequestFocusCallback(
+                node,
+                alignment: alignment,
+                alignmentPolicy: alignmentPolicy,
+                curve: Curves.easeOutCubic,
+                duration: scroll,
+              );
+              final opposite = switch (alignmentPolicy) {
+                ScrollPositionAlignmentPolicy.keepVisibleAtStart =>
+                  ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+                ScrollPositionAlignmentPolicy.keepVisibleAtEnd =>
+                  ScrollPositionAlignmentPolicy.keepVisibleAtStart,
+                _ => null,
+              };
+              final target = node.context;
+              if (opposite == null || target == null) return;
+              unawaited(
+                Scrollable.ensureVisible(
+                  target,
+                  alignmentPolicy: opposite,
                   curve: Curves.easeOutCubic,
                   duration: scroll,
                 ),
+              );
+            },
       ),
       child: FocusScope(node: _scope, child: widget.child),
     );
   }
 }
 
-/// How long the page scrolls to a control the D-pad moved the focus to.
+/// How long the page scrolls to a control the D-pad moved the focus to. The
+/// traversal only keeps the leading edge of a target in sight on a move left
+/// or up, and the trailing edge on a move right or down, which leaves a target
+/// on the far side of a list hidden with the focus on it, so the shell's
+/// policy asks for the other edge as well.
 const _focusScrollDuration = Duration(milliseconds: 220);
 
 class _Action<T extends Intent> extends Action<T> {

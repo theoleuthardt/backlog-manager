@@ -767,11 +767,14 @@ void main() {
           });
           return;
         }
-        final apart = (ring.center - target.center).distance;
-        final hit =
+        bool hit(Rect ring, Rect target) =>
             ring.inflate(6).contains(target.center) ||
             target.inflate(6).contains(ring.center);
-        if (!hit) {
+        if (!hit(ring, target)) {
+          await settle(60);
+          final later = hosts.first.ringRect;
+          if (later != null && hit(later, node.rect)) return;
+          final apart = (ring.center - target.center).distance;
           steps.add({
             'step': step,
             'error':
