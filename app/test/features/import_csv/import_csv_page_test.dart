@@ -20,6 +20,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../data/fakes.dart';
 import '../settings/settings_page_test.dart' show openSettings;
+import '../mobile_pages_test.dart' show resize;
 
 class FakeCsvImportApi implements CsvImportApi {
   Map<String, String> headersResult = {
@@ -177,6 +178,26 @@ Future<void> dismissToast(WidgetTester tester) =>
     tester.pump(const Duration(seconds: 6));
 
 void main() {
+  testWidgets('on a phone the head scrolls away with the preview', (
+    tester,
+  ) async {
+    await previewed(
+      tester,
+      rows: [for (var i = 0; i < 12; i++) previewJson(i, 'Game $i')],
+    );
+    await resize(tester, const Size(700, 874));
+    final file = find.byKey(const Key('import-file'));
+    final top = tester.getTopLeft(file).dy;
+
+    await tester.drag(
+      find.byKey(const Key('import-rows')),
+      const Offset(0, -120),
+    );
+    await tester.pumpAndSettle();
+
+    expect(file.evaluate().isEmpty || tester.getTopLeft(file).dy < top, isTrue);
+  });
+
   group('dropping a file', () {
     testWidgets('the desktop takes a file dropped on the page', (tester) async {
       await open(tester);

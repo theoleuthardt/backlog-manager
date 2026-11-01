@@ -186,7 +186,7 @@ Routes are the current web routes; the Flutter client can use the same names. Ev
 |---|---|---|---|---|
 | Sign-in | window | Email and password, then the two-factor code | Two small windows, fields | `POST /api/auth/login`, `POST /api/auth/2fa/login-verify` |
 | Setup wizard | window | First run: theme, default sort, Steam, IGDB, done | Vertical stepper, form group | `PUT /api/user/me` |
-| Home | main window | Continue playing card, up next and recently completed shelves | Stat tiles, hero card, shelf rows | `GET /api/backlog/entries` |
+| Home | main window | Continue playing card, Up Next shelf, charts by status, genre and month | Stat tiles, hero card, shelf rows | `GET /api/backlog/entries` |
 | Library | main window | All games grouped by status or category; filters, selection, context menu, drag and drop | Toolbar, filter bar, cover grid, contextual bar | `GET/PUT/DELETE /api/backlog/entries*`, `/categories*`, `/statuses*`, `POST /api/igdb-sync/stream`, `POST /api/user/steam/sync/stream` |
 | Entry inspector | right pane of the library | Cover, status, categories, times, review, trailer, delete | Inspector, tabs, bars, switch | `PUT/DELETE /api/backlog/entries/{id}`, `GET /api/user/steam/achievements` |
 | Command palette | sheet | Search games, run actions | Sheet, list | local data plus the actions' endpoints |
