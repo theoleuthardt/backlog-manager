@@ -64,7 +64,6 @@ class _TypeGateState extends State<TypeGate> {
 
   @override
   void dispose() {
-    widget.focusNode?.skipTraversal = false;
     _own?.dispose();
     _gate.dispose();
     super.dispose();

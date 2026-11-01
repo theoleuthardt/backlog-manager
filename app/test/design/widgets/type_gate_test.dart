@@ -97,4 +97,38 @@ void main() {
 
     expect(editing(tester, 'gated'), isTrue);
   });
+
+  testWidgets('a gate that takes over a shared field keeps it out of the D-pad '
+      'path', (tester) async {
+    final shared = FocusNode();
+    addTearDown(shared.dispose);
+    Widget page(String key) => SizedBox(
+      key: ValueKey(key),
+      width: 200,
+      child: TypeGate(
+        focusNode: shared,
+        builder: (context, focusNode) => TextField(focusNode: focusNode),
+      ),
+    );
+
+    var keys = ['library'];
+    late StateSetter setKeys;
+    await pumpThemed(
+      tester,
+      StatefulBuilder(
+        builder: (context, setState) {
+          setKeys = setState;
+          return Column(children: [for (final key in keys) page(key)]);
+        },
+      ),
+      touch: true,
+    );
+
+    setKeys(() => keys = ['library', 'space']);
+    await tester.pump();
+    setKeys(() => keys = ['space']);
+    await tester.pump();
+
+    expect(shared.skipTraversal, isTrue);
+  });
 }
