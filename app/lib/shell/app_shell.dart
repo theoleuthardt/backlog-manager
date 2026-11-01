@@ -13,6 +13,7 @@ import 'package:backlog_manager/shell/gamepad.dart';
 import 'package:backlog_manager/shell/gamepad_hints.dart';
 import 'package:backlog_manager/shell/mobile_navigation.dart';
 import 'package:backlog_manager/shell/pane_widths.dart';
+import 'package:backlog_manager/shell/resume_refresh.dart';
 import 'package:backlog_manager/shell/search_hint.dart';
 import 'package:backlog_manager/shell/shell_layout.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
@@ -119,11 +120,13 @@ class _AppShellState extends ConsumerState<AppShell> {
             excluding: fullscreen,
             child: SizedBox.expand(
               key: const Key('main-content'),
-              child: UpdateNotifier(
-                child: WishlistSyncPrompt(
-                  child: SearchHintPrompt(
-                    location: location,
-                    child: widget.child,
+              child: ResumeRefresh(
+                child: UpdateNotifier(
+                  child: WishlistSyncPrompt(
+                    child: SearchHintPrompt(
+                      location: location,
+                      child: widget.child,
+                    ),
                   ),
                 ),
               ),

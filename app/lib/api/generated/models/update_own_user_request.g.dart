@@ -30,6 +30,9 @@ UpdateOwnUserRequest _$UpdateOwnUserRequestFromJson(
   customThemes: (json['custom_themes'] as List<dynamic>?)
       ?.map((e) => CustomTheme.fromJson(e as Map<String, dynamic>))
       .toList(),
+  groupOrder: (json['group_order'] as List<dynamic>?)
+      ?.map((e) => e as String)
+      .toList(),
 );
 
 Map<String, dynamic> _$UpdateOwnUserRequestToJson(
@@ -51,6 +54,7 @@ Map<String, dynamic> _$UpdateOwnUserRequestToJson(
       _$UpdateOwnUserRequestDefaultSortEnumMap[instance.defaultSort],
   'theme': instance.theme,
   'custom_themes': instance.customThemes,
+  'group_order': instance.groupOrder,
 };
 
 const _$UpdateOwnUserRequestDefaultSortEnumMap = {

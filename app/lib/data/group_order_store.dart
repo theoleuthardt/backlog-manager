@@ -1,6 +1,9 @@
 import 'dart:async';
 
+import 'package:backlog_manager/auth/user_api.dart';
 import 'package:backlog_manager/domain/group_order.dart';
+import 'package:backlog_manager/routing/session.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -48,11 +51,17 @@ final groupOrderStoreProvider = Provider<GroupOrderStore>(
 
 /// The keys of the groups in the order the user arranged them; empty while
 /// the groups keep their default order. Group keys carry their sort option, so
-/// one list serves every sort.
+/// one list serves every sort. The order follows the account: the one stored
+/// there replaces the one of the device, and an account without one takes it
+/// over from the device, which keeps the order of an earlier version. The
+/// device keeps a copy for the start and a failed save changes nothing.
 class GroupOrderNotifier extends Notifier<List<String>> {
   @override
   List<String> build() {
     unawaited(_load(ref.read(groupOrderStoreProvider)));
+    ref.listen(sessionUserProvider, (_, user) {
+      if (user != null) _fromAccount(user.groupOrder);
+    });
     return const [];
   }
 
@@ -71,6 +80,25 @@ class GroupOrderNotifier extends Notifier<List<String>> {
     unawaited(store.write(state));
   }
 
+  void _fromAccount(List<String> order) {
+    if (order.isEmpty) {
+      if (state.isNotEmpty) unawaited(_save());
+      return;
+    }
+    if (listEquals(order, state)) return;
+    state = order;
+    unawaited(ref.read(groupOrderStoreProvider).write(order));
+  }
+
+  Future<void> _save() async {
+    if (ref.read(sessionUserProvider) == null) return;
+    try {
+      await ref.read(userApiProvider).update(UserUpdate(groupOrder: state));
+    } on Object {
+      return;
+    }
+  }
+
   /// Saves [arranged], the order of the groups on screen, in front of the
   /// saved keys of groups that are not on screen now.
   void arrange(List<String> arranged) {
@@ -80,6 +108,7 @@ class GroupOrderNotifier extends Notifier<List<String>> {
         if (!arranged.contains(key)) key,
     ];
     unawaited(ref.read(groupOrderStoreProvider).write(state));
+    unawaited(_save());
   }
 }
 

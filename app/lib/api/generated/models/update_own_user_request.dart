@@ -27,6 +27,7 @@ class UpdateOwnUserRequest {
     this.defaultSort,
     this.theme,
     this.customThemes,
+    this.groupOrder,
   });
 
   factory UpdateOwnUserRequest.fromJson(Map<String, Object?> json) =>
@@ -58,6 +59,8 @@ class UpdateOwnUserRequest {
   final String? theme;
   @JsonKey(name: 'custom_themes')
   final List<CustomTheme>? customThemes;
+  @JsonKey(name: 'group_order')
+  final List<String>? groupOrder;
 
   Map<String, Object?> toJson() => _$UpdateOwnUserRequestToJson(this);
 }

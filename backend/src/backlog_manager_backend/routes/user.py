@@ -162,6 +162,7 @@ async def update_own_user(
                 default_sort=data.default_sort,
                 theme=data.theme,
                 custom_themes=data.custom_themes,
+                group_order=data.group_order,
             ),
         )
     except ConflictError as error:
@@ -346,6 +347,7 @@ async def update_user_admin(
                 default_sort=data.default_sort,
                 theme=data.theme,
                 custom_themes=data.custom_themes,
+                group_order=data.group_order,
                 is_admin=data.is_admin,
             ),
         )

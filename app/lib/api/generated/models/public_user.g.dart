@@ -30,6 +30,9 @@ PublicUser _$PublicUserFromJson(Map<String, dynamic> json) => PublicUser(
   customThemes: (json['custom_themes'] as List<dynamic>?)
       ?.map((e) => CustomTheme.fromJson(e as Map<String, dynamic>))
       .toList(),
+  groupOrder: (json['group_order'] as List<dynamic>?)
+      ?.map((e) => e as String)
+      .toList(),
   avatarUpdatedAt: json['avatar_updated_at'] == null
       ? null
       : DateTime.parse(json['avatar_updated_at'] as String),
@@ -57,5 +60,6 @@ Map<String, dynamic> _$PublicUserToJson(PublicUser instance) =>
       'default_sort': instance.defaultSort,
       'theme': instance.theme,
       'custom_themes': instance.customThemes,
+      'group_order': instance.groupOrder,
       'avatar_updated_at': instance.avatarUpdatedAt?.toIso8601String(),
     };
