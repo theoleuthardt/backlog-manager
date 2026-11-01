@@ -108,7 +108,9 @@ class ShellShortcuts extends ConsumerWidget {
           ),
           if (touch) ...{
             GamepadIntent: _GamepadAction(ref, signedIn: signedIn),
-            DirectionalFocusIntent: _DpadFocusAction(),
+            DirectionalFocusIntent: _DpadFocusAction(
+              ref.read(railFocusProvider),
+            ),
           },
           CloseTopLayerIntent: _Action<CloseTopLayerIntent>(
             enabled: () =>
@@ -382,8 +384,14 @@ class _GamepadAction extends Action<GamepadIntent> {
 }
 
 /// The D-pad: moves the focus like the arrow keys, and when nothing has the
-/// focus yet it goes to the first control instead of doing nothing.
+/// focus yet it goes to the first control instead of doing nothing. Left goes
+/// to the rail when nothing else is to the left, because the few items of the
+/// rail are not beside most of the page; an open sheet keeps the focus.
 class _DpadFocusAction extends DirectionalFocusAction {
+  _DpadFocusAction(this.rail);
+
+  final FocusNode rail;
+
   @override
   void invoke(DirectionalFocusIntent intent) {
     final focused = FocusManager.instance.primaryFocus;
@@ -391,6 +399,13 @@ class _DpadFocusAction extends DirectionalFocusAction {
       (focused ?? FocusManager.instance.rootScope).nextFocus();
       return;
     }
-    super.invoke(intent);
+    final moved = focused.focusInDirection(intent.direction);
+    final railContext = rail.context;
+    if (!moved &&
+        intent.direction == TraversalDirection.left &&
+        railContext != null &&
+        (ModalRoute.of(railContext)?.isCurrent ?? true)) {
+      rail.requestFocus();
+    }
   }
 }

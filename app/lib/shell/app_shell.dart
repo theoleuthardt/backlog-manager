@@ -98,7 +98,10 @@ class _AppShellState extends ConsumerState<AppShell> {
         ? null
         : KeyedSubtree(
             key: _slotKey,
-            child: _InspectorSlot(fullscreen: fullscreen, child: inspector),
+            child: _InspectorSlot(
+              fullscreen: fullscreen,
+              child: _InspectorFocus(fullscreen: fullscreen, child: inspector),
+            ),
           );
     ref.listen(shellInspectorProvider, (_, next) {
       if (next == null) {
@@ -239,6 +242,53 @@ class _MobileShell extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Takes the gamepad along into a full-screen inspector: while the page is
+/// out of reach the focus moves to the first control of the inspector, and
+/// it goes back to where it was when the inspector closes.
+class _InspectorFocus extends ConsumerStatefulWidget {
+  const _InspectorFocus({required this.fullscreen, required this.child});
+
+  final bool fullscreen;
+  final Widget child;
+
+  @override
+  ConsumerState<_InspectorFocus> createState() => _InspectorFocusState();
+}
+
+class _InspectorFocusState extends ConsumerState<_InspectorFocus> {
+  final _scope = FocusScopeNode(debugLabel: 'Inspector');
+  FocusNode? _previous;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.fullscreen || !ref.read(gamepadInUseProvider)) return;
+    _previous = FocusManager.instance.primaryFocus;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      FocusTraversalGroup.of(context)
+          .findFirstFocus(_scope, ignoreCurrentFocus: true)
+          ?.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    final previous = _previous;
+    if (previous != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (previous.context != null) previous.requestFocus();
+      });
+    }
+    _scope.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      FocusScope(node: _scope, child: widget.child);
 }
 
 class _InspectorSlot extends ConsumerWidget {
