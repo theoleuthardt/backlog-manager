@@ -31,6 +31,7 @@ sleep 3
 adb logcat -c
 adb logcat -v time > "$out/logcat.txt" 2>&1 &
 logcat=$!
+trap 'kill "$logcat" 2> /dev/null || true' EXIT
 
 flutter drive \
   --driver=test_driver/tour_driver.dart \
@@ -38,8 +39,6 @@ flutter drive \
   --use-application-binary="$apk" \
   -d emulator-5554 \
   || echo "flutter drive failed with $?" >> "$out/drive-failed.txt"
-
-kill "$logcat" 2> /dev/null || true
 
 adb install -r "$apk" > /dev/null
 adb shell monkey -p dev.theocloud.blm -c android.intent.category.LAUNCHER 1 > /dev/null

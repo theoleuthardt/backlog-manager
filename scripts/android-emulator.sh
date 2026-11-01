@@ -18,7 +18,9 @@ DISPLAY="$display" LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe \
   setsid nohup emulator -avd "$avd" -no-snapshot -noaudio -no-boot-anim -camera-back none -gpu host \
   > /tmp/android-emulator.log 2>&1 < /dev/null &
 
-adb wait-for-device
-until [ "$(adb shell getprop sys.boot_completed 2> /dev/null | tr -d '\r')" = 1 ]; do
+for _ in $(seq 1 150); do
+  [ "$(adb shell getprop sys.boot_completed 2> /dev/null | tr -d '\r')" = 1 ] && exit 0
   sleep 2
 done
+echo "The emulator did not boot, see /tmp/android-emulator.log" >&2
+exit 1
