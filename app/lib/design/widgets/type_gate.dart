@@ -48,23 +48,7 @@ class _TypeGateState extends State<TypeGate> {
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _field.skipTraversal = ShelfFormFactor.isTouch(context);
-  }
-
-  @override
-  void didUpdateWidget(TypeGate oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.focusNode != widget.focusNode) {
-      oldWidget.focusNode?.skipTraversal = false;
-      _field.skipTraversal = ShelfFormFactor.isTouch(context);
-    }
-  }
-
-  @override
   void dispose() {
-    widget.focusNode?.skipTraversal = false;
     _own?.dispose();
     _gate.dispose();
     super.dispose();
@@ -101,7 +85,7 @@ class _TypeGateState extends State<TypeGate> {
         clipBehavior: Clip.none,
         fit: StackFit.passthrough,
         children: [
-          field,
+          ExcludeFocusTraversal(child: field),
           Positioned(
             left: -4,
             top: -4,
