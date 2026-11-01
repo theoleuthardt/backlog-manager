@@ -404,6 +404,7 @@ class _DpadFocusAction extends DirectionalFocusAction {
     if (!moved &&
         intent.direction == TraversalDirection.left &&
         railContext != null &&
+        railContext.mounted &&
         (ModalRoute.of(railContext)?.isCurrent ?? true)) {
       rail.requestFocus();
     }

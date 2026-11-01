@@ -515,6 +515,22 @@ void main() {
       );
     });
 
+    testWidgets('left stays calm on a page without a rail', (tester) async {
+      await focusFirstGame(tester);
+      ProviderScope.containerOf(tester.element(find.byType(MaterialApp)))
+          .read(routerProvider)
+          .go(AppRoutes.settings);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('nav-rail')), findsNothing);
+
+      await press(tester, LogicalKeyboardKey.arrowDown);
+      for (var i = 0; i < 3; i++) {
+        await press(tester, LogicalKeyboardKey.arrowLeft);
+      }
+
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('left does not leave an open sheet for the rail', (
       tester,
     ) async {
