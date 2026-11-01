@@ -183,9 +183,6 @@ workflow never blocks a merge):
   a merge to `main`, never for open pull requests.
 - `release-app.yml` builds, packages and publishes the Flutter app; see
   [`FLUTTER.md`](FLUTTER.md#release-workflow).
-- `app-mobile-tour.yml` (started by hand) runs the mobile tour on Android
-  emulators against a real backend in the job; see
-  [`FLUTTER.md`](FLUTTER.md#mobile-android-and-ios).
 - `deploy-backend.yml` (started by hand, owner only) deploys the backend on
   the self-hosted runner; see [`DEPLOYMENT.md`](DEPLOYMENT.md).
 
