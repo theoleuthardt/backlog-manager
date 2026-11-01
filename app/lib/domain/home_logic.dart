@@ -60,11 +60,14 @@ BacklogEntry? continuePlaying(List<BacklogEntry> entries) {
   return best;
 }
 
-/// Games not started yet, the shortest main story first; games without a time
-/// come last, ordered by title.
+/// Games not started yet, the highest interest first, then the shortest main
+/// story; games without a time come after the others of their interest,
+/// ordered by title.
 List<BacklogEntry> upNext(List<BacklogEntry> entries) {
   final games = entries.where((e) => e.status == _notStarted).toList();
   return stableSorted(games, (a, b) {
+    final byInterest = b.interest.compareTo(a.interest);
+    if (byInterest != 0) return byInterest;
     final timeA = a.timeToBeat;
     final timeB = b.timeToBeat;
     if (timeA != null && timeB != null) {
@@ -79,15 +82,50 @@ List<BacklogEntry> upNext(List<BacklogEntry> entries) {
   });
 }
 
-/// Completed games, the latest completion first; games without a date last.
-List<BacklogEntry> recentlyCompleted(List<BacklogEntry> entries) {
-  final games = entries.where((e) => e.status == _completed).toList();
-  return stableSorted(games, (a, b) {
-    final dateA = a.completedAt;
-    final dateB = b.completedAt;
-    if (dateA != null && dateB != null) return dateB.compareTo(dateA);
-    if (dateA != null) return -1;
-    if (dateB != null) return 1;
-    return compareText(a.title, b.title);
+/// A named number of games for a chart of the home screen.
+typedef HomeCount = ({String label, int count});
+
+/// How often each label comes up, the largest first, then by label.
+List<HomeCount> _counted(Iterable<String> labels) {
+  final counts = <String, int>{};
+  for (final label in labels) {
+    counts[label] = (counts[label] ?? 0) + 1;
+  }
+  final result = [
+    for (final MapEntry(:key, :value) in counts.entries)
+      (label: key, count: value),
+  ];
+  return stableSorted(result, (a, b) {
+    final byCount = b.count.compareTo(a.count);
+    return byCount != 0 ? byCount : compareText(a.label, b.label);
   });
+}
+
+/// The number of games in each status.
+List<HomeCount> statusCounts(List<BacklogEntry> entries) =>
+    _counted(entries.map((entry) => entry.status));
+
+/// The [limit] most common genres; a game counts for each of its genres.
+List<HomeCount> topGenres(List<BacklogEntry> entries, {int limit = 6}) =>
+    _counted(entries.expand((entry) => entry.genre)).take(limit).toList();
+
+/// The completed games of each of the last [months] months up to [now], the
+/// oldest first; games without a completion date do not count.
+List<({DateTime month, int count})> monthlyCompletions(
+  List<BacklogEntry> entries, {
+  required DateTime now,
+  int months = 12,
+}) {
+  final counts = <DateTime, int>{};
+  for (final entry in entries) {
+    final date = entry.completedAt;
+    if (entry.status != _completed || date == null) continue;
+    final month = DateTime(date.year, date.month);
+    counts[month] = (counts[month] ?? 0) + 1;
+  }
+  return [
+    for (var back = months - 1; back >= 0; back--)
+      if (DateTime(now.year, now.month - back) case final month)
+        (month: month, count: counts[month] ?? 0),
+  ];
 }
