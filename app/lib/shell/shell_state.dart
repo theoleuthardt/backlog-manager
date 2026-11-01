@@ -69,6 +69,14 @@ final gamepadInUseProvider = NotifierProvider<GamepadInUseNotifier, bool>(
   GamepadInUseNotifier.new,
 );
 
+/// The focus of the current item of the rail, where a move left from the
+/// page lands when nothing else is to its left.
+final railFocusProvider = Provider<FocusNode>((ref) {
+  final node = FocusNode(debugLabel: 'Rail');
+  ref.onDispose(node.dispose);
+  return node;
+});
+
 /// Whether the sidebar is collapsed from the title bar.
 class SidebarCollapsedNotifier extends _FlagNotifier {
   void toggle() => state = !state;

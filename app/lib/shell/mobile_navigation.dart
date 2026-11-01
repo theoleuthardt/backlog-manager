@@ -189,6 +189,10 @@ class ShellNavRail extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final focusNode = ref.watch(railFocusProvider);
+    final current = primaryNavigationItems
+        .where((item) => item.isActiveFor(location))
+        .firstOrNull;
     return SizedBox(
       key: const Key('nav-rail'),
       width: 64,
@@ -210,6 +214,7 @@ class ShellNavRail extends ConsumerWidget {
                           icon: item.icon,
                           label: _shortLabel(item),
                           active: item.isActiveFor(location),
+                          focusNode: item == current ? focusNode : null,
                           onTap: () =>
                               activateNavigationItem(context, ref, item),
                         ),
@@ -218,6 +223,7 @@ class ShellNavRail extends ConsumerWidget {
                         icon: Icons.menu,
                         label: 'More',
                         active: false,
+                        focusNode: current == null ? focusNode : null,
                         onTap: onMore,
                       ),
                     ],
@@ -241,6 +247,7 @@ class _RailItem extends StatelessWidget {
     required this.label,
     required this.active,
     required this.onTap,
+    this.focusNode,
     super.key,
   });
 
@@ -248,6 +255,7 @@ class _RailItem extends StatelessWidget {
   final String label;
   final bool active;
   final VoidCallback onTap;
+  final FocusNode? focusNode;
 
   @override
   Widget build(BuildContext context) {
@@ -264,6 +272,7 @@ class _RailItem extends StatelessWidget {
           child: ShelfPressable(
             semanticLabel: label,
             onPressed: onTap,
+            focusNode: focusNode,
             borderRadius: _railRadius,
             builder: (context, state) => AnimatedContainer(
               duration: const Duration(milliseconds: 160),

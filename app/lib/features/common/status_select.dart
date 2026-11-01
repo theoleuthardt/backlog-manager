@@ -27,9 +27,11 @@ class StatusSelect extends ConsumerWidget {
     required this.onChanged,
     this.spaceId,
     this.placeholder = 'Select Status',
+    this.autofocus = false,
     super.key,
   });
 
+  final bool autofocus;
   final String value;
 
   /// Called with the chosen status, with the new one after it was created and
@@ -54,6 +56,7 @@ class StatusSelect extends ConsumerWidget {
         text: value.isEmpty ? placeholder : value,
         placeholder: value.isEmpty,
         semanticLabel: 'Status',
+        autofocus: autofocus,
         onPressed: () =>
             controller.isOpen ? controller.close() : controller.open(),
       ),
