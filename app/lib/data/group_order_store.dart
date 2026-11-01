@@ -54,14 +54,25 @@ final groupOrderStoreProvider = Provider<GroupOrderStore>(
 /// one list serves every sort. The order follows the account: the one stored
 /// there replaces the one of the device, and an account without one takes it
 /// over from the device, which keeps the order of an earlier version. The
-/// device keeps a copy for the start and a failed save changes nothing.
+/// device keeps a copy for the start; a save that failed stays pending and
+/// goes out with the next read of the account, and signing out clears the
+/// order, so the next account does not take it over.
 class GroupOrderNotifier extends Notifier<List<String>> {
+  late final Future<void> _loaded;
+  bool _pending = false;
+
   @override
   List<String> build() {
-    unawaited(_load(ref.read(groupOrderStoreProvider)));
-    ref.listen(sessionUserProvider, (_, user) {
-      if (user != null) _fromAccount(user.groupOrder);
+    _loaded = _load(ref.read(groupOrderStoreProvider));
+    ref.listen(sessionUserProvider, (previous, user) {
+      if (user != null) {
+        unawaited(_fromAccount(user.groupOrder));
+      } else if (previous != null) {
+        _signedOut();
+      }
     });
+    final user = ref.read(sessionUserProvider);
+    if (user != null) unawaited(_fromAccount(user.groupOrder));
     return const [];
   }
 
@@ -80,20 +91,30 @@ class GroupOrderNotifier extends Notifier<List<String>> {
     unawaited(store.write(state));
   }
 
-  void _fromAccount(List<String> order) {
-    if (order.isEmpty) {
-      if (state.isNotEmpty) unawaited(_save());
+  Future<void> _fromAccount(List<String> order) async {
+    await _loaded;
+    if (!ref.mounted) return;
+    if (_pending || (order.isEmpty && state.isNotEmpty)) {
+      await _save();
       return;
     }
-    if (listEquals(order, state)) return;
+    if (order.isEmpty || listEquals(order, state)) return;
     state = order;
     unawaited(ref.read(groupOrderStoreProvider).write(order));
   }
 
+  void _signedOut() {
+    _pending = false;
+    state = const [];
+    unawaited(ref.read(groupOrderStoreProvider).write(const []));
+  }
+
   Future<void> _save() async {
     if (ref.read(sessionUserProvider) == null) return;
+    _pending = true;
     try {
       await ref.read(userApiProvider).update(UserUpdate(groupOrder: state));
+      _pending = false;
     } on Object {
       return;
     }

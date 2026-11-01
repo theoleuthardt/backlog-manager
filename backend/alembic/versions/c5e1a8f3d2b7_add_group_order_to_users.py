@@ -29,5 +29,5 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    """Downgrade schema."""
+    """Downgrade schema. The orders saved with the accounts are lost."""
     op.drop_column("Users", "GroupOrder", schema="blm-system")
