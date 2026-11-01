@@ -1,3 +1,4 @@
+import 'package:backlog_manager/design/widgets/fields.dart';
 import 'package:backlog_manager/design/widgets/type_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -143,5 +144,65 @@ void main() {
 
     expect(shared.hasFocus, isFalse);
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'TypeGate');
+  });
+
+  testWidgets('the D-pad stops on a ShelfField without typing in it', (
+    tester,
+  ) async {
+    await pumpThemed(
+      tester,
+      Column(
+        children: [
+          ElevatedButton(
+            autofocus: true,
+            onPressed: () {},
+            child: const Text('Before'),
+          ),
+          const SizedBox(
+            width: 200,
+            child: ShelfField(key: Key('field'), label: 'Name'),
+          ),
+        ],
+      ),
+      touch: true,
+    );
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+
+    expect(editing(tester, 'field'), isFalse);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'TypeGate');
+  });
+
+  testWidgets('the next key of the keyboard types in the next ShelfField', (
+    tester,
+  ) async {
+    await pumpThemed(
+      tester,
+      const Column(
+        children: [
+          SizedBox(
+            width: 200,
+            child: ShelfField(
+              key: Key('email'),
+              label: 'Email',
+              textInputAction: TextInputAction.next,
+            ),
+          ),
+          SizedBox(
+            width: 200,
+            child: ShelfField(key: Key('password'), label: 'Password'),
+          ),
+        ],
+      ),
+      touch: true,
+    );
+
+    await tester.tap(find.byKey(const Key('email')));
+    await tester.pump();
+    await tester.testTextInput.receiveAction(TextInputAction.next);
+    await tester.pumpAndSettle();
+
+    expect(editing(tester, 'password'), isTrue);
   });
 }

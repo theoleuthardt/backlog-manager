@@ -67,6 +67,7 @@ class _LibrarySearchFieldState extends ConsumerState<LibrarySearchField> {
             onChanged: ref.read(filtersProvider.notifier).setSearch,
             focusNode: focusNode,
             style: text.fieldText,
+            textAlignVertical: touch ? TextAlignVertical.center : null,
             decoration: InputDecoration(
               hintText: 'Search your games',
               prefixIcon: Icon(Icons.search, size: 16, color: tokens.muted),
@@ -102,7 +103,7 @@ class _LibrarySearchFieldState extends ConsumerState<LibrarySearchField> {
                 _hovered ? tokens.accent : tokens.borderStrong,
               ),
               focusedBorder: border(tokens.glow),
-              contentPadding: const EdgeInsets.symmetric(vertical: 0),
+              contentPadding: EdgeInsets.symmetric(vertical: touch ? 14 : 0),
             ),
           ),
         ),

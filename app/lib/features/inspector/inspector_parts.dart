@@ -9,6 +9,7 @@ import 'package:backlog_manager/design/widgets/menu.dart';
 import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/design/widgets/progress.dart';
 import 'package:backlog_manager/design/widgets/spinner.dart';
+import 'package:backlog_manager/design/widgets/type_gate.dart';
 import 'package:backlog_manager/domain/inspector_logic.dart';
 import 'package:backlog_manager/features/inspector/entry_autosave.dart';
 import 'package:flutter/material.dart';
@@ -126,15 +127,18 @@ class ShelfTextArea extends StatelessWidget {
         const SizedBox(height: 6),
         Opacity(
           opacity: enabled ? 1 : 0.5,
-          child: TextField(
-            key: fieldKey,
-            controller: controller,
-            enabled: enabled,
-            onChanged: onChanged,
-            minLines: minLines,
-            maxLines: null,
-            style: style.fieldText,
-            decoration: InputDecoration(hintText: hintText),
+          child: TypeGate(
+            builder: (context, focusNode) => TextField(
+              key: fieldKey,
+              controller: controller,
+              focusNode: focusNode,
+              enabled: enabled,
+              onChanged: onChanged,
+              minLines: minLines,
+              maxLines: null,
+              style: style.fieldText,
+              decoration: InputDecoration(hintText: hintText),
+            ),
           ),
         ),
       ],
