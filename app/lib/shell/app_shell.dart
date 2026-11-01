@@ -244,9 +244,9 @@ class _MobileShell extends StatelessWidget {
   }
 }
 
-/// Takes the gamepad along into a full-screen inspector: while the page is
-/// out of reach the focus moves to the first control of the inspector, and
-/// it goes back to where it was when the inspector closes.
+/// Keeps the place of the gamepad behind a full-screen inspector: the
+/// inspector takes the focus in its own scope (the status, not the first
+/// control, which is Delete), and it goes back to where it was on closing.
 class _InspectorFocus extends ConsumerStatefulWidget {
   const _InspectorFocus({required this.fullscreen, required this.child});
 
@@ -266,12 +266,6 @@ class _InspectorFocusState extends ConsumerState<_InspectorFocus> {
     super.initState();
     if (!widget.fullscreen || !ref.read(gamepadInUseProvider)) return;
     _previous = FocusManager.instance.primaryFocus;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      FocusTraversalGroup.of(context)
-          .findFirstFocus(_scope, ignoreCurrentFocus: true)
-          ?.requestFocus();
-    });
   }
 
   @override

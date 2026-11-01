@@ -7,7 +7,7 @@ import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/pressable.dart';
 import 'package:backlog_manager/design/widgets/sheet.dart';
 import 'package:backlog_manager/domain/models.dart';
-import 'package:backlog_manager/features/inspector/entry_inspector.dart';
+import 'package:backlog_manager/features/common/status_select.dart';
 import 'package:backlog_manager/platform/desktop.dart';
 import 'package:backlog_manager/routing/router.dart';
 import 'package:backlog_manager/routing/routes.dart';
@@ -490,10 +490,7 @@ void main() {
 
       await press(tester, LogicalKeyboardKey.gameButtonA);
       final focused = FocusManager.instance.primaryFocus?.context;
-      expect(
-        focused?.findAncestorWidgetOfExactType<EntryInspector>(),
-        isNotNull,
-      );
+      expect(focused?.findAncestorWidgetOfExactType<StatusSelect>(), isNotNull);
 
       await press(tester, LogicalKeyboardKey.gameButtonB);
       expect(FocusManager.instance.primaryFocus, game);
