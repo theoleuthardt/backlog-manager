@@ -97,6 +97,31 @@ void main() {
   });
 
   group('settings on a handheld', () {
+    testWidgets('a D-pad move to the left reveals a tab below the list', (
+      tester,
+    ) async {
+      await openOn(tester, const Size(853, 400));
+      final about = find.byKey(
+        const Key('settings-tab-about'),
+        skipOffstage: false,
+      );
+      final node = Focus.of(
+        tester.element(find.text('About', skipOffstage: false)),
+      );
+      final list = tester.getRect(
+        find.ancestor(of: about, matching: find.byType(ListView)),
+      );
+      expect(tester.getRect(about).bottom, greaterThan(list.bottom));
+
+      FocusTraversalGroup.of(tester.element(about)).requestFocusCallback(
+        node,
+        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtStart,
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.getRect(about).bottom, lessThanOrEqualTo(list.bottom));
+    });
+
     for (final id in [
       'general',
       'security',
