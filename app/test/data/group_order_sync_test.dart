@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:backlog_manager/auth/user_api.dart';
 import 'package:backlog_manager/data/group_order_store.dart';
 import 'package:backlog_manager/routing/session.dart';
@@ -26,10 +28,12 @@ final _account = NotifierProvider<_Account, SessionUser?>(_Account.new);
 class _UserApi implements UserApi {
   final updates = <UserUpdate>[];
   bool failing = false;
+  Completer<void>? gate;
 
   @override
   Future<SessionUser> update(UserUpdate changes) async {
     if (failing) throw StateError('offline');
+    await gate?.future;
     updates.add(changes);
     return const SessionUser(
       id: 1,
@@ -175,5 +179,28 @@ void main() {
     expect(container.read(groupOrderProvider), isEmpty);
     expect(store.saved, isEmpty);
     expect(api.updates, isEmpty);
+  });
+
+  test('an older save does not settle a newer one that failed', () async {
+    container.listen(groupOrderProvider, (_, _) {});
+    container.read(_account.notifier).signIn(['status:Server']);
+    await settle();
+    final gate = Completer<void>();
+    api.gate = gate;
+
+    container.read(groupOrderProvider.notifier).arrange(['status:Older']);
+    api.gate = null;
+    api.failing = true;
+    container.read(groupOrderProvider.notifier).arrange(['status:Newer']);
+    await settle();
+    gate.complete();
+    await settle();
+    api.failing = false;
+    api.updates.clear();
+
+    container.read(_account.notifier).signIn(['status:Server']);
+    await settle();
+
+    expect(api.updates.single.groupOrder?.first, 'status:Newer');
   });
 }

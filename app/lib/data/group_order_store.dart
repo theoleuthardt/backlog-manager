@@ -60,6 +60,7 @@ final groupOrderStoreProvider = Provider<GroupOrderStore>(
 class GroupOrderNotifier extends Notifier<List<String>> {
   late final Future<void> _loaded;
   bool _pending = false;
+  int _saves = 0;
 
   @override
   List<String> build() {
@@ -112,9 +113,10 @@ class GroupOrderNotifier extends Notifier<List<String>> {
   Future<void> _save() async {
     if (ref.read(sessionUserProvider) == null) return;
     _pending = true;
+    final save = ++_saves;
     try {
       await ref.read(userApiProvider).update(UserUpdate(groupOrder: state));
-      _pending = false;
+      if (save == _saves) _pending = false;
     } on Object {
       return;
     }
