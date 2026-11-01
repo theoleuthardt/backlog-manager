@@ -6,16 +6,19 @@ import 'package:backlog_manager/api/api_providers.dart';
 import 'package:backlog_manager/app.dart';
 import 'package:backlog_manager/auth/auth_controller.dart';
 import 'package:backlog_manager/auth/token_store.dart';
+import 'package:backlog_manager/data/filter_providers.dart';
 import 'package:backlog_manager/data/release_source.dart';
 import 'package:backlog_manager/data/selection_providers.dart';
 import 'package:backlog_manager/data/whats_new.dart';
 import 'package:backlog_manager/design/atmosphere.dart';
 import 'package:backlog_manager/design/focus_glide.dart';
+import 'package:backlog_manager/design/light_effects.dart';
 import 'package:backlog_manager/design/widgets/fields.dart';
 import 'package:backlog_manager/platform/csv_file_picker.dart';
 import 'package:backlog_manager/platform/desktop.dart';
 import 'package:backlog_manager/platform/file_saver.dart';
 import 'package:backlog_manager/platform/image_file_picker.dart';
+import 'package:backlog_manager/platform/url_opener.dart';
 import 'package:backlog_manager/routing/router.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
@@ -51,7 +54,12 @@ const _local = bool.fromEnvironment('TOUR_LOCAL');
 /// does not fail on what it finds: every error of the app (layout overflows
 /// included) is recorded with its step, and a step that throws is recorded
 /// and skipped, so one run shows everything. The screenshots and the report
-/// go to the driver (`test_driver/tour_driver.dart`) as report data.
+/// go to the driver (`test_driver/tour_driver.dart`) as report data. Links
+/// are only noted in the report: a browser would cover the app, which then
+/// draws no more frames and the tour would wait for them for ever. On the
+/// emulator the app runs with the lighter effects (no sky, glow, orbs or
+/// blur), because its software GPU took seconds per frame with them until
+/// the emulator hung and died (#588).
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   atmosphereMotion = false;
@@ -78,6 +86,11 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
     }
+    if (_device == 'handheld') {
+      await SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+      ]);
+    }
     final container = ProviderContainer(
       retry: (retryCount, error) => null,
       overrides: [
@@ -85,8 +98,13 @@ void main() {
         csvFilePickerProvider.overrideWithValue(const _TourCsvPicker()),
         imageFilePickerProvider.overrideWithValue(const _TourImagePicker()),
         fileSaverProvider.overrideWithValue(const _TourFileSaver()),
+        urlOpenerProvider.overrideWithValue(
+          (uri) => steps.add({'step': step, 'opened': '$uri'}),
+        ),
         installedVersionProvider.overrideWith((ref) async => '0.9.17'),
         whatsNewStoreProvider.overrideWithValue(_TourWhatsNewStore()),
+        if (!_local)
+          lightEffectsProvider.overrideWithValue(LightEffectsReason.powerSave),
         if (_local) ...[
           isDesktopProvider.overrideWithValue(false),
           tokenStoreProvider.overrideWithValue(MemoryTokenStore()),
@@ -106,7 +124,7 @@ void main() {
       if (settled) await settle();
       final view = tester.binding.renderViews.first;
       final layer = view.debugLayer! as OffsetLayer;
-      final image = await layer.toImage(Offset.zero & view.size);
+      final image = await layer.toImage(Offset.zero & tester.view.physicalSize);
       final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
       image.dispose();
       number++;
@@ -117,6 +135,7 @@ void main() {
 
     Future<void> run(String name, Future<void> Function() body) async {
       step = name;
+      debugPrint('tour step: $name');
       try {
         await body();
       } on Object catch (error, stack) {
@@ -152,6 +171,13 @@ void main() {
       }
       await tester.ensureVisible(finder.first);
       await settle(3);
+      if (finder.evaluate().isEmpty) {
+        steps.add({
+          'step': step,
+          'missing': '${finder.describeMatch(Plurality.zero)} after scrolling',
+        });
+        return;
+      }
       await tester.tap(finder.first, warnIfMissed: false);
       await settle(4);
     }
@@ -514,7 +540,8 @@ void main() {
         await open(AppRoutes.library);
         await typeInto(find.byKey(const Key('search-field')), 'Portal');
         await shot('library_search');
-        await typeInto(find.byKey(const Key('search-field')), '');
+        container.read(filtersProvider.notifier).setSearch('');
+        await settle(4);
         await tapIfThere(find.text('+ Add filter'));
         await tapIfThere(find.text('Platform'));
         await shot('filter_platform_picker');
