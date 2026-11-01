@@ -19,8 +19,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../data/fakes.dart';
-import '../settings/settings_page_test.dart' show openSettings;
 import '../mobile_pages_test.dart' show resize;
+import '../settings/settings_page_test.dart' show openSettings;
 
 class FakeCsvImportApi implements CsvImportApi {
   Map<String, String> headersResult = {
