@@ -2,6 +2,7 @@ import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
+import 'package:backlog_manager/design/widgets/type_gate.dart';
 import 'package:flutter/material.dart';
 
 /// A labelled text input: the label above in muted text, the input on
@@ -94,39 +95,45 @@ class _ShelfFieldState extends State<ShelfField> {
         const SizedBox(height: 6),
         SizedBox(
           height: ShelfFormFactor.heightFor(context, ShelfHeight.input),
-          child: TextField(
-            controller: widget.controller,
+          child: TypeGate(
             focusNode: widget.focusNode,
-            onChanged: widget.onChanged,
-            onSubmitted: widget.onSubmitted,
-            obscureText: widget.obscure && !_revealed,
-            enabled: widget.enabled,
-            autofocus: widget.autofocus,
-            keyboardType: widget.keyboardType,
-            autocorrect: widget.autocorrect,
-            enableSuggestions: widget.autocorrect,
-            autofillHints: widget.autofillHints,
-            textInputAction: widget.textInputAction,
-            style: text.fieldText,
-            textAlignVertical: TextAlignVertical.center,
-            decoration: InputDecoration(
-              hintText: widget.hintText,
-              enabledBorder: dangerBorder,
-              focusedBorder: dangerBorder,
-              suffixIcon: widget.obscure
-                  ? IconButton(
-                      key: const Key('field-reveal'),
-                      tooltip: _revealed ? 'Hide password' : 'Show password',
-                      icon: Icon(
-                        _revealed
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
-                        size: 20,
-                        color: tokens.muted,
-                      ),
-                      onPressed: () => setState(() => _revealed = !_revealed),
-                    )
+            builder: (context, focusNode) => TextField(
+              controller: widget.controller,
+              focusNode: focusNode,
+              onChanged: widget.onChanged,
+              onSubmitted: widget.onSubmitted,
+              onEditingComplete: widget.textInputAction == TextInputAction.next
+                  ? () => TypeGate.typeNext(context)
                   : null,
+              obscureText: widget.obscure && !_revealed,
+              enabled: widget.enabled,
+              autofocus: widget.autofocus,
+              keyboardType: widget.keyboardType,
+              autocorrect: widget.autocorrect,
+              enableSuggestions: widget.autocorrect,
+              autofillHints: widget.autofillHints,
+              textInputAction: widget.textInputAction,
+              style: text.fieldText,
+              textAlignVertical: TextAlignVertical.center,
+              decoration: InputDecoration(
+                hintText: widget.hintText,
+                enabledBorder: dangerBorder,
+                focusedBorder: dangerBorder,
+                suffixIcon: widget.obscure
+                    ? IconButton(
+                        key: const Key('field-reveal'),
+                        tooltip: _revealed ? 'Hide password' : 'Show password',
+                        icon: Icon(
+                          _revealed
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          size: 20,
+                          color: tokens.muted,
+                        ),
+                        onPressed: () => setState(() => _revealed = !_revealed),
+                      )
+                    : null,
+              ),
             ),
           ),
         ),

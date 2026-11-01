@@ -24,6 +24,7 @@ import 'package:backlog_manager/design/widgets/spinner.dart';
 import 'package:backlog_manager/design/widgets/tabs.dart';
 import 'package:backlog_manager/design/widgets/toast.dart';
 import 'package:backlog_manager/design/widgets/toggles.dart';
+import 'package:backlog_manager/design/widgets/type_gate.dart';
 import 'package:backlog_manager/domain/entry_changes.dart';
 import 'package:backlog_manager/domain/format.dart';
 import 'package:backlog_manager/domain/game_search.dart';
@@ -792,20 +793,25 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
                   Expanded(
                     child: SizedBox(
                       height: ShelfHeight.input,
-                      child: TextField(
-                        key: const Key('inspector-playtime'),
-                        controller: _playtime,
-                        onChanged: _setPlaytime,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-                        ],
-                        style: style.fieldText,
-                        textAlignVertical: TextAlignVertical.center,
-                        decoration: const InputDecoration(
-                          hintText: 'Playtime in hours',
+                      child: TypeGate(
+                        builder: (context, focusNode) => TextField(
+                          key: const Key('inspector-playtime'),
+                          controller: _playtime,
+                          focusNode: focusNode,
+                          onChanged: _setPlaytime,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'[0-9.]'),
+                            ),
+                          ],
+                          style: style.fieldText,
+                          textAlignVertical: TextAlignVertical.center,
+                          decoration: const InputDecoration(
+                            hintText: 'Playtime in hours',
+                          ),
                         ),
                       ),
                     ),

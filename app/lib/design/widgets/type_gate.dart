@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
@@ -20,6 +22,19 @@ class TypeGate extends StatefulWidget {
     this.borderRadius = ShelfRadius.control,
     super.key,
   });
+
+  /// Moves on from [context] to the next field, ready to type: for the next
+  /// key of the on-screen keyboard, which would stop on the gate of that
+  /// field and close the keyboard.
+  static void typeNext(BuildContext context) {
+    FocusScope.of(context).nextFocus();
+    scheduleMicrotask(
+      () => FocusManager.instance.primaryFocus?.context
+          ?.findAncestorStateOfType<_TypeGateState>()
+          ?._field
+          .requestFocus(),
+    );
+  }
 
   final Widget Function(BuildContext context, FocusNode focusNode) builder;
   final FocusNode? focusNode;
