@@ -7,6 +7,7 @@ import 'package:backlog_manager/design/light_effects.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
 import 'package:backlog_manager/design/widgets/spinner.dart';
+import 'package:backlog_manager/platform/desktop.dart';
 import 'package:backlog_manager/routing/session.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -125,15 +126,20 @@ class _StartupSplashState extends ConsumerState<StartupSplash>
   }
 }
 
-class _SplashScene extends StatelessWidget {
+class _SplashScene extends ConsumerWidget {
   const _SplashScene({required this.progress});
 
   final Animation<double> progress;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<ShelfTokens>()!;
     final text = Theme.of(context).extension<ShelfTextStyles>()!;
+    final size = MediaQuery.sizeOf(context);
+    final twoLines =
+        !ref.watch(isDesktopProvider) &&
+        size.width < 600 &&
+        size.height > size.width;
 
     return ColoredBox(
       color: tokens.background,
@@ -201,7 +207,12 @@ class _SplashScene extends StatelessWidget {
                     const SizedBox(height: 8),
                     FittedBox(
                       fit: BoxFit.scaleDown,
-                      child: _Wordmark(t: t, style: text.hero, tokens: tokens),
+                      child: _Wordmark(
+                        t: t,
+                        style: text.hero,
+                        tokens: tokens,
+                        twoLines: twoLines,
+                      ),
                     ),
                   ],
                 ),
@@ -217,15 +228,28 @@ class _SplashScene extends StatelessWidget {
 /// The wordmark: letter by letter from 0.28 of the run, then one sweep of
 /// light over it.
 class _Wordmark extends StatelessWidget {
-  const _Wordmark({required this.t, required this.style, required this.tokens});
+  const _Wordmark({
+    required this.t,
+    required this.style,
+    required this.tokens,
+    required this.twoLines,
+  });
 
   final double t;
   final TextStyle style;
   final ShelfTokens tokens;
 
+  /// "Manager" below "Backlog", for a phone in portrait.
+  final bool twoLines;
+
   @override
   Widget build(BuildContext context) {
     final letters = startupWordmark.characters.toList();
+    final space = letters.indexOf(' ');
+    final indices = [for (var i = 0; i < letters.length; i++) i];
+    final lines = twoLines
+        ? [indices.sublist(0, space), indices.sublist(space + 1)]
+        : [indices];
     final big = style.copyWith(
       fontSize: 64,
       fontWeight: FontWeight.w800,
@@ -250,17 +274,23 @@ class _Wordmark extends StatelessWidget {
           math.min(1, sweep * 1.4),
         ],
       ).createShader(bounds),
-      child: Row(
+      child: Column(
         key: const Key('startup-wordmark'),
         mainAxisSize: MainAxisSize.min,
         children: [
-          for (var i = 0; i < letters.length; i++)
-            _Letter(
-              letter: letters[i],
-              style: big,
-              reveal: Curves.easeOutCubic.transform(
-                ((t - 0.28 - i * 0.032) / 0.16).clamp(0.0, 1.0),
-              ),
+          for (final line in lines)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final i in line)
+                  _Letter(
+                    letter: letters[i],
+                    style: big,
+                    reveal: Curves.easeOutCubic.transform(
+                      ((t - 0.28 - i * 0.032) / 0.16).clamp(0.0, 1.0),
+                    ),
+                  ),
+              ],
             ),
         ],
       ),

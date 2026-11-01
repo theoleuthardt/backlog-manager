@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:backlog_manager/api/api_providers.dart';
 import 'package:backlog_manager/data/entry_image.dart';
+import 'package:backlog_manager/design/form_factor.dart';
 import 'package:backlog_manager/design/shelf_metrics.dart';
 import 'package:backlog_manager/design/shelf_text.dart';
 import 'package:backlog_manager/design/shelf_tokens.dart';
@@ -160,8 +161,9 @@ class _SteamPageState extends ConsumerState<SteamPage> {
       ),
       Padding(
         padding: const EdgeInsets.fromLTRB(_gutter, 4, _gutter, 8),
-        child: const ShelfNote(
+        child: ShelfNote(
           text: 'Nothing is written until you press Import.',
+          closable: ShelfFormFactor.isCompact(context),
         ),
       ),
       if (!linked)
@@ -191,6 +193,7 @@ class _SteamPageState extends ConsumerState<SteamPage> {
         Padding(
           padding: const EdgeInsets.fromLTRB(_gutter, 0, _gutter, 8),
           child: ShelfNote(
+            closable: ShelfFormFactor.isCompact(context),
             child: Text(
               'Your Steam wishlist was imported on $importedOn. The '
               'wishlist import is for the first time only; the games it '

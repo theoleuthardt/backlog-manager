@@ -1,5 +1,6 @@
 import 'package:backlog_manager/design/atmosphere.dart';
 import 'package:backlog_manager/features/startup/startup_splash.dart';
+import 'package:backlog_manager/platform/desktop.dart';
 import 'package:backlog_manager/routing/session.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -23,12 +24,19 @@ Future<ProviderContainer> pump(
   WidgetTester tester, {
   SessionState session = const SessionSignedOut(),
   bool reducedMotion = false,
+  bool phone = false,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [sessionProvider.overrideWith(() => _Session(session))],
+      overrides: [
+        sessionProvider.overrideWith(() => _Session(session)),
+        isDesktopProvider.overrideWithValue(!phone),
+      ],
       child: MediaQuery(
-        data: MediaQueryData(disableAnimations: reducedMotion),
+        data: MediaQueryData(
+          disableAnimations: reducedMotion,
+          size: tester.view.physicalSize / tester.view.devicePixelRatio,
+        ),
         child: themed('shelfOled', const StartupSplash(child: _app)),
       ),
     ),
@@ -54,6 +62,22 @@ void main() {
     expect(find.byKey(const Key('startup-saturn')), findsOneWidget);
     expect(find.byKey(const Key('startup-wordmark')), findsOneWidget);
     expect(find.byKey(const Key('the-app')), findsOneWidget);
+  });
+
+  testWidgets('the wordmark breaks onto two lines on a phone in portrait', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(402, 874);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await pump(tester, phone: true);
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(
+      tester.getTopLeft(find.text('M')).dy,
+      greaterThan(tester.getTopLeft(find.text('B')).dy),
+    );
   });
 
   testWidgets('ends by itself after the animation when the session is known', (
