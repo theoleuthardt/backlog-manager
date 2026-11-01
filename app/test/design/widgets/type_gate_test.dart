@@ -118,7 +118,16 @@ void main() {
       StatefulBuilder(
         builder: (context, setState) {
           setKeys = setState;
-          return Column(children: [for (final key in keys) page(key)]);
+          return Column(
+            children: [
+              ElevatedButton(
+                autofocus: true,
+                onPressed: () {},
+                child: const Text('Before'),
+              ),
+              for (final key in keys) page(key),
+            ],
+          );
         },
       ),
       touch: true,
@@ -129,6 +138,10 @@ void main() {
     setKeys(() => keys = ['space']);
     await tester.pump();
 
-    expect(shared.skipTraversal, isTrue);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+
+    expect(shared.hasFocus, isFalse);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'TypeGate');
   });
 }
