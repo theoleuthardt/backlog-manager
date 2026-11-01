@@ -1,3 +1,6 @@
+import 'package:backlog_manager/design/shelf_tokens.dart';
+import 'package:backlog_manager/design/theme_provider.dart';
+import 'package:backlog_manager/domain/themes.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
 import 'package:flutter/material.dart';
@@ -52,6 +55,23 @@ void main() {
       await tester.tap(find.byKey(const Key('bottom-nav-home')));
       await tester.pumpAndSettle();
       expect(app.location, AppRoutes.home);
+    });
+
+    testWidgets('a theme chosen in the More sheet shows in it at once', (
+      tester,
+    ) async {
+      final app = await pumpMobile(tester, size: phonePortrait);
+      await tester.tap(find.byKey(const Key('nav-more')));
+      await tester.pumpAndSettle();
+
+      app.container.read(themeIdProvider.notifier).select('light');
+      await tester.pumpAndSettle();
+
+      final sheet = tester.element(find.byKey(const Key('nav-drawer')));
+      expect(
+        Theme.of(sheet).extension<ShelfTokens>()!.background,
+        ShelfTokens.forTheme(resolveTheme('light', [])).background,
+      );
     });
 
     testWidgets('More opens every item of the sidebar', (tester) async {
