@@ -16,6 +16,7 @@ import 'package:backlog_manager/domain/format.dart';
 import 'package:backlog_manager/domain/home_logic.dart';
 import 'package:backlog_manager/domain/models.dart';
 import 'package:backlog_manager/features/common/entries_gate.dart';
+import 'package:backlog_manager/features/home/home_charts.dart';
 import 'package:backlog_manager/features/updates/whats_new_sheet.dart';
 import 'package:backlog_manager/routing/routes.dart';
 import 'package:backlog_manager/shell/shell_state.dart';
@@ -142,7 +143,6 @@ class _Content extends ConsumerWidget {
     final stats = homeStats(entries, now: DateTime.now());
     final playing = continuePlaying(entries);
     final next = upNext(entries).take(_shelfLength).toList();
-    final done = recentlyCompleted(entries).take(_shelfLength).toList();
     final serverUrl = ref.watch(serverUrlProvider).value;
 
     return SingleChildScrollView(
@@ -165,26 +165,20 @@ class _Content extends ConsumerWidget {
             _Shelf(
               shelfKey: 'up-next',
               title: 'Up Next',
-              subtitle: 'Short games first',
+              subtitle: 'Highest interest first',
               status: 'Not Started',
               entries: next,
               serverUrl: serverUrl,
-              meta: (entry) => entry.timeToBeat == null
-                  ? null
-                  : '${formatHours(entry.timeToBeat!)} h to beat',
+              meta: (entry) {
+                final parts = [
+                  if (entry.interest > 0) 'Interest ${entry.interest}',
+                  if (entry.timeToBeat != null)
+                    '${formatHours(entry.timeToBeat!)} h',
+                ];
+                return parts.isEmpty ? null : parts.join(' · ');
+              },
             ),
-          if (done.isNotEmpty)
-            _Shelf(
-              shelfKey: 'recently-completed',
-              title: 'Recently Completed',
-              status: 'Completed',
-              entries: done,
-              serverUrl: serverUrl,
-              meta: (entry) =>
-                  entry.reviewStars == null || entry.reviewStars == 0
-                  ? null
-                  : '${entry.reviewStars}/10',
-            ),
+          HomeCharts(entries: entries, now: DateTime.now()),
         ],
       ),
     );

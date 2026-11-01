@@ -241,13 +241,13 @@ void main() {
     });
 
     testWidgets(
-      'lists the games to start, the shortest first, with their hours',
+      'lists the games to start by interest, then the shortest, with their hours',
       (tester) async {
         await pumpHome(tester, FakeBacklogApi(entries: backlog));
 
         final up = find.byKey(const Key('shelf-up-next'));
         expect(find.text('Up Next'), findsOneWidget);
-        expect(find.text('Short games first'), findsOneWidget);
+        expect(find.text('Highest interest first'), findsOneWidget);
         final celeste = tester
             .getTopLeft(find.descendant(of: up, matching: find.text('Celeste')))
             .dx;
@@ -263,7 +263,7 @@ void main() {
             .dx;
         expect(celeste, lessThan(portal));
         expect(portal, lessThan(disco));
-        expect(find.text('8 h to beat'), findsOneWidget);
+        expect(find.text('8 h'), findsOneWidget);
       },
     );
 
@@ -287,30 +287,19 @@ void main() {
       expect(uri.queryParameters, {'status': 'Not Started'});
     });
 
-    testWidgets(
-      'lists the completed games with their rating, the latest first',
-      (tester) async {
-        await pumpHome(tester, FakeBacklogApi(entries: backlog));
+    testWidgets('shows the backlog as charts instead of a shelf', (
+      tester,
+    ) async {
+      await pumpHome(tester, FakeBacklogApi(entries: backlog));
 
-        final done = find.byKey(const Key('shelf-recently-completed'));
-        expect(find.text('Recently Completed'), findsOneWidget);
-        expect(
-          tester
-              .getTopLeft(
-                find.descendant(of: done, matching: find.text('Hades II')),
-              )
-              .dx,
-          lessThan(
-            tester
-                .getTopLeft(
-                  find.descendant(of: done, matching: find.text('Tunic')),
-                )
-                .dx,
-          ),
-        );
-        expect(find.text('9/10'), findsOneWidget);
-      },
-    );
+      expect(find.text('Recently Completed'), findsNothing);
+      final status = find.byKey(const Key('home-chart-status'));
+      expect(
+        find.descendant(of: status, matching: find.text('Completed')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('home-chart-months')), findsOneWidget);
+    });
 
     testWidgets('shows the number of games in the status bar', (tester) async {
       final container = await pumpHome(
@@ -350,7 +339,6 @@ void main() {
       await pumpHome(tester, FakeBacklogApi(entries: entries));
 
       expect(find.text('Up Next'), findsNothing);
-      expect(find.text('Recently Completed'), findsNothing);
     });
   });
 

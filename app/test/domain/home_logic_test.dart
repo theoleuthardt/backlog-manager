@@ -10,6 +10,8 @@ BacklogEntry game(
   int? reviewStars,
   DateTime? completedAt,
   String? title,
+  int interest = 0,
+  List<String> genre = const [],
 }) {
   return BacklogEntry(
     id: id,
@@ -19,6 +21,8 @@ BacklogEntry game(
     playtime: playtime,
     reviewStars: reviewStars,
     completedAt: completedAt,
+    interest: interest,
+    genre: genre,
   );
 }
 
@@ -136,25 +140,104 @@ void main() {
     });
   });
 
-  group('recentlyCompleted', () {
-    test('lists completed games, the latest completion first', () {
-      final result = recentlyCompleted([
-        game(1, status: 'Completed', completedAt: DateTime(2026, 3, 1)),
-        game(2, status: 'Completed', completedAt: DateTime(2026, 9, 1)),
-        game(3, status: 'Completed', completedAt: DateTime(2026, 6, 1)),
-        game(4, completedAt: DateTime(2026, 10, 1)),
+  group('upNext by interest', () {
+    test('puts the highest interest first, whatever the time', () {
+      final result = upNext([
+        game(1, interest: 5, mainTime: 2),
+        game(2, interest: 10, mainTime: 90),
+        game(3, interest: 9, mainTime: 40),
       ]);
 
       expect(result.map((e) => e.id), [2, 3, 1]);
     });
 
-    test('puts games without a completion date last', () {
-      final result = recentlyCompleted([
-        game(1, status: 'Completed'),
-        game(2, status: 'Completed', completedAt: DateTime(2020)),
+    test('takes the shorter game of the same interest first', () {
+      final result = upNext([
+        game(1, interest: 8, mainTime: 30),
+        game(2, interest: 8, mainTime: 5),
       ]);
 
       expect(result.map((e) => e.id), [2, 1]);
+    });
+  });
+
+  group('statusCounts', () {
+    test('counts the games per status, the largest first', () {
+      final result = statusCounts([
+        game(1),
+        game(2, status: 'Completed'),
+        game(3, status: 'Completed'),
+        game(4, status: 'In Progress'),
+      ]);
+
+      expect(result, [
+        (label: 'Completed', count: 2),
+        (label: 'In Progress', count: 1),
+        (label: 'Not Started', count: 1),
+      ]);
+    });
+  });
+
+  group('topGenres', () {
+    test('counts every genre of a game, the largest first', () {
+      final result = topGenres([
+        game(1, genre: ['RPG', 'Action']),
+        game(2, genre: ['RPG']),
+        game(3, genre: ['Puzzle']),
+      ]);
+
+      expect(result, [
+        (label: 'RPG', count: 2),
+        (label: 'Action', count: 1),
+        (label: 'Puzzle', count: 1),
+      ]);
+    });
+
+    test('keeps the largest ones up to the limit', () {
+      final result = topGenres([
+        game(1, genre: ['A', 'B', 'C']),
+        game(2, genre: ['C']),
+      ], limit: 2);
+
+      expect(result.map((e) => e.label), ['C', 'A']);
+    });
+  });
+
+  group('monthlyCompletions', () {
+    test('lists the last months up to now, the oldest first', () {
+      final result = monthlyCompletions(
+        [
+          game(1, status: 'Completed', completedAt: DateTime(2026, 10, 2)),
+          game(2, status: 'Completed', completedAt: DateTime(2026, 10, 3)),
+          game(3, status: 'Completed', completedAt: DateTime(2026, 8, 1)),
+          game(4, status: 'Completed', completedAt: DateTime(2025, 8, 1)),
+          game(5, status: 'Completed'),
+          game(6, completedAt: DateTime(2026, 10, 1)),
+        ],
+        now: now,
+        months: 4,
+      );
+
+      expect(result, [
+        (month: DateTime(2026, 7), count: 0),
+        (month: DateTime(2026, 8), count: 1),
+        (month: DateTime(2026, 9), count: 0),
+        (month: DateTime(2026, 10), count: 2),
+      ]);
+    });
+
+    test('crosses the turn of the year', () {
+      final result = monthlyCompletions(
+        const [],
+        now: DateTime(2026, 2, 28),
+        months: 3,
+      );
+
+      expect(result.map((e) => e.month), [
+        DateTime(2025, 12),
+        DateTime(2026),
+        DateTime(2026, 2),
+      ]);
     });
   });
 }
