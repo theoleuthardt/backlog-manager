@@ -6,25 +6,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Backlog Manager is a video game backlog manager. The client is a Flutter app in `app/` for the desktop (macOS, Windows, Linux; epic #247) and mobile (Android and iOS; epic #289); the backend is a standalone Python/Litestar service living in `backend/` (fully migrated off Next.js/tRPC — see issue #103/#104 for that history). The app calls the backend over REST with a JWT Bearer token. Only the backend is meant to be hosted as a public, always-on service; the app is installed from the GitHub Releases and updates itself in place on macOS, Windows, the Linux AppImage and Android (DEB, RPM and the iOS IPA only announce a new release, `docs/APP_UPDATES.md`).
 
-A separate Spring Boot service in `monitor/` (epic #468; Spring Boot 4.1.2, Java 25, Maven wrapper) is the status and alerting service of the homelab: it watches the backend from its own LXC and does not replace it. Its design: [`docs/MONITOR_ARCHITECTURE.md`](docs/MONITOR_ARCHITECTURE.md).
-
 The earlier React/Vite + Tauri client (`frontend/`) was retired with the 0.9.13 release and moved, with its history, CI and docs, to [`backlog-manager-legacy`](https://github.com/theoleuthardt/backlog-manager-legacy) (archived, #287). Everything about the Flutter app: [`docs/FLUTTER.md`](docs/FLUTTER.md).
 
 Users can track games with metadata from HowLongToBeat and IGDB, organize games into categories via drag & drop, connect Steam accounts for playtime sync, and import/export CSV files.
 
 ## Commands
 
-**Always use `task <name>` (see `Taskfile.yml`, requires [go-task](https://taskfile.dev)) when running commands in this repo, instead of calling `uv run ...` / `flutter ...` / `./mvnw ...` / `docker compose ...` directly.** It wraps the backend (uv), app (flutter) and Monitor (Maven wrapper) toolchains plus the local Postgres compose stack under one unified command surface, so any command run from Claude Code should go through it if a matching task exists. `task` (no args) lists everything available; the most common ones:
+**Always use `task <name>` (see `Taskfile.yml`, requires [go-task](https://taskfile.dev)) when running commands in this repo, instead of calling `uv run ...` / `flutter ...` / `docker compose ...` directly.** It wraps the backend (uv) and app (flutter) toolchains plus the local Postgres compose stack under one unified command surface, so any command run from Claude Code should go through it if a matching task exists. `task` (no args) lists everything available; the most common ones:
 
 ```bash
-task install       # uv sync (backend) + flutter pub get (app) + Maven dependencies (monitor); needs a JDK 25
+task install       # uv sync (backend) + flutter pub get (app)
 task backend:dev   # Litestar dev server (uvicorn --reload)
 task db:up         # local Postgres + pgAdmin via compose.yml
-task test          # backend (pytest) + app (flutter test) + monitor (JUnit) + release script (node --test, Node 22 from .nvmrc) suites
-task lint          # backend (ruff) + app (flutter analyze) + monitor (javac -Xlint:all -Werror)
+task test          # backend (pytest) + app (flutter test) + release script (node --test, Node 22 from .nvmrc) suites
+task lint          # backend (ruff) + app (flutter analyze)
 task app:dev       # Flutter app on this platform (needs Flutter 3.47.6, see docs/FLUTTER.md)
-task monitor:dev   # Monitor (Spring Boot) on :8090 against the local Postgres (task monitor:db:create once); also monitor:install, monitor:lint, monitor:test, monitor:build, monitor:format(:check)
-task format        # ruff format (backend) + dart format (app) + Spotless (monitor); task format:check only verifies
+task format        # ruff format (backend) + dart format (app); task format:check only verifies
 task audit         # known-vulnerability scan of the locked backend dependencies
 task backend:migration -- "add foo column"   # new Alembic revision
 task backend:migrate                          # alembic upgrade head
@@ -41,7 +38,7 @@ uv run pytest        # Run tests (spins up a real Postgres via testcontainers)
 uv run ruff check .  # Lint
 ```
 
-`.env`/`.env.example`/`.env.prod`/`.env.prod.example` stay at the repo root since `compose.yml` and the Taskfile's `monitor:*` tasks read them there.
+`.env`/`.env.example`/`.env.prod`/`.env.prod.example` stay at the repo root since `compose.yml` reads them there.
 
 ## Architecture
 
@@ -146,12 +143,12 @@ rather than improvising a different one:
    Ask Claude Code to write the failing test first, look at it, *then* ask
    for the implementation. A test is a contract once it's confirmed correct;
    don't let an agent (or yourself) loosen one just to get a run green.
-3. **Use `task`, not raw `uv`/`flutter`/`./mvnw`/`docker` invocations** — see
+3. **Use `task`, not raw `uv`/`flutter`/`docker` invocations** — see
    [Commands](#commands). This is what keeps Claude Code's tool calls
-   consistent across the backend/app/Monitor split and the local Postgres
+   consistent across the backend/app split and the local Postgres
    stack, and it's what CLAUDE.md tells every agent session to prefer.
 4. **Lint and format-check before calling anything done**: `task check`
-   (backend, app and Monitor lint plus every format check — `task lint`
+   (backend and app lint plus every format check — `task lint`
    covers lint only). The
    CodeRabbit review will flag what these catch anyway — catching it
    locally first is faster.

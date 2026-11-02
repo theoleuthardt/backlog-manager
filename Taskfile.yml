@@ -3,7 +3,6 @@ version: "3"
 vars:
   BACKEND_DIR: backend
   APP_DIR: app
-  MONITOR_DIR: monitor
   APP_PLATFORM: '{{if eq OS "darwin"}}macos{{else}}{{OS}}{{end}}'
 
 tasks:
@@ -14,48 +13,42 @@ tasks:
     silent: true
 
   install:
-    desc: Install backend, Flutter app and Monitor dependencies
+    desc: Install backend and Flutter app dependencies
     cmds:
       - task: backend:install
       - task: app:install
-      - task: monitor:install
 
   lint:
-    desc: Lint backend, Flutter app and Monitor
+    desc: Lint backend and Flutter app
     cmds:
       - task: backend:lint
       - task: app:lint
-      - task: monitor:lint
 
   test:
-    desc: Run the backend, Flutter app, Monitor and release script test suites
+    desc: Run the backend, Flutter app and release script test suites
     cmds:
       - task: backend:test
       - task: app:test
-      - task: monitor:test
       - task: release:test
 
   check:
-    desc: Lint + format-check the backend, the Flutter app and the Monitor
+    desc: Lint + format-check the backend and the Flutter app
     cmds:
       - task: backend:lint
       - task: app:lint
-      - task: monitor:lint
       - task: format:check
 
   format:
-    desc: Format the backend (ruff format), Flutter app (dart format) and Monitor (Spotless)
+    desc: Format the backend (ruff format) and Flutter app (dart format)
     cmds:
       - task: backend:format
       - task: app:format
-      - task: monitor:format
 
   format:check:
-    desc: Check backend, Flutter app and Monitor formatting without changing files
+    desc: Check backend and Flutter app formatting without changing files
     cmds:
       - task: backend:format:check
       - task: app:format:check
-      - task: monitor:format:check
 
   db:up:
     desc: Start local Postgres + pgAdmin via compose.yml
@@ -243,55 +236,6 @@ tasks:
         platforms: [linux]
       - cmd: bash tool/package/rpm.sh
         platforms: [linux]
-
-  monitor:install:
-    desc: Download the Monitor's Maven dependencies and plugins (needs a JDK 25, see monitor/README.md)
-    dir: "{{.MONITOR_DIR}}"
-    cmds:
-      - ./mvnw -B -q dependency:go-offline
-
-  monitor:dev:
-    desc: Run the Monitor (Spring Boot, profile dev) on http://localhost:8090 against the local Postgres
-    dir: "{{.MONITOR_DIR}}"
-    dotenv: ["{{.ROOT_DIR}}/.env"]
-    cmds:
-      - ./mvnw spring-boot:run
-
-  monitor:db:create:
-    desc: Create the Monitor's role and database in the local Postgres (task db:up first; safe to re-run)
-    dotenv: ["{{.ROOT_DIR}}/.env"]
-    cmds:
-      - bash postgres/create-monitor-db.bash
-
-  monitor:lint:
-    desc: Compile the Monitor and its tests with -Xlint:all -Werror
-    dir: "{{.MONITOR_DIR}}"
-    cmds:
-      - ./mvnw -B -q test-compile
-
-  monitor:test:
-    desc: Run the Monitor's tests
-    dir: "{{.MONITOR_DIR}}"
-    cmds:
-      - ./mvnw -B test
-
-  monitor:build:
-    desc: Build the Monitor's executable jar (monitor/target/), tests included
-    dir: "{{.MONITOR_DIR}}"
-    cmds:
-      - ./mvnw -B package
-
-  monitor:format:
-    desc: Format the Monitor (Spotless with palantir-java-format)
-    dir: "{{.MONITOR_DIR}}"
-    cmds:
-      - ./mvnw -B -q spotless:apply
-
-  monitor:format:check:
-    desc: Check the Monitor's formatting without changing files
-    dir: "{{.MONITOR_DIR}}"
-    cmds:
-      - ./mvnw -B -q spotless:check
 
   vscode:setup-python:
     desc: Point VS Code/VSCodium's Python tooling at backend/.venv (run once per machine/checkout)
