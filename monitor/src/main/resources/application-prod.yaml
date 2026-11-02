@@ -1,9 +1,0 @@
-logging:
-  structured:
-    format:
-      console: ecs
-
-management:
-  endpoint:
-    health:
-      show-details: never
