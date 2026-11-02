@@ -508,6 +508,16 @@ void main() {
         inMenu?.findAncestorWidgetOfExactType<MenuItemButton>(),
         isNotNull,
       );
+      final ring = tester
+          .state<FocusGlideHostState>(find.byType(FocusGlideHost))
+          .ringRect;
+      expect(ring, isNotNull);
+      expect(
+        ring!
+            .inflate(6)
+            .contains(FocusManager.instance.primaryFocus!.rect.center),
+        isTrue,
+      );
       await press(tester, LogicalKeyboardKey.arrowDown);
       expect(FocusManager.instance.primaryFocus, isNot(game));
 

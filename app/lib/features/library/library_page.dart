@@ -1408,6 +1408,20 @@ class _EntryTargetState extends ConsumerState<_EntryTarget> {
   BacklogEntry get _entry => widget.entry;
 
   @override
+  void initState() {
+    super.initState();
+    _focus.addListener(_focusChanged);
+  }
+
+  /// The ring only stays on the game while the game itself has the focus: an
+  /// open menu counts as a child of it, and the ring has to follow the menu.
+  void _focusChanged() {
+    if (_focus.hasPrimaryFocus != _focused) {
+      setState(() => _focused = _focus.hasPrimaryFocus);
+    }
+  }
+
+  @override
   void dispose() {
     _focus.dispose();
     _firstMenuItem.dispose();
@@ -1598,7 +1612,6 @@ class _EntryTargetState extends ConsumerState<_EntryTarget> {
 
     return Focus(
       focusNode: _focus,
-      onFocusChange: (focused) => setState(() => _focused = focused),
       onKeyEvent: _onKey,
       child: ContextMenuRegion(
         key: Key('library-tile-${_entry.id}'),

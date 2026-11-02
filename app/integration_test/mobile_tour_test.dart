@@ -522,13 +522,16 @@ void main() {
       });
 
       await run('complete and review', () async {
-        await openFirstEntry();
+        await open(AppRoutes.library);
+        final id = firstEntryId();
+        if (id == null) throw StateError('no entries to inspect');
+        await open('${AppRoutes.library}?entry=$id');
         await tapIfThere(find.byKey(const Key('status-select')));
         await tapIfThere(find.byKey(const Key('status-option-Completed')));
         await settle(6);
         await shot('complete_dialog');
         await closeLayers();
-        await openFirstEntry();
+        await open('${AppRoutes.library}?entry=$id');
         await tapIfThere(find.text('Review'));
         await tapIfThere(find.byKey(const Key('star-4')));
         await typeInto(
