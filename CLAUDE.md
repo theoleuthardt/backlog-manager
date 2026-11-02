@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Backlog Manager is a video game backlog manager. The client is a Flutter app in `app/` for the desktop (macOS, Windows, Linux; epic #247) and mobile (Android and iOS; epic #289); the backend is a standalone Python/Litestar service living in `backend/` (fully migrated off Next.js/tRPC — see issue #103/#104 for that history). The app calls the backend over REST with a JWT Bearer token. Only the backend is meant to be hosted as a public, always-on service; the app is installed from the GitHub Releases and updates itself in place on macOS, Windows, the Linux AppImage and Android (DEB, RPM and the iOS IPA only announce a new release, `docs/APP_UPDATES.md`).
 
+`tracker/` is a background playtime tracker in Rust and the owner's project for learning the language: they write it, Claude explains and reviews and writes its code only when asked. It stands alone and has its own `task tracker:*` commands, which `task test` and `task lint` leave out because they need Rust. Concept: [`docs/TRACKER.md`](docs/TRACKER.md).
+
 The earlier React/Vite + Tauri client (`frontend/`) was retired with the 0.9.13 release and moved, with its history, CI and docs, to [`backlog-manager-legacy`](https://github.com/theoleuthardt/backlog-manager-legacy) (archived, #287). Everything about the Flutter app: [`docs/FLUTTER.md`](docs/FLUTTER.md).
 
 Users can track games with metadata from HowLongToBeat and IGDB, organize games into categories via drag & drop, connect Steam accounts for playtime sync, and import/export CSV files.

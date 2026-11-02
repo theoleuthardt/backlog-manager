@@ -1,0 +1,8 @@
+server = "https://api.example.com"
+poll_seconds = 5
+minimum_session_minutes = 2
+
+[[games]]
+entry_id = 123
+name = "Hades II"
+process = "Hades2.exe"
