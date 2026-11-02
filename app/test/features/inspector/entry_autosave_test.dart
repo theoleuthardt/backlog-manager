@@ -6,7 +6,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 const delay = Duration(milliseconds: 30);
 
-Future<void> wait([int factor = 3]) => Future<void>.delayed(delay * factor);
+/// Waits in real time, in steps well above [delay], so that a busy CI runner
+/// has finished the debounce and the save.
+Future<void> wait([int factor = 3]) =>
+    Future<void>.delayed(const Duration(milliseconds: 150) * factor);
 
 class Harness {
   Harness() {

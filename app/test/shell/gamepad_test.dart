@@ -496,6 +496,30 @@ void main() {
       expect(FocusManager.instance.primaryFocus, game);
     });
 
+    testWidgets('B in a menu brings the focus back to the game', (
+      tester,
+    ) async {
+      await focusFirstGame(tester);
+      final game = FocusManager.instance.primaryFocus;
+
+      await press(tester, LogicalKeyboardKey.gameButtonX);
+      final inMenu = FocusManager.instance.primaryFocus?.context;
+      expect(
+        inMenu?.findAncestorWidgetOfExactType<MenuItemButton>(),
+        isNotNull,
+      );
+      await press(tester, LogicalKeyboardKey.arrowDown);
+      expect(FocusManager.instance.primaryFocus, isNot(game));
+
+      await press(tester, LogicalKeyboardKey.gameButtonB);
+
+      expect(
+        find.widgetWithText(SubmenuButton, 'Move to status'),
+        findsNothing,
+      );
+      expect(FocusManager.instance.primaryFocus, game);
+    });
+
     testWidgets('left reaches the rail from a game low on the page', (
       tester,
     ) async {

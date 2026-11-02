@@ -408,6 +408,8 @@ void main() {
         await shot('space');
         await scrollDown();
         await shot('space_scrolled');
+        await scrollToTop();
+        await settle(4);
         await tapIfThere(find.byKey(const Key('library-actions')));
         await tapIfThere(find.textContaining('Space backups'));
         await settle(10);
@@ -526,6 +528,7 @@ void main() {
         await settle(6);
         await shot('complete_dialog');
         await closeLayers();
+        await openFirstEntry();
         await tapIfThere(find.text('Review'));
         await tapIfThere(find.byKey(const Key('star-4')));
         await typeInto(
@@ -680,6 +683,7 @@ void main() {
         await closeLayers();
         await open('${AppRoutes.settings}?tab=updates');
         await tapIfThere(find.text('Preview'));
+        await settle(30);
         await tapIfThere(find.text('Check for updates'));
         await settle(30);
         await shot('settings_updates_checked');
