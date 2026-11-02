@@ -544,7 +544,8 @@ void main() {
         await typeInto(find.byKey(const Key('search-field')), 'Portal');
         await shot('library_search');
         container.read(filtersProvider.notifier).setSearch('');
-        await settle(4);
+        FocusManager.instance.primaryFocus?.unfocus();
+        await settle(8);
         await tapIfThere(find.text('+ Add filter'));
         await tapIfThere(find.text('Platform'));
         await shot('filter_platform_picker');
@@ -554,9 +555,9 @@ void main() {
         await tapIfThere(find.byKey(const Key('filter-reset')));
         await tapIfThere(find.byTooltip('Sort: Status'));
         await shot('sort_menu');
-        await tapIfThere(find.text('Title'));
-        await shot('sorted_by_title');
-        await tapIfThere(find.byTooltip('Sort: Title'));
+        await tapIfThere(find.text('Genre'));
+        await shot('sorted_by_genre');
+        await tapIfThere(find.byTooltip('Sort: Genre'));
         await tapIfThere(find.text('Status'));
         await closeLayers();
       });
@@ -918,6 +919,7 @@ void main() {
           FocusManager.instance.primaryFocus?.unfocus();
           await settle(2);
           await press(down, times: 6);
+          await settle(6);
           await press(LogicalKeyboardKey.gameButtonX);
           await settle(6);
           await shot('pad_context_menu');

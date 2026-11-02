@@ -520,6 +520,23 @@ void main() {
       expect(FocusManager.instance.primaryFocus, game);
     });
 
+    testWidgets('X with the key event of Android opens the menu', (
+      tester,
+    ) async {
+      await focusFirstGame(tester);
+
+      await tester.sendKeyEvent(
+        LogicalKeyboardKey.gameButtonX,
+        platform: 'android',
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.widgetWithText(SubmenuButton, 'Move to status'),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('left reaches the rail from a game low on the page', (
       tester,
     ) async {
