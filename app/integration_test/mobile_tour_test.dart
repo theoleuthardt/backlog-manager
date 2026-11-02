@@ -408,6 +408,8 @@ void main() {
         await shot('space');
         await scrollDown();
         await shot('space_scrolled');
+        await scrollToTop();
+        await settle(4);
         await tapIfThere(find.byKey(const Key('library-actions')));
         await tapIfThere(find.textContaining('Space backups'));
         await settle(10);
@@ -520,12 +522,16 @@ void main() {
       });
 
       await run('complete and review', () async {
-        await openFirstEntry();
+        await open(AppRoutes.library);
+        final id = firstEntryId();
+        if (id == null) throw StateError('no entries to inspect');
+        await open('${AppRoutes.library}?entry=$id');
         await tapIfThere(find.byKey(const Key('status-select')));
         await tapIfThere(find.byKey(const Key('status-option-Completed')));
         await settle(6);
         await shot('complete_dialog');
         await closeLayers();
+        await open('${AppRoutes.library}?entry=$id');
         await tapIfThere(find.text('Review'));
         await tapIfThere(find.byKey(const Key('star-4')));
         await typeInto(
@@ -541,7 +547,8 @@ void main() {
         await typeInto(find.byKey(const Key('search-field')), 'Portal');
         await shot('library_search');
         container.read(filtersProvider.notifier).setSearch('');
-        await settle(4);
+        FocusManager.instance.primaryFocus?.unfocus();
+        await settle(8);
         await tapIfThere(find.text('+ Add filter'));
         await tapIfThere(find.text('Platform'));
         await shot('filter_platform_picker');
@@ -551,9 +558,9 @@ void main() {
         await tapIfThere(find.byKey(const Key('filter-reset')));
         await tapIfThere(find.byTooltip('Sort: Status'));
         await shot('sort_menu');
-        await tapIfThere(find.text('Title'));
-        await shot('sorted_by_title');
-        await tapIfThere(find.byTooltip('Sort: Title'));
+        await tapIfThere(find.text('Genre'));
+        await shot('sorted_by_genre');
+        await tapIfThere(find.byTooltip('Sort: Genre'));
         await tapIfThere(find.text('Status'));
         await closeLayers();
       });
@@ -680,6 +687,7 @@ void main() {
         await closeLayers();
         await open('${AppRoutes.settings}?tab=updates');
         await tapIfThere(find.text('Preview'));
+        await settle(30);
         await tapIfThere(find.text('Check for updates'));
         await settle(30);
         await shot('settings_updates_checked');
@@ -914,6 +922,7 @@ void main() {
           FocusManager.instance.primaryFocus?.unfocus();
           await settle(2);
           await press(down, times: 6);
+          await settle(6);
           await press(LogicalKeyboardKey.gameButtonX);
           await settle(6);
           await shot('pad_context_menu');

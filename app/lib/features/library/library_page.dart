@@ -1402,8 +1402,40 @@ class _EntryTarget extends ConsumerStatefulWidget {
 class _EntryTargetState extends ConsumerState<_EntryTarget> {
   bool _focused = false;
   final _menu = MenuController();
+  final _focus = FocusNode();
+  final _firstMenuItem = FocusNode();
 
   BacklogEntry get _entry => widget.entry;
+
+  @override
+  void initState() {
+    super.initState();
+    _focus.addListener(_focusChanged);
+  }
+
+  /// The ring only stays on the game while the game itself has the focus: an
+  /// open menu counts as a child of it, and the ring has to follow the menu.
+  void _focusChanged() {
+    if (_focus.hasPrimaryFocus != _focused) {
+      setState(() => _focused = _focus.hasPrimaryFocus);
+    }
+  }
+
+  @override
+  void dispose() {
+    _focus.dispose();
+    _firstMenuItem.dispose();
+    super.dispose();
+  }
+
+  /// Opens the context menu for a gamepad, which only moves in the menu with
+  /// the focus in it; closing it gives the focus back to the game.
+  void _openMenuWithFocus() {
+    _menu.open();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _menu.isOpen) _firstMenuItem.requestFocus();
+    });
+  }
 
   void _activate() {
     if (ref.read(selectionProvider).active) {
@@ -1438,7 +1470,7 @@ class _EntryTargetState extends ConsumerState<_EntryTarget> {
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.gameButtonX) {
-      _menu.open();
+      _openMenuWithFocus();
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.gameButtonSelect) {
@@ -1484,6 +1516,7 @@ class _EntryTargetState extends ConsumerState<_EntryTarget> {
       const ShelfMenuDivider(),
       ShelfMenuItem(
         label: 'Open Details',
+        focusNode: _firstMenuItem,
         icon: Icons.open_in_new,
         shortcut: 'Enter',
         onSelected: () => actions.openDetails(_entry.id),
@@ -1578,11 +1611,12 @@ class _EntryTargetState extends ConsumerState<_EntryTarget> {
     final face = widget.builder(context, selected, selecting, _activate);
 
     return Focus(
-      onFocusChange: (focused) => setState(() => _focused = focused),
+      focusNode: _focus,
       onKeyEvent: _onKey,
       child: ContextMenuRegion(
         key: Key('library-tile-${_entry.id}'),
         controller: _menu,
+        childFocusNode: _focus,
         entries: _menuEntries(actions, statuses, categories, assigned),
         child: Stack(
           children: [

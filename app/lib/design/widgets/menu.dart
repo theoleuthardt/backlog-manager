@@ -24,7 +24,11 @@ class ShelfMenuItem extends ShelfMenuEntry {
     this.keepOpen = false,
     this.submenu,
     this.itemKey,
+    this.focusNode,
   });
+
+  /// Lets the caller put the focus on this row, for a menu a gamepad opened.
+  final FocusNode? focusNode;
 
   final String label;
   final VoidCallback? onSelected;
@@ -136,6 +140,7 @@ List<Widget> _children(BuildContext context, List<ShelfMenuEntry> entries) {
         ),
         ShelfMenuItem() => MenuItemButton(
           key: entry.itemKey,
+          focusNode: entry.focusNode,
           style: _itemStyle(tokens, text, danger: entry.danger),
           closeOnActivate: !entry.keepOpen,
           onPressed: entry.onSelected,
@@ -200,6 +205,7 @@ class ContextMenuRegion extends StatefulWidget {
     required this.entries,
     required this.child,
     this.controller,
+    this.childFocusNode,
     super.key,
   });
 
@@ -208,6 +214,9 @@ class ContextMenuRegion extends StatefulWidget {
 
   /// Opens the menu from elsewhere, for example from the X of a gamepad.
   final MenuController? controller;
+
+  /// Takes the focus back when the menu closes.
+  final FocusNode? childFocusNode;
 
   @override
   State<ContextMenuRegion> createState() => _ContextMenuRegionState();
@@ -222,6 +231,7 @@ class _ContextMenuRegionState extends State<ContextMenuRegion> {
 
     return MenuAnchor(
       controller: _controller,
+      childFocusNode: widget.childFocusNode,
       style: _menuStyle(tokens),
       menuChildren: _children(context, widget.entries),
       child: GestureDetector(
