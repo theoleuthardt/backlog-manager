@@ -31,9 +31,7 @@ instead — this file is about the shape of the system, not where files live.
 Only the backend is meant to be hosted as a public, always-on service. The
 app is installed on each device from the GitHub Releases and updates itself in place (DEB, RPM
 and the iOS IPA only announce new versions)
-([`APP_UPDATES.md`](APP_UPDATES.md)). The Monitor (`monitor/`,
-[`MONITOR_ARCHITECTURE.md`](MONITOR_ARCHITECTURE.md)) watches the backend
-from its own host.
+([`APP_UPDATES.md`](APP_UPDATES.md)).
 
 ## Why REST + JWT instead of tRPC/NextAuth
 
@@ -175,8 +173,7 @@ workflow never blocks a merge):
   change `backend/` or `postgres/`.
 - `tests.yml` runs the release and deploy script tests on PRs that change
   `scripts/`, `deploy/` or `.nvmrc`.
-- `app.yml` checks the Flutter app on PRs that change `app/`, and
-  `monitor.yml` builds and tests the Monitor on PRs that change `monitor/`.
+- `app.yml` checks the Flutter app on PRs that change `app/`.
 - `build.yml` test-builds the backend container image on PRs that change
   `backend/`; it never
   pushes anything. `build-and-publish.yml` publishes it to ghcr.io, only after

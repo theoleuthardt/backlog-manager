@@ -47,7 +47,6 @@ The desktop installers are not code signed, so macOS and Windows warn on the fir
 - **App:** Flutter client in `app/` for the desktop (macOS, Windows, Linux) and mobile (Android, iOS; phones in portrait, handhelds in landscape with a gamepad), calls the backend over REST with a JWT; see [`docs/FLUTTER.md`](docs/FLUTTER.md).
 - **Legacy client:** the earlier React/Vite + Tauri client was retired with the 0.9.13 release and moved to [`backlog-manager-legacy`](https://github.com/theoleuthardt/backlog-manager-legacy) (#287).
 - **Backend:** Python/Litestar, in `backend/` as standalone REST API, SQLAlchemy 2.0 async + asyncpg against PostgreSQL.
-- **Monitor:** Spring Boot status and alerting service in `monitor/`; see [`docs/MONITOR_ARCHITECTURE.md`](docs/MONITOR_ARCHITECTURE.md).
 - **Deployment:** Container-Image on [Github Container Registry](ghcr.io) within this repo. Free to use and host yourself.
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full picture — why
@@ -64,7 +63,6 @@ Steam, SteamGridDB) falls back when unconfigured.
   runs a smoke test on an Android emulator; the mobile tour
   (`scripts/mobile-tour.sh`) walks through the whole app on a phone and a
   handheld emulator against the real backend; see [`docs/FLUTTER.md`](docs/FLUTTER.md).
-- **Monitor:** `task monitor:test` (JUnit, Testcontainers).
 - **Release and deploy scripts:** `task release:test` (`node --test`).
 
 ## API Testing
@@ -77,13 +75,12 @@ the `Local` environment, and run `auth/Login` first to populate the shared
 ## Local Development
 
 Everything runs through [`go-task`](https://taskfile.dev) (`task`), which
-wraps the uv, Flutter and Maven toolchains plus the local Podman compose stack. Install
+wraps the uv and Flutter toolchains plus the local Podman compose stack. Install
 these once before your first `task install`:
 
 | Tool | Why |
 | ---- | --- |
 | [Flutter 3.47.6](https://docs.flutter.dev/get-started/install) | the app in `app/` (see [`docs/FLUTTER.md`](docs/FLUTTER.md); the Android SDK or Xcode only for the mobile builds) |
-| JDK 25 | the Monitor in `monitor/` (Maven wrapper included) |
 | [Node.js 22](https://nodejs.org) (or [nvm](https://github.com/nvm-sh/nvm)) | the release and deploy script tests (`task release:test`) |
 | [uv](https://docs.astral.sh/uv/) | Python backend dependency and tool management |
 | [go-task](https://taskfile.dev) | unified command surface for every repo command |
@@ -93,7 +90,7 @@ these once before your first `task install`:
 | [CodeRabbit CLI](https://docs.coderabbit.ai/cli) (`coderabbit`) | local code reviews of every PR — see [`docs/CODERABBIT_CLI.md`](docs/CODERABBIT_CLI.md) for installation and one-time setup |
 
 ```bash
-task install       # uv sync (backend) + flutter pub get (app) + Maven dependencies (monitor)
+task install       # uv sync (backend) + flutter pub get (app)
 task db:up         # start local Postgres + pgAdmin
 task backend:dev   # Litestar dev server on :8000
 task app:dev       # the Flutter app on this platform
