@@ -198,92 +198,97 @@ class _Loaded extends ConsumerWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final stacked = constraints.maxWidth - 56 < _sideBySideWidth;
+        final head = Padding(
+          padding: const EdgeInsets.fromLTRB(28, 18, 28, 8),
+          child: Wrap(
+            spacing: 12,
+            runSpacing: 10,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              ShelfChip(
+                key: const Key('import-file'),
+                label: state.fileName ?? '',
+                kind: ShelfChipKind.accent,
+              ),
+              ShelfButton(
+                key: const Key('import-choose-other'),
+                label: 'Choose another file',
+                onPressed: state.busy ? null : onChoose,
+              ),
+              if (state.hasPreview)
+                Text(
+                  rowsSummary(rows),
+                  key: const Key('import-summary'),
+                  style: style.caption.copyWith(color: tokens.muted),
+                ),
+              if (running && state.total != null)
+                SizedBox(
+                  width: 160,
+                  child: ShelfProgressBar(
+                    value: (state.processed ?? 0) / state.total!,
+                  ),
+                ),
+              if (stacked && state.hasPreview)
+                ShelfButton(
+                  key: const Key('import-mapping'),
+                  label: 'Column Mapping',
+                  onPressed: () => unawaited(
+                    showShelfSheet<void>(
+                      context,
+                      builder: (_) => _MappingSheet(onPreview: onPreview),
+                    ),
+                  ),
+                ),
+              ShelfButton(
+                key: const Key('import-cancel'),
+                label: 'Cancel',
+                onPressed: running ? controller.cancel : controller.reset,
+              ),
+              if (state.hasPreview)
+                ShelfButton(
+                  key: const Key('import-submit'),
+                  label: submitting
+                      ? submitLabel(state.processed, state.total)
+                      : importLabel(rows.length),
+                  kind: ShelfButtonKind.primary,
+                  busy: submitting,
+                  onPressed: state.busy || rows.isEmpty ? null : onSubmit,
+                ),
+            ],
+          ),
+        );
+        if (stacked && state.hasPreview) {
+          return NestedScrollView(
+            headerSliverBuilder: (context, _) => [
+              SliverToBoxAdapter(child: head),
+            ],
+            body: const Padding(
+              padding: EdgeInsets.fromLTRB(28, 8, 28, 20),
+              child: CsvPreviewTable(),
+            ),
+          );
+        }
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(28, 18, 28, 8),
-              child: Wrap(
-                spacing: 12,
-                runSpacing: 10,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  ShelfChip(
-                    key: const Key('import-file'),
-                    label: state.fileName ?? '',
-                    kind: ShelfChipKind.accent,
-                  ),
-                  ShelfButton(
-                    key: const Key('import-choose-other'),
-                    label: 'Choose another file',
-                    onPressed: state.busy ? null : onChoose,
-                  ),
-                  if (state.hasPreview)
-                    Text(
-                      rowsSummary(rows),
-                      key: const Key('import-summary'),
-                      style: style.caption.copyWith(color: tokens.muted),
-                    ),
-                  if (running && state.total != null)
-                    SizedBox(
-                      width: 160,
-                      child: ShelfProgressBar(
-                        value: (state.processed ?? 0) / state.total!,
-                      ),
-                    ),
-                  if (stacked && state.hasPreview)
-                    ShelfButton(
-                      key: const Key('import-mapping'),
-                      label: 'Column Mapping',
-                      onPressed: () => unawaited(
-                        showShelfSheet<void>(
-                          context,
-                          builder: (_) => _MappingSheet(onPreview: onPreview),
-                        ),
-                      ),
-                    ),
-                  ShelfButton(
-                    key: const Key('import-cancel'),
-                    label: 'Cancel',
-                    onPressed: running ? controller.cancel : controller.reset,
-                  ),
-                  if (state.hasPreview)
-                    ShelfButton(
-                      key: const Key('import-submit'),
-                      label: submitting
-                          ? submitLabel(state.processed, state.total)
-                          : importLabel(rows.length),
-                      kind: ShelfButtonKind.primary,
-                      busy: submitting,
-                      onPressed: state.busy || rows.isEmpty ? null : onSubmit,
-                    ),
-                ],
-              ),
-            ),
+            head,
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(28, 8, 28, 20),
                 child: stacked
-                    ? state.hasPreview
-                          ? const CsvPreviewTable()
-                          : SingleChildScrollView(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  CsvMappingPanel(
-                                    state: state,
-                                    onPreview: onPreview,
-                                  ),
-                                  const SizedBox(height: 14),
-                                  Text(
-                                    _previewHint,
-                                    style: style.body.copyWith(
-                                      color: tokens.muted,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
+                    ? SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            CsvMappingPanel(state: state, onPreview: onPreview),
+                            const SizedBox(height: 14),
+                            Text(
+                              _previewHint,
+                              style: style.body.copyWith(color: tokens.muted),
+                            ),
+                          ],
+                        ),
+                      )
                     : Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
