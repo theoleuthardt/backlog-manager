@@ -2,6 +2,7 @@ version: "3"
 
 vars:
   BACKEND_DIR: backend
+  TRACKER_DIR: tracker
   APP_DIR: app
   APP_PLATFORM: '{{if eq OS "darwin"}}macos{{else}}{{OS}}{{end}}'
 
@@ -236,6 +237,30 @@ tasks:
         platforms: [linux]
       - cmd: bash tool/package/rpm.sh
         platforms: [linux]
+
+  tracker:run:
+    desc: Build and run the playtime tracker (needs Rust, see tracker/README.md)
+    dir: "{{.TRACKER_DIR}}"
+    cmds:
+      - cargo run
+
+  tracker:test:
+    desc: Run the tracker's tests
+    dir: "{{.TRACKER_DIR}}"
+    cmds:
+      - cargo test
+
+  tracker:lint:
+    desc: Lint the tracker with clippy, warnings fail
+    dir: "{{.TRACKER_DIR}}"
+    cmds:
+      - cargo clippy --all-targets -- -D warnings
+
+  tracker:format:
+    desc: Format the tracker with rustfmt
+    dir: "{{.TRACKER_DIR}}"
+    cmds:
+      - cargo fmt
 
   vscode:setup-python:
     desc: Point VS Code/VSCodium's Python tooling at backend/.venv (run once per machine/checkout)

@@ -47,6 +47,7 @@ The desktop installers are not code signed, so macOS and Windows warn on the fir
 - **App:** Flutter client in `app/` for the desktop (macOS, Windows, Linux) and mobile (Android, iOS; phones in portrait, handhelds in landscape with a gamepad), calls the backend over REST with a JWT; see [`docs/FLUTTER.md`](docs/FLUTTER.md).
 - **Legacy client:** the earlier React/Vite + Tauri client was retired with the 0.9.13 release and moved to [`backlog-manager-legacy`](https://github.com/theoleuthardt/backlog-manager-legacy) (#287).
 - **Backend:** Python/Litestar, in `backend/` as standalone REST API, SQLAlchemy 2.0 async + asyncpg against PostgreSQL.
+- **Playtime tracker:** optional background program in Rust in `tracker/`, for games outside Steam, in the making; see [`docs/TRACKER.md`](docs/TRACKER.md).
 - **Deployment:** Container-Image on [Github Container Registry](ghcr.io) within this repo. Free to use and host yourself.
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full picture — why
