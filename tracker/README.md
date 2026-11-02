@@ -13,7 +13,7 @@ task tracker:lint     # clippy, warnings fail
 task tracker:format   # rustfmt
 ```
 
-`src/main.rs` is a small starting point with one function and its tests. Stage 1 begins there: add `sysinfo` with `cargo add sysinfo` and print the running processes.
+`src/main.rs` is a small starting point with one function and its tests, and `tests/smoke.rs` starts the real program, so `task tracker:test` shows whether it still runs. Stage 1 begins there: add `sysinfo` with `cargo add sysinfo` and print the running processes.
 
 For learning: [The Rust Book](https://doc.rust-lang.org/book/), [Rustlings](https://rustlings.rust-lang.org/) and `cargo doc --open` for the crates in use.
 
