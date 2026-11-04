@@ -663,9 +663,7 @@ class _CreationGameFormState extends ConsumerState<CreationGameForm> {
                   controller: _d.review,
                   enabled: reviewable,
                   minLines: 3,
-                  hintText: reviewable
-                      ? 'Write your review here...'
-                      : 'Set the status to Completed to write a review',
+                  hintText: reviewable ? 'Write your review here...' : 'Set the status to Completed or Dropped to write a review',
                   onChanged: (_) {},
                 ),
               ),
@@ -719,7 +717,7 @@ class _CreationGameFormState extends ConsumerState<CreationGameForm> {
   }
 }
 
-const _needsCompleted = 'Stars and review need the status Completed';
+const _needsCompleted = 'Stars and review need the status Completed or Dropped';
 
 /// The width of the cover above the form on a phone or a handheld.
 const _compactCoverWidth = 128.0;

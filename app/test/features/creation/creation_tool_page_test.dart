@@ -724,19 +724,19 @@ void main() {
       await openTool(tester);
 
       expect(
-        find.byTooltip('Stars and review need the status Completed'),
+        find.byTooltip('Stars and review need the status Completed or Dropped'),
         findsWidgets,
       );
 
       await chooseStatus(tester, 'Completed');
 
       expect(
-        find.byTooltip('Stars and review need the status Completed'),
+        find.byTooltip('Stars and review need the status Completed or Dropped'),
         findsNothing,
       );
     });
 
-    testWidgets('need the status Completed', (tester) async {
+    testWidgets('need the status Completed or Dropped', (tester) async {
       await openTool(tester);
 
       expect(
@@ -746,6 +746,19 @@ void main() {
         isFalse,
       );
       await chooseStatus(tester, 'Completed');
+      expect(
+        tester
+            .widget<TextField>(find.byKey(const Key('creation-review')))
+            .enabled,
+        isTrue,
+      );
+    });
+
+    testWidgets('a dropped game can be reviewed', (tester) async {
+      await openTool(tester);
+
+      await chooseStatus(tester, 'Dropped');
+
       expect(
         tester
             .widget<TextField>(find.byKey(const Key('creation-review')))

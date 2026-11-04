@@ -1101,7 +1101,7 @@ class _InspectorFormState extends ConsumerState<_InspectorForm> {
           minLines: 3,
           hintText: reviewable
               ? 'Write your review here...'
-              : 'Set the status to Completed to write a review',
+              : 'Set the status to Completed or Dropped to write a review',
           onChanged: (value) => _edit((form) => form.copyWith(review: value)),
         ),
       ],

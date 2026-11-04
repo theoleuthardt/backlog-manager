@@ -507,18 +507,37 @@ void main() {
       expect(find.byKey(const Key('inspector-review')), findsNothing);
     });
 
-    testWidgets('review needs the status Completed', (tester) async {
+    testWidgets('review needs the status Completed or Dropped', (tester) async {
       await openInspector(tester);
       await openTab(tester, 'Review');
 
       expect(
-        find.text('Set the status to Completed to write a review'),
+        find.text('Set the status to Completed or Dropped to write a review'),
         findsOneWidget,
       );
       final reviewField = tester.widget<TextField>(
         find.byKey(const Key('inspector-review')),
       );
       expect(reviewField.enabled, isFalse);
+    });
+
+    testWidgets('a dropped game can be reviewed', (tester) async {
+      const dropped = BacklogEntry(
+        id: 3,
+        title: 'Spiritfarer',
+        status: 'Dropped',
+      );
+      await openInspector(tester, entries: const [dropped], id: 3);
+      await openTab(tester, 'Review');
+
+      final reviewField = tester.widget<TextField>(
+        find.byKey(const Key('inspector-review')),
+      );
+      expect(reviewField.enabled, isTrue);
+      expect(
+        find.text('Set the status to Completed or Dropped to write a review'),
+        findsNothing,
+      );
     });
 
     testWidgets('a completed game can be reviewed and saves it', (
