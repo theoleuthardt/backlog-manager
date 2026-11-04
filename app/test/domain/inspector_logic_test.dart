@@ -93,9 +93,15 @@ void main() {
   });
 
   group('canReview', () {
-    test('is only true for a completed game', () {
+    test('is true for a completed and for a dropped game', () {
       expect(canReview('Completed'), isTrue);
+      expect(canReview('Dropped'), isTrue);
+    });
+
+    test('is false for games still to play or in play', () {
       expect(canReview('In Progress'), isFalse);
+      expect(canReview('Not Started'), isFalse);
+      expect(canReview('On Hold'), isFalse);
       expect(canReview(''), isFalse);
     });
   });

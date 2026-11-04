@@ -20,8 +20,9 @@ EntryForm entryFormFrom(BacklogEntry entry) {
   );
 }
 
-/// Stars and the review text can only be written for a completed game.
-bool canReview(String status) => status == 'Completed';
+/// Stars and the review text can be written for a game that is over: a
+/// completed one, and a dropped one, which deserves a verdict as well.
+bool canReview(String status) => status == 'Completed' || status == 'Dropped';
 
 const _months = [
   'January',
